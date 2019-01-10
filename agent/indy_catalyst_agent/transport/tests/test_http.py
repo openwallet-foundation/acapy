@@ -70,7 +70,7 @@ class TestAsyncHttp(AsyncTestCase):
         http = Http(*["0.0.0.0", 80, func])
 
         with self.assertRaises(InvalidMessageError) as context:
-            result = await http.parse_message(request)
+            await http.parse_message(request)
         assert (
             str(context.exception)
             == "Request body must contain a valid application/json payload"
