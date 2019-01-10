@@ -2,10 +2,10 @@ FROM python:3.6-slim
 
 WORKDIR /usr/src/app
 
-ADD requirements.txt .
+ADD requirements.dev.txt .
 
 RUN pip install --no-cache-dir \
-	-r requirements.txt \
+	-r requirements.dev.txt \
 	pytest
 
 ADD . .

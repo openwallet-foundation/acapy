@@ -1,0 +1,7 @@
+# dev
+pytest-cov==2.6.1
+asynctest==0.12.2
+
+aiohttp>=3.5.0<3.6
+marshmallow==3.0.0rc2
+
