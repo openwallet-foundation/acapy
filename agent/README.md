@@ -30,7 +30,7 @@ For testing in a self-contained [Docker](https://www.docker.com/) environment, m
 you have Docker installed and run:
 
 ```sh
-test/docker.sh
+.scripts/run_tests
 ```
 
 To execute the test suite locally without using Docker, install the `pytest` Python package
