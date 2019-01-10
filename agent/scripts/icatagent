@@ -1,0 +1,4 @@
+#!/usr/bin/env python
+
+from indy_catalyst_agent import main
+main()
