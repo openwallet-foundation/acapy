@@ -1,8 +1,14 @@
 
-from ..http import Http, HttpSetupError
+import json
+
+from ..http import Http, HttpSetupError, InvalidMessageError
 
 import pytest
 from unittest import mock, TestCase
+
+from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
+from asynctest import patch as async_patch
 
 
 def func():
@@ -47,12 +53,56 @@ class TestHttp(TestCase):
         )
 
 
-# Need to figure out an approach to testing async functions
-# async def test_run_parse_message():
+class TestAsyncHttp(AsyncTestCase):
+    async def test_run_parse_message(self):
+        request = async_mock.MagicMock()
+        request.json = async_mock.CoroutineMock()
+        http = Http(*["0.0.0.0", 80, func])
+        result = await http.parse_message(request)
+        request.json.assert_called_once_with()
+        assert result is request.json.return_value
 
-#     request = mock.Mock()
+    async def test_run_parse_bad_message(self):
+        request = async_mock.MagicMock()
+        request.json = async_mock.CoroutineMock(
+            side_effect=json.JSONDecodeError("", "{}", 1)
+        )
+        http = Http(*["0.0.0.0", 80, func])
 
-#     http = Http(*["0.0.0.0", 80, func])
-#     await http.parse_message(request)
+        with self.assertRaises(InvalidMessageError) as context:
+            result = await http.parse_message(request)
+        assert (
+            str(context.exception)
+            == "Request body must contain a valid application/json payload"
+        )
 
-#     request.json.assert_called_once_wizh("a")
+    @async_mock.patch("indy_catalyst_agent.transport.http.web.Response")
+    async def test_run_message_handler(self, mock_web_response):
+        request = async_mock.CoroutineMock()
+        http = Http(*["0.0.0.0", 80, func])
+
+        http.parse_message = async_mock.CoroutineMock()
+        http.message_router = async_mock.MagicMock()
+
+        await http.message_handler(request)
+
+        mock_web_response.assert_called_once_with(text="OK", status=200)
+
+        http.parse_message.assert_called_once_with(request)
+
+    @async_mock.patch("indy_catalyst_agent.transport.http.web.Response")
+    async def test_run_message_handler_fail(self, mock_web_response):
+        request = async_mock.CoroutineMock()
+        http = Http(*["0.0.0.0", 80, func])
+
+        http.parse_message = async_mock.CoroutineMock()
+
+        err_str = "err123"
+
+        http.message_router = async_mock.MagicMock(side_effect=Exception(err_str))
+
+        await http.message_handler(request)
+
+        mock_web_response.assert_called_once_with(text=err_str, status=400)
+
+        http.parse_message.assert_called_once_with(request)
