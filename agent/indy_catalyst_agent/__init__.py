@@ -1,6 +1,7 @@
 import argparse
 
 from .conductor import Conductor
+from .logging import LoggingConfigurator
 
 from .version import __version__
 
@@ -37,9 +38,11 @@ def main():
     host = args.host
     port = args.port
 
+    LoggingConfigurator.configure()
+
     conductor = Conductor(transport, host, port)
     conductor.start()
 
 
 if __name__ == "__main__":
-    main() # pragma: no cover
+    main()  # pragma: no cover
