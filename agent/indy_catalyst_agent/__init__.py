@@ -29,6 +29,14 @@ PARSER.add_argument(
     help="Specifies the upstream transport port.",
 )
 
+PARSER.add_argument(
+    "--logging-config",
+    dest="logging_config",
+    type=str,
+    default=None,
+    help="Specifies a custom logging configuration file.",
+)
+
 
 def main():
     args = PARSER.parse_args()
@@ -38,7 +46,9 @@ def main():
     host = args.host
     port = args.port
 
-    LoggingConfigurator.configure()
+    logging_config = args.logging_config
+
+    LoggingConfigurator.configure(logging_config)
 
     conductor = Conductor(transport, host, port)
     conductor.start()
