@@ -8,9 +8,10 @@ class TestMain:
     host_arg_value = "host"
     port_arg_value = "port"
 
+    @mock.patch("indy_catalyst_agent.LoggingConfigurator", autospec=True)
     @mock.patch("indy_catalyst_agent.PARSER.parse_args", autospec=True)
     @mock.patch("indy_catalyst_agent.Conductor", autospec=True)
-    def test_main(self, mock_conductor, mock_parse_args):
+    def test_main(self, mock_conductor, mock_parse_args, mock_logging_configurator):
         type(mock_parse_args.return_value).transport = self.transport_arg_value
         type(mock_parse_args.return_value).host = self.host_arg_value
         type(mock_parse_args.return_value).port = self.port_arg_value
