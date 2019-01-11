@@ -8,4 +8,6 @@
 
 # Introduction
 
-Placeholder README for forthcoming Indy Catalyst Credential Registry software.
+Hyperledger Indy Catalyst Credential Registry is a software component that will be derived from the [Verifiable Organizations Network](https://vonx.io) "OrgBook".
+
+The current code can be found in [TheOrgBook](https://github.com/bcgov/TheOrgBook) repo in the Province of British Columbia's GitHub organization.
