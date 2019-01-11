@@ -4,12 +4,15 @@ over the network, communicating with the ledger, passing messages to handlers,
 and storing data in the wallet.
 """
 
+import logging
+
 from ..transport.http import Http as HttpTransport
 from ..transport import InvalidTransportError
 
 from ..messages.message_factory import MessageFactory
 
 
+logger = logging.getLogger(__name__)
 class Conductor:
     def __init__(self, transport: str, host: str, port: int) -> None:
         self.transport = transport
@@ -26,4 +29,4 @@ class Conductor:
     def message_handler(self, message_dict: dict) -> None:
         message = MessageFactory.make_message(message_dict)
         # Pass to handler
-        print(message)
+        logger.info(message)
