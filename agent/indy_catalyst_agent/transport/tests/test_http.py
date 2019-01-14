@@ -49,7 +49,7 @@ class TestHttp(TestCase):
             [self.web_post_return_value]
         )
         mock_aiohttp_web.run_app.assert_called_once_with(
-            mock_aiohttp_web.Application.return_value, host=http.host, port=http.port
+            mock_aiohttp_web.Application.return_value, host=http.host, port=http.port, print=None
         )
 
 
