@@ -38,6 +38,32 @@ PARSER.add_argument(
 )
 
 
+def print_start_banner(host, port, proto):
+
+    banner_length = 30
+
+    banner_title_string = "Indy Catalyst Agent"
+    banner_title_spacer = " " * (banner_length - len(banner_title_string))
+
+    banner_border = ":" * (banner_length + 6)
+    banner_spacer = "::" + " " * (banner_length + 2) + "::"
+
+    host_port_string = f"{proto}: {host}:{port}"
+    host_port_spacer = " " * (banner_length - len(host_port_string))
+
+    version_string = f"ver: {__version__}"
+    version_string_spacer = " " * (banner_length - len(version_string))
+
+    print()
+    print(f"{banner_border}")
+    print(f":: {banner_title_string}{banner_title_spacer} ::")
+    print(f"{banner_spacer}")
+    print(f":: {host_port_string}{host_port_spacer} ::")
+    print(f"{banner_spacer}")
+    print(f":: {version_string_spacer}{version_string} ::")
+    print(f"{banner_border}")
+    print()
+
 def main():
     args = PARSER.parse_args()
 
@@ -49,6 +75,8 @@ def main():
     logging_config = args.logging_config
 
     LoggingConfigurator.configure(logging_config)
+
+    print_start_banner(host, port, 'http')
 
     conductor = Conductor(transport, host, port)
     conductor.start()
