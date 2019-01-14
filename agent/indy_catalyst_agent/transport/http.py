@@ -25,7 +25,7 @@ class Http(Transport):
         app = web.Application()
         app.add_routes([web.post("/", self.message_handler)])
         try:
-            web.run_app(app, host=self.host, port=self.port)
+            web.run_app(app, host=self.host, port=self.port, print=None)
         except socket.gaierror:
             raise HttpSetupError(
                 f"Unable to start webserver with host '{self.host}' and port '{self.port}'\n"

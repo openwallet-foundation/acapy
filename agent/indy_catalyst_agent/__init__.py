@@ -63,6 +63,8 @@ def print_start_banner(host, port, proto):
     print(f":: {version_string_spacer}{version_string} ::")
     print(f"{banner_border}")
     print()
+    print("Listening...")
+    print()
 
 def main():
     args = PARSER.parse_args()

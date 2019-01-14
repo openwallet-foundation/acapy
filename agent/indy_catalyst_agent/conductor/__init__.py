@@ -12,9 +12,10 @@ from ..transport import InvalidTransportError
 from ..messages.message_factory import MessageFactory
 
 
-logger = logging.getLogger(__name__)
+
 class Conductor:
     def __init__(self, transport: str, host: str, port: int) -> None:
+        self.logger = logging.getLogger(__name__)
         self.transport = transport
         self.host = host
         self.port = port
@@ -29,4 +30,4 @@ class Conductor:
     def message_handler(self, message_dict: dict) -> None:
         message = MessageFactory.make_message(message_dict)
         # Pass to handler
-        logger.info(message)
+        self.logger.info(message)
