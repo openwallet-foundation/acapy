@@ -6,11 +6,14 @@ and storing data in the wallet.
 
 import logging
 
+from .dispatcher import Dispatcher
+
 from .transport.http import Http as HttpTransport
 from .transport import InvalidTransportError
 
-from .messaging.message_factory import MessageFactory
+from .storage.basic import BasicStorage
 
+from .messaging.message_factory import MessageFactory
 
 
 class Conductor:
@@ -21,6 +24,10 @@ class Conductor:
         self.port = port
 
     def start(self) -> None:
+        # TODO: make storage type configurable via cli params
+        storage = BasicStorage()
+        self.dispatcher = Dispatcher(storage)
+
         if self.transport is "http":
             transport = HttpTransport(self.host, self.port, self.message_handler)
             transport.setup()
@@ -29,5 +36,4 @@ class Conductor:
 
     def message_handler(self, message_dict: dict) -> None:
         message = MessageFactory.make_message(message_dict)
-        # Pass to handler
-        self.logger.info(message)
+        self.dispatcher.dispatch(message)
