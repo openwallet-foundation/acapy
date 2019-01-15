@@ -1,18 +1,18 @@
 from ..message_factory import MessageFactory, MessageParseError
 from ..message_types import MessageTypes
 
-from ..connections.connection_invitation import ConnectionInvitation
-from ..connections.connection_request import ConnectionRequest
-from ..connections.connection_response import ConnectionResponse
+from ..connections.messages.connection_invitation import ConnectionInvitation
+from ..connections.messages.connection_request import ConnectionRequest
+from ..connections.messages.connection_response import ConnectionResponse
 
-from ..credentials.credential_offer import CredentialOffer
-from ..credentials.credential_request import CredentialRequest
-from ..credentials.credential import Credential
+from ..credentials.messages.credential_offer import CredentialOffer
+from ..credentials.messages.credential_request import CredentialRequest
+from ..credentials.messages.credential import Credential
 
-from ..proofs.proof_request import ProofRequest
-from ..proofs.proof import Proof
+from ..proofs.messages.proof_request import ProofRequest
+from ..proofs.messages.proof import Proof
 
-from ..routing.forward import Forward
+from ..routing.messages.forward import Forward
 
 
 from unittest import mock, TestCase

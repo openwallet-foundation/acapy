@@ -5,7 +5,7 @@ storing state for message threads, etc.
 
 import logging
 
-from ..storage.base import BaseStorage
+from .storage.base import BaseStorage
 
 
 class Dispatcher:

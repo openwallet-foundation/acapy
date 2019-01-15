@@ -4,8 +4,8 @@ Represents a forward message.
 
 from marshmallow import Schema, fields, post_load
 
-from ..agent_message import AgentMessage
-from ..message_types import MessageTypes
+from ...agent_message import AgentMessage
+from ...message_types import MessageTypes
 
 
 class Forward(AgentMessage):

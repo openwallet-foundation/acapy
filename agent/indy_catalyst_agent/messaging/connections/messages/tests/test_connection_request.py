@@ -1,5 +1,5 @@
 from ..connection_request import ConnectionRequest, ConnectionRequestSchema
-from ...message_types import MessageTypes
+from ....message_types import MessageTypes
 
 from unittest import mock, TestCase
 
@@ -20,7 +20,7 @@ class TestConnectionRequest(TestCase):
         assert connection_request._type == MessageTypes.CONNECTION_REQUEST.value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.connection_request.ConnectionRequestSchema.load"
+        "indy_catalyst_agent.messaging.connections.messages.connection_request.ConnectionRequestSchema.load"
     )
     def test_deserialize(self, mock_connection_request_schema_load):
         obj = {"obj": "obj"}
@@ -31,7 +31,7 @@ class TestConnectionRequest(TestCase):
         assert connection_request is mock_connection_request_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.connection_request.ConnectionRequestSchema.dump"
+        "indy_catalyst_agent.messaging.connections.messages.connection_request.ConnectionRequestSchema.dump"
     )
     def test_serialize(self, mock_connection_request_schema_dump):
         connection_request = ConnectionRequest(self.endpoint, self.did, self.verkey)

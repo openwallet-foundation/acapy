@@ -4,15 +4,18 @@ Represents an invitation message for establishing connection.
 
 from marshmallow import Schema, fields, post_load
 
-from ..agent_message import AgentMessage
-from ..message_types import MessageTypes
-from ..validators import must_not_be_none
+from ...agent_message import AgentMessage
+from ...message_types import MessageTypes
+from ...validators import must_not_be_none
 
-from ...models.agent_endpoint import AgentEndpoint, AgentEndpointSchema
+from ..handlers.connection_invitation_handler import ConnectionInvitationHandler
+
+from ....models.agent_endpoint import AgentEndpoint, AgentEndpointSchema
 
 
 class ConnectionInvitation(AgentMessage):
     def __init__(self, endpoint: AgentEndpoint, image_url: str, connection_key: str):
+        self.handler = ConnectionInvitationHandler(self)
         self.endpoint = endpoint
         self.image_url = image_url
         self.connection_key = connection_key

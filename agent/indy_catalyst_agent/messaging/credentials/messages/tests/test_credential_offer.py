@@ -1,5 +1,5 @@
 from ..credential_offer import CredentialOffer, CredentialOfferSchema
-from ...message_types import MessageTypes
+from ....message_types import MessageTypes
 
 from unittest import mock, TestCase
 
@@ -17,7 +17,7 @@ class TestCredentialOffer(TestCase):
         assert credential_offer._type == MessageTypes.CREDENTIAL_OFFER.value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.credentials.credential_offer.CredentialOfferSchema.load"
+        "indy_catalyst_agent.messaging.credentials.messages.credential_offer.CredentialOfferSchema.load"
     )
     def test_deserialize(self, mock_credential_offer_schema_load):
         obj = {"obj": "obj"}
@@ -28,7 +28,7 @@ class TestCredentialOffer(TestCase):
         assert credential_offer is mock_credential_offer_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.credentials.credential_offer.CredentialOfferSchema.dump"
+        "indy_catalyst_agent.messaging.credentials.messages.credential_offer.CredentialOfferSchema.dump"
     )
     def test_serialize(self, mock_credential_offer_schema_dump):
         credential_offer = CredentialOffer(self.offer_json)

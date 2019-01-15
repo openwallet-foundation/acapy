@@ -1,5 +1,5 @@
 from ..proof import Proof, ProofSchema
-from ...message_types import MessageTypes
+from ....message_types import MessageTypes
 
 from unittest import mock, TestCase
 
@@ -18,7 +18,7 @@ class TestProof(TestCase):
 
         assert proof._type == MessageTypes.PROOF.value
 
-    @mock.patch("indy_catalyst_agent.messaging.proofs.proof.ProofSchema.load")
+    @mock.patch("indy_catalyst_agent.messaging.proofs.messages.proof.ProofSchema.load")
     def test_deserialize(self, proof_schema_load):
         obj = {"obj": "obj"}
 
@@ -27,7 +27,7 @@ class TestProof(TestCase):
 
         assert proof is proof_schema_load.return_value
 
-    @mock.patch("indy_catalyst_agent.messaging.proofs.proof.ProofSchema.dump")
+    @mock.patch("indy_catalyst_agent.messaging.proofs.messages.proof.ProofSchema.dump")
     def test_serialize(self, proof_schema_dump):
         proof = Proof(self.proof_json, self.request_nonce)
 

@@ -4,11 +4,11 @@ Represents a connection request message.
 
 from marshmallow import Schema, fields, post_load
 
-from ..agent_message import AgentMessage
-from ..message_types import MessageTypes
-from ..validators import must_not_be_none
+from ...agent_message import AgentMessage
+from ...message_types import MessageTypes
+from ...validators import must_not_be_none
 
-from ...models.agent_endpoint import AgentEndpoint, AgentEndpointSchema
+from ....models.agent_endpoint import AgentEndpoint, AgentEndpointSchema
 
 
 class ConnectionRequest(AgentMessage):

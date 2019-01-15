@@ -1,5 +1,5 @@
 from ..credential_request import CredentialRequest, CredentialRequestSchema
-from ...message_types import MessageTypes
+from ....message_types import MessageTypes
 
 from unittest import mock, TestCase
 
@@ -27,7 +27,7 @@ class TestCredentialRequest(TestCase):
         assert credential_request._type == MessageTypes.CREDENTIAL_REQUEST.value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.credentials.credential_request.CredentialRequestSchema.load"
+        "indy_catalyst_agent.messaging.credentials.messages.credential_request.CredentialRequestSchema.load"
     )
     def test_deserialize(self, mock_credential_request_schema_load):
         obj = {"obj": "obj"}
@@ -38,7 +38,7 @@ class TestCredentialRequest(TestCase):
         assert credential_request is mock_credential_request_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.credentials.credential_request.CredentialRequestSchema.dump"
+        "indy_catalyst_agent.messaging.credentials.messages.credential_request.CredentialRequestSchema.dump"
     )
     def test_serialize(self, mock_credential_request_schema_dump):
         credential_request = CredentialRequest(

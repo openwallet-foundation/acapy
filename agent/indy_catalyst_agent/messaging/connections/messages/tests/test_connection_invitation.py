@@ -1,5 +1,5 @@
 from ..connection_invitation import ConnectionInvitation, ConnectionInvitationSchema
-from ...message_types import MessageTypes
+from ....message_types import MessageTypes
 
 from unittest import mock, TestCase
 
@@ -25,7 +25,7 @@ class TestConnectionInvitation(TestCase):
         assert connection_invitation._type == MessageTypes.CONNECTION_INVITATION.value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.connection_invitation.ConnectionInvitationSchema.load"
+        "indy_catalyst_agent.messaging.connections.messages.connection_invitation.ConnectionInvitationSchema.load"
     )
     def test_deserialize(self, mock_connection_invitation_schema_load):
         obj = {"obj": "obj"}
@@ -38,7 +38,7 @@ class TestConnectionInvitation(TestCase):
         )
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.connection_invitation.ConnectionInvitationSchema.dump"
+        "indy_catalyst_agent.messaging.connections.messages.connection_invitation.ConnectionInvitationSchema.dump"
     )
     def test_serialize(self, mock_connection_invitation_schema_dump):
         connection_invitation = ConnectionInvitation(
