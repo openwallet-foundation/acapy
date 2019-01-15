@@ -1,5 +1,5 @@
 from .. import Conductor
-from ...transport import InvalidTransportError
+from ..transport import InvalidTransportError
 
 from unittest import mock, TestCase
 

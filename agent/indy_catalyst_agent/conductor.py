@@ -6,10 +6,10 @@ and storing data in the wallet.
 
 import logging
 
-from ..transport.http import Http as HttpTransport
-from ..transport import InvalidTransportError
+from .transport.http import Http as HttpTransport
+from .transport import InvalidTransportError
 
-from ..messaging.message_factory import MessageFactory
+from .messaging.message_factory import MessageFactory
 
 
 
