@@ -3,6 +3,13 @@ The dispatcher is responsible for coordinating data flow between handlers, provi
 storing state for message threads, etc.
 """
 
-class Dispatcher:
+import logging
 
-    pass
+from ..storage.base import BaseStorage
+
+
+class Dispatcher:
+    def __init__(self, storage: BaseStorage):
+        self.logger = logging.getLogger(__name__)
+        self.storage = storage
+

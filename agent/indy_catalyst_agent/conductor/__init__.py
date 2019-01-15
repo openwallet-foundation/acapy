@@ -9,7 +9,7 @@ import logging
 from ..transport.http import Http as HttpTransport
 from ..transport import InvalidTransportError
 
-from ..messages.message_factory import MessageFactory
+from ..messaging.message_factory import MessageFactory
 
 
 

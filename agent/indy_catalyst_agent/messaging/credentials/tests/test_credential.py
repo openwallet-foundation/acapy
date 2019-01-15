@@ -19,7 +19,7 @@ class TestCredential(TestCase):
         assert credential._type == MessageTypes.CREDENTIAL.value
 
     @mock.patch(
-        "indy_catalyst_agent.messages.credentials.credential.CredentialSchema.load"
+        "indy_catalyst_agent.messaging.credentials.credential.CredentialSchema.load"
     )
     def test_deserialize(self, mock_credential_schema_load):
         obj = {"obj": "obj"}
@@ -30,7 +30,7 @@ class TestCredential(TestCase):
         assert credential is mock_credential_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messages.credentials.credential.CredentialSchema.dump"
+        "indy_catalyst_agent.messaging.credentials.credential.CredentialSchema.dump"
     )
     def test_serialize(self, mock_credential_schema_dump):
         credential = Credential(self.credential_json, self.revocation_registry_id)

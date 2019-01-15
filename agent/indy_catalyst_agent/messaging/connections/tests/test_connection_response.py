@@ -20,7 +20,7 @@ class TestConnectionResponse(TestCase):
         assert connection_response._type == MessageTypes.CONNECTION_RESPONSE.value
 
     @mock.patch(
-        "indy_catalyst_agent.messages.connections.connection_response.ConnectionResponseSchema.load"
+        "indy_catalyst_agent.messaging.connections.connection_response.ConnectionResponseSchema.load"
     )
     def test_deserialize(self, mock_connection_response_schema_load):
         obj = {"obj": "obj"}
@@ -31,7 +31,7 @@ class TestConnectionResponse(TestCase):
         assert connection_response is mock_connection_response_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messages.connections.connection_response.ConnectionResponseSchema.dump"
+        "indy_catalyst_agent.messaging.connections.connection_response.ConnectionResponseSchema.dump"
     )
     def test_serialize(self, mock_connection_response_schema_dump):
         connection_response = ConnectionResponse(self.endpoint, self.did, self.verkey)

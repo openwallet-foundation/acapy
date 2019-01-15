@@ -33,15 +33,15 @@ class TestMessageFactory(TestCase):
             MessageFactory.make_message(self.unknown_type_message)
         assert "Unrecognized message type" in str(context.exception)
 
-    @mock.patch("indy_catalyst_agent.messages.message_factory.ConnectionInvitation")
-    @mock.patch("indy_catalyst_agent.messages.message_factory.ConnectionRequest")
-    @mock.patch("indy_catalyst_agent.messages.message_factory.ConnectionResponse")
-    @mock.patch("indy_catalyst_agent.messages.message_factory.CredentialOffer")
-    @mock.patch("indy_catalyst_agent.messages.message_factory.CredentialRequest")
-    @mock.patch("indy_catalyst_agent.messages.message_factory.Credential")
-    @mock.patch("indy_catalyst_agent.messages.message_factory.ProofRequest")
-    @mock.patch("indy_catalyst_agent.messages.message_factory.Proof")
-    @mock.patch("indy_catalyst_agent.messages.message_factory.Forward")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.ConnectionInvitation")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.ConnectionRequest")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.ConnectionResponse")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.CredentialOffer")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.CredentialRequest")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.Credential")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.ProofRequest")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.Proof")
+    @mock.patch("indy_catalyst_agent.messaging.message_factory.Forward")
     def test_message_class_initialized(
         self,
         mock_forward,

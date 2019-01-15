@@ -17,7 +17,7 @@ class TestProofRequest(TestCase):
         assert proof_request._type == MessageTypes.PROOF_REQUEST.value
 
     @mock.patch(
-        "indy_catalyst_agent.messages.proofs.proof_request.ProofRequestSchema.load"
+        "indy_catalyst_agent.messaging.proofs.proof_request.ProofRequestSchema.load"
     )
     def test_deserialize(self, proof_request_schema_load):
         obj = {"obj": "obj"}
@@ -28,7 +28,7 @@ class TestProofRequest(TestCase):
         assert proof_request is proof_request_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messages.proofs.proof_request.ProofRequestSchema.dump"
+        "indy_catalyst_agent.messaging.proofs.proof_request.ProofRequestSchema.dump"
     )
     def test_serialize(self, proof_request_schema_dump):
         proof_request = ProofRequest(self.proof_request_json)
