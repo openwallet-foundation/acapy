@@ -1,4 +1,6 @@
 import argparse
+import asyncio
+import signal
 
 from .conductor import Conductor
 from .logging import LoggingConfigurator
@@ -87,7 +89,17 @@ def main():
     print_start_banner(parsed_transports)
 
     conductor = Conductor(parsed_transports)
-    conductor.start()
+
+    async def run():
+        await conductor.start()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run())
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        print("\n\nShutting down")
 
 
 if __name__ == "__main__":

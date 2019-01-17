@@ -6,7 +6,7 @@ class InvalidTransportError(Exception):
     pass
 
 
-class Transport(ABC):
+class BaseTransport(ABC):
     @abstractmethod
-    def setup(self, message_router: Callable) -> None:
-        raise NotImplementedError() # pragma: no cover
+    def start(self, message_router: Callable) -> None:
+        pass

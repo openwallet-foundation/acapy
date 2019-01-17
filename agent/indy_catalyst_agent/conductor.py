@@ -21,7 +21,7 @@ class Conductor:
         self.logger = logging.getLogger(__name__)
         self.transports = parsed_transports
 
-    def start(self) -> None:
+    async def start(self) -> None:
         # TODO: make storage type configurable via cli params
         storage = BasicStorage()
         self.dispatcher = Dispatcher(storage)
@@ -31,7 +31,7 @@ class Conductor:
                 transport = HttpTransport(
                     transport["host"], transport["port"], self.message_handler
                 )
-                transport.setup()
+                await transport.start()
             else:
                 raise InvalidTransportError()
 
