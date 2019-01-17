@@ -34,7 +34,7 @@ build-api() {
   echo -e "\nBuilding indy cat api image ..."
   docker build -q \
     -t 'indycat-api-build' \
-    -f '../django-icat-api/Dockerfile' '../django-icat-api/'
+    -f '../../../../credential-registry/server/django-icat-api/Dockerfile' '../../../../credential-registry/server/django-icat-api/'
   BASE_IMAGE="indycat-api-build"
   #BASE_IMAGE="bcgovimages/von-image:py36-1.7-ew-0-s2i"
   echo -e "\nBuilding django image from ${BASE_IMAGE}..."
