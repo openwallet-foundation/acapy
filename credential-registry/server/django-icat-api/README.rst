@@ -21,7 +21,11 @@ Quick start
 
     path("api/v2/", include("api_v2.urls")),
 
-3. Include the following in your Docker build pipeline to build the OrgBook image:
+3. Move the api_v2 folder (remove from TheOrgBook repo) into this directory
+
+4. Run "python setup.py sdist" to create a distribution
+
+5. Include the following in your Docker build pipeline to build the OrgBook image:
 
 build-api() {
   #
