@@ -5,42 +5,34 @@ from .logging import LoggingConfigurator
 
 from .version import __version__
 
-PARSER = argparse.ArgumentParser(description="Runs an Indy Agent.")
-PARSER.add_argument(
+parser = argparse.ArgumentParser(description="Runs an Indy Agent.")
+
+# group = parser.add_argument_group("transports")
+
+parser.add_argument(
     "--transport",
-    dest="transport",
+    dest="transports",
     type=str,
-    default="http",
-    choices=["http"],
-    help="Specifies the upstream transport type.",
-)
-PARSER.add_argument(
-    "--host",
-    dest="host",
-    type=str,
-    default="0.0.0.0",
-    help="Specifies the upstream transport host.",
-)
-PARSER.add_argument(
-    "--port",
-    dest="port",
-    type=int,
-    default=80,
-    help="Specifies the upstream transport port.",
+    action="append",
+    nargs=3,
+    required=True,
+    metavar=("<type>", "<host>", "<port>"),
+    help="Choose which interface(s) to listen on",
 )
 
-PARSER.add_argument(
+parser.add_argument(
     "--logging-config",
     dest="logging_config",
     type=str,
+    metavar="<path-to-config>",
     default=None,
-    help="Specifies a custom logging configuration file.",
+    help="Specifies a custom logging configuration file",
 )
 
 
-def print_start_banner(host, port, proto):
+def print_start_banner(transports):
 
-    banner_length = 30
+    banner_length = 40
 
     banner_title_string = "Indy Catalyst Agent"
     banner_title_spacer = " " * (banner_length - len(banner_title_string))
@@ -48,8 +40,14 @@ def print_start_banner(host, port, proto):
     banner_border = ":" * (banner_length + 6)
     banner_spacer = "::" + " " * (banner_length + 2) + "::"
 
-    host_port_string = f"{proto}: {host}:{port}"
-    host_port_spacer = " " * (banner_length - len(host_port_string))
+    transport_strings = []
+
+    for transport in transports:
+        host_port_string = (
+            f"{transport['transport']}: {transport['host']}:{transport['port']}"
+        )
+        host_port_spacer = " " * (banner_length - len(host_port_string))
+        transport_strings.append((host_port_string, host_port_spacer))
 
     version_string = f"ver: {__version__}"
     version_string_spacer = " " * (banner_length - len(version_string))
@@ -58,7 +56,8 @@ def print_start_banner(host, port, proto):
     print(f"{banner_border}")
     print(f":: {banner_title_string}{banner_title_spacer} ::")
     print(f"{banner_spacer}")
-    print(f":: {host_port_string}{host_port_spacer} ::")
+    for transport_string in transport_strings:
+        print(f":: {transport_string[0]}{transport_string[1]} ::")
     print(f"{banner_spacer}")
     print(f":: {version_string_spacer}{version_string} ::")
     print(f"{banner_border}")
@@ -66,21 +65,28 @@ def print_start_banner(host, port, proto):
     print("Listening...")
     print()
 
-def main():
-    args = PARSER.parse_args()
 
-    # Obtain required args
-    transport = args.transport
-    host = args.host
-    port = args.port
+def main():
+    args = parser.parse_args()
+
+    parsed_transports = []
+
+    transports = args.transports
+    for transport in transports:
+        transport_type = transport[0]
+        host = transport[1]
+        port = transport[2]
+        parsed_transports.append(
+            {"transport": transport_type, "host": host, "port": port}
+        )
 
     logging_config = args.logging_config
 
     LoggingConfigurator.configure(logging_config)
 
-    print_start_banner(host, port, 'http')
+    print_start_banner(parsed_transports)
 
-    conductor = Conductor(transport, host, port)
+    conductor = Conductor(parsed_transports)
     conductor.start()
 
 
