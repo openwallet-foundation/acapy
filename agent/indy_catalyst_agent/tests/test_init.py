@@ -15,17 +15,29 @@ class TestAsyncMain(AsyncTestCase):
     @mock.patch("indy_catalyst_agent.asyncio", autospec=True)
     @mock.patch("indy_catalyst_agent.LoggingConfigurator", autospec=True)
     @mock.patch("indy_catalyst_agent.parser.parse_args", autospec=True)
-    @async_mock.patch("indy_catalyst_agent.Conductor", autospec=True)
+    @mock.patch("indy_catalyst_agent.Conductor", autospec=True)
+    @mock.patch("indy_catalyst_agent.start", autospec=True)
     def test_main_parse(
-        self, mock_conductor, mock_parse_args, mock_logging_configurator, mock_asyncio
+        self,
+        mock_start,
+        mock_conductor,
+        mock_parse_args,
+        mock_logging_configurator,
+        mock_asyncio,
     ):
-        type(mock_parse_args.return_value).transport = self.transport_arg_value
-        type(mock_parse_args.return_value).host = self.host_arg_value
-        type(mock_parse_args.return_value).port = self.port_arg_value
-
+        type(mock_parse_args.return_value).transports = self.parsed_transports
         indy_catalyst_agent.main()
 
         mock_parse_args.assert_called_once()
+        mock_start.assert_called_once_with(
+            [
+                {
+                    "transport": self.parsed_transports[0][0],
+                    "host": self.parsed_transports[0][1],
+                    "port": self.parsed_transports[0][2],
+                }
+            ]
+        )
 
     @async_mock.patch("indy_catalyst_agent.Conductor", autospec=True)
     async def test_main(self, mock_conductor):

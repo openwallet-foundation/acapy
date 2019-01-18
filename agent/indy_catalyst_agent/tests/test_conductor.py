@@ -23,7 +23,7 @@ class TestConductor(TestCase):
         _dict = {}
         conductor.message_handler(_dict)
         mock_make_message.ensure_called_once_with(_dict)
-        conductor.dispatcher.ensure_called_once_with(mock_make_message.return_value)
+        conductor.dispatcher.dispatch.assert_called_once_with(mock_make_message.return_value)
 
 
 class TestAsyncConductor(AsyncTestCase):
