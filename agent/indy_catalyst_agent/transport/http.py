@@ -2,7 +2,7 @@ import json
 import socket
 from typing import Callable
 
-from . import Transport
+from . import BaseTransport
 
 from aiohttp import web
 
@@ -15,18 +15,21 @@ class HttpSetupError(Exception):
     pass
 
 
-class Http(Transport):
+class Http(BaseTransport):
     def __init__(self, host: str, port: int, message_router: Callable) -> None:
         self.host = host
         self.port = port
         self.message_router = message_router
 
-    def setup(self) -> None:
+    async def start(self) -> None:
         app = web.Application()
         app.add_routes([web.post("/", self.message_handler)])
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, host=self.host, port=self.port)
         try:
-            web.run_app(app, host=self.host, port=self.port)
-        except socket.gaierror:
+            await site.start()
+        except OSError:
             raise HttpSetupError(
                 f"Unable to start webserver with host '{self.host}' and port '{self.port}'\n"
             )
