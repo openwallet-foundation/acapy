@@ -25,7 +25,7 @@ Quick start
 
 4. Run "python setup.py sdist" to create a distribution
 
-5. Include the following in your Docker build pipeline to build the OrgBook image:
+5. Include the following in your Docker build pipeline to build the OrgBook image::
 
     build-api() {
       #
