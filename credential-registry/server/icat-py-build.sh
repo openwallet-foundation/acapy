@@ -1,4 +1,4 @@
-
+#!/bin/bash
 cd django-icat-api/
 python setup.py sdist
 
