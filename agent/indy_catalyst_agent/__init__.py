@@ -42,8 +42,10 @@ def print_start_banner(transports):
     banner_border = ":" * (banner_length + 6)
     banner_spacer = "::" + " " * (banner_length + 2) + "::"
 
-    transport_strings = []
+    interfaces_subtitle_string = "Inferfaces:"
+    interfaces_subtitle_spacer = " " * (banner_length - len(interfaces_subtitle_string))
 
+    transport_strings = []
     for transport in transports:
         host_port_string = (
             f"{transport['transport']}: {transport['host']}:{transport['port']}"
@@ -58,6 +60,9 @@ def print_start_banner(transports):
     print(f"{banner_border}")
     print(f":: {banner_title_string}{banner_title_spacer} ::")
     print(f"{banner_spacer}")
+    print(f"{banner_spacer}")
+    print(f":: {interfaces_subtitle_string}{interfaces_subtitle_spacer} ::")
+    print(f"{banner_spacer}")
     for transport_string in transport_strings:
         print(f":: {transport_string[0]}{transport_string[1]} ::")
     print(f"{banner_spacer}")
@@ -66,6 +71,11 @@ def print_start_banner(transports):
     print()
     print("Listening...")
     print()
+
+
+async def start(parsed_transports):
+    conductor = Conductor(parsed_transports)
+    await conductor.start()
 
 
 def main():
@@ -83,23 +93,17 @@ def main():
         )
 
     logging_config = args.logging_config
-
     LoggingConfigurator.configure(logging_config)
 
     print_start_banner(parsed_transports)
 
-    conductor = Conductor(parsed_transports)
-
-    async def run():
-        await conductor.start()
-
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run())
+    loop.run_until_complete(start(parsed_transports))
 
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        print("\n\nShutting down")
+        print("\nShutting down")
 
 
 if __name__ == "__main__":

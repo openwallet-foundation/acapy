@@ -33,7 +33,8 @@ class Conductor:
                 )
                 await transport.start()
             else:
-                raise InvalidTransportError()
+                # TODO: make this pluggable
+                raise InvalidTransportError("Available transports: http")
 
     def message_handler(self, message_dict: dict) -> None:
         message = MessageFactory.make_message(message_dict)

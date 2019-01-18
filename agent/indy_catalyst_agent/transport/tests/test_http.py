@@ -17,9 +17,6 @@ def func():
 
 class TestHttp(TestCase):
     good_args = ["0.0.0.0", 80, func]
-    bad_args = ["a", "b", "c"]
-
-    web_post_return_value = "web_post_return_value"
 
     def test_init(self):
         http = Http(*self.good_args)
@@ -27,33 +24,12 @@ class TestHttp(TestCase):
         assert http.port == self.good_args[1]
         assert http.message_router == self.good_args[2]
 
-    def test_setup_bad_args(self):
-        http = Http(*self.bad_args)
-        with self.assertRaises(HttpSetupError) as context:
-            http.setup()
-
-        assert "Unable to start webserver" in str(context.exception)
-
-    @mock.patch("indy_catalyst_agent.transport.http.web")
-    def test_run_setup(self, mock_aiohttp_web):
-        mock_aiohttp_web.Application = mock.MagicMock(auto_spec=True)
-        mock_aiohttp_web.post.return_value = self.web_post_return_value
-        mock_aiohttp_web.run_app = mock.MagicMock(auto_spec=True)
-        mock_aiohttp_web.Application.return_value = mock.MagicMock(auto_spec=True)
-
-        http = Http(*self.good_args)
-        http.setup()
-
-        mock_aiohttp_web.Application.assert_called_once_with()
-        mock_aiohttp_web.Application.return_value.add_routes.assert_called_once_with(
-            [self.web_post_return_value]
-        )
-        mock_aiohttp_web.run_app.assert_called_once_with(
-            mock_aiohttp_web.Application.return_value, host=http.host, port=http.port, print=None
-        )
-
 
 class TestAsyncHttp(AsyncTestCase):
+    good_args = ["0.0.0.0", 80, func]
+    bad_args = ["a", "b", "c"]
+    web_post_return_value = "web_post_return_value"
+
     async def test_run_parse_message(self):
         request = async_mock.MagicMock()
         request.json = async_mock.CoroutineMock()
@@ -75,6 +51,41 @@ class TestAsyncHttp(AsyncTestCase):
             str(context.exception)
             == "Request body must contain a valid application/json payload"
         )
+
+    async def test_setup_bad_args(self):
+        http = Http(*self.bad_args)
+        with self.assertRaises(HttpSetupError) as context:
+            await http.start()
+
+        assert "Unable to start webserver" in str(context.exception)
+
+    @async_mock.patch("indy_catalyst_agent.transport.http.web")
+    async def test_run_setup(self, mock_aiohttp_web):
+        mock_aiohttp_web.Application = mock.MagicMock(auto_spec=True)
+        mock_aiohttp_web.post.return_value = self.web_post_return_value
+        mock_aiohttp_web.run_app = mock.MagicMock(auto_spec=True)
+        mock_aiohttp_web.Application.return_value = mock.MagicMock(auto_spec=True)
+        mock_aiohttp_web.AppRunner = mock.MagicMock(auto_spec=True)
+        mock_aiohttp_web.AppRunner.return_value.setup = async_mock.CoroutineMock(
+            auto_spec=True
+        )
+        mock_aiohttp_web.TCPSite = mock.MagicMock(auto_spec=True)
+        mock_aiohttp_web.TCPSite.return_value.start = async_mock.CoroutineMock(
+            auto_spec=True
+        )
+
+        http = Http(*self.good_args)
+        await http.start()
+
+        mock_aiohttp_web.Application.assert_called_once_with()
+        mock_aiohttp_web.Application.return_value.add_routes.assert_called_once_with(
+            [self.web_post_return_value]
+        )
+
+        mock_aiohttp_web.TCPSite.assert_called_once_with(
+            mock_aiohttp_web.AppRunner.return_value, host=http.host, port=http.port
+        )
+        mock_aiohttp_web.TCPSite.return_value.start.assert_called_once_with()
 
     @async_mock.patch("indy_catalyst_agent.transport.http.web.Response")
     async def test_run_message_handler(self, mock_web_response):

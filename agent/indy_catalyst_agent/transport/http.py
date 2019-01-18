@@ -29,7 +29,6 @@ class Http(BaseTransport):
         site = web.TCPSite(runner, host=self.host, port=self.port)
         try:
             await site.start()
-            # web.run_app(app, host=self.host, port=self.port, print=None)
         except OSError:
             raise HttpSetupError(
                 f"Unable to start webserver with host '{self.host}' and port '{self.port}'\n"
