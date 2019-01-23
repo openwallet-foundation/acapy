@@ -17,5 +17,4 @@ class LoggingConfigurator:
 
         if log_level:
             log_level = log_level.upper()
-            print(log_level)
             getLogger().setLevel(log_level)
