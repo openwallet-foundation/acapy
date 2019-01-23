@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import os
 import signal
 
 from .conductor import Conductor
@@ -29,6 +30,15 @@ parser.add_argument(
     metavar="<path-to-config>",
     default=None,
     help="Specifies a custom logging configuration file",
+)
+
+parser.add_argument(
+    "--log-level",
+    dest="log_level",
+    type=str,
+    metavar="<log-level>",
+    default=None,
+    help="Specifies a custom logging level (debug, info, warning, error, critical)",
 )
 
 
@@ -93,7 +103,8 @@ def main():
         )
 
     logging_config = args.logging_config
-    LoggingConfigurator.configure(logging_config)
+    log_level = args.log_level or os.getenv("LOG_LEVEL")
+    LoggingConfigurator.configure(logging_config, log_level)
 
     print_start_banner(parsed_transports)
 
