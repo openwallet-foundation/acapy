@@ -1,0 +1,15 @@
+FROM python:3.6-slim
+
+WORKDIR /usr/src/app
+
+ADD requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+ADD indy_catalyst_agent ./indy_catalyst_agent
+ADD scripts ./scripts
+ADD setup.py ./
+
+RUN pip install --no-cache-dir -e .
+
+ENTRYPOINT ["/bin/bash", "-c", "icatagent \"$@\"", "--"]
