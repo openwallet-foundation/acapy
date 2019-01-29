@@ -1,4 +1,12 @@
 {
-    "python.pythonPath": "/usr/local/opt/python/bin/python3.7",
-    "python.linting.pylintEnabled": true
+    "python.pythonPath": "/usr/local/bin/python3",
+    "python.linting.pylintEnabled": true,
+    "spellright.language": [
+        "en"
+    ],
+    "spellright.documentTypes": [
+        "markdown",
+        "latex",
+        "plaintext"
+    ]
 }

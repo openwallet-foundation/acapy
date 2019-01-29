@@ -147,6 +147,12 @@ Temporary Items
 .apdisk
 
 ###
+### IntelliJ IDEs
+###
+
+.idea/*
+
+###
 ### Windows
 ###
 
