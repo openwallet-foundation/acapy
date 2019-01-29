@@ -4,5 +4,6 @@ pytest-cov==2.6.1
 asynctest==0.12.2
 
 aiohttp>=3.5.0<3.6
+base58
 marshmallow==3.0.0rc2
-
+pysodium>=0.7.1<0.8
