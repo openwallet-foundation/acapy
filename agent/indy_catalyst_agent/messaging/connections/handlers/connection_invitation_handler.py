@@ -12,8 +12,7 @@ class ConnectionInvitationHandler(BaseHandler):
         self.logger = logging.getLogger(__name__)
         self.message = message
 
-    def handle(self, thread_state, callback: Callable):
+    def handle(self, thread_state):
         self.logger.debug(
-            "ConnectionInvitationHandler called with thread_state "
-            + f"{thread_state} and callback {callback}"
+            "ConnectionInvitationHandler called with thread_state " + f"{thread_state}"
         )
