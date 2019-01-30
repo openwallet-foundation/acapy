@@ -152,8 +152,11 @@ class BaseWallet(ABC):
         pass
 
     @abstractmethod
-    async def pack_message(self, message: str, to_verkeys: Sequence[str], from_verkey: str = None) \
-            -> bytes:
+    async def pack_message(
+            self,
+            message: str,
+            to_verkeys: Sequence[str],
+            from_verkey: str = None) -> bytes:
         """
         Pack a message for one or more recipients
         """
