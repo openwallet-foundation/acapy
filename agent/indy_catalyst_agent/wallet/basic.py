@@ -4,14 +4,18 @@ In-memory implementation of BaseWallet interface
 
 from typing import Sequence
 
-from .base import BaseWallet, DIDInfo, PairwiseInfo
+from .base import (
+    BaseWallet, DIDInfo, PairwiseInfo,
+)
 from .crypto import (
     create_keypair, random_seed, validate_seed,
     sign_message, verify_signed_message,
     encode_pack_message, decode_pack_message,
 )
-from .error import WalletException, WalletDuplicateException, WalletNotFoundException
-from .util import b58_to_bytes, bytes_to_b58, b64_to_bytes
+from .error import (
+    WalletException, WalletDuplicateException, WalletNotFoundException,
+)
+from .util import b58_to_bytes, bytes_to_b58
 
 
 class BasicWallet(BaseWallet):

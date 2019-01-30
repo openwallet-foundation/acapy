@@ -12,12 +12,16 @@ from indy.error import IndyError, ErrorCode
 from von_anchor.error import ExtantWallet
 from von_anchor.wallet import Wallet as AnchorWallet
 
-from .base import BaseWallet, DIDInfo, PairwiseInfo
-from .crypto import (
-    create_keypair, random_seed, validate_seed,
+from .base import (
+    BaseWallet, DIDInfo, PairwiseInfo,
 )
-from .error import WalletException, WalletDuplicateException, WalletNotFoundException
-from .util import b58_to_bytes, bytes_to_b58, b64_to_bytes, bytes_to_b64
+from .crypto import (
+    random_seed, validate_seed,
+)
+from .error import (
+    WalletException, WalletDuplicateException, WalletNotFoundException,
+)
+from .util import bytes_to_b64
 
 
 class IndyWallet(BaseWallet):
