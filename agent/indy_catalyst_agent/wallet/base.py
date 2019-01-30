@@ -3,9 +3,13 @@ Wallet base class
 """
 
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from typing import Sequence
 
-from .error import WalletException
+
+DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
+
+PairwiseInfo = namedtuple("PairwiseInfo", "their_did their_verkey my_did my_verkey metadata")
 
 
 class BaseWallet(ABC):
@@ -29,9 +33,9 @@ class BaseWallet(ABC):
     @property
     def opened(self) -> bool:
         """
-        Get internal wallet reference
+        Check whether wallet is currently open
         """
-        return None
+        return False
 
     @abstractmethod
     async def open(self):
@@ -48,30 +52,41 @@ class BaseWallet(ABC):
         pass
 
     @abstractmethod
-    async def create_local_did(self, seed: str = None, did: str = None, metadata: dict = None) -> str:
+    async def get_local_dids(self) -> Sequence[DIDInfo]:
+        """
+        Get list of defined local DIDs
+        """
+        pass
+
+    @abstractmethod
+    async def create_local_did(
+            self,
+            seed: str = None,
+            did: str = None,
+            metadata: dict = None) -> DIDInfo:
         """
         Create and store a new local DID
         """
         pass
 
     @abstractmethod
-    async def get_local_did_for_verkey(self, verkey: str) -> str:
+    async def get_local_dids(self) -> Sequence[DIDInfo]:
+        """
+        Get list of defined local DIDs
+        """
+        pass
+
+    @abstractmethod
+    async def get_local_did(self, did: str) -> DIDInfo:
+        """
+        Find info for a local DID
+        """
+        pass
+
+    @abstractmethod
+    async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
         """
         Resolve a local DID from a verkey
-        """
-        pass
-
-    @abstractmethod
-    async def get_local_verkey_for_did(self, did: str) -> str:
-        """
-        Resolve a local verkey from a DID
-        """
-        pass
-
-    @abstractmethod
-    async def get_local_did_metadata(self, did: str) -> dict:
-        """
-        Get metadata for a local DID
         """
         pass
 
@@ -83,28 +98,40 @@ class BaseWallet(ABC):
         pass
 
     @abstractmethod
-    async def create_pairwise_did(self, to_did: str, from_did: str, metadata: dict = None) -> str:
+    async def create_pairwise(
+            self,
+            their_did: str,
+            their_verkey: str,
+            my_did: str = None,
+            metadata: dict = None) -> PairwiseInfo:
         """
         Create a new pairwise DID for a secure connection
         """
         pass
 
     @abstractmethod
-    async def get_pairwise_did_for_verkey(self, verkey: str) -> str:
+    async def get_pairwise_list(self) -> Sequence[PairwiseInfo]:
+        """
+        Get list of defined pairwise DIDs
+        """
+        pass
+
+    @abstractmethod
+    async def get_pairwise_for_did(self, their_did: str) -> PairwiseInfo:
+        """
+        Find info for a pairwise DID
+        """
+        pass
+
+    @abstractmethod
+    async def get_pairwise_for_verkey(self, their_verkey: str) -> PairwiseInfo:
         """
         Resolve a pairwise DID from a verkey
         """
         pass
 
     @abstractmethod
-    async def get_pairwise_did_metadata(self, did: str) -> dict:
-        """
-        Get metadata for a pairwise DID
-        """
-        pass
-
-    @abstractmethod
-    async def replace_pairwise_did_metadata(self, did: str, metadata: dict):
+    async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
         """
         Replace metadata for a pairwise DID
         """
@@ -125,14 +152,15 @@ class BaseWallet(ABC):
         pass
 
     @abstractmethod
-    async def pack_message(self, message: str, to_verkeys: Sequence[str], from_verkey: str = None) -> bytes:
+    async def pack_message(self, message: str, to_verkeys: Sequence[str], from_verkey: str = None) \
+            -> bytes:
         """
         Pack a message for one or more recipients
         """
         pass
 
     @abstractmethod
-    async def unpack_message(self, message_json: bytes) -> (str, str):
+    async def unpack_message(self, enc_message: bytes) -> (str, str, str):
         """
         Unpack a message
         """

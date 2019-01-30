@@ -1,0 +1,13 @@
+FROM bcgovimages/von-image:py36-1.8-0
+
+ADD requirements.txt requirements.dev.txt ./
+
+RUN pip3 install --no-cache-dir \
+	-r requirements.txt \
+	-r requirements.dev.txt \
+	von_anchor==1.7.9 \
+	pytest
+
+ADD . .
+
+CMD [ "pytest" ]

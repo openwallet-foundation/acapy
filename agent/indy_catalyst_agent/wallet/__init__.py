@@ -2,5 +2,5 @@
 Abstract and Indy wallet handling
 """
 
-from .base import BaseWallet
-from .error import WalletException
+from .base import BaseWallet, DIDInfo, PairwiseInfo
+from .error import WalletException, WalletDuplicateException, WalletNotFoundException
