@@ -240,7 +240,11 @@ class IndyWallet(BaseWallet):
         }
         meta_json = json.dumps(combined_meta)
         try:
-            await indy.pairwise.create_pairwise(self.handle, their_did, my_info.did, meta_json)
+            await indy.pairwise.create_pairwise(
+                self.handle,
+                their_did,
+                my_info.did,
+                meta_json)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
                 raise WalletDuplicateException(
@@ -313,7 +317,8 @@ class IndyWallet(BaseWallet):
         for info in dids:
             if info.their_verkey == their_verkey:
                 return info
-        raise WalletNotFoundException("No pairwise DID defined for verkey: {}".format(their_verkey))
+        raise WalletNotFoundException(
+            "No pairwise DID defined for verkey: {}".format(their_verkey))
 
     async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
         """
@@ -355,8 +360,11 @@ class IndyWallet(BaseWallet):
                 raise WalletException(str(x_indy))
         return result
 
-    async def pack_message(self, message: str, to_verkeys: Sequence[str], from_verkey: str = None) \
-            -> bytes:
+    async def pack_message(
+            self,
+            message: str,
+            to_verkeys: Sequence[str],
+            from_verkey: str = None) -> bytes:
         """
         Pack a message for one or more recipients
         """
