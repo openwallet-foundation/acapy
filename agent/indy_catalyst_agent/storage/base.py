@@ -5,7 +5,6 @@ Abstract base classes for non-secrets storage
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
-from .error import StorageException, StorageSearchException
 from .record import StorageRecord
 
 DEFAULT_PAGE_SIZE = 100
@@ -25,7 +24,7 @@ class BaseStorage(ABC):
         pass
 
     @abstractmethod
-    async def get_record(self, type: str, id: str) -> StorageRecord:
+    async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
         """
         Fetch a record from the store by type and ID
         """
@@ -74,8 +73,6 @@ class BaseStorageRecordSearch(ABC):
                  type_filter: str, tag_query: Mapping,
                  page_size: int = None):
         self._buffer = None
-        self._handle = None
-        self._opened = False
         self._page_size = page_size
         self._store = store
         self._tag_query = tag_query
@@ -86,7 +83,15 @@ class BaseStorageRecordSearch(ABC):
         """
         Return handle to active storage search
         """
-        return self._handle
+        return None
+
+    @property
+    @abstractmethod
+    def opened(self) -> bool:
+        """
+        Accessor for open state
+        """
+        return False
 
     @property
     def page_size(self):
@@ -121,7 +126,6 @@ class BaseStorageRecordSearch(ABC):
         """
         Fetch the next list of results from the store
         """
-        # indy_fetch_wallet_search_next_records
         pass
 
     @abstractmethod
@@ -129,7 +133,6 @@ class BaseStorageRecordSearch(ABC):
         """
         Start the search query
         """
-        # indy_open_wallet_search
         pass
 
     @abstractmethod
@@ -137,7 +140,6 @@ class BaseStorageRecordSearch(ABC):
         """
         Dispose of the search query
         """
-        # indy_close_wallet_search
         pass
 
     async def __aenter__(self):
@@ -151,7 +153,7 @@ class BaseStorageRecordSearch(ABC):
         return self
 
     async def __anext__(self):
-        if not self._opened:
+        if not self.opened:
             await self.open()
         if not self._buffer:
             self._buffer = await self.fetch(self.page_size)
