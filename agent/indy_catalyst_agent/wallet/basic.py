@@ -223,8 +223,11 @@ class BasicWallet(BaseWallet):
         verified = verify_signed_message(signature + message, verkey_bytes)
         return verified
 
-    async def pack_message(self, message: str, to_verkeys: Sequence[str], from_verkey: str = None) \
-            -> bytes:
+    async def pack_message(
+            self,
+            message: str,
+            to_verkeys: Sequence[str],
+            from_verkey: str = None) -> bytes:
         """
         Pack a message for one or more recipients
         """
