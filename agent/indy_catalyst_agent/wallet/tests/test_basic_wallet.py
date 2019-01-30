@@ -5,6 +5,7 @@ from indy_catalyst_agent.wallet.error import (
     WalletException, WalletDuplicateException, WalletNotFoundException,
 )
 
+
 @pytest.fixture()
 def wallet():
     yield BasicWallet()
