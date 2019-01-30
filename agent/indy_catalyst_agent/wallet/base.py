@@ -98,8 +98,12 @@ class BaseWallet(ABC):
         pass
 
     @abstractmethod
-    async def create_pairwise(self, to_did: str, from_did: str, metadata: dict = None) \
-            -> PairwiseInfo:
+    async def create_pairwise(
+            self,
+            their_did: str,
+            their_verkey: str,
+            my_did: str = None,
+            metadata: dict = None) -> PairwiseInfo:
         """
         Create a new pairwise DID for a secure connection
         """
@@ -113,21 +117,21 @@ class BaseWallet(ABC):
         pass
 
     @abstractmethod
-    async def get_pairwise_for_did(self, to_did: str) -> PairwiseInfo:
+    async def get_pairwise_for_did(self, their_did: str) -> PairwiseInfo:
         """
         Find info for a pairwise DID
         """
         pass
 
     @abstractmethod
-    async def get_pairwise_for_verkey(self, verkey: str) -> PairwiseInfo:
+    async def get_pairwise_for_verkey(self, their_verkey: str) -> PairwiseInfo:
         """
         Resolve a pairwise DID from a verkey
         """
         pass
 
     @abstractmethod
-    async def replace_pairwise_metadata(self, did: str, metadata: dict):
+    async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
         """
         Replace metadata for a pairwise DID
         """
@@ -156,7 +160,7 @@ class BaseWallet(ABC):
         pass
 
     @abstractmethod
-    async def unpack_message(self, message_json: bytes) -> (str, str, str):
+    async def unpack_message(self, enc_message: bytes) -> (str, str, str):
         """
         Unpack a message
         """
