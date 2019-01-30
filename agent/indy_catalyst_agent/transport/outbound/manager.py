@@ -56,7 +56,8 @@ class OutboundTransportManager:
     async def start_all(self):
         for schemes, transport_class in self.registered_transports.items():
             # Don't block the loop
-            asyncio.create_task(self.start(schemes, transport_class))
+            # asyncio.create_task(self.start(schemes, transport_class))
+            asyncio.ensure_future(self.start(schemes, transport_class))
 
     async def send_message(self, message, uri):
         # Grab the scheme from the uri

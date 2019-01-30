@@ -52,7 +52,7 @@ class LoggingConfigurator:
         inbound_transport_strings = []
         for transport in inbound_transports:
             host_port_string = (
-                f"  • {transport.scheme}://{transport.host}:{transport.port}"
+                f"  - {transport.scheme}://{transport.host}:{transport.port}"
             )
             host_port_spacer = " " * (banner_length - len(host_port_string))
             inbound_transport_strings.append((host_port_string, host_port_spacer))
@@ -65,7 +65,7 @@ class LoggingConfigurator:
         outbound_transport_strings = []
         for schemes in outbound_transports:
             for scheme in schemes:
-                schema_string = f"  • {scheme}"
+                schema_string = f"  - {scheme}"
                 scheme_spacer = " " * (banner_length - len(schema_string))
                 outbound_transport_strings.append((schema_string, scheme_spacer))
 
