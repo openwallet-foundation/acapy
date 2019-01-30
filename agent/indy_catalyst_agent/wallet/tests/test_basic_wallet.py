@@ -112,7 +112,7 @@ class TestBasicWallet:
             await wallet.close()
 
     @pytest.mark.asyncio
-    async def test_create_pairwise(self, wallet):
+    async def test_create_retrieve_pairwise(self, wallet):
         await wallet.open()
         try:
             await wallet.create_local_did(self.test_seed, self.test_did)
@@ -138,13 +138,27 @@ class TestBasicWallet:
                     found = True
             assert found
 
-            # TODO - test metadata update
-
             with pytest.raises(WalletDuplicateException):
                 await wallet.create_pairwise(
                     self.test_target_did, self.test_target_verkey, None, self.test_metadata)
             with pytest.raises(WalletNotFoundException):
                 await wallet.get_pairwise_for_did(self.missing_did)
+        finally:
+            await wallet.close()
+
+    @pytest.mark.asyncio
+    async def test_pairwise_metadata(self, wallet):
+        await wallet.open()
+        try:
+            await wallet.create_local_did(self.test_seed, self.test_did)
+            pair_created = await wallet.create_pairwise(
+                self.test_target_did, self.test_target_verkey, None, self.test_metadata)
+
+            await wallet.replace_pairwise_metadata(
+                self.test_target_did, self.test_update_metadata)
+            pair_info = await wallet.get_pairwise_for_did(self.test_target_did)
+            assert pair_info.metadata == self.test_update_metadata
+
             with pytest.raises(WalletNotFoundException):
                 await wallet.replace_pairwise_metadata(
                     self.missing_did, self.test_update_metadata)

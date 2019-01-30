@@ -256,7 +256,7 @@ class IndyWallet(BaseWallet):
         """
         Convert Indy pairwise info into PairwiseInfo record
         """
-        meta = json.loads(result["metadata"]) if result["metadata"] else {}
+        meta = result["metadata"] and json.loads(result["metadata"]) or {}
         if "custom" not in meta:
             # not one of our pairwise records
             return None
@@ -316,7 +316,8 @@ class IndyWallet(BaseWallet):
         Replace metadata for a pairwise DID
         """
         info = await self.get_pairwise_for_did(their_did) # throws exception if undefined
-        meta_upd = info.metadata.update({"custom", metadata or {}})
+        meta_upd = info.metadata.copy()
+        meta_upd.update({"custom": metadata or {}})
         upd_json = json.dumps(meta_upd)
         await indy.pairwise.set_pairwise_metadata(self.handle, their_did, upd_json)
 
