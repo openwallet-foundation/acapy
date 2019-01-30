@@ -12,11 +12,11 @@ from indy.error import IndyError, ErrorCode
 from von_anchor.error import ExtantWallet
 from von_anchor.wallet import Wallet as AnchorWallet
 
-from .base import BaseWallet, DIDInfo
+from .base import BaseWallet, DIDInfo, PairwiseInfo
 from .crypto import (
     create_keypair, random_seed, validate_seed,
 )
-from .error import WalletException, WalletNotFoundException
+from .error import WalletException, WalletDuplicateException, WalletNotFoundException
 from .util import b58_to_bytes, bytes_to_b58, b64_to_bytes, bytes_to_b64
 
 
@@ -121,25 +121,11 @@ class IndyWallet(BaseWallet):
                 await self._instance.remove()
             self._instance = None
 
-    async def get_local_dids(self) -> Sequence[DIDInfo]:
-        """
-        Get list of defined local DIDs
-        """
-        ret = []
-        dids_json = await indy.did.list_my_dids_with_meta(self.handle)
-        dids = json.loads(dids_json)
-        for info in dids:
-            ret.append(
-                DIDInfo(
-                    did=info["did"],
-                    verkey=info["verkey"],
-                    tempVerkey=info["tempVerkey"],
-                    metadata=info["metadata"],
-                )
-            )
-        return ret
-
-    async def create_local_did(self, seed: str = None, did: str = None, metadata: dict = None) -> str:
+    async def create_local_did(
+            self,
+            seed: str = None,
+            did: str = None,
+            metadata: dict = None) -> DIDInfo:
         """
         Create and store a new local DID
         """
@@ -150,78 +136,189 @@ class IndyWallet(BaseWallet):
             cfg["did"] = did
         did_json = json.dumps(cfg)
         # crypto_type, cid - optional parameters skipped
-        did, verkey = await indy.did.create_and_store_my_did(self.handle, did_json)
+        try:
+            did, verkey = await indy.did.create_and_store_my_did(self.handle, did_json)
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.DidAlreadyExistsError:
+                raise WalletDuplicateException("DID already present in wallet")
+            else:
+                raise WalletException(str(x_indy))
         if metadata:
             await self.replace_local_did_metadata(did, metadata)
-        return did
+        return DIDInfo(did, verkey, metadata)
 
-    async def get_local_verkey_for_did(self, did: str) -> str:
+    async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
-        Resolve a local verkey from a DID
+        Get list of defined local DIDs
+        """
+        info_json = await indy.did.list_my_dids_with_meta(self.handle)
+        info = json.loads(info_json)
+        ret = []
+        for did in info:
+            ret.append(
+                DIDInfo(
+                    did=did["did"],
+                    verkey=did["verkey"],
+                    metadata=json.loads(did["metadata"]) if did["metadata"] else {},
+                )
+            )
+        return ret
+
+    async def get_local_did(self, did: str) -> DIDInfo:
+        """
+        Find info for a local DID
         """
         try:
-            verkey = await indy.did.key_for_local_did(self.handle, did)
+            info_json = await indy.did.get_my_did_with_meta(self.handle, did)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundException("Unknown DID: {}".format(did))
             else:
                 raise WalletException(str(x_indy))
-        return verkey
+        info = json.loads(info_json)
+        return DIDInfo(
+            did=info["did"],
+            verkey=info["verkey"],
+            metadata=json.loads(info["metadata"]) if info["metadata"] else {},
+        )
 
-    async def get_local_did_for_verkey(self, verkey: str) -> str:
+    async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
         """
         Resolve a local DID from a verkey
         """
         dids = await self.get_local_dids()
         for info in dids:
             if info.verkey == verkey:
-                return info.did
+                return info
         raise WalletNotFoundException("No DID defined for verkey: {}".format(verkey))
-
-    async def get_local_did_metadata(self, did: str) -> dict:
-        """
-        Get metadata for a local DID
-        """
-        try:
-            meta = await indy.did.get_did_metadata(self.handle, did)
-        except IndyError as x_indy:
-            if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise WalletNotFoundException("Unknown DID: {}".format(did))
-            else:
-                raise WalletException(str(x_indy))
-        return json.loads(meta) if meta else {}
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
         """
         Replace metadata for a local DID
         """
         meta_json = json.dumps(metadata or {})
-        await self.get_local_verkey_for_did(did) # throw exception if undefined
+        await self.get_local_did(did) # throw exception if undefined
         await indy.did.set_did_metadata(self.handle, did, meta_json)
 
-    async def create_pairwise_did(self, to_did: str, from_did: str, metadata: dict = None) -> str:
+    async def create_pairwise(
+            self,
+            their_did: str,
+            their_verkey: str,
+            my_did: str = None,
+            metadata: dict = None) -> PairwiseInfo:
         """
         Create a new pairwise DID for a secure connection
         """
-        pass
 
-    async def get_pairwise_did_for_verkey(self, verkey: str) -> str:
+        # store their DID info in wallet
+        ident_json = json.dumps({"did": their_did, "verkey": their_verkey})
+        try:
+            await indy.did.store_their_did(self.handle, ident_json)
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
+                # their DID already stored, but real test is creating pairwise
+                pass
+            else:
+                raise WalletException(str(x_indy))
+
+        # create a new local DID for this pairwise connection
+        if my_did:
+            my_info = await self.get_local_did(my_did)
+        else:
+            my_info = await self.create_local_did(None, None, {"pairwise_for": their_did})
+
+        # create the pairwise record
+        combined_meta = {
+            # info that should be returned in pairwise_info struct but isn't
+            "their_verkey": their_verkey,
+            "my_verkey": my_info.verkey,
+            "custom": metadata or {},
+        }
+        meta_json = json.dumps(combined_meta)
+        try:
+            await indy.pairwise.create_pairwise(self.handle, their_did, my_info.did, meta_json)
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
+                raise WalletDuplicateException(
+                    "Pairwise DID already present in wallet: {}".format(their_did))
+            else:
+                raise WalletException(str(x_indy))
+
+        return PairwiseInfo(
+            their_did=their_did,
+            their_verkey=their_verkey,
+            my_did=my_info.did,
+            my_verkey=my_info.verkey,
+            metadata=combined_meta["custom"],
+        )
+
+    def _make_pairwise_info(self, result: dict, their_did: str = None) -> PairwiseInfo:
+        """
+        Convert Indy pairwise info into PairwiseInfo record
+        """
+        meta = json.loads(result["metadata"]) if result["metadata"] else {}
+        if "custom" not in meta:
+            # not one of our pairwise records
+            return None
+        return PairwiseInfo(
+            their_did=result.get("their_did", their_did),
+            their_verkey=meta.get("their_verkey"),
+            my_did=result.get("my_did"),
+            my_verkey=meta.get("my_verkey"),
+            metadata=meta["custom"],
+        )
+
+    async def get_pairwise_list(self) -> Sequence[PairwiseInfo]:
+        """
+        Get list of defined pairwise DIDs
+        """
+        pairs_json = await indy.pairwise.list_pairwise(self.handle)
+        pairs = json.loads(pairs_json)
+        ret = []
+        for pair_json in pairs:
+            pair = json.loads(pair_json)
+            info = self._make_pairwise_info(pair)
+            if info:
+                ret.append(info)
+        return ret
+
+    async def get_pairwise_for_did(self, their_did: str) -> PairwiseInfo:
+        """
+        Find info for a pairwise DID
+        """
+        try:
+            pair_json = await indy.pairwise.get_pairwise(self.handle, their_did)
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletItemNotFound:
+                raise WalletNotFoundException(
+                    "No pairwise DID defined for target: {}".format(their_did))
+            else:
+                raise WalletException(str(x_indy))
+        pair = json.loads(pair_json)
+        info = self._make_pairwise_info(pair, their_did)
+        if not info:
+            raise WalletNotFoundException(
+                "No pairwise DID defined for target: {}".format(their_did))
+        return info
+
+    async def get_pairwise_for_verkey(self, their_verkey: str) -> PairwiseInfo:
         """
         Resolve a pairwise DID from a verkey
         """
-        pass
+        dids = await self.get_pairwise_list()
+        for info in dids:
+            if info.their_verkey == their_verkey:
+                return info
+        raise WalletNotFoundException("No pairwise DID defined for verkey: {}".format(their_verkey))
 
-    async def get_pairwise_did_metadata(self, did: str) -> dict:
-        """
-        Get metadata for a pairwise DID
-        """
-        pass
-
-    async def replace_pairwise_did_metadata(self, did: str, metadata: dict):
+    async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
         """
         Replace metadata for a pairwise DID
         """
-        pass
+        info = await self.get_pairwise_for_did(their_did) # throws exception if undefined
+        meta_upd = info.metadata.update({"custom", metadata or {}})
+        upd_json = json.dumps(meta_upd)
+        await indy.pairwise.set_pairwise_metadata(self.handle, their_did, upd_json)
 
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
         """
@@ -244,10 +341,17 @@ class IndyWallet(BaseWallet):
             raise WalletException("Signature not provided")
         if not message:
             raise WalletException("Message not provided")
-        result = await indy.crypto.crypto_verify(from_verkey, message, signature)
+        try:
+            result = await indy.crypto.crypto_verify(from_verkey, message, signature)
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.CommonInvalidStructure:
+                result = False
+            else:
+                raise WalletException(str(x_indy))
         return result
 
-    async def pack_message(self, message: str, to_verkeys: Sequence[str], from_verkey: str = None) -> bytes:
+    async def pack_message(self, message: str, to_verkeys: Sequence[str], from_verkey: str = None) \
+            -> bytes:
         """
         Pack a message for one or more recipients
         """
