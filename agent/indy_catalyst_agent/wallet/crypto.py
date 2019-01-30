@@ -8,6 +8,7 @@ from typing import Callable, Optional, Sequence
 
 import pysodium
 
+from .error import WalletException
 from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes
 
 
@@ -26,6 +27,24 @@ def random_seed() -> bytes:
     Generate a random seed value
     """
     return pysodium.randombytes(pysodium.crypto_secretbox_KEYBYTES)
+
+
+def validate_seed(seed: (str, bytes)) -> bytes:
+    """
+    Convert a seed parameter to standard format and check length
+    """
+    if not seed:
+        return None
+    if isinstance(seed, str):
+        if "=" in seed:
+            seed = b64_to_bytes(seed)
+        else:
+            seed = seed.encode("ascii")
+    if not isinstance(seed, bytes):
+        raise WalletException("Seed value is not a string or bytes")
+    if len(seed) != 32:
+        raise WalletException("Seed value must be 32 bytes in length")
+    return seed
 
 
 def sign_message(message: bytes, secret: bytes) -> bytes:

@@ -3,9 +3,11 @@ Wallet base class
 """
 
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from typing import Sequence
 
-from .error import WalletException
+
+DIDInfo = namedtuple("DIDInfo", "did verkey metadata tempVerkey")
 
 
 class BaseWallet(ABC):
@@ -29,9 +31,9 @@ class BaseWallet(ABC):
     @property
     def opened(self) -> bool:
         """
-        Get internal wallet reference
+        Check whether wallet is currently open
         """
-        return None
+        return False
 
     @abstractmethod
     async def open(self):
@@ -44,6 +46,13 @@ class BaseWallet(ABC):
     async def close(self):
         """
         Close previously-opened wallet, removing it if so configured
+        """
+        pass
+
+    @abstractmethod
+    async def get_local_dids(self) -> Sequence[DIDInfo]:
+        """
+        Get list of defined local DIDs
         """
         pass
 
@@ -132,7 +141,7 @@ class BaseWallet(ABC):
         pass
 
     @abstractmethod
-    async def unpack_message(self, message_json: bytes) -> (str, str):
+    async def unpack_message(self, message_json: bytes) -> (str, str, str):
         """
         Unpack a message
         """
