@@ -4,7 +4,15 @@
 
 # Table of Contents <!-- omit in toc -->
 
-- [Introduction](#introduction)
+- [Introduction](#Introduction)
+- [Installing](#Installing)
+- [Running](#Running)
+- [Developing](#Developing)
+  - [Prerequisites](#Prerequisites)
+  - [Running Locally](#Running_Locally)
+    - [Caveats](#Caveats)
+  - [Running Tests](#Running_Tests)
+  - [Development Workflow](#Development_Workflow)
 
 # Introduction
 
@@ -74,7 +82,7 @@ To run the test including [Indy SDK](https://github.com/hyperledger/indy-sdk) an
 
 ## Development Workflow
 
-Please write tests for the work that you submit. 
+Please write tests for the work that you submit.
 
 Tests should reside in a directory named `tests` alongside the code under test. Generally, there is one test file for each file module under test. Test files _must_ have a name starting with `test_` to be automatically picked up the test runner.
 
