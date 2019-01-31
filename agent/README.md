@@ -78,4 +78,4 @@ There are some good examples of various test scenarios for you to work from incl
 
 The test suite also displays the current code coverage after each run so you can see how much of your work is covered by tests. Use your best judgement for how much coverage is sufficient.
 
-Please also refer to the [contributing guidelines](..CONTRIBUTING.md) and [code of conduct](..CODE_OF_CONDUCT.md).
+Please also refer to the [contributing guidelines](/CONTRIBUTING.md) and [code of conduct](/CODE_OF_CONDUCT.md).
