@@ -3,7 +3,16 @@ Storage-related exceptions
 """
 
 class StorageException(Exception):
-    pass
+    """
+    Base class for Storage errors
+    """
+
+class StorageNotFoundException(StorageException):
+    """
+    Record not found in storage
+    """
 
 class StorageSearchException(StorageException):
-    pass
+    """
+    General exception during record search
+    """

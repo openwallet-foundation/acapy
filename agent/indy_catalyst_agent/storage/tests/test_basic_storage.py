@@ -1,6 +1,8 @@
 import pytest
 
-from indy_catalyst_agent.storage import StorageException, StorageSearchException, StorageRecord
+from indy_catalyst_agent.storage import (
+    StorageException, StorageNotFoundException, StorageSearchException, StorageRecord,
+)
 from indy_catalyst_agent.storage.basic import BasicStorage
 
 @pytest.fixture()
@@ -30,8 +32,8 @@ class TestBasicStorage:
     @pytest.mark.asyncio
     async def test_retrieve_missing(self, store):
         missing = test_missing_record()
-        record = await store.get_record(missing.type, missing.id)
-        assert record is None
+        with pytest.raises(StorageNotFoundException):
+            await store.get_record(missing.type, missing.id)
 
     @pytest.mark.asyncio
     async def test_add_retrieve(self, store):
@@ -43,6 +45,66 @@ class TestBasicStorage:
         assert result.type == record.type
         assert result.value == record.value
         assert result.tags == record.tags
+
+    @pytest.mark.asyncio
+    async def test_delete(self, store):
+        record = test_record()
+        await store.add_record(record)
+        await store.delete_record(record)
+        with pytest.raises(StorageNotFoundException):
+            await store.get_record(record.type, record.id)
+
+    @pytest.mark.asyncio
+    async def test_delete_missing(self, store):
+        missing = test_missing_record()
+        with pytest.raises(StorageNotFoundException):
+            await store.delete_record(missing)
+
+    @pytest.mark.asyncio
+    async def test_update_value(self, store):
+        init_value = 'a'
+        upd_value = 'b'
+        record = test_record()._replace(value=init_value)
+        await store.add_record(record)
+        assert record.value == init_value
+        await store.update_record_value(record, upd_value)
+        result = await store.get_record(record.type, record.id)
+        assert result.value == upd_value
+
+    @pytest.mark.asyncio
+    async def test_update_missing(self, store):
+        missing = test_missing_record()
+        with pytest.raises(StorageNotFoundException):
+            await store.update_record_value(missing, missing.value)
+
+    @pytest.mark.asyncio
+    async def test_update_tags(self, store):
+        record = test_record({})
+        assert record.tags == {}
+        await store.add_record(record)
+        await store.update_record_tags(record, {'a': 'A'})
+        result = await store.get_record(record.type, record.id)
+        assert result.tags.get('a') is 'A'
+
+    @pytest.mark.asyncio
+    async def test_update_tags_missing(self, store):
+        missing = test_missing_record()
+        with pytest.raises(StorageNotFoundException):
+            await store.update_record_tags(missing, {})
+
+    @pytest.mark.asyncio
+    async def test_delete_tags(self, store):
+        record = test_record({'a': 'A'})
+        await store.add_record(record)
+        await store.delete_record_tags(record, {'a': 'A'})
+        result = await store.get_record(record.type, record.id)
+        assert result.tags.get('a') is None
+
+    @pytest.mark.asyncio
+    async def test_delete_tags_missing(self, store):
+        missing = test_missing_record()
+        with pytest.raises(StorageNotFoundException):
+            await store.delete_record_tags(missing, {'a': 'A'})
 
     @pytest.mark.asyncio
     async def test_search(self, store):
@@ -80,63 +142,3 @@ class TestBasicStorage:
         search = store.search_records('TYPE', {}, None)
         with pytest.raises(StorageSearchException):
             await search.fetch(100)
-
-    @pytest.mark.asyncio
-    async def test_delete(self, store):
-        record = test_record()
-        await store.add_record(record)
-        await store.delete_record(record)
-        result = await store.get_record(record.type, record.id)
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_delete_missing(self, store):
-        missing = test_missing_record()
-        with pytest.raises(StorageException):
-            await store.delete_record(missing)
-
-    @pytest.mark.asyncio
-    async def test_update_value(self, store):
-        init_value = 'a'
-        upd_value = 'b'
-        record = test_record()._replace(value=init_value)
-        await store.add_record(record)
-        assert record.value == init_value
-        await store.update_record_value(record, upd_value)
-        result = await store.get_record(record.type, record.id)
-        assert result.value == upd_value
-
-    @pytest.mark.asyncio
-    async def test_update_missing(self, store):
-        missing = test_missing_record()
-        with pytest.raises(StorageException):
-            await store.update_record_value(missing, missing.value)
-
-    @pytest.mark.asyncio
-    async def test_update_tags(self, store):
-        record = test_record({})
-        assert record.tags == {}
-        await store.add_record(record)
-        await store.update_record_tags(record, {'a': 'A'})
-        result = await store.get_record(record.type, record.id)
-        assert result.tags.get('a') is 'A'
-
-    @pytest.mark.asyncio
-    async def test_update_tags_missing(self, store):
-        missing = test_missing_record()
-        with pytest.raises(StorageException):
-            await store.update_record_tags(missing, {})
-
-    @pytest.mark.asyncio
-    async def test_delete_tags(self, store):
-        record = test_record({'a': 'A'})
-        await store.add_record(record)
-        await store.delete_record_tags(record, {'a': 'A'})
-        result = await store.get_record(record.type, record.id)
-        assert result.tags.get('a') is None
-
-    @pytest.mark.asyncio
-    async def test_delete_tags_missing(self, store):
-        missing = test_missing_record()
-        with pytest.raises(StorageException):
-            await store.delete_record_tags(missing, {})
