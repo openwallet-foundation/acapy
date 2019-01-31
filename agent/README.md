@@ -52,11 +52,11 @@ To run the locally, we recommend using the provided Docker images to run the sof
 ./scripts/run_docker <args>
 ```
 
+Refer to [the previous section](#Running) for instructions on how to run the software.
+
 ### Caveats
 
 The development docker environment exposes ports 10000 - 10050. When specifying inbound transport ports, you must use ports in that range if you want to make a connection from outside the docker network.
-
-Refer to [the previous section](#Running) for instructions on how to run the software.
 
 ## Running Tests
 
