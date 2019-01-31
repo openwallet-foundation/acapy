@@ -11,8 +11,5 @@ class TestAgentMessage(TestCase):
         with self.assertRaises(TypeError) as context:
             self.BadImplementationClass()  # pylint: disable=E0110
 
-        assert (
-            str(context.exception)
-            == "Can't instantiate abstract class BadImplementationClass with abstract methods _type"
-        )
+        assert "Can't instantiate abstract" in str(context.exception)
 
