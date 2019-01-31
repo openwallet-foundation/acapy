@@ -67,8 +67,8 @@ def verify_signed_message(signed: bytes, verkey: bytes) -> bool:
     return True
 
 
-def prepare_recipient_keys(to_verkeys: Sequence[bytes], from_secret: bytes = None) \
-        -> (str, bytes):
+def prepare_recipient_keys(to_verkeys: Sequence[bytes],
+                           from_secret: bytes = None) -> (str, bytes):
     """
     Assemble the recipients block of a packed message
     """
@@ -108,8 +108,8 @@ def prepare_recipient_keys(to_verkeys: Sequence[bytes], from_secret: bytes = Non
     return json.dumps(data), cek
 
 
-def locate_recipient_key(recipients: Sequence[dict], find_key: Callable) \
-        -> (bytes, str, str):
+def locate_recipient_key(recipients: Sequence[dict],
+                         find_key: Callable) -> (bytes, str, str):
     """
     Decode the encryption key and sender verification key from a
     corresponding recipient block, if any is defined
@@ -174,8 +174,8 @@ def decrypt_plaintext(ciphertext: bytes, recips_bin: bytes, nonce: bytes, key: b
 
 
 def encode_pack_message(message: str,
-                       to_verkeys: Sequence[bytes],
-                       from_secret: bytes = None) -> bytes:
+                        to_verkeys: Sequence[bytes],
+                        from_secret: bytes = None) -> bytes:
     """
     Assemble a packed message for a set of recipients, optionally including the sender
     """
@@ -193,7 +193,8 @@ def encode_pack_message(message: str,
     return json.dumps(data).encode("ascii")
 
 
-def decode_pack_message(enc_message: bytes, find_key: Callable) -> (str, Optional[str], str):
+def decode_pack_message(enc_message: bytes,
+                        find_key: Callable) -> (str, Optional[str], str):
     """
     Disassemble and unencrypt a packed message, returning the message content,
     verification key of the sender (if available), and verification key of the recipient
