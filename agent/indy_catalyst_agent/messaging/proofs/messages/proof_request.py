@@ -2,35 +2,25 @@
 A proof request content message.
 """
 
-from marshmallow import Schema, fields, post_load
+from marshmallow import fields
 
-from ...agent_message import AgentMessage
+from ...agent_message import AgentMessage, AgentMessageSchema
 from ...message_types import MessageTypes
 
 
 class ProofRequest(AgentMessage):
-    def __init__(self, proof_request_json: str):
+    class Meta:
+        # handler_class = ProofRequestHandler
+        message_type = MessageTypes.PROOF_REQUEST.value
+        schema_class = 'ProofRequestSchema'
+
+    def __init__(self, proof_request_json: str = None, **kwargs):
+        super(ProofRequest, self).__init__(**kwargs)
         self.proof_request_json = proof_request_json
 
-    @property
-    # Avoid clobbering builtin property
-    def _type(self):
-        return MessageTypes.PROOF_REQUEST.value
 
-    @classmethod
-    def deserialize(cls, obj):
-        return ProofRequestSchema().load(obj)
+class ProofRequestSchema(AgentMessageSchema):
+    class Meta:
+        model_class = ProofRequest
 
-    def serialize(self):
-        return ProofRequestSchema().dump(self)
-
-
-class ProofRequestSchema(Schema):
-    # Avoid clobbering builtin property
-    _type = fields.Str(data_key="@type", required=True)
     proof_request_json = fields.Str(required=True)
-
-    @post_load
-    def make_model(self, data: dict) -> ProofRequest:
-        del data["_type"]
-        return ProofRequest(**data)

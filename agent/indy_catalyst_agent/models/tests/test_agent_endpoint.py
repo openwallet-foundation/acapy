@@ -9,7 +9,11 @@ class TestAgentEndpoint(TestCase):
     uri = "uri"
 
     def test_init(self):
-        agent_endpoint = AgentEndpoint(self.did, self.verkey, self.uri)
+        agent_endpoint = AgentEndpoint(
+            did=self.did,
+            verkey=self.verkey,
+            uri=self.uri
+        )
         assert agent_endpoint.did == self.did
         assert agent_endpoint.verkey == self.verkey
         assert agent_endpoint.uri == self.uri

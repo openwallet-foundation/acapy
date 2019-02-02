@@ -11,7 +11,9 @@ class TestCredentialRequest(TestCase):
 
     def test_init(self):
         credential_request = CredentialRequest(
-            self.offer_json, self.credential_request_json, self.credential_values_json
+            offer_json=self.offer_json,
+            credential_request_json=self.credential_request_json,
+            credential_values_json=self.credential_values_json,
         )
         assert credential_request.offer_json == self.offer_json
         assert (
@@ -21,7 +23,9 @@ class TestCredentialRequest(TestCase):
 
     def test_type(self):
         credential_request = CredentialRequest(
-            self.offer_json, self.credential_request_json, self.credential_values_json
+            offer_json=self.offer_json,
+            credential_request_json=self.credential_request_json,
+            credential_values_json=self.credential_values_json,
         )
 
         assert credential_request._type == MessageTypes.CREDENTIAL_REQUEST.value
@@ -42,7 +46,9 @@ class TestCredentialRequest(TestCase):
     )
     def test_serialize(self, mock_credential_request_schema_dump):
         credential_request = CredentialRequest(
-            self.offer_json, self.credential_request_json, self.credential_values_json
+            offer_json=self.offer_json,
+            credential_request_json=self.credential_request_json,
+            credential_values_json=self.credential_values_json,
         )
 
         credential_request_dict = credential_request.serialize()
@@ -55,16 +61,12 @@ class TestCredentialRequest(TestCase):
 
 class TestCredentialRequestSchema(TestCase):
     credential_request = CredentialRequest(
-        "offer_json", "credential_request_json", "credential_values_json"
+        offer_json="offer_json",
+        credential_request_json="credential_request_json",
+        credential_values_json="credential_values_json",
     )
 
     def test_make_model(self):
-        schema = CredentialRequestSchema()
-
         data = self.credential_request.serialize()
-        data["_type"] = data["@type"]
-        del data["@type"]
-
-        model_instance = schema.make_model(data)
+        model_instance = CredentialRequest.deserialize(data)
         assert type(model_instance) is type(self.credential_request)
-
