@@ -13,7 +13,7 @@ from von_anchor.error import ExtantWallet
 from von_anchor.wallet import Wallet as AnchorWallet
 
 from .base import (
-    BaseWallet, DIDInfo, PairwiseInfo,
+    BaseWallet, KeyInfo, DIDInfo, PairwiseInfo,
 )
 from .crypto import (
     random_seed, validate_seed,
@@ -124,6 +124,71 @@ class IndyWallet(BaseWallet):
             if self._auto_remove:
                 await self._instance.remove()
             self._instance = None
+
+    async def create_signing_key(self, seed: str = None, metadata: dict = None) -> KeyInfo:
+        """
+        Create a new public/private signing keypair
+
+        Args:
+            metadata: Optional metadata to store with the keypair
+
+        Returns: a `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateException: If the resulting verkey already exists in the wallet
+        """
+        args = {}
+        if seed:
+            args["seed"] = bytes_to_b64(validate_seed(seed))
+        try:
+            verkey = await indy.crypto.create_key(self.handle, json.dumps(args))
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
+                raise WalletDuplicateException("Verification key already present in wallet")
+            else:
+                raise WalletException(str(x_indy))
+        # must save metadata to allow identity check
+        # otherwise get_key_metadata just returns WalletItemNotFound
+        if metadata is None:
+            metadata = {}
+        await indy.crypto.set_key_metadata(self.handle, verkey, json.dumps(metadata))
+        return KeyInfo(verkey, metadata)
+
+    async def get_signing_key(self, verkey: str) -> KeyInfo:
+        """
+        Fetch info for a signing keypair
+
+        Args:
+            verkey: The verification key of the keypair
+
+        Returns: a `KeyInfo` representing the keypair
+
+        Raises:
+            WalletNotFoundException: if no keypair is associated with the verification key
+        """
+        try:
+            metadata = await indy.crypto.get_key_metadata(self.handle, verkey)
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletItemNotFound:
+                raise WalletNotFoundException("Unknown key: {}".format(verkey))
+            else:
+                raise WalletException(str(x_indy))
+        return KeyInfo(verkey, json.loads(metadata) if metadata else {})
+
+    async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
+        """
+        Replace the metadata associated with a signing keypair
+
+        Args:
+            verkey: The verification key of the keypair
+            metadata: The new metadata to store
+
+        Raises:
+            WalletNotFoundException: if no keypair is associated with the verification key
+        """
+        meta_json = json.dumps(metadata or {})
+        await self.get_signing_key(verkey) # throw exception if key is undefined
+        await indy.crypto.set_key_metadata(self.handle, verkey, meta_json)
 
     async def create_local_did(
             self,

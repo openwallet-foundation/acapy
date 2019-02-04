@@ -31,6 +31,42 @@ class TestBasicWallet:
                      b"\xea\xcf\x8bc\xfa_\x0c\xb2jE\xe4}\x12+\xbc0\x01l\xdb\x97\xf6\x02"
 
     @pytest.mark.asyncio
+    async def test_create_signing_key_random(self, wallet):
+        info = await wallet.create_signing_key()
+        assert info and info.verkey
+
+    @pytest.mark.asyncio
+    async def test_create_signing_key_seeded(self, wallet):
+        info = await wallet.create_signing_key(self.test_seed)
+        assert info.verkey == self.test_verkey
+
+        with pytest.raises(WalletDuplicateException):
+            await wallet.create_signing_key(self.test_seed)
+        with pytest.raises(WalletException):
+            await wallet.create_signing_key("invalid-seed", None)
+
+    @pytest.mark.asyncio
+    async def test_signing_key_metadata(self, wallet):
+        info = await wallet.create_signing_key(
+            self.test_seed, self.test_metadata)
+        assert info.metadata == self.test_metadata
+        info2 = await wallet.get_signing_key(self.test_verkey)
+        assert info2.metadata == self.test_metadata
+        await wallet.replace_signing_key_metadata(
+            self.test_verkey, self.test_update_metadata)
+        info3 = await wallet.get_signing_key(self.test_verkey)
+        assert info3.metadata == self.test_update_metadata
+
+        with pytest.raises(WalletNotFoundException):
+            await wallet.replace_signing_key_metadata(
+                self.missing_verkey, self.test_update_metadata)
+
+    @pytest.mark.asyncio
+    async def test_create_signing_key_seeded(self, wallet):
+        info = await wallet.create_signing_key(self.test_seed)
+        assert info.verkey == self.test_verkey
+
+    @pytest.mark.asyncio
     async def test_create_local_random(self, wallet):
         info = await wallet.create_local_did(None, None)
         assert info and info.did and info.verkey
