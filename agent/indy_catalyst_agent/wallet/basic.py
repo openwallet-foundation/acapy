@@ -5,7 +5,7 @@ In-memory implementation of BaseWallet interface
 from typing import Sequence
 
 from .base import (
-    BaseWallet, DIDInfo, PairwiseInfo,
+    BaseWallet, KeyInfo, DIDInfo, PairwiseInfo,
 )
 from .crypto import (
     create_keypair, random_seed, validate_seed,
@@ -28,6 +28,7 @@ class BasicWallet(BaseWallet):
             config = {}
         super(BasicWallet, self).__init__(config)
         self._name = config.get("name")
+        self._keys = {}
         self._local_dids = {}
         self._pair_dids = {}
 
@@ -49,6 +50,63 @@ class BasicWallet(BaseWallet):
         Does not apply to in-memory wallet
         """
         pass
+
+    async def create_signing_key(self, seed: str = None, metadata: dict = None) -> KeyInfo:
+        """
+        Create a new public/private signing keypair
+
+        Args:
+            metadata: Optional metadata to store with the keypair
+
+        Returns: a `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateException: If the resulting verkey already exists in the wallet
+        """
+        seed = validate_seed(seed) or random_seed()
+        verkey, secret = create_keypair(seed)
+        verkey_enc = bytes_to_b58(verkey)
+        if verkey_enc in self._keys:
+            raise WalletDuplicateException("Verification key already present in wallet")
+        self._keys[verkey_enc] = {
+            "seed": seed,
+            "secret": secret,
+            "verkey": verkey_enc,
+            "metadata": metadata.copy() if metadata else {},
+        }
+        return KeyInfo(verkey_enc, self._keys[verkey_enc]["metadata"].copy())
+
+    async def get_signing_key(self, verkey: str) -> KeyInfo:
+        """
+        Fetch info for a signing keypair
+
+        Args:
+            verkey: The verification key of the keypair
+
+        Returns: a `KeyInfo` representing the keypair
+
+        Raises:
+            WalletNotFoundException: if no keypair is associated with the verification key
+        """
+        if verkey not in self._keys:
+            raise WalletNotFoundException("Key not found: {}".format(verkey))
+        key = self._keys[verkey]
+        return KeyInfo(key["verkey"], key["metadata"].copy())
+
+    async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
+        """
+        Replace the metadata associated with a signing keypair
+
+        Args:
+            verkey: The verification key of the keypair
+            metadata: The new metadata to store
+
+        Raises:
+            WalletNotFoundException: if no keypair is associated with the verification key
+        """
+        if verkey not in self._keys:
+            raise WalletNotFoundException("Key not found: {}".format(verkey))
+        self._keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
     async def create_local_did(
             self,

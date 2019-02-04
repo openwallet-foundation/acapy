@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Sequence
 
+KeyInfo = namedtuple("KeyInfo", "verkey metadata")
 
 DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
 
@@ -21,7 +22,6 @@ class BaseWallet(ABC):
         """
         config: {name, key, seed, did, auto-create, auto-remove}
         """
-        pass
 
     @property
     def handle(self):
@@ -42,21 +42,60 @@ class BaseWallet(ABC):
         """
         Open wallet, removing and/or creating it if so configured
         """
-        pass
 
     @abstractmethod
     async def close(self):
         """
         Close previously-opened wallet, removing it if so configured
         """
-        pass
+
+    @abstractmethod
+    async def create_signing_key(self, seed: str = None, metadata: dict = None) -> KeyInfo:
+        """
+        Create a new public/private signing keypair
+
+        Args:
+            seed: Optional seed allowing deterministic key creation
+            metadata: Optional metadata to store with the keypair
+
+        Returns: a `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateException: If the resulting verkey already exists in the wallet
+        """
+
+    @abstractmethod
+    async def get_signing_key(self, verkey: str) -> KeyInfo:
+        """
+        Fetch info for a signing keypair
+
+        Args:
+            verkey: The verification key of the keypair
+
+        Returns: a `KeyInfo` representing the keypair
+
+        Raises:
+            WalletNotFoundException: if no keypair is associated with the verification key
+        """
+
+    @abstractmethod
+    async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
+        """
+        Replace the metadata associated with a signing keypair
+
+        Args:
+            verkey: The verification key of the keypair
+            metadata: The new metadata to store
+
+        Raises:
+            WalletNotFoundException: if no keypair is associated with the verification key
+        """
 
     @abstractmethod
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
         Get list of defined local DIDs
         """
-        pass
 
     @abstractmethod
     async def create_local_did(
@@ -67,35 +106,30 @@ class BaseWallet(ABC):
         """
         Create and store a new local DID
         """
-        pass
 
     @abstractmethod
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
         Get list of defined local DIDs
         """
-        pass
 
     @abstractmethod
     async def get_local_did(self, did: str) -> DIDInfo:
         """
         Find info for a local DID
         """
-        pass
 
     @abstractmethod
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
         """
         Resolve a local DID from a verkey
         """
-        pass
 
     @abstractmethod
     async def replace_local_did_metadata(self, did: str, metadata: dict):
         """
-        Replace metadata for a local DID
+        Replace the metadata associated with a local DID
         """
-        pass
 
     @abstractmethod
     async def create_pairwise(
@@ -107,49 +141,42 @@ class BaseWallet(ABC):
         """
         Create a new pairwise DID for a secure connection
         """
-        pass
 
     @abstractmethod
     async def get_pairwise_list(self) -> Sequence[PairwiseInfo]:
         """
         Get list of defined pairwise DIDs
         """
-        pass
 
     @abstractmethod
     async def get_pairwise_for_did(self, their_did: str) -> PairwiseInfo:
         """
         Find info for a pairwise DID
         """
-        pass
 
     @abstractmethod
     async def get_pairwise_for_verkey(self, their_verkey: str) -> PairwiseInfo:
         """
         Resolve a pairwise DID from a verkey
         """
-        pass
 
     @abstractmethod
     async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
         """
-        Replace metadata for a pairwise DID
+        Replace the metadata associated with a pairwise DID
         """
-        pass
 
     @abstractmethod
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
         """
         Sign a message using the private key associated with a given verkey
         """
-        pass
 
     @abstractmethod
     async def verify_message(self, message: bytes, signature: bytes, from_verkey: str) -> bool:
         """
         Verify a signature against the public key of the signer
         """
-        pass
 
     @abstractmethod
     async def pack_message(
@@ -160,14 +187,12 @@ class BaseWallet(ABC):
         """
         Pack a message for one or more recipients
         """
-        pass
 
     @abstractmethod
     async def unpack_message(self, enc_message: bytes) -> (str, str, str):
         """
         Unpack a message
         """
-        pass
 
 
     # TODO:

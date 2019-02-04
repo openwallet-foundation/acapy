@@ -28,7 +28,6 @@ async def wallet():
     await wallet.close()
 
 
-@pytest.mark.skip
 class TestIndyWallet(test_basic_wallet.TestBasicWallet):
 
     # all basic wallet tests included
