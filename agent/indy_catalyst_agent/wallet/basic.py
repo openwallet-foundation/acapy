@@ -4,17 +4,21 @@ In-memory implementation of BaseWallet interface
 
 from typing import Sequence
 
-from .base import (
-    BaseWallet, DIDInfo, PairwiseInfo,
-)
+from .base import BaseWallet, KeyInfo, DIDInfo, PairwiseInfo
 from .crypto import (
-    create_keypair, random_seed, validate_seed,
-    sign_message, verify_signed_message,
-    encode_pack_message, decode_pack_message,
+    create_keypair,
+    random_seed,
+    validate_seed,
+    sign_message,
+    verify_signed_message,
+    anon_crypt_message,
+    anon_decrypt_message,
+    auth_crypt_message,
+    auth_decrypt_message,
+    encode_pack_message,
+    decode_pack_message,
 )
-from .error import (
-    WalletException, WalletDuplicateException, WalletNotFoundException,
-)
+from .error import WalletException, WalletDuplicateException, WalletNotFoundException
 from .util import b58_to_bytes, bytes_to_b58
 
 
@@ -28,6 +32,7 @@ class BasicWallet(BaseWallet):
             config = {}
         super(BasicWallet, self).__init__(config)
         self._name = config.get("name")
+        self._keys = {}
         self._local_dids = {}
         self._pair_dids = {}
 
@@ -50,11 +55,68 @@ class BasicWallet(BaseWallet):
         """
         pass
 
+    async def create_signing_key(
+        self, seed: str = None, metadata: dict = None
+    ) -> KeyInfo:
+        """
+        Create a new public/private signing keypair
+
+        Args:
+            metadata: Optional metadata to store with the keypair
+
+        Returns: a `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateException: If the resulting verkey already exists in the wallet
+        """
+        seed = validate_seed(seed) or random_seed()
+        verkey, secret = create_keypair(seed)
+        verkey_enc = bytes_to_b58(verkey)
+        if verkey_enc in self._keys:
+            raise WalletDuplicateException("Verification key already present in wallet")
+        self._keys[verkey_enc] = {
+            "seed": seed,
+            "secret": secret,
+            "verkey": verkey_enc,
+            "metadata": metadata.copy() if metadata else {},
+        }
+        return KeyInfo(verkey_enc, self._keys[verkey_enc]["metadata"].copy())
+
+    async def get_signing_key(self, verkey: str) -> KeyInfo:
+        """
+        Fetch info for a signing keypair
+
+        Args:
+            verkey: The verification key of the keypair
+
+        Returns: a `KeyInfo` representing the keypair
+
+        Raises:
+            WalletNotFoundException: if no keypair is associated with the verification key
+        """
+        if verkey not in self._keys:
+            raise WalletNotFoundException("Key not found: {}".format(verkey))
+        key = self._keys[verkey]
+        return KeyInfo(key["verkey"], key["metadata"].copy())
+
+    async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
+        """
+        Replace the metadata associated with a signing keypair
+
+        Args:
+            verkey: The verification key of the keypair
+            metadata: The new metadata to store
+
+        Raises:
+            WalletNotFoundException: if no keypair is associated with the verification key
+        """
+        if verkey not in self._keys:
+            raise WalletNotFoundException("Key not found: {}".format(verkey))
+        self._keys[verkey]["metadata"] = metadata.copy() if metadata else {}
+
     async def create_local_did(
-            self,
-            seed: str = None,
-            did: str = None,
-            metadata: dict = None) -> DIDInfo:
+        self, seed: str = None, did: str = None, metadata: dict = None
+    ) -> DIDInfo:
         """
         Create and store a new local DID
         """
@@ -78,11 +140,7 @@ class BasicWallet(BaseWallet):
         Convert internal DID record to DIDInfo
         """
         info = self._local_dids[did]
-        return DIDInfo(
-            did=did,
-            verkey=info["verkey"],
-            metadata=info["metadata"].copy(),
-        )
+        return DIDInfo(did=did, verkey=info["verkey"], metadata=info["metadata"].copy())
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
@@ -117,22 +175,26 @@ class BasicWallet(BaseWallet):
         self._local_dids[did]["metadata"] = metadata.copy() if metadata else {}
 
     async def create_pairwise(
-            self,
-            their_did: str,
-            their_verkey: str,
-            my_did: str = None,
-            metadata: dict = None) -> PairwiseInfo:
+        self,
+        their_did: str,
+        their_verkey: str,
+        my_did: str = None,
+        metadata: dict = None,
+    ) -> PairwiseInfo:
         """
         Create a new pairwise DID for a secure connection
         """
         if my_did:
             my_info = await self.get_local_did(my_did)
         else:
-            my_info = await self.create_local_did(None, None, {"pairwise_for": their_did})
+            my_info = await self.create_local_did(
+                None, None, {"pairwise_for": their_did}
+            )
 
         if their_did in self._pair_dids:
             raise WalletDuplicateException(
-                    "Pairwise DID already present in wallet: {}".format(their_did))
+                "Pairwise DID already present in wallet: {}".format(their_did)
+            )
 
         self._pair_dids[their_did] = {
             "my_did": my_info.did,
@@ -186,14 +248,17 @@ class BasicWallet(BaseWallet):
             raise WalletNotFoundException("Unknown target DID: {}".format(their_did))
         self._pair_dids[their_did]["metadata"] = metadata.copy() if metadata else {}
 
-    def _get_private_key(self, verkey: str, long=False):
+    def _get_private_key(self, verkey: str, long=False) -> bytes:
         """
         Resolve private key for a wallet DID
         """
-        for info in self._local_dids.values():
+
+        keys_and_dids = list(self._local_dids.values()) + list(self._keys.values())
+        for info in keys_and_dids:
             if info["verkey"] == verkey:
                 return info["secret"] if long else info["seed"]
-        return None
+
+        raise WalletException("Private key not found for verkey: {}".format(verkey))
 
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
         """
@@ -204,12 +269,12 @@ class BasicWallet(BaseWallet):
         if not from_verkey:
             raise WalletException("Verkey not provided")
         secret = self._get_private_key(from_verkey, True)
-        if not secret:
-            raise WalletException("Private key not found for verkey: {}".format(from_verkey))
         signature = sign_message(message, secret)
         return signature
 
-    async def verify_message(self, message: bytes, signature: bytes, from_verkey: str) -> bool:
+    async def verify_message(
+        self, message: bytes, signature: bytes, from_verkey: str
+    ) -> bool:
         """
         Verify a signature against the public key of the signer
         """
@@ -223,23 +288,59 @@ class BasicWallet(BaseWallet):
         verified = verify_signed_message(signature + message, verkey_bytes)
         return verified
 
+    async def encrypt_message(
+        self, message: bytes, to_verkey: str, from_verkey: str = None
+    ) -> bytes:
+        """
+        Apply auth_crypt or anon_crypt to a message
+
+        Args:
+            message: The binary message content
+            to_verkey: The verkey of the recipient
+            from_verkey: The verkey of the sender. If provided then auth_crypt is used,
+                otherwise anon_crypt is used.
+
+        Returns:
+            The encrypted message content
+        """
+        to_verkey_bytes = b58_to_bytes(to_verkey)
+        if from_verkey:
+            secret = self._get_private_key(from_verkey)
+            result = auth_crypt_message(message, to_verkey_bytes, secret)
+        else:
+            result = anon_crypt_message(message, to_verkey_bytes)
+        return result
+
+    async def decrypt_message(
+        self, enc_message: bytes, to_verkey: str, use_auth: bool
+    ) -> (bytes, str):
+        """
+        Decrypt a message assembled by auth_crypt or anon_crypt
+
+        Args:
+            message: The encrypted message content
+            to_verkey: The verkey of the recipient. If provided then auth_decrypt is
+                used, otherwise anon_decrypt is used.
+
+        Returns:
+            A tuple of the decrypted message content and sender verkey (None for anon_crypt)
+        """
+        secret = self._get_private_key(to_verkey)
+        if use_auth:
+            message, from_verkey = auth_decrypt_message(enc_message, secret)
+        else:
+            message = anon_decrypt_message(enc_message, secret)
+            from_verkey = None
+        return message, from_verkey
+
     async def pack_message(
-            self,
-            message: str,
-            to_verkeys: Sequence[str],
-            from_verkey: str = None) -> bytes:
+        self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
+    ) -> bytes:
         """
         Pack a message for one or more recipients
         """
         keys_bin = [b58_to_bytes(key) for key in to_verkeys]
-        if from_verkey:
-            secret = self._get_private_key(from_verkey)
-            if not secret:
-                raise WalletNotFoundException(
-                    "Private key not found for verkey: {}".format(from_verkey))
-        else:
-            secret = None
-
+        secret = self._get_private_key(from_verkey) if from_verkey else None
         result = encode_pack_message(message, keys_bin, secret)
         return result
 
@@ -250,8 +351,9 @@ class BasicWallet(BaseWallet):
         if not enc_message:
             raise WalletException("Message not provided")
         try:
-            message, from_verkey, to_verkey = \
-                decode_pack_message(enc_message, lambda k: self._get_private_key(k, True))
+            message, from_verkey, to_verkey = decode_pack_message(
+                enc_message, lambda k: self._get_private_key(k, True)
+            )
         except ValueError as e:
             raise WalletException("Message could not be unpacked: {}".format(str(e)))
         return message, from_verkey, to_verkey
