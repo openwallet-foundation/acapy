@@ -179,6 +179,43 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
+    async def encrypt_message(
+            self,
+            message: bytes,
+            to_verkey: str,
+            from_verkey: str = None) -> bytes:
+        """
+        Apply auth_crypt or anon_crypt to a message
+
+        Args:
+            message: The binary message content
+            to_verkey: The verkey of the recipient
+            from_verkey: The verkey of the sender. If provided then auth_crypt is used,
+                otherwise anon_crypt is used.
+
+        Returns:
+            The encrypted message content
+        """
+
+    @abstractmethod
+    async def decrypt_message(
+            self,
+            enc_message: bytes,
+            to_verkey: str,
+            use_auth: bool) -> (bytes, str):
+        """
+        Decrypt a message assembled by auth_crypt or anon_crypt
+
+        Args:
+            message: The encrypted message content
+            to_verkey: The verkey of the recipient. If provided then auth_decrypt is
+                used, otherwise anon_decrypt is used.
+
+        Returns:
+            A tuple of the decrypted message content and sender verkey (None for anon_crypt)
+        """
+
+    @abstractmethod
     async def pack_message(
             self,
             message: str,

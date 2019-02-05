@@ -10,6 +10,8 @@ from .base import (
 from .crypto import (
     create_keypair, random_seed, validate_seed,
     sign_message, verify_signed_message,
+    anon_crypt_message, anon_decrypt_message,
+    auth_crypt_message, auth_decrypt_message,
     encode_pack_message, decode_pack_message,
 )
 from .error import (
@@ -244,14 +246,14 @@ class BasicWallet(BaseWallet):
             raise WalletNotFoundException("Unknown target DID: {}".format(their_did))
         self._pair_dids[their_did]["metadata"] = metadata.copy() if metadata else {}
 
-    def _get_private_key(self, verkey: str, long=False):
+    def _get_private_key(self, verkey: str, long=False) -> bytes:
         """
         Resolve private key for a wallet DID
         """
         for info in self._local_dids.values():
             if info["verkey"] == verkey:
                 return info["secret"] if long else info["seed"]
-        return None
+        raise WalletException("Private key not found for verkey: {}".format(verkey))
 
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
         """
@@ -262,8 +264,6 @@ class BasicWallet(BaseWallet):
         if not from_verkey:
             raise WalletException("Verkey not provided")
         secret = self._get_private_key(from_verkey, True)
-        if not secret:
-            raise WalletException("Private key not found for verkey: {}".format(from_verkey))
         signature = sign_message(message, secret)
         return signature
 
@@ -281,6 +281,55 @@ class BasicWallet(BaseWallet):
         verified = verify_signed_message(signature + message, verkey_bytes)
         return verified
 
+    async def encrypt_message(
+            self,
+            message: bytes,
+            to_verkey: str,
+            from_verkey: str = None) -> bytes:
+        """
+        Apply auth_crypt or anon_crypt to a message
+
+        Args:
+            message: The binary message content
+            to_verkey: The verkey of the recipient
+            from_verkey: The verkey of the sender. If provided then auth_crypt is used,
+                otherwise anon_crypt is used.
+
+        Returns:
+            The encrypted message content
+        """
+        to_verkey_bytes = b58_to_bytes(to_verkey)
+        if from_verkey:
+            secret = self._get_private_key(from_verkey)
+            result = auth_crypt_message(message, to_verkey_bytes, secret)
+        else:
+            result = anon_crypt_message(message, to_verkey_bytes)
+        return result
+
+    async def decrypt_message(
+            self,
+            enc_message: bytes,
+            to_verkey: str,
+            use_auth: bool) -> (bytes, str):
+        """
+        Decrypt a message assembled by auth_crypt or anon_crypt
+
+        Args:
+            message: The encrypted message content
+            to_verkey: The verkey of the recipient. If provided then auth_decrypt is
+                used, otherwise anon_decrypt is used.
+
+        Returns:
+            A tuple of the decrypted message content and sender verkey (None for anon_crypt)
+        """
+        secret = self._get_private_key(to_verkey)
+        if use_auth:
+            message, from_verkey = auth_decrypt_message(enc_message, secret)
+        else:
+            message = anon_decrypt_message(enc_message, secret)
+            from_verkey = None
+        return message, from_verkey
+
     async def pack_message(
             self,
             message: str,
@@ -290,14 +339,7 @@ class BasicWallet(BaseWallet):
         Pack a message for one or more recipients
         """
         keys_bin = [b58_to_bytes(key) for key in to_verkeys]
-        if from_verkey:
-            secret = self._get_private_key(from_verkey)
-            if not secret:
-                raise WalletNotFoundException(
-                    "Private key not found for verkey: {}".format(from_verkey))
-        else:
-            secret = None
-
+        secret = self._get_private_key(from_verkey) if from_verkey else None
         result = encode_pack_message(message, keys_bin, secret)
         return result
 

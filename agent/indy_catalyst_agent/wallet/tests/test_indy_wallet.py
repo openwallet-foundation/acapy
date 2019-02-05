@@ -29,8 +29,61 @@ async def wallet():
 
 
 class TestIndyWallet(test_basic_wallet.TestBasicWallet):
+    """
+    Apply all BasicWallet tests against IndyWallet
+    """
 
-    # all basic wallet tests included
+class TestWalletCompat:
+    test_seed = "testseed000000000000000000000001"
+    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+    test_message = "test message"
+
+    @pytest.mark.asyncio
+    async def test_compare_anon_encrypt(self, basic_wallet, wallet):
+        """
+        Ensure that python-based encrypt/decrypt is compatible with indy-sdk implementation
+        """
+        bin_msg = self.test_message.encode("ascii")
+
+        await basic_wallet.create_local_did(self.test_seed)
+        py_enc_message = await basic_wallet.encrypt_message(bin_msg, self.test_verkey)
+        print("py enc:", py_enc_message)
+
+        await wallet.create_local_did(self.test_seed)
+        enc_message = await wallet.encrypt_message(bin_msg, self.test_verkey)
+        print("indy enc:", enc_message)
+
+        py_decrypt, from_vk = await basic_wallet.decrypt_message(enc_message, self.test_verkey, False)
+        assert py_decrypt == bin_msg
+        assert from_vk is None
+
+        decrypt, from_vk = await wallet.decrypt_message(py_enc_message, self.test_verkey, False)
+        assert decrypt == bin_msg
+        assert from_vk is None
+
+    @pytest.mark.asyncio
+    async def test_compare_auth_encrypt(self, basic_wallet, wallet):
+        """
+        Ensure that python-based encrypt/decrypt is compatible with indy-sdk implementation
+        """
+        bin_msg = self.test_message.encode("ascii")
+
+        await basic_wallet.create_local_did(self.test_seed)
+        py_enc_message = await basic_wallet.encrypt_message(bin_msg, self.test_verkey, self.test_verkey)
+        print("py enc:", py_enc_message)
+
+        await wallet.create_local_did(self.test_seed)
+        enc_message = await wallet.encrypt_message(bin_msg, self.test_verkey, self.test_verkey)
+        print("indy enc:", enc_message)
+
+        py_decrypt, from_vk = await basic_wallet.decrypt_message(enc_message, self.test_verkey, True)
+        assert py_decrypt == bin_msg
+        assert from_vk == self.test_verkey
+
+        decrypt, from_vk = await wallet.decrypt_message(py_enc_message, self.test_verkey, True)
+        assert decrypt == bin_msg
+        assert from_vk == self.test_verkey
 
     @pytest.mark.asyncio
     async def test_compare_pack(self, basic_wallet, wallet):
