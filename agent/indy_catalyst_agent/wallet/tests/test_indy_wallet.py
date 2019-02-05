@@ -48,11 +48,9 @@ class TestWalletCompat:
 
         await basic_wallet.create_local_did(self.test_seed)
         py_enc_message = await basic_wallet.encrypt_message(bin_msg, self.test_verkey)
-        print("py enc:", py_enc_message)
 
         await wallet.create_local_did(self.test_seed)
         enc_message = await wallet.encrypt_message(bin_msg, self.test_verkey)
-        print("indy enc:", enc_message)
 
         py_decrypt, from_vk = await basic_wallet.decrypt_message(enc_message, self.test_verkey, False)
         assert py_decrypt == bin_msg
@@ -71,11 +69,9 @@ class TestWalletCompat:
 
         await basic_wallet.create_local_did(self.test_seed)
         py_enc_message = await basic_wallet.encrypt_message(bin_msg, self.test_verkey, self.test_verkey)
-        print("py enc:", py_enc_message)
 
         await wallet.create_local_did(self.test_seed)
         enc_message = await wallet.encrypt_message(bin_msg, self.test_verkey, self.test_verkey)
-        print("indy enc:", enc_message)
 
         py_decrypt, from_vk = await basic_wallet.decrypt_message(enc_message, self.test_verkey, True)
         assert py_decrypt == bin_msg

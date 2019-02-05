@@ -113,21 +113,13 @@ def auth_decrypt_message(enc_message: bytes, secret: bytes) -> (bytes, str):
     pk = pysodium.crypto_sign_pk_to_box_pk(sign_pk)
     sk = pysodium.crypto_sign_sk_to_box_sk(sign_sk)
     body = pysodium.crypto_box_seal_open(enc_message, pk, sk)
-    print(body)
 
     unpacked = msgpack.unpackb(body, raw=False)
-    print(unpacked)
     sender_vk = unpacked["sender"]
     nonce = b64_to_bytes(unpacked["nonce"])
     enc_message = b64_to_bytes(unpacked["msg"])
 
-    message = pysodium.crypto_box_open(
-        enc_message,
-        nonce,
-        pk,
-        sk,
-    )
-    print(message)
+    message = pysodium.crypto_box_open(enc_message, nonce, pk, sk)
     return message, sender_vk
 
 
@@ -203,12 +195,7 @@ def locate_pack_recipient_key(recipients: Sequence[dict],
             sender_vk_bin = pysodium.crypto_box_seal_open(enc_sender, pk, sk)
             sender_vk = sender_vk_bin.decode("ascii")
             sender_pk = pysodium.crypto_sign_pk_to_box_pk(b58_to_bytes(sender_vk_bin))
-            cek = pysodium.crypto_box_open(
-                encrypted_key,
-                nonce,
-                sender_pk,
-                sk,
-            )
+            cek = pysodium.crypto_box_open(encrypted_key, nonce, sender_pk, sk)
         else:
             sender_vk = None
             cek = pysodium.crypto_box_seal_open(encrypted_key, pk, sk)
