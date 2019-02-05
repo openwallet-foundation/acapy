@@ -40,12 +40,6 @@ class TestForwardSchema(TestCase):
     forward = Forward("to", "msg")
 
     def test_make_model(self):
-        schema = ForwardSchema()
-
         data = self.forward.serialize()
-        data["_type"] = data["@type"]
-        del data["@type"]
-
-        model_instance = schema.make_model(data)
+        model_instance = Forward.deserialize(data)
         assert type(model_instance) is type(self.forward)
-

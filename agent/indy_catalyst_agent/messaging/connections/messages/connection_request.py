@@ -2,9 +2,9 @@
 Represents a connection request message.
 """
 
-from marshmallow import Schema, fields, post_load
+from marshmallow import fields
 
-from ...agent_message import AgentMessage
+from ...agent_message import AgentMessage, AgentMessageSchema
 from ...message_types import MessageTypes
 from ...validators import must_not_be_none
 
@@ -12,34 +12,31 @@ from ....models.agent_endpoint import AgentEndpoint, AgentEndpointSchema
 
 
 class ConnectionRequest(AgentMessage):
-    def __init__(self, endpoint: AgentEndpoint, did: str, verkey: str):
+    class Meta:
+        # handler_class = ConnectionRequestHandler
+        schema_class = 'ConnectionRequestSchema'
+        message_type = MessageTypes.CONNECTION_REQUEST.value
+
+    def __init__(
+            self,
+            *,
+            endpoint: AgentEndpoint = None,
+            did: str = None,
+            verkey: str = None,
+            **kwargs
+        ):
+        super(ConnectionRequest, self).__init__(**kwargs)
         self.endpoint = endpoint
         self.did = did
         self.verkey = verkey
 
-    @property
-    # Avoid clobbering builtin property
-    def _type(self):
-        return MessageTypes.CONNECTION_REQUEST.value
 
-    @classmethod
-    def deserialize(cls, obj):
-        return ConnectionRequestSchema().load(obj)
+class ConnectionRequestSchema(AgentMessageSchema):
+    class Meta:
+        model_class = ConnectionRequest
 
-    def serialize(self):
-        return ConnectionRequestSchema().dump(self)
-
-
-class ConnectionRequestSchema(Schema):
-    # Avoid clobbering builtin property
-    _type = fields.Str(data_key="@type", required=True)
     endpoint = fields.Nested(
         AgentEndpointSchema, validate=must_not_be_none, required=True
     )
     did = fields.Str(required=True)
     verkey = fields.Str(required=True)
-
-    @post_load
-    def make_model(self, data: dict) -> ConnectionRequest:
-        del data["_type"]
-        return ConnectionRequest(**data)
