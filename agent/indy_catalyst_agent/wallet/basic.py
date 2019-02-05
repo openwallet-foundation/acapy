@@ -4,19 +4,21 @@ In-memory implementation of BaseWallet interface
 
 from typing import Sequence
 
-from .base import (
-    BaseWallet, KeyInfo, DIDInfo, PairwiseInfo,
-)
+from .base import BaseWallet, KeyInfo, DIDInfo, PairwiseInfo
 from .crypto import (
-    create_keypair, random_seed, validate_seed,
-    sign_message, verify_signed_message,
-    anon_crypt_message, anon_decrypt_message,
-    auth_crypt_message, auth_decrypt_message,
-    encode_pack_message, decode_pack_message,
+    create_keypair,
+    random_seed,
+    validate_seed,
+    sign_message,
+    verify_signed_message,
+    anon_crypt_message,
+    anon_decrypt_message,
+    auth_crypt_message,
+    auth_decrypt_message,
+    encode_pack_message,
+    decode_pack_message,
 )
-from .error import (
-    WalletException, WalletDuplicateException, WalletNotFoundException,
-)
+from .error import WalletException, WalletDuplicateException, WalletNotFoundException
 from .util import b58_to_bytes, bytes_to_b58
 
 
@@ -53,7 +55,9 @@ class BasicWallet(BaseWallet):
         """
         pass
 
-    async def create_signing_key(self, seed: str = None, metadata: dict = None) -> KeyInfo:
+    async def create_signing_key(
+        self, seed: str = None, metadata: dict = None
+    ) -> KeyInfo:
         """
         Create a new public/private signing keypair
 
@@ -111,10 +115,8 @@ class BasicWallet(BaseWallet):
         self._keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
     async def create_local_did(
-            self,
-            seed: str = None,
-            did: str = None,
-            metadata: dict = None) -> DIDInfo:
+        self, seed: str = None, did: str = None, metadata: dict = None
+    ) -> DIDInfo:
         """
         Create and store a new local DID
         """
@@ -138,11 +140,7 @@ class BasicWallet(BaseWallet):
         Convert internal DID record to DIDInfo
         """
         info = self._local_dids[did]
-        return DIDInfo(
-            did=did,
-            verkey=info["verkey"],
-            metadata=info["metadata"].copy(),
-        )
+        return DIDInfo(did=did, verkey=info["verkey"], metadata=info["metadata"].copy())
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
@@ -177,22 +175,26 @@ class BasicWallet(BaseWallet):
         self._local_dids[did]["metadata"] = metadata.copy() if metadata else {}
 
     async def create_pairwise(
-            self,
-            their_did: str,
-            their_verkey: str,
-            my_did: str = None,
-            metadata: dict = None) -> PairwiseInfo:
+        self,
+        their_did: str,
+        their_verkey: str,
+        my_did: str = None,
+        metadata: dict = None,
+    ) -> PairwiseInfo:
         """
         Create a new pairwise DID for a secure connection
         """
         if my_did:
             my_info = await self.get_local_did(my_did)
         else:
-            my_info = await self.create_local_did(None, None, {"pairwise_for": their_did})
+            my_info = await self.create_local_did(
+                None, None, {"pairwise_for": their_did}
+            )
 
         if their_did in self._pair_dids:
             raise WalletDuplicateException(
-                    "Pairwise DID already present in wallet: {}".format(their_did))
+                "Pairwise DID already present in wallet: {}".format(their_did)
+            )
 
         self._pair_dids[their_did] = {
             "my_did": my_info.did,
@@ -250,9 +252,12 @@ class BasicWallet(BaseWallet):
         """
         Resolve private key for a wallet DID
         """
-        for info in self._local_dids.values():
+
+        keys_and_dids = list(self._local_dids.values()) + list(self._keys.values())
+        for info in keys_and_dids:
             if info["verkey"] == verkey:
                 return info["secret"] if long else info["seed"]
+
         raise WalletException("Private key not found for verkey: {}".format(verkey))
 
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
@@ -267,7 +272,9 @@ class BasicWallet(BaseWallet):
         signature = sign_message(message, secret)
         return signature
 
-    async def verify_message(self, message: bytes, signature: bytes, from_verkey: str) -> bool:
+    async def verify_message(
+        self, message: bytes, signature: bytes, from_verkey: str
+    ) -> bool:
         """
         Verify a signature against the public key of the signer
         """
@@ -282,10 +289,8 @@ class BasicWallet(BaseWallet):
         return verified
 
     async def encrypt_message(
-            self,
-            message: bytes,
-            to_verkey: str,
-            from_verkey: str = None) -> bytes:
+        self, message: bytes, to_verkey: str, from_verkey: str = None
+    ) -> bytes:
         """
         Apply auth_crypt or anon_crypt to a message
 
@@ -307,10 +312,8 @@ class BasicWallet(BaseWallet):
         return result
 
     async def decrypt_message(
-            self,
-            enc_message: bytes,
-            to_verkey: str,
-            use_auth: bool) -> (bytes, str):
+        self, enc_message: bytes, to_verkey: str, use_auth: bool
+    ) -> (bytes, str):
         """
         Decrypt a message assembled by auth_crypt or anon_crypt
 
@@ -331,10 +334,8 @@ class BasicWallet(BaseWallet):
         return message, from_verkey
 
     async def pack_message(
-            self,
-            message: str,
-            to_verkeys: Sequence[str],
-            from_verkey: str = None) -> bytes:
+        self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
+    ) -> bytes:
         """
         Pack a message for one or more recipients
         """
@@ -350,8 +351,9 @@ class BasicWallet(BaseWallet):
         if not enc_message:
             raise WalletException("Message not provided")
         try:
-            message, from_verkey, to_verkey = \
-                decode_pack_message(enc_message, lambda k: self._get_private_key(k, True))
+            message, from_verkey, to_verkey = decode_pack_message(
+                enc_message, lambda k: self._get_private_key(k, True)
+            )
         except ValueError as e:
             raise WalletException("Message could not be unpacked: {}".format(str(e)))
         return message, from_verkey, to_verkey
