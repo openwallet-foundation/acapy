@@ -21,7 +21,6 @@ async def wallet():
         "auto_create": True,
         "auto_remove": True,
         "name": "test-wallet",
-        "seed": "testseed00000000000000000000skip",
     })
     await wallet.open()
     yield wallet

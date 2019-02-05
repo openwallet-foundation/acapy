@@ -42,7 +42,6 @@ class IndyWallet(BaseWallet):
         self._handle = None
         self._key = config.get("key") or self.DEFAULT_KEY
         self._name = config.get("name") or self.DEFAULT_NAME
-        self._seed = validate_seed(config.get("seed"))
         self._storage_type = config.get("storage_type") or self.DEFAULT_STORAGE_TYPE
 
     @property
