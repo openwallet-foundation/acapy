@@ -43,12 +43,6 @@ class TestProofRequestSchema(TestCase):
     proof_request = ProofRequest("proof_request_json")
 
     def test_make_model(self):
-        schema = ProofRequestSchema()
-
         data = self.proof_request.serialize()
-        data["_type"] = data["@type"]
-        del data["@type"]
-
-        model_instance = schema.make_model(data)
+        model_instance = ProofRequest.deserialize(data)
         assert type(model_instance) is type(self.proof_request)
-

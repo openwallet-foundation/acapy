@@ -1,5 +1,5 @@
 aiohttp>=3.5.0<3.6
 base58
-marshmallow==3.0.0rc2
+marshmallow==3.0.0rc3
 msgpack>=0.6.1<0.7
 pysodium>=0.7.1<0.8

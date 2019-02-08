@@ -10,13 +10,21 @@ class TestConnectionResponse(TestCase):
     verkey = "verkey"
 
     def test_init(self):
-        connection_response = ConnectionResponse(self.endpoint, self.did, self.verkey)
+        connection_response = ConnectionResponse(
+            endpoint=self.endpoint,
+            did=self.did,
+            verkey=self.verkey
+        )
         assert connection_response.endpoint == self.endpoint
         assert connection_response.did == self.did
         assert connection_response.verkey == self.verkey
 
     def test_type(self):
-        connection_response = ConnectionResponse(self.endpoint, self.did, self.verkey)
+        connection_response = ConnectionResponse(
+            endpoint=self.endpoint,
+            did=self.did,
+            verkey=self.verkey
+        )
         assert connection_response._type == MessageTypes.CONNECTION_RESPONSE.value
 
     @mock.patch(
@@ -34,7 +42,11 @@ class TestConnectionResponse(TestCase):
         "indy_catalyst_agent.messaging.connections.messages.connection_response.ConnectionResponseSchema.dump"
     )
     def test_serialize(self, mock_connection_response_schema_dump):
-        connection_response = ConnectionResponse(self.endpoint, self.did, self.verkey)
+        connection_response = ConnectionResponse(
+            endpoint=self.endpoint,
+            did=self.did,
+            verkey=self.verkey
+        )
 
         connection_response_dict = connection_response.serialize()
         mock_connection_response_schema_dump.assert_called_once_with(
@@ -48,15 +60,14 @@ class TestConnectionResponse(TestCase):
 
 
 class TestConnectionResponseSchema(TestCase):
-    connection_response = ConnectionResponse("endpoint", "did", "verkey")
+    connection_response = ConnectionResponse(
+        endpoint="endpoint",
+        did="did",
+        verkey="verkey"
+    )
 
     def test_make_model(self):
-        schema = ConnectionResponseSchema()
-
         data = self.connection_response.serialize()
-        data["_type"] = data["@type"]
-        del data["@type"]
-
-        model_instance = schema.make_model(data)
+        model_instance = ConnectionResponse.deserialize(data)
         assert type(model_instance) is type(self.connection_response)
 

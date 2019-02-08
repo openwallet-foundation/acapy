@@ -53,8 +53,9 @@ def sign_message(message: bytes, secret: bytes) -> bytes:
     Sign a message using a private signing key
     """
     result = pysodium.crypto_sign(message, secret)
-    sig = result[:pysodium.crypto_sign_BYTES]
+    sig = result[: pysodium.crypto_sign_BYTES]
     return sig
+
 
 def verify_signed_message(signed: bytes, verkey: bytes) -> bool:
     """
@@ -74,6 +75,7 @@ def anon_crypt_message(message: bytes, to_verkey: bytes) -> bytes:
     pk = pysodium.crypto_sign_pk_to_box_pk(to_verkey)
     enc_message = pysodium.crypto_box_seal(message, pk)
     return enc_message
+
 
 def anon_decrypt_message(enc_message: bytes, secret: bytes) -> bytes:
     """
@@ -96,14 +98,17 @@ def auth_crypt_message(message: bytes, to_verkey: bytes, from_secret: bytes) -> 
     sender_pk, sender_sk = create_keypair(from_secret)
     sk = pysodium.crypto_sign_sk_to_box_sk(sender_sk)
     enc_body = pysodium.crypto_box(message, nonce, target_pk, sk)
-    combo_box = OrderedDict([
-        ("msg", bytes_to_b64(enc_body)),
-        ("sender", bytes_to_b58(sender_pk)),
-        ("nonce", bytes_to_b64(nonce)),
-    ])
+    combo_box = OrderedDict(
+        [
+            ("msg", bytes_to_b64(enc_body)),
+            ("sender", bytes_to_b58(sender_pk)),
+            ("nonce", bytes_to_b64(nonce)),
+        ]
+    )
     combo_box_bin = msgpack.packb(combo_box, use_bin_type=True)
     enc_message = pysodium.crypto_box_seal(combo_box_bin, target_pk)
     return enc_message
+
 
 def auth_decrypt_message(enc_message: bytes, secret: bytes) -> (bytes, str):
     """
@@ -118,13 +123,14 @@ def auth_decrypt_message(enc_message: bytes, secret: bytes) -> (bytes, str):
     sender_vk = unpacked["sender"]
     nonce = b64_to_bytes(unpacked["nonce"])
     enc_message = b64_to_bytes(unpacked["msg"])
-
-    message = pysodium.crypto_box_open(enc_message, nonce, pk, sk)
+    sender_pk = pysodium.crypto_sign_pk_to_box_pk(b58_to_bytes(sender_vk))
+    message = pysodium.crypto_box_open(enc_message, nonce, sender_pk, sk)
     return message, sender_vk
 
 
-def prepare_pack_recipient_keys(to_verkeys: Sequence[bytes],
-                                from_secret: bytes = None) -> (str, bytes):
+def prepare_pack_recipient_keys(
+    to_verkeys: Sequence[bytes], from_secret: bytes = None
+) -> (str, bytes):
     """
     Assemble the recipients block of a packed message
     """
@@ -146,26 +152,48 @@ def prepare_pack_recipient_keys(to_verkeys: Sequence[bytes],
             nonce = None
             enc_cek = pysodium.crypto_box_seal(cek, target_pk)
 
-        recips.append(OrderedDict([
-            ("encrypted_key", bytes_to_b64(enc_cek, urlsafe=True)),
-            ("header", OrderedDict([
-                ("kid", bytes_to_b58(target_vk)),
-                ("sender", bytes_to_b64(enc_sender, urlsafe=True) if enc_sender else None),
-                ("iv", bytes_to_b64(nonce, urlsafe=True) if nonce else None),
-            ])),
-        ]))
+        recips.append(
+            OrderedDict(
+                [
+                    ("encrypted_key", bytes_to_b64(enc_cek, urlsafe=True)),
+                    (
+                        "header",
+                        OrderedDict(
+                            [
+                                ("kid", bytes_to_b58(target_vk)),
+                                (
+                                    "sender",
+                                    bytes_to_b64(enc_sender, urlsafe=True)
+                                    if enc_sender
+                                    else None,
+                                ),
+                                (
+                                    "iv",
+                                    bytes_to_b64(nonce, urlsafe=True)
+                                    if nonce
+                                    else None,
+                                ),
+                            ]
+                        ),
+                    ),
+                ]
+            )
+        )
 
-    data = OrderedDict([
-        ("enc", "xchacha20poly1305_ietf"),
-        ("typ", "JWM/1.0"),
-        ("alg", "Authcrypt" if from_secret else "Anoncrypt"),
-        ("recipients", recips),
-    ])
+    data = OrderedDict(
+        [
+            ("enc", "xchacha20poly1305_ietf"),
+            ("typ", "JWM/1.0"),
+            ("alg", "Authcrypt" if from_secret else "Anoncrypt"),
+            ("recipients", recips),
+        ]
+    )
     return json.dumps(data), cek
 
 
-def locate_pack_recipient_key(recipients: Sequence[dict],
-                              find_key: Callable) -> (bytes, str, str):
+def locate_pack_recipient_key(
+    recipients: Sequence[dict], find_key: Callable
+) -> (bytes, str, str):
     """
     Decode the encryption key and sender verification key from a
     corresponding recipient block, if any is defined
@@ -203,30 +231,38 @@ def locate_pack_recipient_key(recipients: Sequence[dict],
     raise ValueError("No corresponding recipient key found in {}".format(not_found))
 
 
-def encrypt_plaintext(message: str, add_data: bytes, key: bytes) -> (bytes, bytes, bytes):
+def encrypt_plaintext(
+    message: str, add_data: bytes, key: bytes
+) -> (bytes, bytes, bytes):
     """
     Encrypt the payload of a packed message
     """
     nonce = pysodium.randombytes(pysodium.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
     message_bin = message.encode("ascii")
-    output = pysodium.crypto_aead_chacha20poly1305_ietf_encrypt(message_bin, add_data, nonce, key)
+    output = pysodium.crypto_aead_chacha20poly1305_ietf_encrypt(
+        message_bin, add_data, nonce, key
+    )
     mlen = len(message)
     ciphertext = output[:mlen]
     tag = output[mlen:]
     return ciphertext, nonce, tag
 
 
-def decrypt_plaintext(ciphertext: bytes, recips_bin: bytes, nonce: bytes, key: bytes) -> str:
+def decrypt_plaintext(
+    ciphertext: bytes, recips_bin: bytes, nonce: bytes, key: bytes
+) -> str:
     """
     Decrypt the payload of a packed message
     """
-    output = pysodium.crypto_aead_chacha20poly1305_ietf_decrypt(ciphertext, recips_bin, nonce, key)
+    output = pysodium.crypto_aead_chacha20poly1305_ietf_decrypt(
+        ciphertext, recips_bin, nonce, key
+    )
     return output.decode("ascii")
 
 
-def encode_pack_message(message: str,
-                        to_verkeys: Sequence[bytes],
-                        from_secret: bytes = None) -> bytes:
+def encode_pack_message(
+    message: str, to_verkeys: Sequence[bytes], from_secret: bytes = None
+) -> bytes:
     """
     Assemble a packed message for a set of recipients, optionally including the sender
     """
@@ -235,17 +271,20 @@ def encode_pack_message(message: str,
 
     ciphertext, nonce, tag = encrypt_plaintext(message, recips_b64.encode("ascii"), cek)
 
-    data = OrderedDict([
-        ("protected", recips_b64),
-        ("iv", bytes_to_b64(nonce, urlsafe=True)),
-        ("ciphertext", bytes_to_b64(ciphertext, urlsafe=True)),
-        ("tag", bytes_to_b64(tag, urlsafe=True)),
-    ])
+    data = OrderedDict(
+        [
+            ("protected", recips_b64),
+            ("iv", bytes_to_b64(nonce, urlsafe=True)),
+            ("ciphertext", bytes_to_b64(ciphertext, urlsafe=True)),
+            ("tag", bytes_to_b64(tag, urlsafe=True)),
+        ]
+    )
     return json.dumps(data).encode("ascii")
 
 
-def decode_pack_message(enc_message: bytes,
-                        find_key: Callable) -> (str, Optional[str], str):
+def decode_pack_message(
+    enc_message: bytes, find_key: Callable
+) -> (str, Optional[str], str):
     """
     Disassemble and unencrypt a packed message, returning the message content,
     verification key of the sender (if available), and verification key of the recipient
@@ -259,7 +298,9 @@ def decode_pack_message(enc_message: bytes,
     is_authcrypt = alg == "Authcrypt"
     if not is_authcrypt and alg != "Anoncrypt":
         raise ValueError("Unsupported pack algorithm: {}".format(alg))
-    cek, sender_vk, recip_vk = locate_pack_recipient_key(recips_outer["recipients"], find_key)
+    cek, sender_vk, recip_vk = locate_pack_recipient_key(
+        recips_outer["recipients"], find_key
+    )
     if not sender_vk and is_authcrypt:
         raise ValueError("Sender public key not provided for Authcrypt message")
 

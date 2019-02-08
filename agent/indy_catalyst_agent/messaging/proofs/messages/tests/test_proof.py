@@ -41,12 +41,6 @@ class TestProofSchema(TestCase):
     proof = Proof("proof_json", "request_nonce")
 
     def test_make_model(self):
-        schema = ProofSchema()
-
         data = self.proof.serialize()
-        data["_type"] = data["@type"]
-        del data["@type"]
-
-        model_instance = schema.make_model(data)
+        model_instance = Proof.deserialize(data)
         assert type(model_instance) is type(self.proof)
-
