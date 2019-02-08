@@ -60,6 +60,12 @@ To run the locally, we recommend using the provided Docker images to run the sof
 ./scripts/run_docker <args>
 ```
 
+To enable the [ptvsd](https://github.com/Microsoft/ptvsd) Python debugger for Visual Studio/VSCode set the `ENABLE_PTVSD` environment variable, for example:
+
+```bash
+ENABLE_PTVSD=1 ./scripts/run_docker --inbound-transport http 0.0.0.0 10000 --outbound-transport http
+```
+
 Refer to [the previous section](#Running) for instructions on how to run the software.
 
 ### Caveats
@@ -71,13 +77,13 @@ The development docker environment exposes ports 10000 - 10050. When specifying 
 To run the test suite, use the following script:
 
 ```sh
-.scripts/run_tests
+./scripts/run_tests
 ```
 
 To run the test including [Indy SDK](https://github.com/hyperledger/indy-sdk) and related dependencies, run the script:
 
 ```sh
-.scripts/run_tests_indy
+./scripts/run_tests_indy
 ```
 
 ## Development Workflow
