@@ -268,6 +268,8 @@ class TestBasicWallet:
         msg = {"test": "signed field"}
         timestamp = int(time.time())
         sig = await FieldSignature.create(msg, key_info.verkey, wallet, timestamp)
-        msg_decode, ts_decode = await sig.decode(wallet)
+        verified = await sig.verify(wallet)
+        assert verified
+        msg_decode, ts_decode = sig.decode()
         assert msg_decode == msg
         assert ts_decode == timestamp
