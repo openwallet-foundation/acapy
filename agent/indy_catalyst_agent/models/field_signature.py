@@ -29,12 +29,12 @@ class FieldSignature(BaseModel):
     def __init__(
             self,
             *,
-            type: str = None,
+            signature_type: str = None,
             signature: str = None,
             sig_data: str = None,
             signer: str = None,
         ):
-        self.signature_type = type
+        self.signature_type = signature_type
         self.signature = signature
         self.sig_data = sig_data
         self.signer = signer
@@ -54,7 +54,7 @@ class FieldSignature(BaseModel):
         msg_combined_bin = timestamp_bin + json.dumps(value).encode("ascii")
         signature_bin = await wallet.sign_message(msg_combined_bin, signer)
         return FieldSignature(
-            type=cls.TYPE_ED25519SHA512,
+            signature_type=cls.TYPE_ED25519SHA512,
             signature=bytes_to_b64(signature_bin, urlsafe=True),
             sig_data=bytes_to_b64(msg_combined_bin, urlsafe=True),
             signer=signer,
@@ -72,6 +72,8 @@ class FieldSignature(BaseModel):
         """
         Verify the signature against the signer's public key
         """
+        if self.signature_type != self.TYPE_ED25519SHA512:
+            return False
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         sig_bin = b64_to_bytes(self.signature, urlsafe=True)
         return await wallet.verify_message(msg_bin, sig_bin, self.signer)
@@ -86,7 +88,8 @@ class FieldSignature(BaseModel):
 class FieldSignatureSchema(BaseModelSchema):
     class Meta:
         model_class = FieldSignature
-    sig_type = fields.Str(data_key="@type")
-    signature = fields.Str()
-    sig_data = fields.Str()
-    signer = fields.Str()
+    signature_type = fields.Str(data_key="@type", required=True)
+    signature = fields.Str(required=True)
+    sig_data = fields.Str(required=True)
+    signer = fields.Str(required=True)
+    blah = fields.Str()

@@ -85,13 +85,13 @@ class AgentMessage(BaseModel):
         """
         self._message_signatures[field_name] = signature
 
-    async def create_signature(
+    async def sign_field(
             self,
             field_name: str,
             signer: str,
             wallet: BaseWallet,
             timestamp=None
-        ):
+        ) -> FieldSignature:
         """
         Create and store a signature for a named field
         """
@@ -102,6 +102,27 @@ class AgentMessage(BaseModel):
                     self.__class__.__name__, field_name))
         sig = await FieldSignature.create(value, signer, wallet, timestamp)
         self.set_signature(field_name, sig)
+        return sig
+
+    async def verify_signed_field(
+            self,
+            field_name: str,
+            wallet: BaseWallet,
+            signer: str = None
+        ) -> str:
+        """
+        Verify a specific field signature
+
+        Returns: the verkey of the signer
+        """
+        if field_name not in self._message_signatures:
+            raise ValueError("Missing field signature: {}".format(field_name))
+        sig = self._message_signatures[field_name]
+        if not await sig.verify(wallet):
+            raise ValueError("Field signature verification failed: {}".format(field_name))
+        if signer is not None and sig.signer != signer:
+            raise ValueError("Signer of signature does not match: {}".format(field_name))
+        return sig.signer
 
     async def verify_signatures(self, wallet: BaseWallet) -> bool:
         """

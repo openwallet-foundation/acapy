@@ -44,15 +44,17 @@ class TestAgentMessage(AsyncTestCase):
 
         msg = SignedAgentMessage()
         msg.value = "Test value"
-        await msg.create_signature("value", key_info.verkey, wallet)
+        await msg.sign_field("value", key_info.verkey, wallet)
         sig = msg.get_signature("value")
         assert isinstance(sig, FieldSignature)
 
         assert await sig.verify(wallet)
+        assert await msg.verify_signed_field("value", wallet) == key_info.verkey
+        assert await msg.verify_signatures(wallet)
 
         serial = msg.serialize()
         assert "value~sig" in serial and "value" not in serial
 
         loaded = SignedAgentMessage.deserialize(serial)
         assert isinstance(loaded, SignedAgentMessage)
-        assert await loaded.verify_signatures(wallet)
+        assert await loaded.verify_signed_field("value", wallet) == key_info.verkey
