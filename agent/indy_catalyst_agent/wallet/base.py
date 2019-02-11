@@ -234,4 +234,4 @@ class BaseWallet(ABC):
 
     # TODO:
     # store credential (return ID)
-    # fetch credentials by ID, [or query, filter, proof request?]
+    # fetch credentials by ID [or query, filter, proof request?]

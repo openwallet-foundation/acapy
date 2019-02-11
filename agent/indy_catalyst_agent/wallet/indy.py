@@ -9,8 +9,6 @@ import indy.did
 import indy.crypto
 import indy.pairwise
 from indy.error import IndyError, ErrorCode
-from von_anchor.error import ExtantWallet
-from von_anchor.wallet import Wallet as AnchorWallet
 
 from .base import (
     BaseWallet, KeyInfo, DIDInfo, PairwiseInfo,
@@ -41,10 +39,9 @@ class IndyWallet(BaseWallet):
         self._auto_create = config.get("auto_create", True)
         self._auto_remove = config.get("auto_remove", False)
         self._freshness_time = config.get("freshness_time", False)
-        self._instance = None
+        self._handle = None
         self._key = config.get("key") or self.DEFAULT_KEY
         self._name = config.get("name") or self.DEFAULT_NAME
-        self._seed = validate_seed(config.get("seed"))
         self._storage_type = config.get("storage_type") or self.DEFAULT_STORAGE_TYPE
 
     @property
@@ -52,14 +49,21 @@ class IndyWallet(BaseWallet):
         """
         Get internal wallet reference
         """
-        return self._instance and self._instance.handle
+        return self._handle
 
     @property
     def opened(self) -> bool:
         """
         Check whether wallet is currently open
         """
-        return bool(self._instance)
+        return bool(self._handle)
+
+    @property
+    def name(self) -> str:
+        """
+        Accessor for the wallet name
+        """
+        return self._name
 
     @property
     def _wallet_config(self) -> dict:
@@ -77,24 +81,41 @@ class IndyWallet(BaseWallet):
             # storage_credentials
         }
 
-    async def _create(self, seed = None, replace: bool = False) -> bool:
+    async def create(self, replace: bool = False):
         """
-        Create the wallet instance
+        Create a new wallet
         """
-        if seed:
-            self._seed = validate_seed(seed)
-        if not self._seed:
-            self._seed = random_seed()
-
         if replace:
-            await self._instance.remove()
+            try:
+                await self.remove()
+            except WalletNotFoundException:
+                pass
         try:
-            await self._instance.create(bytes_to_b64(self._seed))
-        except ExtantWallet as e:
-            if replace:
-                raise WalletException("Wallet was not removed by SDK, may still be open") from e
-            return False
-        return True
+            await indy.wallet.create_wallet(
+                config=json.dumps(self._wallet_config),
+                credentials=json.dumps(self._wallet_access),
+            )
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletAlreadyExistsError:
+                raise WalletException(
+                    "Wallet was not removed by SDK, may still be open: {}".format(self.name)
+                ) from e
+            else:
+                raise WalletException(str(x_indy))
+
+    async def remove(self):
+        """
+        Remove an existing wallet
+        """
+        try:
+            await indy.wallet.delete_wallet(
+                config=json.dumps(self._wallet_config),
+                credentials=json.dumps(self._wallet_access),
+            )
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletNotFoundError:
+                raise WalletNotFoundException("Wallet not found: {}".format(self.name))
+            raise WalletException(str(x_indy))
 
     async def open(self):
         """
@@ -103,27 +124,36 @@ class IndyWallet(BaseWallet):
         if self.opened:
             return
 
-        self._instance = AnchorWallet(
-            self._name,
-            self._storage_type,
-            self._wallet_config,
-            self._wallet_access,
-        )
-
-        if self._auto_create:
-            await self._create(None, self._auto_remove)
-
-        await self._instance.open()
+        created = False
+        while True:
+            try:
+                self._handle = await indy.wallet.open_wallet(
+                    config=json.dumps(self._wallet_config),
+                    credentials=json.dumps(self._wallet_access),
+                )
+                break
+            except IndyError as x_indy:
+                if x_indy.error_code == ErrorCode.WalletNotFoundError:
+                    if created:
+                        raise WalletException("Wallet not found after creation: {}".format(self.name))
+                    if self._auto_create:
+                        await self.create(self._auto_remove)
+                    else:
+                        raise WalletNotFoundError("Wallet not found: {}".format(self.name))
+                elif x_indy.error_code == ErrorCode.WalletAlreadyOpenedError:
+                    raise WalletException("Wallet is already open: {}".format(self.name))
+                else:
+                    raise WalletException(str(x_indy))
 
     async def close(self):
         """
         Close previously-opened wallet, removing it if so configured
         """
-        if self._instance:
-            await self._instance.close()
+        if self._handle:
+            await indy.wallet.close_wallet(self._handle)
             if self._auto_remove:
-                await self._instance.remove()
-            self._instance = None
+                await self.remove()
+            self._handle = None
 
     async def create_signing_key(self, seed: str = None, metadata: dict = None) -> KeyInfo:
         """
