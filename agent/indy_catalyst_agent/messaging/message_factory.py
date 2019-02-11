@@ -1,23 +1,14 @@
 """
-Handle identification of message types
+Handle identification of message types and instantiation of message classes
 """
 
+from typing import Dict, Union
+
+from ..classloader import ClassLoader
 from ..error import BaseError
 
+from .agent_message import AgentMessage
 from .message_types import MessageTypes
-
-from .connections.messages.connection_invitation import ConnectionInvitation
-from .connections.messages.connection_request import ConnectionRequest
-from .connections.messages.connection_response import ConnectionResponse
-
-from .credentials.messages.credential_offer import CredentialOffer
-from .credentials.messages.credential_request import CredentialRequest
-from .credentials.messages.credential import Credential
-
-from .proofs.messages.proof_request import ProofRequest
-from .proofs.messages.proof import Proof
-
-from .routing.messages.forward import Forward
 
 
 class MessageParseError(BaseError):
@@ -30,42 +21,39 @@ class MessageFactory:
     message class
     """
 
-    @classmethod
-    def make_message(cls, obj):
+    def __init__(self):
+        self._typemap = {}
+
+    def register_message_types(self, *types):
+        """
+        Add new supported message types
+        """
+        for typeset in types:
+            self._typemap.update(typeset)
+    
+    def resolve_message_class(self, message_type: str) -> type:
+        """
+        Given a dict describing a message, this method
+        returns the corresponding registered message class.
+        """
+        msg_cls = self._typemap.get(message_type)
+        if isinstance(msg_cls, str):
+            msg_cls = ClassLoader.load_class(msg_cls)
+        return msg_cls
+
+    def make_message(self, serialized_msg: dict) -> AgentMessage:
         """
         Given a dict describing a message, this method
         returns an instance of the related message class.
         """
 
-        if not obj.get("@type"):
+        msg_type = serialized_msg.get("@type")
+        if not msg_type:
             raise MessageParseError("Message does not contain '@type' parameter")
 
-        # Connection Messages
-        if obj["@type"] == MessageTypes.CONNECTION_INVITATION.value:
-            return ConnectionInvitation.deserialize(obj)
-        elif obj["@type"] == MessageTypes.CONNECTION_REQUEST.value:
-            return ConnectionRequest.deserialize(obj)
-        elif obj["@type"] == MessageTypes.CONNECTION_RESPONSE.value:
-            return ConnectionResponse.deserialize(obj)
+        msg_cls = self.resolve_message_class(msg_type)
+        if not msg_cls:
+            raise MessageParseError(f"Unrecognized message type {msg_type}")
 
-        # Credential Messages
-        elif obj["@type"] == MessageTypes.CREDENTIAL.value:
-            return Credential.deserialize(obj)
-        elif obj["@type"] == MessageTypes.CREDENTIAL_OFFER.value:
-            return CredentialOffer.deserialize(obj)
-        elif obj["@type"] == MessageTypes.CREDENTIAL_REQUEST.value:
-            return CredentialRequest.deserialize(obj)
-
-        # Proof Messages
-        elif obj["@type"] == MessageTypes.PROOF_REQUEST.value:
-            return ProofRequest.deserialize(obj)
-        elif obj["@type"] == MessageTypes.PROOF.value:
-            return Proof.deserialize(obj)
-
-        # Routing Messages
-        elif obj["@type"] == MessageTypes.FORWARD.value:
-            return Forward.deserialize(obj)
-
-        else:
-            raise MessageParseError(f"Unrecognized message type {obj['@type']}")
-
+        instance = msg_cls.deserialize(serialized_msg)
+        return instance

@@ -21,9 +21,11 @@ from .transport.outbound.queue.basic import BasicOutboundMessageQueue
 
 class Conductor:
     def __init__(
-        self, transport_configs: InboundTransportConfiguration, outbound_transports
+        self, transport_configs: InboundTransportConfiguration, outbound_transports,
+        message_factory: MessageFactory
     ) -> None:
         self.logger = logging.getLogger(__name__)
+        self.message_factory = message_factory
         self.inbound_transport_configs = transport_configs
         self.outbound_transports = outbound_transports
 
@@ -63,7 +65,8 @@ class Conductor:
         )
 
     async def inbound_message_router(self, message_dict: Dict) -> None:
-        message = MessageFactory.make_message(message_dict)
+        # will throw an exception if @type is missing or unrecognized
+        message = self.message_factory.make_message(message_dict)
         result = await self.dispatcher.dispatch(message, self.outbound_message_router)
         # TODO: need to use callback instead?
         #       respond immediately after message parse in case of req-res transport?

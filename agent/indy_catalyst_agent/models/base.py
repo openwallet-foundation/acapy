@@ -3,18 +3,24 @@ Base classes for Models and Schemas
 """
 
 from abc import ABC
-import sys
 
 from marshmallow import (
     Schema, fields, post_dump, pre_load, post_load,
 )
 
+from ..classloader import ClassLoader
 
-def resolve_class(cls, relative_cls: type):
-    if isinstance(cls, str):
-        mod = sys.modules[relative_cls.__module__]
-        cls = getattr(mod, cls)
-    return cls
+
+def resolve_class(the_cls, relative_cls: type = None):
+    resolved = None
+    if isinstance(the_cls, type):
+        resolved = the_cls
+    elif isinstance(the_cls, str):
+        default_module = relative_cls and relative_cls.__module__
+        resolved = ClassLoader.load_class(the_cls, default_module)
+    if not isinstance(resolved, type):
+        raise ImportError("Class could not be loaded: {}".format(the_cls))
+    return resolved
 
 def resolve_meta_property(obj, prop_name: str, defval=None):
     cls = obj.__class__

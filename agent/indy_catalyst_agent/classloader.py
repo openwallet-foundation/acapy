@@ -1,7 +1,6 @@
 import inspect
 import logging
 
-
 from importlib import import_module
 
 from .error import BaseError
@@ -51,3 +50,25 @@ class ClassLoader:
             raise ClassNotFoundError(error_message)
 
         return imported_class
+
+    @classmethod
+    def load_class(cls, class_name: str, default_module: str = None):
+        """
+        Resolve a complete class path (ie. typing.Dict) to the class itself
+        """
+        if "." in class_name:
+            # import module and find class
+            mod_path, class_name = class_name.rsplit(".", 1)
+        elif default_module:
+            mod_path = default_module
+        else:
+            raise ClassNotFoundError(f"Cannot resolve class name: {class_name}")
+        
+        try:
+            mod = import_module(mod_path)
+        except ModuleNotFoundError:
+            error_message = f"Unable to import module {mod_path}"
+            raise ModuleLoadError(error_message)
+
+        resolved = getattr(mod, class_name, None)        
+        return resolved

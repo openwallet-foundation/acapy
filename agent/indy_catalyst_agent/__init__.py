@@ -4,6 +4,7 @@ import os
 import signal
 
 from .conductor import Conductor
+from .defaults import default_message_factory
 from .logging import LoggingConfigurator
 from .transport.inbound import InboundTransportConfiguration
 
@@ -53,7 +54,8 @@ parser.add_argument(
 
 
 async def start(inbound_transport_configs, outbound_transports):
-    conductor = Conductor(inbound_transport_configs, outbound_transports)
+    factory = default_message_factory()
+    conductor = Conductor(inbound_transport_configs, outbound_transports, factory)
     await conductor.start()
 
 
