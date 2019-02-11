@@ -61,7 +61,7 @@ class BaseWallet(ABC):
         Returns: a `KeyInfo` representing the new record
 
         Raises:
-            WalletDuplicateException: If the resulting verkey already exists in the wallet
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
         """
 
     @abstractmethod
@@ -75,7 +75,7 @@ class BaseWallet(ABC):
         Returns: a `KeyInfo` representing the keypair
 
         Raises:
-            WalletNotFoundException: if no keypair is associated with the verification key
+            WalletNotFoundError: if no keypair is associated with the verification key
         """
 
     @abstractmethod
@@ -88,13 +88,7 @@ class BaseWallet(ABC):
             metadata: The new metadata to store
 
         Raises:
-            WalletNotFoundException: if no keypair is associated with the verification key
-        """
-
-    @abstractmethod
-    async def get_local_dids(self) -> Sequence[DIDInfo]:
-        """
-        Get list of defined local DIDs
+            WalletNotFoundError: if no keypair is associated with the verification key
         """
 
     @abstractmethod

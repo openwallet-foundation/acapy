@@ -6,6 +6,7 @@ from typing import Type
 from urllib.parse import urlparse
 
 from .base import BaseOutboundTransport
+from ...error import BaseError
 from .queue.base import BaseOutboundMessageQueue
 from .message import OutboundMessage
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
@@ -13,7 +14,7 @@ from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 MODULE_BASE_PATH = "indy_catalyst_agent.transport.outbound"
 
 
-class OutboundTransportRegistrationError(Exception):
+class OutboundTransportRegistrationError(BaseError):
     pass
 
 

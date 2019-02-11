@@ -18,7 +18,7 @@ from .crypto import (
     encode_pack_message,
     decode_pack_message,
 )
-from .error import WalletException, WalletDuplicateException, WalletNotFoundException
+from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .util import b58_to_bytes, bytes_to_b58
 
 
@@ -67,13 +67,13 @@ class BasicWallet(BaseWallet):
         Returns: a `KeyInfo` representing the new record
 
         Raises:
-            WalletDuplicateException: If the resulting verkey already exists in the wallet
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
         """
         seed = validate_seed(seed) or random_seed()
         verkey, secret = create_keypair(seed)
         verkey_enc = bytes_to_b58(verkey)
         if verkey_enc in self._keys:
-            raise WalletDuplicateException("Verification key already present in wallet")
+            raise WalletDuplicateError("Verification key already present in wallet")
         self._keys[verkey_enc] = {
             "seed": seed,
             "secret": secret,
@@ -92,10 +92,10 @@ class BasicWallet(BaseWallet):
         Returns: a `KeyInfo` representing the keypair
 
         Raises:
-            WalletNotFoundException: if no keypair is associated with the verification key
+            WalletNotFoundError: if no keypair is associated with the verification key
         """
         if verkey not in self._keys:
-            raise WalletNotFoundException("Key not found: {}".format(verkey))
+            raise WalletNotFoundError("Key not found: {}".format(verkey))
         key = self._keys[verkey]
         return KeyInfo(key["verkey"], key["metadata"].copy())
 
@@ -108,10 +108,10 @@ class BasicWallet(BaseWallet):
             metadata: The new metadata to store
 
         Raises:
-            WalletNotFoundException: if no keypair is associated with the verification key
+            WalletNotFoundError: if no keypair is associated with the verification key
         """
         if verkey not in self._keys:
-            raise WalletNotFoundException("Key not found: {}".format(verkey))
+            raise WalletNotFoundError("Key not found: {}".format(verkey))
         self._keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
     async def create_local_did(
@@ -125,7 +125,7 @@ class BasicWallet(BaseWallet):
         if not did:
             did = bytes_to_b58(verkey[:16])
         if did in self._local_dids:
-            raise WalletDuplicateException("DID already exists in wallet")
+            raise WalletDuplicateError("DID already exists in wallet")
         verkey_enc = bytes_to_b58(verkey)
         self._local_dids[did] = {
             "seed": seed,
@@ -154,7 +154,7 @@ class BasicWallet(BaseWallet):
         Find info for a local DID
         """
         if did not in self._local_dids:
-            raise WalletNotFoundException("DID not found: {}".format(did))
+            raise WalletNotFoundError("DID not found: {}".format(did))
         return self._get_did_info(did)
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
@@ -164,14 +164,14 @@ class BasicWallet(BaseWallet):
         for did, info in self._local_dids.items():
             if info["verkey"] == verkey:
                 return self._get_did_info(did)
-        raise WalletNotFoundException("Verkey not found: {}".format(verkey))
+        raise WalletNotFoundError("Verkey not found: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
         """
         Replace metadata for a local DID
         """
         if did not in self._local_dids:
-            raise WalletNotFoundException("Unknown DID: {}".format(did))
+            raise WalletNotFoundError("Unknown DID: {}".format(did))
         self._local_dids[did]["metadata"] = metadata.copy() if metadata else {}
 
     async def create_pairwise(
@@ -192,7 +192,7 @@ class BasicWallet(BaseWallet):
             )
 
         if their_did in self._pair_dids:
-            raise WalletDuplicateException(
+            raise WalletDuplicateError(
                 "Pairwise DID already present in wallet: {}".format(their_did)
             )
 
@@ -228,7 +228,7 @@ class BasicWallet(BaseWallet):
         Find info for a pairwise DID
         """
         if their_did not in self._pair_dids:
-            raise WalletNotFoundException("Unknown target DID: {}".format(their_did))
+            raise WalletNotFoundError("Unknown target DID: {}".format(their_did))
         return self._get_pairwise_info(their_did)
 
     async def get_pairwise_for_verkey(self, their_verkey: str) -> PairwiseInfo:
@@ -238,14 +238,14 @@ class BasicWallet(BaseWallet):
         for did, info in self._pair_dids.items():
             if info["their_verkey"] == their_verkey:
                 return self._get_pairwise_info(did)
-        raise WalletNotFoundException("Verkey not found: {}".format(their_verkey))
+        raise WalletNotFoundError("Verkey not found: {}".format(their_verkey))
 
     async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
         """
         Replace metadata for a pairwise DID
         """
         if their_did not in self._pair_dids:
-            raise WalletNotFoundException("Unknown target DID: {}".format(their_did))
+            raise WalletNotFoundError("Unknown target DID: {}".format(their_did))
         self._pair_dids[their_did]["metadata"] = metadata.copy() if metadata else {}
 
     def _get_private_key(self, verkey: str, long=False) -> bytes:
@@ -258,16 +258,16 @@ class BasicWallet(BaseWallet):
             if info["verkey"] == verkey:
                 return info["secret"] if long else info["seed"]
 
-        raise WalletException("Private key not found for verkey: {}".format(verkey))
+        raise WalletError("Private key not found for verkey: {}".format(verkey))
 
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
         """
         Sign a message using the private key associated with a given verkey
         """
         if not message:
-            raise WalletException("Message not provided")
+            raise WalletError("Message not provided")
         if not from_verkey:
-            raise WalletException("Verkey not provided")
+            raise WalletError("Verkey not provided")
         secret = self._get_private_key(from_verkey, True)
         signature = sign_message(message, secret)
         return signature
@@ -279,11 +279,11 @@ class BasicWallet(BaseWallet):
         Verify a signature against the public key of the signer
         """
         if not from_verkey:
-            raise WalletException("Verkey not provided")
+            raise WalletError("Verkey not provided")
         if not signature:
-            raise WalletException("Signature not provided")
+            raise WalletError("Signature not provided")
         if not message:
-            raise WalletException("Message not provided")
+            raise WalletError("Message not provided")
         verkey_bytes = b58_to_bytes(from_verkey)
         verified = verify_signed_message(signature + message, verkey_bytes)
         return verified
@@ -349,11 +349,11 @@ class BasicWallet(BaseWallet):
         Unpack a message
         """
         if not enc_message:
-            raise WalletException("Message not provided")
+            raise WalletError("Message not provided")
         try:
             message, from_verkey, to_verkey = decode_pack_message(
                 enc_message, lambda k: self._get_private_key(k, True)
             )
         except ValueError as e:
-            raise WalletException("Message could not be unpacked: {}".format(str(e)))
+            raise WalletError("Message could not be unpacked: {}".format(str(e)))
         return message, from_verkey, to_verkey
