@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from indy_catalyst_agent.wallet.basic import BasicWallet
@@ -6,6 +8,8 @@ from indy_catalyst_agent.wallet.error import (
     WalletDuplicateException,
     WalletNotFoundException,
 )
+
+from indy_catalyst_agent.models.field_signature import FieldSignature
 
 
 @pytest.fixture()
@@ -257,3 +261,15 @@ class TestBasicWallet:
         )
         assert decrypted_msg == self.test_message_bytes
         assert sender_verkey == key_info.verkey
+
+    @pytest.mark.asyncio
+    async def test_signature_round_trip(self, wallet):
+        key_info = await wallet.create_signing_key()
+        msg = {"test": "signed field"}
+        timestamp = int(time.time())
+        sig = await FieldSignature.create(msg, key_info.verkey, wallet, timestamp)
+        verified = await sig.verify(wallet)
+        assert verified
+        msg_decode, ts_decode = sig.decode()
+        assert msg_decode == msg
+        assert ts_decode == timestamp
