@@ -1,4 +1,15 @@
 #!/usr/bin/env python
 
+import os
+
+ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", "").lower()
+if ENABLE_PTVSD and ENABLE_PTVSD not in ("false", "0"):
+    try:
+        import ptvsd
+        ptvsd.enable_attach()
+        print("ptvsd is running")
+    except ImportError as e:
+        print("ptvsd library was not found")
+
 from indy_catalyst_agent import main
 main()

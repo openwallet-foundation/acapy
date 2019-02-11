@@ -10,9 +10,11 @@ RUN apt-get update -y && \
 
 WORKDIR /usr/src/app
 
+ENV ENABLE_PTVSD 0
+
 ADD requirements.txt .
 
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt "ptvsd>=4.2<5.0"
 
 ADD indy_catalyst_agent ./indy_catalyst_agent
 ADD scripts ./scripts

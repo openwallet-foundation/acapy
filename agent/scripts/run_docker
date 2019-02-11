@@ -4,4 +4,10 @@ cd $(dirname $0)
 
 docker build -t indy-cat-run -f ../docker/Dockerfile.run .. || exit 1
 
-docker run --rm -ti --name indy-cat-runner -p 10000-10050:10000-10050 indy-cat-run $@
+PORTS="-p 10000-10050:10000-10050"
+
+if [ ! -z "${ENABLE_PTVSD}" ]; then
+	PORTS="${PORTS} -p 5678:5678 -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\""
+fi
+
+docker run --rm -ti --name indy-cat-runner $PORTS indy-cat-run $@
