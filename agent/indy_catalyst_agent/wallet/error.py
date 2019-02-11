@@ -2,19 +2,21 @@
 Wallet-related exceptions
 """
 
-class WalletException(Exception):
+from ..error import BaseError
+
+class WalletError(BaseError):
     """
     General wallet exception
     """
     pass
 
-class WalletNotFoundException(WalletException):
+class WalletNotFoundError(WalletError):
     """
     Record not found exception
     """
     pass
 
-class WalletDuplicateException(WalletException):
+class WalletDuplicateError(WalletError):
     """
     Duplicate record exception
     """

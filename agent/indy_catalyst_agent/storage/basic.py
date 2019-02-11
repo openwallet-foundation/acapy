@@ -6,7 +6,7 @@ from collections import OrderedDict
 from typing import Mapping, Sequence
 
 from .base import BaseStorage, BaseStorageRecordSearch
-from .error import StorageException, StorageNotFoundException, StorageSearchException
+from .error import StorageError, StorageNotFoundError, StorageSearchError
 from .record import StorageRecord
 
 
@@ -19,9 +19,9 @@ class BasicStorage(BaseStorage):
         Add a new record to the store
         """
         if not record:
-            raise StorageException("No record provided")
+            raise StorageError("No record provided")
         if not record.id:
-            raise StorageException("Record has no ID")
+            raise StorageError("Record has no ID")
         self._records[record.id] = record
 
     async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
@@ -32,7 +32,7 @@ class BasicStorage(BaseStorage):
         if row and row.type == record_type:
             return row
         if not row:
-            raise StorageNotFoundException("Record not found: {}".format(record_id))
+            raise StorageNotFoundError("Record not found: {}".format(record_id))
 
     async def update_record_value(self, record: StorageRecord, value: str):
         """
@@ -40,7 +40,7 @@ class BasicStorage(BaseStorage):
         """
         oldrec = self._records.get(record.id)
         if not oldrec:
-            raise StorageNotFoundException("Record not found: {}".format(record.id))
+            raise StorageNotFoundError("Record not found: {}".format(record.id))
         self._records[record.id] = oldrec._replace(value=value)
 
     async def update_record_tags(self, record: StorageRecord, tags: Mapping):
@@ -49,7 +49,7 @@ class BasicStorage(BaseStorage):
         """
         oldrec = self._records.get(record.id)
         if not oldrec:
-            raise StorageNotFoundException("Record not found: {}".format(record.id))
+            raise StorageNotFoundError("Record not found: {}".format(record.id))
         self._records[record.id] = oldrec._replace(tags=dict(tags or {}))
 
     async def delete_record_tags(self, record: StorageRecord, tags: (Sequence, Mapping)):
@@ -58,7 +58,7 @@ class BasicStorage(BaseStorage):
         """
         oldrec = self._records.get(record.id)
         if not oldrec:
-            raise StorageNotFoundException("Record not found: {}".format(record.id))
+            raise StorageNotFoundError("Record not found: {}".format(record.id))
         newtags = dict(oldrec.tags or {})
         if tags:
             for tag in tags:
@@ -68,7 +68,7 @@ class BasicStorage(BaseStorage):
 
     async def delete_record(self, record: StorageRecord):
         if record.id not in self._records:
-            raise StorageNotFoundException("Record not found: {}".format(record.id))
+            raise StorageNotFoundError("Record not found: {}".format(record.id))
         del self._records[record.id]
 
     def search_records(self, type_filter: str, tag_query: Mapping = None, page_size: int = None) \
@@ -97,7 +97,7 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
         TODO: implement tag filtering
         """
         if not self.opened:
-            raise StorageSearchException("Search query has not been opened")
+            raise StorageSearchError("Search query has not been opened")
         ret = []
         check_type = self.type_filter
         i = max_count

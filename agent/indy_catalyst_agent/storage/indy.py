@@ -9,18 +9,18 @@ from indy import non_secrets
 from indy.error import IndyError, ErrorCode
 
 from .base import BaseStorage, BaseStorageRecordSearch
-from .error import StorageException, StorageNotFoundException, StorageSearchException
+from .error import StorageError, StorageNotFoundError, StorageSearchError
 from .record import StorageRecord
 from ..wallet.indy import IndyWallet
 
 
 def _validate_record(record: StorageRecord):
         if not record:
-            raise StorageException("No record provided")
+            raise StorageError("No record provided")
         if not record.id:
-            raise StorageException("Record has no ID")
+            raise StorageError("Record has no ID")
         if not record.type:
-            raise StorageException("Record has no type")
+            raise StorageError("Record has no type")
 
 
 class IndyStorage(BaseStorage):
@@ -56,9 +56,9 @@ class IndyStorage(BaseStorage):
         Fetch a record from the store by type and ID
         """
         if not record_type:
-            raise StorageException("Record type not provided")
+            raise StorageError("Record type not provided")
         if not record_id:
-            raise StorageException("Record ID not provided")
+            raise StorageError("Record ID not provided")
         options_json = json.dumps({
             "retrieveType": True,
             "retrieveValue": True,
@@ -72,8 +72,8 @@ class IndyStorage(BaseStorage):
                 options_json)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundException("Record not found: {}".format(record_id))
-            raise StorageException(str(x_indy))
+                raise StorageNotFoundError("Record not found: {}".format(record_id))
+            raise StorageError(str(x_indy))
         result = json.loads(result_json)
         return StorageRecord(
             type=result["type"],
@@ -95,8 +95,8 @@ class IndyStorage(BaseStorage):
                 value)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundException("Record not found: {}".format(record.id))
-            raise StorageException(str(x_indy))
+                raise StorageNotFoundError("Record not found: {}".format(record.id))
+            raise StorageError(str(x_indy))
 
     async def update_record_tags(self, record: StorageRecord, tags: Mapping):
         """
@@ -112,8 +112,8 @@ class IndyStorage(BaseStorage):
                 tags_json)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundException("Record not found: {}".format(record.id))
-            raise StorageException(str(x_indy))
+                raise StorageNotFoundError("Record not found: {}".format(record.id))
+            raise StorageError(str(x_indy))
 
     async def delete_record_tags(self, record: StorageRecord, tags: (Sequence, Mapping)):
         """
@@ -140,8 +140,8 @@ class IndyStorage(BaseStorage):
                 record.id)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundException("Record not found: {}".format(record.id))
-            raise StorageException(str(x_indy))
+                raise StorageNotFoundError("Record not found: {}".format(record.id))
+            raise StorageError(str(x_indy))
 
     def search_records(self, type_filter: str, tag_query: Mapping = None, page_size: int = None) \
             -> 'BasicStorageRecordSearch':
@@ -174,7 +174,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         Fetch the next list of results from the store
         """
         if not self.opened:
-            raise StorageSearchException("Search query has not been opened")
+            raise StorageSearchError("Search query has not been opened")
         result_json = await non_secrets.fetch_wallet_search_next_records(
             self.store.wallet.handle,
             self._handle,

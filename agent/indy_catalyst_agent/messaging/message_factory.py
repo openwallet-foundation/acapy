@@ -1,3 +1,9 @@
+"""
+Handle identification of message types
+"""
+
+from ..error import BaseError
+
 from .message_types import MessageTypes
 
 from .connections.messages.connection_invitation import ConnectionInvitation
@@ -14,7 +20,7 @@ from .proofs.messages.proof import Proof
 from .routing.messages.forward import Forward
 
 
-class MessageParseError(Exception):
+class MessageParseError(BaseError):
     pass
 
 

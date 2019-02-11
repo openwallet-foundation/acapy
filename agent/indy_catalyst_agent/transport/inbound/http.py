@@ -6,9 +6,10 @@ from typing import Callable
 from aiohttp import web
 
 from .base import BaseInboundTransport
+from ...error import BaseError
 
 
-class HttpSetupError(Exception):
+class HttpSetupError(BaseError):
     pass
 
 

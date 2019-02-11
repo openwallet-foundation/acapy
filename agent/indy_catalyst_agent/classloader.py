@@ -4,12 +4,13 @@ import logging
 
 from importlib import import_module
 
+from .error import BaseError
 
-class ModuleLoadError(Exception):
+class ModuleLoadError(BaseError):
     pass
 
 
-class ClassNotFoundError(Exception):
+class ClassNotFoundError(BaseError):
     pass
 
 

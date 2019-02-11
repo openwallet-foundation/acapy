@@ -4,9 +4,9 @@ import pytest
 
 from indy_catalyst_agent.wallet.basic import BasicWallet
 from indy_catalyst_agent.wallet.error import (
-    WalletException,
-    WalletDuplicateException,
-    WalletNotFoundException,
+    WalletError,
+    WalletDuplicateError,
+    WalletNotFoundError,
 )
 
 from indy_catalyst_agent.models.field_signature import FieldSignature
@@ -45,9 +45,9 @@ class TestBasicWallet:
         info = await wallet.create_signing_key(self.test_seed)
         assert info.verkey == self.test_verkey
 
-        with pytest.raises(WalletDuplicateException):
+        with pytest.raises(WalletDuplicateError):
             await wallet.create_signing_key(self.test_seed)
-        with pytest.raises(WalletException):
+        with pytest.raises(WalletError):
             await wallet.create_signing_key("invalid-seed", None)
 
     @pytest.mark.asyncio
@@ -62,7 +62,7 @@ class TestBasicWallet:
         info3 = await wallet.get_signing_key(self.test_verkey)
         assert info3.metadata == self.test_update_metadata
 
-        with pytest.raises(WalletNotFoundException):
+        with pytest.raises(WalletNotFoundError):
             await wallet.replace_signing_key_metadata(
                 self.missing_verkey, self.test_update_metadata
             )
@@ -78,9 +78,9 @@ class TestBasicWallet:
         assert info.did == self.test_did
         assert info.verkey == self.test_verkey
 
-        with pytest.raises(WalletDuplicateException):
+        with pytest.raises(WalletDuplicateError):
             await wallet.create_local_did(self.test_seed, None)
-        with pytest.raises(WalletException):
+        with pytest.raises(WalletError):
             _info = await wallet.create_local_did("invalid-seed", None)
 
     @pytest.mark.asyncio
@@ -88,7 +88,7 @@ class TestBasicWallet:
         info = await wallet.create_local_did(None, self.test_did)
         assert info.did == self.test_did
 
-        with pytest.raises(WalletDuplicateException):
+        with pytest.raises(WalletDuplicateError):
             await wallet.create_local_did(None, self.test_did)
 
     @pytest.mark.asyncio
@@ -105,9 +105,9 @@ class TestBasicWallet:
         assert info3.did == self.test_did
         assert info3.verkey == self.test_verkey
 
-        with pytest.raises(WalletNotFoundException):
+        with pytest.raises(WalletNotFoundError):
             _info = await wallet.get_local_did(self.missing_did)
-        with pytest.raises(WalletNotFoundException):
+        with pytest.raises(WalletNotFoundError):
             _info = await wallet.get_local_did_for_verkey(self.missing_verkey)
 
     @pytest.mark.asyncio
@@ -124,7 +124,7 @@ class TestBasicWallet:
         info3 = await wallet.get_local_did(self.test_did)
         assert info3.metadata == self.test_update_metadata
 
-        with pytest.raises(WalletNotFoundException):
+        with pytest.raises(WalletNotFoundError):
             await wallet.replace_local_did_metadata(
                 self.missing_did, self.test_update_metadata
             )
@@ -155,11 +155,11 @@ class TestBasicWallet:
                 found = True
         assert found
 
-        with pytest.raises(WalletDuplicateException):
+        with pytest.raises(WalletDuplicateError):
             await wallet.create_pairwise(
                 self.test_target_did, self.test_target_verkey, None, self.test_metadata
             )
-        with pytest.raises(WalletNotFoundException):
+        with pytest.raises(WalletNotFoundError):
             await wallet.get_pairwise_for_did(self.missing_did)
 
     @pytest.mark.asyncio
@@ -175,7 +175,7 @@ class TestBasicWallet:
         pair_info = await wallet.get_pairwise_for_did(self.test_target_did)
         assert pair_info.metadata == self.test_update_metadata
 
-        with pytest.raises(WalletNotFoundException):
+        with pytest.raises(WalletNotFoundError):
             await wallet.replace_pairwise_metadata(
                 self.missing_did, self.test_update_metadata
             )

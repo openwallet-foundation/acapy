@@ -7,9 +7,10 @@ from typing import Callable
 from aiohttp import web, WSMsgType
 
 from .base import BaseInboundTransport
+from ...error import BaseError
 
 
-class WsSetupError(Exception):
+class WsSetupError(BaseError):
     pass
 
 

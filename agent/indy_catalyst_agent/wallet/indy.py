@@ -17,7 +17,7 @@ from .crypto import (
     random_seed, validate_seed,
 )
 from .error import (
-    WalletException, WalletDuplicateException, WalletNotFoundException,
+    WalletError, WalletDuplicateError, WalletNotFoundError,
 )
 from .util import bytes_to_b64
 
@@ -88,7 +88,7 @@ class IndyWallet(BaseWallet):
         if replace:
             try:
                 await self.remove()
-            except WalletNotFoundException:
+            except WalletNotFoundError:
                 pass
         try:
             await indy.wallet.create_wallet(
@@ -97,11 +97,11 @@ class IndyWallet(BaseWallet):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletAlreadyExistsError:
-                raise WalletException(
+                raise WalletError(
                     "Wallet was not removed by SDK, may still be open: {}".format(self.name)
-                ) from e
+                )
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
 
     async def remove(self):
         """
@@ -114,8 +114,8 @@ class IndyWallet(BaseWallet):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletNotFoundError:
-                raise WalletNotFoundException("Wallet not found: {}".format(self.name))
-            raise WalletException(str(x_indy))
+                raise WalletNotFoundError("Wallet not found: {}".format(self.name))
+            raise WalletError(str(x_indy))
 
     async def open(self):
         """
@@ -135,15 +135,15 @@ class IndyWallet(BaseWallet):
             except IndyError as x_indy:
                 if x_indy.error_code == ErrorCode.WalletNotFoundError:
                     if created:
-                        raise WalletException("Wallet not found after creation: {}".format(self.name))
+                        raise WalletError("Wallet not found after creation: {}".format(self.name))
                     if self._auto_create:
                         await self.create(self._auto_remove)
                     else:
                         raise WalletNotFoundError("Wallet not found: {}".format(self.name))
                 elif x_indy.error_code == ErrorCode.WalletAlreadyOpenedError:
-                    raise WalletException("Wallet is already open: {}".format(self.name))
+                    raise WalletError("Wallet is already open: {}".format(self.name))
                 else:
-                    raise WalletException(str(x_indy))
+                    raise WalletError(str(x_indy))
 
     async def close(self):
         """
@@ -165,7 +165,7 @@ class IndyWallet(BaseWallet):
         Returns: a `KeyInfo` representing the new record
 
         Raises:
-            WalletDuplicateException: If the resulting verkey already exists in the wallet
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
         """
         args = {}
         if seed:
@@ -174,9 +174,9 @@ class IndyWallet(BaseWallet):
             verkey = await indy.crypto.create_key(self.handle, json.dumps(args))
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
-                raise WalletDuplicateException("Verification key already present in wallet")
+                raise WalletDuplicateError("Verification key already present in wallet")
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
         # must save metadata to allow identity check
         # otherwise get_key_metadata just returns WalletItemNotFound
         if metadata is None:
@@ -194,15 +194,15 @@ class IndyWallet(BaseWallet):
         Returns: a `KeyInfo` representing the keypair
 
         Raises:
-            WalletNotFoundException: if no keypair is associated with the verification key
+            WalletNotFoundError: if no keypair is associated with the verification key
         """
         try:
             metadata = await indy.crypto.get_key_metadata(self.handle, verkey)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise WalletNotFoundException("Unknown key: {}".format(verkey))
+                raise WalletNotFoundError("Unknown key: {}".format(verkey))
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
         return KeyInfo(verkey, json.loads(metadata) if metadata else {})
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
@@ -214,7 +214,7 @@ class IndyWallet(BaseWallet):
             metadata: The new metadata to store
 
         Raises:
-            WalletNotFoundException: if no keypair is associated with the verification key
+            WalletNotFoundError: if no keypair is associated with the verification key
         """
         meta_json = json.dumps(metadata or {})
         await self.get_signing_key(verkey) # throw exception if key is undefined
@@ -239,9 +239,9 @@ class IndyWallet(BaseWallet):
             did, verkey = await indy.did.create_and_store_my_did(self.handle, did_json)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.DidAlreadyExistsError:
-                raise WalletDuplicateException("DID already present in wallet")
+                raise WalletDuplicateError("DID already present in wallet")
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
         if metadata:
             await self.replace_local_did_metadata(did, metadata)
         return DIDInfo(did, verkey, metadata)
@@ -271,9 +271,9 @@ class IndyWallet(BaseWallet):
             info_json = await indy.did.get_my_did_with_meta(self.handle, did)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise WalletNotFoundException("Unknown DID: {}".format(did))
+                raise WalletNotFoundError("Unknown DID: {}".format(did))
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
         info = json.loads(info_json)
         return DIDInfo(
             did=info["did"],
@@ -289,7 +289,7 @@ class IndyWallet(BaseWallet):
         for info in dids:
             if info.verkey == verkey:
                 return info
-        raise WalletNotFoundException("No DID defined for verkey: {}".format(verkey))
+        raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
         """
@@ -318,7 +318,7 @@ class IndyWallet(BaseWallet):
                 # their DID already stored, but real test is creating pairwise
                 pass
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
 
         # create a new local DID for this pairwise connection
         if my_did:
@@ -342,10 +342,10 @@ class IndyWallet(BaseWallet):
                 meta_json)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
-                raise WalletDuplicateException(
+                raise WalletDuplicateError(
                     "Pairwise DID already present in wallet: {}".format(their_did))
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
 
         return PairwiseInfo(
             their_did=their_did,
@@ -393,14 +393,14 @@ class IndyWallet(BaseWallet):
             pair_json = await indy.pairwise.get_pairwise(self.handle, their_did)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise WalletNotFoundException(
+                raise WalletNotFoundError(
                     "No pairwise DID defined for target: {}".format(their_did))
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
         pair = json.loads(pair_json)
         info = self._make_pairwise_info(pair, their_did)
         if not info:
-            raise WalletNotFoundException(
+            raise WalletNotFoundError(
                 "No pairwise DID defined for target: {}".format(their_did))
         return info
 
@@ -412,7 +412,7 @@ class IndyWallet(BaseWallet):
         for info in dids:
             if info.their_verkey == their_verkey:
                 return info
-        raise WalletNotFoundException(
+        raise WalletNotFoundError(
             "No pairwise DID defined for verkey: {}".format(their_verkey))
 
     async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
@@ -430,9 +430,9 @@ class IndyWallet(BaseWallet):
         Sign a message using the private key associated with a given verkey
         """
         if not message:
-            raise WalletException("Message not provided")
+            raise WalletError("Message not provided")
         if not from_verkey:
-            raise WalletException("Verkey not provided")
+            raise WalletError("Verkey not provided")
         result = await indy.crypto.crypto_sign(self.handle, from_verkey, message)
         return result
 
@@ -441,18 +441,18 @@ class IndyWallet(BaseWallet):
         Verify a signature against the public key of the signer
         """
         if not from_verkey:
-            raise WalletException("Verkey not provided")
+            raise WalletError("Verkey not provided")
         if not signature:
-            raise WalletException("Signature not provided")
+            raise WalletError("Signature not provided")
         if not message:
-            raise WalletException("Message not provided")
+            raise WalletError("Message not provided")
         try:
             result = await indy.crypto.crypto_verify(from_verkey, message, signature)
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.CommonInvalidStructure:
                 result = False
             else:
-                raise WalletException(str(x_indy))
+                raise WalletError(str(x_indy))
         return result
 
     async def encrypt_message(
@@ -517,7 +517,7 @@ class IndyWallet(BaseWallet):
         Pack a message for one or more recipients
         """
         if message is None:
-            raise WalletException("Message not provided")
+            raise WalletError("Message not provided")
         result = await indy.crypto.pack_message(
             self.handle,
             message,
@@ -530,7 +530,7 @@ class IndyWallet(BaseWallet):
         Unpack a message
         """
         if not enc_message:
-            raise WalletException("Message not provided")
+            raise WalletError("Message not provided")
         unpacked_json = await indy.crypto.unpack_message(
             self.handle,
             enc_message)
