@@ -5,7 +5,7 @@ from unittest import mock, TestCase
 
 
 class TestConnectionInvitation(TestCase):
-    label = "label"
+    label = "Label"
     did = "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
     endpoint_url = "https://example.com/endpoint"
     endpoint_did = "did:sov:A2wBhNYhMrjHiqZDTUYH7u"
@@ -16,23 +16,20 @@ class TestConnectionInvitation(TestCase):
         connection_invitation = ConnectionInvitation(
             label=self.label,
             did=self.did,
-            key=self.key,
+            recipient_keys=[self.key],
             endpoint=self.endpoint_url,
-            image_url=self.image_url,
         )
         assert connection_invitation.label == self.label
         assert connection_invitation.did == self.did
-        assert connection_invitation.key == self.key
+        assert connection_invitation.recipient_keys == [self.key]
         assert connection_invitation.endpoint == self.endpoint_url
-        assert connection_invitation.image_url == self.image_url
 
     def test_type(self):
         connection_invitation = ConnectionInvitation(
             label=self.label,
             did=self.did,
-            key=self.key,
+            recipient_keys=[self.key],
             endpoint=self.endpoint_url,
-            image_url=self.image_url,
         )
 
         assert connection_invitation._type == MessageTypes.CONNECTION_INVITATION.value
@@ -57,9 +54,8 @@ class TestConnectionInvitation(TestCase):
         connection_invitation = ConnectionInvitation(
             label=self.label,
             did=self.did,
-            key=self.key,
+            recipient_keys=[self.key],
             endpoint=self.endpoint_url,
-            image_url=self.image_url,
         )
 
         connection_invitation_dict = connection_invitation.serialize()

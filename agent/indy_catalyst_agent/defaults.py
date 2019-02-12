@@ -1,16 +1,9 @@
 from .messaging.message_factory import MessageFactory
 from .messaging.message_types import MessageTypes
 
-# TODO move message registration to the module level
+from .messaging.connections import MESSAGE_TYPES as CONNECTION_MESSAGES
 
-CONNECTION_MESSAGES = {
-    MessageTypes.CONNECTION_INVITATION.value:
-        'indy_catalyst_agent.messaging.connections.messages.connection_invitation.ConnectionInvitation',
-    MessageTypes.CONNECTION_REQUEST.value:
-        'indy_catalyst_agent.messaging.connections.messages.connection_request.ConnectionRequest',
-    MessageTypes.CONNECTION_RESPONSE.value:
-        'indy_catalyst_agent.messaging.connections.messages.connection_response.ConnectionResponse',
-}
+# TODO move message registration to the module level
 
 CREDENTIAL_MESSAGES = {
     MessageTypes.CREDENTIAL.value:
