@@ -14,6 +14,7 @@ from .version import __version__
 parser = argparse.ArgumentParser(description="Runs an Indy Agent.")
 
 parser.add_argument(
+    "-it",
     "--inbound-transport",
     dest="inbound_transports",
     type=str,
@@ -25,6 +26,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-ot",
     "--outbound-transport",
     dest="outbound_transports",
     type=str,
@@ -52,15 +54,51 @@ parser.add_argument(
     help="Specifies a custom logging level (debug, info, warning, error, critical)",
 )
 
+parser.add_argument(
+    "--endpoint",
+    type=str,
+    metavar="<endpoint>",
+    help="Specify the default endpoint to use when creating connection invitations and requests",
+)
 
-async def start(inbound_transport_configs, outbound_transports):
+parser.add_argument(
+    "--name",
+    type=str,
+    metavar="<name>",
+    help="Specify the default label to use when creating connection invitations and requests",
+)
+
+parser.add_argument(
+    "--wallet-key",
+    type=str,
+    metavar="<wallet-key>",
+    help="Specify the master key value to use when opening the wallet",
+)
+
+parser.add_argument(
+    "--wallet-name",
+    type=str,
+    metavar="<wallet-name>",
+    help="Specify the wallet name",
+)
+
+parser.add_argument(
+    "--wallet-type",
+    type=str,
+    metavar="<wallet-type>",
+    help="Specify the wallet implementation to use",
+)
+
+
+async def start(inbound_transport_configs, outbound_transports, settings: dict):
     factory = default_message_factory()
-    conductor = Conductor(inbound_transport_configs, outbound_transports, factory)
+    conductor = Conductor(inbound_transport_configs, outbound_transports, factory, settings)
     await conductor.start()
 
 
 def main():
     args = parser.parse_args()
+    settings = {}
 
     inbound_transport_configs = []
 
@@ -79,9 +117,23 @@ def main():
     log_level = args.log_level or os.getenv("LOG_LEVEL")
     LoggingConfigurator.configure(logging_config, log_level)
 
+    if args.endpoint:
+        settings["endpoint"] = args.endpoint
+    if args.name:
+        settings["name"] = args.name
+
+    if args.wallet_key:
+        settings["wallet.key"] = args.wallet_key
+    if args.wallet_name:
+        settings["wallet.name"] = args.wallet_name
+    if args.wallet_type:
+        settings["wallet.type"] = args.wallet_type
+
     loop = asyncio.get_event_loop()
     try:
-        loop.run_until_complete(start(inbound_transport_configs, outbound_transports))
+        asyncio.ensure_future(
+            start(inbound_transport_configs, outbound_transports, settings),
+            loop=loop)
         loop.run_forever()
     except KeyboardInterrupt:
         print("\nShutting down")

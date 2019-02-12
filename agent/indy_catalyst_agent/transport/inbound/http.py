@@ -50,7 +50,7 @@ class Transport(BaseInboundTransport):
             )
 
         try:
-            await self.message_router(body)
+            await self.message_router(body, self._scheme)
         except Exception as e:
             error_message = f"Error handling message: {str(e)}"
             self.logger.error(error_message)

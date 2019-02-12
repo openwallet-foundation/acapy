@@ -45,6 +45,9 @@ class Transport(BaseInboundTransport):
         ws = web.WebSocketResponse()
         await ws.prepare(request)
 
+        async def reply(result):
+            await ws.send_json({"success": True, "message": result})
+
         # Listen for incoming messages
         async for msg in ws:
             self.logger.info(f"Received message: {msg.data}")
@@ -62,9 +65,9 @@ class Transport(BaseInboundTransport):
 
                     try:
                         # Route message and provide connection instance as means to respond
-                        result = await self.message_router(message_dict)
-                        await ws.send_json({"success": True, "message": result})
-
+                        result = await self.message_router(message_dict, self._scheme, reply)
+                        if result:
+                            await reply(result)
                     except Exception as e:
                         error_message = f"Error handling message: {str(e)}"
                         self.logger.error(error_message)

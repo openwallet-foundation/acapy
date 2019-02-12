@@ -72,7 +72,7 @@ class BaseModel(ABC):
         schema = self.Schema()
         return schema.dumps(self) if as_string else schema.dump(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
         return "<{}({})>".format(self.__class__.__name__, ', '.join(items))
 

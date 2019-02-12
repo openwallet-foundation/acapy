@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
 
-from .agent_message import AgentMessage
+from .responder import BaseResponder
+from .request_context import RequestContext
 
 
 class BaseHandler(ABC):
     @abstractmethod
-    def __init__(self, message: AgentMessage) -> None:
+    def __init__(self) -> None:
         pass
 
     @abstractmethod
-    def handle(self) -> None:
+    async def handle(self, context: RequestContext, responder: BaseResponder):
         pass

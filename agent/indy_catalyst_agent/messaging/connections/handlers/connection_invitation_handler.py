@@ -1,18 +1,19 @@
 import logging
 
-from typing import Callable
-
 from ...base_handler import BaseHandler
+from ...request_context import RequestContext
+from ...responder import BaseResponder
 
 # from ..messages.connection_invitation import ConnectionInvitation
 
 
 class ConnectionInvitationHandler(BaseHandler):
-    def __init__(self, message: "ConnectionInvitation") -> None:
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
-        self.message = message
 
-    def handle(self, thread_state):
+    async def handle(self, context: RequestContext, responder: BaseResponder):
         self.logger.debug(
-            "ConnectionInvitationHandler called with thread_state " + f"{thread_state}"
+            f"ConnectionInvitationHandler called with context {context}"
         )
+        #await responder.send_reply(context.message)
+        #return context.message

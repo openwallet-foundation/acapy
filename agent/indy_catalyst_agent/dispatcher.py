@@ -4,52 +4,88 @@ hook callbacks storing state for message threads, etc.
 """
 
 import logging
+from typing import Coroutine
 
-from .storage.base import BaseStorage
+from .storage import BaseStorage
+from .wallet import BaseWallet
 from .messaging.agent_message import AgentMessage
+from .messaging.request_context import RequestContext
+from .messaging.responder import BaseResponder, ResponderError
 from .transport.outbound.message import OutboundMessage
 from .connection import Connection
 
 
+
 class Dispatcher:
-    def __init__(self, storage: BaseStorage):  # TODO: take in wallet impl as well
+
+    def __init__(self, common_context: RequestContext):
         self.logger = logging.getLogger(__name__)
-        self.storage = storage
+        self.common_context = common_context
 
-    async def dispatch(self, message: AgentMessage, send):
-        # TODO:
-        # Create an instance of some kind of "ThreadState" or "Context"
-        # using a thread id found in the message data. Messages do not
-        # yet have the notion of threading
-        context = {}
+    async def dispatch(
+            self,
+            message: AgentMessage,
+            send: Coroutine,
+            incoming_transport: str = None,
+            transport_reply: Coroutine = None,
+        ):
+        context = self.common_context.copy()
+        context.message = message
+        context.transport_type = incoming_transport
 
-        # Create "connection"
+        # pack/unpack, set context.sender_verkey, context.recipient_verkey accordingly
+        # could choose to set context.default_endpoint and context.default_label
+        # based on the recipient verkey used
 
-        # pack/unpack
+        # look up existing thread and connection information, if any
 
-        message.handler.handle(context)
+        # handle any other decorators having special behaviour (timing, trace, etc)
 
         # 1. get handler result
         # 1a. Possibly communicate with service backend for instructions
         # 2. based on some logic, build a response message
 
-        handler_response = message  # echo for now
+        responder = self.make_responder(send, transport_reply)
+        handler_cls = message.Handler
+        handler_response = await handler_cls().handle(context, responder)
 
-        # conn = Connection(endpoint="wss://0bc6628c.ngrok.io")
-        conn1 = Connection(endpoint="http://25566605.ngrok.io")
-        conn2 = Connection(endpoint="https://httpbin.org/status/400")
-
-        # Potentially multicast to multiple 
-        await send(handler_response, conn1)
-        await send(handler_response, conn2)
-
-
-        # We also return the result to the caller.
+        # We return the result to the caller.
         # This is for persistent connections waiting on that response.
         return handler_response
 
-        # await send(OutboundMessage(uri="https://httpbin.org/status/200", data=None))
-        # await send(OutboundMessage(uri="https://httpbin.org/status/200", data=None))
+    def make_responder(self, send: Coroutine, reply: Coroutine):
+        responder = DispatcherResponder(send, reply=reply)
+        #responder.add_target(Connection(endpoint="wss://0bc6628c.ngrok.io"))
+        #responder.add_target(Connection(endpoint="http://25566605.ngrok.io"))
+        responder.add_target(Connection(endpoint="https://httpbin.org/status/400"))
+        return responder
 
-        # await connection.send_message(handler_response)
 
+class DispatcherResponder(BaseResponder):
+    """
+    Handle outgoing messages from message handlers
+    """
+    def __init__(self, send: Coroutine, *targets, reply: Coroutine = None):
+        self._targets = list(targets)
+        self._send = send
+        self._reply = reply
+
+    def add_target(self, target: Connection):
+        self._targets.append(target)
+
+    async def send_reply(self, message: AgentMessage):
+        if self._reply:
+            # 'reply' is a temporary solution to support responses to websocket requests
+            # a better solution would likely use a queue to deliver the replies
+            await self._reply(message.serialize())
+        else:
+            if not self._targets:
+                raise ResponderError("No active connection")
+            for target in self._targets:
+                await self.send_outbound(target, message)
+
+    async def send_outbound(self, connection: Connection, message: AgentMessage):
+        await self._send(message, connection)
+
+    async def send_admin_message(self, message: AgentMessage):
+        pass
