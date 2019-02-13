@@ -14,7 +14,7 @@ class TestThreadDecorator(TestCase):
             thid=self.thread_id,
             pthid=self.parent_id,
             sender_order=self.sender_order,
-            received_orders=self.received_orders
+            received_orders=self.received_orders,
         )
         assert decorator.thid == self.thread_id
         assert decorator.pthid == self.parent_id
@@ -26,7 +26,7 @@ class TestThreadDecorator(TestCase):
             thid=self.thread_id,
             pthid=self.parent_id,
             sender_order=self.sender_order,
-            received_orders=self.received_orders
+            received_orders=self.received_orders,
         )
 
         dumped = decorator.serialize()

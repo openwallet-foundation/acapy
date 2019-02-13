@@ -11,7 +11,7 @@ from ...message_types import MessageTypes
 class CredentialOffer(AgentMessage):
     class Meta:
         # handler_class = CredentialOfferHandler
-        schema_class = 'CredentialOfferSchema'
+        schema_class = "CredentialOfferSchema"
         message_type = MessageTypes.CREDENTIAL_OFFER.value
 
     def __init__(self, *, offer_json: str = None, **kwargs):

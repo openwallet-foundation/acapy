@@ -17,16 +17,15 @@ from .models.connection_target import ConnectionTarget
 
 
 class Dispatcher:
-
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
     async def dispatch(
-            self,
-            context: RequestContext,
-            send: Coroutine,
-            transport_reply: Coroutine = None,
-        ):
+        self,
+        context: RequestContext,
+        send: Coroutine,
+        transport_reply: Coroutine = None,
+    ):
 
         # 1. get handler result
         # 1a. Possibly communicate with service backend for instructions
@@ -42,9 +41,11 @@ class Dispatcher:
 
     def make_responder(self, send: Coroutine, wallet: BaseWallet, reply: Coroutine):
         responder = DispatcherResponder(send, wallet, reply=reply)
-        #responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
-        #responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
-        responder.add_target(ConnectionTarget(endpoint="https://httpbin.org/status/400"))
+        # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
+        # responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
+        responder.add_target(
+            ConnectionTarget(endpoint="https://httpbin.org/status/400")
+        )
         return responder
 
 
@@ -52,7 +53,10 @@ class DispatcherResponder(BaseResponder):
     """
     Handle outgoing messages from message handlers
     """
-    def __init__(self, send: Coroutine, wallet: BaseWallet, *targets, reply: Coroutine = None):
+
+    def __init__(
+        self, send: Coroutine, wallet: BaseWallet, *targets, reply: Coroutine = None
+    ):
         self._targets = list(targets)
         self._send = send
         self._reply = reply

@@ -39,7 +39,9 @@ class ConnectionManager:
         """
         return self._context
 
-    async def create_invitation(self, label: str, my_endpoint: str, seed: str = None, metadata: dict = None) -> ConnectionInvitation:
+    async def create_invitation(
+        self, label: str, my_endpoint: str, seed: str = None, metadata: dict = None
+    ) -> ConnectionInvitation:
         """
         Generate new connection invitation.
         This interaction represents an out-of-band communication channel. In the future and in
@@ -65,17 +67,16 @@ class ConnectionManager:
 
         # Create and store new connection key
         connection_key = await self.context.wallet.create_signing_key(
-            seed=seed, metadata=metadata)
-            # may want to store additional metadata on the key (creation date etc.)
+            seed=seed, metadata=metadata
+        )
+        # may want to store additional metadata on the key (creation date etc.)
 
         # Create connection invitation message
         invitation = ConnectionInvitation(
-            label=label,
-            recipient_keys=[connection_key.verkey],
-            endpoint=my_endpoint,
+            label=label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint
         )
         return invitation
-    
+
     async def send_invitation(self, invitation: ConnectionInvitation, endpoint: str):
         """
         Deliver an invitation to an HTTP endpoint
@@ -87,10 +88,8 @@ class ConnectionManager:
             await session.get(endpoint, params={"c_i": invite_b64})
 
     async def store_invitation(
-            self,
-            invitation: ConnectionInvitation,
-            received: bool,
-            tags: dict = None) -> str:
+        self, invitation: ConnectionInvitation, received: bool, tags: dict = None
+    ) -> str:
         """
         Save an invitation for acceptance/rejection and later processing
         """
@@ -105,18 +104,27 @@ class ConnectionManager:
                 invitation_id,
             )
         )
-        self._logger.debug("Stored %s invitation: %s", "incoming" if received else "outgoing", invitation_id)
+        self._logger.debug(
+            "Stored %s invitation: %s",
+            "incoming" if received else "outgoing",
+            invitation_id,
+        )
         return invitation_id
 
-    async def find_invitation(self, invitation_id: str, received: bool) -> (ConnectionInvitation, dict):
+    async def find_invitation(
+        self, invitation_id: str, received: bool
+    ) -> (ConnectionInvitation, dict):
         """
         Locate a previously-received invitation
         """
-        self._logger.debug("Looking up %s invitation: %s", "incoming" if received else "outgoing", invitation_id)
+        self._logger.debug(
+            "Looking up %s invitation: %s",
+            "incoming" if received else "outgoing",
+            invitation_id,
+        )
         # raises exception if not found
         result = await self.context.storage.get_record(
-            "received_invitation" if received else "sent_invitation",
-            invitation_id,
+            "received_invitation" if received else "sent_invitation", invitation_id
         )
         invitation = ConnectionInvitation.deserialize(result.value)
         return invitation, result.tags
@@ -126,16 +134,14 @@ class ConnectionManager:
         Remove a previously-stored invitation
         """
         # raises exception if not found
-        await self.context.storage.delete_record(
-            "invitation",
-            invitation_id,
-        )
+        await self.context.storage.delete_record("invitation", invitation_id)
 
     async def accept_invitation(
-            self,
-            invitation: ConnectionInvitation,
-            my_label: str = None,
-            my_endpoint: str = None) -> (ConnectionRequest, ConnectionTarget):
+        self,
+        invitation: ConnectionInvitation,
+        my_label: str = None,
+        my_endpoint: str = None,
+    ) -> (ConnectionRequest, ConnectionTarget):
         """
         Create a new connection request for a previously-received invitation
         """
@@ -146,10 +152,7 @@ class ConnectionManager:
 
         # Create my information for connection
         my_info = await self.context.wallet.create_local_did(
-            None, None, {
-                "their_label": their_label,
-                "their_endpoint": their_endpoint,
-            }
+            None, None, {"their_label": their_label, "their_endpoint": their_endpoint}
         )
         if not my_label:
             my_label = self.context.default_label
@@ -159,7 +162,9 @@ class ConnectionManager:
         did_doc = DIDDoc(did=my_info.did)
         controller = my_info.did
         value = my_info.verkey
-        pk = PublicKey(my_info.did, "1", PublicKeyType.ED25519_SIG_2018, controller, value, False)
+        pk = PublicKey(
+            my_info.did, "1", PublicKeyType.ED25519_SIG_2018, controller, value, False
+        )
         did_doc.verkeys.append(pk)
         service = Service(my_info.did, "indy", "IndyAgent", my_endpoint)
         did_doc.services.append(service)
@@ -173,10 +178,7 @@ class ConnectionManager:
         # Store message so that response can be processed
         await self.context.storage.add_record(
             StorageRecord(
-                "connection_request",
-                json.dumps(request.serialize()),
-                {},
-                request._id,
+                "connection_request", json.dumps(request.serialize()), {}, request._id
             )
         )
 
@@ -193,10 +195,7 @@ class ConnectionManager:
         Locate a previously saved connection request
         """
         # raises exception if not found
-        result = await self.context.storage.get_record(
-            "connection_request",
-            request_id,
-        )
+        result = await self.context.storage.get_record("connection_request", request_id)
         request = ConnectionRequest.deserialize(result.value)
         return request
 
@@ -205,15 +204,11 @@ class ConnectionManager:
         Remove a previously-stored connection request
         """
         # raises exception if not found
-        await self.context.storage.delete_record(
-            "connection_request",
-            request_id,
-        )
+        await self.context.storage.delete_record("connection_request", request_id)
 
     async def accept_request(
-            self,
-            request: ConnectionRequest,
-            my_endpoint: str = None) -> (ConnectionResponse, ConnectionTarget):
+        self, request: ConnectionRequest, my_endpoint: str = None
+    ) -> (ConnectionResponse, ConnectionTarget):
         """
         Create a connection response for a received connection request
         """
@@ -222,10 +217,12 @@ class ConnectionManager:
         if not self.context.recipient_did_public:
             connection_key = self.context.recipient_verkey
             try:
-                invitation, _inv_tags = await self.find_invitation(connection_key, False)
+                invitation, _inv_tags = await self.find_invitation(
+                    connection_key, False
+                )
             except StorageNotFoundError:
-                #temporarily disabled
-                #raise ConnectionError("No invitation found for pairwise connection")
+                # temporarily disabled
+                # raise ConnectionError("No invitation found for pairwise connection")
                 pass
         self._logger.debug(f"Found invitation: {invitation}")
         if not my_endpoint:
@@ -234,7 +231,9 @@ class ConnectionManager:
         their_label = request.label
         their_did = request.connection.did
         conn_did_doc = request.connection.did_doc
-        their_verkey = conn_did_doc.verkeys[0].value # may be different from self.context.sender_verkey
+        their_verkey = conn_did_doc.verkeys[
+            0
+        ].value  # may be different from self.context.sender_verkey
         their_endpoint = conn_did_doc.services[0].endpoint
 
         # Create a new pairwise record with a newly-generated local DID
@@ -246,27 +245,27 @@ class ConnectionManager:
                 "label": their_label,
                 "endpoint": their_endpoint,
                 # TODO: store established & last active dates
-            }
+            },
         )
 
         my_did = pairwise.my_did
         did_doc = DIDDoc(did=my_did)
         controller = my_did
         value = pairwise.my_verkey
-        pk = PublicKey(my_did, "1", PublicKeyType.ED25519_SIG_2018, controller, value, False)
+        pk = PublicKey(
+            my_did, "1", PublicKeyType.ED25519_SIG_2018, controller, value, False
+        )
         did_doc.verkeys.append(pk)
         service = Service(my_did, "indy", "IndyAgent", my_endpoint)
         did_doc.services.append(service)
 
         response = ConnectionResponse(
-            connection=ConnectionDetail(did=my_did, did_doc=did_doc),
+            connection=ConnectionDetail(did=my_did, did_doc=did_doc)
         )
         if request._id:
             response._thread = ThreadDecorator(thid=request._id)
         await response.sign_field(
-            "connection",
-            self.context.recipient_verkey,
-            self.context.wallet
+            "connection", self.context.recipient_verkey, self.context.wallet
         )
         self._logger.debug(f"Created connection response for {their_did}")
 
@@ -319,7 +318,7 @@ class ConnectionManager:
                 "label": their_label,
                 "endpoint": their_endpoint,
                 # TODO: store established & last active dates
-            }
+            },
         )
         self._logger.debug(f"Accepted connection response from {their_did}")
 

@@ -7,19 +7,21 @@ from . import BaseModel, BaseModelSchema
 
 class ThreadDecorator(BaseModel):
     class Meta:
-        schema_class = 'ThreadDecoratorSchema'
+        schema_class = "ThreadDecoratorSchema"
 
-    def __init__(self, *,
-	             thid: str = None,
-	             pthid: str = None,
-	             sender_order: int = None,
-	             received_orders: Mapping = None,
-        ):
-	    super(ThreadDecorator, self).__init__()
-	    self._thid = thid
-	    self._pthid = pthid
-	    self._sender_order = sender_order or 0
-	    self._received_orders = received_orders and dict(received_orders) or {}
+    def __init__(
+        self,
+        *,
+        thid: str = None,
+        pthid: str = None,
+        sender_order: int = None,
+        received_orders: Mapping = None,
+    ):
+        super(ThreadDecorator, self).__init__()
+        self._thid = thid
+        self._pthid = pthid
+        self._sender_order = sender_order or 0
+        self._received_orders = received_orders and dict(received_orders) or {}
 
     @property
     def thid(self):
@@ -66,4 +68,6 @@ class ThreadDecoratorSchema(BaseModelSchema):
     thid = fields.Str()
     pthid = fields.Str(required=False)
     sender_order = fields.Integer(required=False)
-    received_orders = fields.Dict(values=fields.Integer(), keys=fields.Str(), required=False)
+    received_orders = fields.Dict(
+        values=fields.Integer(), keys=fields.Str(), required=False
+    )

@@ -12,7 +12,7 @@ class Forward(AgentMessage):
     class Meta:
         # handler_class = ForwardHandler
         message_type = MessageTypes.FORWARD.value
-        schema_class = 'ForwardSchema'
+        schema_class = "ForwardSchema"
 
     def __init__(self, to: str = None, msg: str = None, **kwargs):
         super(Forward, self).__init__(**kwargs)

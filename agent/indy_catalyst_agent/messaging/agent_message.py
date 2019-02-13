@@ -2,9 +2,21 @@ import uuid
 
 from typing import Dict
 
-from marshmallow import fields, pre_load, post_load, pre_dump, post_dump, ValidationError
+from marshmallow import (
+    fields,
+    pre_load,
+    post_load,
+    pre_dump,
+    post_dump,
+    ValidationError,
+)
 
-from ..models.base import BaseModel, BaseModelSchema, resolve_class, resolve_meta_property
+from ..models.base import (
+    BaseModel,
+    BaseModelSchema,
+    resolve_class,
+    resolve_meta_property,
+)
 from ..models.field_signature import FieldSignature
 from ..models.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
 from ..wallet import BaseWallet
@@ -17,11 +29,11 @@ class AgentMessage(BaseModel):
         message_type = None
 
     def __init__(
-            self,
-            _id: str = None,
-            _signatures: Dict[str, FieldSignature] = None,
-            _thread: ThreadDecorator = None,
-        ):
+        self,
+        _id: str = None,
+        _signatures: Dict[str, FieldSignature] = None,
+        _thread: ThreadDecorator = None,
+    ):
         super(AgentMessage, self).__init__()
         self._message_id = _id or str(uuid.uuid4())
         self._message_thread = _thread
@@ -29,9 +41,11 @@ class AgentMessage(BaseModel):
         if not self.Meta.message_type:
             raise TypeError(
                 "Can't instantiate abstract class {} with no message_type".format(
-                    self.__class__.__name__))
+                    self.__class__.__name__
+                )
+            )
         # Not required for now
-        #if not self.Meta.handler_class:
+        # if not self.Meta.handler_class:
         #    raise TypeError(
         #        "Can't instantiate abstract class {} with no handler_class".format(
         #            self.__class__.__name__))
@@ -88,12 +102,8 @@ class AgentMessage(BaseModel):
         self._message_signatures[field_name] = signature
 
     async def sign_field(
-            self,
-            field_name: str,
-            signer: str,
-            wallet: BaseWallet,
-            timestamp=None
-        ) -> FieldSignature:
+        self, field_name: str, signer: str, wallet: BaseWallet, timestamp=None
+    ) -> FieldSignature:
         """
         Create and store a signature for a named field
         """
@@ -101,17 +111,16 @@ class AgentMessage(BaseModel):
         if value is None:
             raise ValueError(
                 "{} field has no value for signature: {}".format(
-                    self.__class__.__name__, field_name))
+                    self.__class__.__name__, field_name
+                )
+            )
         sig = await FieldSignature.create(value, signer, wallet, timestamp)
         self.set_signature(field_name, sig)
         return sig
 
     async def verify_signed_field(
-            self,
-            field_name: str,
-            wallet: BaseWallet,
-            signer: str = None
-        ) -> str:
+        self, field_name: str, wallet: BaseWallet, signer: str = None
+    ) -> str:
         """
         Verify a specific field signature
 
@@ -121,9 +130,13 @@ class AgentMessage(BaseModel):
             raise ValueError("Missing field signature: {}".format(field_name))
         sig = self._message_signatures[field_name]
         if not await sig.verify(wallet):
-            raise ValueError("Field signature verification failed: {}".format(field_name))
+            raise ValueError(
+                "Field signature verification failed: {}".format(field_name)
+            )
         if signer is not None and sig.signer != signer:
-            raise ValueError("Signer of signature does not match: {}".format(field_name))
+            raise ValueError(
+                "Signer of signature does not match: {}".format(field_name)
+            )
         return sig.signer
 
     async def verify_signatures(self, wallet: BaseWallet) -> bool:
@@ -167,7 +180,9 @@ class AgentMessageSchema(BaseModelSchema):
         if not self.Meta.model_class:
             raise TypeError(
                 "Can't instantiate abstract class {} with no model_class".format(
-                    self.__class__.__name__))
+                    self.__class__.__name__
+                )
+            )
         self._signatures = {}
 
     @pre_load
@@ -180,9 +195,13 @@ class AgentMessageSchema(BaseModelSchema):
                 if not pfx:
                     raise ValidationError("Unsupported message property: ~sig")
                 if pfx not in expect_fields:
-                    raise ValidationError("Encountered unexpected field signature: {}".format(pfx))
+                    raise ValidationError(
+                        "Encountered unexpected field signature: {}".format(pfx)
+                    )
                 if pfx in data:
-                    raise ValidationError("Message defines both field signature and value: {}".format(pfx))
+                    raise ValidationError(
+                        "Message defines both field signature and value: {}".format(pfx)
+                    )
                 sig = FieldSignature.deserialize(field_value)
                 found[pfx] = sig
                 del data[field_name]
@@ -205,7 +224,9 @@ class AgentMessageSchema(BaseModelSchema):
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         for field_name in expect_fields:
             if field_name not in self._signatures:
-                raise ValidationError("Missing signature for field: {}".format(field_name))
+                raise ValidationError(
+                    "Missing signature for field: {}".format(field_name)
+                )
         return obj
 
     @post_dump

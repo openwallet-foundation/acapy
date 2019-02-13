@@ -40,4 +40,3 @@ class HttpTransport(BaseOutboundTransport):
         except Exception:
             # TODO: add retry logic
             self.logger.exception("Error handling outbound message")
-

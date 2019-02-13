@@ -47,7 +47,9 @@ class BaseStorage(ABC):
         pass
 
     @abstractmethod
-    async def delete_record_tags(self, record: StorageRecord, tags: (Sequence, Mapping)):
+    async def delete_record_tags(
+        self, record: StorageRecord, tags: (Sequence, Mapping)
+    ):
         """
         Update an existing stored record's tags
         """
@@ -60,8 +62,9 @@ class BaseStorage(ABC):
         pass
 
     @abstractmethod
-    def search_records(self, type_filter: str, tag_query: Mapping = None, page_size: int = None) \
-            -> 'BaseStorageRecordSearch':
+    def search_records(
+        self, type_filter: str, tag_query: Mapping = None, page_size: int = None
+    ) -> "BaseStorageRecordSearch":
         pass
 
     def __repr__(self) -> str:
@@ -72,9 +75,14 @@ class BaseStorageRecordSearch(ABC):
     """
     Represent an active stored records search
     """
-    def __init__(self, store: BaseStorage,
-                 type_filter: str, tag_query: Mapping,
-                 page_size: int = None):
+
+    def __init__(
+        self,
+        store: BaseStorage,
+        type_filter: str,
+        tag_query: Mapping,
+        page_size: int = None,
+    ):
         self._buffer = None
         self._page_size = page_size
         self._store = store

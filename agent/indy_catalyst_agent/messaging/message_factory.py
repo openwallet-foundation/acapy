@@ -29,7 +29,7 @@ class MessageFactory:
         """
         for typeset in types:
             self._typemap.update(typeset)
-    
+
     def resolve_message_class(self, message_type: str) -> type:
         """
         Given a dict describing a message, this method

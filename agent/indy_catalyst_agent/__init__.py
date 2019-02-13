@@ -78,10 +78,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--wallet-name",
-    type=str,
-    metavar="<wallet-name>",
-    help="Specify the wallet name",
+    "--wallet-name", type=str, metavar="<wallet-name>", help="Specify the wallet name"
 )
 
 parser.add_argument(
@@ -91,17 +88,10 @@ parser.add_argument(
     help="Specify the wallet implementation to use",
 )
 
-parser.add_argument(
-    "--debug",
-    action="store_true",
-    help="Enable debugging features",
-)
+parser.add_argument("--debug", action="store_true", help="Enable debugging features")
 
 parser.add_argument(
-    "--seed",
-    type=str,
-    metavar="<did-seed>",
-    help="Specify the default seed to use",
+    "--seed", type=str, metavar="<did-seed>", help="Specify the default seed to use"
 )
 
 parser.add_argument(
@@ -114,7 +104,9 @@ parser.add_argument(
 
 async def start(inbound_transport_configs, outbound_transports, settings: dict):
     factory = default_message_factory()
-    conductor = Conductor(inbound_transport_configs, outbound_transports, factory, settings)
+    conductor = Conductor(
+        inbound_transport_configs, outbound_transports, factory, settings
+    )
     await conductor.start()
 
 
@@ -161,8 +153,8 @@ def main():
     loop = asyncio.get_event_loop()
     try:
         asyncio.ensure_future(
-            start(inbound_transport_configs, outbound_transports, settings),
-            loop=loop)
+            start(inbound_transport_configs, outbound_transports, settings), loop=loop
+        )
         loop.run_forever()
     except KeyboardInterrupt:
         print("\nShutting down")

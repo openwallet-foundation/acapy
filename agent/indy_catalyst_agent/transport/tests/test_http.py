@@ -1,4 +1,3 @@
-
 # import json
 
 # from ..http import Http, HttpSetupError, InvalidMessageError

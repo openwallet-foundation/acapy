@@ -8,15 +8,11 @@ class TestCredentialOffer(TestCase):
     offer_json = "offer_json"
 
     def test_init(self):
-        credential_offer = CredentialOffer(
-            offer_json=self.offer_json
-        )
+        credential_offer = CredentialOffer(offer_json=self.offer_json)
         assert credential_offer.offer_json == self.offer_json
 
     def test_type(self):
-        credential_offer = CredentialOffer(
-            offer_json=self.offer_json
-        )
+        credential_offer = CredentialOffer(offer_json=self.offer_json)
 
         assert credential_offer._type == MessageTypes.CREDENTIAL_OFFER.value
 
@@ -35,9 +31,7 @@ class TestCredentialOffer(TestCase):
         "indy_catalyst_agent.messaging.credentials.messages.credential_offer.CredentialOfferSchema.dump"
     )
     def test_serialize(self, mock_credential_offer_schema_dump):
-        credential_offer = CredentialOffer(
-            offer_json=self.offer_json
-        )
+        credential_offer = CredentialOffer(offer_json=self.offer_json)
 
         credential_offer_dict = credential_offer.serialize()
         mock_credential_offer_schema_dump.assert_called_once_with(credential_offer)

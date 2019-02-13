@@ -45,4 +45,3 @@
 
 #         mock_conductor.assert_called_once_with(self.parsed_transports)
 #         mock_conductor.return_value.start.assert_called_once_with()
-

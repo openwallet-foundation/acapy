@@ -2,15 +2,18 @@ import pytest
 
 try:
     from indy.libindy import _cdll
+
     _cdll()
 except ImportError:
     pytest.skip(
         "skipping Indy-specific tests: python module not installed",
-        allow_module_level=True)
+        allow_module_level=True,
+    )
 except OSError:
     pytest.skip(
         "skipping Indy-specific tests: shared library not loaded",
-        allow_module_level=True)
+        allow_module_level=True,
+    )
 
 from indy_catalyst_agent.wallet.basic import BasicWallet
 from indy_catalyst_agent.wallet.indy import IndyWallet
@@ -25,13 +28,12 @@ async def basic_wallet():
     yield wallet
     await wallet.close()
 
+
 @pytest.fixture()
 async def wallet():
-    wallet = IndyWallet({
-        "auto_create": True,
-        "auto_remove": True,
-        "name": "test-wallet",
-    })
+    wallet = IndyWallet(
+        {"auto_create": True, "auto_remove": True, "name": "test-wallet"}
+    )
     await wallet.open()
     yield wallet
     await wallet.close()
@@ -41,6 +43,7 @@ class TestIndyWallet(test_basic_wallet.TestBasicWallet):
     """
     Apply all BasicWallet tests against IndyWallet
     """
+
 
 class TestWalletCompat:
     test_seed = "testseed000000000000000000000001"
@@ -61,11 +64,15 @@ class TestWalletCompat:
         await wallet.create_local_did(self.test_seed)
         enc_message = await wallet.encrypt_message(bin_msg, self.test_verkey)
 
-        py_decrypt, from_vk = await basic_wallet.decrypt_message(enc_message, self.test_verkey, False)
+        py_decrypt, from_vk = await basic_wallet.decrypt_message(
+            enc_message, self.test_verkey, False
+        )
         assert py_decrypt == bin_msg
         assert from_vk is None
 
-        decrypt, from_vk = await wallet.decrypt_message(py_enc_message, self.test_verkey, False)
+        decrypt, from_vk = await wallet.decrypt_message(
+            py_enc_message, self.test_verkey, False
+        )
         assert decrypt == bin_msg
         assert from_vk is None
 
@@ -77,16 +84,24 @@ class TestWalletCompat:
         bin_msg = self.test_message.encode("ascii")
 
         await basic_wallet.create_local_did(self.test_seed)
-        py_enc_message = await basic_wallet.encrypt_message(bin_msg, self.test_verkey, self.test_verkey)
+        py_enc_message = await basic_wallet.encrypt_message(
+            bin_msg, self.test_verkey, self.test_verkey
+        )
 
         await wallet.create_local_did(self.test_seed)
-        enc_message = await wallet.encrypt_message(bin_msg, self.test_verkey, self.test_verkey)
+        enc_message = await wallet.encrypt_message(
+            bin_msg, self.test_verkey, self.test_verkey
+        )
 
-        py_decrypt, from_vk = await basic_wallet.decrypt_message(enc_message, self.test_verkey, True)
+        py_decrypt, from_vk = await basic_wallet.decrypt_message(
+            enc_message, self.test_verkey, True
+        )
         assert py_decrypt == bin_msg
         assert from_vk == self.test_verkey
 
-        decrypt, from_vk = await wallet.decrypt_message(py_enc_message, self.test_verkey, True)
+        decrypt, from_vk = await wallet.decrypt_message(
+            py_enc_message, self.test_verkey, True
+        )
         assert decrypt == bin_msg
         assert from_vk == self.test_verkey
 
@@ -97,16 +112,12 @@ class TestWalletCompat:
         """
         await basic_wallet.create_local_did(self.test_seed)
         py_packed = await basic_wallet.pack_message(
-            self.test_message,
-            [self.test_verkey],
-            self.test_verkey,
+            self.test_message, [self.test_verkey], self.test_verkey
         )
 
         await wallet.create_local_did(self.test_seed)
         packed = await wallet.pack_message(
-            self.test_message,
-            [self.test_verkey],
-            self.test_verkey,
+            self.test_message, [self.test_verkey], self.test_verkey
         )
 
         py_unpacked, from_vk, to_vk = await basic_wallet.unpack_message(packed)

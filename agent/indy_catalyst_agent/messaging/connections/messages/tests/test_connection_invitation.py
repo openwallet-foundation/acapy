@@ -71,8 +71,7 @@ class TestConnectionInvitation(TestCase):
 
 class TestConnectionInvitationSchema(TestCase):
     connection_invitation = ConnectionInvitation(
-        label="label",
-        did="did:sov:QmWbsNYhMrjHiqZDTUTEJs"
+        label="label", did="did:sov:QmWbsNYhMrjHiqZDTUTEJs"
     )
 
     def test_make_model(self):

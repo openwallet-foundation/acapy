@@ -4,15 +4,18 @@ Storage-related exceptions
 
 from ..error import BaseError
 
+
 class StorageError(BaseError):
     """
     Base class for Storage errors
     """
 
+
 class StorageNotFoundError(StorageError):
     """
     Record not found in storage
     """
+
 
 class StorageSearchError(StorageError):
     """

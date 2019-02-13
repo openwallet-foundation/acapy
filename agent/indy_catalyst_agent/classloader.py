@@ -5,6 +5,7 @@ from importlib import import_module
 
 from .error import BaseError
 
+
 class ModuleLoadError(BaseError):
     pass
 
@@ -63,12 +64,12 @@ class ClassLoader:
             mod_path = default_module
         else:
             raise ClassNotFoundError(f"Cannot resolve class name: {class_name}")
-        
+
         try:
             mod = import_module(mod_path)
         except ModuleNotFoundError:
             error_message = f"Unable to import module {mod_path}"
             raise ModuleLoadError(error_message)
 
-        resolved = getattr(mod, class_name, None)        
+        resolved = getattr(mod, class_name, None)
         return resolved

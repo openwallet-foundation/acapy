@@ -33,7 +33,11 @@ class TestBasicWallet:
     test_message_bytes = b"test message bytes"
     missing_did = "YVnYBGTdjZUoQXKQjHV87i"
     missing_verkey = "JAfHCRDH9ZW5E7m4mofjr8cpAHaZdiRQ94it75aXUPK3"
-    test_signature = b"\xd6\x98\x04\x88\xd2-\xc1D\x02\x15\xc9Z\x9bK \x8f\xe0\x8b5\xd0Z$" b"\xe3\x02\x19\xa1\xb3\x86\xfa2\x07\xc8\xbd3-\x1c\xc4\x8d\x8e\xa3\x9be" b"\xea\xcf\x8bc\xfa_\x0c\xb2jE\xe4}\x12+\xbc0\x01l\xdb\x97\xf6\x02"
+    test_signature = (
+        b"\xd6\x98\x04\x88\xd2-\xc1D\x02\x15\xc9Z\x9bK \x8f\xe0\x8b5\xd0Z$"
+        b"\xe3\x02\x19\xa1\xb3\x86\xfa2\x07\xc8\xbd3-\x1c\xc4\x8d\x8e\xa3\x9be"
+        b"\xea\xcf\x8bc\xfa_\x0c\xb2jE\xe4}\x12+\xbc0\x01l\xdb\x97\xf6\x02"
+    )
 
     @pytest.mark.asyncio
     async def test_create_signing_key_random(self, wallet):
@@ -219,9 +223,9 @@ class TestBasicWallet:
         assert to_verkey == self.test_target_verkey
 
         with pytest.raises(WalletError):
-            unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b'bad')
+            unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b"bad")
         with pytest.raises(WalletError):
-            unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b'{}')
+            unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b"{}")
 
     @pytest.mark.asyncio
     async def test_encrypt_decrypt_dids(self, wallet):

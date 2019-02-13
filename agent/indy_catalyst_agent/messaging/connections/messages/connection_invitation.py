@@ -4,9 +4,7 @@ Represents an invitation message for establishing connection.
 
 from typing import Sequence
 
-from marshmallow import (
-    ValidationError, fields, validates_schema,
-)
+from marshmallow import ValidationError, fields, validates_schema
 
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import CONNECTION_INVITATION
@@ -21,15 +19,15 @@ class ConnectionInvitation(AgentMessage):
         schema_class = "ConnectionInvitationSchema"
 
     def __init__(
-            self,
-            *,
-            label: str = None,
-            did: str = None,
-            recipient_keys: Sequence[str] = None,
-            endpoint: str = None,
-            routing_keys: Sequence[str] = None,
-            **kwargs,
-        ):
+        self,
+        *,
+        label: str = None,
+        did: str = None,
+        recipient_keys: Sequence[str] = None,
+        endpoint: str = None,
+        routing_keys: Sequence[str] = None,
+        **kwargs,
+    ):
         super(ConnectionInvitation, self).__init__(**kwargs)
         self.label = label
         self.did = did
@@ -52,8 +50,15 @@ class ConnectionInvitationSchema(AgentMessageSchema):
     def validate_fields(self, data):
         if data.get("did"):
             if data.get("recipient_keys"):
-                raise ValidationError("Fields are incompatible", ("did", "recipient_keys"))
+                raise ValidationError(
+                    "Fields are incompatible", ("did", "recipient_keys")
+                )
             if data.get("endpoint"):
-                raise ValidationError("Fields are incompatible", ("did", "serviceEndpoint"))
+                raise ValidationError(
+                    "Fields are incompatible", ("did", "serviceEndpoint")
+                )
         elif not data.get("recipient_keys") or not data.get("endpoint"):
-            raise ValidationError("Missing required field(s)", ("did", "recipient_keys", "serviceEndpoint"))
+            raise ValidationError(
+                "Missing required field(s)",
+                ("did", "recipient_keys", "serviceEndpoint"),
+            )

@@ -18,12 +18,8 @@ class ConnectionRequest(AgentMessage):
         schema_class = "ConnectionRequestSchema"
 
     def __init__(
-            self,
-            *,
-            connection: ConnectionDetail = None,
-            label: str = None,
-            **kwargs
-        ):
+        self, *, connection: ConnectionDetail = None, label: str = None, **kwargs
+    ):
         super(ConnectionRequest, self).__init__(**kwargs)
         self.connection = connection
         self.label = label

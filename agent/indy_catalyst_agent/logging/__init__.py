@@ -1,3 +1,7 @@
+"""
+Utility class used to configure logging and print an informative start banner
+"""
+
 from os import path
 
 from logging.config import fileConfig

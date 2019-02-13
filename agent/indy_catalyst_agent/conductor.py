@@ -27,6 +27,7 @@ from .transport.outbound.queue.basic import BasicOutboundMessageQueue
 class ConductorError(BaseError):
     pass
 
+
 class Conductor:
     STORAGE_TYPES = {
         "basic": "indy_catalyst_agent.storage.basic.BasicStorage",
@@ -38,8 +39,11 @@ class Conductor:
     }
 
     def __init__(
-        self, transport_configs: InboundTransportConfiguration, outbound_transports,
-        message_factory: MessageFactory, settings: dict,
+        self,
+        transport_configs: InboundTransportConfiguration,
+        outbound_transports,
+        message_factory: MessageFactory,
+        settings: dict,
     ) -> None:
         self.context = None
         self.logger = logging.getLogger(__name__)
@@ -50,7 +54,9 @@ class Conductor:
 
     async def start(self) -> None:
         context = RequestContext()
-        context.default_endpoint = self.settings.get("default_endpoint", "http://localhost:10001")
+        context.default_endpoint = self.settings.get(
+            "default_endpoint", "http://localhost:10001"
+        )
         context.default_label = self.settings.get("default_name", "Indy Catalyst Agent")
         context.message_factory = self.message_factory
 
@@ -113,20 +119,30 @@ class Conductor:
         try:
             if send_invite_to:
                 mgr = ConnectionManager(context)
-                invitation = await mgr.create_invitation(context.default_label, context.default_endpoint)
+                invitation = await mgr.create_invitation(
+                    context.default_label, context.default_endpoint
+                )
                 await mgr.store_invitation(invitation, False)
                 await mgr.send_invitation(invitation, send_invite_to)
         except Exception:
             self.logger.exception("Error sending invitation")
 
-
-    async def inbound_message_router(self, message_body: Union[str, bytes], transport_type: str, reply: Coroutine = None):
+    async def inbound_message_router(
+        self,
+        message_body: Union[str, bytes],
+        transport_type: str,
+        reply: Coroutine = None,
+    ):
         context = await self.context.expand_message(message_body, transport_type)
-        result = await self.dispatcher.dispatch(context, self.outbound_message_router, reply)
+        result = await self.dispatcher.dispatch(
+            context, self.outbound_message_router, reply
+        )
         # TODO: need to use callback instead?
         #       respond immediately after message parse in case of req-res transport?
         return result.serialize() if result else None
 
-    async def outbound_message_router(self, message: AgentMessage, target: ConnectionTarget) -> None:
+    async def outbound_message_router(
+        self, message: AgentMessage, target: ConnectionTarget
+    ) -> None:
         payload = await self.context.compact_message(message, target)
         await self.outbound_transport_manager.send_message(payload, target.endpoint)

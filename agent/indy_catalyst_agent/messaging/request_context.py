@@ -34,7 +34,7 @@ class RequestContext:
         self._storage = None
         self._wallet = None
 
-    def copy(self) -> 'RequestContext':
+    def copy(self) -> "RequestContext":
         """
         Create a copy of this context
         """
@@ -144,7 +144,7 @@ class RequestContext:
         Setter for the transport type used to receive the message
         """
         self._transport_type = transport
-    
+
     @property
     def message_factory(self) -> MessageFactory:
         """
@@ -201,7 +201,9 @@ class RequestContext:
         """
         self._wallet = wallet
 
-    async def expand_message(self, message_body: Union[str, bytes], transport_type: str) -> 'RequestContext':
+    async def expand_message(
+        self, message_body: Union[str, bytes], transport_type: str
+    ) -> "RequestContext":
         """
         Deserialize an incoming message
         """
@@ -217,16 +219,18 @@ class RequestContext:
 
         if isinstance(message_body, bytes):
             try:
-                message_json, from_verkey, to_verkey = await self.wallet.unpack_message(message_body)
+                message_json, from_verkey, to_verkey = await self.wallet.unpack_message(
+                    message_body
+                )
             except WalletError:
                 self._logger.debug("Message unpack failed")
-        
+
         try:
             message_dict = json.loads(message_json)
         except ValueError:
             raise MessageParseError("Message JSON parsing failed")
         self._logger.debug(f"Extracted message: {message_dict}")
-        
+
         ctx = self.copy()
         ctx.message = self.message_factory.make_message(message_dict)
         ctx.transport_type = transport_type
@@ -252,14 +256,18 @@ class RequestContext:
 
         return ctx
 
-    async def compact_message(self, message: AgentMessage, target: ConnectionTarget) -> Union[str, bytes]:
+    async def compact_message(
+        self, message: AgentMessage, target: ConnectionTarget
+    ) -> Union[str, bytes]:
         """
         Serialize an outgoing message for transport
         """
         message_dict = message.serialize()
         message_json = json.dumps(message_dict)
         if target.sender_key and target.recipient_keys:
-            message = await self.wallet.pack_message(message_json, target.recipient_keys, target.sender_key)
+            message = await self.wallet.pack_message(
+                message_json, target.recipient_keys, target.sender_key
+            )
         else:
             message = message_json
         return message
@@ -272,5 +280,9 @@ class RequestContext:
 
     def __repr__(self) -> str:
         skip = ("_logger",)
-        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items() if k not in skip)
-        return "<{}({})>".format(self.__class__.__name__, ', '.join(items))
+        items = (
+            "{}={}".format(k, repr(v))
+            for k, v in self.__dict__.items()
+            if k not in skip
+        )
+        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))

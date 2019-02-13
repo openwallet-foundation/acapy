@@ -11,7 +11,7 @@ class TestCredential(TestCase):
     def test_init(self):
         credential = Credential(
             credential_json=self.credential_json,
-            revocation_registry_id=self.revocation_registry_id
+            revocation_registry_id=self.revocation_registry_id,
         )
         assert credential.credential_json == self.credential_json
         assert credential.revocation_registry_id == self.revocation_registry_id
@@ -19,7 +19,7 @@ class TestCredential(TestCase):
     def test_type(self):
         credential = Credential(
             credential_json=self.credential_json,
-            revocation_registry_id=self.revocation_registry_id
+            revocation_registry_id=self.revocation_registry_id,
         )
 
         assert credential._type == MessageTypes.CREDENTIAL.value
@@ -41,7 +41,7 @@ class TestCredential(TestCase):
     def test_serialize(self, mock_credential_schema_dump):
         credential = Credential(
             credential_json=self.credential_json,
-            revocation_registry_id=self.revocation_registry_id
+            revocation_registry_id=self.revocation_registry_id,
         )
 
         credential_dict = credential.serialize()
@@ -53,11 +53,10 @@ class TestCredential(TestCase):
 class TestCredentialSchema(TestCase):
     credential = Credential(
         credential_json="credential_json",
-        revocation_registry_id="revocation_registry_id"
+        revocation_registry_id="revocation_registry_id",
     )
 
     def test_make_model(self):
         data = self.credential.serialize()
         model_instance = Credential.deserialize(data)
         assert type(model_instance) is type(self.credential)
-

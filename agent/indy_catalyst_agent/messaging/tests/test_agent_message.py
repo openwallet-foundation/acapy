@@ -11,17 +11,19 @@ from ...wallet.basic import BasicWallet
 class SignedAgentMessage(AgentMessage):
     class Meta:
         handler_class = None
-        schema_class = 'SignedAgentMessageSchema'
-        message_type = 'signed-agent-message'
+        schema_class = "SignedAgentMessageSchema"
+        message_type = "signed-agent-message"
 
     def __init__(self, value: str = None, **kwargs):
         super(SignedAgentMessage, self).__init__(**kwargs)
         self.value = value
 
+
 class SignedAgentMessageSchema(AgentMessageSchema):
     class Meta:
         model_class = SignedAgentMessage
-        signed_fields = ('value',)
+        signed_fields = ("value",)
+
     value = fields.Str(required=True)
 
 

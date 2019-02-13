@@ -14,15 +14,10 @@ HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_r
 class ConnectionResponse(AgentMessage):
     class Meta:
         handler_class = HANDLER_CLASS
-        schema_class = 'ConnectionResponseSchema'
+        schema_class = "ConnectionResponseSchema"
         message_type = CONNECTION_RESPONSE
 
-    def __init__(
-            self,
-            *,
-            connection: ConnectionDetail = None,
-            **kwargs
-        ):
+    def __init__(self, *, connection: ConnectionDetail = None, **kwargs):
         super(ConnectionResponse, self).__init__(**kwargs)
         self.connection = connection
 

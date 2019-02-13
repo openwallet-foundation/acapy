@@ -7,7 +7,9 @@ from von_anchor.a2a.publickey import PublicKey, PublicKeyType
 from von_anchor.a2a.service import Service
 
 from ..connection_request import (
-    ConnectionRequest, ConnectionRequestSchema, ConnectionDetail,
+    ConnectionRequest,
+    ConnectionRequestSchema,
+    ConnectionDetail,
 )
 from ...message_types import CONNECTION_REQUEST
 
@@ -24,7 +26,14 @@ class TestConfig:
         controller = self.test_did
         ident = "1"
         value = self.test_verkey
-        pk = PublicKey(self.test_did, ident, PublicKeyType.ED25519_SIG_2018, controller, value, False)
+        pk = PublicKey(
+            self.test_did,
+            ident,
+            PublicKeyType.ED25519_SIG_2018,
+            controller,
+            value,
+            False,
+        )
         doc.verkeys.append(pk)
         service = Service(self.test_did, "indy", "IndyAgent", self.test_endpoint)
         doc.services.append(service)
@@ -32,7 +41,6 @@ class TestConfig:
 
 
 class TestConnectionRequest(TestCase, TestConfig):
-
     def setUp(self):
         self.connection_request = ConnectionRequest(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc()),
@@ -42,7 +50,7 @@ class TestConnectionRequest(TestCase, TestConfig):
     def test_init(self):
         assert self.connection_request.label == self.test_label
         assert self.connection_request.connection.did == self.test_did
-        #assert self.connection_request.verkey == self.verkey
+        # assert self.connection_request.verkey == self.verkey
 
     def test_type(self):
         assert self.connection_request._type == CONNECTION_REQUEST
@@ -63,7 +71,9 @@ class TestConnectionRequest(TestCase, TestConfig):
     )
     def test_serialize(self, mock_connection_request_schema_dump):
         connection_request_dict = self.connection_request.serialize()
-        mock_connection_request_schema_dump.assert_called_once_with(self.connection_request)
+        mock_connection_request_schema_dump.assert_called_once_with(
+            self.connection_request
+        )
 
         assert (
             connection_request_dict is mock_connection_request_schema_dump.return_value

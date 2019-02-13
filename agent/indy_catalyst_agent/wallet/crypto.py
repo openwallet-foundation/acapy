@@ -20,14 +20,17 @@ class PackMessageSchema(Schema):
     tag = fields.Str(required=True)
     ciphertext = fields.Str(required=True)
 
+
 class PackRecipientHeaderSchema(Schema):
     kid = fields.Str(required=True)
     sender = fields.Str(required=False, allow_none=True)
     iv = fields.Str(required=False, allow_none=True)
 
+
 class PackRecipientSchema(Schema):
     encrypted_key = fields.Str(required=True)
     header = fields.Nested(PackRecipientHeaderSchema(), required=True)
+
 
 class PackRecipientsSchema(Schema):
     enc = fields.Constant("xchacha20poly1305_ietf", required=True)

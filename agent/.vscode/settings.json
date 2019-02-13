@@ -8,5 +8,6 @@
         "markdown",
         "latex",
         "plaintext"
-    ]
+    ],
+    "python.linting.enabled": true
 }

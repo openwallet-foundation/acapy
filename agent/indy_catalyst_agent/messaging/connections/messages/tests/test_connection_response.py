@@ -7,7 +7,9 @@ from von_anchor.a2a.publickey import PublicKey, PublicKeyType
 from von_anchor.a2a.service import Service
 
 from ..connection_response import (
-    ConnectionResponse, ConnectionResponseSchema, ConnectionDetail,
+    ConnectionResponse,
+    ConnectionResponseSchema,
+    ConnectionDetail,
 )
 from ...message_types import CONNECTION_RESPONSE
 from .....wallet.basic import BasicWallet
@@ -24,7 +26,14 @@ class TestConfig:
         controller = self.test_did
         ident = "1"
         value = self.test_verkey
-        pk = PublicKey(self.test_did, ident, PublicKeyType.ED25519_SIG_2018, controller, value, False)
+        pk = PublicKey(
+            self.test_did,
+            ident,
+            PublicKeyType.ED25519_SIG_2018,
+            controller,
+            value,
+            False,
+        )
         doc.verkeys.append(pk)
         service = Service(self.test_did, "indy", "IndyAgent", self.test_endpoint)
         doc.services.append(service)
@@ -34,7 +43,7 @@ class TestConfig:
 class TestConnectionResponse(TestCase, TestConfig):
     def setUp(self):
         self.connection_response = ConnectionResponse(
-            connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc()),
+            connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc())
         )
 
     def test_init(self):
@@ -72,7 +81,7 @@ class TestConnectionResponse(TestCase, TestConfig):
 class TestConnectionResponseSchema(AsyncTestCase, TestConfig):
     async def test_make_model(self):
         connection_response = ConnectionResponse(
-            connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc()),
+            connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc())
         )
         wallet = BasicWallet()
         key_info = await wallet.create_signing_key()

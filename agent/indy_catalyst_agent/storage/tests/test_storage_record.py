@@ -2,8 +2,8 @@ import pytest
 
 from indy_catalyst_agent.storage import StorageRecord
 
-class TestStorageRecord:
 
+class TestStorageRecord:
     def test_create(self):
         record_type = "TYPE"
         record_value = "VALUE"

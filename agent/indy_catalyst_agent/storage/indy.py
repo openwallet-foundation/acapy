@@ -15,12 +15,12 @@ from ..wallet.indy import IndyWallet
 
 
 def _validate_record(record: StorageRecord):
-        if not record:
-            raise StorageError("No record provided")
-        if not record.id:
-            raise StorageError("Record has no ID")
-        if not record.type:
-            raise StorageError("Record has no type")
+    if not record:
+        raise StorageError("No record provided")
+    if not record.id:
+        raise StorageError("Record has no ID")
+    if not record.type:
+        raise StorageError("Record has no type")
 
 
 class IndyStorage(BaseStorage):
@@ -45,11 +45,8 @@ class IndyStorage(BaseStorage):
         _validate_record(record)
         tags_json = json.dumps(record.tags) if record.tags else None
         await non_secrets.add_wallet_record(
-            self._wallet.handle,
-            record.type,
-            record.id,
-            record.value,
-            tags_json)
+            self._wallet.handle, record.type, record.id, record.value, tags_json
+        )
 
     async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
         """
@@ -59,17 +56,13 @@ class IndyStorage(BaseStorage):
             raise StorageError("Record type not provided")
         if not record_id:
             raise StorageError("Record ID not provided")
-        options_json = json.dumps({
-            "retrieveType": True,
-            "retrieveValue": True,
-            "retrieveTags": True,
-        })
+        options_json = json.dumps(
+            {"retrieveType": True, "retrieveValue": True, "retrieveTags": True}
+        )
         try:
             result_json = await non_secrets.get_wallet_record(
-                self._wallet.handle,
-                record_type,
-                record_id,
-                options_json)
+                self._wallet.handle, record_type, record_id, options_json
+            )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise StorageNotFoundError("Record not found: {}".format(record_id))
@@ -89,10 +82,8 @@ class IndyStorage(BaseStorage):
         _validate_record(record)
         try:
             await non_secrets.update_wallet_record_value(
-                self._wallet.handle,
-                record.type,
-                record.id,
-                value)
+                self._wallet.handle, record.type, record.id, value
+            )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise StorageNotFoundError("Record not found: {}".format(record.id))
@@ -106,16 +97,16 @@ class IndyStorage(BaseStorage):
         tags_json = json.dumps(tags) if tags else "{}"
         try:
             await non_secrets.update_wallet_record_tags(
-                self._wallet.handle,
-                record.type,
-                record.id,
-                tags_json)
+                self._wallet.handle, record.type, record.id, tags_json
+            )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise StorageNotFoundError("Record not found: {}".format(record.id))
             raise StorageError(str(x_indy))
 
-    async def delete_record_tags(self, record: StorageRecord, tags: (Sequence, Mapping)):
+    async def delete_record_tags(
+        self, record: StorageRecord, tags: (Sequence, Mapping)
+    ):
         """
         Update an existing stored record's tags
         """
@@ -126,33 +117,37 @@ class IndyStorage(BaseStorage):
 
             tag_names_json = json.dumps(list(tags))
             await non_secrets.delete_wallet_record_tags(
-                self._wallet.handle,
-                record.type,
-                record.id,
-                tag_names_json)
+                self._wallet.handle, record.type, record.id, tag_names_json
+            )
 
     async def delete_record(self, record: StorageRecord):
         _validate_record(record)
         try:
             await non_secrets.delete_wallet_record(
-                self._wallet.handle,
-                record.type,
-                record.id)
+                self._wallet.handle, record.type, record.id
+            )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise StorageNotFoundError("Record not found: {}".format(record.id))
             raise StorageError(str(x_indy))
 
-    def search_records(self, type_filter: str, tag_query: Mapping = None, page_size: int = None) \
-            -> 'BasicStorageRecordSearch':
+    def search_records(
+        self, type_filter: str, tag_query: Mapping = None, page_size: int = None
+    ) -> "BasicStorageRecordSearch":
         return IndyStorageRecordSearch(self, type_filter, tag_query, page_size)
 
 
 class IndyStorageRecordSearch(BaseStorageRecordSearch):
-    def __init__(self, store: IndyStorage,
-                 type_filter: str, tag_query: Mapping,
-                 page_size: int = None):
-        super(IndyStorageRecordSearch, self).__init__(store, type_filter, tag_query, page_size)
+    def __init__(
+        self,
+        store: IndyStorage,
+        type_filter: str,
+        tag_query: Mapping,
+        page_size: int = None,
+    ):
+        super(IndyStorageRecordSearch, self).__init__(
+            store, type_filter, tag_query, page_size
+        )
         self._handle = None
 
     @property
@@ -176,19 +171,20 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         if not self.opened:
             raise StorageSearchError("Search query has not been opened")
         result_json = await non_secrets.fetch_wallet_search_next_records(
-            self.store.wallet.handle,
-            self._handle,
-            max_count)
+            self.store.wallet.handle, self._handle, max_count
+        )
         results = json.loads(result_json)
         ret = []
         if results["records"]:
             for row in results["records"]:
-                ret.append(StorageRecord(
-                    type=row["type"],
-                    id=row["id"],
-                    value=row["value"],
-                    tags=row["tags"],
-                ))
+                ret.append(
+                    StorageRecord(
+                        type=row["type"],
+                        id=row["id"],
+                        value=row["value"],
+                        tags=row["tags"],
+                    )
+                )
         return ret
 
     async def open(self):
@@ -196,18 +192,18 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         Start the search query
         """
         query_json = json.dumps(self.tag_query or {})
-        options_json = json.dumps({
-            "retrieveRecords": True,
-            "retrieveTotalCount": True,
-            "retrieveType": True,
-            "retrieveValue": True,
-            "retrieveTags": True,
-        })
+        options_json = json.dumps(
+            {
+                "retrieveRecords": True,
+                "retrieveTotalCount": True,
+                "retrieveType": True,
+                "retrieveValue": True,
+                "retrieveTags": True,
+            }
+        )
         self._handle = await non_secrets.open_wallet_search(
-            self.store.wallet.handle,
-            self.type_filter,
-            query_json,
-            options_json)
+            self.store.wallet.handle, self.type_filter, query_json, options_json
+        )
 
     async def close(self):
         """
