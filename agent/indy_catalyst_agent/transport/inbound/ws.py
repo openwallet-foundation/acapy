@@ -61,8 +61,8 @@ class Transport(BaseInboundTransport):
                     if result:
                         await reply(result)
                 except Exception as e:
+                    self.logger.exception("Error handling message")
                     error_message = f"Error handling message: {str(e)}"
-                    self.logger.error(error_message)
                     await ws.send_json({"success": False, "message": error_message})
                     continue
 

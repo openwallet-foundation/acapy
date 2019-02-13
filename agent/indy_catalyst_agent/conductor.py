@@ -4,10 +4,12 @@ over the network, communicating with the ledger, passing messages to handlers,
 and storing data in the wallet.
 """
 
+import json
 import logging
 
 from typing import Coroutine, Dict, Union
 
+from .connection import ConnectionManager
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
 from .error import BaseError
@@ -48,8 +50,8 @@ class Conductor:
 
     async def start(self) -> None:
         context = RequestContext()
-        context.default_endpoint = self.settings.get("endpoint")
-        context.default_label = self.settings.get("name", "Indy Catalyst Agent")
+        context.default_endpoint = self.settings.get("default_endpoint", "http://localhost:10001")
+        context.default_label = self.settings.get("default_name", "Indy Catalyst Agent")
         context.message_factory = self.message_factory
 
         wallet_type = self.settings.get("wallet.type", "basic").lower()
@@ -87,8 +89,8 @@ class Conductor:
         for outbound_transport in self.outbound_transports:
             try:
                 self.outbound_transport_manager.register(outbound_transport)
-            except Exception as e:
-                self.logger.warning(f"Unable to register outbound transport. {str(e)}")
+            except Exception:
+                self.logger.exception("Unable to register outbound transport")
 
         await self.outbound_transport_manager.start_all()
 
@@ -98,6 +100,26 @@ class Conductor:
             self.outbound_transport_manager.registered_transports,
         )
 
+        # Debug settings
+        test_seed = self.settings.get("debug.seed")
+        if self.settings.get("debug.enabled"):
+            if not test_seed:
+                test_seed = "testseed000000000000000000000001"
+        if test_seed:
+            _did_info = await context.wallet.create_local_did(test_seed)
+
+        # Auto-send an invitation to another agent
+        send_invite_to = self.settings.get("debug.send_invitation_to")
+        try:
+            if send_invite_to:
+                mgr = ConnectionManager(context)
+                invitation = await mgr.create_invitation(context.default_label, context.default_endpoint)
+                await mgr.store_invitation(invitation, False)
+                await mgr.send_invitation(invitation, send_invite_to)
+        except Exception:
+            self.logger.exception("Error sending invitation")
+
+
     async def inbound_message_router(self, message_body: Union[str, bytes], transport_type: str, reply: Coroutine = None):
         context = await self.context.expand_message(message_body, transport_type)
         result = await self.dispatcher.dispatch(context, self.outbound_message_router, reply)
@@ -106,5 +128,5 @@ class Conductor:
         return result.serialize() if result else None
 
     async def outbound_message_router(self, message: AgentMessage, target: ConnectionTarget) -> None:
-        message_dict = message.serialize()
-        await self.outbound_transport_manager.send_message(message_dict, target)
+        payload = await self.context.compact_message(message, target)
+        await self.outbound_transport_manager.send_message(payload, target.endpoint)

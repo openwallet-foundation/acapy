@@ -32,7 +32,7 @@ class Dispatcher:
         # 1a. Possibly communicate with service backend for instructions
         # 2. based on some logic, build a response message
 
-        responder = self.make_responder(send, transport_reply)
+        responder = self.make_responder(send, context.wallet, transport_reply)
         handler_cls = context.message.Handler
         handler_response = await handler_cls().handle(context, responder)
 
@@ -40,8 +40,8 @@ class Dispatcher:
         # This is for persistent connections waiting on that response.
         return handler_response
 
-    def make_responder(self, send: Coroutine, reply: Coroutine):
-        responder = DispatcherResponder(send, reply=reply)
+    def make_responder(self, send: Coroutine, wallet: BaseWallet, reply: Coroutine):
+        responder = DispatcherResponder(send, wallet, reply=reply)
         #responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
         #responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
         responder.add_target(ConnectionTarget(endpoint="https://httpbin.org/status/400"))
@@ -52,10 +52,11 @@ class DispatcherResponder(BaseResponder):
     """
     Handle outgoing messages from message handlers
     """
-    def __init__(self, send: Coroutine, *targets, reply: Coroutine = None):
+    def __init__(self, send: Coroutine, wallet: BaseWallet, *targets, reply: Coroutine = None):
         self._targets = list(targets)
         self._send = send
         self._reply = reply
+        self._wallet = wallet
 
     def add_target(self, target: ConnectionTarget):
         self._targets.append(target)

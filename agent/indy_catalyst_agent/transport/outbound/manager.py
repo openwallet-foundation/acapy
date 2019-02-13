@@ -60,11 +60,11 @@ class OutboundTransportManager:
             # asyncio.create_task(self.start(schemes, transport_class))
             asyncio.ensure_future(self.start(schemes, transport_class))
 
-    async def send_message(self, message, target: ConnectionTarget):
+    async def send_message(self, message, uri: str):
         # Grab the scheme from the uri
-        scheme = urlparse(target.endpoint).scheme
+        scheme = urlparse(uri).scheme
         if scheme == "":
-            self.logger.warn(f"The uri '{target.endpoint}' does not specify a scheme")
+            self.logger.warn(f"The uri '{uri}' does not specify a scheme")
             return
 
         # Look up transport that is registered to handle this scheme
@@ -78,5 +78,5 @@ class OutboundTransportManager:
             self.logger.warn(f"No transport driver exists to handle scheme '{scheme}'")
             return
 
-        message = OutboundMessage(data=message, target=target)
+        message = OutboundMessage(data=message, uri=uri)
         await transport.queue.enqueue(message)
