@@ -40,7 +40,10 @@ class WsTransport(BaseOutboundTransport):
             # As an example, we can open a websocket channel, send a message, then
             # close the channel immediately. This is not optimal but it works.
             async with self.client_session.ws_connect(message.uri) as ws:
-                await ws.send_json(message.data)
-        except Exception as e:
+                if isinstance(message.data, bytes):
+                    await ws.send_bytes(message.data)
+                else:
+                    await ws.send_str(message.data)
+        except Exception:
             # TODO: add retry logic
-            self.logger.error(f"Error handling outbound message: {str(e)}")
+            self.logger.exception("Error handling outbound message")

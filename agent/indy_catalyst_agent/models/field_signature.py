@@ -49,6 +49,8 @@ class FieldSignature(BaseModel):
         """
         if not timestamp:
             timestamp = time.time()
+        if isinstance(value, BaseModel):
+            value = value.serialize()
         # 8 byte, big-endian encoded, unsigned int (long)
         timestamp_bin = struct.pack("!Q", int(timestamp))
         msg_combined_bin = timestamp_bin + json.dumps(value).encode("ascii")

@@ -64,6 +64,9 @@ class BaseStorage(ABC):
             -> 'BaseStorageRecordSearch':
         pass
 
+    def __repr__(self) -> str:
+        return "<{}>".format(self.__class__.__name__)
+
 
 class BaseStorageRecordSearch(ABC):
     """
@@ -164,3 +167,6 @@ class BaseStorageRecordSearch(ABC):
             return self._buffer.pop(0)
         except IndexError:
             raise StopAsyncIteration
+
+    def __repr__(self) -> str:
+        return "<{}>".format(self.__class__.__name__)

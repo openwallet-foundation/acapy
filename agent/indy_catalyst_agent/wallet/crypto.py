@@ -6,11 +6,34 @@ from collections import OrderedDict
 import json
 from typing import Callable, Optional, Sequence
 
+from marshmallow import fields, Schema, ValidationError
 import msgpack
 import pysodium
 
 from .error import WalletError
 from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes
+
+
+class PackMessageSchema(Schema):
+    protected = fields.Str(required=True)
+    iv = fields.Str(required=True)
+    tag = fields.Str(required=True)
+    ciphertext = fields.Str(required=True)
+
+class PackRecipientHeaderSchema(Schema):
+    kid = fields.Str(required=True)
+    sender = fields.Str(required=False, allow_none=True)
+    iv = fields.Str(required=False, allow_none=True)
+
+class PackRecipientSchema(Schema):
+    encrypted_key = fields.Str(required=True)
+    header = fields.Nested(PackRecipientHeaderSchema(), required=True)
+
+class PackRecipientsSchema(Schema):
+    enc = fields.Constant("xchacha20poly1305_ietf", required=True)
+    typ = fields.Constant("JWM/1.0", required=True)
+    alg = fields.Str(required=True)
+    recipients = fields.List(fields.Nested(PackRecipientSchema()), required=True)
 
 
 def create_keypair(seed: bytes = None) -> (bytes, bytes):
@@ -289,10 +312,18 @@ def decode_pack_message(
     Disassemble and unencrypt a packed message, returning the message content,
     verification key of the sender (if available), and verification key of the recipient
     """
-    wrapper = json.loads(enc_message)
+    try:
+        wrapper = PackMessageSchema().loads(enc_message)
+    except ValidationError:
+        raise ValueError("Invalid packed message")
+
     protected_bin = wrapper["protected"].encode("ascii")
     recips_json = b64_to_bytes(wrapper["protected"], urlsafe=True).decode("ascii")
-    recips_outer = json.loads(recips_json)
+    print(recips_json)
+    try:
+        recips_outer = PackRecipientsSchema().loads(recips_json)
+    except ValidationError:
+        ValueError("Invalid packed message recipients")
 
     alg = recips_outer["alg"]
     is_authcrypt = alg == "Authcrypt"

@@ -225,7 +225,9 @@ class BaseWallet(ABC):
         Unpack a message
         """
 
-
     # TODO:
     # store credential (return ID)
     # fetch credentials by ID [or query, filter, proof request?]
+
+    def __repr__(self) -> str:
+        return "<{}(opened={})>".format(self.__class__.__name__, self.opened)

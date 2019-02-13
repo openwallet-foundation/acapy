@@ -45,31 +45,26 @@ class Transport(BaseInboundTransport):
         ws = web.WebSocketResponse()
         await ws.prepare(request)
 
+        async def reply(result):
+            await ws.send_json({"success": True, "message": result})
+
         # Listen for incoming messages
         async for msg in ws:
             self.logger.info(f"Received message: {msg.data}")
-            if msg.type == WSMsgType.TEXT:
-                if msg.data == "close":
-                    await ws.close()
-                else:
-                    try:
-                        message_dict = json.loads(msg.data)
-                    except json.decoder.JSONDecodeError as e:
-                        error_message = f"Could not parse message json: {str(e)}"
-                        self.logger.error(error_message)
-                        await ws.send_json({"success": False, "message": error_message})
-                        continue
+            if msg.type == WSMsgType.TEXT and msg.data == "close":
+                await ws.close()
 
-                    try:
-                        # Route message and provide connection instance as means to respond
-                        result = await self.message_router(message_dict)
-                        await ws.send_json({"success": True, "message": result})
-
-                    except Exception as e:
-                        error_message = f"Error handling message: {str(e)}"
-                        self.logger.error(error_message)
-                        await ws.send_json({"success": False, "message": error_message})
-                        continue
+            elif msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
+                try:
+                    # Route message and provide connection instance as means to respond
+                    result = await self.message_router(msg.data, self._scheme, reply)
+                    if result:
+                        await reply(result)
+                except Exception as e:
+                    self.logger.exception("Error handling message")
+                    error_message = f"Error handling message: {str(e)}"
+                    await ws.send_json({"success": False, "message": error_message})
+                    continue
 
             elif msg.type == WSMsgType.ERROR:
                 self.logger.error(

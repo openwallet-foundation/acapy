@@ -5,38 +5,33 @@ Represents a connection request message.
 from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
-from ...message_types import MessageTypes
-from ...validators import must_not_be_none
+from ..message_types import CONNECTION_REQUEST
+from ....models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
-from ....models.agent_endpoint import AgentEndpoint, AgentEndpointSchema
+HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_request_handler.ConnectionRequestHandler"
 
 
 class ConnectionRequest(AgentMessage):
     class Meta:
-        # handler_class = ConnectionRequestHandler
-        schema_class = 'ConnectionRequestSchema'
-        message_type = MessageTypes.CONNECTION_REQUEST.value
+        handler_class = HANDLER_CLASS
+        message_type = CONNECTION_REQUEST
+        schema_class = "ConnectionRequestSchema"
 
     def __init__(
             self,
             *,
-            endpoint: AgentEndpoint = None,
-            did: str = None,
-            verkey: str = None,
+            connection: ConnectionDetail = None,
+            label: str = None,
             **kwargs
         ):
         super(ConnectionRequest, self).__init__(**kwargs)
-        self.endpoint = endpoint
-        self.did = did
-        self.verkey = verkey
+        self.connection = connection
+        self.label = label
 
 
 class ConnectionRequestSchema(AgentMessageSchema):
     class Meta:
         model_class = ConnectionRequest
 
-    endpoint = fields.Nested(
-        AgentEndpointSchema, validate=must_not_be_none, required=True
-    )
-    did = fields.Str(required=True)
-    verkey = fields.Str(required=True)
+    connection = fields.Nested(ConnectionDetailSchema, required=True)
+    label = fields.Str(required=True)

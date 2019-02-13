@@ -34,10 +34,10 @@ class HttpTransport(BaseOutboundTransport):
     async def handle_message(self, message: OutboundMessage):
         try:
             async with self.client_session.post(
-                message.uri, json=message.data
+                message.uri, data=message.data
             ) as response:
                 self.logger.info(response.status)
-        except Exception as e:
+        except Exception:
             # TODO: add retry logic
-            self.logger.error(f"Error handling outbound message: {str(e)}")
+            self.logger.exception("Error handling outbound message")
 

@@ -165,7 +165,7 @@ class TestBasicWallet:
     @pytest.mark.asyncio
     async def test_pairwise_metadata(self, wallet):
         await wallet.create_local_did(self.test_seed, self.test_did)
-        pair_created = await wallet.create_pairwise(
+        _pair_created = await wallet.create_pairwise(
             self.test_target_did, self.test_target_verkey, None, self.test_metadata
         )
 
@@ -217,6 +217,11 @@ class TestBasicWallet:
         assert unpacked_auth == self.test_message
         assert from_verkey == self.test_verkey
         assert to_verkey == self.test_target_verkey
+
+        with pytest.raises(WalletError):
+            unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b'bad')
+        with pytest.raises(WalletError):
+            unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b'{}')
 
     @pytest.mark.asyncio
     async def test_encrypt_decrypt_dids(self, wallet):

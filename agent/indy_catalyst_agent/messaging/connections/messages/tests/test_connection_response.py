@@ -1,31 +1,47 @@
-from ..connection_response import ConnectionResponse, ConnectionResponseSchema
-from ....message_types import MessageTypes
-
 from unittest import mock, TestCase
 
+from asynctest import TestCase as AsyncTestCase
 
-class TestConnectionResponse(TestCase):
-    endpoint = "endpoint"
-    did = "did"
-    verkey = "verkey"
+from von_anchor.a2a import DIDDoc
+from von_anchor.a2a.publickey import PublicKey, PublicKeyType
+from von_anchor.a2a.service import Service
+
+from ..connection_response import (
+    ConnectionResponse, ConnectionResponseSchema, ConnectionDetail,
+)
+from ...message_types import CONNECTION_RESPONSE
+from .....wallet.basic import BasicWallet
+
+
+class TestConfig:
+    test_seed = "testseed000000000000000000000001"
+    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+    test_endpoint = "http://localhost"
+
+    def make_did_doc(self):
+        doc = DIDDoc(did=self.test_did)
+        controller = self.test_did
+        ident = "1"
+        value = self.test_verkey
+        pk = PublicKey(self.test_did, ident, PublicKeyType.ED25519_SIG_2018, controller, value, False)
+        doc.verkeys.append(pk)
+        service = Service(self.test_did, "indy", "IndyAgent", self.test_endpoint)
+        doc.services.append(service)
+        return doc
+
+
+class TestConnectionResponse(TestCase, TestConfig):
+    def setUp(self):
+        self.connection_response = ConnectionResponse(
+            connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc()),
+        )
 
     def test_init(self):
-        connection_response = ConnectionResponse(
-            endpoint=self.endpoint,
-            did=self.did,
-            verkey=self.verkey
-        )
-        assert connection_response.endpoint == self.endpoint
-        assert connection_response.did == self.did
-        assert connection_response.verkey == self.verkey
+        assert self.connection_response.connection.did == self.test_did
 
     def test_type(self):
-        connection_response = ConnectionResponse(
-            endpoint=self.endpoint,
-            did=self.did,
-            verkey=self.verkey
-        )
-        assert connection_response._type == MessageTypes.CONNECTION_RESPONSE.value
+        assert self.connection_response._type == CONNECTION_RESPONSE
 
     @mock.patch(
         "indy_catalyst_agent.messaging.connections.messages.connection_response.ConnectionResponseSchema.load"
@@ -42,15 +58,9 @@ class TestConnectionResponse(TestCase):
         "indy_catalyst_agent.messaging.connections.messages.connection_response.ConnectionResponseSchema.dump"
     )
     def test_serialize(self, mock_connection_response_schema_dump):
-        connection_response = ConnectionResponse(
-            endpoint=self.endpoint,
-            did=self.did,
-            verkey=self.verkey
-        )
-
-        connection_response_dict = connection_response.serialize()
+        connection_response_dict = self.connection_response.serialize()
         mock_connection_response_schema_dump.assert_called_once_with(
-            connection_response
+            self.connection_response
         )
 
         assert (
@@ -59,15 +69,14 @@ class TestConnectionResponse(TestCase):
         )
 
 
-class TestConnectionResponseSchema(TestCase):
-    connection_response = ConnectionResponse(
-        endpoint="endpoint",
-        did="did",
-        verkey="verkey"
-    )
-
-    def test_make_model(self):
-        data = self.connection_response.serialize()
+class TestConnectionResponseSchema(AsyncTestCase, TestConfig):
+    async def test_make_model(self):
+        connection_response = ConnectionResponse(
+            connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc()),
+        )
+        wallet = BasicWallet()
+        key_info = await wallet.create_signing_key()
+        await connection_response.sign_field("connection", key_info.verkey, wallet)
+        data = connection_response.serialize()
         model_instance = ConnectionResponse.deserialize(data)
-        assert type(model_instance) is type(self.connection_response)
-
+        assert type(model_instance) is type(connection_response)

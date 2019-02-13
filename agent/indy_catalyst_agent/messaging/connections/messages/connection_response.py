@@ -5,31 +5,31 @@ Represents a connection response message
 from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
-from ...message_types import MessageTypes
-from ...validators import must_not_be_none
+from ..message_types import CONNECTION_RESPONSE
+from ....models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
-from ....models.agent_endpoint import AgentEndpoint, AgentEndpointSchema
+HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_response_handler.ConnectionResponseHandler"
 
 
 class ConnectionResponse(AgentMessage):
     class Meta:
-        # handler_class = ConnectionResponseHandler
+        handler_class = HANDLER_CLASS
         schema_class = 'ConnectionResponseSchema'
-        message_type = MessageTypes.CONNECTION_RESPONSE.value
+        message_type = CONNECTION_RESPONSE
 
-    def __init__(self, *, endpoint: AgentEndpoint = None, did: str = None, verkey: str = None, **kwargs):
+    def __init__(
+            self,
+            *,
+            connection: ConnectionDetail = None,
+            **kwargs
+        ):
         super(ConnectionResponse, self).__init__(**kwargs)
-        self.endpoint = endpoint
-        self.did = did
-        self.verkey = verkey
+        self.connection = connection
 
 
 class ConnectionResponseSchema(AgentMessageSchema):
     class Meta:
         model_class = ConnectionResponse
+        signed_fields = ("connection",)
 
-    endpoint = fields.Nested(
-        AgentEndpointSchema, validate=must_not_be_none, required=True
-    )
-    did = fields.Str(required=True)
-    verkey = fields.Str(required=True)
+    connection = fields.Nested(ConnectionDetailSchema, required=True)

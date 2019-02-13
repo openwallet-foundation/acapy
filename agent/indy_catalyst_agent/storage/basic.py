@@ -8,10 +8,11 @@ from typing import Mapping, Sequence
 from .base import BaseStorage, BaseStorageRecordSearch
 from .error import StorageError, StorageNotFoundError, StorageSearchError
 from .record import StorageRecord
+from ..wallet import BaseWallet
 
 
 class BasicStorage(BaseStorage):
-    def __init__(self):
+    def __init__(self, _wallet: BaseWallet = None):
         self._records = OrderedDict()
 
     async def add_record(self, record: StorageRecord):
