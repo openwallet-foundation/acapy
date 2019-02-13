@@ -12,7 +12,7 @@ from ..error import BaseError
 from .message_factory import MessageFactory, MessageParseError
 from ..models.connection_target import ConnectionTarget
 from ..storage import BaseStorage
-from ..wallet import BaseWallet, WalletNotFoundError
+from ..wallet import BaseWallet, WalletError, WalletNotFoundError
 
 
 class RequestContext:
@@ -218,12 +218,12 @@ class RequestContext:
         if isinstance(message_body, bytes):
             try:
                 message_json, from_verkey, to_verkey = await self.wallet.unpack_message(message_body)
-            except KeyError: # FIXME! send common exception from unpack
+            except WalletError:
                 self._logger.debug("Message unpack failed")
         
         try:
             message_dict = json.loads(message_json)
-        except TypeError:
+        except ValueError:
             raise MessageParseError("Message JSON parsing failed")
         self._logger.debug(f"Extracted message: {message_dict}")
         

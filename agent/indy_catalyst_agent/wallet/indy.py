@@ -433,7 +433,10 @@ class IndyWallet(BaseWallet):
             raise WalletError("Message not provided")
         if not from_verkey:
             raise WalletError("Verkey not provided")
-        result = await indy.crypto.crypto_sign(self.handle, from_verkey, message)
+        try:
+            result = await indy.crypto.crypto_sign(self.handle, from_verkey, message)
+        except IndyError:
+            raise WalletError("Exception when signing message")
         return result
 
     async def verify_message(self, message: bytes, signature: bytes, from_verkey: str) -> bool:
@@ -473,13 +476,19 @@ class IndyWallet(BaseWallet):
             The encrypted message content
         """
         if from_verkey:
-            result = await indy.crypto.auth_crypt(
-                self.handle,
-                from_verkey,
-                to_verkey,
-                message)
+            try:
+                result = await indy.crypto.auth_crypt(
+                    self.handle,
+                    from_verkey,
+                    to_verkey,
+                    message)
+            except IndyError:
+                raise WalletError("Exception when encrypting auth message")
         else:
-            result = await indy.crypto.anon_crypt(to_verkey, message)
+            try:
+                result = await indy.crypto.anon_crypt(to_verkey, message)
+            except IndyError:
+                raise WalletError("Exception when encrypting anonymous message")
         return result
 
     async def decrypt_message(
@@ -499,12 +508,18 @@ class IndyWallet(BaseWallet):
             A tuple of the decrypted message content and sender verkey (None for anon_crypt)
         """
         if use_auth:
-            sender_verkey, result = await indy.crypto.auth_decrypt(
-                self.handle,
-                to_verkey,
-                enc_message)
+            try:
+                sender_verkey, result = await indy.crypto.auth_decrypt(
+                    self.handle,
+                    to_verkey,
+                    enc_message)
+            except IndyError:
+                raise WalletError("Exception when decrypting auth message")
         else:
-            result = await indy.crypto.anon_decrypt(self.handle, to_verkey, enc_message)
+            try:
+                result = await indy.crypto.anon_decrypt(self.handle, to_verkey, enc_message)
+            except IndyError:
+                raise WalletError("Exception when decrypting anonymous message")
             sender_verkey = None
         return result, sender_verkey
 
@@ -518,11 +533,14 @@ class IndyWallet(BaseWallet):
         """
         if message is None:
             raise WalletError("Message not provided")
-        result = await indy.crypto.pack_message(
-            self.handle,
-            message,
-            to_verkeys,
-            from_verkey)
+        try:
+            result = await indy.crypto.pack_message(
+                self.handle,
+                message,
+                to_verkeys,
+                from_verkey)
+        except IndyError:
+            raise WalletError("Exception when packing message")
         return result
 
     async def unpack_message(self, enc_message: bytes) -> (str, str, str):
@@ -531,9 +549,12 @@ class IndyWallet(BaseWallet):
         """
         if not enc_message:
             raise WalletError("Message not provided")
-        unpacked_json = await indy.crypto.unpack_message(
-            self.handle,
-            enc_message)
+        try:
+            unpacked_json = await indy.crypto.unpack_message(
+                self.handle,
+                enc_message)
+        except IndyError:
+            raise WalletError("Exception when unpacking message")
         unpacked = json.loads(unpacked_json)
         message = unpacked["message"]
         to_verkey = unpacked.get("recipient_verkey", None)

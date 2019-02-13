@@ -218,6 +218,11 @@ class TestBasicWallet:
         assert from_verkey == self.test_verkey
         assert to_verkey == self.test_target_verkey
 
+        with pytest.raises(WalletError):
+            unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b'bad')
+        with pytest.raises(WalletError):
+            unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b'{}')
+
     @pytest.mark.asyncio
     async def test_encrypt_decrypt_dids(self, wallet):
         await wallet.create_local_did(self.test_seed, self.test_did)
