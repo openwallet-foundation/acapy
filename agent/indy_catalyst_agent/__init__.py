@@ -55,6 +55,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-e",
     "--endpoint",
     type=str,
     metavar="<endpoint>",
@@ -62,9 +63,10 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--name",
+    "-l",
+    "--label",
     type=str,
-    metavar="<name>",
+    metavar="<label>",
     help="Specify the default label to use when creating connection invitations and requests",
 )
 
@@ -87,6 +89,26 @@ parser.add_argument(
     type=str,
     metavar="<wallet-type>",
     help="Specify the wallet implementation to use",
+)
+
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="Enable debugging features",
+)
+
+parser.add_argument(
+    "--seed",
+    type=str,
+    metavar="<did-seed>",
+    help="Specify the default seed to use",
+)
+
+parser.add_argument(
+    "--invite",
+    type=str,
+    metavar="<agent-endpoint>",
+    help="Specify an endpoint to send an invitation to",
 )
 
 
@@ -118,9 +140,9 @@ def main():
     LoggingConfigurator.configure(logging_config, log_level)
 
     if args.endpoint:
-        settings["endpoint"] = args.endpoint
-    if args.name:
-        settings["name"] = args.name
+        settings["default_endpoint"] = args.endpoint
+    if args.label:
+        settings["default_label"] = args.label
 
     if args.wallet_key:
         settings["wallet.key"] = args.wallet_key
@@ -128,6 +150,13 @@ def main():
         settings["wallet.name"] = args.wallet_name
     if args.wallet_type:
         settings["wallet.type"] = args.wallet_type
+
+    if args.debug:
+        settings["debug.enabled"] = True
+    if args.seed:
+        settings["debug.seed"] = args.seed
+    if args.invite:
+        settings["debug.send_invitation_to"] = args.invite
 
     loop = asyncio.get_event_loop()
     try:
