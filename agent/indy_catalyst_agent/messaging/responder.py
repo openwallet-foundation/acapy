@@ -1,7 +1,7 @@
 from abc import ABC
 
 from .agent_message import AgentMessage
-from ..connection import Connection
+from ..models.connection_target import ConnectionTarget
 from ..error import BaseError
 
 
@@ -14,9 +14,9 @@ class BaseResponder(ABC):
     Interface for message handlers to send responses
     """
 
-    async def send_outbound(self, connection: Connection, message: AgentMessage):
+    async def send_outbound(self, message: AgentMessage, target: ConnectionTarget):
         """
-        Send a message to a given connection (endpoint). The
+        Send a message to a given connection target (endpoint). The
         message may be queued for later delivery.
         """
 

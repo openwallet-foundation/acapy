@@ -1,3 +1,5 @@
+import uuid
+
 from typing import Dict
 
 from marshmallow import fields, pre_load, post_load, pre_dump, post_dump, ValidationError
@@ -21,7 +23,7 @@ class AgentMessage(BaseModel):
             _thread: ThreadDecorator = None,
         ):
         super(AgentMessage, self).__init__()
-        self._message_id = _id
+        self._message_id = _id or str(uuid.uuid4())
         self._message_thread = _thread
         self._message_signatures = _signatures.copy() if _signatures else {}
         if not self.Meta.message_type:

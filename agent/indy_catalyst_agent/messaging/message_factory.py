@@ -8,7 +8,6 @@ from ..classloader import ClassLoader
 from ..error import BaseError
 
 from .agent_message import AgentMessage
-from .message_types import MessageTypes
 
 
 class MessageParseError(BaseError):
@@ -57,3 +56,6 @@ class MessageFactory:
 
         instance = msg_cls.deserialize(serialized_msg)
         return instance
+
+    def __repr__(self) -> str:
+        return "<{}>".format(self.__class__.__name__)

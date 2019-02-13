@@ -3,7 +3,7 @@ import logging
 import socket
 from typing import Callable
 
-from aiohttp import web
+from aiohttp import web, ClientRequest
 
 from .base import BaseInboundTransport
 from ...error import BaseError
@@ -39,16 +39,12 @@ class Transport(BaseInboundTransport):
                 f"Unable to start webserver with host '{self.host}' and port '{self.port}'\n"
             )
 
-    async def inbound_message_handler(self, request):
-        try:
-            body = await request.json()
-        except json.decoder.JSONDecodeError as e:
-            error_message = f"Could not parse message json: {str(e)}"
-            self.logger.error(error_message)
-            return web.json_response(
-                {"success": False, "message": error_message}, status=400
-            )
-
+    async def inbound_message_handler(self, request: ClientRequest):
+        ctype = request.headers.get("content-type", "")
+        if ctype.split(";", 1)[0].lower() == "application/json":
+            body = await request.text()
+        else:
+            body = await request.read()
         try:
             await self.message_router(body, self._scheme)
         except Exception as e:

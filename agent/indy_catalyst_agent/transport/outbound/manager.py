@@ -6,10 +6,11 @@ from typing import Type
 from urllib.parse import urlparse
 
 from .base import BaseOutboundTransport
+from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...error import BaseError
 from .queue.base import BaseOutboundMessageQueue
 from .message import OutboundMessage
-from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
+from ...models.connection_target import ConnectionTarget
 
 MODULE_BASE_PATH = "indy_catalyst_agent.transport.outbound"
 
@@ -24,7 +25,6 @@ class OutboundTransportManager:
         self.registered_transports = {}
         self.running_transports = {}
         self.class_loader = ClassLoader(MODULE_BASE_PATH, BaseOutboundTransport)
-
         self.queue = queue
 
     def register(self, module_path):
@@ -60,11 +60,11 @@ class OutboundTransportManager:
             # asyncio.create_task(self.start(schemes, transport_class))
             asyncio.ensure_future(self.start(schemes, transport_class))
 
-    async def send_message(self, message, uri):
+    async def send_message(self, message, target: ConnectionTarget):
         # Grab the scheme from the uri
-        scheme = urlparse(uri).scheme
+        scheme = urlparse(target.endpoint).scheme
         if scheme == "":
-            self.logger.warn(f"The uri '{uri}' does not specify a scheme")
+            self.logger.warn(f"The uri '{target.endpoint}' does not specify a scheme")
             return
 
         # Look up transport that is registered to handle this scheme
@@ -78,5 +78,5 @@ class OutboundTransportManager:
             self.logger.warn(f"No transport driver exists to handle scheme '{scheme}'")
             return
 
-        message = OutboundMessage(data=message, uri=uri)
+        message = OutboundMessage(data=message, target=target)
         await transport.queue.enqueue(message)

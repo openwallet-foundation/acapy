@@ -6,7 +6,7 @@ and storing data in the wallet.
 
 import logging
 
-from typing import Coroutine, Dict
+from typing import Coroutine, Dict, Union
 
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
@@ -15,6 +15,7 @@ from .logging import LoggingConfigurator
 from .messaging.agent_message import AgentMessage
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
+from .models.connection_target import ConnectionTarget
 from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
@@ -49,6 +50,7 @@ class Conductor:
         context = RequestContext()
         context.default_endpoint = self.settings.get("endpoint")
         context.default_label = self.settings.get("name", "Indy Catalyst Agent")
+        context.message_factory = self.message_factory
 
         wallet_type = self.settings.get("wallet.type", "basic").lower()
         wallet_type = self.WALLET_TYPES.get(wallet_type, wallet_type)
@@ -64,7 +66,7 @@ class Conductor:
         context.storage = ClassLoader.load_class(storage_type)(context.wallet)
 
         self.context = context
-        self.dispatcher = Dispatcher(context)
+        self.dispatcher = Dispatcher()
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -96,15 +98,13 @@ class Conductor:
             self.outbound_transport_manager.registered_transports,
         )
 
-    async def inbound_message_router(self, message_dict: Dict, transport_type: str, reply: Coroutine = None):
-        # will throw an exception if @type is missing or unrecognized
-        message = self.message_factory.make_message(message_dict)
-        result = await self.dispatcher.dispatch(message, self.outbound_message_router, transport_type, reply)
+    async def inbound_message_router(self, message_body: Union[str, bytes], transport_type: str, reply: Coroutine = None):
+        context = await self.context.expand_message(message_body, transport_type)
+        result = await self.dispatcher.dispatch(context, self.outbound_message_router, reply)
         # TODO: need to use callback instead?
         #       respond immediately after message parse in case of req-res transport?
         return result.serialize() if result else None
 
-    async def outbound_message_router(self, message: AgentMessage, connection) -> None:
+    async def outbound_message_router(self, message: AgentMessage, target: ConnectionTarget) -> None:
         message_dict = message.serialize()
-        uri = connection.endpoint
-        await self.outbound_transport_manager.send_message(message_dict, uri)
+        await self.outbound_transport_manager.send_message(message_dict, target)

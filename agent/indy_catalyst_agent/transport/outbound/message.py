@@ -1,3 +1,3 @@
 from collections import namedtuple
 
-OutboundMessage = namedtuple("OutboundMessage", "data uri")
+OutboundMessage = namedtuple("OutboundMessage", "data target")

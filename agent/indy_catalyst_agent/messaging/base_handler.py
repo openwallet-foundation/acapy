@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
+import logging
 
 from .responder import BaseResponder
 from .request_context import RequestContext
 
 
 class BaseHandler(ABC):
-    @abstractmethod
     def __init__(self) -> None:
-        pass
+        self._logger = logging.getLogger(__name__)
 
     @abstractmethod
     async def handle(self, context: RequestContext, responder: BaseResponder):

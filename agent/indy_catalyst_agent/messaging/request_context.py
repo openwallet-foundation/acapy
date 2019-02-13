@@ -3,23 +3,32 @@ Request context class
 """
 
 import copy
+import json
+import logging
+from typing import Union
 
 from .agent_message import AgentMessage
+from ..error import BaseError
+from .message_factory import MessageFactory, MessageParseError
 from ..storage import BaseStorage
-from ..wallet import BaseWallet
+from ..wallet import BaseWallet, WalletNotFoundError
 
 
 class RequestContext:
     """
-    Context established by Dispatcher and passed into message handlers
+    Context established by the Conductor and passed into message handlers
     """
 
     def __init__(self):
         self._default_endpoint = None
         self._default_label = None
+        self._logger = logging.getLogger(__name__)
         self._recipient_verkey = None
+        self._recipient_did = None
+        self._recipient_did_public = False
         self._sender_verkey = None
         self._transport_type = None
+        self._message_factory = None
         self._message = None
         self._storage = None
         self._wallet = None
@@ -73,6 +82,41 @@ class RequestContext:
         self._recipient_verkey = verkey
 
     @property
+    def recipient_did(self) -> str:
+        """
+        Accessor for the recipient DID which corresponds with the verkey
+        """
+        return self._recipient_did
+
+    @recipient_did.setter
+    def recipient_did(self, did: str):
+        """
+        Setter for the recipient DID which corresponds with the verkey
+        """
+        self._recipient_did = did
+
+    @property
+    def recipient_did_public(self) -> bool:
+        """
+        Indicates whether the message is associated with a public (ledger) recipient DID
+        """
+        return self._recipient_did_public
+
+    @recipient_did_public.setter
+    def recipient_did_public(self, public: bool):
+        """
+        Setter for the flag indicating the recipient DID is public
+        """
+        self._recipient_did_public = public
+
+    @recipient_verkey.setter
+    def recipient_verkey(self, verkey: str):
+        """
+        Setter for the recipient public key used to pack the incoming request
+        """
+        self._recipient_verkey = verkey
+
+    @property
     def sender_verkey(self) -> str:
         """
         Accessor for the sender public key used to pack the incoming request
@@ -100,6 +144,20 @@ class RequestContext:
         """
         self._transport_type = transport
     
+    @property
+    def message_factory(self) -> MessageFactory:
+        """
+        Accessor for the message factory instance
+        """
+        return self._message_factory
+
+    @message_factory.setter
+    def message_factory(self, factory: MessageFactory):
+        """
+        Setter for the message factory instance
+        """
+        self._message_factory = factory
+
     @property
     def message(self) -> AgentMessage:
         """
@@ -142,6 +200,52 @@ class RequestContext:
         """
         self._wallet = wallet
 
+    async def expand_message(self, message_body: Union[str, bytes], transport_type: str) -> 'RequestContext':
+        if not self.message_factory:
+            raise MessageParseError("Message factory not defined")
+        if not self.wallet:
+            raise MessageParseError("Wallet not defined")
+
+        message_dict = None
+        message_json = message_body
+        from_verkey = None
+        to_verkey = None
+
+        if isinstance(message_body, bytes):
+            try:
+                message_json, from_verkey, to_verkey = await self.wallet.unpack_message(message_body)
+            except TypeError:
+                self._logger.debug("Message unpack failed")
+        
+        try:
+            message_dict = json.loads(message_json)
+        except TypeError:
+            raise MessageParseError("Message JSON parsing failed")
+        
+        ctx = self.copy()
+        ctx.message = self.message_factory.make_message(message_dict)
+        ctx.transport_type = transport_type
+
+        if from_verkey:
+            ctx.sender_verkey = from_verkey
+
+        if to_verkey:
+            ctx.recipient_verkey = to_verkey
+            try:
+                did_info = await self.wallet.get_local_did_for_verkey(to_verkey)
+            except WalletNotFoundError:
+                did_info = None
+            if did_info:
+                ctx.recipient_did = did_info.did
+            # TODO set ctx.recipient_did_public if DID is published to the ledger
+            # could also choose to set ctx.default_endpoint and ctx.default_label
+            # (these things could be stored on did_info.metadata)
+
+        # look up existing thread and connection information, if any
+
+        # handle any other decorators having special behaviour (timing, trace, etc)
+
+        return ctx
 
     # Missing:
     # - NodePool
@@ -150,5 +254,6 @@ class RequestContext:
     # - Extra transport info? (received at endpoint?)
 
     def __repr__(self) -> str:
-        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
+        skip = ("_logger",)
+        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items() if k not in skip)
         return "<{}({})>".format(self.__class__.__name__, ', '.join(items))
