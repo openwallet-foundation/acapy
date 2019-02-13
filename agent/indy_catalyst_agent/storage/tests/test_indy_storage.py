@@ -1,6 +1,16 @@
 import pytest
 
-_indy = pytest.importorskip("indy")
+try:
+    from indy.libindy import _cdll
+    _cdll()
+except ImportError:
+    pytest.skip(
+        "skipping Indy-specific tests: python module not installed",
+        allow_module_level=True)
+except OSError:
+    pytest.skip(
+        "skipping Indy-specific tests: shared library not loaded",
+        allow_module_level=True)
 
 from indy_catalyst_agent.wallet.indy import IndyWallet
 from indy_catalyst_agent.storage.indy import IndyStorage

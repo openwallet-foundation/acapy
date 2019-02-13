@@ -165,7 +165,7 @@ class TestBasicWallet:
     @pytest.mark.asyncio
     async def test_pairwise_metadata(self, wallet):
         await wallet.create_local_did(self.test_seed, self.test_did)
-        pair_created = await wallet.create_pairwise(
+        _pair_created = await wallet.create_pairwise(
             self.test_target_did, self.test_target_verkey, None, self.test_metadata
         )
 

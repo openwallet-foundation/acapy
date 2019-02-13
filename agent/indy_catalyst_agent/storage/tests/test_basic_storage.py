@@ -110,7 +110,6 @@ class TestBasicStorage:
     async def test_search(self, store):
         record = test_record()
         await store.add_record(record)
-        count = 0
         search = store.search_records(record.type, {}, None)
         await search.open()
         rows = await search.fetch(100)
