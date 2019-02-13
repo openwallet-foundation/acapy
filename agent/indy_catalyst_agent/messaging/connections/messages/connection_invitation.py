@@ -9,15 +9,16 @@ from marshmallow import (
 )
 
 from ...agent_message import AgentMessage, AgentMessageSchema
-from ..handlers.connection_invitation_handler import ConnectionInvitationHandler
 from ..message_types import CONNECTION_INVITATION
+
+HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_invitation_handler.ConnectionInvitationHandler"
 
 
 class ConnectionInvitation(AgentMessage):
     class Meta:
-        handler_class = ConnectionInvitationHandler
-        schema_class = 'ConnectionInvitationSchema'
+        handler_class = HANDLER_CLASS
         message_type = CONNECTION_INVITATION
+        schema_class = "ConnectionInvitationSchema"
 
     def __init__(
             self,
@@ -32,9 +33,9 @@ class ConnectionInvitation(AgentMessage):
         super(ConnectionInvitation, self).__init__(**kwargs)
         self.label = label
         self.did = did
-        self.recipient_keys = recipient_keys
+        self.recipient_keys = list(recipient_keys) if recipient_keys else []
         self.endpoint = endpoint
-        self.routing_keys = routing_keys
+        self.routing_keys = list(routing_keys) if routing_keys else []
 
 
 class ConnectionInvitationSchema(AgentMessageSchema):
@@ -52,7 +53,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         if data.get("did"):
             if data.get("recipient_keys"):
                 raise ValidationError("Fields are incompatible", ("did", "recipient_keys"))
-            if data.get("serviceEndpoint"):
+            if data.get("endpoint"):
                 raise ValidationError("Fields are incompatible", ("did", "serviceEndpoint"))
-        elif not data.get("recipient_keys") or not data.get("serviceEndpoint"):
+        elif not data.get("recipient_keys") or not data.get("endpoint"):
             raise ValidationError("Missing required field(s)", ("did", "recipient_keys", "serviceEndpoint"))

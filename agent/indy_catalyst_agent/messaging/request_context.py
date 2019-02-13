@@ -10,6 +10,7 @@ from typing import Union
 from .agent_message import AgentMessage
 from ..error import BaseError
 from .message_factory import MessageFactory, MessageParseError
+from ..models.connection_target import ConnectionTarget
 from ..storage import BaseStorage
 from ..wallet import BaseWallet, WalletNotFoundError
 
@@ -201,6 +202,9 @@ class RequestContext:
         self._wallet = wallet
 
     async def expand_message(self, message_body: Union[str, bytes], transport_type: str) -> 'RequestContext':
+        """
+        Deserialize an incoming message
+        """
         if not self.message_factory:
             raise MessageParseError("Message factory not defined")
         if not self.wallet:
@@ -214,13 +218,14 @@ class RequestContext:
         if isinstance(message_body, bytes):
             try:
                 message_json, from_verkey, to_verkey = await self.wallet.unpack_message(message_body)
-            except TypeError:
+            except KeyError: # FIXME! send common exception from unpack
                 self._logger.debug("Message unpack failed")
         
         try:
             message_dict = json.loads(message_json)
         except TypeError:
             raise MessageParseError("Message JSON parsing failed")
+        self._logger.debug(f"Extracted message: {message_dict}")
         
         ctx = self.copy()
         ctx.message = self.message_factory.make_message(message_dict)
@@ -246,6 +251,18 @@ class RequestContext:
         # handle any other decorators having special behaviour (timing, trace, etc)
 
         return ctx
+
+    async def compact_message(self, message: AgentMessage, target: ConnectionTarget) -> Union[str, bytes]:
+        """
+        Serialize an outgoing message for transport
+        """
+        message_dict = message.serialize()
+        message_json = json.dumps(message_dict)
+        if target.sender_key and target.recipient_keys:
+            message = await self.wallet.pack_message(message_json, target.recipient_keys, target.sender_key)
+        else:
+            message = message_json
+        return message
 
     # Missing:
     # - NodePool

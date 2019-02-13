@@ -8,12 +8,14 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import CONNECTION_REQUEST
 from ....models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
+HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_request_handler.ConnectionRequestHandler"
+
 
 class ConnectionRequest(AgentMessage):
     class Meta:
-        # handler_class = ConnectionRequestHandler
-        schema_class = 'ConnectionRequestSchema'
+        handler_class = HANDLER_CLASS
         message_type = CONNECTION_REQUEST
+        schema_class = "ConnectionRequestSchema"
 
     def __init__(
             self,
