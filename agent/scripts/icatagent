@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 
 import os
+import sys
 
 ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", "").lower()
-if ENABLE_PTVSD and ENABLE_PTVSD not in ("false", "0"):
+ENABLE_PTVSD = ENABLE_PTVSD and ENABLE_PTVSD not in ("false", "0")
+if ENABLE_PTVSD or "--debug" in sys.argv:
     try:
         import ptvsd
         ptvsd.enable_attach()
         print("ptvsd is running")
+        # To pause execution until the debugger is attached:
+        ptvsd.wait_for_attach()
     except ImportError as e:
         print("ptvsd library was not found")
 
