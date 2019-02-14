@@ -1,5 +1,5 @@
 """
-Utility class used to configure logging and print an informative start banner
+Utilities related to logging
 """
 
 from os import path
@@ -12,6 +12,10 @@ from os import path
 
 
 class LoggingConfigurator:
+    """
+    Utility class used to configure logging and print an informative start banner
+    """
+
     @classmethod
     def configure(cls, logging_config_path: str = None, log_level: str = None):
         if logging_config_path is not None:

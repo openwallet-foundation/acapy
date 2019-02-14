@@ -1,19 +1,20 @@
+"""Entrypoint."""
+
 import argparse
 import asyncio
 import os
-import signal
 
 from .conductor import Conductor
 from .defaults import default_message_factory
 from .logging import LoggingConfigurator
 from .transport.inbound import InboundTransportConfiguration
 
-from .version import __version__
+# from .version import __version__
 
 
-parser = argparse.ArgumentParser(description="Runs an Indy Agent.")
+PARSER = argparse.ArgumentParser(description="Runs an Indy Agent.")
 
-parser.add_argument(
+PARSER.add_argument(
     "-it",
     "--inbound-transport",
     dest="inbound_transports",
@@ -25,7 +26,7 @@ parser.add_argument(
     help="Choose which interface(s) to listen on",
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "-ot",
     "--outbound-transport",
     dest="outbound_transports",
@@ -36,7 +37,7 @@ parser.add_argument(
     help="Choose which outbound transport handlers to register",
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "--logging-config",
     dest="logging_config",
     type=str,
@@ -45,56 +46,59 @@ parser.add_argument(
     help="Specifies a custom logging configuration file",
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "--log-level",
     dest="log_level",
     type=str,
     metavar="<log-level>",
     default=None,
-    help="Specifies a custom logging level (debug, info, warning, error, critical)",
+    help="Specifies a custom logging level "
+    + "(debug, info, warning, error, critical)",
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "-e",
     "--endpoint",
     type=str,
     metavar="<endpoint>",
-    help="Specify the default endpoint to use when creating connection invitations and requests",
+    help="Specify the default endpoint to use when "
+    + "creating connection invitations and requests",
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "-l",
     "--label",
     type=str,
     metavar="<label>",
-    help="Specify the default label to use when creating connection invitations and requests",
+    help="Specify the default label to use when creating"
+    + " connection invitations and requests",
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "--wallet-key",
     type=str,
     metavar="<wallet-key>",
     help="Specify the master key value to use when opening the wallet",
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "--wallet-name", type=str, metavar="<wallet-name>", help="Specify the wallet name"
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "--wallet-type",
     type=str,
     metavar="<wallet-type>",
     help="Specify the wallet implementation to use",
 )
 
-parser.add_argument("--debug", action="store_true", help="Enable debugging features")
+PARSER.add_argument("--debug", action="store_true", help="Enable debugging features")
 
-parser.add_argument(
+PARSER.add_argument(
     "--seed", type=str, metavar="<did-seed>", help="Specify the default seed to use"
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "--invite",
     type=str,
     metavar="<agent-endpoint>",
@@ -103,6 +107,12 @@ parser.add_argument(
 
 
 async def start(inbound_transport_configs, outbound_transports, settings: dict):
+    """
+    Start.
+
+    Args:
+        inbound_transport_configs
+    """
     factory = default_message_factory()
     conductor = Conductor(
         inbound_transport_configs, outbound_transports, factory, settings
@@ -111,7 +121,8 @@ async def start(inbound_transport_configs, outbound_transports, settings: dict):
 
 
 def main():
-    args = parser.parse_args()
+    """Entrypoint."""
+    args = PARSER.parse_args()
     settings = {}
 
     inbound_transport_configs = []

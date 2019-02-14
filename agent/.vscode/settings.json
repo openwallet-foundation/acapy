@@ -1,6 +1,5 @@
 {
-    "python.pythonPath": "/usr/local/bin/python3",
-    "python.linting.pylintEnabled": true,
+    "python.pythonPath": "/usr/local/bin/python3",,
     "spellright.language": [
         "en"
     ],
@@ -9,5 +8,6 @@
         "latex",
         "plaintext"
     ],
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
 }
