@@ -11,29 +11,35 @@ from .agent_message import AgentMessage
 
 
 class MessageParseError(BaseError):
+    """ """
     pass
 
 
 class MessageFactory:
-    """
-    Message factory for deserializing message json and obtaining relevant
+    """Message factory for deserializing message json and obtaining relevant
     message class
+
+
     """
 
     def __init__(self):
         self._typemap = {}
 
     def register_message_types(self, *types):
-        """
-        Add new supported message types
+        """Add new supported message types
+
+        :param *types: 
+
         """
         for typeset in types:
             self._typemap.update(typeset)
 
     def resolve_message_class(self, message_type: str) -> type:
-        """
-        Given a dict describing a message, this method
+        """Given a dict describing a message, this method
         returns the corresponding registered message class.
+
+        :param message_type: str: 
+
         """
         msg_cls = self._typemap.get(message_type)
         if isinstance(msg_cls, str):
@@ -41,9 +47,11 @@ class MessageFactory:
         return msg_cls
 
     def make_message(self, serialized_msg: dict) -> AgentMessage:
-        """
-        Given a dict describing a message, this method
+        """Given a dict describing a message, this method
         returns an instance of the related message class.
+
+        :param serialized_msg: dict: 
+
         """
 
         msg_type = serialized_msg.get("@type")

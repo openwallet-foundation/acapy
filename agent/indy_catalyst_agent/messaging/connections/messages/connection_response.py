@@ -12,7 +12,9 @@ HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_r
 
 
 class ConnectionResponse(AgentMessage):
+    """ """
     class Meta:
+        """ """
         handler_class = HANDLER_CLASS
         schema_class = "ConnectionResponseSchema"
         message_type = CONNECTION_RESPONSE
@@ -23,7 +25,9 @@ class ConnectionResponse(AgentMessage):
 
 
 class ConnectionResponseSchema(AgentMessageSchema):
+    """ """
     class Meta:
+        """ """
         model_class = ConnectionResponse
         signed_fields = ("connection",)
 

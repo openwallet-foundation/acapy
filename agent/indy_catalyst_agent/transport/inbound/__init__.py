@@ -11,4 +11,5 @@ InboundTransportConfiguration = namedtuple(
 
 
 class InvalidTransportError(BaseError):
+    """ """
     pass

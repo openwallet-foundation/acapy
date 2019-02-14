@@ -4,6 +4,7 @@ from ....connection import ConnectionManager
 
 
 class ConnectionResponseHandler(BaseHandler):
+    """ """
     async def handle(self, context: RequestContext, responder: BaseResponder):
         self._logger.debug(f"ConnectionResponseHandler called with context {context}")
         assert isinstance(context.message, ConnectionResponse)

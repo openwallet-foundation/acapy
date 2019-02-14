@@ -7,20 +7,29 @@ from .error import BaseError
 
 
 class ModuleLoadError(BaseError):
+    """ """
     pass
 
 
 class ClassNotFoundError(BaseError):
+    """ """
     pass
 
 
 class ClassLoader:
+    """ """
     def __init__(self, base_path, super_class):
         self.logger = logging.getLogger(__name__)
         self.base_path = base_path
         self.super_class = super_class
 
     def load(self, module_path, load_relative=False):
+        """
+
+        :param module_path: 
+        :param load_relative:  (Default value = False)
+
+        """
         # We can try to load the module relative to a given base path
         if load_relative:
             relative_module_path = ".".join([self.base_path, module_path])
@@ -54,8 +63,11 @@ class ClassLoader:
 
     @classmethod
     def load_class(cls, class_name: str, default_module: str = None):
-        """
-        Resolve a complete class path (ie. typing.Dict) to the class itself
+        """Resolve a complete class path (ie. typing.Dict) to the class itself
+
+        :param class_name: str: 
+        :param default_module: str:  (Default value = None)
+
         """
         if "." in class_name:
             # import module and find class

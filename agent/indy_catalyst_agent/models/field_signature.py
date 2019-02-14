@@ -16,11 +16,10 @@ from ..wallet.util import b64_to_bytes, bytes_to_b64
 
 
 class FieldSignature(BaseModel):
-    """
-    Class representing a field value signed by a known verkey
-    """
+    """Class representing a field value signed by a known verkey"""
 
     class Meta:
+        """ """
         schema_class = "FieldSignatureSchema"
 
     TYPE_ED25519SHA512 = (
@@ -64,8 +63,11 @@ class FieldSignature(BaseModel):
         )
 
     def decode(self) -> (object, int):
-        """
-        Decode the signature to its timestamp and value
+        """Decode the signature to its timestamp and value
+
+        :param self) -> (object: 
+        :param int: 
+
         """
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         timestamp, = struct.unpack_from("!Q", msg_bin, 0)
@@ -92,7 +94,9 @@ class FieldSignature(BaseModel):
 
 
 class FieldSignatureSchema(BaseModelSchema):
+    """ """
     class Meta:
+        """ """
         model_class = FieldSignature
 
     signature_type = fields.Str(data_key="@type", required=True)

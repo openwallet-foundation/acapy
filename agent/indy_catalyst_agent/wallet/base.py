@@ -16,9 +16,7 @@ PairwiseInfo = namedtuple(
 
 
 class BaseWallet(ABC):
-    """
-    Abstract wallet interface
-    """
+    """Abstract wallet interface"""
 
     def __init__(self, config: dict):
         """
@@ -27,16 +25,12 @@ class BaseWallet(ABC):
 
     @property
     def handle(self):
-        """
-        Get internal wallet reference
-        """
+        """Get internal wallet reference"""
         return None
 
     @property
     def opened(self) -> bool:
-        """
-        Check whether wallet is currently open
-        """
+        """Check whether wallet is currently open"""
         return False
 
     @abstractmethod

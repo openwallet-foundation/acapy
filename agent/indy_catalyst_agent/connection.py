@@ -24,19 +24,19 @@ from von_anchor.a2a.service import Service
 
 
 class ConnectionError(BaseError):
+    """ """
     pass
 
 
 class ConnectionManager:
+    """ """
     def __init__(self, context: RequestContext):
         self._context = context
         self._logger = logging.getLogger(__name__)
 
     @property
     def context(self) -> RequestContext:
-        """
-        Accessor for the current request context
-        """
+        """Accessor for the current request context"""
         return self._context
 
     async def create_invitation(

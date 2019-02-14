@@ -5,11 +5,13 @@ from unittest import mock, TestCase
 
 
 class TestCredentialRequest(TestCase):
+    """ """
     offer_json = "offer_json"
     credential_request_json = "credential_request_json"
     credential_values_json = "credential_values_json"
 
     def test_init(self):
+        """ """
         credential_request = CredentialRequest(
             offer_json=self.offer_json,
             credential_request_json=self.credential_request_json,
@@ -22,6 +24,7 @@ class TestCredentialRequest(TestCase):
         assert credential_request.credential_values_json == self.credential_values_json
 
     def test_type(self):
+        """ """
         credential_request = CredentialRequest(
             offer_json=self.offer_json,
             credential_request_json=self.credential_request_json,
@@ -34,6 +37,11 @@ class TestCredentialRequest(TestCase):
         "indy_catalyst_agent.messaging.credentials.messages.credential_request.CredentialRequestSchema.load"
     )
     def test_deserialize(self, mock_credential_request_schema_load):
+        """
+
+        :param mock_credential_request_schema_load: 
+
+        """
         obj = {"obj": "obj"}
 
         credential_request = CredentialRequest.deserialize(obj)
@@ -45,6 +53,11 @@ class TestCredentialRequest(TestCase):
         "indy_catalyst_agent.messaging.credentials.messages.credential_request.CredentialRequestSchema.dump"
     )
     def test_serialize(self, mock_credential_request_schema_dump):
+        """
+
+        :param mock_credential_request_schema_dump: 
+
+        """
         credential_request = CredentialRequest(
             offer_json=self.offer_json,
             credential_request_json=self.credential_request_json,
@@ -60,6 +73,7 @@ class TestCredentialRequest(TestCase):
 
 
 class TestCredentialRequestSchema(TestCase):
+    """ """
     credential_request = CredentialRequest(
         offer_json="offer_json",
         credential_request_json="credential_request_json",
@@ -67,6 +81,7 @@ class TestCredentialRequestSchema(TestCase):
     )
 
     def test_make_model(self):
+        """ """
         data = self.credential_request.serialize()
         model_instance = CredentialRequest.deserialize(data)
         assert type(model_instance) is type(self.credential_request)

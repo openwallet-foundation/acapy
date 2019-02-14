@@ -12,6 +12,7 @@ from ..wallet import BaseWallet
 
 
 class BasicStorage(BaseStorage):
+    """ """
     def __init__(self, _wallet: BaseWallet = None):
         self._records = OrderedDict()
 
@@ -77,10 +78,18 @@ class BasicStorage(BaseStorage):
     def search_records(
         self, type_filter: str, tag_query: Mapping = None, page_size: int = None
     ) -> "BasicStorageRecordSearch":
+        """
+
+        :param type_filter: str: 
+        :param tag_query: Mapping:  (Default value = None)
+        :param page_size: int:  (Default value = None)
+
+        """
         return BasicStorageRecordSearch(self, type_filter, tag_query, page_size)
 
 
 class BasicStorageRecordSearch(BaseStorageRecordSearch):
+    """ """
     def __init__(
         self,
         store: BasicStorage,
@@ -96,9 +105,7 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
 
     @property
     def opened(self) -> bool:
-        """
-        Accessor for open state
-        """
+        """Accessor for open state"""
         return self._cache is not None
 
     async def fetch(self, max_count: int) -> Sequence[StorageRecord]:

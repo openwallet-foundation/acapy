@@ -12,12 +12,16 @@ from os import path
 
 
 class LoggingConfigurator:
-    """
-    Utility class used to configure logging and print an informative start banner
-    """
+    """Utility class used to configure logging and print an informative start banner"""
 
     @classmethod
     def configure(cls, logging_config_path: str = None, log_level: str = None):
+        """
+
+        :param logging_config_path: str:  (Default value = None)
+        :param log_level: str:  (Default value = None)
+
+        """
         if logging_config_path is not None:
             config_path = logging_config_path
         else:
@@ -39,7 +43,20 @@ class LoggingConfigurator:
         banner_length=40,
         border_character=":",
     ):
+        """
+
+        :param inbound_transports: 
+        :param outbound_transports: 
+        :param banner_length:  (Default value = 40)
+        :param border_character:  (Default value = ":")
+
+        """
         def lr_pad(content):
+            """
+
+            :param content: 
+
+            """
             return f"{border_character}{border_character} {content} {border_character}{border_character}"
 
         banner_title_string = "Indy Catalyst Agent"

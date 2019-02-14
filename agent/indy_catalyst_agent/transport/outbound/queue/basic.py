@@ -6,6 +6,7 @@ from .base import BaseOutboundMessageQueue
 
 
 class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
+    """ """
     def __init__(self):
         self.queue = Queue()
         self.logger = logging.getLogger(__name__)

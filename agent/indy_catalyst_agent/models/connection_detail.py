@@ -11,17 +11,31 @@ from von_anchor.a2a import DIDDoc
 
 
 class DIDDocWrapper(fields.Field):
-    """
-    Field that loads and serializes DIDDoc
-    """
+    """Field that loads and serializes DIDDoc"""
 
     def _serialize(self, value, attr, obj, **kwargs):
+        """
+
+        :param value: 
+        :param attr: 
+        :param obj: 
+        :param **kwargs: 
+
+        """
         # FIXME - not ideal! need a separate method on DIDDoc
         # return value.serialize()
         dd_json = value.to_json()
         return json.loads(dd_json)
 
     def _deserialize(self, value, attr, data, **kwargs):
+        """
+
+        :param value: 
+        :param attr: 
+        :param data: 
+        :param **kwargs: 
+
+        """
         # FIXME - same as above
         # return DIDDoc.deserialize(value)
         dd_json = json.dumps(value)
@@ -29,7 +43,9 @@ class DIDDocWrapper(fields.Field):
 
 
 class ConnectionDetail(BaseModel):
+    """ """
     class Meta:
+        """ """
         schema_class = "ConnectionDetailSchema"
 
     def __init__(self, *, did: str = None, did_doc: DIDDoc = None, **kwargs):
@@ -39,21 +55,19 @@ class ConnectionDetail(BaseModel):
 
     @property
     def did(self) -> str:
-        """
-        Accessor for the connection DID
-        """
+        """Accessor for the connection DID"""
         return self._did
 
     @property
     def did_doc(self) -> DIDDoc:
-        """
-        Accessor for the connection DID Document
-        """
+        """Accessor for the connection DID Document"""
         return self._did_doc
 
 
 class ConnectionDetailSchema(BaseModelSchema):
+    """ """
     class Meta:
+        """ """
         model_class = "ConnectionDetail"
 
     did = fields.Str(data_key="DID")

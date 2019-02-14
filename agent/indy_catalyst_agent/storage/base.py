@@ -11,9 +11,7 @@ DEFAULT_PAGE_SIZE = 100
 
 
 class BaseStorage(ABC):
-    """
-    Abstract Non-Secrets interface
-    """
+    """Abstract Non-Secrets interface"""
 
     @abstractmethod
     async def add_record(self, record: StorageRecord):
@@ -65,6 +63,13 @@ class BaseStorage(ABC):
     def search_records(
         self, type_filter: str, tag_query: Mapping = None, page_size: int = None
     ) -> "BaseStorageRecordSearch":
+        """
+
+        :param type_filter: str: 
+        :param tag_query: Mapping:  (Default value = None)
+        :param page_size: int:  (Default value = None)
+
+        """
         pass
 
     def __repr__(self) -> str:
@@ -72,9 +77,7 @@ class BaseStorage(ABC):
 
 
 class BaseStorageRecordSearch(ABC):
-    """
-    Represent an active stored records search
-    """
+    """Represent an active stored records search"""
 
     def __init__(
         self,
@@ -91,45 +94,33 @@ class BaseStorageRecordSearch(ABC):
 
     @property
     def handle(self):
-        """
-        Return handle to active storage search
-        """
+        """ """
         return None
 
     @property
     @abstractmethod
     def opened(self) -> bool:
-        """
-        Accessor for open state
-        """
+        """Accessor for open state"""
         return False
 
     @property
     def page_size(self):
-        """
-        Return page size for this search query
-        """
+        """ """
         return self._page_size or DEFAULT_PAGE_SIZE
 
     @property
     def store(self) -> BaseStorage:
-        """
-        Return reference to store
-        """
+        """ """
         return self._store
 
     @property
     def tag_query(self):
-        """
-        Return the query to filter results according to tag values
-        """
+        """ """
         return self._tag_query
 
     @property
     def type_filter(self):
-        """
-        Return the type value used to filter results
-        """
+        """ """
         return self._type_filter
 
     @abstractmethod

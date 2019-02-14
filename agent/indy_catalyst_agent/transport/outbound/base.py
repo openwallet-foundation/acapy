@@ -8,6 +8,7 @@ from .queue.base import BaseOutboundMessageQueue
 
 
 class BaseOutboundTransport(ABC):
+    """ """
     @abstractmethod
     def __init__(self, queue: BaseOutboundMessageQueue) -> None:
         pass
@@ -22,6 +23,7 @@ class BaseOutboundTransport(ABC):
 
     @abstractproperty
     def queue(self):
+        """ """
         pass
 
     @abstractmethod

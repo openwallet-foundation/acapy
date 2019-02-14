@@ -17,9 +17,7 @@ from .util import bytes_to_b64
 
 
 class IndyWallet(BaseWallet):
-    """
-    Indy wallet implementation
-    """
+    """Indy wallet implementation"""
 
     DEFAULT_FRESHNESS = 0
     DEFAULT_KEY = ""
@@ -40,27 +38,22 @@ class IndyWallet(BaseWallet):
 
     @property
     def handle(self):
-        """
-        Get internal wallet reference
-        """
+        """Get internal wallet reference"""
         return self._handle
 
     @property
     def opened(self) -> bool:
-        """
-        Check whether wallet is currently open
-        """
+        """Check whether wallet is currently open"""
         return bool(self._handle)
 
     @property
     def name(self) -> str:
-        """
-        Accessor for the wallet name
-        """
+        """Accessor for the wallet name"""
         return self._name
 
     @property
     def _wallet_config(self) -> dict:
+        """ """
         return {
             "id": self._name,
             "freshness_time": self._freshness_time,
@@ -69,6 +62,7 @@ class IndyWallet(BaseWallet):
 
     @property
     def _wallet_access(self) -> dict:
+        """ """
         return {
             "key": self._key,
             # key_derivation_method
@@ -358,8 +352,11 @@ class IndyWallet(BaseWallet):
         )
 
     def _make_pairwise_info(self, result: dict, their_did: str = None) -> PairwiseInfo:
-        """
-        Convert Indy pairwise info into PairwiseInfo record
+        """Convert Indy pairwise info into PairwiseInfo record
+
+        :param result: dict: 
+        :param their_did: str:  (Default value = None)
+
         """
         meta = result["metadata"] and json.loads(result["metadata"]) or {}
         if "custom" not in meta:

@@ -10,7 +10,9 @@ from .base import BaseModel, BaseModelSchema
 
 
 class ConnectionTarget(BaseModel):
+    """ """
     class Meta:
+        """ """
         schema_class = "ConnectionTargetSchema"
 
     def __init__(
@@ -28,7 +30,9 @@ class ConnectionTarget(BaseModel):
 
 
 class ConnectionTargetSchema(BaseModelSchema):
+    """ """
     class Meta:
+        """ """
         model_class = ConnectionTarget
 
     endpoint = fields.Str(required=False)

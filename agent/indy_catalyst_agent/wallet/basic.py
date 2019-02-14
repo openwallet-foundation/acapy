@@ -23,9 +23,7 @@ from .util import b58_to_bytes, bytes_to_b58
 
 
 class BasicWallet(BaseWallet):
-    """
-    In-memory wallet implementation
-    """
+    """In-memory wallet implementation"""
 
     def __init__(self, config: dict = None):
         if not config:
@@ -38,9 +36,7 @@ class BasicWallet(BaseWallet):
 
     @property
     def opened(self) -> bool:
-        """
-        Check whether wallet is currently open
-        """
+        """Check whether wallet is currently open"""
         return True
 
     async def open(self):
@@ -136,8 +132,10 @@ class BasicWallet(BaseWallet):
         return DIDInfo(did, verkey_enc, self._local_dids[did]["metadata"].copy())
 
     def _get_did_info(self, did: str) -> DIDInfo:
-        """
-        Convert internal DID record to DIDInfo
+        """Convert internal DID record to DIDInfo
+
+        :param did: str: 
+
         """
         info = self._local_dids[did]
         return DIDInfo(did=did, verkey=info["verkey"], metadata=info["metadata"].copy())
@@ -204,8 +202,10 @@ class BasicWallet(BaseWallet):
         return self._get_pairwise_info(their_did)
 
     def _get_pairwise_info(self, their_did: str) -> PairwiseInfo:
-        """
-        Convert internal pairwise DID record to PairwiseInfo
+        """Convert internal pairwise DID record to PairwiseInfo
+
+        :param their_did: str: 
+
         """
         info = self._pair_dids[their_did]
         return PairwiseInfo(
@@ -249,8 +249,11 @@ class BasicWallet(BaseWallet):
         self._pair_dids[their_did]["metadata"] = metadata.copy() if metadata else {}
 
     def _get_private_key(self, verkey: str, long=False) -> bytes:
-        """
-        Resolve private key for a wallet DID
+        """Resolve private key for a wallet DID
+
+        :param verkey: str: 
+        :param long:  (Default value = False)
+
         """
 
         keys_and_dids = list(self._local_dids.values()) + list(self._keys.values())

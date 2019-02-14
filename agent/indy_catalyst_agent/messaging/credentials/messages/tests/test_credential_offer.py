@@ -5,13 +5,16 @@ from unittest import mock, TestCase
 
 
 class TestCredentialOffer(TestCase):
+    """ """
     offer_json = "offer_json"
 
     def test_init(self):
+        """ """
         credential_offer = CredentialOffer(offer_json=self.offer_json)
         assert credential_offer.offer_json == self.offer_json
 
     def test_type(self):
+        """ """
         credential_offer = CredentialOffer(offer_json=self.offer_json)
 
         assert credential_offer._type == MessageTypes.CREDENTIAL_OFFER.value
@@ -20,6 +23,11 @@ class TestCredentialOffer(TestCase):
         "indy_catalyst_agent.messaging.credentials.messages.credential_offer.CredentialOfferSchema.load"
     )
     def test_deserialize(self, mock_credential_offer_schema_load):
+        """
+
+        :param mock_credential_offer_schema_load: 
+
+        """
         obj = {"obj": "obj"}
 
         credential_offer = CredentialOffer.deserialize(obj)
@@ -31,6 +39,11 @@ class TestCredentialOffer(TestCase):
         "indy_catalyst_agent.messaging.credentials.messages.credential_offer.CredentialOfferSchema.dump"
     )
     def test_serialize(self, mock_credential_offer_schema_dump):
+        """
+
+        :param mock_credential_offer_schema_dump: 
+
+        """
         credential_offer = CredentialOffer(offer_json=self.offer_json)
 
         credential_offer_dict = credential_offer.serialize()
@@ -40,9 +53,11 @@ class TestCredentialOffer(TestCase):
 
 
 class TestCredentialOfferSchema(TestCase):
+    """ """
     credential_offer = CredentialOffer(offer_json="offer_json")
 
     def test_make_model(self):
+        """ """
         data = self.credential_offer.serialize()
         model_instance = CredentialOffer.deserialize(data)
         assert type(model_instance) is type(self.credential_offer)

@@ -9,7 +9,9 @@ from ...wallet.basic import BasicWallet
 
 
 class SignedAgentMessage(AgentMessage):
+    """ """
     class Meta:
+        """ """
         handler_class = None
         schema_class = "SignedAgentMessageSchema"
         message_type = "signed-agent-message"
@@ -20,7 +22,9 @@ class SignedAgentMessage(AgentMessage):
 
 
 class SignedAgentMessageSchema(AgentMessageSchema):
+    """ """
     class Meta:
+        """ """
         model_class = SignedAgentMessage
         signed_fields = ("value",)
 
@@ -28,10 +32,13 @@ class SignedAgentMessageSchema(AgentMessageSchema):
 
 
 class TestAgentMessage(AsyncTestCase):
+    """ """
     class BadImplementationClass(AgentMessage):
+        """ """
         pass
 
     def test_init(self):
+        """ """
         _msg = SignedAgentMessage()
 
         with self.assertRaises(TypeError) as context:

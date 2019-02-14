@@ -23,7 +23,9 @@ from ..wallet import BaseWallet
 
 
 class AgentMessage(BaseModel):
+    """ """
     class Meta:
+        """ """
         handler_class = None
         schema_class = None
         message_type = None
@@ -52,52 +54,52 @@ class AgentMessage(BaseModel):
 
     @classmethod
     def _get_handler_class(cls):
+        """ """
         return resolve_class(cls.Meta.handler_class, cls)
 
     @property
     def Handler(self) -> type:
-        """
-        Accessor for the agent message's handler class
-        """
+        """Accessor for the agent message's handler class"""
         return self._get_handler_class()
 
     @property
     def _type(self) -> str:
-        """
-        Accessor for the message type identifier
-        """
+        """Accessor for the message type identifier"""
         return self.Meta.message_type
 
     @property
     def _id(self) -> str:
-        """
-        Accessor for the unique message identifier
-        """
+        """Accessor for the unique message identifier"""
         return self._message_id
 
     @_id.setter
     def _id(self, val: str):
-        """
-        Set the unique message identifier
+        """Set the unique message identifier
+
+        :param val: str: 
+
         """
         self._message_id = val
 
     @property
     def _signatures(self) -> Dict[str, FieldSignature]:
-        """
-        Fetch the dictionary of defined field signatures
-        """
+        """Fetch the dictionary of defined field signatures"""
         return self._message_signatures.copy()
 
     def get_signature(self, field_name: str) -> FieldSignature:
-        """
-        Get the signature for a named field
+        """Get the signature for a named field
+
+        :param field_name: str: 
+
         """
         return self._message_signatures.get(field_name)
 
     def set_signature(self, field_name: str, signature: FieldSignature):
-        """
-        Add or replace the signature for a named field
+        """Add or replace the signature for a named field
+
+        :param field_name: str: 
+        :param signature: FieldSignature: 
+
         """
         self._message_signatures[field_name] = signature
 
@@ -150,21 +152,23 @@ class AgentMessage(BaseModel):
 
     @property
     def _thread(self) -> ThreadDecorator:
-        """
-        Accessor for the message's thread decorator
-        """
+        """Accessor for the message's thread decorator"""
         return self._message_thread
 
     @_thread.setter
     def _thread(self, val: ThreadDecorator):
-        """
-        Setter for the message's thread decorator
+        """Setter for the message's thread decorator
+
+        :param val: ThreadDecorator: 
+
         """
         self._message_thread = val
 
 
 class AgentMessageSchema(BaseModelSchema):
+    """ """
     class Meta:
+        """ """
         model_class = None
         signed_fields = None
 
@@ -187,6 +191,11 @@ class AgentMessageSchema(BaseModelSchema):
 
     @pre_load
     def parse_signed_fields(self, data):
+        """
+
+        :param data: 
+
+        """
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         found = {}
         for field_name, field_value in data.items():
@@ -214,12 +223,22 @@ class AgentMessageSchema(BaseModelSchema):
 
     @post_load
     def populate_signatures(self, obj):
+        """
+
+        :param obj: 
+
+        """
         for field_name, sig in self._signatures.items():
             obj.set_signature(field_name, sig)
         return obj
 
     @pre_dump
     def copy_signatures(self, obj):
+        """
+
+        :param obj: 
+
+        """
         self._signatures = obj._signatures
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         for field_name in expect_fields:
@@ -231,6 +250,11 @@ class AgentMessageSchema(BaseModelSchema):
 
     @post_dump
     def replace_signatures(self, data):
+        """
+
+        :param data: 
+
+        """
         for field_name, sig in self._signatures.items():
             del data[field_name]
             data["{}~sig".format(field_name)] = sig.serialize()

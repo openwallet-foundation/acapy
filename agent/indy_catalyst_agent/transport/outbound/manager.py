@@ -16,10 +16,12 @@ MODULE_BASE_PATH = "indy_catalyst_agent.transport.outbound"
 
 
 class OutboundTransportRegistrationError(BaseError):
+    """ """
     pass
 
 
 class OutboundTransportManager:
+    """ """
     def __init__(self, queue: Type[BaseOutboundMessageQueue]):
         self.logger = logging.getLogger(__name__)
         self.registered_transports = {}
@@ -28,6 +30,11 @@ class OutboundTransportManager:
         self.queue = queue
 
     def register(self, module_path):
+        """
+
+        :param module_path: 
+
+        """
         imported_class = self.class_loader.load(module_path, True)
 
         try:

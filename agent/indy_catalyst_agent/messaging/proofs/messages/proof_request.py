@@ -9,7 +9,9 @@ from ...message_types import MessageTypes
 
 
 class ProofRequest(AgentMessage):
+    """ """
     class Meta:
+        """ """
         # handler_class = ProofRequestHandler
         message_type = MessageTypes.PROOF_REQUEST.value
         schema_class = "ProofRequestSchema"
@@ -20,7 +22,9 @@ class ProofRequest(AgentMessage):
 
 
 class ProofRequestSchema(AgentMessageSchema):
+    """ """
     class Meta:
+        """ """
         model_class = ProofRequest
 
     proof_request_json = fields.Str(required=True)

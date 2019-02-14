@@ -22,6 +22,7 @@ ROUTING_MESSAGES = {
 
 
 def default_message_factory() -> MessageFactory:
+    """ """
     factory = MessageFactory()
 
     factory.register_message_types(

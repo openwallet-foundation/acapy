@@ -12,7 +12,9 @@ HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_r
 
 
 class ConnectionRequest(AgentMessage):
+    """ """
     class Meta:
+        """ """
         handler_class = HANDLER_CLASS
         message_type = CONNECTION_REQUEST
         schema_class = "ConnectionRequestSchema"
@@ -26,7 +28,9 @@ class ConnectionRequest(AgentMessage):
 
 
 class ConnectionRequestSchema(AgentMessageSchema):
+    """ """
     class Meta:
+        """ """
         model_class = ConnectionRequest
 
     connection = fields.Nested(ConnectionDetailSchema, required=True)

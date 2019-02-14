@@ -11,10 +11,12 @@ from ...error import BaseError
 
 
 class WsSetupError(BaseError):
+    """ """
     pass
 
 
 class Transport(BaseInboundTransport):
+    """ """
     def __init__(self, host: str, port: int, message_router: Callable) -> None:
         self.host = host
         self.port = port
@@ -26,6 +28,7 @@ class Transport(BaseInboundTransport):
 
     @property
     def scheme(self):
+        """ """
         return self._scheme
 
     async def start(self) -> None:

@@ -40,12 +40,11 @@ async def wallet():
 
 
 class TestIndyWallet(test_basic_wallet.TestBasicWallet):
-    """
-    Apply all BasicWallet tests against IndyWallet
-    """
+    """Apply all BasicWallet tests against IndyWallet"""
 
 
 class TestWalletCompat:
+    """ """
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"

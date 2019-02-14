@@ -5,6 +5,7 @@ from unittest import mock, TestCase
 
 
 class TestConnectionInvitation(TestCase):
+    """ """
     label = "Label"
     did = "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
     endpoint_url = "https://example.com/endpoint"
@@ -13,6 +14,7 @@ class TestConnectionInvitation(TestCase):
     key = "8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"
 
     def test_init(self):
+        """ """
         connection_invitation = ConnectionInvitation(
             label=self.label,
             did=self.did,
@@ -25,6 +27,7 @@ class TestConnectionInvitation(TestCase):
         assert connection_invitation.endpoint == self.endpoint_url
 
     def test_type(self):
+        """ """
         connection_invitation = ConnectionInvitation(
             label=self.label,
             did=self.did,
@@ -38,6 +41,11 @@ class TestConnectionInvitation(TestCase):
         "indy_catalyst_agent.messaging.connections.messages.connection_invitation.ConnectionInvitationSchema.load"
     )
     def test_deserialize(self, mock_connection_invitation_schema_load):
+        """
+
+        :param mock_connection_invitation_schema_load: 
+
+        """
         obj = {"obj": "obj"}
 
         connection_invitation = ConnectionInvitation.deserialize(obj)
@@ -51,6 +59,11 @@ class TestConnectionInvitation(TestCase):
         "indy_catalyst_agent.messaging.connections.messages.connection_invitation.ConnectionInvitationSchema.dump"
     )
     def test_serialize(self, mock_connection_invitation_schema_dump):
+        """
+
+        :param mock_connection_invitation_schema_dump: 
+
+        """
         connection_invitation = ConnectionInvitation(
             label=self.label,
             did=self.did,
@@ -70,11 +83,13 @@ class TestConnectionInvitation(TestCase):
 
 
 class TestConnectionInvitationSchema(TestCase):
+    """ """
     connection_invitation = ConnectionInvitation(
         label="label", did="did:sov:QmWbsNYhMrjHiqZDTUTEJs"
     )
 
     def test_make_model(self):
+        """ """
         data = self.connection_invitation.serialize()
         model_instance = ConnectionInvitation.deserialize(data)
         assert type(model_instance) is type(self.connection_invitation)

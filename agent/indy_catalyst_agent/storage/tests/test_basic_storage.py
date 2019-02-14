@@ -11,18 +11,30 @@ from indy_catalyst_agent.storage.basic import BasicStorage
 
 @pytest.fixture()
 def store():
+    """ """
     yield BasicStorage()
 
 
 def test_record(tags={}):
+    """
+
+    :param tags:  (Default value = {})
+
+    """
     return StorageRecord(type="TYPE", value="TEST", tags=tags)
 
 
 def test_missing_record(tags={}):
+    """
+
+    :param tags:  (Default value = {})
+
+    """
     return StorageRecord(type="__MISSING__", value="000000000")
 
 
 class TestBasicStorage:
+    """ """
     @pytest.mark.asyncio
     async def test_add_required(self, store):
         with pytest.raises(StorageError):

@@ -13,7 +13,9 @@ HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_i
 
 
 class ConnectionInvitation(AgentMessage):
+    """ """
     class Meta:
+        """ """
         handler_class = HANDLER_CLASS
         message_type = CONNECTION_INVITATION
         schema_class = "ConnectionInvitationSchema"
@@ -37,7 +39,9 @@ class ConnectionInvitation(AgentMessage):
 
 
 class ConnectionInvitationSchema(AgentMessageSchema):
+    """ """
     class Meta:
+        """ """
         model_class = ConnectionInvitation
 
     label = fields.Str()
@@ -48,6 +52,11 @@ class ConnectionInvitationSchema(AgentMessageSchema):
 
     @validates_schema
     def validate_fields(self, data):
+        """
+
+        :param data: 
+
+        """
         if data.get("did"):
             if data.get("recipient_keys"):
                 raise ValidationError(

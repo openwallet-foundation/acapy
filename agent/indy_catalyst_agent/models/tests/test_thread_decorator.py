@@ -4,12 +4,14 @@ from unittest import mock, TestCase
 
 
 class TestThreadDecorator(TestCase):
+    """ """
     thread_id = "tid-001"
     parent_id = "tid-000"
     sender_order = 1
     received_orders = {"did": 2}
 
     def test_init(self):
+        """ """
         decorator = ThreadDecorator(
             thid=self.thread_id,
             pthid=self.parent_id,
@@ -22,6 +24,7 @@ class TestThreadDecorator(TestCase):
         assert decorator.received_orders == self.received_orders
 
     def test_serialize_load(self):
+        """ """
         decorator = ThreadDecorator(
             thid=self.thread_id,
             pthid=self.parent_id,

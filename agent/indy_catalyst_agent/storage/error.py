@@ -6,18 +6,12 @@ from ..error import BaseError
 
 
 class StorageError(BaseError):
-    """
-    Base class for Storage errors
-    """
+    """Base class for Storage errors"""
 
 
 class StorageNotFoundError(StorageError):
-    """
-    Record not found in storage
-    """
+    """Record not found in storage"""
 
 
 class StorageSearchError(StorageError):
-    """
-    General exception during record search
-    """
+    """General exception during record search"""

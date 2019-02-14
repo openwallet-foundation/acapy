@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class MessageTypes(Enum):
+    """ """
     # Connection Messages
     CONNECTION_INVITATION = (
         "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
