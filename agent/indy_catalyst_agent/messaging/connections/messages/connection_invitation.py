@@ -44,16 +44,16 @@ class ConnectionInvitationSchema(AgentMessageSchema):
 
     label = fields.Str()
     did = fields.Str(required=False)
-    recipient_keys = fields.List(fields.Str(), required=False)
+    recipient_keys = fields.List(fields.Str(), data_key="recipientKeys", required=False)
     endpoint = fields.Str(data_key="serviceEndpoint", required=False)
-    routing_keys = fields.List(fields.Str(), required=False)
+    routing_keys = fields.List(fields.Str(), data_key="routingKeys", required=False)
 
     @validates_schema
     def validate_fields(self, data):
         if data.get("did"):
             if data.get("recipient_keys"):
-                raise ValidationError("Fields are incompatible", ("did", "recipient_keys"))
+                raise ValidationError("Fields are incompatible", ("did", "recipientKeys"))
             if data.get("endpoint"):
                 raise ValidationError("Fields are incompatible", ("did", "serviceEndpoint"))
         elif not data.get("recipient_keys") or not data.get("endpoint"):
-            raise ValidationError("Missing required field(s)", ("did", "recipient_keys", "serviceEndpoint"))
+            raise ValidationError("Missing required field(s)", ("did", "recipientKeys", "serviceEndpoint"))

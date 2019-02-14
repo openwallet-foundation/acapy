@@ -56,7 +56,7 @@ class ConnectionManager:
                 "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
                 "label": "Alice",
                 "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
-                "recipient_keys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+                "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
                 "serviceEndpoint": "https://example.com/endpoint"
             }
         Currently, only peer DID is supported.
@@ -75,7 +75,7 @@ class ConnectionManager:
             endpoint=my_endpoint,
         )
         return invitation
-    
+
     async def send_invitation(self, invitation: ConnectionInvitation, endpoint: str):
         """
         Deliver an invitation to an HTTP endpoint
