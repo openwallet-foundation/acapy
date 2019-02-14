@@ -81,10 +81,10 @@ class ConnectionManager:
         Deliver an invitation to an HTTP endpoint
         """
         self._logger.debug(f"Sending invitation to {endpoint}")
-        invite_json = json.dumps(invitation.serialize())
+        invite_json = invitation.to_json()
         invite_b64 = bytes_to_b64(invite_json.encode("ascii"), urlsafe=True)
         async with aiohttp.ClientSession() as session:
-            await session.get(endpoint, params={"c_i": invite_b64})
+            await session.get(endpoint, params={"invite": invite_b64})
 
     async def store_invitation(
             self,
