@@ -2,7 +2,7 @@
 Represents an invitation message for establishing connection.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Union
 
 from marshmallow import fields
@@ -22,16 +22,16 @@ class BasicMessage(AgentMessage):
     def __init__(
             self,
             *,
-            timestamp: Union[str, datetime] = None,
+            sent_time: Union[str, datetime] = None,
             content: str = None,
             **kwargs,
         ):
         super(BasicMessage, self).__init__(**kwargs)
-        if not timestamp:
-            timestamp = datetime.utcnow()
-        if isinstance(timestamp, datetime):
-            timestamp = timestamp.isoformat()
-        self.timestamp = timestamp
+        if not sent_time:
+            sent_time = datetime.utcnow()
+        if isinstance(sent_time, datetime):
+            sent_time = sent_time.replace(tzinfo=timezone.utc).isoformat(' ')
+        self.sent_time = sent_time
         self.content = content
 
 
@@ -39,5 +39,5 @@ class BasicMessageSchema(AgentMessageSchema):
     class Meta:
         model_class = BasicMessage
 
-    timestamp = fields.Str(required=False) # should be called sent_time
+    sent_time = fields.Str(required=False)
     content = fields.Str(required=True)
