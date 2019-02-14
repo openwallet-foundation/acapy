@@ -2,4 +2,4 @@
 Models for non-message structured data
 """
 
-from .base import BaseModel, BaseModelSchema
+# from .base import BaseModel, BaseModelSchema

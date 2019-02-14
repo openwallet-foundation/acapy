@@ -1,16 +1,14 @@
-from ..credential import Credential, CredentialSchema
+from ..credential import Credential
 from ....message_types import MessageTypes
 
 from unittest import mock, TestCase
 
 
 class TestCredential(TestCase):
-    """ """
     credential_json = "credential_json"
     revocation_registry_id = "revocation_registry_id"
 
     def test_init(self):
-        """ """
         credential = Credential(
             credential_json=self.credential_json,
             revocation_registry_id=self.revocation_registry_id,
@@ -19,7 +17,6 @@ class TestCredential(TestCase):
         assert credential.revocation_registry_id == self.revocation_registry_id
 
     def test_type(self):
-        """ """
         credential = Credential(
             credential_json=self.credential_json,
             revocation_registry_id=self.revocation_registry_id,
@@ -28,14 +25,10 @@ class TestCredential(TestCase):
         assert credential._type == MessageTypes.CREDENTIAL.value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.credentials.messages.credential.CredentialSchema.load"
+        "indy_catalyst_agent.messaging.credentials.messages."
+        + "credential.CredentialSchema.load"
     )
     def test_deserialize(self, mock_credential_schema_load):
-        """
-
-        :param mock_credential_schema_load: 
-
-        """
         obj = {"obj": "obj"}
 
         credential = Credential.deserialize(obj)
@@ -44,14 +37,10 @@ class TestCredential(TestCase):
         assert credential is mock_credential_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.credentials.messages.credential.CredentialSchema.dump"
+        "indy_catalyst_agent.messaging.credentials.messages."
+        + "credential.CredentialSchema.dump"
     )
     def test_serialize(self, mock_credential_schema_dump):
-        """
-
-        :param mock_credential_schema_dump: 
-
-        """
         credential = Credential(
             credential_json=self.credential_json,
             revocation_registry_id=self.revocation_registry_id,
@@ -64,14 +53,12 @@ class TestCredential(TestCase):
 
 
 class TestCredentialSchema(TestCase):
-    """ """
     credential = Credential(
         credential_json="credential_json",
         revocation_registry_id="revocation_registry_id",
     )
 
     def test_make_model(self):
-        """ """
         data = self.credential.serialize()
         model_instance = Credential.deserialize(data)
-        assert type(model_instance) is type(self.credential)
+        assert isinstance(model_instance, Credential)

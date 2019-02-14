@@ -6,16 +6,11 @@ from von_anchor.a2a import DIDDoc
 from von_anchor.a2a.publickey import PublicKey, PublicKeyType
 from von_anchor.a2a.service import Service
 
-from ..connection_request import (
-    ConnectionRequest,
-    ConnectionRequestSchema,
-    ConnectionDetail,
-)
+from ..connection_request import ConnectionRequest, ConnectionDetail
 from ...message_types import CONNECTION_REQUEST
 
 
 class TestConfig:
-    """ """
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -23,7 +18,6 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        """ """
         doc = DIDDoc(did=self.test_did)
         controller = self.test_did
         ident = "1"
@@ -43,32 +37,29 @@ class TestConfig:
 
 
 class TestConnectionRequest(TestCase, TestConfig):
-    """ """
     def setUp(self):
-        """ """
         self.connection_request = ConnectionRequest(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc()),
             label=self.test_label,
         )
 
     def test_init(self):
-        """ """
+        """Test initialization."""
         assert self.connection_request.label == self.test_label
         assert self.connection_request.connection.did == self.test_did
         # assert self.connection_request.verkey == self.verkey
 
     def test_type(self):
-        """ """
+        """Test type."""
         assert self.connection_request._type == CONNECTION_REQUEST
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.messages.connection_request.ConnectionRequestSchema.load"
+        "indy_catalyst_agent.messaging.connections.messages."
+        + "connection_request.ConnectionRequestSchema.load"
     )
     def test_deserialize(self, mock_connection_request_schema_load):
         """
-
-        :param mock_connection_request_schema_load: 
-
+        Test deserialization.
         """
         obj = {"obj": "obj"}
 
@@ -78,13 +69,12 @@ class TestConnectionRequest(TestCase, TestConfig):
         assert connection_request is mock_connection_request_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.messages.connection_request.ConnectionRequestSchema.dump"
+        "indy_catalyst_agent.messaging.connections.messages."
+        + "connection_request.ConnectionRequestSchema.dump"
     )
     def test_serialize(self, mock_connection_request_schema_dump):
         """
-
-        :param mock_connection_request_schema_dump: 
-
+        Test serialization.
         """
         connection_request_dict = self.connection_request.serialize()
         mock_connection_request_schema_dump.assert_called_once_with(
@@ -97,7 +87,8 @@ class TestConnectionRequest(TestCase, TestConfig):
 
 
 class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
-    """ """
+    """Test connection request schema."""
+
     async def test_make_model(self):
         connection_request = ConnectionRequest(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc()),

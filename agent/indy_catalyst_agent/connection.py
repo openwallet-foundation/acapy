@@ -2,10 +2,11 @@
 Connection management
 """
 
+import aiohttp
 import json
 import logging
 
-import aiohttp
+from typing import Tuple
 
 from .error import BaseError
 from .messaging.connections.messages.connection_invitation import ConnectionInvitation
@@ -24,12 +25,14 @@ from von_anchor.a2a.service import Service
 
 
 class ConnectionError(BaseError):
-    """ """
+    """Connection error."""
+
     pass
 
 
 class ConnectionManager:
-    """ """
+    """Class for managing connections."""
+
     def __init__(self, context: RequestContext):
         self._context = context
         self._logger = logging.getLogger(__name__)
@@ -44,23 +47,26 @@ class ConnectionManager:
     ) -> ConnectionInvitation:
         """
         Generate new connection invitation.
-        This interaction represents an out-of-band communication channel. In the future and in
-        practice, these sort of invitations will be received over any number of channels such as
-        SMS, Email, QR Code, NFC, etc.
+        This interaction represents an out-of-band communication channel. In the future
+        and in practice, these sort of invitations will be received over any number of
+        channels such as SMS, Email, QR Code, NFC, etc.
+
         Structure of an invite message:
-            {
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
-                "label": "Alice",
-                "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
-            }
+        {
+            "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+            "label": "Alice",
+            "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
+        }
+
         Or, in the case of a peer DID:
-            {
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
-                "label": "Alice",
-                "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
-                "recipient_keys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
-                "serviceEndpoint": "https://example.com/endpoint"
-            }
+        {
+            "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+            "label": "Alice",
+            "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
+            "recipient_keys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+            "serviceEndpoint": "https://example.com/endpoint"
+        }
+
         Currently, only peer DID is supported.
         """
         self._logger.debug("Creating invitation")
@@ -93,7 +99,8 @@ class ConnectionManager:
         """
         Save an invitation for acceptance/rejection and later processing
         """
-        # may want to generate another unique ID, or use the message ID instead of the key
+        # may want to generate another unique ID, or use the message ID
+        # instead of the key
         invitation_id = invitation.recipient_keys[0]
 
         await self.context.storage.add_record(
@@ -113,9 +120,9 @@ class ConnectionManager:
 
     async def find_invitation(
         self, invitation_id: str, received: bool
-    ) -> (ConnectionInvitation, dict):
+    ) -> Tuple[ConnectionInvitation, dict]:
         """
-        Locate a previously-received invitation
+        Locate a previously-received invitation.
         """
         self._logger.debug(
             "Looking up %s invitation: %s",
@@ -141,7 +148,7 @@ class ConnectionManager:
         invitation: ConnectionInvitation,
         my_label: str = None,
         my_endpoint: str = None,
-    ) -> (ConnectionRequest, ConnectionTarget):
+    ) -> Tuple[ConnectionRequest, ConnectionTarget]:
         """
         Create a new connection request for a previously-received invitation
         """
@@ -182,7 +189,8 @@ class ConnectionManager:
             )
         )
 
-        # request must be sent to their_endpoint using their_connection_key, from my_info.verkey
+        # request must be sent to their_endpoint using their_connection_key,
+        # from my_info.verkey
         target = ConnectionTarget(
             endpoint=their_endpoint,
             recipient_keys=[their_connection_key],
@@ -208,9 +216,9 @@ class ConnectionManager:
 
     async def accept_request(
         self, request: ConnectionRequest, my_endpoint: str = None
-    ) -> (ConnectionResponse, ConnectionTarget):
+    ) -> Tuple[ConnectionResponse, ConnectionTarget]:
         """
-        Create a connection response for a received connection request
+        Create a connection response for a received connection request.
         """
 
         invitation = None
@@ -231,9 +239,8 @@ class ConnectionManager:
         their_label = request.label
         their_did = request.connection.did
         conn_did_doc = request.connection.did_doc
-        their_verkey = conn_did_doc.verkeys[
-            0
-        ].value  # may be different from self.context.sender_verkey
+        # may be different from self.context.sender_verkey
+        their_verkey = conn_did_doc.verkeys[0].value
         their_endpoint = conn_did_doc.services[0].endpoint
 
         # Create a new pairwise record with a newly-generated local DID
@@ -269,7 +276,8 @@ class ConnectionManager:
         )
         self._logger.debug(f"Created connection response for {their_did}")
 
-        # response must be sent to their_endpoint, packed with their_verkey and pairwise.my_verkey
+        # response must be sent to their_endpoint, packed with their_verkey
+        # and pairwise.my_verkey
         target = ConnectionTarget(
             endpoint=their_endpoint,
             recipient_keys=[their_verkey],
@@ -300,16 +308,19 @@ class ConnectionManager:
             # local DID not associated with a connection
             raise ConnectionError()
 
-        # update local DID metadata to mark connection as accepted, prevent multiple responses?
-        # may also set a creation time on the local DID to allow request expiry
+        # update local DID metadata to mark connection as accepted, prevent multiple
+        # responses? May also set a creation time on the local DID to allow request
+        # expiry.
 
         # In the final implementation, a signature will be provided to verify changes to
         # the keys and DIDs to be used long term in the relationship.
-        # Both the signature and signature check are omitted for now until specifics of the
-        # signature are decided.
+        # Both the signature and signature check are omitted for now until specifics of
+        # the signature are decided.
 
-        # Create a new pairwise record associated with our previously-generated local DID
-        # Note: WalletDuplicateError will be raised if their_did already has a connection
+        # Create a new pairwise record associated with our previously-generated local
+        # DID
+        # Note: WalletDuplicateError will be raised if their_did already has a
+        # connection
         pairwise = await self.context.wallet.create_pairwise(
             their_did,
             their_verkey,

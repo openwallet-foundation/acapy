@@ -8,13 +8,18 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import CONNECTION_RESPONSE
 from ....models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
-HANDLER_CLASS = "indy_catalyst_agent.messaging.connections.handlers.connection_response_handler.ConnectionResponseHandler"
+HANDLER_CLASS = (
+    "indy_catalyst_agent.messaging.connections.handlers."
+    + "connection_response_handler.ConnectionResponseHandler"
+)
 
 
 class ConnectionResponse(AgentMessage):
     """ """
+
     class Meta:
         """ """
+
         handler_class = HANDLER_CLASS
         schema_class = "ConnectionResponseSchema"
         message_type = CONNECTION_RESPONSE
@@ -26,8 +31,10 @@ class ConnectionResponse(AgentMessage):
 
 class ConnectionResponseSchema(AgentMessageSchema):
     """ """
+
     class Meta:
         """ """
+
         model_class = ConnectionResponse
         signed_fields = ("connection",)
 

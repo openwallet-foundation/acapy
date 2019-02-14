@@ -4,10 +4,9 @@ over the network, communicating with the ledger, passing messages to handlers,
 and storing data in the wallet.
 """
 
-import json
 import logging
 
-from typing import Coroutine, Dict, Union
+from typing import Coroutine, Union
 
 from .connection import ConnectionManager
 from .classloader import ClassLoader
@@ -25,12 +24,17 @@ from .transport.outbound.queue.basic import BasicOutboundMessageQueue
 
 
 class ConductorError(BaseError):
-    """ """
+    """Conductor error."""
+
     pass
 
 
 class Conductor:
-    """ """
+    """
+    Class responsible for initalizing concrete implementations
+    of our require interfaces and routing inbound and outbound message data.
+    """
+
     STORAGE_TYPES = {
         "basic": "indy_catalyst_agent.storage.basic.BasicStorage",
         "indy": "indy_catalyst_agent.storage.indy.IndyStorage",
@@ -55,6 +59,7 @@ class Conductor:
         self.settings = settings.copy() if settings else {}
 
     async def start(self) -> None:
+        """Start the agent."""
         context = RequestContext()
         context.default_endpoint = self.settings.get(
             "default_endpoint", "http://localhost:10001"
@@ -114,7 +119,7 @@ class Conductor:
             if not test_seed:
                 test_seed = "testseed000000000000000000000001"
         if test_seed:
-            _did_info = await context.wallet.create_local_did(test_seed)
+            await context.wallet.create_local_did(test_seed)
 
         # Auto-send an invitation to another agent
         send_invite_to = self.settings.get("debug.send_invitation_to")
@@ -135,6 +140,9 @@ class Conductor:
         transport_type: str,
         reply: Coroutine = None,
     ):
+        """
+        Routes inbound messages.
+        """
         context = await self.context.expand_message(message_body, transport_type)
         result = await self.dispatcher.dispatch(
             context, self.outbound_message_router, reply

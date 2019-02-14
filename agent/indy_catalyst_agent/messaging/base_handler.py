@@ -6,7 +6,7 @@ from .request_context import RequestContext
 
 
 class BaseHandler(ABC):
-    """ """
+    """Abstract base class for handlers."""
     def __init__(self) -> None:
         self._logger = logging.getLogger(__name__)
 

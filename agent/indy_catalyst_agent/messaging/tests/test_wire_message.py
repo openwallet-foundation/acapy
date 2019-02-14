@@ -1,10 +1,10 @@
 from ..wire_message import WireMessage
 
-from unittest import mock, TestCase
+from unittest import TestCase
 
 
 class TestWireMessage(TestCase):
-    """ """
+
     to = "to"
     _from = "from"
     msg = "msg"

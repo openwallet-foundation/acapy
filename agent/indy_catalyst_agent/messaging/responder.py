@@ -6,7 +6,8 @@ from ..error import BaseError
 
 
 class ResponderError(BaseError):
-    """ """
+    """Responder error."""
+
     pass
 
 

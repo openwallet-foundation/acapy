@@ -6,24 +6,19 @@ from von_anchor.a2a import DIDDoc
 from von_anchor.a2a.publickey import PublicKey, PublicKeyType
 from von_anchor.a2a.service import Service
 
-from ..connection_response import (
-    ConnectionResponse,
-    ConnectionResponseSchema,
-    ConnectionDetail,
-)
+from ..connection_response import ConnectionResponse, ConnectionDetail
 from ...message_types import CONNECTION_RESPONSE
 from .....wallet.basic import BasicWallet
 
 
 class TestConfig:
-    """ """
+
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        """ """
         doc = DIDDoc(did=self.test_did)
         controller = self.test_did
         ident = "1"
@@ -43,29 +38,24 @@ class TestConfig:
 
 
 class TestConnectionResponse(TestCase, TestConfig):
-    """ """
     def setUp(self):
-        """ """
         self.connection_response = ConnectionResponse(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc())
         )
 
     def test_init(self):
-        """ """
         assert self.connection_response.connection.did == self.test_did
 
     def test_type(self):
-        """ """
         assert self.connection_response._type == CONNECTION_RESPONSE
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.messages.connection_response.ConnectionResponseSchema.load"
+        "indy_catalyst_agent.messaging.connections.messages."
+        + "connection_response.ConnectionResponseSchema.load"
     )
     def test_deserialize(self, mock_connection_response_schema_load):
         """
-
-        :param mock_connection_response_schema_load: 
-
+        Test deserialization.
         """
         obj = {"obj": "obj"}
 
@@ -75,13 +65,12 @@ class TestConnectionResponse(TestCase, TestConfig):
         assert connection_response is mock_connection_response_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.messages.connection_response.ConnectionResponseSchema.dump"
+        "indy_catalyst_agent.messaging.connections.messages."
+        + "connection_response.ConnectionResponseSchema.dump"
     )
     def test_serialize(self, mock_connection_response_schema_dump):
         """
-
-        :param mock_connection_response_schema_dump: 
-
+        Test serialization.
         """
         connection_response_dict = self.connection_response.serialize()
         mock_connection_response_schema_dump.assert_called_once_with(
@@ -95,7 +84,6 @@ class TestConnectionResponse(TestCase, TestConfig):
 
 
 class TestConnectionResponseSchema(AsyncTestCase, TestConfig):
-    """ """
     async def test_make_model(self):
         connection_response = ConnectionResponse(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc())

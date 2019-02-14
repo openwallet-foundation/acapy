@@ -9,9 +9,9 @@ from ...message_types import MessageTypes
 
 
 class CredentialRequest(AgentMessage):
-    """ """
+    """Class representing a credential request."""
+
     class Meta:
-        """ """
         # handler_class = CredentialRequestHandler
         schema_class = "CredentialRequestSchema"
         message_type = MessageTypes.CREDENTIAL_REQUEST.value
@@ -31,9 +31,9 @@ class CredentialRequest(AgentMessage):
 
 
 class CredentialRequestSchema(AgentMessageSchema):
-    """ """
+    """Credential request schema."""
+
     class Meta:
-        """ """
         model_class = CredentialRequest
 
     offer_json = fields.Str(required=True)

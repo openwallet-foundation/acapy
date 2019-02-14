@@ -4,7 +4,7 @@ Base classes for Models and Schemas
 
 from abc import ABC
 
-from marshmallow import Schema, fields, post_dump, pre_load, post_load
+from marshmallow import Schema, post_dump, pre_load, post_load
 
 from ..classloader import ClassLoader
 
@@ -50,8 +50,10 @@ def resolve_meta_property(obj, prop_name: str, defval=None):
 
 class BaseModel(ABC):
     """ """
+
     class Meta:
         """ """
+
         schema_class = None
 
     def __init__(self):
@@ -98,8 +100,10 @@ class BaseModel(ABC):
 
 class BaseModelSchema(Schema):
     """ """
+
     class Meta:
         """ """
+
         model_class = None
         skip_values = [None]
         ordered = True

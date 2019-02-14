@@ -24,8 +24,10 @@ from ..wallet import BaseWallet
 
 class AgentMessage(BaseModel):
     """ """
+
     class Meta:
         """ """
+
         handler_class = None
         schema_class = None
         message_type = None
@@ -76,7 +78,7 @@ class AgentMessage(BaseModel):
     def _id(self, val: str):
         """Set the unique message identifier
 
-        :param val: str: 
+        :param val: str:
 
         """
         self._message_id = val
@@ -89,7 +91,7 @@ class AgentMessage(BaseModel):
     def get_signature(self, field_name: str) -> FieldSignature:
         """Get the signature for a named field
 
-        :param field_name: str: 
+        :param field_name: str:
 
         """
         return self._message_signatures.get(field_name)
@@ -97,8 +99,8 @@ class AgentMessage(BaseModel):
     def set_signature(self, field_name: str, signature: FieldSignature):
         """Add or replace the signature for a named field
 
-        :param field_name: str: 
-        :param signature: FieldSignature: 
+        :param field_name: str:
+        :param signature: FieldSignature:
 
         """
         self._message_signatures[field_name] = signature
@@ -159,7 +161,7 @@ class AgentMessage(BaseModel):
     def _thread(self, val: ThreadDecorator):
         """Setter for the message's thread decorator
 
-        :param val: ThreadDecorator: 
+        :param val: ThreadDecorator:
 
         """
         self._message_thread = val
@@ -167,8 +169,10 @@ class AgentMessage(BaseModel):
 
 class AgentMessageSchema(BaseModelSchema):
     """ """
+
     class Meta:
         """ """
+
         model_class = None
         signed_fields = None
 
@@ -193,7 +197,7 @@ class AgentMessageSchema(BaseModelSchema):
     def parse_signed_fields(self, data):
         """
 
-        :param data: 
+        :param data:
 
         """
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
@@ -225,7 +229,7 @@ class AgentMessageSchema(BaseModelSchema):
     def populate_signatures(self, obj):
         """
 
-        :param obj: 
+        :param obj:
 
         """
         for field_name, sig in self._signatures.items():
@@ -236,7 +240,7 @@ class AgentMessageSchema(BaseModelSchema):
     def copy_signatures(self, obj):
         """
 
-        :param obj: 
+        :param obj:
 
         """
         self._signatures = obj._signatures
@@ -252,7 +256,7 @@ class AgentMessageSchema(BaseModelSchema):
     def replace_signatures(self, data):
         """
 
-        :param data: 
+        :param data:
 
         """
         for field_name, sig in self._signatures.items():

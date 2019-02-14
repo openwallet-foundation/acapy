@@ -7,17 +7,20 @@ from .error import BaseError
 
 
 class ModuleLoadError(BaseError):
-    """ """
+    """Module load error."""
+
     pass
 
 
 class ClassNotFoundError(BaseError):
-    """ """
+    """Class not found error."""
+
     pass
 
 
 class ClassLoader:
-    """ """
+    """Class used to load classes from modules dynamically."""
+
     def __init__(self, base_path, super_class):
         self.logger = logging.getLogger(__name__)
         self.base_path = base_path
@@ -25,10 +28,11 @@ class ClassLoader:
 
     def load(self, module_path, load_relative=False):
         """
+        Load module by module path.
 
-        :param module_path: 
-        :param load_relative:  (Default value = False)
-
+        :param module_path: Dotted path to module
+        :param load_relative:  (Default value = False) Should the method check in the
+            configured base path for relative import
         """
         # We can try to load the module relative to a given base path
         if load_relative:
@@ -65,9 +69,8 @@ class ClassLoader:
     def load_class(cls, class_name: str, default_module: str = None):
         """Resolve a complete class path (ie. typing.Dict) to the class itself
 
-        :param class_name: str: 
+        :param class_name: str: Class name
         :param default_module: str:  (Default value = None)
-
         """
         if "." in class_name:
             # import module and find class

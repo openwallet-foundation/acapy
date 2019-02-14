@@ -8,7 +8,6 @@ import logging
 from typing import Union
 
 from .agent_message import AgentMessage
-from ..error import BaseError
 from .message_factory import MessageFactory, MessageParseError
 from ..models.connection_target import ConnectionTarget
 from ..storage import BaseStorage
@@ -45,7 +44,7 @@ class RequestContext:
     def default_endpoint(self, endp: str):
         """Setter for the default agent endpoint (from agent config)
 
-        :param endp: str: 
+        :param endp: str:
 
         """
         self._default_endpoint = endp
@@ -59,7 +58,7 @@ class RequestContext:
     def default_label(self, lbl: str):
         """Setter for the default agent label (from agent config)
 
-        :param lbl: str: 
+        :param lbl: str:
 
         """
         self._default_label = lbl
@@ -73,7 +72,7 @@ class RequestContext:
     def recipient_verkey(self, verkey: str):
         """Setter for the recipient public key used to pack the incoming request
 
-        :param verkey: str: 
+        :param verkey: str:
 
         """
         self._recipient_verkey = verkey
@@ -87,21 +86,23 @@ class RequestContext:
     def recipient_did(self, did: str):
         """Setter for the recipient DID which corresponds with the verkey
 
-        :param did: str: 
+        :param did: str:
 
         """
         self._recipient_did = did
 
     @property
     def recipient_did_public(self) -> bool:
-        """Indicates whether the message is associated with a public (ledger) recipient DID"""
+        """
+        Indicates whether the message is associated with a public (ledger) recipient DID
+        """
         return self._recipient_did_public
 
     @recipient_did_public.setter
     def recipient_did_public(self, public: bool):
         """Setter for the flag indicating the recipient DID is public
 
-        :param public: bool: 
+        :param public: bool:
 
         """
         self._recipient_did_public = public
@@ -110,7 +111,7 @@ class RequestContext:
     def recipient_verkey(self, verkey: str):
         """Setter for the recipient public key used to pack the incoming request
 
-        :param verkey: str: 
+        :param verkey: str:
 
         """
         self._recipient_verkey = verkey
@@ -124,7 +125,7 @@ class RequestContext:
     def sender_verkey(self, verkey: str):
         """Setter for the sender public key used to pack the incoming request
 
-        :param verkey: str: 
+        :param verkey: str:
 
         """
         self._sender_verkey = verkey
@@ -138,7 +139,7 @@ class RequestContext:
     def transport_type(self, transport: str):
         """Setter for the transport type used to receive the message
 
-        :param transport: str: 
+        :param transport: str:
 
         """
         self._transport_type = transport
@@ -152,7 +153,7 @@ class RequestContext:
     def message_factory(self, factory: MessageFactory):
         """Setter for the message factory instance
 
-        :param factory: MessageFactory: 
+        :param factory: MessageFactory:
 
         """
         self._message_factory = factory
@@ -166,7 +167,7 @@ class RequestContext:
     def message(self, msg: AgentMessage):
         """Setter for the deserialized message instance
 
-        :param msg: AgentMessage: 
+        :param msg: AgentMessage:
 
         """
         self._message = msg
@@ -180,7 +181,7 @@ class RequestContext:
     def storage(self, storage: BaseStorage):
         """Setter for the BaseStorage implementation
 
-        :param storage: BaseStorage: 
+        :param storage: BaseStorage:
 
         """
         self._storage = storage
@@ -194,8 +195,7 @@ class RequestContext:
     def wallet(self, wallet: BaseWallet):
         """Setter for the BaseWallet implementation
 
-        :param wallet: BaseWallet: 
-
+        :param wallet: BaseWallet:
         """
         self._wallet = wallet
 
