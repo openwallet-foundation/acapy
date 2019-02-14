@@ -1,26 +1,24 @@
-"""
-Utilities related to logging
-"""
+"""Utilities related to logging."""
 
 from os import path
 
 from logging.config import fileConfig
-from ..version import __version__
+from indy_catalyst_agent.version import __version__
 from logging import getLogger
-from logging.config import fileConfig
-from os import path
 
 
 class LoggingConfigurator:
-    """Utility class used to configure logging and print an informative start banner"""
+    """Utility class used to configure logging and print an informative start banner."""
 
     @classmethod
     def configure(cls, logging_config_path: str = None, log_level: str = None):
         """
+        Configure logger.
 
-        :param logging_config_path: str:  (Default value = None)
-        :param log_level: str:  (Default value = None)
+        :param logging_config_path: str: (Default value = None) Optional path to
+            custom logging config
 
+        :param log_level: str: (Default value = None)
         """
         if logging_config_path is not None:
             config_path = logging_config_path
@@ -44,20 +42,25 @@ class LoggingConfigurator:
         border_character=":",
     ):
         """
+        Print a startup banner describing the configuration.
 
-        :param inbound_transports: 
-        :param outbound_transports: 
-        :param banner_length:  (Default value = 40)
-        :param border_character:  (Default value = ":")
-
+        :param inbound_transports: Configured inbound transports
+        :param outbound_transports: Configured outbound transports
+        :param banner_length:  (Default value = 40) Length of the banner
+        :param border_character: (Default value = ":") Character to use in banner
+            border
         """
-        def lr_pad(content):
-            """
 
-            :param content: 
-
+        def lr_pad(content: str):
             """
-            return f"{border_character}{border_character} {content} {border_character}{border_character}"
+            Pad string content with defined border character.
+
+            :param content: String content to pad
+            """
+            return (
+                f"{border_character}{border_character}"
+                + f" {content} {border_character}{border_character}"
+            )
 
         banner_title_string = "Indy Catalyst Agent"
         banner_title_spacer = " " * (banner_length - len(banner_title_string))
@@ -104,7 +107,8 @@ class LoggingConfigurator:
         print(f"{banner_spacer}")
         print(
             lr_pad(
-                f"{inbound_transports_subtitle_string}{inbound_transports_subtitle_spacer}"
+                str(inbound_transports_subtitle_string)
+                + str(inbound_transports_subtitle_spacer)
             )
         )
         print(f"{banner_spacer}")
@@ -114,7 +118,8 @@ class LoggingConfigurator:
         print(f"{banner_spacer}")
         print(
             lr_pad(
-                f"{outbound_transports_subtitle_string}{outbound_transports_subtitle_spacer}"
+                str(outbound_transports_subtitle_string)
+                + str(outbound_transports_subtitle_spacer)
             )
         )
         print(f"{banner_spacer}")

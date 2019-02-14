@@ -9,9 +9,6 @@ from .defaults import default_message_factory
 from .logging import LoggingConfigurator
 from .transport.inbound import InboundTransportConfiguration
 
-# from .version import __version__
-
-
 PARSER = argparse.ArgumentParser(description="Runs an Indy Agent.")
 
 PARSER.add_argument(
@@ -106,12 +103,13 @@ PARSER.add_argument(
 )
 
 
-async def start(inbound_transport_configs, outbound_transports, settings: dict):
+async def start(
+    inbound_transport_configs: list, outbound_transports: list, settings: dict
+):
     """
     Start.
 
-    Args:
-        inbound_transport_configs
+    :inbound_transport_configs: list:
     """
     factory = default_message_factory()
     conductor = Conductor(

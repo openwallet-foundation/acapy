@@ -1,3 +1,5 @@
+"""Module setup."""
+
 import runpy
 from setuptools import setup, find_packages
 
@@ -7,7 +9,7 @@ VERSION = version_meta["__version__"]
 
 
 def parse_requirements(filename):
-    """ load requirements from a pip requirements file """
+    """Load requirements from a pip requirements file."""
     lineiter = (line.strip() for line in open(filename))
     return [line for line in lineiter if line and not line.startswith("#")]
 
