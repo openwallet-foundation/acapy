@@ -1,6 +1,7 @@
 from .messaging.message_factory import MessageFactory
 from .messaging.message_types import MessageTypes
 
+from .messaging.basicmessage import MESSAGE_TYPES as BASICMESSAGE_MESSAGES
 from .messaging.connections import MESSAGE_TYPES as CONNECTION_MESSAGES
 
 # TODO move message registration to the module level
@@ -31,6 +32,7 @@ def default_message_factory() -> MessageFactory:
     factory = MessageFactory()
 
     factory.register_message_types(
+        BASICMESSAGE_MESSAGES,
         CONNECTION_MESSAGES,
         CREDENTIAL_MESSAGES,
         PROOF_MESSAGES,
