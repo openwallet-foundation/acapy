@@ -283,13 +283,17 @@ class ConnectionManager:
         Process a ConnectionResponse message by looking up
         the connection request and setting up the pairwise connection
         """
+        if response._thread:
+            request_id = response._thread.thid
+            request = await self.find_request(request_id)
+            my_did = request.connection.did
+        else:
+            my_did = self.context.recipient_did
+        if not my_did:
+            raise ConnectionError(f"No DID associated with connection response")
 
-        request_id = response._thread.thid
-        request = await self.find_request(request_id)
-
-        my_did = request.connection.did
         their_did = response.connection.did
-        conn_did_doc = request.connection.did_doc
+        conn_did_doc = response.connection.did_doc
         their_verkey = conn_did_doc.verkeys[0].value
         their_endpoint = conn_did_doc.services[0].endpoint
 
@@ -298,8 +302,7 @@ class ConnectionManager:
         if not their_endpoint:
             their_endpoint = my_info.metadata.get("their_endpoint")
         if not their_label:
-            # local DID not associated with a connection
-            raise ConnectionError()
+            raise ConnectionError(f"DID not associated with a connection: {my_did}")
 
         # update local DID metadata to mark connection as accepted, prevent multiple responses?
         # may also set a creation time on the local DID to allow request expiry
