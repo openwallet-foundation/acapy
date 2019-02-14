@@ -11,7 +11,7 @@ import indy.pairwise
 from indy.error import IndyError, ErrorCode
 
 from .base import BaseWallet, KeyInfo, DIDInfo, PairwiseInfo
-from .crypto import random_seed, validate_seed
+from .crypto import validate_seed
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .util import bytes_to_b64
 
@@ -352,11 +352,8 @@ class IndyWallet(BaseWallet):
         )
 
     def _make_pairwise_info(self, result: dict, their_did: str = None) -> PairwiseInfo:
-        """Convert Indy pairwise info into PairwiseInfo record
-
-        :param result: dict: 
-        :param their_did: str:  (Default value = None)
-
+        """
+        Convert Indy pairwise info into PairwiseInfo record
         """
         meta = result["metadata"] and json.loads(result["metadata"]) or {}
         if "custom" not in meta:
@@ -505,7 +502,8 @@ class IndyWallet(BaseWallet):
                 used, otherwise anon_decrypt is used.
 
         Returns:
-            A tuple of the decrypted message content and sender verkey (None for anon_crypt)
+            A tuple of the decrypted message content and sender verkey
+            (None for anon_crypt)
         """
         if use_auth:
             try:

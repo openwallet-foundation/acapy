@@ -16,7 +16,8 @@ from .messaging.request_context import RequestContext
 from .models.connection_detail import ConnectionDetail
 from .models.connection_target import ConnectionTarget
 from .models.thread_decorator import ThreadDecorator
-from .storage import StorageRecord, StorageNotFoundError
+from .storage.record import StorageRecord
+from .storage.error import StorageNotFoundError
 from .wallet.util import bytes_to_b64
 
 from von_anchor.a2a import DIDDoc

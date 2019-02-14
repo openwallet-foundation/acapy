@@ -15,11 +15,6 @@ from ..wallet.indy import IndyWallet
 
 
 def _validate_record(record: StorageRecord):
-    """
-
-    :param record: StorageRecord: 
-
-    """
     if not record:
         raise StorageError("No record provided")
     if not record.id:
@@ -134,19 +129,11 @@ class IndyStorage(BaseStorage):
 
     def search_records(
         self, type_filter: str, tag_query: Mapping = None, page_size: int = None
-    ) -> "BasicStorageRecordSearch":
-        """
-
-        :param type_filter: str: 
-        :param tag_query: Mapping:  (Default value = None)
-        :param page_size: int:  (Default value = None)
-
-        """
+    ) -> "IndyStorageRecordSearch":
         return IndyStorageRecordSearch(self, type_filter, tag_query, page_size)
 
 
 class IndyStorageRecordSearch(BaseStorageRecordSearch):
-    """ """
     def __init__(
         self,
         store: IndyStorage,
@@ -166,7 +153,6 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
 
     @property
     def handle(self):
-        """ """
         return self._handle
 
     async def fetch(self, max_count: int) -> Sequence[StorageRecord]:

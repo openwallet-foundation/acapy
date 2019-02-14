@@ -1,14 +1,10 @@
-import logging
-
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, Dict, Iterable
 
 from .message import OutboundMessage
 from .queue.base import BaseOutboundMessageQueue
 
 
 class BaseOutboundTransport(ABC):
-    """ """
     @abstractmethod
     def __init__(self, queue: BaseOutboundMessageQueue) -> None:
         pass
@@ -23,7 +19,6 @@ class BaseOutboundTransport(ABC):
 
     @abstractproperty
     def queue(self):
-        """ """
         pass
 
     @abstractmethod

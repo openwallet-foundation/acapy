@@ -45,6 +45,7 @@ class TestIndyWallet(test_basic_wallet.TestBasicWallet):
 
 class TestWalletCompat:
     """ """
+
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -53,7 +54,8 @@ class TestWalletCompat:
     @pytest.mark.asyncio
     async def test_compare_anon_encrypt(self, basic_wallet, wallet):
         """
-        Ensure that python-based encrypt/decrypt is compatible with indy-sdk implementation
+        Ensure that python-based encrypt/decrypt is compatible with
+        indy-sdk implementation
         """
         bin_msg = self.test_message.encode("ascii")
 
@@ -78,7 +80,8 @@ class TestWalletCompat:
     @pytest.mark.asyncio
     async def test_compare_auth_encrypt(self, basic_wallet, wallet):
         """
-        Ensure that python-based encrypt/decrypt is compatible with indy-sdk implementation
+        Ensure that python-based encrypt/decrypt is compatible
+        with indy-sdk implementation
         """
         bin_msg = self.test_message.encode("ascii")
 

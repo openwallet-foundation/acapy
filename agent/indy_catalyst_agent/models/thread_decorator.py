@@ -1,14 +1,19 @@
+"""
+A thread decorator identifies a message that may require additional
+context from previous messages.
+"""
+
 from typing import Mapping
 
 from marshmallow import fields
 
-from . import BaseModel, BaseModelSchema
+from .base import BaseModel, BaseModelSchema
 
 
 class ThreadDecorator(BaseModel):
-    """ """
+    """Class representing thread decorator."""
+
     class Meta:
-        """ """
         schema_class = "ThreadDecoratorSchema"
 
     def __init__(
@@ -39,34 +44,32 @@ class ThreadDecorator(BaseModel):
     def pthid(self, val: str):
         """Setter for parent thread identifier
 
-        :param val: str: 
+        :param val: str: new pthid
 
         """
         self._pthid = val
 
     @property
     def received_orders(self) -> dict:
-        """Reports the highest sender_order value that the sender has seen from other sender(s)
-        on the thread
-
-
+        """
+        Reports the highest sender_order value that the sender has seen from other
+        sender(s) on the thread
         """
         return self._received_orders
 
     @property
     def sender_order(self) -> int:
-        """A number that tells where this message fits in the sequence of all messages that the
-        current sender has contributed to this thread
-
-
+        """
+        A number that tells where this message fits in the sequence of all
+        messages that the current sender has contributed to this thread
         """
         return self._sender_order
 
 
 class ThreadDecoratorSchema(BaseModelSchema):
-    """ """
+    """Thread decorator schema used in serialization/deserialization"""
+
     class Meta:
-        """ """
         model_class = ThreadDecorator
 
     thid = fields.Str()

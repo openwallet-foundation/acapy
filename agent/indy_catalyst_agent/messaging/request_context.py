@@ -10,8 +10,9 @@ from typing import Union
 from .agent_message import AgentMessage
 from .message_factory import MessageFactory, MessageParseError
 from ..models.connection_target import ConnectionTarget
-from ..storage import BaseStorage
-from ..wallet import BaseWallet, WalletError, WalletNotFoundError
+from ..storage.base import BaseStorage
+from ..wallet.base import BaseWallet
+from ..wallet.error import WalletError, WalletNotFoundError
 
 
 class RequestContext:

@@ -6,7 +6,7 @@ lifecycle hook callbacks storing state for message threads, etc.
 import logging
 from typing import Coroutine, Union
 
-from .wallet import BaseWallet
+from .wallet.base import BaseWallet
 from .messaging.agent_message import AgentMessage
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder, ResponderError
@@ -45,11 +45,6 @@ class Dispatcher:
     ):
         """
         Build a responder object.
-
-        :param send: Coroutine:
-        :param wallet: BaseWallet:
-        :param reply: Coroutine:
-
         """
         responder = DispatcherResponder(send, wallet, reply=reply)
         # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))

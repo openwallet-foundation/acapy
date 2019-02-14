@@ -63,13 +63,6 @@ class BaseStorage(ABC):
     def search_records(
         self, type_filter: str, tag_query: Mapping = None, page_size: int = None
     ) -> "BaseStorageRecordSearch":
-        """
-
-        :param type_filter: str: 
-        :param tag_query: Mapping:  (Default value = None)
-        :param page_size: int:  (Default value = None)
-
-        """
         pass
 
     def __repr__(self) -> str:

@@ -19,15 +19,11 @@ from ..models.base import (
 )
 from ..models.field_signature import FieldSignature
 from ..models.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
-from ..wallet import BaseWallet
+from ..wallet.base import BaseWallet
 
 
 class AgentMessage(BaseModel):
-    """ """
-
     class Meta:
-        """ """
-
         handler_class = None
         schema_class = None
         message_type = None
@@ -76,10 +72,8 @@ class AgentMessage(BaseModel):
 
     @_id.setter
     def _id(self, val: str):
-        """Set the unique message identifier
-
-        :param val: str:
-
+        """
+        Set the unique message identifier
         """
         self._message_id = val
 
@@ -89,19 +83,14 @@ class AgentMessage(BaseModel):
         return self._message_signatures.copy()
 
     def get_signature(self, field_name: str) -> FieldSignature:
-        """Get the signature for a named field
-
-        :param field_name: str:
-
+        """
+        Get the signature for a named field
         """
         return self._message_signatures.get(field_name)
 
     def set_signature(self, field_name: str, signature: FieldSignature):
-        """Add or replace the signature for a named field
-
-        :param field_name: str:
-        :param signature: FieldSignature:
-
+        """
+        Add or replace the signature for a named field
         """
         self._message_signatures[field_name] = signature
 
@@ -159,20 +148,14 @@ class AgentMessage(BaseModel):
 
     @_thread.setter
     def _thread(self, val: ThreadDecorator):
-        """Setter for the message's thread decorator
-
-        :param val: ThreadDecorator:
-
+        """
+        Setter for the message's thread decorator
         """
         self._message_thread = val
 
 
 class AgentMessageSchema(BaseModelSchema):
-    """ """
-
     class Meta:
-        """ """
-
         model_class = None
         signed_fields = None
 
@@ -195,11 +178,6 @@ class AgentMessageSchema(BaseModelSchema):
 
     @pre_load
     def parse_signed_fields(self, data):
-        """
-
-        :param data:
-
-        """
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         found = {}
         for field_name, field_value in data.items():
@@ -227,22 +205,12 @@ class AgentMessageSchema(BaseModelSchema):
 
     @post_load
     def populate_signatures(self, obj):
-        """
-
-        :param obj:
-
-        """
         for field_name, sig in self._signatures.items():
             obj.set_signature(field_name, sig)
         return obj
 
     @pre_dump
     def copy_signatures(self, obj):
-        """
-
-        :param obj:
-
-        """
         self._signatures = obj._signatures
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         for field_name in expect_fields:
@@ -254,11 +222,6 @@ class AgentMessageSchema(BaseModelSchema):
 
     @post_dump
     def replace_signatures(self, data):
-        """
-
-        :param data:
-
-        """
         for field_name, sig in self._signatures.items():
             del data[field_name]
             data["{}~sig".format(field_name)] = sig.serialize()

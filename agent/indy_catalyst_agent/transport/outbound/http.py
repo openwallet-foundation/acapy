@@ -1,10 +1,6 @@
-import asyncio
-import json
 import logging
-import socket
-from typing import Callable
 
-from aiohttp import web, ClientSession, WSMsgType
+from aiohttp import ClientSession
 
 from .message import OutboundMessage
 from .base import BaseOutboundTransport
@@ -12,7 +8,7 @@ from .queue.base import BaseOutboundMessageQueue
 
 
 class HttpTransport(BaseOutboundTransport):
-    """ """
+
     schemes = ("http", "https")
 
     def __init__(self, queue: BaseOutboundMessageQueue) -> None:
@@ -30,7 +26,6 @@ class HttpTransport(BaseOutboundTransport):
 
     @property
     def queue(self):
-        """ """
         return self._queue
 
     async def handle_message(self, message: OutboundMessage):

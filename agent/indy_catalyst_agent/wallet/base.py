@@ -201,7 +201,8 @@ class BaseWallet(ABC):
                 used, otherwise anon_decrypt is used.
 
         Returns:
-            A tuple of the decrypted message content and sender verkey (None for anon_crypt)
+            A tuple of the decrypted message content and sender verkey
+            (None for anon_crypt)
         """
 
     @abstractmethod

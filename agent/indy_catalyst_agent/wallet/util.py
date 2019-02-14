@@ -2,17 +2,13 @@
 Wallet utility functions
 """
 
-import base64
-
 import base58
+import base64
 
 
 def b64_to_bytes(val: str, urlsafe=False) -> bytes:
-    """Convert a base 64 string to bytes
-
-    :param val: str: 
-    :param urlsafe:  (Default value = False)
-
+    """
+    Convert a base 64 string to bytes
     """
     if urlsafe:
         return base64.urlsafe_b64decode(val)
@@ -20,11 +16,8 @@ def b64_to_bytes(val: str, urlsafe=False) -> bytes:
 
 
 def bytes_to_b64(val: bytes, urlsafe=False) -> str:
-    """Convert a byte string to base 64
-
-    :param val: bytes: 
-    :param urlsafe:  (Default value = False)
-
+    """
+    Convert a byte string to base 64
     """
     if urlsafe:
         return base64.urlsafe_b64encode(val).decode("ascii")
@@ -32,18 +25,14 @@ def bytes_to_b64(val: bytes, urlsafe=False) -> str:
 
 
 def b58_to_bytes(val: str) -> bytes:
-    """Convert a base 58 string to bytes
-
-    :param val: str: 
-
+    """
+    Convert a base 58 string to bytes
     """
     return base58.b58decode(val)
 
 
 def bytes_to_b58(val: bytes) -> str:
-    """Convert a byte string to base 58
-
-    :param val: bytes: 
-
+    """
+    Convert a byte string to base 58
     """
     return base58.b58encode(val).decode("ascii")

@@ -1,6 +1,4 @@
-import json
 import logging
-import socket
 from typing import Callable
 
 from aiohttp import web
@@ -11,12 +9,10 @@ from ...wallet.util import b64_to_bytes
 
 
 class HttpSetupError(BaseError):
-    """ """
     pass
 
 
 class Transport(BaseInboundTransport):
-    """ """
     def __init__(self, host: str, port: int, message_router: Callable) -> None:
         self.host = host
         self.port = port
@@ -27,7 +23,6 @@ class Transport(BaseInboundTransport):
 
     @property
     def scheme(self):
-        """ """
         return self._scheme
 
     async def start(self) -> None:
@@ -41,7 +36,8 @@ class Transport(BaseInboundTransport):
             await site.start()
         except OSError:
             raise HttpSetupError(
-                f"Unable to start webserver with host '{self.host}' and port '{self.port}'\n"
+                "Unable to start webserver with host "
+                + f"'{self.host}' and port '{self.port}'\n"
             )
 
     async def inbound_message_handler(self, request: web.BaseRequest):

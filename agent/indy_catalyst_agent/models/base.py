@@ -10,12 +10,6 @@ from ..classloader import ClassLoader
 
 
 def resolve_class(the_cls, relative_cls: type = None):
-    """
-
-    :param the_cls: 
-    :param relative_cls: type:  (Default value = None)
-
-    """
     resolved = None
     if isinstance(the_cls, type):
         resolved = the_cls
@@ -28,13 +22,6 @@ def resolve_class(the_cls, relative_cls: type = None):
 
 
 def resolve_meta_property(obj, prop_name: str, defval=None):
-    """
-
-    :param obj: 
-    :param prop_name: str: 
-    :param defval:  (Default value = None)
-
-    """
     cls = obj.__class__
     found = defval
     while cls:
@@ -49,11 +36,7 @@ def resolve_meta_property(obj, prop_name: str, defval=None):
 
 
 class BaseModel(ABC):
-    """ """
-
     class Meta:
-        """ """
-
         schema_class = None
 
     def __init__(self):
@@ -66,7 +49,6 @@ class BaseModel(ABC):
 
     @classmethod
     def _get_schema_class(cls):
-        """ """
         return resolve_class(cls.Meta.schema_class, cls)
 
     @property
@@ -76,20 +58,12 @@ class BaseModel(ABC):
 
     @classmethod
     def deserialize(cls, obj):
-        """Convert from JSON representation to a model instance
-
-        :param obj: 
-
-        """
+        """Convert from JSON representation to a model instance."""
         schema = cls._get_schema_class()()
         return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
 
     def serialize(self, as_string=False):
-        """Create a JSON representation of the model instance
-
-        :param as_string:  (Default value = False)
-
-        """
+        """Create a JSON representation of the model instance."""
         schema = self.Schema()
         return schema.dumps(self) if as_string else schema.dump(self)
 
@@ -99,11 +73,7 @@ class BaseModel(ABC):
 
 
 class BaseModelSchema(Schema):
-    """ """
-
     class Meta:
-        """ """
-
         model_class = None
         skip_values = [None]
         ordered = True
@@ -119,7 +89,6 @@ class BaseModelSchema(Schema):
 
     @classmethod
     def _get_model_class(cls):
-        """ """
         return resolve_class(cls.Meta.model_class, cls)
 
     @property
@@ -129,11 +98,6 @@ class BaseModelSchema(Schema):
 
     @pre_load
     def skip_dump_only(self, data):
-        """
-
-        :param data: 
-
-        """
         # not sure why this is necessary, seems like a bug
         to_remove = {
             field_obj.data_key or field_name
@@ -147,19 +111,9 @@ class BaseModelSchema(Schema):
 
     @post_load
     def make_model(self, data: dict):
-        """
-
-        :param data: dict: 
-
-        """
         return self.Model(**data)
 
     @post_dump
     def remove_skipped_values(self, data):
-        """
-
-        :param data: 
-
-        """
         skip_vals = resolve_meta_property(self, "skip_values", [])
         return {key: value for key, value in data.items() if value not in skip_vals}

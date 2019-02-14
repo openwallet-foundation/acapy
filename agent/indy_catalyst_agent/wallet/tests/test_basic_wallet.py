@@ -85,7 +85,7 @@ class TestBasicWallet:
         with pytest.raises(WalletDuplicateError):
             await wallet.create_local_did(self.test_seed, None)
         with pytest.raises(WalletError):
-            _info = await wallet.create_local_did("invalid-seed", None)
+            _ = await wallet.create_local_did("invalid-seed", None)
 
     @pytest.mark.asyncio
     async def test_create_local_with_did(self, wallet):
@@ -110,9 +110,9 @@ class TestBasicWallet:
         assert info3.verkey == self.test_verkey
 
         with pytest.raises(WalletNotFoundError):
-            _info = await wallet.get_local_did(self.missing_did)
+            _ = await wallet.get_local_did(self.missing_did)
         with pytest.raises(WalletNotFoundError):
-            _info = await wallet.get_local_did_for_verkey(self.missing_verkey)
+            _ = await wallet.get_local_did_for_verkey(self.missing_verkey)
 
     @pytest.mark.asyncio
     async def test_local_metadata(self, wallet):
@@ -169,7 +169,7 @@ class TestBasicWallet:
     @pytest.mark.asyncio
     async def test_pairwise_metadata(self, wallet):
         await wallet.create_local_did(self.test_seed, self.test_did)
-        _pair_created = await wallet.create_pairwise(
+        _ = await wallet.create_pairwise(
             self.test_target_did, self.test_target_verkey, None, self.test_metadata
         )
 
@@ -237,7 +237,7 @@ class TestBasicWallet:
             encrypted_msg, self.test_verkey, False
         )
         assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey == None
+        assert sender_verkey is None
 
         await wallet.create_local_did(self.test_target_seed, self.test_target_did)
         encrypted_msg = await wallet.encrypt_message(
@@ -259,7 +259,7 @@ class TestBasicWallet:
             encrypted_msg, key_info.verkey, False
         )
         assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey == None
+        assert sender_verkey is None
 
         target_key_info = await wallet.create_signing_key()
         encrypted_msg = await wallet.encrypt_message(

@@ -1,40 +1,30 @@
 import pytest
 
-from indy_catalyst_agent.storage import (
+from indy_catalyst_agent.storage.error import (
     StorageError,
     StorageNotFoundError,
     StorageSearchError,
-    StorageRecord,
 )
+
+from indy_catalyst_agent.storage.record import StorageRecord
+
 from indy_catalyst_agent.storage.basic import BasicStorage
 
 
 @pytest.fixture()
 def store():
-    """ """
     yield BasicStorage()
 
 
 def test_record(tags={}):
-    """
-
-    :param tags:  (Default value = {})
-
-    """
     return StorageRecord(type="TYPE", value="TEST", tags=tags)
 
 
 def test_missing_record(tags={}):
-    """
-
-    :param tags:  (Default value = {})
-
-    """
     return StorageRecord(type="__MISSING__", value="000000000")
 
 
 class TestBasicStorage:
-    """ """
     @pytest.mark.asyncio
     async def test_add_required(self, store):
         with pytest.raises(StorageError):
@@ -101,7 +91,7 @@ class TestBasicStorage:
         await store.add_record(record)
         await store.update_record_tags(record, {"a": "A"})
         result = await store.get_record(record.type, record.id)
-        assert result.tags.get("a") is "A"
+        assert result.tags.get("a") == "A"
 
     @pytest.mark.asyncio
     async def test_update_tags_missing(self, store):
@@ -151,7 +141,7 @@ class TestBasicStorage:
             assert found.value == record.value
             assert found.tags == record.tags
             count += 1
-        assert count is 1
+        assert count == 1
 
     @pytest.mark.asyncio
     async def test_closed_search(self, store):
