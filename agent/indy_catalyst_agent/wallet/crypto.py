@@ -319,7 +319,6 @@ def decode_pack_message(
 
     protected_bin = wrapper["protected"].encode("ascii")
     recips_json = b64_to_bytes(wrapper["protected"], urlsafe=True).decode("ascii")
-    print(recips_json)
     try:
         recips_outer = PackRecipientsSchema().loads(recips_json)
     except ValidationError:
