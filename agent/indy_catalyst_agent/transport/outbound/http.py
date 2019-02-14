@@ -33,8 +33,13 @@ class HttpTransport(BaseOutboundTransport):
 
     async def handle_message(self, message: OutboundMessage):
         try:
+            headers = {}
+            if isinstance(message.data, bytes):
+                headers["Content-Type"] = "application/ssi-agent-wire"
+            else:
+                headers["Content-Type"] = "application/json"
             async with self.client_session.post(
-                message.uri, data=message.data
+                message.uri, data=message.data, headers=headers,
             ) as response:
                 self.logger.info(response.status)
         except Exception:
