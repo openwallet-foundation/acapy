@@ -101,7 +101,7 @@ PARSER.add_argument(
     help="Generate and print a new connection invitation URL",
 )
 
-parser.add_argument(
+PARSER.add_argument(
     "--send-invite",
     type=str,
     metavar="<agent-endpoint>",

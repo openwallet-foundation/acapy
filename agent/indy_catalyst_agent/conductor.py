@@ -125,7 +125,9 @@ class Conductor:
         if self.settings.get("debug.print_invitation"):
             try:
                 mgr = ConnectionManager(context)
-                invitation = await mgr.create_invitation(context.default_label, context.default_endpoint)
+                invitation = await mgr.create_invitation(
+                    context.default_label, context.default_endpoint
+                )
                 await mgr.store_invitation(invitation, False)
                 invite_url = invitation.to_url()
                 print("\nCreated invitation:")
