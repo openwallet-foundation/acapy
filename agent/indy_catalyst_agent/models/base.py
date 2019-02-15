@@ -3,6 +3,8 @@ Base classes for Models and Schemas
 """
 
 from abc import ABC
+import json
+from typing import Union
 
 from marshmallow import Schema, post_dump, pre_load, post_load
 
@@ -62,10 +64,26 @@ class BaseModel(ABC):
         schema = cls._get_schema_class()()
         return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
 
-    def serialize(self, as_string=False):
-        """Create a JSON representation of the model instance."""
+    def serialize(self, as_string=False) -> dict:
+        """
+        Create a JSON-compatible dict representation of the model instance
+        """
         schema = self.Schema()
         return schema.dumps(self) if as_string else schema.dump(self)
+
+    @classmethod
+    def from_json(cls, json_repr: Union[str, bytes]):
+        """
+        Parse a JSON string into a model instance
+        """
+        parsed = json.loads(json_repr)
+        return cls.deserialize(parsed)
+
+    def to_json(self) -> str:
+        """
+        Create a JSON representation of the model instance
+        """
+        return json.dumps(self.serialize())
 
     def __repr__(self) -> str:
         items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())

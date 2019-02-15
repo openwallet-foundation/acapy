@@ -97,6 +97,12 @@ PARSER.add_argument(
 
 PARSER.add_argument(
     "--invite",
+    action="store_true",
+    help="Generate and print a new connection invitation URL",
+)
+
+parser.add_argument(
+    "--send-invite",
     type=str,
     metavar="<agent-endpoint>",
     help="Specify an endpoint to send an invitation to",
@@ -157,7 +163,9 @@ def main():
     if args.seed:
         settings["debug.seed"] = args.seed
     if args.invite:
-        settings["debug.send_invitation_to"] = args.invite
+        settings["debug.print_invitation"] = True
+    if args.send_invite:
+        settings["debug.send_invitation_to"] = args.send_invite
 
     loop = asyncio.get_event_loop()
     try:

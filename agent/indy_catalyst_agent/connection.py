@@ -64,10 +64,9 @@ class ConnectionManager:
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
             "label": "Alice",
             "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
-            "recipient_keys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+            "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
             "serviceEndpoint": "https://example.com/endpoint"
         }
-
         Currently, only peer DID is supported.
         """
         self._logger.debug("Creating invitation")
@@ -89,10 +88,10 @@ class ConnectionManager:
         Deliver an invitation to an HTTP endpoint
         """
         self._logger.debug(f"Sending invitation to {endpoint}")
-        invite_json = json.dumps(invitation.serialize())
+        invite_json = invitation.to_json()
         invite_b64 = bytes_to_b64(invite_json.encode("ascii"), urlsafe=True)
         async with aiohttp.ClientSession() as session:
-            await session.get(endpoint, params={"c_i": invite_b64})
+            await session.get(endpoint, params={"invite": invite_b64})
 
     async def store_invitation(
         self, invitation: ConnectionInvitation, received: bool, tags: dict = None
@@ -291,13 +290,17 @@ class ConnectionManager:
         Process a ConnectionResponse message by looking up
         the connection request and setting up the pairwise connection
         """
+        if response._thread:
+            request_id = response._thread.thid
+            request = await self.find_request(request_id)
+            my_did = request.connection.did
+        else:
+            my_did = self.context.recipient_did
+        if not my_did:
+            raise ConnectionError(f"No DID associated with connection response")
 
-        request_id = response._thread.thid
-        request = await self.find_request(request_id)
-
-        my_did = request.connection.did
         their_did = response.connection.did
-        conn_did_doc = request.connection.did_doc
+        conn_did_doc = response.connection.did_doc
         their_verkey = conn_did_doc.verkeys[0].value
         their_endpoint = conn_did_doc.services[0].endpoint
 
@@ -306,8 +309,7 @@ class ConnectionManager:
         if not their_endpoint:
             their_endpoint = my_info.metadata.get("their_endpoint")
         if not their_label:
-            # local DID not associated with a connection
-            raise ConnectionError()
+            raise ConnectionError(f"DID not associated with a connection: {my_did}")
 
         # update local DID metadata to mark connection as accepted, prevent multiple
         # responses? May also set a creation time on the local DID to allow request

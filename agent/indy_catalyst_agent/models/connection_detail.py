@@ -2,8 +2,6 @@
 An object for containing the connection request/response DID information
 """
 
-import json
-
 from marshmallow import fields
 
 from .base import BaseModel, BaseModelSchema
@@ -14,16 +12,15 @@ class DIDDocWrapper(fields.Field):
     """Field that loads and serializes DIDDoc"""
 
     def _serialize(self, value, attr, obj, **kwargs):
-        # FIXME - not ideal! need a separate method on DIDDoc
-        # return value.serialize()
-        dd_json = value.to_json()
-        return json.loads(dd_json)
+        return value.serialize()
 
     def _deserialize(self, value, attr, data, **kwargs):
-        # FIXME - same as above
-        # return DIDDoc.deserialize(value)
-        dd_json = json.dumps(value)
-        return DIDDoc.from_json(dd_json)
+        # quick fix for missing optional values
+        if "authentication" not in value:
+            value["authentication"] = []
+        if "service" not in value:
+            value["service"] = []
+        return DIDDoc.deserialize(value)
 
 
 class ConnectionDetail(BaseModel):

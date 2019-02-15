@@ -121,18 +121,30 @@ class Conductor:
         if test_seed:
             await context.wallet.create_local_did(test_seed)
 
+        # Print an invitation to the terminal
+        if self.settings.get("debug.print_invitation"):
+            try:
+                mgr = ConnectionManager(context)
+                invitation = await mgr.create_invitation(context.default_label, context.default_endpoint)
+                await mgr.store_invitation(invitation, False)
+                invite_url = invitation.to_url()
+                print("\nCreated invitation:")
+                print(invite_url)
+            except Exception:
+                self.logger.exception("Error sending invitation")
+
         # Auto-send an invitation to another agent
         send_invite_to = self.settings.get("debug.send_invitation_to")
-        try:
-            if send_invite_to:
+        if send_invite_to:
+            try:
                 mgr = ConnectionManager(context)
                 invitation = await mgr.create_invitation(
                     context.default_label, context.default_endpoint
                 )
                 await mgr.store_invitation(invitation, False)
                 await mgr.send_invitation(invitation, send_invite_to)
-        except Exception:
-            self.logger.exception("Error sending invitation")
+            except Exception:
+                self.logger.exception("Error sending invitation")
 
     async def inbound_message_router(
         self,
