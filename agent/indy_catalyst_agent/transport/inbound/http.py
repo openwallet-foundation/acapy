@@ -63,5 +63,9 @@ class Transport(BaseInboundTransport):
             invite = b64_to_bytes(invite, urlsafe=True)
             await self.message_router(invite, "invitation")
             return web.Response(text="Invitation received")
+        elif request.query.get("c_i"):
+            return web.Response(
+                text="You have received a connection invitation. To accept the "
+                "invitation, paste it into your agent application.")
         else:
             return web.Response(text="To send an invitation add ?invite=<base64invite>")
