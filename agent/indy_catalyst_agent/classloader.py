@@ -5,21 +5,35 @@ from importlib import import_module
 
 from .error import BaseError
 
+
 class ModuleLoadError(BaseError):
+    """Module load error."""
+
     pass
 
 
 class ClassNotFoundError(BaseError):
+    """Class not found error."""
+
     pass
 
 
 class ClassLoader:
+    """Class used to load classes from modules dynamically."""
+
     def __init__(self, base_path, super_class):
         self.logger = logging.getLogger(__name__)
         self.base_path = base_path
         self.super_class = super_class
 
     def load(self, module_path, load_relative=False):
+        """
+        Load module by module path.
+
+        :param module_path: Dotted path to module
+        :param load_relative:  (Default value = False) Should the method check in the
+            configured base path for relative import
+        """
         # We can try to load the module relative to a given base path
         if load_relative:
             relative_module_path = ".".join([self.base_path, module_path])
@@ -53,8 +67,10 @@ class ClassLoader:
 
     @classmethod
     def load_class(cls, class_name: str, default_module: str = None):
-        """
-        Resolve a complete class path (ie. typing.Dict) to the class itself
+        """Resolve a complete class path (ie. typing.Dict) to the class itself
+
+        :param class_name: str: Class name
+        :param default_module: str:  (Default value = None)
         """
         if "." in class_name:
             # import module and find class
@@ -63,12 +79,12 @@ class ClassLoader:
             mod_path = default_module
         else:
             raise ClassNotFoundError(f"Cannot resolve class name: {class_name}")
-        
+
         try:
             mod = import_module(mod_path)
         except ModuleNotFoundError:
             error_message = f"Unable to import module {mod_path}"
             raise ModuleLoadError(error_message)
 
-        resolved = getattr(mod, class_name, None)        
+        resolved = getattr(mod, class_name, None)
         return resolved

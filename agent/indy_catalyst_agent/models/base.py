@@ -6,9 +6,7 @@ from abc import ABC
 import json
 from typing import Union
 
-from marshmallow import (
-    Schema, fields, post_dump, pre_load, post_load,
-)
+from marshmallow import Schema, post_dump, pre_load, post_load
 
 from ..classloader import ClassLoader
 
@@ -24,11 +22,12 @@ def resolve_class(the_cls, relative_cls: type = None):
         raise ImportError("Class could not be loaded: {}".format(the_cls))
     return resolved
 
+
 def resolve_meta_property(obj, prop_name: str, defval=None):
     cls = obj.__class__
     found = defval
     while cls:
-        Meta = getattr(cls, 'Meta', None)
+        Meta = getattr(cls, "Meta", None)
         if Meta and hasattr(Meta, prop_name):
             found = getattr(Meta, prop_name)
             break
@@ -46,7 +45,9 @@ class BaseModel(ABC):
         if not self.Meta.schema_class:
             raise TypeError(
                 "Can't instantiate abstract class {} with no schema_class".format(
-                    self.__class__.__name__))
+                    self.__class__.__name__
+                )
+            )
 
     @classmethod
     def _get_schema_class(cls):
@@ -54,16 +55,12 @@ class BaseModel(ABC):
 
     @property
     def Schema(self) -> type:
-        """
-        Accessor for the model's schema class
-        """
+        """Accessor for the model's schema class"""
         return self._get_schema_class()
 
     @classmethod
     def deserialize(cls, obj):
-        """
-        Convert from JSON representation to a model instance
-        """
+        """Convert from JSON representation to a model instance."""
         schema = cls._get_schema_class()()
         return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
 
@@ -81,7 +78,7 @@ class BaseModel(ABC):
         """
         parsed = json.loads(json_repr)
         return cls.deserialize(parsed)
-    
+
     def to_json(self) -> str:
         """
         Create a JSON representation of the model instance
@@ -90,7 +87,7 @@ class BaseModel(ABC):
 
     def __repr__(self) -> str:
         items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
-        return "<{}({})>".format(self.__class__.__name__, ', '.join(items))
+        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
 
 
 class BaseModelSchema(Schema):
@@ -104,7 +101,9 @@ class BaseModelSchema(Schema):
         if not self.Meta.model_class:
             raise TypeError(
                 "Can't instantiate abstract class {} with no model_class".format(
-                    self.__class__.__name__))
+                    self.__class__.__name__
+                )
+            )
 
     @classmethod
     def _get_model_class(cls):
@@ -112,9 +111,7 @@ class BaseModelSchema(Schema):
 
     @property
     def Model(self) -> type:
-        """
-        Accessor for the schema's model class
-        """
+        """Accessor for the schema's model class"""
         return self._get_model_class()
 
     @pre_load
@@ -136,8 +133,5 @@ class BaseModelSchema(Schema):
 
     @post_dump
     def remove_skipped_values(self, data):
-        skip_vals = resolve_meta_property(self, 'skip_values', [])
-        return {
-            key: value for key, value in data.items()
-            if value not in skip_vals
-        }
+        skip_vals = resolve_meta_property(self, "skip_values", [])
+        return {key: value for key, value in data.items() if value not in skip_vals}

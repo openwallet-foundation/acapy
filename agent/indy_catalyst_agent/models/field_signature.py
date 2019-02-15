@@ -2,38 +2,37 @@
 Model and schema for working with field signatures within message bodies
 """
 
-from abc import ABC
+
 import json
 import struct
-import sys
 import time
 
-from marshmallow import (
-    Schema, fields, post_dump, pre_load, post_load,
-)
+from marshmallow import fields
 
 from .base import BaseModel, BaseModelSchema
-from ..wallet import BaseWallet
+from ..wallet.base import BaseWallet
 from ..wallet.util import b64_to_bytes, bytes_to_b64
 
 
 class FieldSignature(BaseModel):
-    """
-    Class representing a field value signed by a known verkey
-    """
-    class Meta:
-        schema_class = 'FieldSignatureSchema'
+    """Class representing a field value signed by a known verkey"""
 
-    TYPE_ED25519SHA512 = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single"
+    class Meta:
+
+        schema_class = "FieldSignatureSchema"
+
+    TYPE_ED25519SHA512 = (
+        "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single"
+    )
 
     def __init__(
-            self,
-            *,
-            signature_type: str = None,
-            signature: str = None,
-            sig_data: str = None,
-            signer: str = None,
-        ):
+        self,
+        *,
+        signature_type: str = None,
+        signature: str = None,
+        sig_data: str = None,
+        signer: str = None,
+    ):
         self.signature_type = signature_type
         self.signature = signature
         self.sig_data = sig_data
@@ -41,8 +40,8 @@ class FieldSignature(BaseModel):
 
     @classmethod
     async def create(
-            cls, value, signer: str, wallet: BaseWallet, timestamp = None
-        ) -> 'FieldSignature':
+        cls, value, signer: str, wallet: BaseWallet, timestamp=None
+    ) -> "FieldSignature":
         """
         Sign a field value and return a newly constructed `FieldSignature` representing
         the resulting signature
@@ -81,15 +80,18 @@ class FieldSignature(BaseModel):
         return await wallet.verify_message(msg_bin, sig_bin, self.signer)
 
     def __str__(self):
-        return "{}(signature_type='{}', signature='{}', sig_data='{}', signer='{}')".format(
-            self.__class__.__name__,
-            self.signature_type, self.signature, self.sig_data, self.signer,
+        return (
+            f"{self.__class__.__name__}"
+            + f"(signature_type='{self.signature_type,}', "
+            + f"signature='{self.signature,}', "
+            + f"sig_data='{self.sig_data}', signer='{self.signer}')"
         )
 
 
 class FieldSignatureSchema(BaseModelSchema):
     class Meta:
         model_class = FieldSignature
+
     signature_type = fields.Str(data_key="@type", required=True)
     signature = fields.Str(required=True)
     sig_data = fields.Str(required=True)

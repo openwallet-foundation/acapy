@@ -4,13 +4,12 @@ from ....connection import ConnectionManager
 
 
 class ConnectionResponseHandler(BaseHandler):
+    """ """
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        self._logger.debug(
-            f"ConnectionResponseHandler called with context {context}"
-        )
+        self._logger.debug(f"ConnectionResponseHandler called with context {context}")
         assert isinstance(context.message, ConnectionResponse)
 
         mgr = ConnectionManager(context)
-        target = await mgr.accept_response(context.message)
+        _ = await mgr.accept_response(context.message)
         # send trust ping?

@@ -1,10 +1,11 @@
-from ..proof_request import ProofRequest, ProofRequestSchema
+from ..proof_request import ProofRequest
 from ....message_types import MessageTypes
 
 from unittest import mock, TestCase
 
 
 class TestProofRequest(TestCase):
+
     proof_request_json = "proof_request_json"
 
     def test_init(self):
@@ -17,7 +18,8 @@ class TestProofRequest(TestCase):
         assert proof_request._type == MessageTypes.PROOF_REQUEST.value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.proofs.messages.proof_request.ProofRequestSchema.load"
+        "indy_catalyst_agent.messaging.proofs.messages."
+        + "proof_request.ProofRequestSchema.load"
     )
     def test_deserialize(self, proof_request_schema_load):
         obj = {"obj": "obj"}
@@ -28,7 +30,8 @@ class TestProofRequest(TestCase):
         assert proof_request is proof_request_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.proofs.messages.proof_request.ProofRequestSchema.dump"
+        "indy_catalyst_agent.messaging.proofs.messages."
+        + "proof_request.ProofRequestSchema.dump"
     )
     def test_serialize(self, proof_request_schema_dump):
         proof_request = ProofRequest(self.proof_request_json)
@@ -45,4 +48,4 @@ class TestProofRequestSchema(TestCase):
     def test_make_model(self):
         data = self.proof_request.serialize()
         model_instance = ProofRequest.deserialize(data)
-        assert type(model_instance) is type(self.proof_request)
+        assert isinstance(model_instance, ProofRequest)

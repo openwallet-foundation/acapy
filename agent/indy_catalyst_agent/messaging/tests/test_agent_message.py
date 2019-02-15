@@ -1,5 +1,3 @@
-import time
-
 from asynctest import TestCase as AsyncTestCase
 from marshmallow import fields
 
@@ -9,28 +7,41 @@ from ...wallet.basic import BasicWallet
 
 
 class SignedAgentMessage(AgentMessage):
+    """Signed agent message tests"""
+
     class Meta:
+        """Meta data"""
+
         handler_class = None
-        schema_class = 'SignedAgentMessageSchema'
-        message_type = 'signed-agent-message'
+        schema_class = "SignedAgentMessageSchema"
+        message_type = "signed-agent-message"
 
     def __init__(self, value: str = None, **kwargs):
         super(SignedAgentMessage, self).__init__(**kwargs)
         self.value = value
 
+
 class SignedAgentMessageSchema(AgentMessageSchema):
+    """Utility schema"""
+
     class Meta:
         model_class = SignedAgentMessage
-        signed_fields = ('value',)
+        signed_fields = ("value",)
+
     value = fields.Str(required=True)
 
 
 class TestAgentMessage(AsyncTestCase):
+    """Tests agent message."""
+
     class BadImplementationClass(AgentMessage):
+        """Test utility class."""
+
         pass
 
     def test_init(self):
-        _msg = SignedAgentMessage()
+        """Tests init class"""
+        SignedAgentMessage()
 
         with self.assertRaises(TypeError) as context:
             self.BadImplementationClass()  # pylint: disable=E0110
@@ -40,7 +51,6 @@ class TestAgentMessage(AsyncTestCase):
     async def test_field_signature(self):
         wallet = BasicWallet()
         key_info = await wallet.create_signing_key()
-        timestamp = int(time.time())
 
         msg = SignedAgentMessage()
         msg.value = "Test value"

@@ -1,13 +1,11 @@
 from unittest import mock, TestCase
 
 from ..message_factory import MessageFactory, MessageParseError
-from ..message_types import MessageTypes
 
 from ..proofs.messages.proof_request import ProofRequest
 
 
 class TestMessageFactory(TestCase):
-
     no_type_message = {"a": "b"}
     unknown_type_message = {"@type": 1}
     test_message_type = "MESSAGE"
@@ -29,9 +27,7 @@ class TestMessageFactory(TestCase):
         mock_message = mock.MagicMock()
         mock_message.deserialize.return_value = ProofRequest()
 
-        self.factory.register_message_types({
-            self.test_message_type: mock_message
-        })
+        self.factory.register_message_types({self.test_message_type: mock_message})
 
         obj = {"@type": self.test_message_type}
         return_value = self.factory.make_message(obj)
@@ -39,11 +35,18 @@ class TestMessageFactory(TestCase):
         mock_message.deserialize.assert_called_once_with(obj)
         assert return_value is mock_message.deserialize.return_value
 
-    @mock.patch("indy_catalyst_agent.messaging.proofs.messages.proof_request.ProofRequest")
+    @mock.patch(
+        "indy_catalyst_agent.messaging.proofs.messages.proof_request.ProofRequest"
+    )
     def test_message_class_name_registration(self, mock_proof_request):
-        self.factory.register_message_types({
-            self.test_message_type: "indy_catalyst_agent.messaging.proofs.messages.proof_request.ProofRequest",
-        })
+        self.factory.register_message_types(
+            {
+                self.test_message_type: (
+                    "indy_catalyst_agent.messaging.proofs.messages."
+                    + "proof_request.ProofRequest"
+                )
+            }
+        )
 
         obj = {"@type": self.test_message_type}
         return_value = self.factory.make_message(obj)

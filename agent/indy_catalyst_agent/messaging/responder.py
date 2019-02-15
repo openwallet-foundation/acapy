@@ -6,13 +6,13 @@ from ..error import BaseError
 
 
 class ResponderError(BaseError):
+    """Responder error."""
+
     pass
 
 
 class BaseResponder(ABC):
-    """
-    Interface for message handlers to send responses
-    """
+    """Interface for message handlers to send responses"""
 
     async def send_outbound(self, message: AgentMessage, target: ConnectionTarget):
         """

@@ -9,10 +9,12 @@ from ...message_types import MessageTypes
 
 
 class Forward(AgentMessage):
+    """ """
     class Meta:
+        """ """
         # handler_class = ForwardHandler
         message_type = MessageTypes.FORWARD.value
-        schema_class = 'ForwardSchema'
+        schema_class = "ForwardSchema"
 
     def __init__(self, to: str = None, msg: str = None, **kwargs):
         super(Forward, self).__init__(**kwargs)
@@ -21,7 +23,9 @@ class Forward(AgentMessage):
 
 
 class ForwardSchema(AgentMessageSchema):
+    """ """
     class Meta:
+        """ """
         model_class = Forward
 
     to = fields.Str(required=True)

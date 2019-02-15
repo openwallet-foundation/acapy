@@ -1,36 +1,36 @@
 """
-The dispatcher is responsible for coordinating data flow between handlers, providing lifecycle
-hook callbacks storing state for message threads, etc.
+The dispatcher is responsible for coordinating data flow between handlers, providing
+lifecycle hook callbacks storing state for message threads, etc.
 """
 
 import logging
-from typing import Coroutine
+from typing import Coroutine, Union
 
-from .storage import BaseStorage
-from .wallet import BaseWallet, WalletError
+from .wallet.base import BaseWallet
 from .messaging.agent_message import AgentMessage
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder, ResponderError
-from .transport.outbound.message import OutboundMessage
-from .messaging.message_factory import MessageFactory
 from .models.connection_target import ConnectionTarget
 
 
 class Dispatcher:
+    """
+    Class responsible for dispatching messages to message handlers and responding
+    to other agents.
+    """
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
     async def dispatch(
-            self,
-            context: RequestContext,
-            send: Coroutine,
-            transport_reply: Coroutine = None,
-        ):
-
-        # 1. get handler result
-        # 1a. Possibly communicate with service backend for instructions
-        # 2. based on some logic, build a response message
+        self,
+        context: RequestContext,
+        send: Coroutine,
+        transport_reply: Coroutine = None,
+    ):
+        """
+        Configure responder and dispatch message context to message handler.
+        """
 
         responder = self.make_responder(send, context.wallet, transport_reply)
         handler_cls = context.message.Handler
@@ -40,25 +40,38 @@ class Dispatcher:
         # This is for persistent connections waiting on that response.
         return handler_response
 
-    def make_responder(self, send: Coroutine, wallet: BaseWallet, reply: Coroutine):
+    def make_responder(
+        self, send: Coroutine, wallet: BaseWallet, reply: Union[Coroutine, None]
+    ):
+        """
+        Build a responder object.
+        """
         responder = DispatcherResponder(send, wallet, reply=reply)
-        #responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
-        #responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
-        responder.add_target(ConnectionTarget(endpoint="https://httpbin.org/status/400"))
+        # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
+        # responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
+        responder.add_target(
+            ConnectionTarget(endpoint="https://httpbin.org/status/400")
+        )
         return responder
 
 
 class DispatcherResponder(BaseResponder):
-    """
-    Handle outgoing messages from message handlers
-    """
-    def __init__(self, send: Coroutine, wallet: BaseWallet, *targets, reply: Coroutine = None):
+    """Handle outgoing messages from message handlers"""
+
+    def __init__(
+        self, send: Coroutine, wallet: BaseWallet, *targets, reply: Coroutine = None
+    ):
         self._targets = list(targets)
         self._send = send
         self._reply = reply
         self._wallet = wallet
 
     def add_target(self, target: ConnectionTarget):
+        """
+        Add target.
+
+        :param target: ConnectionTarget: Connection target
+        """
         self._targets.append(target)
 
     async def send_reply(self, message: AgentMessage):

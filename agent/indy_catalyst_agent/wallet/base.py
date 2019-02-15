@@ -10,13 +10,13 @@ KeyInfo = namedtuple("KeyInfo", "verkey metadata")
 
 DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
 
-PairwiseInfo = namedtuple("PairwiseInfo", "their_did their_verkey my_did my_verkey metadata")
+PairwiseInfo = namedtuple(
+    "PairwiseInfo", "their_did their_verkey my_did my_verkey metadata"
+)
 
 
 class BaseWallet(ABC):
-    """
-    Abstract wallet interface
-    """
+    """Abstract wallet interface"""
 
     def __init__(self, config: dict):
         """
@@ -25,16 +25,12 @@ class BaseWallet(ABC):
 
     @property
     def handle(self):
-        """
-        Get internal wallet reference
-        """
+        """Get internal wallet reference"""
         return None
 
     @property
     def opened(self) -> bool:
-        """
-        Check whether wallet is currently open
-        """
+        """Check whether wallet is currently open"""
         return False
 
     @abstractmethod
@@ -50,7 +46,9 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
-    async def create_signing_key(self, seed: str = None, metadata: dict = None) -> KeyInfo:
+    async def create_signing_key(
+        self, seed: str = None, metadata: dict = None
+    ) -> KeyInfo:
         """
         Create a new public/private signing keypair
 
@@ -93,10 +91,8 @@ class BaseWallet(ABC):
 
     @abstractmethod
     async def create_local_did(
-            self,
-            seed: str = None,
-            did: str = None,
-            metadata: dict = None) -> DIDInfo:
+        self, seed: str = None, did: str = None, metadata: dict = None
+    ) -> DIDInfo:
         """
         Create and store a new local DID
         """
@@ -127,11 +123,12 @@ class BaseWallet(ABC):
 
     @abstractmethod
     async def create_pairwise(
-            self,
-            their_did: str,
-            their_verkey: str,
-            my_did: str = None,
-            metadata: dict = None) -> PairwiseInfo:
+        self,
+        their_did: str,
+        their_verkey: str,
+        my_did: str = None,
+        metadata: dict = None,
+    ) -> PairwiseInfo:
         """
         Create a new pairwise DID for a secure connection
         """
@@ -167,17 +164,17 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
-    async def verify_message(self, message: bytes, signature: bytes, from_verkey: str) -> bool:
+    async def verify_message(
+        self, message: bytes, signature: bytes, from_verkey: str
+    ) -> bool:
         """
         Verify a signature against the public key of the signer
         """
 
     @abstractmethod
     async def encrypt_message(
-            self,
-            message: bytes,
-            to_verkey: str,
-            from_verkey: str = None) -> bytes:
+        self, message: bytes, to_verkey: str, from_verkey: str = None
+    ) -> bytes:
         """
         Apply auth_crypt or anon_crypt to a message
 
@@ -193,10 +190,8 @@ class BaseWallet(ABC):
 
     @abstractmethod
     async def decrypt_message(
-            self,
-            enc_message: bytes,
-            to_verkey: str,
-            use_auth: bool) -> (bytes, str):
+        self, enc_message: bytes, to_verkey: str, use_auth: bool
+    ) -> (bytes, str):
         """
         Decrypt a message assembled by auth_crypt or anon_crypt
 
@@ -206,15 +201,14 @@ class BaseWallet(ABC):
                 used, otherwise anon_decrypt is used.
 
         Returns:
-            A tuple of the decrypted message content and sender verkey (None for anon_crypt)
+            A tuple of the decrypted message content and sender verkey
+            (None for anon_crypt)
         """
 
     @abstractmethod
     async def pack_message(
-            self,
-            message: str,
-            to_verkeys: Sequence[str],
-            from_verkey: str = None) -> bytes:
+        self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
+    ) -> bytes:
         """
         Pack a message for one or more recipients
         """

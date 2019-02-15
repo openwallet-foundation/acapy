@@ -1,10 +1,6 @@
-import asyncio
-import json
 import logging
-import socket
-from typing import Callable
 
-from aiohttp import web, ClientSession, WSMsgType
+from aiohttp import ClientSession
 
 from .message import OutboundMessage
 from .base import BaseOutboundTransport
@@ -12,6 +8,7 @@ from .queue.base import BaseOutboundMessageQueue
 
 
 class HttpTransport(BaseOutboundTransport):
+
     schemes = ("http", "https")
 
     def __init__(self, queue: BaseOutboundMessageQueue) -> None:
@@ -45,4 +42,3 @@ class HttpTransport(BaseOutboundTransport):
         except Exception:
             # TODO: add retry logic
             self.logger.exception("Error handling outbound message")
-

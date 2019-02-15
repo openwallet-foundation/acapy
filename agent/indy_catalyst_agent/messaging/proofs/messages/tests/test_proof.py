@@ -1,4 +1,4 @@
-from ..proof import Proof, ProofSchema
+from ..proof import Proof
 from ....message_types import MessageTypes
 
 from unittest import mock, TestCase
@@ -43,4 +43,4 @@ class TestProofSchema(TestCase):
     def test_make_model(self):
         data = self.proof.serialize()
         model_instance = Proof.deserialize(data)
-        assert type(model_instance) is type(self.proof)
+        assert isinstance(model_instance, Proof)

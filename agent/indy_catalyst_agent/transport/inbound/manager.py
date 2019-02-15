@@ -1,5 +1,4 @@
 import logging
-from importlib import import_module
 
 from .base import BaseInboundTransport
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
@@ -15,6 +14,7 @@ class InboundTransportManager:
         self.transports = []
 
     def register(self, module_path, host, port, message_handler):
+        """Register transport module."""
         try:
             imported_class = self.class_loader.load(module_path, True)
         except (ModuleLoadError, ClassNotFoundError):

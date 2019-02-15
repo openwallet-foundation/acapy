@@ -2,8 +2,6 @@
 Handle identification of message types and instantiation of message classes
 """
 
-from typing import Dict, Union
-
 from ..classloader import ClassLoader
 from ..error import BaseError
 
@@ -11,6 +9,8 @@ from .agent_message import AgentMessage
 
 
 class MessageParseError(BaseError):
+    """Message parse error."""
+
     pass
 
 
@@ -25,15 +25,20 @@ class MessageFactory:
 
     def register_message_types(self, *types):
         """
-        Add new supported message types
+        Add new supported message types.
+
+        :param *types:
+
         """
         for typeset in types:
             self._typemap.update(typeset)
-    
+
     def resolve_message_class(self, message_type: str) -> type:
         """
         Given a dict describing a message, this method
         returns the corresponding registered message class.
+
+        :param message_type: str:
         """
         msg_cls = self._typemap.get(message_type)
         if isinstance(msg_cls, str):
@@ -44,6 +49,9 @@ class MessageFactory:
         """
         Given a dict describing a message, this method
         returns an instance of the related message class.
+
+        :param serialized_msg: dict:
+
         """
 
         msg_type = serialized_msg.get("@type")

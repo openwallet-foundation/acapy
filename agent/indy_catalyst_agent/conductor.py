@@ -4,10 +4,9 @@ over the network, communicating with the ledger, passing messages to handlers,
 and storing data in the wallet.
 """
 
-import json
 import logging
 
-from typing import Coroutine, Dict, Union
+from typing import Coroutine, Union
 
 from .connection import ConnectionManager
 from .classloader import ClassLoader
@@ -25,9 +24,17 @@ from .transport.outbound.queue.basic import BasicOutboundMessageQueue
 
 
 class ConductorError(BaseError):
+    """Conductor error."""
+
     pass
 
+
 class Conductor:
+    """
+    Class responsible for initalizing concrete implementations
+    of our require interfaces and routing inbound and outbound message data.
+    """
+
     STORAGE_TYPES = {
         "basic": "indy_catalyst_agent.storage.basic.BasicStorage",
         "indy": "indy_catalyst_agent.storage.indy.IndyStorage",
@@ -38,8 +45,11 @@ class Conductor:
     }
 
     def __init__(
-        self, transport_configs: InboundTransportConfiguration, outbound_transports,
-        message_factory: MessageFactory, settings: dict,
+        self,
+        transport_configs: InboundTransportConfiguration,
+        outbound_transports,
+        message_factory: MessageFactory,
+        settings: dict,
     ) -> None:
         self.context = None
         self.logger = logging.getLogger(__name__)
@@ -49,8 +59,11 @@ class Conductor:
         self.settings = settings.copy() if settings else {}
 
     async def start(self) -> None:
+        """Start the agent."""
         context = RequestContext()
-        context.default_endpoint = self.settings.get("default_endpoint", "http://localhost:10001")
+        context.default_endpoint = self.settings.get(
+            "default_endpoint", "http://localhost:10001"
+        )
         context.default_label = self.settings.get("default_name", "Indy Catalyst Agent")
         context.message_factory = self.message_factory
 
@@ -106,13 +119,15 @@ class Conductor:
             if not test_seed:
                 test_seed = "testseed000000000000000000000001"
         if test_seed:
-            _did_info = await context.wallet.create_local_did(test_seed)
+            await context.wallet.create_local_did(test_seed)
 
         # Print an invitation to the terminal
         if self.settings.get("debug.print_invitation"):
             try:
                 mgr = ConnectionManager(context)
-                invitation = await mgr.create_invitation(context.default_label, context.default_endpoint)
+                invitation = await mgr.create_invitation(
+                    context.default_label, context.default_endpoint
+                )
                 await mgr.store_invitation(invitation, False)
                 invite_url = invitation.to_url()
                 print("\nCreated invitation:")
@@ -125,20 +140,33 @@ class Conductor:
         if send_invite_to:
             try:
                 mgr = ConnectionManager(context)
-                invitation = await mgr.create_invitation(context.default_label, context.default_endpoint)
+                invitation = await mgr.create_invitation(
+                    context.default_label, context.default_endpoint
+                )
                 await mgr.store_invitation(invitation, False)
                 await mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
 
-
-    async def inbound_message_router(self, message_body: Union[str, bytes], transport_type: str, reply: Coroutine = None):
+    async def inbound_message_router(
+        self,
+        message_body: Union[str, bytes],
+        transport_type: str,
+        reply: Coroutine = None,
+    ):
+        """
+        Routes inbound messages.
+        """
         context = await self.context.expand_message(message_body, transport_type)
-        result = await self.dispatcher.dispatch(context, self.outbound_message_router, reply)
+        result = await self.dispatcher.dispatch(
+            context, self.outbound_message_router, reply
+        )
         # TODO: need to use callback instead?
         #       respond immediately after message parse in case of req-res transport?
         return result.serialize() if result else None
 
-    async def outbound_message_router(self, message: AgentMessage, target: ConnectionTarget) -> None:
+    async def outbound_message_router(
+        self, message: AgentMessage, target: ConnectionTarget
+    ) -> None:
         payload = await self.context.compact_message(message, target)
         await self.outbound_transport_manager.send_message(payload, target.endpoint)

@@ -1,25 +1,28 @@
 import asyncio
 import logging
 
-from importlib import import_module
 from typing import Type
 from urllib.parse import urlparse
 
 from .base import BaseOutboundTransport
-from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
+from ...classloader import ClassLoader
 from ...error import BaseError
 from .queue.base import BaseOutboundMessageQueue
 from .message import OutboundMessage
-from ...models.connection_target import ConnectionTarget
+
 
 MODULE_BASE_PATH = "indy_catalyst_agent.transport.outbound"
 
 
 class OutboundTransportRegistrationError(BaseError):
+    """ """
+
     pass
 
 
 class OutboundTransportManager:
+    """ """
+
     def __init__(self, queue: Type[BaseOutboundMessageQueue]):
         self.logger = logging.getLogger(__name__)
         self.registered_transports = {}
@@ -34,7 +37,8 @@ class OutboundTransportManager:
             schemes = imported_class.schemes
         except AttributeError:
             raise OutboundTransportRegistrationError(
-                f"Imported class {imported_class} does not specify a required 'schemes' attribute"
+                f"Imported class {imported_class} does not "
+                + "specify a required 'schemes' attribute"
             )
 
         for scheme in schemes:
@@ -42,8 +46,9 @@ class OutboundTransportManager:
             for scheme_tuple in self.registered_transports.keys():
                 if scheme in scheme_tuple:
                     raise OutboundTransportRegistrationError(
-                        f"Cannot register transport '{module_path}' for '{scheme}' scheme"
-                        + f" because the scheme has already been registered"
+                        f"Cannot register transport '{module_path}'"
+                        + f"for '{scheme}' scheme because the scheme"
+                        + "has already been registered"
                     )
 
         self.registered_transports[schemes] = imported_class
