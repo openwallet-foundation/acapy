@@ -4,6 +4,7 @@ from .messaging.message_types import MessageTypes
 from .messaging.basicmessage.message_types import MESSAGE_TYPES as BASICMESSAGE_MESSAGES
 from .messaging.connections.message_types import MESSAGE_TYPES as CONNECTION_MESSAGES
 from .messaging.trustping.message_types import MESSAGE_TYPES as TRUSTPING_MESSAGES
+from .messaging.routing.message_types import MESSAGE_TYPES as ROUTING_MESSAGES
 
 # TODO move message registration to the module level
 
@@ -28,12 +29,6 @@ PROOF_MESSAGES = {
     MessageTypes.PROOF.value: (
         "indy_catalyst_agent.messaging.proofs.messages.proof.Proof"
     ),
-}
-
-ROUTING_MESSAGES = {
-    MessageTypes.FORWARD.value: (
-        "indy_catalyst_agent.messaging.routing.messages.forward.Forward"
-    )
 }
 
 

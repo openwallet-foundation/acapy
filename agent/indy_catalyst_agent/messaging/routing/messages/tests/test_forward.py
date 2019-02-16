@@ -6,7 +6,7 @@ from unittest import mock, TestCase
 
 class TestForward(TestCase):
 
-    to = "to"
+    to = ["to"]
     msg = "msg"
 
     def test_init(self):
