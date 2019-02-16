@@ -1,5 +1,7 @@
 from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
+from ..manager import RoutingManager
 from ..messages.get_routes import GetRoutes
+from ..messages.routes import Routes
 
 
 class GetRoutesHandler(BaseHandler):
@@ -14,5 +16,6 @@ class GetRoutesHandler(BaseHandler):
             raise HandlerError("Cannot get routes: no connection")
         self._logger.info("Received get routes from: %s", context.sender_verkey)
 
-        # mgr = RoutesManager(context)
-        # result = await mgr.get_routes()
+        mgr = RoutingManager(context)
+        result = await mgr.get_routes()
+        await responder.send_reply(Routes(recipient_keys=result))

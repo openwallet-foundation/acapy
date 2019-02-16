@@ -1,5 +1,7 @@
 from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
 from ..messages.forward import Forward
+from ....connection import ConnectionManager, ConnectionManagerError
+from ..manager import RoutingManager, RoutingManagerError
 
 
 class ForwardHandler(BaseHandler):
@@ -13,3 +15,22 @@ class ForwardHandler(BaseHandler):
         if not context.recipient_verkey:
             raise HandlerError("Cannot forward message: unknown recipient")
         self._logger.info("Received forward for: %s", context.recipient_verkey)
+
+        # convert to bytes to ensure correct content-type
+        packed = context.message.msg.encode("ascii")
+
+        rt_mgr = RoutingManager(context)
+        for target in context.message.to:
+            try:
+                recipient = await rt_mgr.get_recipient(target)
+            except RoutingManagerError:
+                self._logger.exception("Error resolving recipient")
+                continue
+
+            conn_mgr = ConnectionManager(context)
+            try:
+                conn = await conn_mgr.find_connection(recipient)
+            except ConnectionManagerError:
+                self._logger.exception("Error resolving connection for route")
+
+            await self.responder.send_outbound(packed, conn.target)

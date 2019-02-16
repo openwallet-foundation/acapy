@@ -1,4 +1,5 @@
 from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
+from ..manager import RoutingManager
 from ..messages.delete_routes import DeleteRoutes
 
 
@@ -14,5 +15,5 @@ class DeleteRoutesHandler(BaseHandler):
             raise HandlerError("Cannot delete routes: no connection")
         self._logger.info("Received delete routes from: %s", context.sender_verkey)
 
-        # mgr = RoutesManager(context)
-        # await mgr.delete_routes(context.message.recipient_keys)
+        mgr = RoutingManager(context)
+        await mgr.delete_routes(context.message.recipient_keys)

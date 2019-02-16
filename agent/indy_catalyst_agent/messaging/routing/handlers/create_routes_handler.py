@@ -1,4 +1,5 @@
 from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
+from ..manager import RoutingManager
 from ..messages.create_routes import CreateRoutes
 
 
@@ -14,5 +15,5 @@ class CreateRoutesHandler(BaseHandler):
             raise HandlerError("Cannot create routes: no connection")
         self._logger.info("Received create routes from: %s", context.sender_verkey)
 
-        # mgr = RoutesManager(context)
-        # await mgr.create_routes(context.message.recipient_keys)
+        mgr = RoutingManager(context)
+        await mgr.create_routes(context.message.recipient_keys)
