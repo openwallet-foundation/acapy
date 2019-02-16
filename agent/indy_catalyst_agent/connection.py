@@ -371,7 +371,7 @@ class ConnectionManager:
         return target
 
     async def find_connection(
-        self, my_verkey: str, their_verkey: str, auto_complete=False
+        self, their_verkey: str, my_verkey: str = None, auto_complete=False
     ) -> dict:
         """Look up existing connection information for a sender verkey"""
         try:
@@ -406,6 +406,9 @@ class ConnectionManager:
                     sender_key=pairwise.my_verkey,
                 ),
             )
+
+        if not my_verkey:
+            return None
 
         try:
             did_info = await self.context.wallet.get_local_did(my_verkey)
@@ -460,10 +463,8 @@ class ConnectionManager:
 
         if isinstance(message_body, bytes):
             try:
-                message_json, from_verkey, to_verkey = \
-                    await self.context.wallet.unpack_message(
-                        message_body
-                    )
+                unpacked = await self.context.wallet.unpack_message(message_body)
+                message_json, from_verkey, to_verkey = unpacked
             except WalletError:
                 self._logger.debug("Message unpack failed, trying JSON")
 
@@ -480,7 +481,7 @@ class ConnectionManager:
         if from_verkey:
             # must be a packed message for from_verkey to be populated
             ctx.sender_verkey = from_verkey
-            conn = await self.find_connection(to_verkey, from_verkey, True)
+            conn = await self.find_connection(from_verkey, to_verkey, True)
             if conn:
                 ctx.connection_active = conn.state == conn.STATE_COMPLETE
                 ctx.connection_target = conn.target
@@ -506,17 +507,17 @@ class ConnectionManager:
         return ctx
 
     async def compact_message(
-        self, message: AgentMessage, target: ConnectionTarget
+        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
     ) -> Union[str, bytes]:
         """
         Serialize an outgoing message for transport
         """
-        message_dict = message.serialize()
-        message_json = json.dumps(message_dict)
-        if target.sender_key and target.recipient_keys:
-            message = await self.context.wallet.pack_message(
-                message_json, target.recipient_keys, target.sender_key
-            )
-        else:
-            message = message_json
+        if isinstance(message, AgentMessage):
+            message_json = message.to_json()
+            if target.sender_key and target.recipient_keys:
+                message = await self.context.wallet.pack_message(
+                    message_json, target.recipient_keys, target.sender_key
+                )
+            else:
+                message = message_json
         return message

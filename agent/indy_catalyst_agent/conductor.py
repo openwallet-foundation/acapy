@@ -166,7 +166,7 @@ class Conductor:
         return result.serialize() if result else None
 
     async def outbound_message_router(
-        self, message: AgentMessage, target: ConnectionTarget
+        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
     ) -> None:
         payload = await self.connection_mgr.compact_message(message, target)
         await self.outbound_transport_manager.send_message(payload, target.endpoint)

@@ -76,7 +76,7 @@ class DispatcherResponder(BaseResponder):
         """
         self._targets.append(target)
 
-    async def send_reply(self, message: AgentMessage):
+    async def send_reply(self, message: Union[AgentMessage, str, bytes]):
         if self._reply:
             # 'reply' is a temporary solution to support responses to websocket requests
             # a better solution would likely use a queue to deliver the replies
@@ -87,7 +87,9 @@ class DispatcherResponder(BaseResponder):
             for target in self._targets:
                 await self.send_outbound(message, target)
 
-    async def send_outbound(self, message: AgentMessage, target: ConnectionTarget):
+    async def send_outbound(
+        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
+    ):
         await self._send(message, target)
 
     async def send_admin_message(self, message: AgentMessage):
