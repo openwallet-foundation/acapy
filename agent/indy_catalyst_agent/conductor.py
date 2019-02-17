@@ -8,15 +8,15 @@ import logging
 
 from typing import Coroutine, Union
 
-from .connection import ConnectionManager
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
 from .error import BaseError
 from .logging import LoggingConfigurator
 from .messaging.agent_message import AgentMessage
+from .messaging.connections.manager import ConnectionManager
+from .messaging.connections.models.connection_target import ConnectionTarget
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
-from .models.connection_target import ConnectionTarget
 from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
@@ -25,8 +25,6 @@ from .transport.outbound.queue.basic import BasicOutboundMessageQueue
 
 class ConductorError(BaseError):
     """Conductor error."""
-
-    pass
 
 
 class Conductor:

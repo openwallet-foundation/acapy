@@ -8,20 +8,20 @@ import logging
 
 from typing import Tuple, Union
 
-from .error import BaseError
-from .messaging.agent_message import AgentMessage
-from .messaging.connections.messages.connection_invitation import ConnectionInvitation
-from .messaging.connections.messages.connection_request import ConnectionRequest
-from .messaging.connections.messages.connection_response import ConnectionResponse
-from .messaging.message_factory import MessageParseError
-from .messaging.request_context import RequestContext
+from ...error import BaseError
+from ..agent_message import AgentMessage
+from .messages.connection_invitation import ConnectionInvitation
+from .messages.connection_request import ConnectionRequest
+from .messages.connection_response import ConnectionResponse
+from ..message_factory import MessageParseError
+from ..request_context import RequestContext
 from .models.connection_detail import ConnectionDetail
 from .models.connection_target import ConnectionTarget
-from .models.thread_decorator import ThreadDecorator
-from .storage.error import StorageNotFoundError
-from .storage.record import StorageRecord
-from .wallet.error import WalletError, WalletNotFoundError
-from .wallet.util import bytes_to_b64
+from ...models.thread_decorator import ThreadDecorator
+from ...storage.error import StorageNotFoundError
+from ...storage.record import StorageRecord
+from ...wallet.error import WalletError, WalletNotFoundError
+from ...wallet.util import bytes_to_b64
 
 from von_anchor.a2a import DIDDoc
 from von_anchor.a2a.publickey import PublicKey, PublicKeyType

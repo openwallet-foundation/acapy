@@ -6,11 +6,11 @@ lifecycle hook callbacks storing state for message threads, etc.
 import logging
 from typing import Coroutine, Union
 
-from .wallet.base import BaseWallet
 from .messaging.agent_message import AgentMessage
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder, ResponderError
-from .models.connection_target import ConnectionTarget
+from .messaging.connections.models.connection_target import ConnectionTarget
+from .wallet.base import BaseWallet
 
 
 class Dispatcher:

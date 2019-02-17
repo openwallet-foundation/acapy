@@ -21,7 +21,10 @@ def request_context() -> RequestContext:
 
 @pytest.fixture()
 def manager() -> RoutingManager:
-    return RoutingManager(next(request_context()))
+    ctx = RequestContext()
+    ctx.sender_verkey = TEST_VERKEY
+    ctx.storage = BasicStorage()
+    return RoutingManager(ctx)
 
 
 class TestBasicStorage:

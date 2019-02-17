@@ -4,7 +4,7 @@ An object for containing the connection request/response DID information
 
 from marshmallow import fields
 
-from .base import BaseModel, BaseModelSchema
+from ....models.base import BaseModel, BaseModelSchema
 from von_anchor.a2a import DIDDoc
 
 

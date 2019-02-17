@@ -1,6 +1,6 @@
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
 from ..messages.connection_response import ConnectionResponse
-from ....connection import ConnectionManager
+from ..manager import ConnectionManager
 from ...trustping.messages.ping import Ping
 
 

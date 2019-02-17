@@ -1,6 +1,6 @@
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
 from ..messages.connection_invitation import ConnectionInvitation
-from ....connection import ConnectionManager
+from ..manager import ConnectionManager
 
 
 class ConnectionInvitationHandler(BaseHandler):

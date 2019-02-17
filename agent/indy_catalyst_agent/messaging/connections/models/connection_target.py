@@ -6,7 +6,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from .base import BaseModel, BaseModelSchema
+from ....models.base import BaseModel, BaseModelSchema
 
 
 class ConnectionTarget(BaseModel):
