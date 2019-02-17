@@ -22,7 +22,9 @@ class CreateRoutes(AgentMessage):
         message_type = CREATE_ROUTES
         schema_class = "CreateRoutesSchema"
 
-    def __init__(self, recipient_keys: Sequence[str] = None, msg: str = None, **kwargs):
+    def __init__(
+        self, *, recipient_keys: Sequence[str] = None, msg: str = None, **kwargs
+    ):
         super(CreateRoutes, self).__init__(**kwargs)
         self.recipient_keys = list(recipient_keys) if recipient_keys else []
 

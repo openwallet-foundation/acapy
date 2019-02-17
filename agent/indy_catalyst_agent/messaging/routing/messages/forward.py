@@ -22,7 +22,7 @@ class Forward(AgentMessage):
         message_type = FORWARD
         schema_class = "ForwardSchema"
 
-    def __init__(self, to: Sequence[str] = None, msg: str = None, **kwargs):
+    def __init__(self, *, to: Sequence[str] = None, msg: str = None, **kwargs):
         super(Forward, self).__init__(**kwargs)
         self.to = list(to) if to else []
         self.msg = msg

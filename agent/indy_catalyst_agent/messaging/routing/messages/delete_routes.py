@@ -22,7 +22,9 @@ class DeleteRoutes(AgentMessage):
         message_type = DELETE_ROUTES
         schema_class = "DeleteRoutesSchema"
 
-    def __init__(self, recipient_keys: Sequence[str] = None, msg: str = None, **kwargs):
+    def __init__(
+        self, *, recipient_keys: Sequence[str] = None, msg: str = None, **kwargs
+    ):
         super(DeleteRoutes, self).__init__(**kwargs)
         self.recipient_keys = list(recipient_keys) if recipient_keys else []
 
