@@ -166,15 +166,15 @@ class ConnectionManager:
         my_label: str = None,
         my_endpoint: str = None,
         my_router_verkey: str = None,
-        role: str = None,
+        their_role: str = None,
     ) -> Tuple[ConnectionRequest, ConnectionTarget]:
         """
         Create a new connection request for a previously-received invitation
         """
 
-        their_label = invitation.label
         their_connection_key = invitation.recipient_keys[0]
         their_endpoint = invitation.endpoint
+        their_label = invitation.label
         their_routing_keys = invitation.routing_keys
 
         # Create my information for connection
@@ -182,9 +182,10 @@ class ConnectionManager:
             None,
             None,
             {
+                "my_router_verkey": my_router_verkey,
                 "their_endpoint": their_endpoint,
                 "their_label": their_label,
-                "their_role": role,
+                "their_role": their_role,
                 "their_routing_keys": their_routing_keys,
             },
         )
@@ -300,6 +301,7 @@ class ConnectionManager:
             {
                 "label": their_label,
                 "endpoint": their_endpoint,
+                "role": None,
                 "routing_keys": their_routing_keys,
                 "state": ConnectionRecord.STATE_RESPONDED,
                 # TODO: store established & last active dates
@@ -450,6 +452,7 @@ class ConnectionManager:
                     routing_keys=pair_meta.get("routing_keys"),
                     sender_key=pairwise.my_verkey,
                 ),
+                pair_meta.get("role"),
             )
 
         if not my_verkey:
@@ -478,6 +481,7 @@ class ConnectionManager:
                         routing_keys=did_meta.get("their_routing_keys"),
                         sender_key=my_verkey,
                     ),
+                    did_meta.get("their_role"),
                 )
             else:
                 self._logger.error("Discarding connection record, no DID or endpoint")
