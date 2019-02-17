@@ -1,6 +1,7 @@
 from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
 from ..manager import RoutingManager
 from ..messages.create_routes import CreateRoutes
+from ..messages.routes import Routes
 
 
 class CreateRoutesHandler(BaseHandler):
@@ -17,3 +18,6 @@ class CreateRoutesHandler(BaseHandler):
 
         mgr = RoutingManager(context)
         await mgr.create_routes(context.message.recipient_keys)
+
+        result = await mgr.get_routes()
+        await responder.send_reply(Routes(recipient_keys=result))
