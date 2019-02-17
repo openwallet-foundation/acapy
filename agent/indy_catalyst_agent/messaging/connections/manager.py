@@ -14,10 +14,11 @@ from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
 from ..message_factory import MessageParseError
-from ..request_context import RequestContext
 from .models.connection_detail import ConnectionDetail
 from .models.connection_target import ConnectionTarget
 from ...models.thread_decorator import ThreadDecorator
+from ..request_context import RequestContext
+from ..routing.messages.forward import Forward
 from ...storage.error import StorageNotFoundError
 from ...storage.record import StorageRecord
 from ...wallet.error import WalletError, WalletNotFoundError
@@ -33,6 +34,7 @@ class ConnectionManagerError(BaseError):
 
 
 class ConnectionRecord:
+    ROLE_ROUTER = "router"
     STATE_INVITED = "invited"
     STATE_REQUESTED = "requested"
     STATE_RESPONDED = "responded"
@@ -40,7 +42,8 @@ class ConnectionRecord:
 
     """Assembles connection state and target information"""
 
-    def __init__(self, state: str, target: ConnectionTarget):
+    def __init__(self, state: str, target: ConnectionTarget, role: str = None):
+        self.role = role
         self.state = state
         self.target = target
 
@@ -162,6 +165,8 @@ class ConnectionManager:
         invitation: ConnectionInvitation,
         my_label: str = None,
         my_endpoint: str = None,
+        my_router_verkey: str = None,
+        role: str = None,
     ) -> Tuple[ConnectionRequest, ConnectionTarget]:
         """
         Create a new connection request for a previously-received invitation
@@ -170,15 +175,23 @@ class ConnectionManager:
         their_label = invitation.label
         their_connection_key = invitation.recipient_keys[0]
         their_endpoint = invitation.endpoint
+        their_routing_keys = invitation.routing_keys
 
         # Create my information for connection
         my_info = await self.context.wallet.create_local_did(
-            None, None, {"their_label": their_label, "their_endpoint": their_endpoint}
+            None,
+            None,
+            {
+                "their_endpoint": their_endpoint,
+                "their_label": their_label,
+                "their_role": role,
+                "their_routing_keys": their_routing_keys,
+            },
         )
-        if not my_label:
-            my_label = self.context.default_label
         if not my_endpoint:
             my_endpoint = self.context.default_endpoint
+        if not my_label:
+            my_label = self.context.default_label
 
         did_doc = DIDDoc(did=my_info.did)
         controller = my_info.did
@@ -187,8 +200,26 @@ class ConnectionManager:
             my_info.did, "1", PublicKeyType.ED25519_SIG_2018, controller, value, True
         )
         did_doc.verkeys.append(pk)
-        service = Service(my_info.did, "indy", "IndyAgent", my_endpoint)
-        did_doc.services.append(service)
+
+        if my_router_verkey:
+            # May raise ConnectionManagerError
+            router_conn = await self.find_connection(my_router_verkey)
+            router_pk = PublicKey(
+                my_info.did,
+                "routing",
+                PublicKeyType.ED25519_SIG_2018,
+                controller,  # TODO: should controller DID match the router's DID?
+                router_conn.target.recipient_keys[0],
+                False,
+            )
+            did_doc.verkeys.append(router_pk)
+            service = Service(
+                my_info.did, "indy", "Agency", router_conn.target.endpoint
+            )
+            did_doc.services.append(service)
+        else:
+            service = Service(my_info.did, "indy", "IndyAgent", my_endpoint)
+            did_doc.services.append(service)
 
         # Create connection request message
         request = ConnectionRequest(
@@ -198,12 +229,10 @@ class ConnectionManager:
 
         # Store message so that response can be processed
         await self.context.storage.add_record(
-            StorageRecord(
-                "connection_request", json.dumps(request.serialize()), {}, request._id
-            )
+            StorageRecord("connection_request", request.to_json(), {}, request._id)
         )
 
-        # request must be sent to their_endpoint using their_connection_key,
+        # Request must be sent to their_endpoint using their_connection_key,
         # from my_info.verkey
         target = ConnectionTarget(
             endpoint=their_endpoint,
@@ -254,9 +283,14 @@ class ConnectionManager:
         their_label = request.label
         their_did = request.connection.did
         conn_did_doc = request.connection.did_doc
-        # may be different from self.context.sender_verkey
-        their_verkey = conn_did_doc.verkeys[0].value
         their_endpoint = conn_did_doc.services[0].endpoint
+        their_routing_keys = []
+        their_verkey = None  # may be different from self.context.sender_verkey
+        for verkey in conn_did_doc.verkeys:
+            if verkey.id == "routing":
+                their_routing_keys.append(verkey.value)
+            elif not their_verkey:
+                their_verkey = verkey.value
 
         # Create a new pairwise record with a newly-generated local DID
         pairwise = await self.context.wallet.create_pairwise(
@@ -266,6 +300,7 @@ class ConnectionManager:
             {
                 "label": their_label,
                 "endpoint": their_endpoint,
+                "routing_keys": their_routing_keys,
                 "state": ConnectionRecord.STATE_RESPONDED,
                 # TODO: store established & last active dates
             },
@@ -317,8 +352,14 @@ class ConnectionManager:
 
         their_did = response.connection.did
         conn_did_doc = response.connection.did_doc
-        their_verkey = conn_did_doc.verkeys[0].value
         their_endpoint = conn_did_doc.services[0].endpoint
+        their_routing_keys = []
+        their_verkey = None
+        for verkey in conn_did_doc.verkeys:
+            if verkey.id == "routing":
+                their_routing_keys.append(verkey.value)
+            elif not their_verkey:
+                their_verkey = verkey.value
 
         my_info = await self.context.wallet.get_local_did(my_did)
         their_label = my_info.metadata.get("their_label")
@@ -328,6 +369,7 @@ class ConnectionManager:
             raise ConnectionManagerError(
                 f"DID not associated with a connection: {my_did}"
             )
+        their_role = my_info.metadata.get("their_role")
 
         # update local DID metadata to mark connection as accepted, prevent multiple
         # responses? May also set a creation time on the local DID to allow request
@@ -347,8 +389,10 @@ class ConnectionManager:
             their_verkey,
             my_did,
             {
-                "label": their_label,
                 "endpoint": their_endpoint,
+                "label": their_label,
+                "role": their_role,
+                "routing_keys": their_routing_keys,
                 "state": ConnectionRecord.STATE_RESPONDED,
                 # TODO: store established & last active dates
             },
@@ -372,7 +416,7 @@ class ConnectionManager:
 
     async def find_connection(
         self, their_verkey: str, my_verkey: str = None, auto_complete=False
-    ) -> dict:
+    ) -> ConnectionRecord:
         """Look up existing connection information for a sender verkey"""
         try:
             pairwise = await self.context.wallet.get_pairwise_for_verkey(their_verkey)
@@ -403,6 +447,7 @@ class ConnectionManager:
                     endpoint=pair_endp,
                     label=pair_meta.get("label"),
                     recipient_keys=[pairwise.their_verkey],
+                    routing_keys=pair_meta.get("routing_keys"),
                     sender_key=pairwise.my_verkey,
                 ),
             )
@@ -430,6 +475,7 @@ class ConnectionManager:
                         endpoint=did_info.metadata.get("their_endpoint"),
                         label=did_meta.get("their_label"),
                         recipient_keys=[their_verkey],
+                        routing_keys=did_meta.get("their_routing_keys"),
                         sender_key=my_verkey,
                     ),
                 )
@@ -518,6 +564,14 @@ class ConnectionManager:
                 message = await self.context.wallet.pack_message(
                     message_json, target.recipient_keys, target.sender_key
                 )
+                if target.routing_keys:
+                    recip_keys = target.recipient_keys
+                    for router_key in target.routing_keys:
+                        fwd_msg = Forward(recip_keys, bytes_to_b64(message))
+                        message = await self.context.wallet.pack_message(
+                            fwd_msg.to_json(), recip_keys, target.sender_key
+                        )
+                        recip_keys = [router_key]
             else:
                 message = message_json
         return message
