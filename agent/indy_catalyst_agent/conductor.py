@@ -52,6 +52,7 @@ class Conductor:
         settings: dict,
     ) -> None:
         self.context = None
+        self.connection_mgr = None
         self.logger = logging.getLogger(__name__)
         self.message_factory = message_factory
         self.inbound_transport_configs = transport_configs
@@ -81,6 +82,7 @@ class Conductor:
         context.storage = ClassLoader.load_class(storage_type)(context.wallet)
 
         self.context = context
+        self.connection_mgr = ConnectionManager(context)
         self.dispatcher = Dispatcher()
 
         # Register all inbound transports
@@ -124,11 +126,10 @@ class Conductor:
         # Print an invitation to the terminal
         if self.settings.get("debug.print_invitation"):
             try:
-                mgr = ConnectionManager(context)
-                invitation = await mgr.create_invitation(
+                invitation = await self.connection_mgr.create_invitation(
                     context.default_label, context.default_endpoint
                 )
-                await mgr.store_invitation(invitation, False)
+                await self.connection_mgr.store_invitation(invitation, False)
                 invite_url = invitation.to_url()
                 print("\nCreated invitation:")
                 print(invite_url)
@@ -139,12 +140,11 @@ class Conductor:
         send_invite_to = self.settings.get("debug.send_invitation_to")
         if send_invite_to:
             try:
-                mgr = ConnectionManager(context)
-                invitation = await mgr.create_invitation(
+                invitation = await self.connection_mgr.create_invitation(
                     context.default_label, context.default_endpoint
                 )
-                await mgr.store_invitation(invitation, False)
-                await mgr.send_invitation(invitation, send_invite_to)
+                await self.connection_mgr.store_invitation(invitation, False)
+                await self.connection_mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
 
@@ -157,7 +157,7 @@ class Conductor:
         """
         Routes inbound messages.
         """
-        context = await self.context.expand_message(message_body, transport_type)
+        context = await self.connection_mgr.expand_message(message_body, transport_type)
         result = await self.dispatcher.dispatch(
             context, self.outbound_message_router, reply
         )
@@ -168,5 +168,5 @@ class Conductor:
     async def outbound_message_router(
         self, message: AgentMessage, target: ConnectionTarget
     ) -> None:
-        payload = await self.context.compact_message(message, target)
+        payload = await self.connection_mgr.compact_message(message, target)
         await self.outbound_transport_manager.send_message(payload, target.endpoint)

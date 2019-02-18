@@ -16,12 +16,16 @@ class ConnectionTarget(BaseModel):
     def __init__(
         self,
         *,
+        did: str = None,
         endpoint: str = None,
+        label: str = None,
         recipient_keys: Sequence[str] = None,
         routing_keys: Sequence[str] = None,
         sender_key: str = None,
     ):
+        self.did = did
         self.endpoint = endpoint
+        self.label = label
         self.recipient_keys = list(recipient_keys) if recipient_keys else []
         self.routing_keys = list(routing_keys) if routing_keys else []
         self.sender_key = sender_key
@@ -31,7 +35,9 @@ class ConnectionTargetSchema(BaseModelSchema):
     class Meta:
         model_class = ConnectionTarget
 
+    did = fields.Str(required=False)
     endpoint = fields.Str(required=False)
+    label = fields.Str(required=False)
     recipient_keys = fields.List(fields.Str(), required=False)
     routing_keys = fields.List(fields.Str(), required=False)
     sender_key = fields.Str(required=False)

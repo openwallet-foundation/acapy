@@ -32,7 +32,7 @@ class Dispatcher:
         Configure responder and dispatch message context to message handler.
         """
 
-        responder = self.make_responder(send, context.wallet, transport_reply)
+        responder = self.make_responder(send, context, transport_reply)
         handler_cls = context.message.Handler
         handler_response = await handler_cls().handle(context, responder)
 
@@ -41,17 +41,19 @@ class Dispatcher:
         return handler_response
 
     def make_responder(
-        self, send: Coroutine, wallet: BaseWallet, reply: Union[Coroutine, None]
+        self, send: Coroutine, context: RequestContext, reply: Union[Coroutine, None]
     ):
         """
         Build a responder object.
         """
-        responder = DispatcherResponder(send, wallet, reply=reply)
+        responder = DispatcherResponder(send, context.wallet, reply=reply)
         # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
         # responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
-        responder.add_target(
-            ConnectionTarget(endpoint="https://httpbin.org/status/400")
-        )
+        # responder.add_target(
+        #    ConnectionTarget(endpoint="https://httpbin.org/status/400")
+        # )
+        if context.connection_target:
+            responder.add_target(context.connection_target)
         return responder
 
 
@@ -83,7 +85,7 @@ class DispatcherResponder(BaseResponder):
             if not self._targets:
                 raise ResponderError("No active connection")
             for target in self._targets:
-                await self.send_outbound(target, message)
+                await self.send_outbound(message, target)
 
     async def send_outbound(self, message: AgentMessage, target: ConnectionTarget):
         await self._send(message, target)
