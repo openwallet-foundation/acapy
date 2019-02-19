@@ -1,6 +1,4 @@
-"""
-Base classes for Models and Schemas
-"""
+"""Base classes for Models and Schemas."""
 
 from abc import ABC
 import json
@@ -12,6 +10,9 @@ from ..classloader import ClassLoader
 
 
 def resolve_class(the_cls, relative_cls: type = None):
+    """
+    Resolve a class
+    """
     resolved = None
     if isinstance(the_cls, type):
         resolved = the_cls
