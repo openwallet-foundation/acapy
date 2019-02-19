@@ -1,6 +1,4 @@
-"""
-Represents an invitation message for establishing connection.
-"""
+"""Basic message."""
 
 from datetime import datetime, timezone
 from typing import Union
@@ -17,7 +15,11 @@ HANDLER_CLASS = (
 
 
 class BasicMessage(AgentMessage):
+    """Class defining the structure of a basic message."""
+
     class Meta:
+        """Basic message metadata class."""
+
         handler_class = HANDLER_CLASS
         message_type = BASIC_MESSAGE
         schema_class = "BasicMessageSchema"
@@ -25,6 +27,13 @@ class BasicMessage(AgentMessage):
     def __init__(
         self, *, sent_time: Union[str, datetime] = None, content: str = None, **kwargs
     ):
+        """
+        Initialize basic message object.
+
+        Args:
+            sent_time: Time message was sent
+            content: message content
+        """
         super(BasicMessage, self).__init__(**kwargs)
         if not sent_time:
             sent_time = datetime.utcnow()
@@ -35,7 +44,11 @@ class BasicMessage(AgentMessage):
 
 
 class BasicMessageSchema(AgentMessageSchema):
+    """Basic message schema class."""
+
     class Meta:
+        """Basic message schema metadata."""
+
         model_class = BasicMessage
 
     sent_time = fields.Str(required=False)

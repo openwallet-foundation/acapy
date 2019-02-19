@@ -1,3 +1,5 @@
+"""A Base handler class for all message handlers."""
+
 from abc import ABC, abstractmethod
 import logging
 
@@ -7,9 +9,19 @@ from .request_context import RequestContext
 
 class BaseHandler(ABC):
     """Abstract base class for handlers."""
+
     def __init__(self) -> None:
+        """Initialize a BaseHandler instance."""
         self._logger = logging.getLogger(__name__)
 
     @abstractmethod
     async def handle(self, context: RequestContext, responder: BaseResponder):
+        """
+        Abstract method for handler logic.
+
+        Args:
+            context: Request context object
+            responder: A responder object
+
+        """
         pass
