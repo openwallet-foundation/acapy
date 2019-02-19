@@ -31,11 +31,13 @@ class AgentMessage(BaseModel):
     def __init__(
         self,
         _id: str = None,
+        _l10n: dict = None,
         _signatures: Dict[str, FieldSignature] = None,
         _thread: ThreadDecorator = None,
     ):
         super(AgentMessage, self).__init__()
         self._message_id = _id or str(uuid.uuid4())
+        self._message_l10n = _l10n
         self._message_thread = _thread
         self._message_signatures = _signatures.copy() if _signatures else {}
         if not self.Meta.message_type:
@@ -76,6 +78,18 @@ class AgentMessage(BaseModel):
         Set the unique message identifier
         """
         self._message_id = val
+
+    @property
+    def _l10n(self) -> str:
+        """Accessor for the unique message identifier"""
+        return self._message_l10n
+
+    @_l10n.setter
+    def _l10n(self, val: str):
+        """
+        Set the unique message identifier
+        """
+        self._message_l10n = val
 
     @property
     def _signatures(self) -> Dict[str, FieldSignature]:
@@ -162,6 +176,9 @@ class AgentMessageSchema(BaseModelSchema):
     # Avoid clobbering keywords
     _type = fields.Str(data_key="@type", dump_only=True, required=False)
     _id = fields.Str(data_key="@id", required=False)
+
+    # Localization decorator
+    _l10n = fields.Dict(data_key="~l10n", required=False)
 
     # Thread decorator value
     _thread = fields.Nested(ThreadDecoratorSchema, data_key="~thread", required=False)
