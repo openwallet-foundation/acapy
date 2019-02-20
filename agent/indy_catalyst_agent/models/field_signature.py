@@ -15,9 +15,10 @@ from ..wallet.util import b64_to_bytes, bytes_to_b64
 
 
 class FieldSignature(BaseModel):
-    """Class representing a field value signed by a known verkey"""
+    """Class representing a field value signed by a known verkey."""
 
     class Meta:
+        """FieldSignature metadata."""
 
         schema_class = "FieldSignatureSchema"
 
@@ -33,6 +34,15 @@ class FieldSignature(BaseModel):
         sig_data: str = None,
         signer: str = None,
     ):
+        """
+        Initialize a FieldSignature instance.
+
+        Args:
+            signature_type: Type of signature
+            signature: The signature
+            sig_data: Signature data
+            signer: The verkey of the signer
+        """
         self.signature_type = signature_type
         self.signature = signature
         self.sig_data = sig_data
@@ -43,8 +53,19 @@ class FieldSignature(BaseModel):
         cls, value, signer: str, wallet: BaseWallet, timestamp=None
     ) -> "FieldSignature":
         """
+        Create a Signature.
+
         Sign a field value and return a newly constructed `FieldSignature` representing
-        the resulting signature
+        the resulting signature.
+
+        Args:
+            value:
+            signer: 
+            wallet: The wallet to use for the signature
+        
+        Returns:
+            The created `FieldSignature` object
+
         """
         if not timestamp:
             timestamp = time.time()
