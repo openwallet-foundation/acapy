@@ -59,10 +59,10 @@ class FieldSignature(BaseModel):
         the resulting signature.
 
         Args:
-            value:
-            signer: 
+            value: Value to sign
+            signer: Verkey of the signing party
             wallet: The wallet to use for the signature
-        
+
         Returns:
             The created `FieldSignature` object
 
@@ -84,7 +84,10 @@ class FieldSignature(BaseModel):
 
     def decode(self) -> (object, int):
         """
-        Decode the signature to its timestamp and value
+        Decode the signature to its timestamp and value.
+
+        Returns:
+            A tuple of (decoded message, timestamp)
         """
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         timestamp, = struct.unpack_from("!Q", msg_bin, 0)
@@ -92,7 +95,13 @@ class FieldSignature(BaseModel):
 
     async def verify(self, wallet: BaseWallet) -> bool:
         """
-        Verify the signature against the signer's public key
+        Verify the signature against the signer's public key.
+
+        Args:
+            wallet: Wallet to use to verify signature
+
+        Returns:
+            True if verification succeeds else False
         """
         if self.signature_type != self.TYPE_ED25519SHA512:
             return False
