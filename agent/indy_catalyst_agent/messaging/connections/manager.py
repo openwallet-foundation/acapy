@@ -315,21 +315,33 @@ class ConnectionManager:
         the connection request and setting up the pairwise connection
         """
 
+        connection = None
         if response._thread:
+            # identify the request by the thread ID
             request_id = response._thread.thid
-            connection = await ConnectionRecord.retrieve_by_request_id(
-                self.context.storage, request_id
-            )
-        # else: look up by sender_did, recipient_did, recipient_verkey?
+            try:
+                connection = await ConnectionRecord.retrieve_by_request_id(
+                    self.context.storage, request_id
+                )
+            except StorageNotFoundError:
+                pass
+
         if not connection:
-            raise ConnectionManagerError(
-                f"No connection associated with connection response"
-            )
+            # identify connection by the DID they used for us
+            try:
+                connection = await ConnectionRecord.retrieve_by_did(
+                    self.context.storage,
+                    self.context.sender_did,
+                    self.context.recipient_did,
+                )
+            except StorageNotFoundError:
+                pass
 
         if not connection:
             raise ConnectionManagerError(
-                "No associated connection found for connection response"
+                "No connection associated with connection response"
             )
+
         if connection.state not in (
             ConnectionRecord.STATE_REQUEST,
             ConnectionRecord.STATE_RESPONSE,
@@ -451,9 +463,11 @@ class ConnectionManager:
                 ctx.sender_did, ctx.recipient_did, to_verkey, True
             )
             if connection:
+                self._log_state("Found connection", {"connection": connection})
                 ctx.connection_active = (
                     connection.state == ConnectionRecord.STATE_ACTIVE
                 )
+                ctx.connection_record = connection
                 ctx.connection_target = await self.get_connection_target(connection)
 
         # look up thread information

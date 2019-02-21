@@ -134,14 +134,16 @@ class ConnectionRecord:
         storage: BaseStorage,
         their_did: str = None,
         my_did: str = None,
-        party: str = None,
+        initiator: str = None,
     ) -> "ConnectionRecord":
         """Retrieve a connection record by target DID"""
-        tag_filter = {"their_did": their_did}
+        tag_filter = {}
+        if their_did:
+            tag_filter["their_did"] = their_did
         if my_did:
             tag_filter["my_did"] = my_did
-        if party:
-            tag_filter["party"] = party
+        if initiator:
+            tag_filter["initiator"] = initiator
         return await cls.retrieve_by_tag_filter(storage, tag_filter)
 
     @classmethod
