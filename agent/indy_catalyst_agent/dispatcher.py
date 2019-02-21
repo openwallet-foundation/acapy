@@ -32,9 +32,13 @@ class Dispatcher:
         Configure responder and dispatch message context to message handler.
         """
 
-        responder = self.make_responder(send, context, transport_reply)
-        handler_cls = context.message.Handler
-        handler_response = await handler_cls().handle(context, responder)
+        try:
+            responder = self.make_responder(send, context, transport_reply)
+            handler_cls = context.message.Handler
+            handler_response = await handler_cls().handle(context, responder)
+        except Exception:
+            self.logger.exception("Exception in message handler")
+            raise
 
         # We return the result to the caller.
         # This is for persistent connections waiting on that response.
