@@ -6,7 +6,7 @@ from unittest import mock, TestCase
 
 class TestForward(TestCase):
 
-    to = ["to"]
+    to = "to"
     msg = "msg"
 
     def setUp(self):
@@ -40,7 +40,6 @@ class TestForward(TestCase):
 
 
 class TestForwardSchema(TestCase):
-
     def test_make_model(self):
         forward = Forward(to="to", msg="msg")
         data = forward.serialize()

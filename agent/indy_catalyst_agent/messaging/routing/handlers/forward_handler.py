@@ -2,7 +2,6 @@ from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestCon
 from ..messages.forward import Forward
 from ....connection import ConnectionManager, ConnectionManagerError
 from ..manager import RoutingManager, RoutingManagerError
-from ....wallet.util import b64_to_bytes
 
 
 class ForwardHandler(BaseHandler):
@@ -17,9 +16,10 @@ class ForwardHandler(BaseHandler):
             raise HandlerError("Cannot forward message: unknown recipient")
         self._logger.info("Received forward for: %s", context.recipient_verkey)
 
-        packed = b64_to_bytes(context.message.msg)
+        packed = context.message.msg.encode("ascii")
         rt_mgr = RoutingManager(context)
-        for target in context.message.to:
+        targets = [context.message.to]
+        for target in targets:
             try:
                 recipient = await rt_mgr.get_recipient(target)
             except RoutingManagerError:

@@ -3,7 +3,6 @@ Forward a message according to registered routing records
 """
 
 from marshmallow import fields
-from typing import Sequence
 
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import FORWARD
@@ -22,9 +21,9 @@ class Forward(AgentMessage):
         message_type = FORWARD
         schema_class = "ForwardSchema"
 
-    def __init__(self, *, to: Sequence[str] = None, msg: str = None, **kwargs):
+    def __init__(self, *, to: str = None, msg: str = None, **kwargs):
         super(Forward, self).__init__(**kwargs)
-        self.to = list(to) if to else []
+        self.to = to
         self.msg = msg
 
 
@@ -36,5 +35,5 @@ class ForwardSchema(AgentMessageSchema):
 
         model_class = Forward
 
-    to = fields.List(fields.Str(), required=True)
+    to = fields.Str(required=True)
     msg = fields.Str(required=True)
