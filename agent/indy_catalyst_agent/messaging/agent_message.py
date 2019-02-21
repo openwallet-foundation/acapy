@@ -201,7 +201,8 @@ class AgentMessageSchema(BaseModelSchema):
     @pre_load
     def parse_signed_fields(self, data):
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
-        found = {}
+        found_signatures = {}
+        processed = {}
         for field_name, field_value in data.items():
             if field_name.endswith("~sig"):
                 pfx = field_name[:-4]
@@ -216,14 +217,15 @@ class AgentMessageSchema(BaseModelSchema):
                         "Message defines both field signature and value: {}".format(pfx)
                     )
                 sig = FieldSignature.deserialize(field_value)
-                found[pfx] = sig
-                del data[field_name]
-                data[pfx], _ts = sig.decode()
+                found_signatures[pfx] = sig
+                processed[pfx], _ts = sig.decode()
+            else:
+                processed[field_name] = field_value
         for field_name in expect_fields:
-            if field_name not in found:
+            if field_name not in found_signatures:
                 raise ValidationError("Expected field signature: {}".format(field_name))
-        self._signatures = found
-        return data
+        self._signatures = found_signatures
+        return processed
 
     @post_load
     def populate_signatures(self, obj):
