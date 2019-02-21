@@ -17,5 +17,6 @@ class PingHandler(BaseHandler):
             )
             return
 
-        reply = PingResponse(_thread=ThreadDecorator(thid=context.message._id))
-        await responder.send_reply(reply)
+        if context.message.response_requested:
+            reply = PingResponse(_thread=ThreadDecorator(thid=context.message._id))
+            await responder.send_reply(reply)

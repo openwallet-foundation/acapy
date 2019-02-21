@@ -19,7 +19,7 @@ class Ping(AgentMessage):
         schema_class = "PingSchema"
 
     def __init__(
-        self, *, response_requested: bool = None, comment: str = None, **kwargs
+        self, *, response_requested: bool = True, comment: str = None, **kwargs
     ):
         super(Ping, self).__init__(**kwargs)
         self.comment = comment
