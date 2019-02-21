@@ -149,7 +149,14 @@ class Conductor:
         """
         Routes inbound messages.
         """
-        context = await self.connection_mgr.expand_message(message_body, transport_type)
+        try:
+            context = await self.connection_mgr.expand_message(
+                message_body, transport_type
+            )
+        except Exception:
+            self.logger.exception("Error expanding message")
+            raise
+
         result = await self.dispatcher.dispatch(
             context, self.outbound_message_router, reply
         )

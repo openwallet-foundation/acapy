@@ -6,12 +6,11 @@ from ..classloader import ClassLoader
 from ..error import BaseError
 
 from .agent_message import AgentMessage
+from ..models.base import BaseModelError
 
 
 class MessageParseError(BaseError):
     """Message parse error."""
-
-    pass
 
 
 class MessageFactory:
@@ -62,7 +61,11 @@ class MessageFactory:
         if not msg_cls:
             raise MessageParseError(f"Unrecognized message type {msg_type}")
 
-        instance = msg_cls.deserialize(serialized_msg)
+        try:
+            instance = msg_cls.deserialize(serialized_msg)
+        except BaseModelError as e:
+            raise MessageParseError(f"Error deserializing message: {e}") from e
+
         return instance
 
     def __repr__(self) -> str:

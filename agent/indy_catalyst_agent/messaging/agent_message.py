@@ -13,6 +13,7 @@ from marshmallow import (
 
 from ..models.base import (
     BaseModel,
+    BaseModelError,
     BaseModelSchema,
     resolve_class,
     resolve_meta_property,
@@ -20,6 +21,10 @@ from ..models.base import (
 from ..models.field_signature import FieldSignature
 from ..models.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
 from ..wallet.base import BaseWallet
+
+
+class AgentMessageError(BaseModelError):
+    """Base exception for agent message issues"""
 
 
 class AgentMessage(BaseModel):

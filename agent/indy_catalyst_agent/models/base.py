@@ -6,9 +6,10 @@ from abc import ABC
 import json
 from typing import Union
 
-from marshmallow import Schema, post_dump, pre_load, post_load
+from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError
 
 from ..classloader import ClassLoader
+from ..error import BaseError
 
 
 def resolve_class(the_cls, relative_cls: type = None):
@@ -37,6 +38,10 @@ def resolve_meta_property(obj, prop_name: str, defval=None):
     return found
 
 
+class BaseModelError(BaseError):
+    """Base exception class for base model errors"""
+
+
 class BaseModel(ABC):
     class Meta:
         schema_class = None
@@ -62,21 +67,30 @@ class BaseModel(ABC):
     def deserialize(cls, obj):
         """Convert from JSON representation to a model instance."""
         schema = cls._get_schema_class()()
-        return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
+        try:
+            return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
+        except ValidationError as e:
+            raise BaseModelError("Schema validation failed") from e
 
     def serialize(self, as_string=False) -> dict:
         """
         Create a JSON-compatible dict representation of the model instance
         """
         schema = self.Schema()
-        return schema.dumps(self) if as_string else schema.dump(self)
+        try:
+            return schema.dumps(self) if as_string else schema.dump(self)
+        except ValidationError as e:
+            raise BaseModelError("Schema validation failed") from e
 
     @classmethod
     def from_json(cls, json_repr: Union[str, bytes]):
         """
         Parse a JSON string into a model instance
         """
-        parsed = json.loads(json_repr)
+        try:
+            parsed = json.loads(json_repr)
+        except ValueError as e:
+            raise BaseModelError("JSON parsing failed") from e
         return cls.deserialize(parsed)
 
     def to_json(self) -> str:
