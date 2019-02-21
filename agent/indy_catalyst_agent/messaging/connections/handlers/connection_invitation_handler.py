@@ -21,5 +21,11 @@ class ConnectionInvitationHandler(BaseHandler):
             role = ConnectionRecord.ROLE_ROUTER
 
         mgr = ConnectionManager(context)
-        request, target = await mgr.accept_invitation(context.message, their_role=role)
-        await responder.send_outbound(request, target)
+        conn = await mgr.receive_invitation(context.message, their_role=role)
+
+        if conn.requires_routing:
+            await mgr.update_routing(conn)
+        else:
+            request = await mgr.create_request(conn)
+            target = await mgr.get_connection_target(conn)
+            await responder.send_outbound(request, target)

@@ -3,4 +3,4 @@ base58
 marshmallow==3.0.0rc3
 msgpack>=0.6.1<0.7
 pysodium>=0.7.1<0.8
-von_anchor==1.8.4
+von_anchor==1.8.6

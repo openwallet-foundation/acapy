@@ -15,12 +15,14 @@ from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
 from ..message_factory import MessageParseError
 from .models.connection_detail import ConnectionDetail
+from .models.connection_record import ConnectionRecord
 from .models.connection_target import ConnectionTarget
 from ...models.thread_decorator import ThreadDecorator
 from ..request_context import RequestContext
 from ..routing.messages.forward import Forward
-from ...storage.error import StorageNotFoundError
+from ...storage.error import StorageError, StorageNotFoundError
 from ...storage.record import StorageRecord
+from ...wallet.base import DIDInfo
 from ...wallet.error import WalletError, WalletNotFoundError
 from ...wallet.util import bytes_to_b64
 
@@ -33,27 +35,23 @@ class ConnectionManagerError(BaseError):
     """Connection error."""
 
 
-class ConnectionRecord:
-    ROLE_ROUTER = "router"
-    STATE_INVITED = "invited"
-    STATE_REQUESTED = "requested"
-    STATE_RESPONDED = "responded"
-    STATE_COMPLETE = "complete"
-
-    """Assembles connection state and target information"""
-
-    def __init__(self, state: str, target: ConnectionTarget, role: str = None):
-        self.role = role
-        self.state = state
-        self.target = target
-
-
 class ConnectionManager:
     """Class for managing connections."""
+
+    RECORD_TYPE_DID_DOC = "did_doc"
+    RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, context: RequestContext):
         self._context = context
         self._logger = logging.getLogger(__name__)
+
+    def _log_state(self, msg: str, params: dict = None):
+        """Print a message with increased visibility (for testing)"""
+        print(f"{msg}")
+        if params:
+            for k, v in params.items():
+                print(f"    {k}: {v}")
+        print()
 
     @property
     def context(self) -> RequestContext:
@@ -61,8 +59,12 @@ class ConnectionManager:
         return self._context
 
     async def create_invitation(
-        self, label: str, my_endpoint: str, seed: str = None, metadata: dict = None
-    ) -> ConnectionInvitation:
+        self,
+        my_label: str = None,
+        my_endpoint: str = None,
+        their_role: str = None,
+        my_router_did: str = None,
+    ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
         This interaction represents an out-of-band communication channel. In the future
@@ -86,414 +88,307 @@ class ConnectionManager:
         }
         Currently, only peer DID is supported.
         """
-        self._logger.debug("Creating invitation")
+        self._log_state("Creating invitation")
 
-        # Create and store new connection key
-        connection_key = await self.context.wallet.create_signing_key(
-            seed=seed, metadata=metadata
-        )
-        # may want to store additional metadata on the key (creation date etc.)
-
-        # Create connection invitation message
-        invitation = ConnectionInvitation(
-            label=label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint
-        )
-        return invitation
-
-    async def send_invitation(self, invitation: ConnectionInvitation, endpoint: str):
-        """
-        Deliver an invitation to an HTTP endpoint
-        """
-        self._logger.debug("Sending invitation to %s", endpoint)
-        invite_json = invitation.to_json()
-        invite_b64 = bytes_to_b64(invite_json.encode("ascii"), urlsafe=True)
-        async with aiohttp.ClientSession() as session:
-            await session.get(endpoint, params={"invite": invite_b64})
-
-    async def store_invitation(
-        self, invitation: ConnectionInvitation, received: bool, tags: dict = None
-    ) -> str:
-        """
-        Save an invitation for acceptance/rejection and later processing
-        """
-        # may want to generate another unique ID, or use the message ID
-        # instead of the key
-        invitation_id = invitation.recipient_keys[0]
-
-        await self.context.storage.add_record(
-            StorageRecord(
-                "received_invitation" if received else "sent_invitation",
-                json.dumps(invitation.serialize()),
-                tags,
-                invitation_id,
-            )
-        )
-        self._logger.debug(
-            "Stored %s invitation: %s",
-            "incoming" if received else "outgoing",
-            invitation_id,
-        )
-        return invitation_id
-
-    async def find_invitation(
-        self, invitation_id: str, received: bool
-    ) -> Tuple[ConnectionInvitation, dict]:
-        """
-        Locate a previously-received invitation.
-        """
-        self._logger.debug(
-            "Looking up %s invitation: %s",
-            "incoming" if received else "outgoing",
-            invitation_id,
-        )
-        # raises StorageNotFoundError if not found
-        result = await self.context.storage.get_record(
-            "received_invitation" if received else "sent_invitation", invitation_id
-        )
-        invitation = ConnectionInvitation.deserialize(result.value)
-        return invitation, result.tags
-
-    async def remove_invitation(self, invitation_id: str):
-        """
-        Remove a previously-stored invitation
-        """
-        # raises StorageNotFoundError if not found
-        await self.context.storage.delete_record("invitation", invitation_id)
-
-    async def accept_invitation(
-        self,
-        invitation: ConnectionInvitation,
-        my_label: str = None,
-        my_endpoint: str = None,
-        my_router_verkey: str = None,
-        their_role: str = None,
-    ) -> Tuple[ConnectionRequest, ConnectionTarget]:
-        """
-        Create a new connection request for a previously-received invitation
-        """
-
-        their_connection_key = invitation.recipient_keys[0]
-        their_endpoint = invitation.endpoint
-        their_label = invitation.label
-        their_routing_keys = invitation.routing_keys
-
-        # Create my information for connection
-        my_info = await self.context.wallet.create_local_did(
-            None,
-            None,
-            {
-                "my_router_verkey": my_router_verkey,
-                "their_endpoint": their_endpoint,
-                "their_label": their_label,
-                "their_role": their_role,
-                "their_routing_keys": their_routing_keys,
-            },
-        )
         if not my_endpoint:
             my_endpoint = self.context.default_endpoint
         if not my_label:
             my_label = self.context.default_label
 
-        did_doc = DIDDoc(did=my_info.did)
-        controller = my_info.did
-        value = my_info.verkey
-        pk = PublicKey(
-            my_info.did, "1", PublicKeyType.ED25519_SIG_2018, controller, value, True
+        # Create and store new invitation key
+        connection_key = await self.context.wallet.create_signing_key()
+
+        # Create connection record
+        connection = ConnectionRecord(
+            my_router_did=my_router_did,
+            initiator=ConnectionRecord.INITIATOR_SELF,
+            invitation_key=connection_key.verkey,
+            their_role=their_role,
+            state=ConnectionRecord.STATE_INVITATION,
+            routing_state=ConnectionRecord.ROUTING_STATE_REQUIRED
+            if my_router_did
+            else ConnectionRecord.ROUTING_STATE_NONE,
         )
-        did_doc.verkeys.append(pk)
+        await connection.save(self.context.storage)
 
-        if my_router_verkey:
-            # May raise ConnectionManagerError
-            router_conn = await self.find_connection(my_router_verkey)
-            router_pk = PublicKey(
-                my_info.did,
-                "routing",
-                PublicKeyType.ED25519_SIG_2018,
-                controller,  # TODO: should controller DID match the router's DID?
-                router_conn.target.recipient_keys[0],
-                False,
-            )
-            did_doc.verkeys.append(router_pk)
-            service = Service(
-                my_info.did, "indy", "Agency", router_conn.target.endpoint
-            )
-            did_doc.services.append(service)
-        else:
-            service = Service(my_info.did, "indy", "IndyAgent", my_endpoint)
-            did_doc.services.append(service)
-
-        # Create connection request message
-        request = ConnectionRequest(
-            label=my_label,
-            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc),
+        self._log_state(
+            "Created new connection record",
+            {"id": connection.connection_id, "state": connection.state},
         )
 
-        # Store message so that response can be processed
-        await self.context.storage.add_record(
-            StorageRecord("connection_request", request.to_json(), {}, request._id)
+        # Create connection invitation message
+        # Note: routing keys would need to be filled in later
+        invitation = ConnectionInvitation(
+            label=my_label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint
+        )
+        await connection.attach_invitation(self.context.storage, invitation)
+
+        return connection, invitation
+
+    async def send_invitation(self, invitation: ConnectionInvitation, endpoint: str):
+        """
+        Deliver an invitation to an HTTP endpoint (for testing)
+        """
+        self._log_state("Sending invitation", {"endpoint": endpoint})
+        invite_json = invitation.to_json()
+        invite_b64 = bytes_to_b64(invite_json.encode("ascii"), urlsafe=True)
+        async with aiohttp.ClientSession() as session:
+            await session.get(endpoint, params={"invite": invite_b64})
+
+    async def receive_invitation(
+        self,
+        invitation: ConnectionInvitation,
+        their_role: str = None,
+        my_router_did: str = None,
+    ) -> ConnectionRecord:
+        """Create a new connection record to track an incoming invitation"""
+        self._log_state(
+            "Receiving invitation", {"invitation": invitation, "role": their_role}
         )
 
-        # Request must be sent to their_endpoint using their_connection_key,
-        # from my_info.verkey
-        target = ConnectionTarget(
-            endpoint=their_endpoint,
-            recipient_keys=[their_connection_key],
-            sender_key=my_info.verkey,
+        # TODO: validate invitation (must have recipient keys, endpoint)
+
+        # Create my information for connection
+        my_info = await self.context.wallet.create_local_did()
+
+        # Create connection record
+        connection = ConnectionRecord(
+            my_did=my_info.did,
+            my_router_did=my_router_did,
+            initiator=ConnectionRecord.INITIATOR_EXTERNAL,
+            invitation_key=invitation.recipient_keys[0],
+            their_label=invitation.label,
+            their_role=their_role,
+            state=ConnectionRecord.STATE_INVITATION,
+            routing_state=ConnectionRecord.ROUTING_STATE_REQUIRED
+            if my_router_did
+            else ConnectionRecord.ROUTING_STATE_NONE,
         )
-        return request, target
+        await connection.save(self.context.storage)
 
-    async def find_request(self, request_id: str) -> ConnectionRequest:
-        """
-        Locate a previously saved connection request
-        """
-        # raises exception if not found
-        result = await self.context.storage.get_record("connection_request", request_id)
-        request = ConnectionRequest.deserialize(result.value)
-        return request
-
-    async def remove_request(self, request_id: str):
-        """
-        Remove a previously-stored connection request
-        """
-        # raises exception if not found
-        await self.context.storage.delete_record("connection_request", request_id)
-
-    async def accept_request(
-        self, request: ConnectionRequest, my_endpoint: str = None
-    ) -> Tuple[ConnectionResponse, ConnectionTarget]:
-        """
-        Create a connection response for a received connection request.
-        """
-
-        invitation = None
-        if not self.context.recipient_did_public:
-            connection_key = self.context.recipient_verkey
-            try:
-                invitation, _inv_tags = await self.find_invitation(
-                    connection_key, False
-                )
-            except StorageNotFoundError:
-                # temporarily disabled - not requiring an existing invitation
-                # raise ConnectionManagerError(
-                #   "No invitation found for pairwise connection")
-                pass
-        self._logger.debug("Found invitation: %s", invitation)
-        if not my_endpoint:
-            my_endpoint = self.context.default_endpoint
-
-        their_label = request.label
-        their_did = request.connection.did
-        conn_did_doc = request.connection.did_doc
-        their_endpoint = conn_did_doc.services[0].endpoint
-        their_routing_keys = []
-        their_verkey = None  # may be different from self.context.sender_verkey
-        for verkey in conn_did_doc.verkeys:
-            if verkey.id == "routing":
-                their_routing_keys.append(verkey.value)
-            elif not their_verkey:
-                their_verkey = verkey.value
-
-        # Create a new pairwise record with a newly-generated local DID
-        pairwise = await self.context.wallet.create_pairwise(
-            their_did,
-            their_verkey,
-            None,
+        self._log_state(
+            "Created new connection record",
             {
-                "label": their_label,
-                "endpoint": their_endpoint,
-                "role": None,
-                "routing_keys": their_routing_keys,
-                "state": ConnectionRecord.STATE_RESPONDED,
-                # TODO: store established & last active dates
+                "id": connection.connection_id,
+                "routing_state": connection.routing_state,
+                "state": connection.state,
             },
         )
 
-        my_did = pairwise.my_did
-        did_doc = DIDDoc(did=my_did)
-        controller = my_did
-        value = pairwise.my_verkey
-        pk = PublicKey(
-            my_did, "1", PublicKeyType.ED25519_SIG_2018, controller, value, True
-        )
-        did_doc.verkeys.append(pk)
-        service = Service(my_did, "indy", "IndyAgent", my_endpoint)
-        did_doc.services.append(service)
+        # Save the invitation for later processing
+        await connection.attach_invitation(self.context.storage, invitation)
 
+        return connection
+
+    async def create_request(
+        self,
+        connection: ConnectionRecord,
+        my_label: str = None,
+        my_endpoint: str = None,
+    ) -> ConnectionRequest:
+        """Create a connection request for an existing connection
+        (from an incoming invitation)"""
+        if connection.my_did:
+            my_info = await self.context.wallet.get_local_did(connection.my_did)
+        else:
+            # Create new DID for connection
+            my_info = await self.context.wallet.create_local_did()
+            connection.my_did = my_info.did
+
+        # Create connection request message
+        did_doc = await self.create_did_document(my_info, connection.my_router_did)
+        if not my_label:
+            my_label = self.context.default_label
+        request = ConnectionRequest(
+            label=my_label,
+            connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
+        )
+
+        # Update connection state
+        connection.request_id = request._id
+        connection.state = ConnectionRecord.STATE_REQUEST
+        await connection.save(self.context.storage)
+        self._log_state("Updated connection state", {"connection": connection})
+
+        return request
+
+    async def create_response(
+        self,
+        request: ConnectionRequest,
+        my_endpoint: str = None,
+        my_router_did: str = None,
+        their_role: str = None,
+    ) -> Tuple[ConnectionRecord, ConnectionResponse]:
+        """Create a connection response for a received connection request."""
+        self._log_state("Creating response", {"request": request})
+
+        connection = None
+        connection_key = None
+        if self.context.recipient_did_public:
+            my_info = await self.context.wallet.get_local_did(
+                self.context.recipient_did
+            )
+            connection_key = my_info.verkey
+        else:
+            connection_key = self.context.recipient_verkey
+            try:
+                connection = await ConnectionRecord.retrieve_by_invitation_key(
+                    self.context.storage,
+                    connection_key,
+                    ConnectionRecord.INITIATOR_SELF,
+                )
+            except StorageNotFoundError:
+                raise ConnectionManagerError(
+                    "No invitation found for pairwise connection"
+                )
+
+        invitation = None
+        if connection:
+            invitation = await connection.retrieve_invitation(self.context.storage)
+            connection_key = connection.invitation_key
+            self._log_state("Found invitation", {"invitation": invitation})
+
+        if not my_endpoint:
+            my_endpoint = self.context.default_endpoint
+
+        conn_did_doc = request.connection.did_doc
+        if request.connection.did != conn_did_doc.did:
+            raise ConnectionManagerError("Connection DID does not match DIDDoc id")
+        await self.store_did_document(conn_did_doc)
+
+        if connection and connection.my_did:
+            my_info = await self.context.wallet.get_local_did(connection.my_did)
+        else:
+            my_info = await self.context.wallet.create_local_did()
+
+        if connection:
+            connection.my_did = my_info.did
+            connection.their_label = request.label
+            connection.their_did = request.connection.did
+            connection.state = ConnectionRecord.STATE_RESPONSE
+            await connection.save(self.context.storage)
+            self._log_state("Updated connection state", {"connection": connection})
+        else:
+            connection = ConnectionRecord(
+                my_did=my_info.did,
+                my_router_did=my_router_did,
+                initiator=ConnectionRecord.INITIATOR_EXTERNAL,
+                their_label=request.label,
+                their_role=their_role,
+                state=ConnectionRecord.STATE_RESPONSE,
+                router_state=ConnectionRecord.ROUTING_STATE_REQUIRED
+                if my_router_did
+                else ConnectionRecord.ROUTING_STATE_NONE,
+            )
+            await connection.save(self.context.storage)
+            self._log_state(
+                "Created new connection record",
+                {
+                    "id": connection.connection_id,
+                    "routing_state": connection.routing_state,
+                    "state": connection.state,
+                },
+            )
+
+        # Create connection response message
+        did_doc = await self.create_did_document(my_info, my_router_did)
         response = ConnectionResponse(
-            connection=ConnectionDetail(did=my_did, did_doc=did_doc)
+            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
         )
         if request._id:
             response._thread = ThreadDecorator(thid=request._id)
-        await response.sign_field(
-            "connection", self.context.recipient_verkey, self.context.wallet
+        await response.sign_field("connection", connection_key, self.context.wallet)
+        self._log_state(
+            "Created connection response",
+            {
+                "my_did": my_info.did,
+                "their_did": connection.their_did,
+                "response": response,
+            },
         )
-        self._logger.debug("Created connection response for %s", their_did)
 
-        # response must be sent to their_endpoint, packed with their_verkey
-        # and pairwise.my_verkey
-        target = ConnectionTarget(
-            endpoint=their_endpoint,
-            recipient_keys=[their_verkey],
-            sender_key=pairwise.my_verkey,
-        )
-        return response, target
+        return connection, response
 
-    async def accept_response(self, response: ConnectionResponse) -> ConnectionTarget:
+    async def accept_response(self, response: ConnectionResponse) -> ConnectionRecord:
         """
         Process a ConnectionResponse message by looking up
         the connection request and setting up the pairwise connection
         """
+
         if response._thread:
             request_id = response._thread.thid
-            request = await self.find_request(request_id)
-            my_did = request.connection.did
-        else:
-            my_did = self.context.recipient_did
-        if not my_did:
-            raise ConnectionManagerError(f"No DID associated with connection response")
+            connection = await ConnectionRecord.retrieve_by_request_id(
+                self.context.storage, request_id
+            )
+        # else: look up by sender_did, recipient_did, recipient_verkey?
+        if not connection:
+            raise ConnectionManagerError(
+                f"No connection associated with connection response"
+            )
+
+        if not connection:
+            raise ConnectionManagerError(
+                "No associated connection found for connection response"
+            )
+        if connection.state not in (
+            ConnectionRecord.STATE_REQUEST,
+            ConnectionRecord.STATE_RESPONSE,
+        ):
+            raise ConnectionManagerError(
+                f"Cannot accept connection response for connection"
+                " in state: {connection.state}"
+            )
 
         their_did = response.connection.did
         conn_did_doc = response.connection.did_doc
-        their_endpoint = conn_did_doc.services[0].endpoint
-        their_routing_keys = []
-        their_verkey = None
-        for verkey in conn_did_doc.verkeys:
-            if verkey.id == "routing":
-                their_routing_keys.append(verkey.value)
-            elif not their_verkey:
-                their_verkey = verkey.value
+        if their_did != conn_did_doc.did:
+            raise ConnectionManagerError("Connection DID does not match DIDDoc id")
+        await self.store_did_document(conn_did_doc)
 
-        my_info = await self.context.wallet.get_local_did(my_did)
-        their_label = my_info.metadata.get("their_label")
-        if not their_endpoint:
-            their_endpoint = my_info.metadata.get("their_endpoint")
-        if not their_label:
-            raise ConnectionManagerError(
-                f"DID not associated with a connection: {my_did}"
-            )
-        their_role = my_info.metadata.get("their_role")
-
-        # update local DID metadata to mark connection as accepted, prevent multiple
-        # responses? May also set a creation time on the local DID to allow request
-        # expiry.
-
-        # In the final implementation, a signature will be provided to verify changes to
-        # the keys and DIDs to be used long term in the relationship.
-        # Both the signature and signature check are omitted for now until specifics of
-        # the signature are decided.
-
-        # Create a new pairwise record associated with our previously-generated local
-        # DID
-        # Note: WalletDuplicateError will be raised if their_did already has a
-        # connection
-        pairwise = await self.context.wallet.create_pairwise(
-            their_did,
-            their_verkey,
-            my_did,
-            {
-                "endpoint": their_endpoint,
-                "label": their_label,
-                "role": their_role,
-                "routing_keys": their_routing_keys,
-                "state": ConnectionRecord.STATE_RESPONDED,
-                # TODO: store established & last active dates
-            },
-        )
-
-        # Store their_verkey on the local DID so we can find the pairwise record
-        upd_did_meta = my_info.metadata.copy()
-        upd_did_meta["their_verkey"] = their_verkey
-        await self.context.wallet.replace_local_did_metadata(my_did, upd_did_meta)
-
-        self._logger.debug("Accepted connection response from %s", their_did)
-
-        target = ConnectionTarget(
-            endpoint=their_endpoint,
-            recipient_keys=[their_verkey],
-            sender_key=pairwise.my_verkey,
-        )
-        # Caller may wish to send a Trust Ping to verify the endpoint
-        # and confirm the connection
-        return target
+        connection.their_did = their_did
+        connection.state = ConnectionRecord.STATE_RESPONSE
+        await connection.save(self.context.storage)
+        return connection
 
     async def find_connection(
-        self, their_verkey: str, my_verkey: str = None, auto_complete=False
+        self,
+        their_did: str,
+        my_did: str = None,
+        my_verkey: str = None,
+        auto_complete=False,
     ) -> ConnectionRecord:
         """Look up existing connection information for a sender verkey"""
-        try:
-            pairwise = await self.context.wallet.get_pairwise_for_verkey(their_verkey)
-        except WalletNotFoundError:
-            pairwise = None
-
-        if pairwise:
-            pairwise_state = pairwise.metadata.get("state")
-            pair_meta = pairwise.metadata
-            pair_endp = pair_meta.get("endpoint")
-            if pairwise_state == ConnectionRecord.STATE_RESPONDED and auto_complete:
-                # automatically promote state when a subsequent message is received
-                pairwise_state = ConnectionRecord.STATE_COMPLETE
-                pair_meta = pair_meta.copy()
-                pair_meta.update({"state": pairwise_state})
-                await self.context.wallet.replace_pairwise_metadata(
-                    pairwise.their_did, pair_meta
+        # self._log_state(
+        #    "Finding connection",
+        #    {"their_did": their_did, "my_did": my_did, "my_verkey": my_verkey},
+        # )
+        connection = None
+        if their_did:
+            try:
+                connection = await ConnectionRecord.retrieve_by_did(
+                    self.context.storage, their_did, my_did
                 )
-                self._logger.debug("Connection promoted to active: %s", their_verkey)
-            elif pairwise_state != ConnectionRecord.STATE_COMPLETE or not pair_endp:
-                # something wrong with the state
-                self._logger.error("Discarding pairwise record, unexpected state")
-                return None
-            return ConnectionRecord(
-                pairwise_state,
-                ConnectionTarget(
-                    did=pairwise.their_did,
-                    endpoint=pair_endp,
-                    label=pair_meta.get("label"),
-                    recipient_keys=[pairwise.their_verkey],
-                    routing_keys=pair_meta.get("routing_keys"),
-                    sender_key=pairwise.my_verkey,
-                ),
-                pair_meta.get("role"),
-            )
+            except StorageNotFoundError:
+                pass
 
-        if not my_verkey:
-            return None
+        if (
+            connection
+            and connection.state == ConnectionRecord.STATE_RESPONSE
+            and auto_complete
+        ):
+            connection.state = ConnectionRecord.STATE_ACTIVE
+            await connection.save(self.context.storage)
+            self._log_state("Connection promoted to active", {"connection": connection})
 
-        try:
-            did_info = await self.context.wallet.get_local_did(my_verkey)
-        except WalletNotFoundError:
-            did_info = None
-        if did_info:
-            did_meta = did_info.metadata
-            if did_meta.get("their_verkey"):
-                # their_verkey indicates that the connection has been completed,
-                # but we didn't find a pairwise record so it must not be active
-                self._logger.error("Discarding connection record, missing pairwise")
-                return None
-
-            if did_meta.get("their_did") or did_meta.get("their_endpoint"):
-                return ConnectionRecord(
-                    ConnectionRecord.STATE_REQUESTED,
-                    ConnectionTarget(
-                        did=did_meta.get("their_did"),
-                        endpoint=did_info.metadata.get("their_endpoint"),
-                        label=did_meta.get("their_label"),
-                        recipient_keys=[their_verkey],
-                        routing_keys=did_meta.get("their_routing_keys"),
-                        sender_key=my_verkey,
-                    ),
-                    did_meta.get("their_role"),
+        if not connection and my_verkey:
+            try:
+                connection = await ConnectionRecord.retrieve_by_invitation_key(
+                    self.context.storage, my_verkey, ConnectionRecord.INITIATOR_SELF
                 )
-            else:
-                self._logger.error("Discarding connection record, no DID or endpoint")
-                return None
+            except StorageError:
+                pass
 
-        try:
-            invitation, _tags = await self.find_invitation(my_verkey, False)
-        except StorageNotFoundError:
-            return None
-        return ConnectionRecord(
-            ConnectionRecord.STATE_INVITED, None  # no target information available
-        )
+        return connection
 
     async def expand_message(
         self, message_body: Union[str, bytes], transport_type: str
@@ -511,44 +406,55 @@ class ConnectionManager:
         from_verkey = None
         to_verkey = None
 
-        if isinstance(message_body, bytes):
-            try:
-                unpacked = await self.context.wallet.unpack_message(message_body)
-                message_json, from_verkey, to_verkey = unpacked
-            except WalletError:
-                self._logger.debug("Message unpack failed, trying JSON")
-
         try:
             message_dict = json.loads(message_json)
         except ValueError:
             raise MessageParseError("Message JSON parsing failed")
-        self._logger.debug(f"Extracted message: {message_dict}")
+
+        if "@type" not in message_dict:
+            try:
+                unpacked = await self.context.wallet.unpack_message(message_body)
+                message_json, from_verkey, to_verkey = unpacked
+            except WalletError:
+                self._logger.debug("Message unpack failed, falling back to JSON")
+            else:
+                try:
+                    message_dict = json.loads(message_json)
+                except ValueError:
+                    raise MessageParseError("Message JSON parsing failed")
+
+        self._logger.debug(f"Expanded message: {message_dict}")
 
         ctx = self.context.copy()
         ctx.message = ctx.message_factory.make_message(message_dict)
         ctx.transport_type = transport_type
 
-        if from_verkey:
-            # must be a packed message for from_verkey to be populated
-            ctx.sender_verkey = from_verkey
-            conn = await self.find_connection(from_verkey, to_verkey, True)
-            if conn:
-                ctx.connection_active = conn.state == conn.STATE_COMPLETE
-                ctx.connection_target = conn.target
-                if conn.target:
-                    ctx.sender_did = conn.target.did
-
-        if to_verkey:
+        if from_verkey and to_verkey:
+            # must be a packed message for from_verke and to_verkey to be populated
             ctx.recipient_verkey = to_verkey
+            ctx.sender_verkey = from_verkey
             try:
-                did_info = await self.context.wallet.get_local_did_for_verkey(to_verkey)
+                ctx.sender_did = await self.find_did_for_key(from_verkey)
+            except StorageNotFoundError:
+                pass
+
+            try:
+                my_info = await self.context.wallet.get_local_did_for_verkey(to_verkey)
+                ctx.recipient_did = my_info.did
+                # TODO set ctx.recipient_did_public if DID is published to the ledger
+                # could also choose to set ctx.default_endpoint and ctx.default_label
+                # (these things could be stored on did_info.metadata)
             except WalletNotFoundError:
-                did_info = None
-            if did_info:
-                ctx.recipient_did = did_info.did
-            # TODO set ctx.recipient_did_public if DID is published to the ledger
-            # could also choose to set ctx.default_endpoint and ctx.default_label
-            # (these things could be stored on did_info.metadata)
+                pass
+
+            connection = await self.find_connection(
+                ctx.sender_did, ctx.recipient_did, to_verkey, True
+            )
+            if connection:
+                ctx.connection_active = (
+                    connection.state == ConnectionRecord.STATE_ACTIVE
+                )
+                ctx.connection_target = await self.get_connection_target(connection)
 
         # look up thread information
 
@@ -579,3 +485,115 @@ class ConnectionManager:
             else:
                 message = message_json
         return message
+
+    async def create_did_document(
+        self, my_info: DIDInfo, my_router_did: str = None, my_endpoint: str = None
+    ) -> DIDDoc:
+        """Create our DID document for a given DID"""
+
+        did_doc = DIDDoc(did=my_info.did)
+        did_controller = my_info.did
+        did_key = my_info.verkey
+        pk = PublicKey(
+            my_info.did,
+            "1",
+            PublicKeyType.ED25519_SIG_2018,
+            did_controller,
+            did_key,
+            True,
+        )
+        did_doc.verkeys.append(pk)
+
+        if not my_endpoint:
+            my_endpoint = self.context.default_endpoint
+        service = Service(my_info.did, "indy", "IndyAgent", [did_key], [], my_endpoint)
+        did_doc.services.append(service)
+
+        return did_doc
+
+    async def fetch_did_document(self, did: str) -> DIDDoc:
+        """Retrieve a DID Document for a given DID"""
+        record = await self.context.storage.search_records(
+            self.RECORD_TYPE_DID_DOC, {"did": did}
+        ).fetch_single()
+        return DIDDoc.from_json(record.value)
+
+    async def store_did_document(self, did_doc: DIDDoc):
+        """Store a DID document """
+        assert did_doc.did
+        try:
+            record = await self.fetch_did_document(did_doc.did)
+        except StorageNotFoundError:
+            record = StorageRecord(
+                self.RECORD_TYPE_DID_DOC, did_doc.to_json(), {"did": did_doc.did}
+            )
+            await self.context.storage.add_record(record)
+        else:
+            await self.context.storage.update_record_value(record, did_doc.value)
+        await self.remove_keys_for_did(did_doc.did)
+        for key in did_doc.verkeys:
+            if key.controller == did_doc.did:
+                await self.add_key_for_did(did_doc.did, key.value)
+
+    async def add_key_for_did(self, did: str, key: str):
+        """Store a verkey for lookup against a DID"""
+        record = StorageRecord(self.RECORD_TYPE_DID_KEY, None, {"did": did, "key": key})
+        await self.context.storage.add_record(record)
+
+    async def find_did_for_key(self, key: str) -> str:
+        """Find the DID previously associated with a key"""
+        record = await self.context.storage.search_records(
+            self.RECORD_TYPE_DID_KEY, {"key": key}
+        ).fetch_single()
+        return record.tags["did"]
+
+    async def remove_keys_for_did(self, did: str):
+        """Remove all keys associated with a DID"""
+        keys = await self.context.storage.search_records(
+            self.RECORD_TYPE_DID_KEY, {"did": did}
+        ).fetch_all()
+        for record in keys:
+            await self.context.storage.delete_record(record)
+
+    async def get_connection_target(
+        self, connection: ConnectionRecord
+    ) -> ConnectionTarget:
+        """Create a connection target based on the DIDDoc associated with a
+        connection"""
+        if not connection.my_did:
+            self._logger.debug("No local DID associated with connection")
+            return None
+
+        my_info = await self.context.wallet.get_local_did(connection.my_did)
+
+        if (
+            connection.state in (connection.STATE_INVITATION, connection.STATE_REQUEST)
+            and connection.initiator == connection.INITIATOR_EXTERNAL
+        ):
+            invitation = await connection.retrieve_invitation(self.context.storage)
+            return ConnectionTarget(
+                did=connection.their_did,
+                endpoint=invitation.endpoint,
+                label=invitation.label,
+                recipient_keys=invitation.recipient_keys,
+                routing_keys=invitation.routing_keys,
+                sender_key=my_info.verkey,
+            )
+
+        if not connection.their_did:
+            self._logger.debug("No target DID associated with connection")
+            return None
+
+        doc = await self.fetch_did_document(connection.their_did)
+        if not doc.services:
+            raise ConnectionManagerError("No services defined by DIDDoc")
+
+        service = doc.services[0]
+        return ConnectionTarget(
+            did=doc.did,
+            endpoint=service.endpoint,
+            label=connection.their_label,
+            recipient_keys=service.recip_keys,
+            routing_keys=service.routing_keys,
+            sender_key=my_info.verkey,
+        )

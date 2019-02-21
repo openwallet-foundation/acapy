@@ -12,7 +12,8 @@ class ConnectionResponseHandler(BaseHandler):
         assert isinstance(context.message, ConnectionResponse)
 
         mgr = ConnectionManager(context)
-        target = await mgr.accept_response(context.message)
+        connection = await mgr.accept_response(context.message)
+        target = await mgr.get_connection_target(connection)
 
         # send trust ping in response
         await responder.send_outbound(Ping(), target)

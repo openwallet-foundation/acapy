@@ -124,12 +124,9 @@ class Conductor:
         # Print an invitation to the terminal
         if self.settings.get("debug.print_invitation"):
             try:
-                invitation = await self.connection_mgr.create_invitation(
-                    context.default_label, context.default_endpoint
-                )
-                await self.connection_mgr.store_invitation(invitation, False)
+                _connection, invitation = await self.connection_mgr.create_invitation()
                 invite_url = invitation.to_url()
-                print("\nCreated invitation:")
+                print("Invitation URL:")
                 print(invite_url)
             except Exception:
                 self.logger.exception("Error sending invitation")
@@ -138,10 +135,7 @@ class Conductor:
         send_invite_to = self.settings.get("debug.send_invitation_to")
         if send_invite_to:
             try:
-                invitation = await self.connection_mgr.create_invitation(
-                    context.default_label, context.default_endpoint
-                )
-                await self.connection_mgr.store_invitation(invitation, False)
+                _connection, invitation = await self.connection_mgr.create_invitation()
                 await self.connection_mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
