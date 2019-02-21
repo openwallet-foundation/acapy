@@ -72,9 +72,9 @@ class ThreadDecoratorSchema(BaseModelSchema):
     class Meta:
         model_class = ThreadDecorator
 
-    thid = fields.Str()
-    pthid = fields.Str(required=False)
-    sender_order = fields.Integer(required=False)
+    thid = fields.Str(required=False, allow_none=True)
+    pthid = fields.Str(required=False, allow_none=True)
+    sender_order = fields.Integer(required=False, allow_none=True)
     received_orders = fields.Dict(
-        values=fields.Integer(), keys=fields.Str(), required=False
+        values=fields.Integer(), keys=fields.Str(), required=False, allow_none=True
     )
