@@ -5,6 +5,7 @@ Abstract base classes for non-secrets storage
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
+from .error import StorageDuplicateError, StorageNotFoundError
 from .record import StorageRecord
 
 DEFAULT_PAGE_SIZE = 100
@@ -18,31 +19,24 @@ class BaseStorage(ABC):
         """
         Add a new record to the store
         """
-        # indy_add_wallet_record
-        pass
 
     @abstractmethod
     async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
         """
         Fetch a record from the store by type and ID
         """
-        pass
 
     @abstractmethod
     async def update_record_value(self, record: StorageRecord, value: str):
         """
         Update an existing stored record's value
         """
-        # indy_update_wallet_record_value
-        pass
 
     @abstractmethod
     async def update_record_tags(self, record: StorageRecord, tags: Mapping):
         """
         Update an existing stored record's tags
         """
-        # indy_update_wallet_record_tags
-        pass
 
     @abstractmethod
     async def delete_record_tags(
@@ -51,19 +45,16 @@ class BaseStorage(ABC):
         """
         Update an existing stored record's tags
         """
-        # indy_delete_wallet_record_tags
-        pass
 
     @abstractmethod
     async def delete_record(self, record: StorageRecord):
-        # indy_delete_wallet_record
-        pass
+        """Delete an existing record"""
 
     @abstractmethod
     def search_records(
         self, type_filter: str, tag_query: Mapping = None, page_size: int = None
     ) -> "BaseStorageRecordSearch":
-        pass
+        """Create a new record query"""
 
     def __repr__(self) -> str:
         return "<{}>".format(self.__class__.__name__)
@@ -121,21 +112,34 @@ class BaseStorageRecordSearch(ABC):
         """
         Fetch the next list of results from the store
         """
-        pass
+
+    async def fetch_all(self) -> Sequence[StorageRecord]:
+        """Fetch all records from the query"""
+        results = []
+        async for record in self:
+            results.append(record)
+        return results
+
+    async def fetch_single(self) -> StorageRecord:
+        """Fetch a single query result"""
+        results = await self.fetch_all()
+        if not results:
+            raise StorageNotFoundError("Record not found")
+        if len(results) > 1:
+            raise StorageDuplicateError("Duplicate records found")
+        return results[0]
 
     @abstractmethod
     async def open(self):
         """
         Start the search query
         """
-        pass
 
     @abstractmethod
     async def close(self):
         """
         Dispose of the search query
         """
-        pass
 
     async def __aenter__(self):
         await self.open()

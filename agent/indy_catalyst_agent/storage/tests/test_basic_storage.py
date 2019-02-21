@@ -1,6 +1,7 @@
 import pytest
 
 from indy_catalyst_agent.storage.error import (
+    StorageDuplicateError,
     StorageError,
     StorageNotFoundError,
     StorageSearchError,
@@ -52,6 +53,9 @@ class TestBasicStorage:
         assert result.type == record.type
         assert result.value == record.value
         assert result.tags == record.tags
+
+        with pytest.raises(StorageDuplicateError):
+            await store.add_record(record)
 
     @pytest.mark.asyncio
     async def test_delete(self, store):

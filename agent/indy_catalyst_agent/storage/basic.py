@@ -6,7 +6,12 @@ from collections import OrderedDict
 from typing import Mapping, Sequence
 
 from .base import BaseStorage, BaseStorageRecordSearch
-from .error import StorageError, StorageNotFoundError, StorageSearchError
+from .error import (
+    StorageError,
+    StorageDuplicateError,
+    StorageNotFoundError,
+    StorageSearchError,
+)
 from .record import StorageRecord
 from ..wallet.base import BaseWallet
 
@@ -23,6 +28,8 @@ class BasicStorage(BaseStorage):
             raise StorageError("No record provided")
         if not record.id:
             raise StorageError("Record has no ID")
+        if record.id in self._records:
+            raise StorageDuplicateError("Duplicate record")
         self._records[record.id] = record
 
     async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
@@ -80,6 +87,22 @@ class BasicStorage(BaseStorage):
         return BasicStorageRecordSearch(self, type_filter, tag_query, page_size)
 
 
+def basic_tag_query_match(tags: dict, tag_query: dict) -> bool:
+    """Match simple tag filters (string values)
+    TODO: implement more complex queries like $or
+    """
+    result = True
+    if not tags:
+        tags = {}
+    if tag_query:
+        for k, v in tag_query.items():
+            if isinstance(v, str):  # not handling complex queries
+                if tags.get(k) != v:
+                    result = False
+                    break
+    return result
+
+
 class BasicStorageRecordSearch(BaseStorageRecordSearch):
     def __init__(
         self,
@@ -102,7 +125,6 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
     async def fetch(self, max_count: int) -> Sequence[StorageRecord]:
         """
         Fetch the next list of results from the store
-        TODO: implement tag filtering
         """
         if not self.opened:
             raise StorageSearchError("Search query has not been opened")
@@ -115,7 +137,9 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
             except StopIteration:
                 break
             record = self._cache[id]
-            if record.type == check_type:
+            if record.type == check_type and basic_tag_query_match(
+                record.tags, self.tag_query
+            ):
                 ret.append(record)
                 i -= 1
         return ret

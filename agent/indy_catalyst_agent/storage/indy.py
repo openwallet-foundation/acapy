@@ -9,7 +9,12 @@ from indy import non_secrets
 from indy.error import IndyError, ErrorCode
 
 from .base import BaseStorage, BaseStorageRecordSearch
-from .error import StorageError, StorageNotFoundError, StorageSearchError
+from .error import (
+    StorageError,
+    StorageDuplicateError,
+    StorageNotFoundError,
+    StorageSearchError,
+)
 from .record import StorageRecord
 from ..wallet.indy import IndyWallet
 
@@ -40,9 +45,14 @@ class IndyStorage(BaseStorage):
         """
         _validate_record(record)
         tags_json = json.dumps(record.tags) if record.tags else None
-        await non_secrets.add_wallet_record(
-            self._wallet.handle, record.type, record.id, record.value, tags_json
-        )
+        try:
+            await non_secrets.add_wallet_record(
+                self._wallet.handle, record.type, record.id, record.value, tags_json
+            )
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
+                raise StorageDuplicateError("Duplicate record ID: {}".format(record.id))
+            raise StorageError(str(x_indy))
 
     async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
         """
