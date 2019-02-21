@@ -28,7 +28,7 @@ class ForwardHandler(BaseHandler):
 
             conn_mgr = ConnectionManager(context)
             try:
-                conn = await conn_mgr.find_connection(recipient)
+                conn = await conn_mgr.find_connection(None, None, recipient)
             except ConnectionManagerError:
                 self._logger.exception("Error resolving connection for route")
 
