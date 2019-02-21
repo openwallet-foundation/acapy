@@ -3,10 +3,8 @@ Handle connection info interface with storage
 """
 
 import json
-from typing import Sequence
 import uuid
 
-from .connection_key import ConnectionKey
 from ..messages.connection_invitation import ConnectionInvitation
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
@@ -98,16 +96,6 @@ class ConnectionRecord:
             if val:
                 result[prop] = val
         return result
-
-    async def fetch_keys(
-        self, storage: BaseStorage, party: str = None
-    ) -> Sequence[ConnectionKey]:
-        tag_filter = {"connection_id": self.connection_id}
-        if party:
-            tag_filter["party"] = party
-        return await storage.search_records(
-            ConnectionKey.RECORD_TYPE, tag_filter
-        ).fetch_all()
 
     async def save(self, storage: BaseStorage):
         """Persist the connection record to storage"""
