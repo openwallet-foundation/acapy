@@ -25,7 +25,12 @@ class ConnectionRequest(AgentMessage):
         schema_class = "ConnectionRequestSchema"
 
     def __init__(
-        self, *, connection: ConnectionDetail = None, label: str = None, **kwargs
+        self,
+        *,
+        connection: ConnectionDetail = None,
+        label: str = None,
+        image_url: str = None,
+        **kwargs
     ):
         super(ConnectionRequest, self).__init__(**kwargs)
         self.connection = connection
@@ -42,3 +47,4 @@ class ConnectionRequestSchema(AgentMessageSchema):
 
     connection = fields.Nested(ConnectionDetailSchema, required=True)
     label = fields.Str(required=True)
+    image_url = fields.Str(data_key="imageUrl", required=False, allow_none=True)
