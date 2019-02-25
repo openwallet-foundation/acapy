@@ -42,7 +42,7 @@ class ClassLoader:
         Args:
             module_path: Dotted path to module
             load_relative: Should the method check in the
-                configured base path for relative import
+            configured base path for relative import
 
         Return:
             The loaded class

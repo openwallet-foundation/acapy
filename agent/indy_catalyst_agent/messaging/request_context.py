@@ -48,28 +48,44 @@ class RequestContext:
 
     @property
     def connection_active(self) -> bool:
-        """Accessor for the flag indicating an active connection with the sender"""
+        """
+        Accessor for the flag indicating an active connection with the sender.
+
+        Returns:
+            True if the connection is active, else False
+
+        """
         return self._connection_active
 
     @connection_active.setter
     def connection_active(self, active: bool):
-        """Setter for the flag indicating an active connection with the sender
+        """
+        Setter for the flag indicating an active connection with the sender.
 
-        :param active: bool:
+        Args:
+            active: The new active value
 
         """
         self._connection_active = active
 
     @property
     def connection_target(self) -> ConnectionTarget:
-        """Accessor for the ConnectionTarget associated with the current connection"""
+        """
+        Accessor for the ConnectionTarget associated with the current connection.
+
+        Returns:
+            The connection target for this connection
+
+        """
         return self._connection_target
 
     @connection_target.setter
     def connection_target(self, target: ConnectionTarget):
-        """Setter for the ConnectionTarget associated with the current connection
+        """
+        Setter for the ConnectionTarget associated with the current connection.
 
-        :param target: str:
+        Args:
+            The new connection target
 
         """
         self._connection_target = target
@@ -199,14 +215,22 @@ class RequestContext:
 
     @property
     def sender_did(self) -> str:
-        """Accessor for the sender DID which corresponds with the verkey"""
+        """
+        Accessor for the sender DID which corresponds with the verkey.
+
+        Returns:
+            The sender did
+
+        """
         return self._sender_did
 
     @sender_did.setter
     def sender_did(self, did: str):
-        """Setter for the sender DID which corresponds with the verkey
+        """
+        Setter for the sender DID which corresponds with the verkey.
 
-        :param did: str:
+        Args:
+            The new sender did
 
         """
         self._sender_did = did
@@ -247,7 +271,7 @@ class RequestContext:
     @transport_type.setter
     def transport_type(self, transport: str):
         """
-        Setter for the transport type used to receive the message
+        Setter for the transport type used to receive the message.
 
         Args:
             transport: This context's new transport
@@ -352,6 +376,7 @@ class RequestContext:
 
         Returns:
             A human readable representation of this object
+
         """
         skip = ("_logger",)
         items = (

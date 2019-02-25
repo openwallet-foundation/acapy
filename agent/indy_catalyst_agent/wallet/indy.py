@@ -481,6 +481,7 @@ class IndyWallet(BaseWallet):
 
         Returns:
             A new `PairwiseInfo` instance
+
         """
         meta = result["metadata"] and json.loads(result["metadata"]) or {}
         if "custom" not in meta:
@@ -496,7 +497,11 @@ class IndyWallet(BaseWallet):
 
     async def get_pairwise_list(self) -> Sequence[PairwiseInfo]:
         """
-        Get list of defined pairwise DIDs
+        Get list of defined pairwise DIDs.
+
+        Returns:
+            A list of `PairwiseInfo` instances for all pairwise relationships
+
         """
         pairs_json = await indy.pairwise.list_pairwise(self.handle)
         pairs = json.loads(pairs_json)
@@ -510,7 +515,18 @@ class IndyWallet(BaseWallet):
 
     async def get_pairwise_for_did(self, their_did: str) -> PairwiseInfo:
         """
-        Find info for a pairwise DID
+        Find info for a pairwise DID.
+
+        Args:
+            their_did: The DID to get a pairwise relationship for
+
+        Returns:
+            A `PairwiseInfo` instance representing the relationship
+
+        Raises:
+            WalletNotFoundError: If no pairwise DID defined for target
+            WalletNotFoundError: If no pairwise DID defined for target
+
         """
         try:
             pair_json = await indy.pairwise.get_pairwise(self.handle, their_did)
@@ -531,7 +547,17 @@ class IndyWallet(BaseWallet):
 
     async def get_pairwise_for_verkey(self, their_verkey: str) -> PairwiseInfo:
         """
-        Resolve a pairwise DID from a verkey
+        Resolve a pairwise DID from a verkey.
+
+        Args:
+            their_verkey: The verkey to get a pairwise relationship for
+
+        Returns:
+            A `PairwiseInfo` instance for the relationship
+
+        Raises:
+            WalletNotFoundError: If no pairwise DID is defined for verkey
+
         """
         dids = await self.get_pairwise_list()
         for info in dids:
@@ -543,7 +569,12 @@ class IndyWallet(BaseWallet):
 
     async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
         """
-        Replace metadata for a pairwise DID
+        Replace metadata for a pairwise DID.
+
+        Args:
+            their_did: The DID to replace metadata for
+            metadata: The new metadata
+
         """
         info = await self.get_pairwise_for_did(
             their_did
@@ -555,7 +586,20 @@ class IndyWallet(BaseWallet):
 
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
         """
-        Sign a message using the private key associated with a given verkey
+        Sign a message using the private key associated with a given verkey.
+
+        Args:
+            message: Message bytes to sign
+            from_verkey: The verkey to use to sign
+
+        Returns:
+            A signature
+
+        Raises:
+            WalletError: If the message is not provided
+            WalletError: If the verkey is not provided
+            WalletError: If a libindy error occurs
+
         """
         if not message:
             raise WalletError("Message not provided")
@@ -571,7 +615,22 @@ class IndyWallet(BaseWallet):
         self, message: bytes, signature: bytes, from_verkey: str
     ) -> bool:
         """
-        Verify a signature against the public key of the signer
+        Verify a signature against the public key of the signer.
+
+        Args:
+            message: Message to verify
+            signature: Signature to verify
+            from_verkey: Verkey to use in verification
+
+        Returns:
+            True if verified, else False
+
+        Raises:
+            WalletError: If the verkey is not provided
+            WalletError: If the signature is not provided
+            WalletError: If the message is not provided
+            WalletError: If a libindy error occurs
+
         """
         if not from_verkey:
             raise WalletError("Verkey not provided")
@@ -592,7 +651,7 @@ class IndyWallet(BaseWallet):
         self, message: bytes, to_verkey: str, from_verkey: str = None
     ) -> bytes:
         """
-        Apply auth_crypt or anon_crypt to a message
+        Apply auth_crypt or anon_crypt to a message.
 
         Args:
             message: The binary message content
@@ -602,6 +661,10 @@ class IndyWallet(BaseWallet):
 
         Returns:
             The encrypted message content
+
+        Raises:
+            WalletError: If a libindy error occurs
+
         """
         if from_verkey:
             try:
@@ -621,16 +684,21 @@ class IndyWallet(BaseWallet):
         self, enc_message: bytes, to_verkey: str, use_auth: bool
     ) -> (bytes, str):
         """
-        Decrypt a message assembled by auth_crypt or anon_crypt
+        Decrypt a message assembled by auth_crypt or anon_crypt.
 
         Args:
             message: The encrypted message content
             to_verkey: The verkey of the recipient. If provided then auth_decrypt is
                 used, otherwise anon_decrypt is used.
+            use_auth: True if you would like to auth_decrypt, False for anon_decrypt
 
         Returns:
             A tuple of the decrypted message content and sender verkey
             (None for anon_crypt)
+
+        Raises:
+            WalletError: If a libindy error occurs
+
         """
         if use_auth:
             try:
@@ -653,7 +721,20 @@ class IndyWallet(BaseWallet):
         self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
     ) -> bytes:
         """
-        Pack a message for one or more recipients
+        Pack a message for one or more recipients.
+
+        Args:
+            message: The message to pack
+            to_verkeys: List of verkeys to pack for
+            from_verkey: Sender verkey to pack from
+
+        Returns:
+            The resulting packed message bytes
+
+        Raises:
+            WalletError: If no message is provided
+            WalletError: If a libindy error occurs
+
         """
         if message is None:
             raise WalletError("Message not provided")
@@ -667,7 +748,18 @@ class IndyWallet(BaseWallet):
 
     async def unpack_message(self, enc_message: bytes) -> (str, str, str):
         """
-        Unpack a message
+        Unpack a message.
+
+        Args:
+            enc_message: The packed message bytes
+
+        Returns:
+            A tuple: (message, from_verkey, to_verkey)
+
+        Raises:
+            WalletError: If the message is not provided
+            WalletError: If a libindy error occurs
+
         """
         if not enc_message:
             raise WalletError("Message not provided")

@@ -1,6 +1,4 @@
-"""
-Model and schema for working with field signatures within message bodies
-"""
+"""Model and schema for working with field signatures within message bodies."""
 
 
 import json
@@ -88,6 +86,7 @@ class FieldSignature(BaseModel):
 
         Returns:
             A tuple of (decoded message, timestamp)
+
         """
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         timestamp, = struct.unpack_from("!Q", msg_bin, 0)

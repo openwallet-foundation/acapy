@@ -1,6 +1,4 @@
-"""
-Represents an invitation message for establishing connection.
-"""
+"""Represents an invitation message for establishing connection."""
 
 from typing import Sequence
 from urllib.parse import parse_qs, urljoin, urlparse

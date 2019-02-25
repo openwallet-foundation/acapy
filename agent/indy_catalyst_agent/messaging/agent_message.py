@@ -225,6 +225,7 @@ class AgentMessage(BaseModel):
 
         Returns:
             True if all signatures verify, else false
+
         """
         for sig in self._message_signatures.values():
             if not await sig.verify(wallet):

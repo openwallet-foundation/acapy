@@ -583,9 +583,11 @@ class ConnectionManager:
 
         if isinstance(message_body, bytes):
             try:
-                message_json, from_verkey, to_verkey = await self.context.wallet.unpack_message(
-                    message_body
-                )
+                (
+                    message_json,
+                    from_verkey,
+                    to_verkey,
+                ) = await self.context.wallet.unpack_message(message_body)
             except WalletError:
                 self._logger.debug("Message unpack failed, trying JSON")
 
