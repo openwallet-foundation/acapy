@@ -1,3 +1,5 @@
+"""The classloader provides utilties to dynamically load classes and modules."""
+
 import inspect
 import logging
 
@@ -22,6 +24,13 @@ class ClassLoader:
     """Class used to load classes from modules dynamically."""
 
     def __init__(self, base_path, super_class):
+        """
+        Initialize a ClassLoader instance.
+
+        Args:
+            base_path: The base dotted path to look for a relative import
+            super_class: Look for a class that inherits from this class
+        """
         self.logger = logging.getLogger(__name__)
         self.base_path = base_path
         self.super_class = super_class
@@ -30,9 +39,18 @@ class ClassLoader:
         """
         Load module by module path.
 
-        :param module_path: Dotted path to module
-        :param load_relative:  (Default value = False) Should the method check in the
-            configured base path for relative import
+        Args:
+            module_path: Dotted path to module
+            load_relative: Should the method check in the
+                configured base path for relative import
+
+        Return:
+            The loaded class
+
+        Raises:
+            ModuleLoadError: If there is an error loading the class
+            ClassNotFoundError: If there is no class to load at specified path
+
         """
         # We can try to load the module relative to a given base path
         if load_relative:
@@ -67,10 +85,20 @@ class ClassLoader:
 
     @classmethod
     def load_class(cls, class_name: str, default_module: str = None):
-        """Resolve a complete class path (ie. typing.Dict) to the class itself
+        """
+        Resolve a complete class path (ie. typing.Dict) to the class itself.
 
-        :param class_name: str: Class name
-        :param default_module: str:  (Default value = None)
+        Args:
+            class_name: Class name
+            default_module:  (Default value = None)
+
+        Returns:
+            The resolved class
+
+        Raises:
+            ClassNotFoundError: If the class could not be resolved at path
+            ModuleLoadError: If there was an error loading the module
+
         """
         if "." in class_name:
             # import module and find class

@@ -1,3 +1,5 @@
+"""Sane defaults for known message definitions."""
+
 from .messaging.message_factory import MessageFactory
 from .messaging.message_types import MessageTypes
 

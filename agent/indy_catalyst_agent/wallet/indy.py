@@ -1,6 +1,4 @@
-"""
-Indy implementation of BaseWallet interface
-"""
+"""Indy implementation of BaseWallet interface."""
 
 import json
 from typing import Sequence
@@ -17,7 +15,7 @@ from .util import bytes_to_b64
 
 
 class IndyWallet(BaseWallet):
-    """Indy wallet implementation"""
+    """Indy wallet implementation."""
 
     DEFAULT_FRESHNESS = 0
     DEFAULT_KEY = ""
@@ -25,6 +23,13 @@ class IndyWallet(BaseWallet):
     DEFAULT_STORAGE_TYPE = None
 
     def __init__(self, config: dict = None):
+        """
+        Initialize a `IndyWallet` instance.
+
+        Args:
+            config: {name, key, seed, did, auto-create, auto-remove}
+
+        """
         if not config:
             config = {}
         super(IndyWallet, self).__init__(config)
@@ -38,22 +43,46 @@ class IndyWallet(BaseWallet):
 
     @property
     def handle(self):
-        """Get internal wallet reference"""
+        """
+        Get internal wallet reference.
+
+        Returns:
+            A handle to the wallet
+
+        """
         return self._handle
 
     @property
     def opened(self) -> bool:
-        """Check whether wallet is currently open"""
+        """
+        Check whether wallet is currently open.
+
+        Returns:
+            True if open, else False
+
+        """
         return bool(self._handle)
 
     @property
     def name(self) -> str:
-        """Accessor for the wallet name"""
+        """
+        Accessor for the wallet name.
+
+        Returns:
+            The wallet name
+
+        """
         return self._name
 
     @property
     def _wallet_config(self) -> dict:
-        """ """
+        """
+        Accessor for the wallet config.
+
+        Returns:
+            The wallet config
+
+        """
         return {
             "id": self._name,
             "freshness_time": self._freshness_time,
@@ -62,7 +91,13 @@ class IndyWallet(BaseWallet):
 
     @property
     def _wallet_access(self) -> dict:
-        """ """
+        """
+        Accessor for the wallet access.
+
+        Returns:
+            The wallet access
+
+        """
         return {
             "key": self._key,
             # key_derivation_method
@@ -71,7 +106,15 @@ class IndyWallet(BaseWallet):
 
     async def create(self, replace: bool = False):
         """
-        Create a new wallet
+        Create a new wallet.
+
+        Args:
+            replace: Removes the old wallet if True
+
+        Raises:
+            WalletError: If there was a problem removing the wallet
+            WalletError: IF there was a libindy error
+
         """
         if replace:
             try:
@@ -95,7 +138,12 @@ class IndyWallet(BaseWallet):
 
     async def remove(self):
         """
-        Remove an existing wallet
+        Remove an existing wallet.
+
+        Raises:
+            WalletNotFoundError: If the wallet could not be found
+            WalletError: If there was an libindy error
+
         """
         try:
             await indy.wallet.delete_wallet(
@@ -109,7 +157,14 @@ class IndyWallet(BaseWallet):
 
     async def open(self):
         """
-        Open wallet, removing and/or creating it if so configured
+        Open wallet, removing and/or creating it if so configured.
+
+        Raises:
+            WalletError: If wallet not found after creation
+            WalletNotFoundError: If the wallet is not found
+            WalletError: If the wallet is already open
+            WalletError: If there is a libindy error
+
         """
         if self.opened:
             return
@@ -140,9 +195,7 @@ class IndyWallet(BaseWallet):
                     raise WalletError(str(x_indy))
 
     async def close(self):
-        """
-        Close previously-opened wallet, removing it if so configured
-        """
+        """Close previously-opened wallet, removing it if so configured."""
         if self._handle:
             await indy.wallet.close_wallet(self._handle)
             if self._auto_remove:
@@ -153,15 +206,19 @@ class IndyWallet(BaseWallet):
         self, seed: str = None, metadata: dict = None
     ) -> KeyInfo:
         """
-        Create a new public/private signing keypair
+        Create a new public/private signing keypair.
 
         Args:
+            seed: Seed for key
             metadata: Optional metadata to store with the keypair
 
-        Returns: a `KeyInfo` representing the new record
+        Returns:
+            A `KeyInfo` representing the new record
 
         Raises:
             WalletDuplicateError: If the resulting verkey already exists in the wallet
+            WalletError: If there is a libindy error
+
         """
         args = {}
         if seed:
@@ -182,15 +239,18 @@ class IndyWallet(BaseWallet):
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
         """
-        Fetch info for a signing keypair
+        Fetch info for a signing keypair.
 
         Args:
             verkey: The verification key of the keypair
 
-        Returns: a `KeyInfo` representing the keypair
+        Returns:
+            A `KeyInfo` representing the keypair
 
         Raises:
-            WalletNotFoundError: if no keypair is associated with the verification key
+            WalletNotFoundError: If no keypair is associated with the verification key
+            WalletError: If there is a libindy error
+
         """
         try:
             metadata = await indy.crypto.get_key_metadata(self.handle, verkey)
@@ -203,7 +263,7 @@ class IndyWallet(BaseWallet):
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
         """
-        Replace the metadata associated with a signing keypair
+        Replace the metadata associated with a signing keypair.
 
         Args:
             verkey: The verification key of the keypair
@@ -211,6 +271,7 @@ class IndyWallet(BaseWallet):
 
         Raises:
             WalletNotFoundError: if no keypair is associated with the verification key
+
         """
         meta_json = json.dumps(metadata or {})
         await self.get_signing_key(verkey)  # throw exception if key is undefined
@@ -220,7 +281,20 @@ class IndyWallet(BaseWallet):
         self, seed: str = None, did: str = None, metadata: dict = None
     ) -> DIDInfo:
         """
-        Create and store a new local DID
+        Create and store a new local DID.
+
+        Args:
+            seed: Optional seed to use for did
+            did: The DID to use
+            metadata: Metadata to store with DID
+
+        Returns:
+            A `DIDInfo` instance representing the created DID
+
+        Raises:
+            WalletDuplicateError: If the DID already exists in the wallet
+            WalletError: If there is a libindy error
+
         """
         cfg = {}
         if seed:
@@ -242,7 +316,11 @@ class IndyWallet(BaseWallet):
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
-        Get list of defined local DIDs
+        Get list of defined local DIDs.
+
+        Returns:
+            A list of locally stored DIDs as `DIDInfo` instances
+
         """
         info_json = await indy.did.list_my_dids_with_meta(self.handle)
         info = json.loads(info_json)
@@ -259,8 +337,20 @@ class IndyWallet(BaseWallet):
 
     async def get_local_did(self, did: str) -> DIDInfo:
         """
-        Find info for a local DID
+        Find info for a local DID.
+
+        Args:
+            did: The DID to get info for
+
+        Returns:
+            A `DIDInfo` instance representing the found DID
+
+        Raises:
+            WalletNotFoundError: If the DID is not found
+            WalletError: If there is a libindy error
+
         """
+
         try:
             info_json = await indy.did.get_my_did_with_meta(self.handle, did)
         except IndyError as x_indy:
@@ -277,8 +367,19 @@ class IndyWallet(BaseWallet):
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
         """
-        Resolve a local DID from a verkey
+        Resolve a local DID from a verkey.
+
+        Args:
+            verkey: The verkey to get the local DID for
+
+        Returns:
+            A `DIDInfo` instance representing the found DID
+
+        Raises:
+            WalletNotFoundError: If the verkey is not found
+
         """
+
         dids = await self.get_local_dids()
         for info in dids:
             if info.verkey == verkey:
@@ -287,7 +388,12 @@ class IndyWallet(BaseWallet):
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
         """
-        Replace metadata for a local DID
+        Replace metadata for a local DID.
+
+        Args:
+            did: The DID to replace metadata for
+            metadata: The new metadata
+
         """
         meta_json = json.dumps(metadata or {})
         await self.get_local_did(did)  # throw exception if undefined
@@ -301,7 +407,21 @@ class IndyWallet(BaseWallet):
         metadata: dict = None,
     ) -> PairwiseInfo:
         """
-        Create a new pairwise DID for a secure connection
+        Create a new pairwise DID for a secure connection.
+
+        Args:
+            their_did: The other party's DID
+            their_verkey: The other party's verkey
+            my_did: My DID
+            metadata: Metadata to store with this relationship
+
+        Returns:
+            A `PairwiseInfo` object representing the pairwise connection
+
+        Raises:
+            WalletError: If there is a libindy error
+            WalletDuplicateError: If the DID already exists in the wallet
+
         """
 
         # store their DID info in wallet
@@ -353,7 +473,14 @@ class IndyWallet(BaseWallet):
 
     def _make_pairwise_info(self, result: dict, their_did: str = None) -> PairwiseInfo:
         """
-        Convert Indy pairwise info into PairwiseInfo record
+        Convert Indy pairwise info into PairwiseInfo record.
+
+        Args:
+            result:
+            their_did
+
+        Returns:
+            A new `PairwiseInfo` instance
         """
         meta = result["metadata"] and json.loads(result["metadata"]) or {}
         if "custom" not in meta:

@@ -25,7 +25,12 @@ class BasicMessage(AgentMessage):
         schema_class = "BasicMessageSchema"
 
     def __init__(
-        self, *, sent_time: Union[str, datetime] = None, content: str = None, **kwargs
+        self,
+        *,
+        sent_time: Union[str, datetime] = None,
+        content: str = None,
+        localization: str = None,
+        **kwargs
     ):
         """
         Initialize basic message object.
@@ -41,6 +46,7 @@ class BasicMessage(AgentMessage):
             sent_time = sent_time.replace(tzinfo=timezone.utc).isoformat(" ")
         self.sent_time = sent_time
         self.content = content
+        self.localization = localization
 
 
 class BasicMessageSchema(AgentMessageSchema):
@@ -51,5 +57,6 @@ class BasicMessageSchema(AgentMessageSchema):
 
         model_class = BasicMessage
 
+    localization = fields.Str(data_key="l10n", required=False)
     sent_time = fields.Str(required=False)
     content = fields.Str(required=True)

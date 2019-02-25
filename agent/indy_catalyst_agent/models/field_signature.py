@@ -102,6 +102,7 @@ class FieldSignature(BaseModel):
 
         Returns:
             True if verification succeeds else False
+
         """
         if self.signature_type != self.TYPE_ED25519SHA512:
             return False
@@ -110,6 +111,7 @@ class FieldSignature(BaseModel):
         return await wallet.verify_message(msg_bin, sig_bin, self.signer)
 
     def __str__(self):
+        """Get a string representation of this class."""
         return (
             f"{self.__class__.__name__}"
             + f"(signature_type='{self.signature_type,}', "
@@ -119,7 +121,11 @@ class FieldSignature(BaseModel):
 
 
 class FieldSignatureSchema(BaseModelSchema):
+    """FieldSignature schema."""
+
     class Meta:
+        """FieldSignatureSchema metadata."""
+
         model_class = FieldSignature
 
     signature_type = fields.Str(data_key="@type", required=True)
