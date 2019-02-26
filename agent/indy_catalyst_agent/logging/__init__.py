@@ -44,18 +44,20 @@ class LoggingConfigurator:
         """
         Print a startup banner describing the configuration.
 
-        :param inbound_transports: Configured inbound transports
-        :param outbound_transports: Configured outbound transports
-        :param banner_length:  (Default value = 40) Length of the banner
-        :param border_character: (Default value = ":") Character to use in banner
-            border
+        Args:
+            inbound_transports: Configured inbound transports
+            outbound_transports: Configured outbound transports
+            banner_length: (Default value = 40) Length of the banner
+            border_character: (Default value = ":") Character to use in banner
+                border
         """
 
         def lr_pad(content: str):
             """
             Pad string content with defined border character.
 
-            :param content: String content to pad
+            Args:
+                content: String content to pad
             """
             return (
                 f"{border_character}{border_character}"

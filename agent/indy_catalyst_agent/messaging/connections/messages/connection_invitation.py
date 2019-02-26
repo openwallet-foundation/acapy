@@ -1,6 +1,4 @@
-"""
-Represents an invitation message for establishing connection.
-"""
+"""Represents an invitation message for establishing connection."""
 
 from typing import Sequence
 from urllib.parse import parse_qs, urljoin, urlparse
@@ -21,6 +19,8 @@ class ConnectionInvitation(AgentMessage):
     """Class representing a connection invitation."""
 
     class Meta:
+        """Metadata for a connection invitation."""
+
         handler_class = HANDLER_CLASS
         message_type = CONNECTION_INVITATION
         schema_class = "ConnectionInvitationSchema"
@@ -35,6 +35,16 @@ class ConnectionInvitation(AgentMessage):
         routing_keys: Sequence[str] = None,
         **kwargs,
     ):
+        """
+        Initialize connection invitation object.
+
+        Args:
+            label: Optional label for connection
+            did: DID for this connection invitation
+            recipient_keys: List of recipient keys
+            endpoint: Endpoint which this agent can be reached at
+            routing_keys: List of routing keys
+        """
         super(ConnectionInvitation, self).__init__(**kwargs)
         self.label = label
         self.did = did
@@ -44,7 +54,11 @@ class ConnectionInvitation(AgentMessage):
 
     def to_url(self) -> str:
         """
-        Convert an invitation to URL format for sharing
+        Convert an invitation to URL format for sharing.
+
+        Returns:
+            An invite url
+
         """
         c_json = self.to_json()
         c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
@@ -54,7 +68,14 @@ class ConnectionInvitation(AgentMessage):
     @classmethod
     def from_url(cls, url: str) -> "ConnectionInvitation":
         """
-        Parse a URL-encoded invitation into a `ConnectionInvitation` message
+        Parse a URL-encoded invitation into a `ConnectionInvitation` message.
+
+        Args:
+            url: Url to decode
+
+        Returns:
+            A `ConnectionInvitation` object.
+
         """
         parts = urlparse(url)
         query = parse_qs(parts.query)
@@ -65,9 +86,11 @@ class ConnectionInvitation(AgentMessage):
 
 
 class ConnectionInvitationSchema(AgentMessageSchema):
-    """Class """
+    """Connection invitation schema class."""
 
     class Meta:
+        """Connection invitation schema metadata."""
+
         model_class = ConnectionInvitation
 
     label = fields.Str()
@@ -80,7 +103,13 @@ class ConnectionInvitationSchema(AgentMessageSchema):
     def validate_fields(self, data):
         """
         Validate schema fields.
-        :param data:
+
+        Args:
+            data: The data to validate
+
+        Raises:
+            ValidationError: If any of the fields do not validate
+
         """
         if data.get("did"):
             if data.get("recipient_keys"):

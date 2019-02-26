@@ -1,6 +1,4 @@
-"""
-Model and schema for working with field signatures within message bodies
-"""
+"""Model and schema for working with field signatures within message bodies."""
 
 
 import json
@@ -15,9 +13,10 @@ from ..wallet.util import b64_to_bytes, bytes_to_b64
 
 
 class FieldSignature(BaseModel):
-    """Class representing a field value signed by a known verkey"""
+    """Class representing a field value signed by a known verkey."""
 
     class Meta:
+        """FieldSignature metadata."""
 
         schema_class = "FieldSignatureSchema"
 
@@ -33,6 +32,15 @@ class FieldSignature(BaseModel):
         sig_data: str = None,
         signer: str = None,
     ):
+        """
+        Initialize a FieldSignature instance.
+
+        Args:
+            signature_type: Type of signature
+            signature: The signature
+            sig_data: Signature data
+            signer: The verkey of the signer
+        """
         self.signature_type = signature_type
         self.signature = signature
         self.sig_data = sig_data
@@ -43,8 +51,19 @@ class FieldSignature(BaseModel):
         cls, value, signer: str, wallet: BaseWallet, timestamp=None
     ) -> "FieldSignature":
         """
+        Create a Signature.
+
         Sign a field value and return a newly constructed `FieldSignature` representing
-        the resulting signature
+        the resulting signature.
+
+        Args:
+            value: Value to sign
+            signer: Verkey of the signing party
+            wallet: The wallet to use for the signature
+
+        Returns:
+            The created `FieldSignature` object
+
         """
         if not timestamp:
             timestamp = time.time()
@@ -63,7 +82,11 @@ class FieldSignature(BaseModel):
 
     def decode(self) -> (object, int):
         """
-        Decode the signature to its timestamp and value
+        Decode the signature to its timestamp and value.
+
+        Returns:
+            A tuple of (decoded message, timestamp)
+
         """
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         timestamp, = struct.unpack_from("!Q", msg_bin, 0)
@@ -71,7 +94,14 @@ class FieldSignature(BaseModel):
 
     async def verify(self, wallet: BaseWallet) -> bool:
         """
-        Verify the signature against the signer's public key
+        Verify the signature against the signer's public key.
+
+        Args:
+            wallet: Wallet to use to verify signature
+
+        Returns:
+            True if verification succeeds else False
+
         """
         if self.signature_type != self.TYPE_ED25519SHA512:
             return False
@@ -80,6 +110,7 @@ class FieldSignature(BaseModel):
         return await wallet.verify_message(msg_bin, sig_bin, self.signer)
 
     def __str__(self):
+        """Get a string representation of this class."""
         return (
             f"{self.__class__.__name__}"
             + f"(signature_type='{self.signature_type,}', "
@@ -89,7 +120,11 @@ class FieldSignature(BaseModel):
 
 
 class FieldSignatureSchema(BaseModelSchema):
+    """FieldSignature schema."""
+
     class Meta:
+        """FieldSignatureSchema metadata."""
+
         model_class = FieldSignature
 
     signature_type = fields.Str(data_key="@type", required=True)

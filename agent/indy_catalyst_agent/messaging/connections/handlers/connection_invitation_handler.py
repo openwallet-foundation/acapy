@@ -1,12 +1,22 @@
+"""Connect invitation handler."""
+
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
 from ..messages.connection_invitation import ConnectionInvitation
 from ....connection import ConnectionManager
 
 
 class ConnectionInvitationHandler(BaseHandler):
-    """Handler for connection invitations."""
+    """Handler class for connection invitations."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
+        """
+        Handle connection invitation.
+
+        Args:
+            context: Request context
+            responder: Responder callback
+        """
+
         self._logger.debug(f"ConnectionInvitationHandler called with context {context}")
         assert isinstance(context.message, ConnectionInvitation)
 

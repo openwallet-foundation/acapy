@@ -1,6 +1,4 @@
-"""
-Connection management
-"""
+"""Classes to manage connections."""
 
 import aiohttp
 import json
@@ -33,14 +31,21 @@ class ConnectionManagerError(BaseError):
 
 
 class ConnectionRecord:
+    """Assembles connection state and target information."""
+
     STATE_INVITED = "invited"
     STATE_REQUESTED = "requested"
     STATE_RESPONDED = "responded"
     STATE_COMPLETE = "complete"
 
-    """Assembles connection state and target information"""
-
     def __init__(self, state: str, target: ConnectionTarget):
+        """
+        Initialize a ConnectionRecord.
+
+        Args:
+            state: The current state of this connection
+            target: The target for this connection
+        """
         self.state = state
         self.target = target
 
@@ -49,12 +54,24 @@ class ConnectionManager:
     """Class for managing connections."""
 
     def __init__(self, context: RequestContext):
+        """
+        Initialize a ConnectionManager.
+
+        Args:
+            context: The context for this connection
+        """
         self._context = context
         self._logger = logging.getLogger(__name__)
 
     @property
     def context(self) -> RequestContext:
-        """Accessor for the current request context"""
+        """
+        Accessor for the current request context.
+
+        Returns:
+            The request context for this connection
+
+        """
         return self._context
 
     async def create_invitation(
@@ -62,18 +79,22 @@ class ConnectionManager:
     ) -> ConnectionInvitation:
         """
         Generate new connection invitation.
+
         This interaction represents an out-of-band communication channel. In the future
         and in practice, these sort of invitations will be received over any number of
         channels such as SMS, Email, QR Code, NFC, etc.
 
         Structure of an invite message:
+        ```json
         {
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
             "label": "Alice",
             "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
         }
+        ```
 
         Or, in the case of a peer DID:
+        ```json
         {
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
             "label": "Alice",
@@ -81,7 +102,19 @@ class ConnectionManager:
             "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
             "serviceEndpoint": "https://example.com/endpoint"
         }
+        ```
+
         Currently, only peer DID is supported.
+
+        Args:
+            label: Label for this connection
+            my_endpoint: Endpoint where other party can reach me
+            seed: Seed for key
+            metadata: Metadata for key
+
+        Returns:
+            A new ConnectionInvitation
+
         """
         self._logger.debug("Creating invitation")
 
@@ -99,7 +132,11 @@ class ConnectionManager:
 
     async def send_invitation(self, invitation: ConnectionInvitation, endpoint: str):
         """
-        Deliver an invitation to an HTTP endpoint
+        Deliver an invitation to an HTTP endpoint.
+
+        Args:
+            invitation: The `ConnectionInvitation` to send
+            endpoint: Endpoint to send this invitation to
         """
         self._logger.debug("Sending invitation to %s", endpoint)
         invite_json = invitation.to_json()
@@ -111,7 +148,16 @@ class ConnectionManager:
         self, invitation: ConnectionInvitation, received: bool, tags: dict = None
     ) -> str:
         """
-        Save an invitation for acceptance/rejection and later processing
+        Save an invitation for acceptance/rejection and later processing.
+
+        Args:
+            invitation: A `ConnectionInvitation` to store
+            received: Has the invitation been received
+            tags: A `dict` of tags for the storage record
+
+        Returns:
+            The invitation id
+
         """
         # may want to generate another unique ID, or use the message ID
         # instead of the key
@@ -137,6 +183,14 @@ class ConnectionManager:
     ) -> Tuple[ConnectionInvitation, dict]:
         """
         Locate a previously-received invitation.
+
+        Args:
+            invitation_id: Id for the storeg invitation
+            received: Was the invitation received
+
+        Returns:
+            A tuple of the stored `ConnectionInvitation` and it's tags
+
         """
         self._logger.debug(
             "Looking up %s invitation: %s",
@@ -152,7 +206,11 @@ class ConnectionManager:
 
     async def remove_invitation(self, invitation_id: str):
         """
-        Remove a previously-stored invitation
+        Remove a previously-stored invitation.
+
+        Args:
+            The invitation id
+
         """
         # raises StorageNotFoundError if not found
         await self.context.storage.delete_record("invitation", invitation_id)
@@ -164,7 +222,16 @@ class ConnectionManager:
         my_endpoint: str = None,
     ) -> Tuple[ConnectionRequest, ConnectionTarget]:
         """
-        Create a new connection request for a previously-received invitation
+        Create a new connection request for a previously-received invitation.
+
+        Args:
+            invitation: The `ConnectionInvitation` to accept
+            my_label: My label
+            my_endpoint: My endpoint
+
+        Returns:
+            A tuple of created `ConnectionRequest` and `ConnectionTarget`
+
         """
 
         their_label = invitation.label
@@ -214,7 +281,14 @@ class ConnectionManager:
 
     async def find_request(self, request_id: str) -> ConnectionRequest:
         """
-        Locate a previously saved connection request
+        Locate a previously saved connection request.
+
+        Args:
+            request_id: The id of the connection request
+
+        Returns:
+            The found `ConnectionRequest`
+
         """
         # raises exception if not found
         result = await self.context.storage.get_record("connection_request", request_id)
@@ -223,7 +297,11 @@ class ConnectionManager:
 
     async def remove_request(self, request_id: str):
         """
-        Remove a previously-stored connection request
+        Remove a previously-stored connection request.
+
+        Args:
+            request_id: The id of the connection request
+
         """
         # raises exception if not found
         await self.context.storage.delete_record("connection_request", request_id)
@@ -233,6 +311,14 @@ class ConnectionManager:
     ) -> Tuple[ConnectionResponse, ConnectionTarget]:
         """
         Create a connection response for a received connection request.
+
+        Args:
+            request: The `ConnectionRequest` to accept
+            my_endpoint: The endpoint I can be reached at
+
+        Returns:
+            A tuple of the resulting `ConnectionResponse` and `ConnectionTarget`
+
         """
 
         invitation = None
@@ -303,8 +389,22 @@ class ConnectionManager:
 
     async def accept_response(self, response: ConnectionResponse) -> ConnectionTarget:
         """
+        Accept a connection response.
+
         Process a ConnectionResponse message by looking up
-        the connection request and setting up the pairwise connection
+        the connection request and setting up the pairwise connection.
+
+        Args:
+            response: The `ConnectionResponse` to accept
+
+        Returns:
+            A `ConnectionTarget` for the new connection
+
+        Raises:
+            ConnectionManagerError: If there is no DID associated with the
+                connection response
+            ConnectionManagerError: If the DID is not associated with a connection
+
         """
         if response._thread:
             request_id = response._thread.thid
@@ -372,8 +472,19 @@ class ConnectionManager:
 
     async def find_connection(
         self, my_verkey: str, their_verkey: str, auto_complete=False
-    ) -> dict:
-        """Look up existing connection information for a sender verkey"""
+    ) -> ConnectionRecord:
+        """
+        Look up existing connection information for a sender verkey.
+
+        Args:
+            my_verkey: My verkey
+            their_verkey: Their verkey
+            auto_complete: Should this connection automatically be completed
+
+        Returns:
+            The found `ConnectionRecord`
+
+        """
         try:
             pairwise = await self.context.wallet.get_pairwise_for_verkey(their_verkey)
         except WalletNotFoundError:
@@ -446,7 +557,19 @@ class ConnectionManager:
         self, message_body: Union[str, bytes], transport_type: str
     ) -> RequestContext:
         """
-        Deserialize an incoming message and further populate the request context
+        Deserialize an incoming message and further populate the request context.
+
+        message_body: The body of the message
+        transport_type: The transport the message was received on
+
+        Returns:
+            The `RequestContext` of the expanded message
+
+        Raises:
+            MessageParseError: If there is no message factory defined
+            MessageParseError: If there is no wallet defined
+            MessageParseError: If the JSON parsing failed
+
         """
         if not self.context.message_factory:
             raise MessageParseError("Message factory not defined")
@@ -460,10 +583,11 @@ class ConnectionManager:
 
         if isinstance(message_body, bytes):
             try:
-                message_json, from_verkey, to_verkey = \
-                    await self.context.wallet.unpack_message(
-                        message_body
-                    )
+                (
+                    message_json,
+                    from_verkey,
+                    to_verkey,
+                ) = await self.context.wallet.unpack_message(message_body)
             except WalletError:
                 self._logger.debug("Message unpack failed, trying JSON")
 
@@ -509,7 +633,15 @@ class ConnectionManager:
         self, message: AgentMessage, target: ConnectionTarget
     ) -> Union[str, bytes]:
         """
-        Serialize an outgoing message for transport
+        Serialize an outgoing message for transport.
+
+        Args:
+            message: The `AgentMessage` to compact
+            target: The `ConnectionTarget` you are compacting for
+
+        Returns:
+            The compacted message
+
         """
         message_dict = message.serialize()
         message_json = json.dumps(message_dict)

@@ -1,6 +1,4 @@
-"""
-Record used to handle routing of messages to another agent
-"""
+"""Record used to handle routing of messages to another agent."""
 
 from typing import Sequence
 
@@ -10,7 +8,11 @@ from .base import BaseModel, BaseModelSchema
 
 
 class ConnectionTarget(BaseModel):
+    """Record used to handle routing of messages to another agent."""
+
     class Meta:
+        """ConnectionTarget metadata."""
+
         schema_class = "ConnectionTargetSchema"
 
     def __init__(
@@ -23,6 +25,16 @@ class ConnectionTarget(BaseModel):
         routing_keys: Sequence[str] = None,
         sender_key: str = None,
     ):
+        """
+        Initialize a ConnectionTarget instance.
+
+        Args:
+            did: A did for the connection
+            endpoint: An endpoint for the connection
+            label: A label for the connection
+            recipient_key: A list of recipient keys
+            routing_keys: A list of routing keys
+        """
         self.did = did
         self.endpoint = endpoint
         self.label = label
@@ -32,7 +44,11 @@ class ConnectionTarget(BaseModel):
 
 
 class ConnectionTargetSchema(BaseModelSchema):
+    """ConnectionTarget schema."""
+
     class Meta:
+        """ConnectionTargetSchema metadata."""
+
         model_class = ConnectionTarget
 
     did = fields.Str(required=False)

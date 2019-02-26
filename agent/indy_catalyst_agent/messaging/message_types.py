@@ -1,8 +1,10 @@
+"""Message types for some built in message families."""
+
 from enum import Enum
 
 
 class MessageTypes(Enum):
-    """ """
+    """Enum of built in message types."""
 
     # Connection Messages
     CONNECTION_INVITATION = (

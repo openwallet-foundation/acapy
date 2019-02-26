@@ -1,6 +1,4 @@
-"""
-Basic in-memory storage implementation (non-wallet)
-"""
+"""Basic in-memory storage implementation (non-wallet)."""
 
 from collections import OrderedDict
 from typing import Mapping, Sequence
@@ -12,12 +10,29 @@ from ..wallet.base import BaseWallet
 
 
 class BasicStorage(BaseStorage):
+    """Basic in-memory storage class."""
+
     def __init__(self, _wallet: BaseWallet = None):
+        """
+        Initialize a `BasicStorage` instance.
+
+        Args:
+            _wallet: The wallet implementation to use
+
+        """
         self._records = OrderedDict()
 
     async def add_record(self, record: StorageRecord):
         """
-        Add a new record to the store
+        Add a new record to the store.
+
+        Args:
+            record: `StorageRecord` to be stored
+
+        Raises:
+            StorageError: If no record is provided
+            StorageError: If the record has no ID
+
         """
         if not record:
             raise StorageError("No record provided")
@@ -27,7 +42,18 @@ class BasicStorage(BaseStorage):
 
     async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
         """
-        Fetch a record from the store by ID
+        Fetch a record from the store by type and ID.
+
+        Args:
+            record_type: The record type
+            record_id: The record id
+
+        Returns:
+            A `StorageRecord` instance
+
+        Raises:
+            StorageNotFoundError: If the record is not found
+
         """
         row = self._records.get(record_id)
         if row and row.type == record_type:
@@ -37,7 +63,15 @@ class BasicStorage(BaseStorage):
 
     async def update_record_value(self, record: StorageRecord, value: str):
         """
-        Update an existing stored record's value
+        Update an existing stored record's value.
+
+        Args:
+            record: `StorageRecord` to update
+            value: The new value
+
+        Raises:
+            StorageNotFoundError: If record not found
+
         """
         oldrec = self._records.get(record.id)
         if not oldrec:
@@ -46,7 +80,15 @@ class BasicStorage(BaseStorage):
 
     async def update_record_tags(self, record: StorageRecord, tags: Mapping):
         """
-        Update an existing stored record's tags
+        Update an existing stored record's tags.
+
+        Args:
+            record: `StorageRecord` to update
+            tags: New tags
+
+        Raises:
+            StorageNotFoundError: If record not found
+
         """
         oldrec = self._records.get(record.id)
         if not oldrec:
@@ -57,7 +99,15 @@ class BasicStorage(BaseStorage):
         self, record: StorageRecord, tags: (Sequence, Mapping)
     ):
         """
-        Update an existing stored record's tags
+        Update an existing stored record's tags.
+
+        Args:
+            record: `StorageRecord` to delete
+            tags: Tags
+
+        Raises:
+            StorageNotFoundError: If record not found
+
         """
         oldrec = self._records.get(record.id)
         if not oldrec:
@@ -70,6 +120,16 @@ class BasicStorage(BaseStorage):
         self._records[record.id] = oldrec._replace(tags=newtags)
 
     async def delete_record(self, record: StorageRecord):
+        """
+        Delete a record.
+
+        Args:
+            record: `StorageRecord` to delete
+
+        Raises:
+            StorageNotFoundError: If record not found
+
+        """
         if record.id not in self._records:
             raise StorageNotFoundError("Record not found: {}".format(record.id))
         del self._records[record.id]
@@ -77,10 +137,24 @@ class BasicStorage(BaseStorage):
     def search_records(
         self, type_filter: str, tag_query: Mapping = None, page_size: int = None
     ) -> "BasicStorageRecordSearch":
+        """
+        Search stored records.
+
+        Args:
+            type_filter: Filter string
+            tag_query: Tags to query
+            page_size: Page size
+
+        Returns:
+            An instance of `BaseStorageRecordSearch`
+
+        """
         return BasicStorageRecordSearch(self, type_filter, tag_query, page_size)
 
 
 class BasicStorageRecordSearch(BaseStorageRecordSearch):
+    """Represent an active stored records search."""
+
     def __init__(
         self,
         store: BasicStorage,
@@ -88,6 +162,16 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
         tag_query: Mapping,
         page_size: int = None,
     ):
+        """
+        Initialize a `BasicStorageRecordSearch` instance.
+
+        Args:
+            store: `BaseStorage` to search
+            type_filter: Filter string
+            tag_query: Tags to search
+            page_size: Size of page to return
+
+        """
         super(BasicStorageRecordSearch, self).__init__(
             store, type_filter, tag_query, page_size
         )
@@ -96,13 +180,28 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
 
     @property
     def opened(self) -> bool:
-        """Accessor for open state"""
+        """
+        Accessor for open state.
+
+        Returns:
+            True if opened, else False
+
+        """
         return self._cache is not None
 
     async def fetch(self, max_count: int) -> Sequence[StorageRecord]:
         """
-        Fetch the next list of results from the store
-        TODO: implement tag filtering
+        Fetch the next list of results from the store.
+
+        Args:
+            max_count: Max number of records to return
+
+        Returns:
+            A list of `StorageRecord`s
+
+        Raises:
+            StorageSearchError: If the search query has not been opened
+
         """
         if not self.opened:
             raise StorageSearchError("Search query has not been opened")
@@ -121,14 +220,10 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
         return ret
 
     async def open(self):
-        """
-        Start the search query
-        """
+        """Start the search query."""
         self._cache = self._store._records.copy()
         self._iter = iter(self._cache)
 
     async def close(self):
-        """
-        Dispose of the search query
-        """
+        """Dispose of the search query."""
         self._cache = None

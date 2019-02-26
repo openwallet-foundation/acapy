@@ -1,4 +1,6 @@
 """
+The Dispatcher.
+
 The dispatcher is responsible for coordinating data flow between handlers, providing
 lifecycle hook callbacks storing state for message threads, etc.
 """
@@ -15,11 +17,14 @@ from .models.connection_target import ConnectionTarget
 
 class Dispatcher:
     """
+    Dispatcher class.
+
     Class responsible for dispatching messages to message handlers and responding
     to other agents.
     """
 
     def __init__(self):
+        """Initialize an instance of Dispatcher."""
         self.logger = logging.getLogger(__name__)
 
     async def dispatch(
@@ -30,6 +35,15 @@ class Dispatcher:
     ):
         """
         Configure responder and dispatch message context to message handler.
+
+        Args:
+            context: The `RequestContext` to be handled
+            send: Function to send outbound messages
+            transport_reply: Function to reply on the incoming channel
+
+        Returns:
+            The response from the handler
+
         """
 
         responder = self.make_responder(send, context, transport_reply)
@@ -42,9 +56,18 @@ class Dispatcher:
 
     def make_responder(
         self, send: Coroutine, context: RequestContext, reply: Union[Coroutine, None]
-    ):
+    ) -> "DispatcherResponder":
         """
         Build a responder object.
+
+        Args:
+            send: Function to send outbound messages
+            context: The `RequestContext` to be handled
+            reply: Function to reply on the incoming channel
+
+        Returns:
+            The created `DispatcherResponder`
+
         """
         responder = DispatcherResponder(send, context.wallet, reply=reply)
         # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
@@ -58,11 +81,21 @@ class Dispatcher:
 
 
 class DispatcherResponder(BaseResponder):
-    """Handle outgoing messages from message handlers"""
+    """Handle outgoing messages from message handlers."""
 
     def __init__(
         self, send: Coroutine, wallet: BaseWallet, *targets, reply: Coroutine = None
     ):
+        """
+        Initialize an instance of `DispatcherResponder`.
+
+        Args:
+            send: Function to send outbound message
+            wallet: Wallet instance to use
+            targets: List of `ConnectionTarget`s to send to
+            reply: Function to reply on incoming channel
+
+        """
         self._targets = list(targets)
         self._send = send
         self._reply = reply
@@ -72,11 +105,22 @@ class DispatcherResponder(BaseResponder):
         """
         Add target.
 
-        :param target: ConnectionTarget: Connection target
+        Args:
+            target: ConnectionTarget to add
         """
         self._targets.append(target)
 
     async def send_reply(self, message: AgentMessage):
+        """
+        Send a reply to an incoming message.
+
+        Args:
+            message: `AgentMessage` to reply with
+
+        Raises:
+            ResponderError: If there is no active connection
+
+        """
         if self._reply:
             # 'reply' is a temporary solution to support responses to websocket requests
             # a better solution would likely use a queue to deliver the replies
@@ -88,7 +132,15 @@ class DispatcherResponder(BaseResponder):
                 await self.send_outbound(message, target)
 
     async def send_outbound(self, message: AgentMessage, target: ConnectionTarget):
+        """
+        Send outbound message.
+
+        Args:
+            message: `AgentMessage` to send
+            target: `ConnectionTarget` to send to
+        """
         await self._send(message, target)
 
     async def send_admin_message(self, message: AgentMessage):
+        """Todo."""
         pass

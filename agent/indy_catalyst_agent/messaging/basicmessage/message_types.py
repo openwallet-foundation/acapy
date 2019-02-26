@@ -1,6 +1,4 @@
-"""
-Message type identifiers for Connections
-"""
+"""Message type identifiers for Connections."""
 
 MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/basicmessage/1.0/"
 
