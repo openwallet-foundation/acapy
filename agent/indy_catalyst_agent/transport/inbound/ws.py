@@ -1,3 +1,5 @@
+"""Websockets Transport classes and functions."""
+
 import logging
 from typing import Callable
 
@@ -8,11 +10,24 @@ from ...error import BaseError
 
 
 class WsSetupError(BaseError):
+    """Websocket setup error."""
+
     pass
 
 
 class Transport(BaseInboundTransport):
+    """Websockets Transport class."""
+
     def __init__(self, host: str, port: int, message_router: Callable) -> None:
+        """
+        Initialize a Transport instance.
+
+        Args:
+            host: Host to listen on
+            port: Port to listen on
+            message_router: Function to pass incoming messages to
+
+        """
         self.host = host
         self.port = port
         self.message_router = message_router
@@ -23,9 +38,17 @@ class Transport(BaseInboundTransport):
 
     @property
     def scheme(self):
+        """Accessor for this transport's scheme."""
         return self._scheme
 
     async def start(self) -> None:
+        """
+        Start this transport.
+
+        Raises:
+            HttpSetupError: If there was an error starting the webserver
+
+        """
         app = web.Application()
         app.add_routes([web.get("/", self.inbound_message_handler)])
         runner = web.AppRunner(app)
@@ -40,6 +63,16 @@ class Transport(BaseInboundTransport):
             )
 
     async def inbound_message_handler(self, request):
+        """
+        Message handler for inbound messages.
+
+        Args:
+            request: aiohttp request object
+
+        Returns:
+            The web response
+
+        """
         ws = web.WebSocketResponse()
         await ws.prepare(request)
 
