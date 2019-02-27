@@ -1,6 +1,7 @@
 version: 2
 jobs:
   build:
+    working_directory: agent
     docker:
       - image: bcgovimages/von-image:py36-1.8-0
     steps:
