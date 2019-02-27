@@ -7,8 +7,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - pip-dependencies-{{ checksum "agent/requirements.txt" }}-{{ checksum "agent/requirements.dev.txt" }}
-            - pip-dependencies-
+            - v1-pip-dependencies-{{ checksum "agent/requirements.txt" }}-{{ checksum "agent/requirements.dev.txt" }}
+            - v1-pip-dependencies-
       - run:
           name: Install Python Dependencies
           command: |
@@ -21,7 +21,7 @@ jobs:
       - save_cache:
           paths:
             - /home/indy/.cache/pip
-          key: pip-dependencies-{{ checksum "agent/requirements.txt" }}-{{ checksum "agent/requirements.dev.txt" }}
+          key: v1-pip-dependencies-{{ checksum "agent/requirements.txt" }}-{{ checksum "agent/requirements.dev.txt" }}
 
       - run:
           name: Run Agent Tests
