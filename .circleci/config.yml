@@ -5,11 +5,15 @@ jobs:
       - image: bcgovimages/von-image:py36-1.8-0
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - pip-dependencies-{{ checksum "requirements.txt" }}{{ checksum "requirements.dev.txt" }}
+            - pip-dependencies-
       - run:
           name: Install Python Dependencies
           command: |
             cd agent
-            pip3 install \
+            pip3 install -target=./pip_packages \
               -r requirements.txt \
               -r requirements.dev.txt \
               pytest
@@ -20,14 +24,18 @@ jobs:
             mkdir test-reports
             mkdir test-reports/pytest
             cd agent
-            pytest --quiet --junitxml=../test-reports/pytest/junit.xml
+            PYTHONPATH="$PYTHONPATH:./pip_packages" pytest --quiet --junitxml=../test-reports/pytest/junit.xml
+
+      - save_cache:
+          paths:
+            - ./pip_packages
+          key: pip-dependencies-{{ checksum "requirements.txt" }}{{ checksum "requirements.dev.txt" }}
 
       - store_test_results:
           path: test-reports
 
       - store_artifacts:
           path: test-reports
-
       # - run:
       #     name: Push to Codecov.io (Optional Step)
       #     command: |
