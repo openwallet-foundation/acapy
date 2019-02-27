@@ -15,11 +15,12 @@ jobs:
               pytest
 
       - run:
-          name: Run Tests
+          name: Run Agent Tests
           command: |
             mkdir test-reports
             mkdir test-reports/pytest
-            pytest --quiet --junitxml=test-reports/pytest/junit.xml
+            cd agent
+            pytest --quiet --junitxml=../test-reports/pytest/junit.xml
 
       - store_test_results:
           path: test-reports
