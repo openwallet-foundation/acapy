@@ -13,6 +13,8 @@ jobs:
           name: Install Python Dependencies
           command: |
             cd agent
+            python3 -m venv venv
+            source ./venv/bin/activate
             pip3 install \
               -r requirements.txt \
               -r requirements.dev.txt \
@@ -20,7 +22,7 @@ jobs:
 
       - save_cache:
           paths:
-            - /home/indy/.cache/pip
+            - agent/.venv
           key: v1-pip-dependencies-{{ checksum "agent/requirements.txt" }}-{{ checksum "agent/requirements.dev.txt" }}
 
       - run:
