@@ -13,7 +13,7 @@ jobs:
           name: Install Python Dependencies
           command: |
             cd agent
-            pip3 install -target=./pip_packages \
+            pip3 install \
               -r requirements.txt \
               -r requirements.dev.txt \
               pytest
@@ -26,7 +26,7 @@ jobs:
       - run:
           name: Run Agent Tests
           command: |
-            export PYTHONPATH="$PYTHONPATH:./pip_packages" 
+            # export PYTHONPATH="$PYTHONPATH:./pip_packages" 
             mkdir test-reports
             mkdir test-reports/pytest
             cd agent
