@@ -32,7 +32,8 @@ jobs:
             mkdir test-reports/pytest
             cd agent
             . venv/bin/activate
-            pytest --quiet --junitxml=../test-reports/pytest/junit.xml
+            # pytest --quiet --junitxml=../test-reports/pytest/junit.xml
+            pytest
 
       - store_test_results:
           path: test-reports
