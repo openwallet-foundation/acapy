@@ -18,6 +18,11 @@ jobs:
               -r requirements.dev.txt \
               pytest
 
+      - save_cache:
+          paths:
+            - ./pip_packages
+          key: pip-dependencies-{{ checksum "agent/requirements.txt" }}{{ checksum "agent/requirements.dev.txt" }}
+
       - run:
           name: Run Agent Tests
           command: |
@@ -25,11 +30,6 @@ jobs:
             mkdir test-reports/pytest
             cd agent
             PYTHONPATH="$PYTHONPATH:./pip_packages" pytest --quiet --junitxml=../test-reports/pytest/junit.xml
-
-      - save_cache:
-          paths:
-            - ./pip_packages
-          key: pip-dependencies-{{ checksum "requirements.txt" }}{{ checksum "requirements.dev.txt" }}
 
       - store_test_results:
           path: test-reports
