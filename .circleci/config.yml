@@ -8,14 +8,24 @@ jobs:
       - run:
           name: Install Python Dependencies
           command: |
-            cd agent && pip3 install \
+            cd agent
+            mkdir test-reports
+            pip3 install \
               -r requirements.txt \
               -r requirements.dev.txt \
-              pytest
+              pytest --junitxml=test-reports/junit.xml
+
       - run:
           name: Run Tests
           command: |
             pytest
+
+      - store_test_results:
+          path: agent/test-reports
+
+      - store_artifacts:
+          path: agent/test-reports
+
       # - run:
       #     name: Push to Codecov.io (Optional Step)
       #     command: |
@@ -27,7 +37,6 @@ jobs:
       #     command: |
       #         node_modules/sfdx-cli/bin/run force:org:delete -u scratch -p
       #         rm ~/tests/apex/*.txt ~/tests/apex/test-result-7*.json
-
 # Python CircleCI 2.0 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
