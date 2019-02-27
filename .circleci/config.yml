@@ -9,22 +9,22 @@ jobs:
           name: Install Python Dependencies
           command: |
             cd agent
-            mkdir test-reports
             pip3 install \
               -r requirements.txt \
               -r requirements.dev.txt \
-              pytest --junitxml=test-reports/junit.xml
+              pytest
 
       - run:
           name: Run Tests
           command: |
-            pytest
+            mkdir test-reports
+            pytest --junitxml=test-reports/junit.xml
 
       - store_test_results:
-          path: agent/test-reports
+          path: test-reports
 
       - store_artifacts:
-          path: agent/test-reports
+          path: test-reports
 
       # - run:
       #     name: Push to Codecov.io (Optional Step)
