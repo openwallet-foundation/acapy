@@ -1,7 +1,6 @@
 version: 2
 jobs:
   build:
-    working_directory: agent
     docker:
       - image: bcgovimages/von-image:py36-1.8-0
     steps:
@@ -9,7 +8,7 @@ jobs:
       - run:
           name: Install Python Dependencies
           command: |
-            pip3 install \
+            cd agent && pip3 install \
               -r requirements.txt \
               -r requirements.dev.txt \
               pytest
