@@ -6,6 +6,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install Python Dependencies
+          command: |
+            pip3 install \
+              -r requirements.txt \
+              -r requirements.dev.txt \
+              pytest
+      - run:
           name: Run Tests
           command: |
             pytest
