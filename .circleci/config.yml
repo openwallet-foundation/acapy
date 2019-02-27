@@ -26,10 +26,11 @@ jobs:
       - run:
           name: Run Agent Tests
           command: |
+            export PYTHONPATH="$PYTHONPATH:./pip_packages" 
             mkdir test-reports
             mkdir test-reports/pytest
             cd agent
-            PYTHONPATH="$PYTHONPATH:./pip_packages" pytest --quiet --junitxml=../test-reports/pytest/junit.xml
+            pytest --quiet --junitxml=../test-reports/pytest/junit.xml
 
       - store_test_results:
           path: test-reports
