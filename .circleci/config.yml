@@ -7,7 +7,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - pip-dependencies-{{ checksum "requirements.txt" }}{{ checksum "requirements.dev.txt" }}
+            - pip-dependencies-{{ checksum "agent/requirements.txt" }}{{ checksum "agent/requirements.dev.txt" }}
             - pip-dependencies-
       - run:
           name: Install Python Dependencies
