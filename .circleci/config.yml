@@ -30,14 +30,14 @@ jobs:
           command: |
             mkdir test-reports
             mkdir test-reports/pytest
-            cd agent
+            cp agent/
             . venv/bin/activate
             pytest
 
       - run:
           name: Push to Codecov.io
           command: |
-              cd agent
+              cp agent/coverage.xml .
               bash <(curl -s https://codecov.io/bash)
 
       - store_test_results:
