@@ -30,7 +30,7 @@ jobs:
           command: |
             mkdir test-reports
             mkdir test-reports/pytest
-            cp agent/
+            cd agent
             . venv/bin/activate
             pytest
 
