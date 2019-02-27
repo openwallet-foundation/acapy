@@ -20,7 +20,7 @@ jobs:
 
       - save_cache:
           paths:
-            - /home/indy/.cache/pip
+            - {{ .Environment.HOME }}/.cache/pip
           key: pip-dependencies-{{ checksum "agent/requirements.txt" }}-{{ checksum "agent/requirements.dev.txt" }}
 
       - run:
