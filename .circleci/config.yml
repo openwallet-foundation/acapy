@@ -37,7 +37,6 @@ jobs:
       - run:
           name: Push to Codecov.io
           command: |
-              cp agent/coverage.xml .
               bash <(curl -s https://codecov.io/bash)
 
       - store_test_results:
