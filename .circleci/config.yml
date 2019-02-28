@@ -1,0 +1,47 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: bcgovimages/von-image:py36-1.8-0
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-pip-dependencies-{{ .Branch }}-{{ checksum "agent/requirements.txt" }}-{{ checksum "agent/requirements.dev.txt" }}
+            - v2-pip-dependencies-{{ .Branch }}-
+      - run:
+          name: Install Python Dependencies
+          command: |
+            cd agent
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install \
+              -r requirements.txt \
+              -r requirements.dev.txt \
+              pytest
+
+      - save_cache:
+          paths:
+            - agent/venv
+          key: v2-pip-dependencies-{{ .Branch }}-{{ checksum "agent/requirements.txt" }}-{{ checksum "agent/requirements.dev.txt" }}
+
+      - run:
+          name: Run Agent Tests
+          command: |
+            mkdir test-reports
+            mkdir test-reports/pytest
+            cd agent
+            . venv/bin/activate
+            pytest
+
+      - run:
+          name: Push to Codecov.io
+          command: |
+              bash <(curl -s https://codecov.io/bash)
+
+      - store_test_results:
+          path: test-reports
+
+      - store_artifacts:
+          path: test-reports
+
