@@ -7,3 +7,6 @@ flake8==3.7.5
 # flake8-rst-docstrings==0.0.8
 flake8-docstrings==1.3.0
 flake8-rst==0.7.1
+
+sphinx==1.8.4
+sphinx-rtd-theme>=0.4.3

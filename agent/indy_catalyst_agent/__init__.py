@@ -112,11 +112,7 @@ PARSER.add_argument(
 async def start(
     inbound_transport_configs: list, outbound_transports: list, settings: dict
 ):
-    """
-    Start.
-
-    :inbound_transport_configs: list:
-    """
+    """Start."""
     factory = default_message_factory()
     conductor = Conductor(
         inbound_transport_configs, outbound_transports, factory, settings

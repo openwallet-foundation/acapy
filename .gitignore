@@ -179,3 +179,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Docs build
+_build/
