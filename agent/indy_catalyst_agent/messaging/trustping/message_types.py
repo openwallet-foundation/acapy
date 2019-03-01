@@ -1,6 +1,6 @@
 """Message type identifiers for Trust Pings."""
 
-MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/trustping/1.0/"
+MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/trust_ping/1.0/"
 
 PING = f"{MESSAGE_FAMILY}ping"
 PING_RESPONSE = f"{MESSAGE_FAMILY}ping_response"

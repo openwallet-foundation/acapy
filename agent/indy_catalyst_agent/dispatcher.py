@@ -8,11 +8,11 @@ lifecycle hook callbacks storing state for message threads, etc.
 import logging
 from typing import Coroutine, Union
 
-from .wallet.base import BaseWallet
 from .messaging.agent_message import AgentMessage
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder, ResponderError
-from .models.connection_target import ConnectionTarget
+from .messaging.connections.models.connection_target import ConnectionTarget
+from .wallet.base import BaseWallet
 
 
 class Dispatcher:
@@ -46,9 +46,13 @@ class Dispatcher:
 
         """
 
-        responder = self.make_responder(send, context, transport_reply)
-        handler_cls = context.message.Handler
-        handler_response = await handler_cls().handle(context, responder)
+        try:
+            responder = self.make_responder(send, context, transport_reply)
+            handler_cls = context.message.Handler
+            handler_response = await handler_cls().handle(context, responder)
+        except Exception:
+            self.logger.exception("Exception in message handler")
+            raise
 
         # We return the result to the caller.
         # This is for persistent connections waiting on that response.
@@ -110,12 +114,12 @@ class DispatcherResponder(BaseResponder):
         """
         self._targets.append(target)
 
-    async def send_reply(self, message: AgentMessage):
+    async def send_reply(self, message: Union[AgentMessage, str, bytes]):
         """
         Send a reply to an incoming message.
 
         Args:
-            message: `AgentMessage` to reply with
+            message: the `AgentMessage`, or pre-packed str or bytes to reply with
 
         Raises:
             ResponderError: If there is no active connection
@@ -131,7 +135,9 @@ class DispatcherResponder(BaseResponder):
             for target in self._targets:
                 await self.send_outbound(message, target)
 
-    async def send_outbound(self, message: AgentMessage, target: ConnectionTarget):
+    async def send_outbound(
+        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
+    ):
         """
         Send outbound message.
 

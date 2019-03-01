@@ -2,7 +2,7 @@
 
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
 from ..messages.connection_invitation import ConnectionInvitation
-from ....connection import ConnectionManager
+from ..manager import ConnectionManager, ConnectionRecord
 
 
 class ConnectionInvitationHandler(BaseHandler):
@@ -26,6 +26,16 @@ class ConnectionInvitationHandler(BaseHandler):
         #       "Invitation must be submitted as part of a GET request"
         #    )
 
+        role = None
+        if context.transport_type == "router_invitation":
+            role = ConnectionRecord.ROLE_ROUTER
+
         mgr = ConnectionManager(context)
-        request, target = await mgr.accept_invitation(context.message)
-        await responder.send_outbound(request, target)
+        conn = await mgr.receive_invitation(context.message, their_role=role)
+
+        if conn.requires_routing:
+            await mgr.update_routing(conn)
+        else:
+            request = await mgr.create_request(conn)
+            target = await mgr.get_connection_target(conn)
+            await responder.send_outbound(request, target)

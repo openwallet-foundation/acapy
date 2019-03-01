@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
+from .error import StorageDuplicateError, StorageNotFoundError
 from .record import StorageRecord
 
 DEFAULT_PAGE_SIZE = 100
@@ -20,8 +21,6 @@ class BaseStorage(ABC):
             record: `StorageRecord` to be stored
 
         """
-        # indy_add_wallet_record
-        pass
 
     @abstractmethod
     async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
@@ -36,7 +35,6 @@ class BaseStorage(ABC):
             A `StorageRecord` instance
 
         """
-        pass
 
     @abstractmethod
     async def update_record_value(self, record: StorageRecord, value: str):
@@ -48,8 +46,6 @@ class BaseStorage(ABC):
             value: The new value
 
         """
-        # indy_update_wallet_record_value
-        pass
 
     @abstractmethod
     async def update_record_tags(self, record: StorageRecord, tags: Mapping):
@@ -61,8 +57,6 @@ class BaseStorage(ABC):
             tags: New tags
 
         """
-        # indy_update_wallet_record_tags
-        pass
 
     @abstractmethod
     async def delete_record_tags(
@@ -76,27 +70,23 @@ class BaseStorage(ABC):
             tags: Tags
 
         """
-        # indy_delete_wallet_record_tags
-        pass
 
     @abstractmethod
     async def delete_record(self, record: StorageRecord):
         """
-        Delete a record.
+        Delete an existing record.
 
         Args:
             record: `StorageRecord` to delete
 
         """
-        # indy_delete_wallet_record
-        pass
 
     @abstractmethod
     def search_records(
         self, type_filter: str, tag_query: Mapping = None, page_size: int = None
     ) -> "BaseStorageRecordSearch":
         """
-        Search stored records.
+        Create a new record query.
 
         Args:
             type_filter: Filter string
@@ -107,7 +97,6 @@ class BaseStorage(ABC):
             An instance of `BaseStorageRecordSearch`
 
         """
-        pass
 
     def __repr__(self) -> str:
         """Human readable representation of a `BaseStorage` implementation."""
@@ -213,17 +202,30 @@ class BaseStorageRecordSearch(ABC):
             A list of `StorageRecord`s
 
         """
-        pass
+
+    async def fetch_all(self) -> Sequence[StorageRecord]:
+        """Fetch all records from the query."""
+        results = []
+        async for record in self:
+            results.append(record)
+        return results
+
+    async def fetch_single(self) -> StorageRecord:
+        """Fetch a single query result."""
+        results = await self.fetch_all()
+        if not results:
+            raise StorageNotFoundError("Record not found")
+        if len(results) > 1:
+            raise StorageDuplicateError("Duplicate records found")
+        return results[0]
 
     @abstractmethod
     async def open(self):
         """Start the search query."""
-        pass
 
     @abstractmethod
     async def close(self):
         """Dispose of the search query."""
-        pass
 
     async def __aenter__(self):
         """Context manager enter."""

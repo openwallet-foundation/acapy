@@ -15,13 +15,23 @@ from marshmallow import (
 
 from ..models.base import (
     BaseModel,
+    BaseModelError,
     BaseModelSchema,
     resolve_class,
     resolve_meta_property,
 )
 from ..models.field_signature import FieldSignature
+from ..models.localization_decorator import (
+    LocalizationDecorator,
+    LocalizationDecoratorSchema,
+)
 from ..models.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
+from ..models.timing_decorator import TimingDecorator, TimingDecoratorSchema
 from ..wallet.base import BaseWallet
+
+
+class AgentMessageError(BaseModelError):
+    """Base exception for agent message issues."""
 
 
 class AgentMessage(BaseModel):
@@ -37,8 +47,10 @@ class AgentMessage(BaseModel):
     def __init__(
         self,
         _id: str = None,
+        _l10n: LocalizationDecorator = None,
         _signatures: Dict[str, FieldSignature] = None,
         _thread: ThreadDecorator = None,
+        _timing: TimingDecorator = None,
     ):
         """
         Initialize base agent message object.
@@ -54,7 +66,9 @@ class AgentMessage(BaseModel):
         """
         super(AgentMessage, self).__init__()
         self._message_id = _id or str(uuid.uuid4())
+        self._message_l10n = _l10n
         self._message_thread = _thread
+        self._message_timing = _timing
         self._message_signatures = _signatures.copy() if _signatures else {}
         if not self.Meta.message_type:
             raise TypeError(
@@ -116,6 +130,16 @@ class AgentMessage(BaseModel):
     def _id(self, val: str):
         """Set the unique message identifier."""
         self._message_id = val
+
+    @property
+    def _l10n(self) -> LocalizationDecorator:
+        """Accessor for the localization decorator."""
+        return self._message_l10n
+
+    @_l10n.setter
+    def _l10n(self, val: LocalizationDecorator):
+        """Set the localization decorator."""
+        self._message_l10n = val
 
     @property
     def _signatures(self) -> Dict[str, FieldSignature]:
@@ -253,6 +277,16 @@ class AgentMessage(BaseModel):
         """
         self._message_thread = val
 
+    @property
+    def _timing(self) -> TimingDecorator:
+        """Accessor for the timing decorator."""
+        return self._message_timing
+
+    @_timing.setter
+    def _timing(self, val: TimingDecorator):
+        """Set the timing decorator."""
+        self._message_timing = val
+
 
 class AgentMessageSchema(BaseModelSchema):
     """AgentMessage schema."""
@@ -267,8 +301,14 @@ class AgentMessageSchema(BaseModelSchema):
     _type = fields.Str(data_key="@type", dump_only=True, required=False)
     _id = fields.Str(data_key="@id", required=False)
 
+    # Localization decorator
+    _l10n = fields.Nested(LocalizationDecoratorSchema, data_key="~l10n", required=False)
+
     # Thread decorator value
     _thread = fields.Nested(ThreadDecoratorSchema, data_key="~thread", required=False)
+
+    # Localization decorator
+    _timing = fields.Nested(TimingDecoratorSchema, data_key="~timing", required=False)
 
     def __init__(self, *args, **kwargs):
         """
@@ -308,7 +348,8 @@ class AgentMessageSchema(BaseModelSchema):
 
         """
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
-        found = {}
+        found_signatures = {}
+        processed = {}
         for field_name, field_value in data.items():
             if field_name.endswith("~sig"):
                 pfx = field_name[:-4]
@@ -323,14 +364,15 @@ class AgentMessageSchema(BaseModelSchema):
                         "Message defines both field signature and value: {}".format(pfx)
                     )
                 sig = FieldSignature.deserialize(field_value)
-                found[pfx] = sig
-                del data[field_name]
-                data[pfx], _ts = sig.decode()
+                found_signatures[pfx] = sig
+                processed[pfx], _ts = sig.decode()
+            else:
+                processed[field_name] = field_value
         for field_name in expect_fields:
-            if field_name not in found:
+            if field_name not in found_signatures:
                 raise ValidationError("Expected field signature: {}".format(field_name))
-        self._signatures = found
-        return data
+        self._signatures = found_signatures
+        return processed
 
     @post_load
     def populate_signatures(self, obj):
