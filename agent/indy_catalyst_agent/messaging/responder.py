@@ -8,7 +8,7 @@ in response to the message being handled.
 from abc import ABC
 
 from .agent_message import AgentMessage
-from ..models.connection_target import ConnectionTarget
+from .connections.models.connection_target import ConnectionTarget
 from ..error import BaseError
 
 

@@ -2,7 +2,7 @@
 
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
 from ..messages.connection_request import ConnectionRequest
-from ....connection import ConnectionManager
+from ..manager import ConnectionManager
 
 
 class ConnectionRequestHandler(BaseHandler):
@@ -21,7 +21,8 @@ class ConnectionRequestHandler(BaseHandler):
         assert isinstance(context.message, ConnectionRequest)
 
         mgr = ConnectionManager(context)
-        response, target = await mgr.accept_request(context.message)
+        connection, response = await mgr.create_response(context.message)
+        target = await mgr.get_connection_target(connection)
 
         self._logger.debug("Sending connection response to target: %s", target)
         await responder.send_outbound(response, target)

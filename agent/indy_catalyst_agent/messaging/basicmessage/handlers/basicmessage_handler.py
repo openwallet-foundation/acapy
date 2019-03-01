@@ -19,3 +19,9 @@ class BasicMessageHandler(BaseHandler):
         assert isinstance(context.message, BasicMessage)
 
         self._logger.info("Received basic message: %s", context.message.content)
+
+        content = context.message.content
+        if content.startswith("Reply with: "):
+            reply = content[12:]
+            reply = BasicMessage(content=reply, _l10n=context.message._l10n)
+            await responder.send_reply(reply)

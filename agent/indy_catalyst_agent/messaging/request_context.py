@@ -9,8 +9,9 @@ import copy
 import logging
 
 from .agent_message import AgentMessage
+from .connections.models.connection_record import ConnectionRecord
+from .connections.models.connection_target import ConnectionTarget
 from .message_factory import MessageFactory
-from ..models.connection_target import ConnectionTarget
 from ..storage.base import BaseStorage
 from ..wallet.base import BaseWallet
 
@@ -21,6 +22,7 @@ class RequestContext:
     def __init__(self):
         """Initialize an instance of RequestContext."""
         self._connection_active = False
+        self._connection_record = None
         self._connection_target = None
         self._default_endpoint = None
         self._default_label = None
@@ -67,6 +69,20 @@ class RequestContext:
 
         """
         self._connection_active = active
+
+    @property
+    def connection_record(self) -> ConnectionRecord:
+        """Accessor for the related connection record."""
+        return self._connection_record
+
+    @connection_record.setter
+    def connection_record(self, record: ConnectionRecord):
+        """Setter for the related connection record.
+
+        :param record: ConnectionRecord:
+
+        """
+        self._connection_record = record
 
     @property
     def connection_target(self) -> ConnectionTarget:

@@ -22,17 +22,26 @@ class TestConfig:
         doc = DIDDoc(did=self.test_did)
         controller = self.test_did
         ident = "1"
-        value = self.test_verkey
+        pk_value = self.test_verkey
         pk = PublicKey(
             self.test_did,
             ident,
             PublicKeyType.ED25519_SIG_2018,
             controller,
-            value,
+            pk_value,
             False,
         )
         doc.verkeys.append(pk)
-        service = Service(self.test_did, "indy", "IndyAgent", self.test_endpoint)
+        recip_keys = [pk_value]
+        routing_keys = []
+        service = Service(
+            self.test_did,
+            "indy",
+            "IndyAgent",
+            recip_keys,
+            routing_keys,
+            self.test_endpoint,
+        )
         doc.services.append(service)
         return doc
 

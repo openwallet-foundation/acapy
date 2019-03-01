@@ -33,6 +33,7 @@ class ConnectionInvitation(AgentMessage):
         recipient_keys: Sequence[str] = None,
         endpoint: str = None,
         routing_keys: Sequence[str] = None,
+        image_url: str = None,
         **kwargs,
     ):
         """
@@ -98,6 +99,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
     recipient_keys = fields.List(fields.Str(), data_key="recipientKeys", required=False)
     endpoint = fields.Str(data_key="serviceEndpoint", required=False)
     routing_keys = fields.List(fields.Str(), data_key="routingKeys", required=False)
+    image_url = fields.Str(data_key="imageUrl", required=False, allow_none=True)
 
     @validates_schema
     def validate_fields(self, data):

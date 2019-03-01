@@ -3,20 +3,23 @@
 from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
-from ...message_types import MessageTypes
+from ..message_types import FORWARD
+
+HANDLER_CLASS = "indy_catalyst_agent.messaging.routing.handlers"
+".forward_handler.ForwardHandler"
 
 
 class Forward(AgentMessage):
-    """Class representing a forward message."""
+    """Represents a request to forward a message to a connected agent."""
 
     class Meta:
         """Forward metadata."""
 
-        # handler_class = ForwardHandler
-        message_type = MessageTypes.FORWARD.value
+        handler_class = HANDLER_CLASS
+        message_type = FORWARD
         schema_class = "ForwardSchema"
 
-    def __init__(self, to: str = None, msg: str = None, **kwargs):
+    def __init__(self, *, to: str = None, msg: str = None, **kwargs):
         """
         Initialize forward message object.
 
@@ -30,7 +33,7 @@ class Forward(AgentMessage):
 
 
 class ForwardSchema(AgentMessageSchema):
-    """Forward schema."""
+    """Forward message schema used in serialization/deserialization."""
 
     class Meta:
         """ForwardSchema metadata."""

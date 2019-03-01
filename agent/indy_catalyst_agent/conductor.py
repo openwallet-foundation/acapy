@@ -12,15 +12,15 @@ import logging
 
 from typing import Coroutine, Union
 
-from .connection import ConnectionManager
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
 from .error import BaseError
 from .logging import LoggingConfigurator
 from .messaging.agent_message import AgentMessage
+from .messaging.connections.manager import ConnectionManager
+from .messaging.connections.models.connection_target import ConnectionTarget
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
-from .models.connection_target import ConnectionTarget
 from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
@@ -29,8 +29,6 @@ from .transport.outbound.queue.basic import BasicOutboundMessageQueue
 
 class ConductorError(BaseError):
     """Conductor error."""
-
-    pass
 
 
 class Conductor:
@@ -142,12 +140,9 @@ class Conductor:
         # Print an invitation to the terminal
         if self.settings.get("debug.print_invitation"):
             try:
-                invitation = await self.connection_mgr.create_invitation(
-                    context.default_label, context.default_endpoint
-                )
-                await self.connection_mgr.store_invitation(invitation, False)
+                _connection, invitation = await self.connection_mgr.create_invitation()
                 invite_url = invitation.to_url()
-                print("\nCreated invitation:")
+                print("Invitation URL:")
                 print(invite_url)
             except Exception:
                 self.logger.exception("Error sending invitation")
@@ -156,10 +151,7 @@ class Conductor:
         send_invite_to = self.settings.get("debug.send_invitation_to")
         if send_invite_to:
             try:
-                invitation = await self.connection_mgr.create_invitation(
-                    context.default_label, context.default_endpoint
-                )
-                await self.connection_mgr.store_invitation(invitation, False)
+                _connection, invitation = await self.connection_mgr.create_invitation()
                 await self.connection_mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
@@ -179,7 +171,14 @@ class Conductor:
             reply: Function to reply to this message
 
         """
-        context = await self.connection_mgr.expand_message(message_body, transport_type)
+        try:
+            context = await self.connection_mgr.expand_message(
+                message_body, transport_type
+            )
+        except Exception:
+            self.logger.exception("Error expanding message")
+            raise
+
         result = await self.dispatcher.dispatch(
             context, self.outbound_message_router, reply
         )
@@ -188,7 +187,7 @@ class Conductor:
         return result.serialize() if result else None
 
     async def outbound_message_router(
-        self, message: AgentMessage, target: ConnectionTarget
+        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
     ) -> None:
         """
         Route an outbound message.

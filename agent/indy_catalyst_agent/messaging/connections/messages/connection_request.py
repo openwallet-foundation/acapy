@@ -4,7 +4,7 @@ from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import CONNECTION_REQUEST
-from ....models.connection_detail import ConnectionDetail, ConnectionDetailSchema
+from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
     "indy_catalyst_agent.messaging.connections.handlers"
@@ -23,7 +23,12 @@ class ConnectionRequest(AgentMessage):
         schema_class = "ConnectionRequestSchema"
 
     def __init__(
-        self, *, connection: ConnectionDetail = None, label: str = None, **kwargs
+        self,
+        *,
+        connection: ConnectionDetail = None,
+        label: str = None,
+        image_url: str = None,
+        **kwargs
     ):
         """
         Initialize connection request object.
@@ -47,3 +52,4 @@ class ConnectionRequestSchema(AgentMessageSchema):
 
     connection = fields.Nested(ConnectionDetailSchema, required=True)
     label = fields.Str(required=True)
+    image_url = fields.Str(data_key="imageUrl", required=False, allow_none=True)

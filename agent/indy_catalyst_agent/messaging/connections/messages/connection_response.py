@@ -4,7 +4,7 @@ from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import CONNECTION_RESPONSE
-from ....models.connection_detail import ConnectionDetail, ConnectionDetailSchema
+from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
     "indy_catalyst_agent.messaging.connections.handlers."
