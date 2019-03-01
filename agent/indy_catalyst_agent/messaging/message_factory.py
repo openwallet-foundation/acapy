@@ -1,6 +1,4 @@
-"""
-Handle identification of message types and instantiation of message classes
-"""
+"""Handle identification of message types and instantiation of message classes."""
 
 from ..classloader import ClassLoader
 from ..error import BaseError
@@ -14,19 +12,18 @@ class MessageParseError(BaseError):
 
 
 class MessageFactory:
-    """
-    Message factory for deserializing message json and obtaining relevant
-    message class
-    """
+    """Message factory for deserializing messages."""
 
     def __init__(self):
+        """Initialize a MessageFactory instance."""
         self._typemap = {}
 
     def register_message_types(self, *types):
         """
         Add new supported message types.
 
-        :param *types:
+        Args:
+            *types: Message types to register
 
         """
         for typeset in types:
@@ -34,10 +31,17 @@ class MessageFactory:
 
     def resolve_message_class(self, message_type: str) -> type:
         """
+        Resolve a message_type to a message class.
+
         Given a dict describing a message, this method
         returns the corresponding registered message class.
 
-        :param message_type: str:
+        Args:
+            message_type: Message type to resolve
+
+        Returns:
+            The resolved message class
+
         """
         msg_cls = self._typemap.get(message_type)
         if isinstance(msg_cls, str):
@@ -46,10 +50,21 @@ class MessageFactory:
 
     def make_message(self, serialized_msg: dict) -> AgentMessage:
         """
+        Desererialize a message dict into a relevant message instance.
+
         Given a dict describing a message, this method
         returns an instance of the related message class.
 
-        :param serialized_msg: dict:
+        Args:
+            serialized_msg: The serialized message
+
+        Returns:
+            An instance of the corresponding message class for this message
+
+        Raises:
+            MessageParseError: If the message doesn't specify @type
+            MessageParseError: If there is no message class registered to handle
+                the given type
 
         """
 
@@ -69,4 +84,5 @@ class MessageFactory:
         return instance
 
     def __repr__(self) -> str:
+        """Return a string representation for this class."""
         return "<{}>".format(self.__class__.__name__)

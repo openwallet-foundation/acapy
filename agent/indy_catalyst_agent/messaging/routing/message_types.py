@@ -1,6 +1,4 @@
-"""
-Message type identifiers for Connections
-"""
+"""Message type identifiers for Routing."""
 
 MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/"
 

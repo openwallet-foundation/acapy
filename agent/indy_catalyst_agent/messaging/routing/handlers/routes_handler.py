@@ -1,12 +1,14 @@
+"""Handler for incoming routes messages."""
+
 from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
 from ..messages.routes import Routes
 
 
 class RoutesHandler(BaseHandler):
-    """Handler for incoming routes messages"""
+    """Handler for incoming routes messages."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """Message handler implementation"""
+        """Message handler implementation."""
         self._logger.debug("RoutesHandler called with context %s", context)
         assert isinstance(context.message, Routes)
 

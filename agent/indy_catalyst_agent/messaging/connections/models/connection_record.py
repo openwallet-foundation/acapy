@@ -1,6 +1,4 @@
-"""
-Handle connection info interface with storage
-"""
+"""Handle connection information interface with non-secrets storage."""
 
 import json
 import uuid
@@ -11,7 +9,7 @@ from ....storage.record import StorageRecord
 
 
 class ConnectionRecord:
-    """ """
+    """Represents a single connection."""
 
     RECORD_TYPE = "connection"
     RECORD_INVITATION_TYPE = "connection_invitation"
@@ -46,6 +44,7 @@ class ConnectionRecord:
         routing_state: str = None,
         error_msg: str = None,
     ):
+        """Initialize a new ConnectionRecord."""
         self._id = connection_id
         self.my_did = my_did
         self.my_router_did = my_router_did
@@ -61,25 +60,26 @@ class ConnectionRecord:
 
     @property
     def connection_id(self) -> str:
+        """Accessor for the ID associated with this connection."""
         return self._id
 
     @property
     def storage_record(self) -> StorageRecord:
-        """Accessor for a StorageRecord representing this connection"""
+        """Accessor for a `StorageRecord` representing this connection."""
         return StorageRecord(
             self.RECORD_TYPE, json.dumps(self.value), self.tags, self.connection_id
         )
 
     @property
     def value(self) -> dict:
-        """Accessor for the JSON record value generated for this connection"""
+        """Accessor for the JSON record value generated for this connection."""
         ret = self.tags
         ret.update({"error_msg": self.error_msg, "their_label": self.their_label})
         return ret
 
     @property
     def tags(self) -> dict:
-        """Accessor for the record tags generated for this connection"""
+        """Accessor for the record tags generated for this connection."""
         result = {}
         for prop in (
             "my_did",
@@ -98,7 +98,11 @@ class ConnectionRecord:
         return result
 
     async def save(self, storage: BaseStorage):
-        """Persist the connection record to storage"""
+        """Persist the connection record to storage.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
         if not self._id:
             self._id = str(uuid.uuid4())
             await storage.add_record(self.storage_record)
@@ -108,8 +112,15 @@ class ConnectionRecord:
             await storage.update_record_tags(record, record.tags)
 
     @classmethod
-    async def retrieve_by_id(cls, storage: BaseStorage, connection_id: str):
-        """Retrieve a connection record by ID"""
+    async def retrieve_by_id(
+        cls, storage: BaseStorage, connection_id: str
+    ) -> "ConnectionRecord":
+        """Retrieve a connection record by ID.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            connection_id: The ID of the connection record to find
+        """
         result = await storage.get_record(cls.RECORD_TYPE, connection_id)
         vals = json.loads(result.value)
         if result.tags:
@@ -120,7 +131,12 @@ class ConnectionRecord:
     async def retrieve_by_tag_filter(
         cls, storage: BaseStorage, tag_filter: dict
     ) -> "ConnectionRecord":
-        """Retrieve a connection record by tag filter"""
+        """Retrieve a connection record by tag filter.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            tag_filter: The filter dictionary to apply
+        """
         result = await storage.search_records(
             cls.RECORD_TYPE, tag_filter
         ).fetch_single()
@@ -136,7 +152,14 @@ class ConnectionRecord:
         my_did: str = None,
         initiator: str = None,
     ) -> "ConnectionRecord":
-        """Retrieve a connection record by target DID"""
+        """Retrieve a connection record by target DID.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            their_did: The target DID to filter by
+            my_did: One of our DIDs to filter by
+            initiator: Filter connections by the initiator value
+        """
         tag_filter = {}
         if their_did:
             tag_filter["their_did"] = their_did
@@ -150,7 +173,13 @@ class ConnectionRecord:
     async def retrieve_by_invitation_key(
         cls, storage: BaseStorage, invitation_key: str, initiator: str = None
     ) -> "ConnectionRecord":
-        """Retrieve a connection record by invitation key"""
+        """Retrieve a connection record by invitation key.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            invitation_key: The key on the originating invitation
+            initiator: Filter by the initiator value
+        """
         tag_filter = {"invitation_key": invitation_key, "state": cls.STATE_INVITATION}
         if initiator:
             tag_filter["initiator"] = initiator
@@ -158,16 +187,26 @@ class ConnectionRecord:
 
     @classmethod
     async def retrieve_by_request_id(
-        cls, storage: BaseStorage, request_id
+        cls, storage: BaseStorage, request_id: str
     ) -> "ConnectionRecord":
-        """Retrieve a connection record from our previous request ID"""
+        """Retrieve a connection record from our previous request ID.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            request_id: The ID of the originating connection request
+        """
         tag_filter = {"request_id": request_id}
         return await cls.retrieve_by_tag_filter(storage, tag_filter)
 
     async def attach_invitation(
         self, storage: BaseStorage, invitation: ConnectionInvitation
     ):
-        """Persist the related connection invitation to storage"""
+        """Persist the related connection invitation to storage.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            invitation: The invitation to relate to this connection record
+        """
         assert self.connection_id
         record = StorageRecord(
             self.RECORD_INVITATION_TYPE,
@@ -177,7 +216,11 @@ class ConnectionRecord:
         await storage.add_record(record)
 
     async def retrieve_invitation(self, storage: BaseStorage) -> ConnectionInvitation:
-        """Retrieve the related connection invitation"""
+        """Retrieve the related connection invitation.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
         assert self.connection_id
         result = await storage.search_records(
             self.RECORD_INVITATION_TYPE, {"connection_id": self.connection_id}
@@ -186,12 +229,13 @@ class ConnectionRecord:
 
     @property
     def requires_routing(self) -> bool:
-        """Accessor to check if routing actions are needed"""
+        """Accessor to check if routing actions are needed."""
         return self.routing_state in (
             self.ROUTING_STATE_REQUIRED,
             self.ROUTING_STATE_PENDING,
         )
 
     def __repr__(self) -> str:
+        """Generate a string representation of the connection record."""
         items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))

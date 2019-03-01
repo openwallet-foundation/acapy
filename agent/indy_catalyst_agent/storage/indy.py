@@ -1,6 +1,4 @@
-"""
-Indy implementation of BaseStorage interface
-"""
+"""Indy implementation of BaseStorage interface."""
 
 import json
 from typing import Mapping, Sequence
@@ -29,19 +27,30 @@ def _validate_record(record: StorageRecord):
 
 
 class IndyStorage(BaseStorage):
-    """Abstract Non-Secrets interface"""
+    """Indy Non-Secrets interface."""
 
     def __init__(self, wallet: IndyWallet):
+        """
+        Initialize a `BasicStorage` instance.
+
+        Args:
+            wallet: The indy wallet instance to use
+
+        """
         self._wallet = wallet
 
     @property
     def wallet(self) -> IndyWallet:
-        """Accessor for IndyWallet instance"""
+        """Accessor for IndyWallet instance."""
         return self._wallet
 
     async def add_record(self, record: StorageRecord):
         """
-        Add a new record to the store
+        Add a new record to the store.
+
+        Args:
+            record: `StorageRecord` to be stored
+
         """
         _validate_record(record)
         tags_json = json.dumps(record.tags) if record.tags else None
@@ -56,7 +65,21 @@ class IndyStorage(BaseStorage):
 
     async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
         """
-        Fetch a record from the store by type and ID
+        Fetch a record from the store by type and ID.
+
+        Args:
+            record_type: The record type
+            record_id: The record id
+
+        Returns:
+            A `StorageRecord` instance
+
+        Raises:
+            StorageError: If the record is not provided
+            StorageError: If the record ID not provided
+            StorageNotFoundError: If the record is not found
+            StorageError: If record not found
+
         """
         if not record_type:
             raise StorageError("Record type not provided")
@@ -83,7 +106,16 @@ class IndyStorage(BaseStorage):
 
     async def update_record_value(self, record: StorageRecord, value: str):
         """
-        Update an existing stored record's value
+        Update an existing stored record's value.
+
+        Args:
+            record: `StorageRecord` to update
+            value: The new value
+
+        Raises:
+            StorageNotFoundError: If record not found
+            StorageError: If a libindy error occurs
+
         """
         _validate_record(record)
         try:
@@ -97,7 +129,16 @@ class IndyStorage(BaseStorage):
 
     async def update_record_tags(self, record: StorageRecord, tags: Mapping):
         """
-        Update an existing stored record's tags
+        Update an existing stored record's tags.
+
+        Args:
+            record: `StorageRecord` to update
+            tags: New tags
+
+        Raises:
+            StorageNotFoundError: If record not found
+            StorageError: If a libindy error occurs
+
         """
         _validate_record(record)
         tags_json = json.dumps(tags) if tags else "{}"
@@ -114,7 +155,12 @@ class IndyStorage(BaseStorage):
         self, record: StorageRecord, tags: (Sequence, Mapping)
     ):
         """
-        Update an existing stored record's tags
+        Update an existing stored record's tags.
+
+        Args:
+            record: `StorageRecord` to delete
+            tags: Tags
+
         """
         _validate_record(record)
         if tags:
@@ -127,6 +173,17 @@ class IndyStorage(BaseStorage):
             )
 
     async def delete_record(self, record: StorageRecord):
+        """
+        Delete a record.
+
+        Args:
+            record: `StorageRecord` to delete
+
+        Raises:
+            StorageNotFoundError: If record not found
+            StorageError: If a libindy error occurs
+
+        """
         _validate_record(record)
         try:
             await non_secrets.delete_wallet_record(
@@ -140,10 +197,24 @@ class IndyStorage(BaseStorage):
     def search_records(
         self, type_filter: str, tag_query: Mapping = None, page_size: int = None
     ) -> "IndyStorageRecordSearch":
+        """
+        Search stored records.
+
+        Args:
+            type_filter: Filter string
+            tag_query: Tags to query
+            page_size: Page size
+
+        Returns:
+            An instance of `BaseStorageRecordSearch`
+
+        """
         return IndyStorageRecordSearch(self, type_filter, tag_query, page_size)
 
 
 class IndyStorageRecordSearch(BaseStorageRecordSearch):
+    """Represent an active stored records search."""
+
     def __init__(
         self,
         store: IndyStorage,
@@ -151,6 +222,16 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         tag_query: Mapping,
         page_size: int = None,
     ):
+        """
+        Initialize a `IndyStorageRecordSearch` instance.
+
+        Args:
+            store: `BaseStorage` to search
+            type_filter: Filter string
+            tag_query: Tags to search
+            page_size: Size of page to return
+
+        """
         super(IndyStorageRecordSearch, self).__init__(
             store, type_filter, tag_query, page_size
         )
@@ -158,16 +239,39 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
 
     @property
     def opened(self) -> bool:
-        """Accessor for open state"""
+        """
+        Accessor for open state.
+
+        Returns:
+            True if opened, else False
+
+        """
         return self._handle is not None
 
     @property
     def handle(self):
+        """
+        Accessor for search handle.
+
+        Returns:
+            The handle
+
+        """
         return self._handle
 
     async def fetch(self, max_count: int) -> Sequence[StorageRecord]:
         """
-        Fetch the next list of results from the store
+        Fetch the next list of results from the store.
+
+        Args:
+            max_count: Max number of records to return
+
+        Returns:
+            A list of `StorageRecord`s
+
+        Raises:
+            StorageSearchError: If the search query has not been opened
+
         """
         if not self.opened:
             raise StorageSearchError("Search query has not been opened")
@@ -189,9 +293,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         return ret
 
     async def open(self):
-        """
-        Start the search query
-        """
+        """Start the search query."""
         query_json = json.dumps(self.tag_query or {})
         options_json = json.dumps(
             {
@@ -207,9 +309,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         )
 
     async def close(self):
-        """
-        Dispose of the search query
-        """
+        """Dispose of the search query."""
         if self._handle:
             await non_secrets.close_wallet_search(self._handle)
             self._handle = None

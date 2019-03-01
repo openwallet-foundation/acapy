@@ -1,6 +1,4 @@
-"""
-Cryptography functions used by BasicWallet
-"""
+"""Cryptography functions used by BasicWallet."""
 
 from collections import OrderedDict
 import json
@@ -15,6 +13,8 @@ from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes
 
 
 class PackMessageSchema(Schema):
+    """Packed message schema."""
+
     protected = fields.Str(required=True)
     iv = fields.Str(required=True)
     tag = fields.Str(required=True)
@@ -22,17 +22,23 @@ class PackMessageSchema(Schema):
 
 
 class PackRecipientHeaderSchema(Schema):
+    """Packed recipient header schema."""
+
     kid = fields.Str(required=True)
     sender = fields.Str(required=False, allow_none=True)
     iv = fields.Str(required=False, allow_none=True)
 
 
 class PackRecipientSchema(Schema):
+    """Packed recipient schema."""
+
     encrypted_key = fields.Str(required=True)
     header = fields.Nested(PackRecipientHeaderSchema(), required=True)
 
 
 class PackRecipientsSchema(Schema):
+    """Packed recipients schema."""
+
     enc = fields.Constant("xchacha20poly1305_ietf", required=True)
     typ = fields.Constant("JWM/1.0", required=True)
     alg = fields.Str(required=True)
@@ -40,7 +46,16 @@ class PackRecipientsSchema(Schema):
 
 
 def create_keypair(seed: bytes = None) -> (bytes, bytes):
-    """Create a public and private signing keypair from a seed value"""
+    """
+    Create a public and private signing keypair from a seed value.
+
+    Args:
+        seed: Seed for keypair
+
+    Returns:
+        A tuple of (public key, secret key)
+
+    """
     if not seed:
         seed = random_seed()
     pk, sk = pysodium.crypto_sign_seed_keypair(seed)
@@ -48,12 +63,27 @@ def create_keypair(seed: bytes = None) -> (bytes, bytes):
 
 
 def random_seed() -> bytes:
-    """Generate a random seed value"""
+    """
+    Generate a random seed value.
+
+    Returns:
+        A new random seed
+
+    """
     return pysodium.randombytes(pysodium.crypto_secretbox_KEYBYTES)
 
 
 def validate_seed(seed: (str, bytes)) -> bytes:
-    """Convert a seed parameter to standard format and check length"""
+    """
+    Convert a seed parameter to standard format and check length.
+
+    Args:
+        seed: The seed to validate
+
+    Returns:
+        The validated and encoded seed
+
+    """
     if not seed:
         return None
     if isinstance(seed, str):
@@ -69,14 +99,34 @@ def validate_seed(seed: (str, bytes)) -> bytes:
 
 
 def sign_message(message: bytes, secret: bytes) -> bytes:
-    """Sign a message using a private signing key"""
+    """
+    Sign a message using a private signing key.
+
+    Args:
+        message: The message to sign
+        secret: The private signing key
+
+    Returns:
+        The signature
+
+    """
     result = pysodium.crypto_sign(message, secret)
     sig = result[: pysodium.crypto_sign_BYTES]
     return sig
 
 
 def verify_signed_message(signed: bytes, verkey: bytes) -> bool:
-    """Verify a signed message according to a public verification key"""
+    """
+    Verify a signed message according to a public verification key.
+
+    Args:
+        signed: The signed message
+        verkey: The verkey to use in verification
+
+    Returns:
+        True if verified, else False
+
+    """
     try:
         pysodium.crypto_sign_open(signed, verkey)
     except ValueError:
@@ -85,14 +135,34 @@ def verify_signed_message(signed: bytes, verkey: bytes) -> bool:
 
 
 def anon_crypt_message(message: bytes, to_verkey: bytes) -> bytes:
-    """Apply anon_crypt to a binary message"""
+    """
+    Apply anon_crypt to a binary message.
+
+    Args:
+        message: The message to encrypt
+        to_verkey: The verkey to encrypt the message for
+
+    Returns:
+        The anon encrypted message
+
+    """
     pk = pysodium.crypto_sign_pk_to_box_pk(to_verkey)
     enc_message = pysodium.crypto_box_seal(message, pk)
     return enc_message
 
 
 def anon_decrypt_message(enc_message: bytes, secret: bytes) -> bytes:
-    """Apply anon_decrypt to a binary message"""
+    """
+    Apply anon_decrypt to a binary message.
+
+    Args:
+        enc_message: The encrypted message
+        secret: The seed to use
+
+    Returns:
+        The decrypted message
+
+    """
     sign_pk, sign_sk = create_keypair(secret)
     pk = pysodium.crypto_sign_pk_to_box_pk(sign_pk)
     sk = pysodium.crypto_sign_sk_to_box_sk(sign_sk)
@@ -102,7 +172,18 @@ def anon_decrypt_message(enc_message: bytes, secret: bytes) -> bytes:
 
 
 def auth_crypt_message(message: bytes, to_verkey: bytes, from_secret: bytes) -> bytes:
-    """Apply auth_crypt to a binary message"""
+    """
+    Apply auth_crypt to a binary message.
+
+    Args:
+        message: The message to encrypt
+        to_verkey: To recipient's verkey
+        from_secret: The seed to use
+
+    Returns:
+        The encrypted message
+
+    """
     nonce = pysodium.randombytes(pysodium.crypto_box_NONCEBYTES)
     target_pk = pysodium.crypto_sign_pk_to_box_pk(to_verkey)
     sender_pk, sender_sk = create_keypair(from_secret)
@@ -121,7 +202,17 @@ def auth_crypt_message(message: bytes, to_verkey: bytes, from_secret: bytes) -> 
 
 
 def auth_decrypt_message(enc_message: bytes, secret: bytes) -> (bytes, str):
-    """Apply auth_decrypt to a binary message"""
+    """
+    Apply auth_decrypt to a binary message.
+
+    Args:
+        enc_message: The encrypted message
+        secret: Secret for signing keys
+
+    Returns:
+        A tuple of (decrypted message, sender verkey)
+
+    """
     sign_pk, sign_sk = create_keypair(secret)
     pk = pysodium.crypto_sign_pk_to_box_pk(sign_pk)
     sk = pysodium.crypto_sign_sk_to_box_sk(sign_sk)
@@ -139,7 +230,17 @@ def auth_decrypt_message(enc_message: bytes, secret: bytes) -> (bytes, str):
 def prepare_pack_recipient_keys(
     to_verkeys: Sequence[bytes], from_secret: bytes = None
 ) -> (str, bytes):
-    """Assemble the recipients block of a packed message"""
+    """
+    Assemble the recipients block of a packed message.
+
+    Args:
+        to_verkeys: Verkeys of recipients
+        from_secret: Secret to use for signing keys
+
+    Returns:
+        A tuple of (json result, key)
+
+    """
     cek = pysodium.crypto_secretstream_xchacha20poly1305_keygen()
     recips = []
 
@@ -201,8 +302,21 @@ def locate_pack_recipient_key(
     recipients: Sequence[dict], find_key: Callable
 ) -> (bytes, str, str):
     """
+    Locate pack recipient key.
+
     Decode the encryption key and sender verification key from a
-    corresponding recipient block, if any is defined
+    corresponding recipient block, if any is defined.
+
+    Args:
+        recipients: Recipients to locate
+        find_key: Function used to find private key
+
+    Returns:
+        A tuple of (cek, sender_vk, recip_vk_b58)
+
+    Raises:
+        ValueError: If no corresponding recipient key found
+
     """
     not_found = []
     for recip in recipients:
@@ -241,7 +355,16 @@ def encrypt_plaintext(
     message: str, add_data: bytes, key: bytes
 ) -> (bytes, bytes, bytes):
     """
-    Encrypt the payload of a packed message
+    Encrypt the payload of a packed message.
+
+    Args:
+        message: Message to encrypt
+        add_data:
+        key: Key used for encryption
+
+    Returns:
+        A tuple of (ciphertext, nonce, tag)
+
     """
     nonce = pysodium.randombytes(pysodium.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
     message_bin = message.encode("ascii")
@@ -257,7 +380,19 @@ def encrypt_plaintext(
 def decrypt_plaintext(
     ciphertext: bytes, recips_bin: bytes, nonce: bytes, key: bytes
 ) -> str:
-    """Decrypt the payload of a packed message"""
+    """
+    Decrypt the payload of a packed message.
+
+    Args:
+        ciphertext:
+        recips_bin:
+        nonce:
+        key:
+
+    Returns:
+        The decrypted string
+
+    """
     output = pysodium.crypto_aead_chacha20poly1305_ietf_decrypt(
         ciphertext, recips_bin, nonce, key
     )
@@ -268,7 +403,16 @@ def encode_pack_message(
     message: str, to_verkeys: Sequence[bytes], from_secret: bytes = None
 ) -> bytes:
     """
-    Assemble a packed message for a set of recipients, optionally including the sender
+    Assemble a packed message for a set of recipients, optionally including the sender.
+
+    Args:
+        message: The message to pack
+        to_verkeys: The verkeys to pack the message for
+        from_secret: The sender secret
+
+    Returns:
+        The encoded message
+
     """
     recips_json, cek = prepare_pack_recipient_keys(to_verkeys, from_secret)
     recips_b64 = bytes_to_b64(recips_json.encode("ascii"), urlsafe=True)
@@ -290,8 +434,25 @@ def decode_pack_message(
     enc_message: bytes, find_key: Callable
 ) -> (str, Optional[str], str):
     """
+    Decode a packed message.
+
     Disassemble and unencrypt a packed message, returning the message content,
-    verification key of the sender (if available), and verification key of the recipient
+    verification key of the sender (if available), and verification key of the
+    recipient.
+
+    Args:
+        enc_message: The encrypted message
+        find_key: Function to retrieve private key
+
+    Returns:
+        A tuple of (message, sender_vk, recip_vk)
+
+    Raises:
+        ValueError: If the packed message is invalid
+        ValueError: If the packed message reipients are invalid
+        ValueError: If the pack algorithm is unsupported
+        ValueError: If the sender's public key was not provided
+
     """
     try:
         wrapper = PackMessageSchema().loads(enc_message)

@@ -1,5 +1,4 @@
-"""The localization decorator (~l10n) for message localization information
-"""
+"""The localization decorator (~l10n) for message localization information."""
 
 from typing import Sequence
 
@@ -12,6 +11,8 @@ class LocalizationDecorator(BaseModel):
     """Class representing the localization decorator."""
 
     class Meta:
+        """LocalizationDecorator metadata."""
+
         schema_class = "LocalizationDecoratorSchema"
 
     def __init__(
@@ -21,6 +22,15 @@ class LocalizationDecorator(BaseModel):
         localizable: Sequence[str] = None,
         catalogs: Sequence[str] = None,
     ):
+        """
+        Initialize a TimingDecorator instance.
+
+        Args:
+            locale: The locale of this message
+            localizable: The fields which may be localized
+            catalogs: A list of URLs for localization resources
+
+        """
         super(LocalizationDecorator, self).__init__()
         self.locale = locale
         self.localizable = list(localizable) if localizable else []
@@ -28,9 +38,11 @@ class LocalizationDecorator(BaseModel):
 
 
 class LocalizationDecoratorSchema(BaseModelSchema):
-    """Localization decorator schema used in serialization/deserialization"""
+    """Localization decorator schema used in serialization/deserialization."""
 
     class Meta:
+        """LocalizationDecoratorSchema metadata."""
+
         model_class = LocalizationDecorator
 
     locale = fields.Str(required=True)

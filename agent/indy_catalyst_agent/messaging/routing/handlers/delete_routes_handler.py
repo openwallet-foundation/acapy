@@ -1,3 +1,5 @@
+"""Handler for incoming delete_routes messages."""
+
 from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
 from ..manager import RoutingManager
 from ..messages.delete_routes import DeleteRoutes
@@ -5,10 +7,10 @@ from ..messages.routes import Routes
 
 
 class DeleteRoutesHandler(BaseHandler):
-    """Handler for incoming delete_routes messages"""
+    """Handler for incoming delete_routes messages."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """Message handler implementation"""
+        """Message handler implementation."""
         self._logger.debug("DeleteRoutesHandler called with context %s", context)
         assert isinstance(context.message, DeleteRoutes)
 

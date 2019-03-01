@@ -1,6 +1,4 @@
-"""
-Connection management
-"""
+"""Classes to manage connections."""
 
 import aiohttp
 import json
@@ -42,11 +40,17 @@ class ConnectionManager:
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, context: RequestContext):
+        """
+        Initialize a ConnectionManager.
+
+        Args:
+            context: The context for this connection
+        """
         self._context = context
         self._logger = logging.getLogger(__name__)
 
     def _log_state(self, msg: str, params: dict = None):
-        """Print a message with increased visibility (for testing)"""
+        """Print a message with increased visibility (for testing)."""
         print(f"{msg}")
         if params:
             for k, v in params.items():
@@ -55,7 +59,13 @@ class ConnectionManager:
 
     @property
     def context(self) -> RequestContext:
-        """Accessor for the current request context"""
+        """
+        Accessor for the current request context.
+
+        Returns:
+            The request context for this connection
+
+        """
         return self._context
 
     async def create_invitation(
@@ -67,26 +77,40 @@ class ConnectionManager:
     ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
+
         This interaction represents an out-of-band communication channel. In the future
         and in practice, these sort of invitations will be received over any number of
         channels such as SMS, Email, QR Code, NFC, etc.
 
         Structure of an invite message:
+        ```json
         {
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
             "label": "Alice",
             "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
-        }
+        }```
 
         Or, in the case of a peer DID:
+        ```json
         {
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
             "label": "Alice",
             "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
             "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
             "serviceEndpoint": "https://example.com/endpoint"
-        }
+        }```
+
         Currently, only peer DID is supported.
+
+        Args:
+            label: Label for this connection
+            my_endpoint: Endpoint where other party can reach me
+            seed: Seed for key
+            metadata: Metadata for key
+
+        Returns:
+            A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
+
         """
         self._log_state("Creating invitation")
 
@@ -127,7 +151,11 @@ class ConnectionManager:
 
     async def send_invitation(self, invitation: ConnectionInvitation, endpoint: str):
         """
-        Deliver an invitation to an HTTP endpoint (for testing)
+        Deliver an invitation to an HTTP endpoint.
+
+        Args:
+            invitation: The `ConnectionInvitation` to send
+            endpoint: Endpoint to send this invitation to
         """
         self._log_state("Sending invitation", {"endpoint": endpoint})
         invite_json = invitation.to_json()
@@ -141,7 +169,18 @@ class ConnectionManager:
         their_role: str = None,
         my_router_did: str = None,
     ) -> ConnectionRecord:
-        """Create a new connection record to track an incoming invitation"""
+        """
+        Create a new connection record to track a received invitation.
+
+        Args:
+            invitation: The `ConnectionInvitation` to accept
+            their_role: The role assigned to this connection
+            my_router_did: The DID of the router connection to use
+
+        Returns:
+            The new `ConnectionRecord` instance
+
+        """
         self._log_state(
             "Receiving invitation", {"invitation": invitation, "role": their_role}
         )
@@ -186,8 +225,18 @@ class ConnectionManager:
         my_label: str = None,
         my_endpoint: str = None,
     ) -> ConnectionRequest:
-        """Create a connection request for an existing connection
-        (from an incoming invitation)"""
+        """
+        Create a new connection request for a previously-received invitation.
+
+        Args:
+            connection: The `ConnectionRecord` representing the invitation to accept
+            my_label: My label
+            my_endpoint: My endpoint
+
+        Returns:
+            A new `ConnectionRequest` message to send to the other agent
+
+        """
         if connection.my_did:
             my_info = await self.context.wallet.get_local_did(connection.my_did)
         else:
@@ -219,7 +268,19 @@ class ConnectionManager:
         my_router_did: str = None,
         their_role: str = None,
     ) -> Tuple[ConnectionRecord, ConnectionResponse]:
-        """Create a connection response for a received connection request."""
+        """
+        Create a connection response for a received connection request.
+
+        Args:
+            request: The `ConnectionRequest` to accept
+            my_endpoint: The endpoint I can be reached at
+            my_router_did: The DID of my router connection to use
+            their_role: The role to assign to this connection
+
+        Returns:
+            A tuple of the updated `ConnectionRecord` new `ConnectionResponse` message
+
+        """
         self._log_state("Creating response", {"request": request})
 
         connection = None
@@ -311,8 +372,23 @@ class ConnectionManager:
 
     async def accept_response(self, response: ConnectionResponse) -> ConnectionRecord:
         """
+        Accept a connection response.
+
         Process a ConnectionResponse message by looking up
-        the connection request and setting up the pairwise connection
+        the connection request and setting up the pairwise connection.
+
+        Args:
+            response: The `ConnectionResponse` to accept
+
+        Returns:
+            The updated `ConnectionRecord` representing the connection
+
+        Raises:
+            ConnectionManagerError: If there is no DID associated with the
+                connection response
+            ConnectionManagerError: If the corresponding connection is not
+                at the request or response stage
+
         """
 
         connection = None
@@ -369,7 +445,19 @@ class ConnectionManager:
         my_verkey: str = None,
         auto_complete=False,
     ) -> ConnectionRecord:
-        """Look up existing connection information for a sender verkey"""
+        """
+        Look up existing connection information for a sender verkey.
+
+        Args:
+            their_did: Their DID
+            my_did: My DID
+            my_verkey: My verkey
+            auto_complete: Should this connection automatically be promoted to active
+
+        Returns:
+            The found `ConnectionRecord`
+
+        """
         # self._log_state(
         #    "Finding connection",
         #    {"their_did": their_did, "my_did": my_did, "my_verkey": my_verkey},
@@ -406,7 +494,19 @@ class ConnectionManager:
         self, message_body: Union[str, bytes], transport_type: str
     ) -> RequestContext:
         """
-        Deserialize an incoming message and further populate the request context
+        Deserialize an incoming message and further populate the request context.
+
+        message_body: The body of the message
+        transport_type: The transport the message was received on
+
+        Returns:
+            The `RequestContext` of the expanded message
+
+        Raises:
+            MessageParseError: If there is no message factory defined
+            MessageParseError: If there is no wallet defined
+            MessageParseError: If the JSON parsing failed
+
         """
         if not self.context.message_factory:
             raise MessageParseError("Message factory not defined")
@@ -480,7 +580,15 @@ class ConnectionManager:
         self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
     ) -> Union[str, bytes]:
         """
-        Serialize an outgoing message for transport
+        Serialize an outgoing message for transport.
+
+        Args:
+            message: The `AgentMessage` to compact, or a pre-packed string or bytes
+            target: The `ConnectionTarget` you are compacting for
+
+        Returns:
+            The compacted message
+
         """
         if isinstance(message, AgentMessage):
             message_json = message.to_json()
@@ -503,7 +611,17 @@ class ConnectionManager:
     async def create_did_document(
         self, my_info: DIDInfo, my_router_did: str = None, my_endpoint: str = None
     ) -> DIDDoc:
-        """Create our DID document for a given DID"""
+        """Create our DID document for a given DID.
+
+        Args:
+            my_info: The DID I am using in this connection
+            my_router_did: The DID of the router connection to use
+            my_endpoint: A custom endpoint for the DID Document
+
+        Returns:
+            The prepared `DIDDoc` instance
+
+        """
 
         did_doc = DIDDoc(did=my_info.did)
         did_controller = my_info.did
@@ -526,14 +644,22 @@ class ConnectionManager:
         return did_doc
 
     async def fetch_did_document(self, did: str) -> DIDDoc:
-        """Retrieve a DID Document for a given DID"""
+        """Retrieve a DID Document for a given DID.
+
+        Args:
+            did: The DID to search for
+        """
         record = await self.context.storage.search_records(
             self.RECORD_TYPE_DID_DOC, {"did": did}
         ).fetch_single()
         return DIDDoc.from_json(record.value)
 
     async def store_did_document(self, did_doc: DIDDoc):
-        """Store a DID document """
+        """Store a DID document.
+
+        Args:
+            did_doc: The `DIDDoc` instance to be persisted
+        """
         assert did_doc.did
         try:
             record = await self.fetch_did_document(did_doc.did)
@@ -550,19 +676,32 @@ class ConnectionManager:
                 await self.add_key_for_did(did_doc.did, key.value)
 
     async def add_key_for_did(self, did: str, key: str):
-        """Store a verkey for lookup against a DID"""
+        """Store a verkey for lookup against a DID.
+
+        Args:
+            did: The DID to associate with this key
+            key: The verkey to be added
+        """
         record = StorageRecord(self.RECORD_TYPE_DID_KEY, None, {"did": did, "key": key})
         await self.context.storage.add_record(record)
 
     async def find_did_for_key(self, key: str) -> str:
-        """Find the DID previously associated with a key"""
+        """Find the DID previously associated with a key.
+
+        Args:
+            key: The verkey to look up
+        """
         record = await self.context.storage.search_records(
             self.RECORD_TYPE_DID_KEY, {"key": key}
         ).fetch_single()
         return record.tags["did"]
 
     async def remove_keys_for_did(self, did: str):
-        """Remove all keys associated with a DID"""
+        """Remove all keys associated with a DID.
+
+        Args:
+            did: The DID to remove keys for
+        """
         keys = await self.context.storage.search_records(
             self.RECORD_TYPE_DID_KEY, {"did": did}
         ).fetch_all()
@@ -572,8 +711,12 @@ class ConnectionManager:
     async def get_connection_target(
         self, connection: ConnectionRecord
     ) -> ConnectionTarget:
-        """Create a connection target based on the DIDDoc associated with a
-        connection"""
+        """Create a connection target from a `ConnectionRecord`.
+
+        Args:
+            connection: The connection record (with associated `DIDDoc`)
+                used to generate the connection target
+        """
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
             return None

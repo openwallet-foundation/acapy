@@ -1,3 +1,5 @@
+"""Sane defaults for known message definitions."""
+
 from .messaging.message_factory import MessageFactory
 from .messaging.message_types import MessageTypes
 
@@ -33,7 +35,7 @@ PROOF_MESSAGES = {
 
 
 def default_message_factory() -> MessageFactory:
-    """ """
+    """Message factory for default message types."""
     factory = MessageFactory()
 
     factory.register_message_types(

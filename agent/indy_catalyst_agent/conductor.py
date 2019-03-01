@@ -1,7 +1,11 @@
 """
+The Conductor.
+
 The conductor is responsible for coordinating messages that are received
 over the network, communicating with the ledger, passing messages to handlers,
-and storing data in the wallet.
+instantiating concrete implementations of required modules and storing data in the
+wallet.
+
 """
 
 import logging
@@ -29,6 +33,8 @@ class ConductorError(BaseError):
 
 class Conductor:
     """
+    Conductor class.
+
     Class responsible for initalizing concrete implementations
     of our require interfaces and routing inbound and outbound message data.
     """
@@ -49,6 +55,16 @@ class Conductor:
         message_factory: MessageFactory,
         settings: dict,
     ) -> None:
+        """
+        Initialize an instance of Conductor.
+
+        Args:
+            transport_configs: Configuration for inbound transport
+            outbound_transports: Configuration for outbound transport
+            message_factory: Message factory for discovering and deserializing messages
+            settings: Dictionary of various settings
+
+        """
         self.context = None
         self.connection_mgr = None
         self.logger = logging.getLogger(__name__)
@@ -147,7 +163,13 @@ class Conductor:
         reply: Coroutine = None,
     ):
         """
-        Routes inbound messages.
+        Route inbound messages.
+
+        Args:
+            message_body: Body of the incoming message
+            transport_type: Type of transport this message came from
+            reply: Function to reply to this message
+
         """
         try:
             context = await self.connection_mgr.expand_message(
@@ -167,5 +189,12 @@ class Conductor:
     async def outbound_message_router(
         self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
     ) -> None:
+        """
+        Route an outbound message.
+
+        Args:
+            message: An agent message to be sent
+            target: Target to send message to
+        """
         payload = await self.connection_mgr.compact_message(message, target)
         await self.outbound_transport_manager.send_message(payload, target.endpoint)

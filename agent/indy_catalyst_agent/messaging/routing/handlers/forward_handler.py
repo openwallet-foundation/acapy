@@ -1,3 +1,5 @@
+"""Handler for incoming forward messages."""
+
 from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
 from ..messages.forward import Forward
 from ....connection import ConnectionManager, ConnectionManagerError
@@ -5,10 +7,10 @@ from ..manager import RoutingManager, RoutingManagerError
 
 
 class ForwardHandler(BaseHandler):
-    """Handler for incoming forward messages"""
+    """Handler for incoming forward messages."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """Message handler implementation"""
+        """Message handler implementation."""
         self._logger.debug("ForwardHandler called with context %s", context)
         assert isinstance(context.message, Forward)
 

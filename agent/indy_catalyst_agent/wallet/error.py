@@ -1,17 +1,15 @@
-"""
-Wallet-related exceptions
-"""
+"""Wallet-related exceptions."""
 
 from ..error import BaseError
 
 
 class WalletError(BaseError):
-    """General wallet exception"""
+    """General wallet exception."""
 
 
 class WalletNotFoundError(WalletError):
-    """Record not found exception"""
+    """Record not found exception."""
 
 
 class WalletDuplicateError(WalletError):
-    """Duplicate record exception"""
+    """Duplicate record exception."""
