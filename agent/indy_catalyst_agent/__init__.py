@@ -89,6 +89,14 @@ PARSER.add_argument(
     help="Specify the wallet implementation to use",
 )
 
+PARSER.add_argument(
+    "--admin",
+    type=str,
+    nargs=2,
+    metavar=("<host>", "<port>"),
+    help="Enable the administration API on a given host and port",
+)
+
 PARSER.add_argument("--debug", action="store_true", help="Enable debugging features")
 
 PARSER.add_argument(
@@ -153,6 +161,11 @@ def main():
         settings["wallet.name"] = args.wallet_name
     if args.wallet_type:
         settings["wallet.type"] = args.wallet_type
+
+    if args.admin:
+        settings["admin.enabled"] = True
+        settings["admin.host"] = args.admin[0]
+        settings["admin.port"] = args.admin[1]
 
     if args.debug:
         settings["debug.enabled"] = True

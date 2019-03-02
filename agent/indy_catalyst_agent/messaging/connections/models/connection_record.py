@@ -3,13 +3,23 @@
 import json
 import uuid
 
+from typing import Sequence
+
+from marshmallow import fields
+
 from ..messages.connection_invitation import ConnectionInvitation
+from ....models.base import BaseModel, BaseModelSchema
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
 
 
-class ConnectionRecord:
+class ConnectionRecord(BaseModel):
     """Represents a single connection."""
+
+    class Meta:
+        """ConnectionRecord metadata."""
+
+        schema_class = "ConnectionRecordSchema"
 
     RECORD_TYPE = "connection"
     RECORD_INVITATION_TYPE = "connection_invitation"
@@ -31,6 +41,7 @@ class ConnectionRecord:
 
     def __init__(
         self,
+        *,
         connection_id: str = None,
         my_did: str = None,
         my_router_did: str = None,
@@ -198,6 +209,23 @@ class ConnectionRecord:
         tag_filter = {"request_id": request_id}
         return await cls.retrieve_by_tag_filter(storage, tag_filter)
 
+    @classmethod
+    async def query(
+        cls, storage: BaseStorage, tag_filter: dict = None
+    ) -> Sequence["ConnectionRecord"]:
+        """Query existing connection records.
+
+        Args:
+            tag_filter: An optional dictionary of tag filter clauses
+        """
+        found = await storage.search_records(cls.RECORD_TYPE, tag_filter).fetch_all()
+        result = []
+        for record in found:
+            vals = json.loads(record.value)
+            vals.update(record.tags)
+            result.append(ConnectionRecord(connection_id=record.id, **vals))
+        return result
+
     async def attach_invitation(
         self, storage: BaseStorage, invitation: ConnectionInvitation
     ):
@@ -235,7 +263,22 @@ class ConnectionRecord:
             self.ROUTING_STATE_PENDING,
         )
 
-    def __repr__(self) -> str:
-        """Generate a string representation of the connection record."""
-        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
-        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
+
+class ConnectionRecordSchema(BaseModelSchema):
+    class Meta:
+        """ConnectionRecordSchema metadata."""
+
+        model_class = ConnectionRecord
+
+    connection_id = fields.Str(required=False)
+    my_did = fields.Str(required=False)
+    my_router_did = fields.Str(required=False)
+    their_did = fields.Str(required=False)
+    their_label = fields.Str(required=False)
+    their_role = fields.Str(required=False)
+    initiator = fields.Str(required=False)
+    invitation_key = fields.Str(required=False)
+    request_id = fields.Str(required=False)
+    state = fields.Str(required=False)
+    routing_state = fields.Str(required=False)
+    error_msg = fields.Str(required=False)
