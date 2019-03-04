@@ -130,7 +130,9 @@ class Conductor:
             try:
                 admin_host = self.settings.get("admin.host", "0.0.0.0")
                 admin_port = self.settings.get("admin.port", "80")
-                self.admin_server = AdminServer(admin_host, admin_port, context)
+                self.admin_server = AdminServer(
+                    admin_host, admin_port, context, self.outbound_message_router
+                )
                 await self.admin_server.start()
             except Exception:
                 self.logger.exception("Unable to start administration API")

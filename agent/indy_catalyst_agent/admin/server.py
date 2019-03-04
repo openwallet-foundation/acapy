@@ -1,6 +1,7 @@
 """Admin server classes."""
 
 import logging
+from typing import Coroutine
 
 from aiohttp import web
 from aiohttp_apispec import docs, response_schema, setup_aiohttp_apispec
@@ -30,7 +31,13 @@ class AdminStatusSchema(Schema):
 class AdminServer:
     """Admin HTTP server class."""
 
-    def __init__(self, host: str, port: int, context: RequestContext):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        context: RequestContext,
+        outbound_message_router: Coroutine,
+    ):
         """
         Initialize an AdminServer instance.
 
@@ -45,6 +52,7 @@ class AdminServer:
         self.port = port
         self.logger = logging.getLogger(__name__)
         self.loaded_modules = []
+        self.outbound_message_router = outbound_message_router
         self.site = None
 
     async def start(self) -> None:
@@ -57,6 +65,7 @@ class AdminServer:
         """
         self.app = web.Application(debug=True)
         self.app["request_context"] = self.context
+        self.app["outbound_message_router"] = self.outbound_message_router
         self.app.add_routes(
             [
                 web.get("/", self.redirect_handler),
