@@ -12,6 +12,7 @@ import logging
 
 from typing import Coroutine, Union
 
+from .admin.server import AdminServer
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
 from .error import BaseError
@@ -65,6 +66,7 @@ class Conductor:
             settings: Dictionary of various settings
 
         """
+        self.admin_server = None
         self.context = None
         self.connection_mgr = None
         self.logger = logging.getLogger(__name__)
@@ -123,10 +125,21 @@ class Conductor:
 
         await self.outbound_transport_manager.start_all()
 
+        # Admin API
+        if self.settings.get("admin.enabled"):
+            try:
+                admin_host = self.settings.get("admin.host", "0.0.0.0")
+                admin_port = self.settings.get("admin.port", "80")
+                self.admin_server = AdminServer(admin_host, admin_port, context)
+                await self.admin_server.start()
+            except Exception:
+                self.logger.exception("Unable to start administration API")
+
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
             self.inbound_transport_manager.transports,
             self.outbound_transport_manager.registered_transports,
+            self.admin_server,
         )
 
         # Debug settings

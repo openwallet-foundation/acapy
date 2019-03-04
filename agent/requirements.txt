@@ -1,4 +1,6 @@
-aiohttp==3.5.4
+aiohttp~=3.5.4
+aiohttp-apispec~=1.0.2
+aiohttp-swagger~=1.0.5
 base58
 marshmallow==3.0.0rc3
 msgpack>=0.6.1<0.7

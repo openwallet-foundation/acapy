@@ -38,6 +38,7 @@ class LoggingConfigurator:
         cls,
         inbound_transports,
         outbound_transports,
+        admin_server=None,
         banner_length=40,
         border_character=":",
     ):
@@ -102,6 +103,19 @@ class LoggingConfigurator:
         version_string = f"ver: {__version__}"
         version_string_spacer = " " * (banner_length - len(version_string))
 
+        admin_subtitle_string = "Administration API:"
+        admin_subtitle_spacer = " " * (banner_length - len(admin_subtitle_string))
+
+        admin_strings = []
+        if admin_server:
+            host_port_string = f"  - http://{admin_server.host}:{admin_server.port}"
+            host_port_spacer = " " * (banner_length - len(host_port_string))
+            admin_strings.append((host_port_string, host_port_spacer))
+        else:
+            disabled_string = "  - not enabled"
+            disabled_spacer = " " * (banner_length - len(disabled_string))
+            admin_strings.append((disabled_string, disabled_spacer))
+
         print()
         print(f"{banner_border}")
         print(lr_pad(f"{banner_title_string}{banner_title_spacer}"))
@@ -117,7 +131,6 @@ class LoggingConfigurator:
         for transport_string in inbound_transport_strings:
             print(lr_pad(f"{transport_string[0]}{transport_string[1]}"))
         print(f"{banner_spacer}")
-        print(f"{banner_spacer}")
         print(
             lr_pad(
                 str(outbound_transports_subtitle_string)
@@ -127,6 +140,11 @@ class LoggingConfigurator:
         print(f"{banner_spacer}")
         for transport_string in outbound_transport_strings:
             print(lr_pad(f"{transport_string[0]}{transport_string[1]}"))
+        print(f"{banner_spacer}")
+        print(lr_pad(str(admin_subtitle_string) + str(admin_subtitle_spacer)))
+        print(f"{banner_spacer}")
+        for admin_string in admin_strings:
+            print(lr_pad(f"{admin_string[0]}{admin_string[1]}"))
         print(f"{banner_spacer}")
         print(lr_pad(f"{version_string_spacer}{version_string}"))
         print(f"{banner_border}")
