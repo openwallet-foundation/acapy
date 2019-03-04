@@ -59,6 +59,7 @@ class AdminServer:
         self.app["request_context"] = self.context
         self.app.add_routes(
             [
+                web.get("/", self.redirect_handler),
                 web.get("/modules", self.modules_handler),
                 web.get("/status", self.status_handler),
             ]
@@ -117,3 +118,7 @@ class AdminServer:
 
         """
         return web.json_response({})
+
+    async def redirect_handler(self, request: web.BaseRequest):
+        """Perform redirect to documentation."""
+        return web.HTTPFound("/api/doc")
