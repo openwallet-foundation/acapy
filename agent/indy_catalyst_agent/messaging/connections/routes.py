@@ -9,6 +9,8 @@ from .models.connection_record import ConnectionRecord, ConnectionRecordSchema
 
 
 class ConnectionListSchema(Schema):
+    """Result schema for connection list."""
+
     results = fields.List(fields.Nested(ConnectionRecordSchema()))
 
 

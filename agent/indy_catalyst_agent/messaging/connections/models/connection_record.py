@@ -265,6 +265,8 @@ class ConnectionRecord(BaseModel):
 
 
 class ConnectionRecordSchema(BaseModelSchema):
+    """Schema to allow serialization/deserialization of connection records."""
+
     class Meta:
         """ConnectionRecordSchema metadata."""
 
