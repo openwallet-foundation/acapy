@@ -173,7 +173,7 @@ class ConnectionManager:
         Create a new connection record to track a received invitation.
 
         Args:
-            invitation: The `ConnectionInvitation` to accept
+            invitation: The `ConnectionInvitation` to store
             their_role: The role assigned to this connection
             my_router_did: The DID of the router connection to use
 

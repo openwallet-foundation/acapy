@@ -9,13 +9,13 @@ if [ -z "$PORTS" ]; then
 	ARGS="-p 10000-10050:10000-10050"
 else
 	for PORT in $PORTS; do
-		ARGS="-p $PORT"
+		ARGS="${ARGS} -p $PORT"
 	done
 fi
 PTVSD_PORT="${PTVSD_PORT-5678}"
 
 if [ ! -z "${ENABLE_PTVSD}" ] || [[ "$@" == *--debug* ]]; then
-	PORTS="${PORTS} -p ${PTVSD_PORT}:5678 -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\""
+	ARGS="${ARGS} -p ${PTVSD_PORT}:5678 -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\""
 fi
 
 RAND_NAME=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
