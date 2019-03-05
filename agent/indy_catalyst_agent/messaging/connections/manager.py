@@ -261,30 +261,23 @@ class ConnectionManager:
 
         return request
 
-    async def create_response(
-        self,
-        request: ConnectionRequest,
-        my_endpoint: str = None,
-        my_router_did: str = None,
-        their_role: str = None,
-    ) -> Tuple[ConnectionRecord, ConnectionResponse]:
+    async def receive_request(self, request: ConnectionRequest) -> ConnectionRecord:
         """
-        Create a connection response for a received connection request.
+        Receive and store a connection request.
 
         Args:
             request: The `ConnectionRequest` to accept
-            my_endpoint: The endpoint I can be reached at
-            my_router_did: The DID of my router connection to use
-            their_role: The role to assign to this connection
 
         Returns:
-            A tuple of the updated `ConnectionRecord` new `ConnectionResponse` message
+            The new or updated `ConnectionRecord` instance
 
         """
-        self._log_state("Creating response", {"request": request})
+        self._log_state("Receiving connection request", {"request": request})
 
         connection = None
         connection_key = None
+
+        # Determine what key will need to sign the response
         if self.context.recipient_did_public:
             my_info = await self.context.wallet.get_local_did(
                 self.context.recipient_did
@@ -309,9 +302,6 @@ class ConnectionManager:
             connection_key = connection.invitation_key
             self._log_state("Found invitation", {"invitation": invitation})
 
-        if not my_endpoint:
-            my_endpoint = self.context.default_endpoint
-
         conn_did_doc = request.connection.did_doc
         if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
@@ -326,20 +316,18 @@ class ConnectionManager:
             connection.my_did = my_info.did
             connection.their_label = request.label
             connection.their_did = request.connection.did
-            connection.state = ConnectionRecord.STATE_RESPONSE
+            connection.state = ConnectionRecord.STATE_REQUEST
             await connection.save(self.context.storage)
             self._log_state("Updated connection state", {"connection": connection})
         else:
             connection = ConnectionRecord(
                 my_did=my_info.did,
-                my_router_did=my_router_did,
+                my_router_did=None,
                 initiator=ConnectionRecord.INITIATOR_EXTERNAL,
+                invitation_key=connection_key,
                 their_label=request.label,
-                their_role=their_role,
-                state=ConnectionRecord.STATE_RESPONSE,
-                router_state=ConnectionRecord.ROUTING_STATE_REQUIRED
-                if my_router_did
-                else ConnectionRecord.ROUTING_STATE_NONE,
+                state=ConnectionRecord.STATE_REQUEST,
+                router_state=ConnectionRecord.ROUTING_STATE_NONE,
             )
             await connection.save(self.context.storage)
             self._log_state(
@@ -351,14 +339,65 @@ class ConnectionManager:
                 },
             )
 
+        # Attach the connection request so it can be found and responded to
+        await connection.attach_request(self.context.storage, request)
+
+        return connection
+
+    async def create_response(
+        self,
+        connection: ConnectionRecord,
+        my_endpoint: str = None,
+        my_router_did: str = None,
+        their_role: str = None,
+    ) -> ConnectionResponse:
+        """
+        Create a connection response for a received connection request.
+
+        Args:
+            connection: The `ConnectionRecord` with a pending connection request
+            my_endpoint: The endpoint I can be reached at
+            my_router_did: The DID of my router connection to use
+            their_role: The role to assign to this connection
+
+        Returns:
+            A tuple of the updated `ConnectionRecord` new `ConnectionResponse` message
+
+        """
+        self._log_state(
+            "Creating connection response", {"connection_id": connection.connection_id}
+        )
+
+        if connection.state not in (
+            connection.STATE_REQUEST, connection.STATE_RESPONSE
+        ):
+            raise ConnectionManagerError(
+                "Connection is not in the request or response state")
+
+        request = await connection.retrieve_request(self.context.storage)
+        my_info = await self.context.wallet.get_local_did(connection.my_did)
+
+        if my_router_did:
+            connection.my_router_did = my_router_did
+            connection.router_state = ConnectionRecord.ROUTING_STATE_REQUIRED
+        if their_role:
+            connection.their_role = their_role
+
+        if not my_endpoint:
+            my_endpoint = self.context.default_endpoint
+
         # Create connection response message
-        did_doc = await self.create_did_document(my_info, my_router_did)
+        did_doc = await self.create_did_document(
+            my_info, connection.my_router_did, my_endpoint
+        )
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
         )
         if request._id:
             response._thread = ThreadDecorator(thid=request._id)
-        await response.sign_field("connection", connection_key, self.context.wallet)
+        await response.sign_field(
+            "connection", connection.invitation_key, self.context.wallet
+        )
         self._log_state(
             "Created connection response",
             {
@@ -368,7 +407,12 @@ class ConnectionManager:
             },
         )
 
-        return connection, response
+        # Update connection state
+        connection.state = ConnectionRecord.STATE_RESPONSE
+        await connection.save(self.context.storage)
+        self._log_state("Updated connection state", {"connection": connection})
+
+        return response
 
     async def accept_response(self, response: ConnectionResponse) -> ConnectionRecord:
         """

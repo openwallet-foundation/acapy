@@ -8,6 +8,7 @@ from typing import Sequence
 from marshmallow import fields
 
 from ..messages.connection_invitation import ConnectionInvitation
+from ..messages.connection_request import ConnectionRequest
 from ....models.base import BaseModel, BaseModelSchema
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
@@ -22,7 +23,8 @@ class ConnectionRecord(BaseModel):
         schema_class = "ConnectionRecordSchema"
 
     RECORD_TYPE = "connection"
-    RECORD_INVITATION_TYPE = "connection_invitation"
+    RECORD_TYPE_INVITATION = "connection_invitation"
+    RECORD_TYPE_REQUEST = "connection_request"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -237,7 +239,7 @@ class ConnectionRecord(BaseModel):
         """
         assert self.connection_id
         record = StorageRecord(
-            self.RECORD_INVITATION_TYPE,
+            self.RECORD_TYPE_INVITATION,
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
@@ -251,9 +253,36 @@ class ConnectionRecord(BaseModel):
         """
         assert self.connection_id
         result = await storage.search_records(
-            self.RECORD_INVITATION_TYPE, {"connection_id": self.connection_id}
+            self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         ).fetch_single()
         return ConnectionInvitation.from_json(result.value)
+
+    async def attach_request(self, storage: BaseStorage, request: ConnectionRequest):
+        """Persist the related connection request to storage.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            request: The request to relate to this connection record
+        """
+        assert self.connection_id
+        record = StorageRecord(
+            self.RECORD_TYPE_REQUEST,
+            request.to_json(),
+            {"connection_id": self.connection_id},
+        )
+        await storage.add_record(record)
+
+    async def retrieve_request(self, storage: BaseStorage) -> ConnectionRequest:
+        """Retrieve the related connection invitation.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
+        assert self.connection_id
+        result = await storage.search_records(
+            self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
+        ).fetch_single()
+        return ConnectionRequest.from_json(result.value)
 
     @property
     def requires_routing(self) -> bool:
