@@ -12,6 +12,7 @@ import logging
 
 from typing import Coroutine, Union
 
+from .admin.manager import AdminManager
 from .admin.server import AdminServer
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
@@ -134,6 +135,7 @@ class Conductor:
                     admin_host, admin_port, context, self.outbound_message_router
                 )
                 await self.admin_server.start()
+                AdminManager.SERVER = self.admin_server
             except Exception:
                 self.logger.exception("Unable to start administration API")
 

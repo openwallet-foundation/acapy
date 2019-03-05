@@ -1,7 +1,9 @@
 """Admin server classes."""
 
+import asyncio
 import logging
 from typing import Coroutine
+import uuid
 
 from aiohttp import web
 from aiohttp_apispec import docs, response_schema, setup_aiohttp_apispec
@@ -53,6 +55,7 @@ class AdminServer:
         self.port = port
         self.logger = logging.getLogger(__name__)
         self.loaded_modules = []
+        self.notify_queues = {}
         self.outbound_message_router = outbound_message_router
         self.site = None
 
@@ -73,6 +76,7 @@ class AdminServer:
                 web.get("/", self.redirect_handler),
                 web.get("/modules", self.modules_handler),
                 web.get("/status", self.status_handler),
+                web.get("/ws", self.websocket_handler),
             ]
         )
         await register_module_routes(self.app)
@@ -90,7 +94,6 @@ class AdminServer:
         )
         for route in self.app.router.routes():
             cors.add(route)
-            print(route)
 
         setup_aiohttp_apispec(app=self.app, title="Indy Catalyst Agent", version="v1")
         self.app.on_startup.append(self.on_startup)
@@ -148,3 +151,31 @@ class AdminServer:
     async def redirect_handler(self, request: web.BaseRequest):
         """Perform redirect to documentation."""
         return web.HTTPFound("/api/doc")
+
+    async def websocket_handler(self, request):
+        """Send notifications to admin client over websocket."""
+
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        socket_id = str(uuid.uuid4())
+        queue = asyncio.Queue()
+        self.notify_queues[socket_id] = queue
+
+        while True:
+            msg = await queue.get()
+            print(msg)
+            if msg is None:
+                await ws.close()
+                break
+            else:
+                await ws.send_json(msg)
+
+        del self.notify_queues[socket_id]
+
+        return ws
+
+    async def add_notification(self, message: dict):
+        """Add a notification to existing queues."""
+
+        for queue in self.notify_queues.values():
+            await queue.put(message)

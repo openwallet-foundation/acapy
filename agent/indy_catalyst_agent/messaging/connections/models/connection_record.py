@@ -1,5 +1,6 @@
 """Handle connection information interface with non-secrets storage."""
 
+import datetime
 import json
 import uuid
 
@@ -7,11 +8,18 @@ from typing import Sequence
 
 from marshmallow import fields
 
+from ....admin.manager import AdminManager
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
 from ....models.base import BaseModel, BaseModelSchema
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
+
+
+def time_now() -> str:
+    """Timestamp in ISO format."""
+    dt = datetime.datetime.utcnow()
+    return dt.replace(tzinfo=datetime.timezone.utc).isoformat(" ")
 
 
 class ConnectionRecord(BaseModel):
@@ -56,6 +64,8 @@ class ConnectionRecord(BaseModel):
         state: str = None,
         routing_state: str = None,
         error_msg: str = None,
+        created_at: str = None,
+        updated_at: str = None,
     ):
         """Initialize a new ConnectionRecord."""
         self._id = connection_id
@@ -70,6 +80,8 @@ class ConnectionRecord(BaseModel):
         self.state = state or self.STATE_INIT
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.error_msg = error_msg
+        self.created_at = (None,)
+        self.updated_at = None
 
     @property
     def connection_id(self) -> str:
@@ -87,7 +99,14 @@ class ConnectionRecord(BaseModel):
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this connection."""
         ret = self.tags
-        ret.update({"error_msg": self.error_msg, "their_label": self.their_label})
+        ret.update(
+            {
+                "error_msg": self.error_msg,
+                "their_label": self.their_label,
+                "created_at": self.created_at,
+                "updated_at": self.updated_at,
+            }
+        )
         return ret
 
     @property
@@ -116,13 +135,18 @@ class ConnectionRecord(BaseModel):
         Args:
             storage: The `BaseStorage` instance to use
         """
+        self.updated_at = time_now()
         if not self._id:
             self._id = str(uuid.uuid4())
+            self.created_at = self.updated_at
             await storage.add_record(self.storage_record)
         else:
             record = self.storage_record
             await storage.update_record_value(record, record.value)
             await storage.update_record_tags(record, record.tags)
+        await AdminManager.add_notification(
+            "connection_update", {"connection": self.serialize()}
+        )
 
     @classmethod
     async def retrieve_by_id(
@@ -313,3 +337,5 @@ class ConnectionRecordSchema(BaseModelSchema):
     state = fields.Str(required=False)
     routing_state = fields.Str(required=False)
     error_msg = fields.Str(required=False)
+    created_at = fields.Str(required=False)
+    updated_at = fields.Str(required=False)
