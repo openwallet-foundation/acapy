@@ -303,13 +303,7 @@ class ConnectionManager:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
         await self.store_did_document(conn_did_doc)
 
-        if connection and connection.my_did:
-            my_info = await self.context.wallet.get_local_did(connection.my_did)
-        else:
-            my_info = await self.context.wallet.create_local_did()
-
         if connection:
-            connection.my_did = my_info.did
             connection.their_label = request.label
             connection.their_did = request.connection.did
             connection.state = ConnectionRecord.STATE_REQUEST
@@ -317,7 +311,6 @@ class ConnectionManager:
             self._log_state("Updated connection state", {"connection": connection})
         else:
             connection = ConnectionRecord(
-                my_did=my_info.did,
                 my_router_did=None,
                 initiator=ConnectionRecord.INITIATOR_EXTERNAL,
                 invitation_key=connection_key,
@@ -371,7 +364,11 @@ class ConnectionManager:
                 "Connection is not in the request or response state")
 
         request = await connection.retrieve_request(self.context.storage)
-        my_info = await self.context.wallet.get_local_did(connection.my_did)
+        if connection.my_did:
+            my_info = await self.context.wallet.get_local_did(connection.my_did)
+        else:
+            my_info = await self.context.wallet.create_local_did()
+            connection.my_did = my_info.did
 
         if my_router_did:
             connection.my_router_did = my_router_did
