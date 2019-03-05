@@ -316,7 +316,7 @@ class ConnectionManager:
                 invitation_key=connection_key,
                 their_label=request.label,
                 state=ConnectionRecord.STATE_REQUEST,
-                router_state=ConnectionRecord.ROUTING_STATE_NONE,
+                routing_state=ConnectionRecord.ROUTING_STATE_NONE,
             )
             await connection.save(self.context.storage)
             self._log_state(
@@ -372,7 +372,7 @@ class ConnectionManager:
 
         if my_router_did:
             connection.my_router_did = my_router_did
-            connection.router_state = ConnectionRecord.ROUTING_STATE_REQUIRED
+            connection.routing_state = ConnectionRecord.ROUTING_STATE_REQUIRED
         if their_role:
             connection.their_role = their_role
 
