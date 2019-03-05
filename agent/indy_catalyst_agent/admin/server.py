@@ -5,6 +5,7 @@ from typing import Coroutine
 
 from aiohttp import web
 from aiohttp_apispec import docs, response_schema, setup_aiohttp_apispec
+import aiohttp_cors
 from aiohttp_swagger import setup_swagger
 
 from marshmallow import fields, Schema
@@ -66,6 +67,7 @@ class AdminServer:
         self.app = web.Application(debug=True)
         self.app["request_context"] = self.context
         self.app["outbound_message_router"] = self.outbound_message_router
+
         self.app.add_routes(
             [
                 web.get("/", self.redirect_handler),
@@ -74,6 +76,21 @@ class AdminServer:
             ]
         )
         await register_module_routes(self.app)
+
+        cors = aiohttp_cors.setup(
+            self.app,
+            defaults={
+                "*": aiohttp_cors.ResourceOptions(
+                    allow_credentials=True,
+                    expose_headers="*",
+                    allow_headers="*",
+                    allow_methods="*",
+                )
+            },
+        )
+        for route in self.app.router.routes():
+            cors.add(route)
+            print(route)
 
         setup_aiohttp_apispec(app=self.app, title="Indy Catalyst Agent", version="v1")
         self.app.on_startup.append(self.on_startup)
