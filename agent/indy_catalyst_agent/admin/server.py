@@ -163,7 +163,6 @@ class AdminServer:
 
         while True:
             msg = await queue.get()
-            print(msg)
             if msg is None:
                 await ws.close()
                 break

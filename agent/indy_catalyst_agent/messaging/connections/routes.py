@@ -95,7 +95,12 @@ async def connections_list(request: web.BaseRequest):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
     records = await ConnectionRecord.query(context.storage, tag_filter)
-    return web.json_response({"results": [record.serialize() for record in records]})
+    results = []
+    for record in records:
+        row = record.serialize()
+        row["activity"] = await record.fetch_activity(context.storage)
+        results.append(row)
+    return web.json_response({"results": results})
 
 
 @docs(tags=["connection"], summary="Fetch a single connection record")

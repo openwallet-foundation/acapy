@@ -1,27 +1,18 @@
-"""Basic message admin routes."""
+"""Trust ping admin routes."""
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema
-
-from marshmallow import fields, Schema
+from aiohttp_apispec import docs
 
 from ..connections.manager import ConnectionManager
 from ..connections.models.connection_record import ConnectionRecord
-from .messages.basicmessage import BasicMessage
+from .messages.ping import Ping
 from ...storage.error import StorageNotFoundError
 
 
-class SendMessageSchema(Schema):
-    """Request schema for sending a message."""
-
-    content = fields.Str()
-
-
-@docs(tags=["basicmessage"], summary="Send a basic message to a connection")
-@request_schema(SendMessageSchema())
-async def connections_send_message(request: web.BaseRequest):
+@docs(tags=["trustping"], summary="Send a trust ping to a connection")
+async def connections_send_ping(request: web.BaseRequest):
     """
-    Request handler for sending a basic message to a connection.
+    Request handler for sending a trust ping to a connection.
 
     Args:
         request: aiohttp request object
@@ -31,7 +22,6 @@ async def connections_send_message(request: web.BaseRequest):
     connection_id = request.match_info["id"]
     connection_mgr = ConnectionManager(context)
     outbound_handler = request.app["outbound_message_router"]
-    params = await request.json()
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(
@@ -41,12 +31,12 @@ async def connections_send_message(request: web.BaseRequest):
         return web.HTTPNotFound()
 
     if connection.state == "active":
-        msg = BasicMessage(content=params["content"])
+        msg = Ping()
         target = await connection_mgr.get_connection_target(connection)
         await outbound_handler(msg, target)
 
         await connection.log_activity(
-            context.storage, "message", connection.DIRECTION_SENT, params["content"]
+            context.storage, "ping", connection.DIRECTION_SENT
         )
 
     return web.HTTPOk()
@@ -55,6 +45,4 @@ async def connections_send_message(request: web.BaseRequest):
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes(
-        [web.post("/connections/{id}/send-message", connections_send_message)]
-    )
+    app.add_routes([web.post("/connections/{id}/send-ping", connections_send_ping)])

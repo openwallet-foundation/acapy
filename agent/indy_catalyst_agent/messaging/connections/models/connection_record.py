@@ -31,8 +31,12 @@ class ConnectionRecord(BaseModel):
         schema_class = "ConnectionRecordSchema"
 
     RECORD_TYPE = "connection"
+    RECORD_TYPE_ACTIVITY = "connection_activity"
     RECORD_TYPE_INVITATION = "connection_invitation"
     RECORD_TYPE_REQUEST = "connection_request"
+
+    DIRECTION_RECEIVED = "received"
+    DIRECTION_SENT = "sent"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -144,9 +148,7 @@ class ConnectionRecord(BaseModel):
             record = self.storage_record
             await storage.update_record_value(record, record.value)
             await storage.update_record_tags(record, record.tags)
-        await AdminManager.add_notification(
-            "connection_update", {"connection": self.serialize()}
-        )
+        await self.admin_send_update(storage)
 
     @classmethod
     async def retrieve_by_id(
@@ -307,6 +309,64 @@ class ConnectionRecord(BaseModel):
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         ).fetch_single()
         return ConnectionRequest.from_json(result.value)
+
+    async def log_activity(
+        self,
+        storage: BaseStorage,
+        activity_type: str,
+        direction: str,
+        content: str = None,
+    ):
+        """Log an event against this connection record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            activity_type: The activity type identifier
+            direction: The direction of the activity (sent or received)
+            content: An optional content value for the activity
+        """
+        assert self.connection_id
+        record = StorageRecord(
+            self.RECORD_TYPE_ACTIVITY,
+            json.dumps({"content": content, "time": time_now()}),
+            {
+                "type": activity_type,
+                "direction": direction,
+                "connection_id": self.connection_id,
+            },
+        )
+        await storage.add_record(record)
+        await self.admin_send_update(storage)
+
+    async def fetch_activity(
+        self, storage: BaseStorage, activity_type: str = None, direction: str = None
+    ) -> Sequence[dict]:
+        """Fetch all activity logs for this connection record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            activity_type: An optional activity type filter
+            direction: An optional direction filter
+        """
+        tag_filter = {"connection_id": self.connection_id}
+        if activity_type:
+            tag_filter["activity_type"] = activity_type
+        if direction:
+            tag_filter["direction"] = direction
+        records = await storage.search_records(
+            self.RECORD_TYPE_ACTIVITY, tag_filter
+        ).fetch_all()
+        results = [
+            dict(**json.loads(record.value), **record.tags) for record in records
+        ]
+        results.sort(key=lambda x: x["time"], reverse=True)
+        return results
+
+    async def admin_send_update(self, storage: BaseStorage):
+        """Send updated connection status to websocket listener."""
+        record = self.serialize()
+        record["activity"] = await self.fetch_activity(storage)
+        await AdminManager.add_notification("connection_update", {"connection": record})
 
     @property
     def requires_routing(self) -> bool:

@@ -213,6 +213,9 @@ class ConnectionManager:
         # Save the invitation for later processing
         await connection.attach_invitation(self.context.storage, invitation)
 
+        await connection.log_activity(
+            self.context.storage, "invitation", connection.DIRECTION_RECEIVED)
+
         return connection
 
     async def create_request(
@@ -254,6 +257,9 @@ class ConnectionManager:
         connection.state = ConnectionRecord.STATE_REQUEST
         await connection.save(self.context.storage)
         self._log_state("Updated connection state", {"connection": connection})
+
+        await connection.log_activity(
+            self.context.storage, "request", connection.DIRECTION_SENT)
 
         return request
 
@@ -331,6 +337,9 @@ class ConnectionManager:
         # Attach the connection request so it can be found and responded to
         await connection.attach_request(self.context.storage, request)
 
+        await connection.log_activity(
+            self.context.storage, "request", connection.DIRECTION_RECEIVED)
+
         return connection
 
     async def create_response(
@@ -405,6 +414,9 @@ class ConnectionManager:
         await connection.save(self.context.storage)
         self._log_state("Updated connection state", {"connection": connection})
 
+        await connection.log_activity(
+            self.context.storage, "response", connection.DIRECTION_SENT)
+
         return response
 
     async def accept_response(self, response: ConnectionResponse) -> ConnectionRecord:
@@ -473,6 +485,10 @@ class ConnectionManager:
         connection.their_did = their_did
         connection.state = ConnectionRecord.STATE_RESPONSE
         await connection.save(self.context.storage)
+
+        await connection.log_activity(
+            self.context.storage, "response", connection.DIRECTION_RECEIVED)
+
         return connection
 
     async def find_connection(
