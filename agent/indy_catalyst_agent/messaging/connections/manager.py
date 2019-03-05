@@ -187,12 +187,8 @@ class ConnectionManager:
 
         # TODO: validate invitation (must have recipient keys, endpoint)
 
-        # Create my information for connection
-        my_info = await self.context.wallet.create_local_did()
-
         # Create connection record
         connection = ConnectionRecord(
-            my_did=my_info.did,
             my_router_did=my_router_did,
             initiator=ConnectionRecord.INITIATOR_EXTERNAL,
             invitation_key=invitation.recipient_keys[0],
