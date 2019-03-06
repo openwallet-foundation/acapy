@@ -160,6 +160,15 @@ class AdminServer:
         socket_id = str(uuid.uuid4())
         queue = asyncio.Queue()
         self.notify_queues[socket_id] = queue
+        await queue.put(
+            {
+                "type": "settings",
+                "context": {
+                    "label": self.context.default_label,
+                    "endpoint": self.context.default_endpoint,
+                },
+            }
+        )
 
         while True:
             msg = await queue.get()
