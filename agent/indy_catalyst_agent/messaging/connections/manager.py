@@ -147,6 +147,9 @@ class ConnectionManager:
         )
         await connection.attach_invitation(self.context.storage, invitation)
 
+        await connection.log_activity(
+            self.context.storage, "invitation", connection.DIRECTION_SENT)
+
         return connection, invitation
 
     async def send_invitation(self, invitation: ConnectionInvitation, endpoint: str):
