@@ -82,7 +82,9 @@ class Conductor:
         context.default_endpoint = self.settings.get(
             "default_endpoint", "http://localhost:10001"
         )
-        context.default_label = self.settings.get("default_name", "Indy Catalyst Agent")
+        context.default_label = self.settings.get(
+            "default_label", "Indy Catalyst Agent"
+        )
         context.message_factory = self.message_factory
 
         wallet_type = self.settings.get("wallet.type", "basic").lower()
