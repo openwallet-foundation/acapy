@@ -1,6 +1,7 @@
 """Admin server classes."""
 
 import asyncio
+from concurrent.futures import CancelledError
 import logging
 from typing import Coroutine
 import uuid
@@ -170,12 +171,19 @@ class AdminServer:
             }
         )
 
-        while True:
-            msg = await queue.get()
-            if msg is None:
-                await ws.close()
-                break
-            else:
+        closed = False
+        while not closed:
+            try:
+                msg = await asyncio.wait_for(queue.get(), 0.5)
+            except asyncio.TimeoutError:
+                # we send fake pings because the JS client
+                # can't detect real ones
+                msg = {"type": "ping"}
+            except CancelledError:
+                closed = True
+            if ws.closed:
+                closed = True
+            if msg and not closed:
                 await ws.send_json(msg)
 
         del self.notify_queues[socket_id]
