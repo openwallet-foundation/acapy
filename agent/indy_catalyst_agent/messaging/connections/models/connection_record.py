@@ -84,8 +84,8 @@ class ConnectionRecord(BaseModel):
         self.state = state or self.STATE_INIT
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.error_msg = error_msg
-        self.created_at = (None,)
-        self.updated_at = None
+        self.created_at = created_at
+        self.updated_at = updated_at
 
     @property
     def connection_id(self) -> str:
