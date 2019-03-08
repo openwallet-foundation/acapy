@@ -170,6 +170,7 @@ class AdminServer:
                     "no_receive_invites": self.context.settings.get(
                         "admin.no_receive_invites", False
                     ),
+                    "help_link": self.context.settings.get("admin.help_link"),
                 },
             }
         )

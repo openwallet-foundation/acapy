@@ -124,6 +124,13 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--help-link",
+    type=str,
+    metavar="<help-url>",
+    help="Define the help URL for the administration interface",
+)
+
+PARSER.add_argument(
     "--invite",
     action="store_true",
     help="Generate and print a new connection invitation URL",
@@ -186,6 +193,8 @@ def main():
         settings["admin.enabled"] = True
         settings["admin.host"] = args.admin[0]
         settings["admin.port"] = args.admin[1]
+        if args.help_link:
+            settings["admin.help_link"] = args.help_link
         if args.no_receive_invites:
             settings["admin.no_receive_invites"] = True
 
