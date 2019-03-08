@@ -166,9 +166,14 @@ async def connections_receive_invitation(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     connection_mgr = ConnectionManager(context)
+    outbound_handler = request.app["outbound_message_router"]
     invitation_json = await request.json()
     invitation = ConnectionInvitation.deserialize(invitation_json)
     connection = await connection_mgr.receive_invitation(invitation)
+    if context.settings.get("accept_invites"):
+        request = await connection_mgr.create_request(connection)
+        target = await connection_mgr.get_connection_target(connection)
+        await outbound_handler(request, target)
     return web.json_response(connection.serialize())
 
 

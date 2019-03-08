@@ -86,6 +86,7 @@ class Conductor:
             "default_label", "Indy Catalyst Agent"
         )
         context.message_factory = self.message_factory
+        context.settings = self.settings
 
         wallet_type = self.settings.get("wallet.type", "basic").lower()
         wallet_type = self.WALLET_TYPES.get(wallet_type, wallet_type)

@@ -104,6 +104,14 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--accept-invites", action="store_true", help="Auto-accept connection invitations"
+)
+
+PARSER.add_argument(
+    "--accept-requests", action="store_true", help="Auto-accept connection requests"
+)
+
+PARSER.add_argument(
     "--invite",
     action="store_true",
     help="Generate and print a new connection invitation URL",
@@ -175,6 +183,11 @@ def main():
         settings["debug.print_invitation"] = True
     if args.send_invite:
         settings["debug.send_invitation_to"] = args.send_invite
+
+    if args.accept_invites:
+        settings["accept_invites"] = True
+    if args.accept_requests:
+        settings["accept_requests"] = True
 
     loop = asyncio.get_event_loop()
     try:

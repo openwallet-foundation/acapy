@@ -35,6 +35,7 @@ class RequestContext:
         self._transport_type = None
         self._message_factory = None
         self._message = None
+        self._settings = {}
         self._storage = None
         self._wallet = None
 
@@ -337,6 +338,27 @@ class RequestContext:
             msg: This context's new agent message
         """
         self._message = msg
+
+    @property
+    def settings(self) -> dict:
+        """
+        Accessor for the server settings.
+
+        Returns:
+            This context's server settings
+
+        """
+        return self._settings
+
+    @settings.setter
+    def settings(self, settings: dict):
+        """
+        Setter for the server settings.
+
+        Args:
+            settings: The context's server settings
+        """
+        self._settings = settings
 
     @property
     def storage(self) -> BaseStorage:

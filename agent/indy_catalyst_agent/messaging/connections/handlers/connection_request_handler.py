@@ -23,8 +23,7 @@ class ConnectionRequestHandler(BaseHandler):
         mgr = ConnectionManager(context)
         connection = await mgr.receive_request(context.message)
 
-        auto_reply = False
-        if auto_reply:
+        if context.settings.get("accept_requests"):
             response = await mgr.create_response(connection)
             target = await mgr.get_connection_target(connection)
 
