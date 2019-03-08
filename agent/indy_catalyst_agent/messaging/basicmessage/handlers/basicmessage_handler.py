@@ -34,8 +34,14 @@ class BasicMessageHandler(BaseHandler):
         )
 
         body = context.message.content
-        if body.startswith("Reply with: "):
+        if context.settings.get("debug.auto_respond_messages"):
+            reply = "Message received"
+        elif body.startswith("Reply with: "):
             reply = body[12:]
+        else:
+            reply = None
+
+        if reply:
             reply_msg = BasicMessage(content=reply, _l10n=context.message._l10n)
             await responder.send_reply(reply_msg)
             await context.connection_record.log_activity(

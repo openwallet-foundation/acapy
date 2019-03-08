@@ -165,6 +165,8 @@ async def connections_receive_invitation(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    if context.settings.get("admin.no_receive_invites"):
+        return web.HTTPForbidden()
     connection_mgr = ConnectionManager(context)
     outbound_handler = request.app["outbound_message_router"]
     invitation_json = await request.json()
