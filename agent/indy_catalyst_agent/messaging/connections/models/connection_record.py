@@ -315,7 +315,7 @@ class ConnectionRecord(BaseModel):
         storage: BaseStorage,
         activity_type: str,
         direction: str,
-        content: str = None,
+        meta: dict = None,
     ):
         """Log an event against this connection record.
 
@@ -323,12 +323,12 @@ class ConnectionRecord(BaseModel):
             storage: The `BaseStorage` instance to use
             activity_type: The activity type identifier
             direction: The direction of the activity (sent or received)
-            content: An optional content value for the activity
+            meta: Optional metadata for the activity
         """
         assert self.connection_id
         record = StorageRecord(
             self.RECORD_TYPE_ACTIVITY,
-            json.dumps({"content": content, "time": time_now()}),
+            json.dumps({"meta": meta, "time": time_now()}),
             {
                 "type": activity_type,
                 "direction": direction,
@@ -357,10 +357,40 @@ class ConnectionRecord(BaseModel):
             self.RECORD_TYPE_ACTIVITY, tag_filter
         ).fetch_all()
         results = [
-            dict(**json.loads(record.value), **record.tags) for record in records
+            dict(id=record.id, **json.loads(record.value), **record.tags)
+            for record in records
         ]
         results.sort(key=lambda x: x["time"], reverse=True)
         return results
+
+    async def retrieve_activity(
+        self, storage: BaseStorage, activity_id: str
+    ) -> Sequence[dict]:
+        """Retrieve a single activity record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            activity_id: The ID of the activity entry
+        """
+        record = await storage.get_record(self.RECORD_TYPE_ACTIVITY, activity_id)
+        result = dict(id=record.id, **json.loads(record.value), **record.tags)
+        return result
+
+    async def update_activity_meta(
+        self, storage: BaseStorage, activity_id: str, meta: dict
+    ) -> Sequence[dict]:
+        """Update metadata for an activity entry.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            activity_id: The ID of the activity entry
+            meta: The metadata stored on the activity
+        """
+        record = await storage.get_record(self.RECORD_TYPE_ACTIVITY, activity_id)
+        value = json.loads(record.value)
+        value["meta"] = meta
+        await storage.update_record_value(record, json.dumps(value))
+        await self.admin_send_update(storage)
 
     async def admin_send_update(self, storage: BaseStorage):
         """Send updated connection status to websocket listener."""

@@ -46,8 +46,40 @@ async def connections_send_message(request: web.BaseRequest):
         await outbound_handler(msg, target)
 
         await connection.log_activity(
-            context.storage, "message", connection.DIRECTION_SENT, params["content"]
+            context.storage,
+            "message",
+            connection.DIRECTION_SENT,
+            {"content": params["content"]},
         )
+
+    return web.HTTPOk()
+
+
+@docs(tags=["basicmessage"], summary="Expire a copyable basicmessage")
+async def connections_expire_message(request: web.BaseRequest):
+    """
+    Request handler for sending a basic message to a connection.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context = request.app["request_context"]
+    connection_id = request.match_info["id"]
+
+    try:
+        connection = await ConnectionRecord.retrieve_by_id(
+            context.storage, connection_id
+        )
+    except StorageNotFoundError:
+        return web.HTTPNotFound()
+
+    activity_id = request.match_info["activity_id"]
+    activity = await connection.retrieve_activity(context.storage, activity_id)
+    meta = activity.get("meta") or {}
+    if meta.get("copy_invite"):
+        meta["copied"] = 1
+        await connection.update_activity_meta(context.storage, activity_id, meta)
 
     return web.HTTPOk()
 
@@ -57,4 +89,13 @@ async def register(app: web.Application):
 
     app.add_routes(
         [web.post("/connections/{id}/send-message", connections_send_message)]
+    )
+
+    app.add_routes(
+        [
+            web.post(
+                "/connections/{id}/expire-message/{activity_id}",
+                connections_expire_message,
+            )
+        ]
     )

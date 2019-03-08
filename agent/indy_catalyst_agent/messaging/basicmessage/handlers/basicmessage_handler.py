@@ -20,21 +20,27 @@ class BasicMessageHandler(BaseHandler):
 
         self._logger.info("Received basic message: %s", context.message.content)
 
+        meta = {"content": context.message.content}
+
+        # For Workshop: mark invitations as copyable
+        if context.message.content and context.message.content.startswith("http"):
+            meta["copy_invite"] = True
+
         await context.connection_record.log_activity(
             context.storage,
             "message",
             context.connection_record.DIRECTION_RECEIVED,
-            context.message.content,
+            meta,
         )
 
-        content = context.message.content
-        if content.startswith("Reply with: "):
-            reply = content[12:]
+        body = context.message.content
+        if body.startswith("Reply with: "):
+            reply = body[12:]
             reply_msg = BasicMessage(content=reply, _l10n=context.message._l10n)
             await responder.send_reply(reply_msg)
             await context.connection_record.log_activity(
                 context.storage,
                 "message",
                 context.connection_record.DIRECTION_SENT,
-                reply,
+                {"content": reply},
             )
