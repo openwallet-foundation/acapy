@@ -100,6 +100,7 @@ async def connections_list(request: web.BaseRequest):
         row = record.serialize()
         row["activity"] = await record.fetch_activity(context.storage)
         results.append(row)
+    results.sort(key=lambda x: x["created_at"])
     return web.json_response({"results": results})
 
 
