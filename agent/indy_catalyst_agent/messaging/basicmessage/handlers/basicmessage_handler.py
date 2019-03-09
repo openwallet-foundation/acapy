@@ -34,12 +34,12 @@ class BasicMessageHandler(BaseHandler):
         )
 
         body = context.message.content
+        reply = None
         if context.settings.get("debug.auto_respond_messages"):
-            reply = "Message received"
+            if "received your message" not in body:
+                reply = f"{context.default_label} received your message"
         elif body.startswith("Reply with: "):
             reply = body[12:]
-        else:
-            reply = None
 
         if reply:
             reply_msg = BasicMessage(content=reply, _l10n=context.message._l10n)
