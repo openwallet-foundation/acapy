@@ -535,6 +535,10 @@ class ConnectionManager:
             connection.state = ConnectionRecord.STATE_ACTIVE
             await connection.save(self.context.storage)
             self._log_state("Connection promoted to active", {"connection": connection})
+        elif connection and connection.state == ConnectionRecord.STATE_INACTIVE:
+            connection.state = ConnectionRecord.STATE_ACTIVE
+            await connection.save(self.context.storage)
+            self._log_state("Connection restored to active", {"connection": connection})
 
         if not connection and my_verkey:
             try:
