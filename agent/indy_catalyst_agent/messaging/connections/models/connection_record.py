@@ -1,5 +1,6 @@
 """Handle connection information interface with non-secrets storage."""
 
+import asyncio
 import datetime
 import json
 import uuid
@@ -47,6 +48,7 @@ class ConnectionRecord(BaseModel):
     STATE_RESPONSE = "response"
     STATE_ACTIVE = "active"
     STATE_ERROR = "error"
+    STATE_INACTIVE = "inactive"
 
     ROUTING_STATE_NONE = "none"
     ROUTING_STATE_REQUIRED = "required"
@@ -86,6 +88,7 @@ class ConnectionRecord(BaseModel):
         self.error_msg = error_msg
         self.created_at = created_at
         self.updated_at = updated_at
+        self._admin_timer = None
 
     @property
     def connection_id(self) -> str:
@@ -392,11 +395,19 @@ class ConnectionRecord(BaseModel):
         await storage.update_record_value(record, json.dumps(value))
         await self.admin_send_update(storage)
 
-    async def admin_send_update(self, storage: BaseStorage):
-        """Send updated connection status to websocket listener."""
+    async def admin_delayed_update(self, storage: BaseStorage, delay: float):
+        """Wait a specified time before sending an update notification."""
+        if delay:
+            await asyncio.sleep(delay)
         record = self.serialize()
         record["activity"] = await self.fetch_activity(storage)
         await AdminManager.add_notification("connection_update", {"connection": record})
+
+    async def admin_send_update(self, storage: BaseStorage):
+        """Send updated connection status to websocket listener."""
+        if self._admin_timer:
+            self._admin_timer.cancel()
+        self._admin_timer = asyncio.ensure_future(self.admin_delayed_update(storage, 0.1))
 
     @property
     def requires_routing(self) -> bool:

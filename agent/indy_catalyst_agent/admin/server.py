@@ -178,7 +178,7 @@ class AdminServer:
         closed = False
         while not closed:
             try:
-                msg = await asyncio.wait_for(queue.get(), 0.5)
+                msg = await asyncio.wait_for(queue.get(), 5.0)
             except asyncio.TimeoutError:
                 # we send fake pings because the JS client
                 # can't detect real ones
