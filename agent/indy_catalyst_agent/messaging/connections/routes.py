@@ -28,6 +28,17 @@ class InvitationResultSchema(Schema):
     invitation_url = fields.Str()
 
 
+def connection_sort_key(conn):
+    """Get the sorting key for a particular connection."""
+    if conn["state"] == ConnectionRecord.STATE_INACTIVE:
+        pfx = "2"
+    elif conn["state"] == ConnectionRecord.STATE_INVITATION:
+        pfx = "1"
+    else:
+        pfx = "0"
+    return pfx + conn["created_at"]
+
+
 @docs(
     tags=["connection"],
     summary="Query agent-to-agent connections",
@@ -100,7 +111,7 @@ async def connections_list(request: web.BaseRequest):
         row = record.serialize()
         row["activity"] = await record.fetch_activity(context.storage)
         results.append(row)
-    results.sort(key=lambda x: x["created_at"])
+    results.sort(key=connection_sort_key)
     return web.json_response({"results": results})
 
 
