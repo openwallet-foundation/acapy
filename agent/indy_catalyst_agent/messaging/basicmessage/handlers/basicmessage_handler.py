@@ -36,8 +36,14 @@ class BasicMessageHandler(BaseHandler):
         body = context.message.content
         reply = None
         if context.settings.get("debug.auto_respond_messages"):
-            if "received your message" not in body:
-                reply = f"{context.default_label} received your message"
+            if (
+                "received your message" not in body
+                and "received your invitation" not in body
+            ):
+                if context.message.content.startswith("http"):
+                    reply = f"{context.default_label} received your invitation"
+                else:
+                    reply = f"{context.default_label} received your message"
         elif body.startswith("Reply with: "):
             reply = body[12:]
 
