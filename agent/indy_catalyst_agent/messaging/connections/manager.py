@@ -660,8 +660,9 @@ class ConnectionManager:
                     recip_keys = target.recipient_keys
                     for router_key in target.routing_keys:
                         fwd_msg = Forward(to=recip_keys[0], msg=message)
+                        # Forwards are anon packed
                         message = await self.context.wallet.pack_message(
-                            fwd_msg.to_json(), recip_keys, target.sender_key
+                            fwd_msg.to_json(), recip_keys,
                         )
                         recip_keys = [router_key]
             else:
