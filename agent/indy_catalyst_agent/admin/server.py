@@ -13,13 +13,10 @@ from aiohttp_swagger import setup_swagger
 
 from marshmallow import fields, Schema
 
-from .error import AdminError
+from .base_server import BaseAdminServer
+from .error import AdminSetupError
 from ..messaging.request_context import RequestContext
 from .routes import register_module_routes
-
-
-class AdminSetupError(AdminError):
-    """Admin server setup or configuration error."""
 
 
 class AdminModulesSchema(Schema):
@@ -32,7 +29,7 @@ class AdminStatusSchema(Schema):
     """Schema for the status endpoint."""
 
 
-class AdminServer:
+class AdminServer(BaseAdminServer):
     """Admin HTTP server class."""
 
     def __init__(
@@ -194,8 +191,8 @@ class AdminServer:
 
         return ws
 
-    async def add_notification(self, message: dict):
-        """Add a notification to existing queues."""
+    async def add_event(self, message: dict):
+        """Add an event to existing queues."""
 
         for queue in self.notify_queues.values():
             await queue.put(message)

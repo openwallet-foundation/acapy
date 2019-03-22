@@ -396,18 +396,20 @@ class ConnectionRecord(BaseModel):
         await self.admin_send_update(storage)
 
     async def admin_delayed_update(self, storage: BaseStorage, delay: float):
-        """Wait a specified time before sending an update notification."""
+        """Wait a specified time before sending a connection update event."""
         if delay:
             await asyncio.sleep(delay)
         record = self.serialize()
         record["activity"] = await self.fetch_activity(storage)
-        await AdminManager.add_notification("connection_update", {"connection": record})
+        await AdminManager.add_event("connection_update", {"connection": record})
 
     async def admin_send_update(self, storage: BaseStorage):
         """Send updated connection status to websocket listener."""
         if self._admin_timer:
             self._admin_timer.cancel()
-        self._admin_timer = asyncio.ensure_future(self.admin_delayed_update(storage, 0.1))
+        self._admin_timer = asyncio.ensure_future(
+            self.admin_delayed_update(storage, 0.1)
+        )
 
     @property
     def requires_routing(self) -> bool:

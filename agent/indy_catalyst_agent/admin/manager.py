@@ -1,21 +1,34 @@
 """Admin API management classes."""
 
 
+from .base_server import BaseAdminServer
+
+
 class AdminManager:
-    """Admin manager class for letting back-end code send notifications."""
+    """Admin manager class for letting back-end code send event notifications."""
 
     SERVER = None
 
     @classmethod
-    async def add_notification(cls, notify_type: str, notify_context: dict = None):
+    def get_server(cls) -> BaseAdminServer:
+        """Set the global server instance."""
+        return cls.SERVER
+
+    @classmethod
+    def set_server(cls, server: BaseAdminServer):
+        """Set the global server instance."""
+        cls.SERVER = server
+
+    @classmethod
+    async def add_event(cls, event_type: str, event_context: dict = None):
         """
-        Add a new admin notification.
+        Add a new admin event.
 
         Args:
-            notify_type: The unique type identifier for the notification
-            notify_context: An optional dictionary of additional parameters
+            event_type: The unique type identifier for the event
+            event_context: An optional dictionary of additional parameters
         """
 
         if cls.SERVER:
-            msg = {"type": notify_type, "context": notify_context or None}
-            await cls.SERVER.add_notification(msg)
+            msg = {"type": event_type, "context": event_context or None}
+            await cls.SERVER.add_event(msg)

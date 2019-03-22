@@ -138,7 +138,7 @@ class Conductor:
                     admin_host, admin_port, context, self.outbound_message_router
                 )
                 await self.admin_server.start()
-                AdminManager.SERVER = self.admin_server
+                AdminManager.set_server(self.admin_server)
             except Exception:
                 self.logger.exception("Unable to start administration API")
 
