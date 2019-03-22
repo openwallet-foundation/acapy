@@ -136,7 +136,7 @@ class ConnectionRecord(BaseModel):
                 result[prop] = val
         return result
 
-    async def save(self, storage: BaseStorage):
+    async def save(self, storage: BaseStorage) -> str:
         """Persist the connection record to storage.
 
         Args:
@@ -152,6 +152,7 @@ class ConnectionRecord(BaseModel):
             await storage.update_record_value(record, record.value)
             await storage.update_record_tags(record, record.tags)
         await self.admin_send_update(storage)
+        return self._id
 
     @classmethod
     async def retrieve_by_id(
@@ -418,6 +419,12 @@ class ConnectionRecord(BaseModel):
             self.ROUTING_STATE_REQUIRED,
             self.ROUTING_STATE_PENDING,
         )
+
+    def __eq__(self, other) -> bool:
+        """Comparison between records."""
+        if type(other) is type(self):
+            return self.value == other.value and self.tags == other.tags
+        return False
 
 
 class ConnectionRecordSchema(BaseModelSchema):
