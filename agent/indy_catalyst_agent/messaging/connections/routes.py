@@ -28,6 +28,17 @@ class InvitationResultSchema(Schema):
     invitation_url = fields.Str()
 
 
+def connection_sort_key(conn):
+    """Get the sorting key for a particular connection."""
+    if conn["state"] == ConnectionRecord.STATE_INACTIVE:
+        pfx = "2"
+    elif conn["state"] == ConnectionRecord.STATE_INVITATION:
+        pfx = "1"
+    else:
+        pfx = "0"
+    return pfx + conn["created_at"]
+
+
 @docs(
     tags=["connection"],
     summary="Query agent-to-agent connections",
@@ -95,7 +106,13 @@ async def connections_list(request: web.BaseRequest):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
     records = await ConnectionRecord.query(context.storage, tag_filter)
-    return web.json_response({"results": [record.serialize() for record in records]})
+    results = []
+    for record in records:
+        row = record.serialize()
+        row["activity"] = await record.fetch_activity(context.storage)
+        results.append(row)
+    results.sort(key=connection_sort_key)
+    return web.json_response({"results": results})
 
 
 @docs(tags=["connection"], summary="Fetch a single connection record")
@@ -159,10 +176,17 @@ async def connections_receive_invitation(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    if context.settings.get("admin.no_receive_invites"):
+        return web.HTTPForbidden()
     connection_mgr = ConnectionManager(context)
+    outbound_handler = request.app["outbound_message_router"]
     invitation_json = await request.json()
     invitation = ConnectionInvitation.deserialize(invitation_json)
     connection = await connection_mgr.receive_invitation(invitation)
+    if context.settings.get("accept_invites"):
+        request = await connection_mgr.create_request(connection)
+        target = await connection_mgr.get_connection_target(connection)
+        await outbound_handler(request, target)
     return web.json_response(connection.serialize())
 
 
@@ -214,6 +238,63 @@ async def connections_accept_invitation(request: web.BaseRequest):
     return web.json_response(connection.serialize())
 
 
+@docs(
+    tags=["connection"],
+    summary="Accept a stored connection request",
+    parameters=[
+        {
+            "name": "my_endpoint",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+        {
+            "name": "my_router_did",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+        {
+            "name": "their_role",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+    ],
+)
+@response_schema(ConnectionRecordSchema(), 200)
+async def connections_accept_request(request: web.BaseRequest):
+    """
+    Request handler for accepting a stored connection request.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The resulting connection record details
+
+    """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+    connection_id = request.match_info["id"]
+    try:
+        connection = await ConnectionRecord.retrieve_by_id(
+            context.storage, connection_id
+        )
+    except StorageNotFoundError:
+        return web.HTTPNotFound()
+    connection_mgr = ConnectionManager(context)
+    my_endpoint = request.query.get("my_endpoint") or None
+    my_router_did = request.query.get("my_router_did") or None
+    their_role = request.query.get("their_role") or None
+    request = await connection_mgr.create_response(
+        connection, my_endpoint, my_router_did, their_role
+    )
+    target = await connection_mgr.get_connection_target(connection)
+    await outbound_handler(request, target)
+    return web.json_response(connection.serialize())
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -227,4 +308,7 @@ async def register(app: web.Application):
     )
     app.add_routes(
         [web.post("/connections/{id}/accept-invitation", connections_accept_invitation)]
+    )
+    app.add_routes(
+        [web.post("/connections/{id}/accept-request", connections_accept_request)]
     )

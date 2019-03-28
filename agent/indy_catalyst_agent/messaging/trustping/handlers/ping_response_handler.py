@@ -22,4 +22,8 @@ class PingResponseHandler(BaseHandler):
 
         self._logger.info("Received trust ping response from: %s", context.sender_did)
 
-        # Nothing to do, Connection should be automatically promoted to 'complete'
+        # Nothing to do, Connection should be automatically promoted to 'active'
+
+        await context.connection_record.log_activity(
+            context.storage, "ping", context.connection_record.DIRECTION_RECEIVED
+        )

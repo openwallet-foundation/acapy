@@ -1,5 +1,7 @@
 """Handle connection information interface with non-secrets storage."""
 
+import asyncio
+import datetime
 import json
 import uuid
 
@@ -7,10 +9,18 @@ from typing import Sequence
 
 from marshmallow import fields
 
+from ....admin.manager import AdminManager
 from ..messages.connection_invitation import ConnectionInvitation
+from ..messages.connection_request import ConnectionRequest
 from ....models.base import BaseModel, BaseModelSchema
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
+
+
+def time_now() -> str:
+    """Timestamp in ISO format."""
+    dt = datetime.datetime.utcnow()
+    return dt.replace(tzinfo=datetime.timezone.utc).isoformat(" ")
 
 
 class ConnectionRecord(BaseModel):
@@ -22,7 +32,12 @@ class ConnectionRecord(BaseModel):
         schema_class = "ConnectionRecordSchema"
 
     RECORD_TYPE = "connection"
-    RECORD_INVITATION_TYPE = "connection_invitation"
+    RECORD_TYPE_ACTIVITY = "connection_activity"
+    RECORD_TYPE_INVITATION = "connection_invitation"
+    RECORD_TYPE_REQUEST = "connection_request"
+
+    DIRECTION_RECEIVED = "received"
+    DIRECTION_SENT = "sent"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -33,6 +48,7 @@ class ConnectionRecord(BaseModel):
     STATE_RESPONSE = "response"
     STATE_ACTIVE = "active"
     STATE_ERROR = "error"
+    STATE_INACTIVE = "inactive"
 
     ROUTING_STATE_NONE = "none"
     ROUTING_STATE_REQUIRED = "required"
@@ -54,6 +70,8 @@ class ConnectionRecord(BaseModel):
         state: str = None,
         routing_state: str = None,
         error_msg: str = None,
+        created_at: str = None,
+        updated_at: str = None,
     ):
         """Initialize a new ConnectionRecord."""
         self._id = connection_id
@@ -68,6 +86,9 @@ class ConnectionRecord(BaseModel):
         self.state = state or self.STATE_INIT
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.error_msg = error_msg
+        self.created_at = created_at
+        self.updated_at = updated_at
+        self._admin_timer = None
 
     @property
     def connection_id(self) -> str:
@@ -85,7 +106,14 @@ class ConnectionRecord(BaseModel):
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this connection."""
         ret = self.tags
-        ret.update({"error_msg": self.error_msg, "their_label": self.their_label})
+        ret.update(
+            {
+                "error_msg": self.error_msg,
+                "their_label": self.their_label,
+                "created_at": self.created_at,
+                "updated_at": self.updated_at,
+            }
+        )
         return ret
 
     @property
@@ -108,19 +136,23 @@ class ConnectionRecord(BaseModel):
                 result[prop] = val
         return result
 
-    async def save(self, storage: BaseStorage):
+    async def save(self, storage: BaseStorage) -> str:
         """Persist the connection record to storage.
 
         Args:
             storage: The `BaseStorage` instance to use
         """
+        self.updated_at = time_now()
         if not self._id:
             self._id = str(uuid.uuid4())
+            self.created_at = self.updated_at
             await storage.add_record(self.storage_record)
         else:
             record = self.storage_record
             await storage.update_record_value(record, record.value)
             await storage.update_record_tags(record, record.tags)
+        await self.admin_send_update(storage)
+        return self._id
 
     @classmethod
     async def retrieve_by_id(
@@ -237,7 +269,7 @@ class ConnectionRecord(BaseModel):
         """
         assert self.connection_id
         record = StorageRecord(
-            self.RECORD_INVITATION_TYPE,
+            self.RECORD_TYPE_INVITATION,
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
@@ -251,9 +283,134 @@ class ConnectionRecord(BaseModel):
         """
         assert self.connection_id
         result = await storage.search_records(
-            self.RECORD_INVITATION_TYPE, {"connection_id": self.connection_id}
+            self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         ).fetch_single()
         return ConnectionInvitation.from_json(result.value)
+
+    async def attach_request(self, storage: BaseStorage, request: ConnectionRequest):
+        """Persist the related connection request to storage.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            request: The request to relate to this connection record
+        """
+        assert self.connection_id
+        record = StorageRecord(
+            self.RECORD_TYPE_REQUEST,
+            request.to_json(),
+            {"connection_id": self.connection_id},
+        )
+        await storage.add_record(record)
+
+    async def retrieve_request(self, storage: BaseStorage) -> ConnectionRequest:
+        """Retrieve the related connection invitation.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
+        assert self.connection_id
+        result = await storage.search_records(
+            self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
+        ).fetch_single()
+        return ConnectionRequest.from_json(result.value)
+
+    async def log_activity(
+        self,
+        storage: BaseStorage,
+        activity_type: str,
+        direction: str,
+        meta: dict = None,
+    ):
+        """Log an event against this connection record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            activity_type: The activity type identifier
+            direction: The direction of the activity (sent or received)
+            meta: Optional metadata for the activity
+        """
+        assert self.connection_id
+        record = StorageRecord(
+            self.RECORD_TYPE_ACTIVITY,
+            json.dumps({"meta": meta, "time": time_now()}),
+            {
+                "type": activity_type,
+                "direction": direction,
+                "connection_id": self.connection_id,
+            },
+        )
+        await storage.add_record(record)
+        await self.admin_send_update(storage)
+
+    async def fetch_activity(
+        self, storage: BaseStorage, activity_type: str = None, direction: str = None
+    ) -> Sequence[dict]:
+        """Fetch all activity logs for this connection record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            activity_type: An optional activity type filter
+            direction: An optional direction filter
+        """
+        tag_filter = {"connection_id": self.connection_id}
+        if activity_type:
+            tag_filter["activity_type"] = activity_type
+        if direction:
+            tag_filter["direction"] = direction
+        records = await storage.search_records(
+            self.RECORD_TYPE_ACTIVITY, tag_filter
+        ).fetch_all()
+        results = [
+            dict(id=record.id, **json.loads(record.value), **record.tags)
+            for record in records
+        ]
+        results.sort(key=lambda x: x["time"], reverse=True)
+        return results
+
+    async def retrieve_activity(
+        self, storage: BaseStorage, activity_id: str
+    ) -> Sequence[dict]:
+        """Retrieve a single activity record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            activity_id: The ID of the activity entry
+        """
+        record = await storage.get_record(self.RECORD_TYPE_ACTIVITY, activity_id)
+        result = dict(id=record.id, **json.loads(record.value), **record.tags)
+        return result
+
+    async def update_activity_meta(
+        self, storage: BaseStorage, activity_id: str, meta: dict
+    ) -> Sequence[dict]:
+        """Update metadata for an activity entry.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+            activity_id: The ID of the activity entry
+            meta: The metadata stored on the activity
+        """
+        record = await storage.get_record(self.RECORD_TYPE_ACTIVITY, activity_id)
+        value = json.loads(record.value)
+        value["meta"] = meta
+        await storage.update_record_value(record, json.dumps(value))
+        await self.admin_send_update(storage)
+
+    async def admin_delayed_update(self, storage: BaseStorage, delay: float):
+        """Wait a specified time before sending a connection update event."""
+        if delay:
+            await asyncio.sleep(delay)
+        record = self.serialize()
+        record["activity"] = await self.fetch_activity(storage)
+        await AdminManager.add_event("connection_update", {"connection": record})
+
+    async def admin_send_update(self, storage: BaseStorage):
+        """Send updated connection status to websocket listener."""
+        if self._admin_timer:
+            self._admin_timer.cancel()
+        self._admin_timer = asyncio.ensure_future(
+            self.admin_delayed_update(storage, 0.1)
+        )
 
     @property
     def requires_routing(self) -> bool:
@@ -262,6 +419,12 @@ class ConnectionRecord(BaseModel):
             self.ROUTING_STATE_REQUIRED,
             self.ROUTING_STATE_PENDING,
         )
+
+    def __eq__(self, other) -> bool:
+        """Comparison between records."""
+        if type(other) is type(self):
+            return self.value == other.value and self.tags == other.tags
+        return False
 
 
 class ConnectionRecordSchema(BaseModelSchema):
@@ -284,3 +447,5 @@ class ConnectionRecordSchema(BaseModelSchema):
     state = fields.Str(required=False)
     routing_state = fields.Str(required=False)
     error_msg = fields.Str(required=False)
+    created_at = fields.Str(required=False)
+    updated_at = fields.Str(required=False)

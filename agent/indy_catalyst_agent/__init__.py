@@ -104,6 +104,33 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--accept-invites", action="store_true", help="Auto-accept connection invitations"
+)
+
+PARSER.add_argument(
+    "--accept-requests", action="store_true", help="Auto-accept connection requests"
+)
+
+PARSER.add_argument(
+    "--auto-respond-messages",
+    action="store_true",
+    help="Auto-respond to basic messages",
+)
+
+PARSER.add_argument(
+    "--no-receive-invites",
+    action="store_true",
+    help="Disable the receive invitations administration function",
+)
+
+PARSER.add_argument(
+    "--help-link",
+    type=str,
+    metavar="<help-url>",
+    help="Define the help URL for the administration interface",
+)
+
+PARSER.add_argument(
     "--invite",
     action="store_true",
     help="Generate and print a new connection invitation URL",
@@ -166,6 +193,10 @@ def main():
         settings["admin.enabled"] = True
         settings["admin.host"] = args.admin[0]
         settings["admin.port"] = args.admin[1]
+        if args.help_link:
+            settings["admin.help_link"] = args.help_link
+        if args.no_receive_invites:
+            settings["admin.no_receive_invites"] = True
 
     if args.debug:
         settings["debug.enabled"] = True
@@ -175,6 +206,13 @@ def main():
         settings["debug.print_invitation"] = True
     if args.send_invite:
         settings["debug.send_invitation_to"] = args.send_invite
+
+    if args.accept_invites:
+        settings["accept_invites"] = True
+    if args.accept_requests:
+        settings["accept_requests"] = True
+    if args.auto_respond_messages:
+        settings["debug.auto_respond_messages"] = True
 
     loop = asyncio.get_event_loop()
     try:

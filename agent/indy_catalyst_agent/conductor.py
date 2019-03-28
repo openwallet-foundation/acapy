@@ -12,6 +12,7 @@ import logging
 
 from typing import Coroutine, Union
 
+from .admin.manager import AdminManager
 from .admin.server import AdminServer
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
@@ -81,8 +82,11 @@ class Conductor:
         context.default_endpoint = self.settings.get(
             "default_endpoint", "http://localhost:10001"
         )
-        context.default_label = self.settings.get("default_name", "Indy Catalyst Agent")
+        context.default_label = self.settings.get(
+            "default_label", "Indy Catalyst Agent"
+        )
         context.message_factory = self.message_factory
+        context.settings = self.settings
 
         wallet_type = self.settings.get("wallet.type", "basic").lower()
         wallet_type = self.WALLET_TYPES.get(wallet_type, wallet_type)
@@ -134,6 +138,7 @@ class Conductor:
                     admin_host, admin_port, context, self.outbound_message_router
                 )
                 await self.admin_server.start()
+                AdminManager.set_server(self.admin_server)
             except Exception:
                 self.logger.exception("Unable to start administration API")
 

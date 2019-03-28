@@ -29,6 +29,13 @@ class PingHandler(BaseHandler):
             )
             return
 
+        await context.connection_record.log_activity(
+            context.storage, "ping", context.connection_record.DIRECTION_RECEIVED
+        )
+
         if context.message.response_requested:
             reply = PingResponse(_thread=ThreadDecorator(thid=context.message._id))
             await responder.send_reply(reply)
+            await context.connection_record.log_activity(
+                context.storage, "ping", context.connection_record.DIRECTION_SENT
+            )
