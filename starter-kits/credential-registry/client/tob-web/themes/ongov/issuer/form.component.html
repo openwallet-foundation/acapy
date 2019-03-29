@@ -1,0 +1,34 @@
+<section id="issuer" class="container" *ngIf="(result$ | async) as result">
+  <app-breadcrumb></app-breadcrumb>
+  <loading-indicator [loading]="result.loading"></loading-indicator>
+  <error-message [error]="result.error"></error-message>
+
+  <div class="row" *ngIf="result.data as record">
+    <div class="col-sm-12">
+      <div class="card name-panel" >
+        <div class="card-header panel-heading" translate>issuer.breadcrumb</div>
+        <div class="card-header panel-title">
+          <h5>{{record.abbreviation | translate}}</h5>
+        </div>
+        <div class="card-body form-body">
+
+            <div class="row form-group">
+                <label class="col-sm-3 control-label" translate>issuer.website</label>
+                <div class="col-sm-9 form-field">
+                    <a [title]="'app.footer.link-title' | translate "  target="_blank" class="body-link" [href]="[record.url]" rel="external">
+                        {{record.url}}</a>
+                </div>
+            </div>
+            <div class="row form-group">
+                <label class="col-sm-3 control-label" translate>issuer.email</label>
+                <div class="col-sm-9 form-field">
+                    {{record.email}}
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</section>

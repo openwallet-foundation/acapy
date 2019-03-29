@@ -1,0 +1,165 @@
+@import "./common";
+
+.page-min-height {
+  min-height: 20em;
+}
+
+h3, h4, h5 {
+  &.control-label {
+    cursor: default;
+    font-size: $font-size-base;
+  }
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+$indicator-color: #666;
+$dark-indicator-color: #eeeff3;
+$indicator-size: 1em;
+$indicator-thickness: 0.2em;
+.loading-indicator {
+	&, &:after {
+		border-radius: 50%;
+		width: $indicator-size;
+		height: $indicator-size;
+	}
+	animation: spin 1.1s infinite linear;
+	border: $indicator-thickness solid transparent;
+	border-top-color: $indicator-color;
+	line-height: 1;
+	&:not(.inline) {
+    margin: 0 auto;
+  }
+	position: relative;
+	text-indent: -9999em;
+	transform: translateZ(0);
+	&:after {
+		position: absolute;
+		top: (- $indicator-thickness);
+		left: (- $indicator-thickness);
+		border: $indicator-thickness solid transparentize($indicator-color, 0.8);
+		content: ' ';
+	}
+	.alt-text {
+	  display: none;
+	}
+	.dark-bg & {
+	  border-top-color: $dark-indicator-color;
+    &:after {
+		  border-color: transparentize($dark-indicator-color, 0.8);
+    }
+  }
+}
+
+.page-load {
+  font-size: 2rem;
+}
+
+.text-number {
+	font-variant-numeric: lining-nums tabular-nums;
+}
+
+.text-identifier {
+	font-family: $font-family-monospace;
+	font-size: 95%;
+}
+
+.text-help {
+  font-weight: normal;
+  color: $text-muted;
+}
+
+@keyframes loading {
+    from {left: -100%; }
+    to { left: 100%; }
+}
+
+.btn.loading {
+  background-color: #ddd;
+  border-color: #bbb;
+  color: #666;
+  cursor: wait;
+  overflow: hidden;
+  position: relative;
+  text-shadow:0 2px 2px #fff;
+  &::before {
+    animation: loading 1s linear infinite;
+    background-color: #2980b9;
+    background: linear-gradient(to right, #ddd, #2980b9, #ddd);
+    bottom: 0;
+    content: "";
+    height: 2px;
+    left: -100%;
+    position: absolute;
+    width: 50%;
+  }
+}
+
+// Standard margins for icons
+.fa.left {
+  margin-right: 0.25em;
+}
+.fa.right {
+  margin-left: 0.25em;
+}
+// Fix button height when only icon is visible
+.btn .fa {
+  line-height: inherit;
+}
+
+.form-body {
+  > .form-group:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Restore panel-info etc equivalents
+@each $color, $value in (success, info, warning, danger) {
+  .card-#{$color} {
+    border-color: theme-color-level($color, $alert-border-level);
+    > .card-header {
+      @include gradient-bg(theme-color-level($color, $alert-bg-level));
+      border-color: theme-color-level($color, $alert-border-level);
+      color: theme-color-level($color, $alert-color-level);
+    }
+    > .card-footer {
+      border-color: theme-color-level($color, $alert-border-level);
+    }
+  }
+}
+.card-warning {
+    border-color: theme-color-level(warning, -6);
+    > .card-header, > .card-footer {
+        border-color: theme-color-level(warning, -6);
+    }
+}
+
+// Header accessibility links
+a.a11y-link {
+  color: theme-color(light);
+  position: absolute;
+  left: 0;
+  top: 1rem;
+  text-align: center;
+  width: 100%;
+  &:focus {
+    color: theme-color(light);
+    outline: none;
+    z-index: 10;
+  }
+  .content {
+    background: theme-color(primary);
+    border: 1px solid theme-color(light);
+    border-radius: 3px;
+    box-sizing: border-box;
+    font-size: 1.1;
+    padding: 0.25em;
+  }
+}

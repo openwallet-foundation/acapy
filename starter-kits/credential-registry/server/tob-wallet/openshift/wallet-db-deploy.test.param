@@ -1,0 +1,20 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-wallet
+# Template File: templates/wallet-db-deploy.json
+#=========================================================
+# NAME=wallet-db
+# IMAGE_NAMESPACE=devex-von-tools
+# SOURCE_IMAGE_NAME=postgresql
+TAG_NAME=test
+# POSTGRESQL_DATABASE_NAME=Wallet
+# POSTGRESQL_USER=[a-zA-Z_][a-zA-Z0-9_]{10}
+# POSTGRESQL_PASSWORD=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# POSTGRESQL_ADMIN_PASSWORD=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# MOUNT_PATH=/var/lib/pgsql/data
+# PERSISTENT_VOLUME_SIZE=1Gi
+# PERSISTENT_VOLUME_CLASS=gluster-file-db
+# CPU_REQUEST=100m
+# CPU_LIMIT=250m
+# MEMORY_REQUEST=100Mi
+# MEMORY_LIMIT=512Mi

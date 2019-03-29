@@ -1,0 +1,29 @@
+<section id="topic-form" class="container" *ngIf="(result$ | async) as result">
+  <app-breadcrumb></app-breadcrumb>
+  <loading-indicator [loading]="result.loading"></loading-indicator>
+  <error-message tabIndex="0" [error]="result.error"></error-message>
+
+  <div class="row" *ngIf="result.data as topic">
+    <div class="col-sm-12">
+      <a tabIndex="0" [title]="'search.return-link' | translate" [routerLink]="'/home' | localize" class="title-back-link mb-3"><span class="fa fa-arrow-left"></span> {{'search.return-link' | translate}}</a>
+
+      <div class="row">
+        <div class="col-sm-12 name-info">
+          <!-- <name-panel *ngFor="let name of names" [record]="name"></name-panel> -->
+          <name-panel [record]="topic"></name-panel>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="row mt-3" *ngIf="result.loaded">
+    <h5><strong class="section-title" tabIndex="0" translate>cred.breadcrumb</strong></h5>
+
+    <div class="col-sm-12">
+      <related-creds [topicId]="topic.id" [defaultFormat]="credsFormat"></related-creds>
+    </div>
+  </div>
+
+</section>

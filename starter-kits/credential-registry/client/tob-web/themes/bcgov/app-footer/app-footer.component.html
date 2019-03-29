@@ -1,0 +1,43 @@
+<footer class="footer">
+  <section class="footer-detail">
+    <div class="container">
+      <div class="row my-4">
+        <div class="col-md-6">
+          <h4 class="h5" id="footerAbout" tabindex="-1" translate>general.about-site-title</h4>
+          <p>
+          An initiative to serve businesses by the Ministry of Citizens’ Services, OrgBook BC leverages
+          Hyperledger Indy open source blockchain technology, a first for a government.
+          </p>
+        </div>
+        <div class="col-md-4 offset-md-2">
+          <h4 class="h5" id="footerConnect" tabindex="-1" translate>connect.title</h4>
+          <a class="btn btn-outline-light" [routerLink]="'/contact' | localize" fragment="feedback">
+            {{ 'general.feedback-link' | translate }} <span class="fa fa-arrow-right right"></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="navbar navbar-expand-sm navbar-dark">
+    <div class="container footer-links">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" tabindex="0" [routerLink]="'/' | localize" translate>home.breadcrumb</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" tabindex="0" href="http://www2.gov.bc.ca/gov/content/home/disclaimer" target="_blank" translate>app.footer.disclaimer</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" tabindex="0" href="http://www2.gov.bc.ca/gov/content/home/privacy" target="_blank" translate>app.footer.privacy</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" tabindex="0" href="http://www2.gov.bc.ca/gov/content/home/accessibility" target="_blank" translate>app.footer.accessibility</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" tabindex="0" href="http://www2.gov.bc.ca/gov/content/home/copyright" target="_blank" translate>app.footer.copyright</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+</footer>

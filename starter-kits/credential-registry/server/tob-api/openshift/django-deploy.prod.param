@@ -1,0 +1,52 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-api
+# Template File: templates/django/django-deploy.json
+#=========================================================
+# NAME=django
+# APP_GROUP=tob
+# IMAGE_NAMESPACE=devex-von-tools
+APPLICATION_DOMAIN=demo-api.orgbook.gov.bc.ca
+# ROUTE_PATH=/api/v2/indy
+# DATABASE_SERVICE_NAME=postgresql
+# DATABASE_ENGINE=postgresql
+# DATABASE_NAME=TheOrgBook_Database
+# WALLET_TYPE=postgres_storage
+# POSTGRESQL_WALLET_HOST=wallet-db
+# POSTGRESQL_WALLET_PORT=5432
+# WALLET_ENCRYPTION_KEY=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# INDY_WALLET_SEED=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# INDY_WALLET_DID=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# WALLET_CREDENTIAL_STORE_NAME=wallet-credentials
+# APP_FILE=app-vonx.py
+# APP_CONFIG=
+# #DJANGO_SECRET_KEY=[\w]{50}
+# DJANGO_DEBUG=False
+# SOLR_SERVICE_NAME=solr
+# SOLR_CORE_NAME=the_org_book
+# SKIP_INDEXING_ON_STARTUP=all
+# ENABLE_REALTIME_INDEXING=1
+# ENABLE_SUGGESTER_REBUILD=
+TAG_NAME=prod
+# DATABASE_DEPLOYMENT_NAME=postgresql
+# PERSISTENT_VOLUME_SIZE=1Gi
+# MOUNT_PATH=/home/indy/.indy_client/wallet
+# GENESIS_URL=
+LEDGER_URL=http://prod.bcovrin.vonx.io
+# LEDGER_PROTOCOL_VERSION=
+# AUTO_REGISTER_DID=1
+# TOB_THEME=bcgov
+# USE_AUTHENTICATION=
+# USER_ID=[a-zA-Z_][a-zA-Z0-9_]{10}
+# USER_PASSWORD=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+# ADMIN_USER_ID=[a-zA-Z_][a-zA-Z0-9_]{10}
+# ADMIN_PASSWORD=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+APPLICATION_URL=https://demo.orgbook.gov.bc.ca
+# EMAIL_SETTINGS_STORE_NAME=email-settings
+# FEEDBACK_TARGET_EMAIL=
+# SMTP_SERVER_ADDRESS=
+# DEMO_SITE=True
+# CPU_REQUEST=100m
+# CPU_LIMIT=750m
+# MEMORY_REQUEST=100Mi
+# MEMORY_LIMIT=512Mi

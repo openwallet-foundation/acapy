@@ -1,0 +1,45 @@
+<header>
+  <a href="#contentStart" class="a11y-link" (click)="moveFocus($event, 'contentStart');">
+    <span class="content" translate>general.skip-link-content</span>
+  </a>
+  <a href="#footerAbout" class="a11y-link" (click)="moveFocus($event, 'footerAbout');">
+    <span class="content" translate>general.skip-link-about</span>
+  </a>
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" [routerLink]="'/' | localize">
+
+        <img class="img-fluid d-none d-md-block"
+          [src]="'assets/bootstrap/bcid-logo-rev-' + parent.currentLang + '.svg'" width="177" height="44"
+          tabindex="-1" [alt]="'app.header.logo-alt-text' | translate">
+
+        <img class="img-fluid d-md-none" src="assets/bootstrap/bcid-symbol-rev.svg" width="63" height="44"
+          [alt]="'app.header.logo-alt-text' | translate">
+      </a>
+      <div class="navbar-brand">
+        <span class="title" translate>app.header.title</span>
+        <span class="tag">PUBLIC BETA</span>
+      </div>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup"
+        (click)="toggleNavCollapsed($event)" [attr.aria-expanded]="!navCollapsed" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        <span class="navbar-toggler-label">MENU</span>
+      </button>
+      <div class="collapse navbar-collapse" [ngbCollapse]="navCollapsed" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+          <!-- a class="nav-item nav-link" href="#" [lang]="parent.altLang" (click)="parent.switchLanguage($event)">{{parent.altLangLabel}}</a -->
+          <a class="nav-item nav-link" [routerLink]="'/search/name' | localize" translate>search.title</a>
+          <a class="nav-item nav-link" [routerLink]="'/contact' | localize" translate>connect.title</a>
+          <a class="nav-item nav-link d-none" href="#" [lang]="parent.altLang" (click)="parent.switchLanguage($event)">{{parent.altLangLabel}}</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <div *ngIf="parent.showDebugMsg" class="debug-msg">
+    <div class="msg-body">
+      <small><span class="fa fa-exclamation-circle mr-2"></span></small>
+      {{ 'general.demo-site' | translate }}
+      <small><span class="fa fa-exclamation-circle ml-2"></span></small>
+    </div>
+  </div>
+</header>

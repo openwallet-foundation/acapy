@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "issuer": {
+      "id": 1,
+      "name": "BC Registries",
+      "abbreviation": "BC",
+      "url": "http://test.example.com",
+      "startDate": "2018-01-01",
+      "endDate": null
+    },
+    "description": "Incorporation",
+    "startDate": "2018-01-01",
+    "endDate": null
+  },
+  {
+    "id": 2,
+    "issuer": {
+      "id": 1,
+      "name": "BC Registries",
+      "abbreviation": "BC",
+      "url": "http://test.example.com",
+      "startDate": "2018-01-01",
+      "endDate": null
+    },
+    "description": "Doing Business As",
+    "startDate": "2018-01-01",
+    "endDate": null
+  }
+]

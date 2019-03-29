@@ -1,0 +1,133 @@
+%fa-base {
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.cred-link {
+  &::before {
+    @extend %fa-base;
+    content: "\f0a3";
+    padding-right: 0.3em;
+  }
+  &.location::before {
+    content: "\f041";
+  }
+  &.name::before {
+    content: "\f02b";
+  }
+  &.contact::before {
+    content: "\f1d8";
+  }
+  &.email::before {
+    content: "\f0e0";
+  }
+  &.phone::before {
+    content: "\f095";
+  }
+  &.url::before {
+    content: "\f14e";
+  }
+  &.person::before {
+    content: "\f2c2";
+  }
+  &.related::before {
+    content: "\f0c1";
+  }
+}
+
+.claim-info {
+  padding-left: 0.3em;
+  padding-right: 0.3em;
+  &::before {
+    @extend %fa-base;
+    padding-right: 0.3em;
+  }
+  &.contact::before {
+    content: "\f1d8";
+  }
+  &.location::before {
+    content: "\f041";
+  }
+  &.name::before {
+    content: "\f02b";
+  }
+  &.email::before {
+    content: "\f0e0";
+  }
+  &.phone::before {
+    content: "\f095";
+  }
+  &.website::before {
+    content: "\f14e";
+  }
+  &.person::before {
+    content: "\f2c2";
+  }
+  &.date::before {
+    content: "\f073";
+  }
+}
+div.claim-info {
+  padding-left: 1.3em;
+  position: relative;
+  &::before {
+    margin-left: -1.2em;
+  }
+}
+
+.issuer-link {
+  &::before {
+    @extend %fa-base;
+    content: "\f19c";
+    padding-right: 0.3em;
+  }
+}
+
+.claim-list {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  > li {
+    display: flex;
+    align-items: flex-start;
+    > label {
+      flex: 0 0 10em;
+      font-weight: normal;
+    }
+    > span {
+      flex: auto;
+    }
+  }
+}
+
+.attributes-outer {
+  max-width: 600px;
+}
+.attribute-table {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  margin-bottom: 0;
+  .attribute-type {
+    margin-bottom: 0;
+  }
+  .attribute-row:nth-child(even) {
+    background-color: #f3f3f3;
+  }
+}
+
+.form-field + .control-label, .form-field + .form-field {
+  margin-top: 10px;
+}
+
+.claim-meta {
+  padding-left: 3em;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+//place all overrides for a specific theme in this file inside your theme/cred directory
+@import "../../_active/cred/cred.custom";

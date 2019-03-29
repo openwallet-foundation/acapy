@@ -1,0 +1,6 @@
+User-agent: *
+
+Disallow: /api
+Disallow: /*/search
+Disallow: /*/organization
+Disallow: /assets

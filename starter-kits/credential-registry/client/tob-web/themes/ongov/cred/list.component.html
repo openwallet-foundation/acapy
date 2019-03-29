@@ -1,0 +1,42 @@
+<div class="creds-list" *ngIf="format !='search'">
+    <div *ngFor="let cred of records">
+    <div class="cred" *ngIf="cred.credential_type.schema.name.indexOf('registration') != -1">
+        <div class="card name-panel">
+            <div class="card-header panel-heading" >
+                <a [title]="[cred.issuer.name]" tabindex="0" class="header-link"  [routerLink]="['/issuer', cred.issuer.id] | localize">{{cred.issuer.abbreviation}} </a>
+            </div>
+
+            <div class="card-body form-body">
+                <a tabindex="0" [title]="'cred.business_registration' | translate" class="body-link control-label"  [routerLink]="cred.topic.extLink('cred', cred.id) | localize" translate>cred.business_registration</a>
+                <div class="form-field cert-image w-25 ml-auto">
+                    <img [alt]="'cred.verify-info'| translate" src="assets/cert.svg">
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+<div class="creds-list creds-search" *ngIf="format==='search'">
+    <div class="row cred-row" *ngFor="let cred of records">
+        <div class="col" *ngIf="cred.names.length > 0"> <!-- temp issue with search returning blank topics -->
+            <div class="row">
+                <div class="col">
+                    <a tabindex="0" [title]="cred.names[0].text"  [routerLink]="cred.topic.link | localize"
+                      class="body-link cred-link name">{{cred.names[0].text}}</a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col cred-info" tabindex="0">
+                    <small *ngIf="cred.topic.attribute_map['entity_type'] as topic_type">
+                        {{('business_type.' + topic_type.value) | translate}}
+                    </small>
+                </div>
+                <div class="col cred-address" tabindex="0">
+                    <small *ngIf="cred.topic.addresses.length > 0">
+                        <address-view [record]="cred.topic.addresses[0]" style="float: right"></address-view>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

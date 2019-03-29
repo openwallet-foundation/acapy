@@ -1,0 +1,19 @@
+<header>
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" [title]="'app.header.logo-alt-text' | translate"  href="http://www.ontario.ca" tabindex="1">
+        <img class="header-logo" tabindex="-1" target="_blank"
+             [src]="'assets/ontario-logo.png'">
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup"
+        (click)="toggleNavCollapsed($event)" [attr.aria-expanded]="!navCollapsed" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" [ngbCollapse]="navCollapsed" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+          <a class="nav-item nav-link" href="#" [lang]="parent.altLang" (click)="parent.switchLanguage($event)">{{parent.altLangLabel}}</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>

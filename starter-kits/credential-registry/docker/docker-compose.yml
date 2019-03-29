@@ -1,0 +1,224 @@
+version: '3'
+services:
+  # 
+  # tob-web
+  # 
+  tob-web:
+    image: angular-on-nginx
+    environment:
+      - API_URL=${API_URL}
+      - APPLICATION_URL=${APPLICATION_URL}
+      - IpFilterRules=${IpFilterRules}
+      - RealIpFrom=${RealIpFrom}
+      - HTTP_BASIC_USERNAME=${HTTP_BASIC_USERNAME}
+      - HTTP_BASIC_PASSWORD=${HTTP_BASIC_PASSWORD}
+      - WEB_BASE_HREF=${WEB_BASE_HREF}
+      - WEB_DEPLOY_URL=${WEB_DEPLOY_URL}
+    networks:
+      - tob
+    ports:
+      - "${WEB_HTTP_PORT}:8080"
+    depends_on:
+      - tob-api
+
+  #
+  # tob-web-dev
+  # Run tob-web in development mode with auto-reload and inspector support
+  #
+  tob-web-dev:
+    image: angular-dev
+    environment:
+      - API_URL=${API_URL}
+      - APPLICATION_URL=${APPLICATION_URL}
+      - DEV_MODE=false
+      - NODE_ENV=development
+      - NPM_CONFIG_LOGLEVEL=notice
+      - NPM_RUN=dev
+      - TOB_THEME=${TOB_THEME}
+      - TOB_THEME_PATH_DEV=${TOB_THEME_PATH_DEV}
+      - WEB_BASE_HREF=${WEB_BASE_HREF}
+      - WEB_DEPLOY_URL=${WEB_DEPLOY_URL}
+    networks:
+      - tob
+    ports:
+      - "${WEB_HTTP_PORT}:8080"
+      - 5858:5858
+    volumes:
+      - "../client/tob-web/src:/opt/app-root/src/src"
+      - "${TOB_THEME_PATH}:/tmp/tob-theme"
+    depends_on:
+      - tob-api
+
+  # 
+  # tob-api
+  #-------------------------------------------------
+  # The API performs the migrations on the database
+  # and updates the indexes in Solr.  Therefore
+  # it needs to come up after the database and 
+  # and Solr services have had time to fully
+  # initialize.
+  #
+  #
+  # We are using a simple sleep command to do this 
+  # for the moment; refer to the `command` section 
+  # of the configuration for details.  It would be 
+  # nice to implement a more deterministic solution.
+  #
+  tob-api:
+    image: django
+    environment:
+      - APP_FILE=${APP_FILE}
+      - APP_CONFIG=${APP_CONFIG}
+      - APP_MODULE=${APP_MODULE}
+      - DATABASE_SERVICE_NAME=${DATABASE_SERVICE_NAME}
+      - DATABASE_ENGINE=${DATABASE_ENGINE}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - WALLET_TYPE=${WALLET_TYPE}
+      - POSTGRESQL_WALLET_HOST=${POSTGRESQL_WALLET_HOST}
+      - POSTGRESQL_WALLET_PORT=${POSTGRESQL_WALLET_PORT}
+      - POSTGRESQL_WALLET_USER=${POSTGRESQL_USER}
+      - POSTGRESQL_WALLET_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_WALLET_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+      - INDY_WALLET_SEED=${INDY_WALLET_SEED}
+      - INDY_WALLET_DID=${INDY_WALLET_DID}
+      - DEBUG=${DEBUG}
+      - DEMO_SITE=${DEMO_SITE}
+      - SQL_DEBUG=${SQL_DEBUG}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_DEBUG=${DJANGO_DEBUG}
+      - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL}
+      - OPTIMIZE_TABLE_ROW_COUNTS=${OPTIMIZE_TABLE_ROW_COUNTS}
+      - SOLR_SERVICE_NAME=${SOLR_SERVICE_NAME}
+      - SOLR_CORE_NAME=${SOLR_CORE_NAME}
+      - SKIP_INDEXING_ON_STARTUP=${SKIP_INDEXING_ON_STARTUP}
+      - TOB_DB_SERVICE_HOST=${DATABASE_SERVICE_NAME}
+      - TOB_DB_SERVICE_PORT=5432
+      - TOB_SOLR_SERVICE_HOST=${SOLR_SERVICE_NAME}
+      - TOB_SOLR_SERVICE_PORT=8983
+      - INDY_DISABLED=${INDY_DISABLED}
+      - LEDGER_URL=${LEDGER_URL}
+      - GENESIS_URL=${GENESIS_URL}
+      - LEDGER_PROTOCOL_VERSION=${LEDGER_PROTOCOL_VERSION}
+      - AUTO_REGISTER_DID=${AUTO_REGISTER_DID:-1}
+      - STI_SCRIPTS_PATH=${STI_SCRIPTS_PATH}
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-1}
+      - RUST_LOG=${RUST_LOG}
+      - RUST_BACKTRACE=${RUST_BACKTRACE}
+      - TOB_THEME=${TOB_THEME}
+      - ENABLE_REALTIME_INDEXING=${ENABLE_REALTIME_INDEXING}
+      - APPLICATION_URL=${APPLICATION_URL}
+    volumes:
+      - ../server/tob-api/api:/home/indy/api
+      - ../server/tob-api/tob_api:/home/indy/tob_api
+      - ../server/tob-api/api_v2:/home/indy/api_v2
+      - tob-wallet:/home/indy/.indy_client/wallet
+    networks:
+      - tob
+    ports:
+      - "${API_HTTP_PORT}:8080"
+      - 3000:3000
+    depends_on:
+      - tob-db
+      - wallet-db
+      - tob-solr
+    command: >
+        /bin/bash -c "
+        echo waiting for solr ...;
+        sleep 10;
+        if [ $DEBUG ] && [ "$DEBUG" == "true" ]; then
+          python manage.py migrate && \
+          python manage.py update_index --max-retries=5 --batch-size=500;
+          python manage.py runserver --noreload --nothreading 0.0.0.0:8080;
+        else
+          ${STI_SCRIPTS_PATH}/run;
+        fi"
+
+  # 
+  # schema-spy
+  #-------------------------------------------------
+  # Needs to wait for the schema to be created/migrated
+  # by the API server; it's not enough to wait for the
+  # database to be available.
+  #
+  # We are using a simple sleep command to do this 
+  # for the moment; refer to the `command` section 
+  # of the configuration for details.  It would be 
+  # nice to implement a more deterministic solution.
+  #
+  schema-spy:
+    image: schema-spy
+    environment:
+      - DATABASE_SERVICE_NAME=${DATABASE_SERVICE_NAME}
+      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+      - POSTGRESQL_USER=${POSTGRESQL_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+    networks:
+      - tob
+    ports:
+      - 8082:8080
+    depends_on:
+      - tob-db
+    command: >
+      /bin/sh -c "
+        echo sleeping ...;
+        sleep 20;
+        ./start.sh;"
+    
+  # 
+  # tob-solr
+  # 
+  tob-solr:
+    image: solr
+    environment:
+      - CORE_NAME=${CORE_NAME}
+    networks:
+      - tob
+    ports:
+      - 8983:8983
+
+  # 
+  # tob-db
+  # 
+  tob-db:
+    image: postgresql
+    environment:
+      - POSTGRESQL_USER=${POSTGRESQL_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+    networks:
+      - tob
+    ports:
+      - 5432:5432
+    volumes:
+      - tob-data:/var/lib/pgsql/data     
+
+  # 
+  # wallet-db
+  # 
+  wallet-db:
+    image: postgresql
+    environment:
+      - POSTGRESQL_USER=${POSTGRESQL_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+      - POSTGRESQL_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
+    networks:
+      - tob
+    ports:
+      - 5433:5432
+    volumes:
+      - tob-wallet-db:/var/lib/pgsql/data     
+    #command:
+    #  postgres -c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr'
+
+networks:
+  tob:
+
+volumes:
+  tob-data:
+  tob-wallet:
+  tob-wallet-db:
+  tob-web-empty:

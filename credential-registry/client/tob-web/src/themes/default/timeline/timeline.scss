@@ -1,0 +1,202 @@
+@import "../common";
+
+$timeline-border-color: $card-border-color;
+$timeline-border: 1px solid $timeline-border-color;
+$timeline-hpad: 0; /* allow room for scrollbar? */
+$timeline-vpad: 8px;
+$timeline-row-shadow: inset 0 5px 20px 5px rgba(0, 0, 0, 0.08);
+$timeline-controls-bg: rgba(0, 0, 0, 0.1);
+$slot-border-default: 1px solid #ccc;
+$slot-bg-default: theme-color(light);
+$slot-bg-level: $alert-bg-level;
+$slot-border-level: $alert-border-level;
+$slot-color-level: $alert-color-level;
+$slot-focus-width: $btn-focus-width;
+$slot-radius: 5px;
+
+
+@mixin slot-variant($background, $border, $color) {
+  color: $color;
+  @include gradient-bg($background);
+  border-color: $border;
+  &.focus {
+    box-shadow: 0 0 0 $btn-focus-width rgba($border, .5);
+  }
+  &.hover, &.focus {
+    border-color: mix($black, $border, 3 * $theme-color-interval);
+  }
+}
+
+
+.timeline-outer {
+  border: $timeline-border;
+  :host.flush & {
+    border: none;
+  }
+  box-sizing: border-box;
+  display: flex;
+  flex-flow: column nowrap;
+  min-height: 10rem;
+  overflow: hidden;
+
+  .controls-outer {
+    background: $timeline-controls-bg;
+    border-bottom: $timeline-border;
+    padding: $card-spacer-y $card-spacer-x;
+    flex: none;
+  }
+  .controls-inner {
+    .btn {
+      font-size: 110%;
+      padding: 0.1rem;
+      width: 3rem;
+    }
+    > .btn, > .btn-group {
+      margin: 0 5px 0 0;
+    }
+  }
+
+  .rows-outer {
+    flex: auto;
+    padding: $timeline-vpad 0 1rem;
+    margin: 0 $timeline-hpad;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .axis-outer {
+    flex: none;
+    margin: 0 $timeline-hpad;
+  }
+}
+
+.timeline-row {
+  border: $timeline-border;
+  border-left: none;
+  border-right: none;
+  box-shadow: $timeline-row-shadow;
+  box-sizing: border-box;
+  height: 2.3em;
+  margin-bottom: 8px;
+  padding: 2px 0;
+  position: relative;
+  .prev-link, .next-link {
+    position: absolute;
+    color: #555;
+    top: 0;
+    bottom: 0;
+    font-size: 1.2em;
+    line-height: 1.7;
+    width: 0.8em;
+    z-index: 101;
+  }
+  .prev-link {
+    left: 0;
+  }
+  .next-link {
+    right: 0;
+    text-align: right;
+  }
+}
+
+.timeline-marker {
+  position: absolute;
+  box-sizing: border-box;
+  border-left: 1px solid theme-color(dark);
+  top: 0;
+  bottom: 0;
+  label {
+    background: theme-color(dark);
+    border-radius: 0 3px 3px 0;
+    bottom: 2px;
+    color: theme-color(light);
+    font-size: 0.8em;
+    left: 0;
+    line-height: 1;
+    padding: 2px;
+    position: absolute;
+    margin: 0;
+  }
+}
+
+.timeline-axis {
+  background: $timeline-controls-bg;
+  border-top: 2px solid $timeline-border-color;
+  height: 1.8em;
+  overflow: hidden;
+  padding-top: 2px;
+  pointer-events: none;
+  position: relative;
+  .tick {
+    box-sizing: border-box;
+    background: #bbb;
+    position: absolute;
+    top: 0;
+    height: 0.8em;
+    width: 1px;
+    .small {
+      height: 0.3em;
+      background: #ddd;
+    }
+  }
+  .date {
+    bottom: 0;
+    color: #555;
+    font-size: 0.8em;
+    line-height: 1em;
+    margin-left: -3em;
+    position: absolute;
+    text-align: center;
+    width: 6em;
+    word-wrap: nowrap;
+  }
+}
+
+.timeline-slot {
+  background: $slot-bg-default;
+  border: $slot-border-default;
+  box-sizing: border-box;
+  font-size: 0.9em;
+  line-height: 100%;
+  overflow: hidden;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  text-decoration: none;
+  width: 15em;
+  .content {
+    overflow: hidden;
+    padding: 0.2em 0 0 0.25em;
+    // word-wrap: break-word;
+  }
+  &:not([href]) {
+    cursor: default;
+  }
+  &.focus {
+    outline: none;
+  }
+  &.focus, &.hover {
+    z-index: 100;
+  }
+  &.started {
+    border-top-left-radius: $slot-radius;
+    border-bottom-left-radius: $slot-radius;
+  }
+  &:not(.started) {
+    border-left-width: 0;
+  }
+  &.ended {
+    border-top-right-radius: $slot-radius;
+    border-bottom-right-radius: $slot-radius;
+  }
+  &:not(.ended) {
+    border-right-width: 0;
+  }
+  @each $color, $value in (success, warning, danger, primary, secondary) {
+    &.slot-#{$color} {
+      @include slot-variant(theme-color-level($color, $slot-bg-level), theme-color-level($color, $slot-border-level), theme-color-level($color, $slot-color-level));
+    }
+  }
+}

@@ -1,0 +1,38 @@
+<section id="topic-form" class="container page-min-height" *ngIf="(result$ | async) as result">
+  <app-breadcrumb></app-breadcrumb>
+  <loading-indicator [loading]="! isLoaded('all')"></loading-indicator>
+  <error-message [error]="result.error"></error-message>
+
+  <div class="topic-main" [ngClass]="{'d-none': ! isLoaded('all')}">
+    <div class="row mt-4 mb-3" *ngIf="result.data as topic">
+      <div class="col-sm-12">
+        <h1 class="h2 page-title" id="contentStart" tabindex="-1">{{title}}</h1>
+
+        <div class="row title-links mb-3">
+          <div class="col">
+            <a [routerLink]="'/search' | localize" class="title-link back-link"><span class="fa fa-arrow-left left"></span>{{'search.return-link' | translate}}</a>
+          </div>
+          <div class="col text-right">
+            <app-sharelink [link]="topic.link"></app-sharelink>
+          </div>
+        </div>
+
+        <div class="name-info">
+          <name-panel [record]="topic"></name-panel>
+        </div>
+
+      </div>
+    </div>
+
+    <related-topics (afterLoad)="onLoadSection('related_from')" [records]="topic.related_from" [topicId]="topic.id" defaultFormat="compact" *ngIf="result.loaded" [related-from]="true" [title]="'topic.related-to' | translate"></related-topics>
+
+    <related-topics (afterLoad)="onLoadSection('related_to')" [records]="topic.related_to" [topicId]="topic.id" defaultFormat="compact" *ngIf="result.loaded" [title]="'name.doing-business-as' | translate"></related-topics>
+
+    <div class="row creds-outer" *ngIf="result.loaded">
+      <div class="col-sm-12">
+        <related-creds (afterLoad)="onLoadSection('creds')" [topicId]="topic.id" [defaultFormat]="credsFormat"></related-creds>
+      </div>
+    </div>
+  </div>
+
+</section>
