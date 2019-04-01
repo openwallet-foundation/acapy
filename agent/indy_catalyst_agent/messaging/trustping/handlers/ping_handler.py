@@ -3,7 +3,6 @@
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
 from ..messages.ping import Ping
 from ..messages.ping_response import PingResponse
-from ....models.thread_decorator import ThreadDecorator
 
 
 class PingHandler(BaseHandler):
@@ -34,7 +33,8 @@ class PingHandler(BaseHandler):
         )
 
         if context.message.response_requested:
-            reply = PingResponse(_thread=ThreadDecorator(thid=context.message._id))
+            reply = PingResponse()
+            reply.assign_thread_from(context.message)
             await responder.send_reply(reply)
             await context.connection_record.log_activity(
                 context.storage, "ping", context.connection_record.DIRECTION_SENT

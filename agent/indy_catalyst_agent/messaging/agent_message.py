@@ -65,7 +65,12 @@ class AgentMessage(BaseModel):
 
         """
         super(AgentMessage, self).__init__()
-        self._message_id = _id or str(uuid.uuid4())
+        if _id:
+            self._message_id = _id
+            self._message_new_id = False
+        else:
+            self._message_id = str(uuid.uuid4())
+            self._message_new_id = True
         self._message_l10n = _l10n
         self._message_thread = _thread
         self._message_timing = _timing
@@ -276,6 +281,25 @@ class AgentMessage(BaseModel):
             val: ThreadDecorator to set as the thread
         """
         self._message_thread = val
+
+    @property
+    def _thread_id(self) -> str:
+        """Accessor for the ID associated with this message."""
+        if self._thread and self._thread.thid:
+            return self._thread.thid
+        return self._message_id
+
+    def assign_thread_from(self, msg: "AgentMessage"):
+        """
+        Copy thread information from a previous message.
+
+        Args:
+            msg: The received message containing optional thread information
+        """
+        if msg:
+            thid = msg._thread and msg._thread.thid or msg._message_id
+            pthid = msg._thread and msg._thread.pthid
+            self._thread = ThreadDecorator(thid=thid, pthid=pthid)
 
     @property
     def _timing(self) -> TimingDecorator:

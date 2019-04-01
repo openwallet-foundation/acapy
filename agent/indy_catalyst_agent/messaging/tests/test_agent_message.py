@@ -31,6 +31,16 @@ class SignedAgentMessageSchema(AgentMessageSchema):
     value = fields.Str(required=True)
 
 
+class BasicAgentMessage(AgentMessage):
+    """Simple agent message implementation"""
+
+    class Meta:
+        """Meta data"""
+
+        schema_class = "AgentMessageSchema"
+        message_type = "basic-message"
+
+
 class TestAgentMessage(AsyncTestCase):
     """Tests agent message."""
 
@@ -68,3 +78,11 @@ class TestAgentMessage(AsyncTestCase):
         loaded = SignedAgentMessage.deserialize(serial)
         assert isinstance(loaded, SignedAgentMessage)
         assert await loaded.verify_signed_field("value", wallet) == key_info.verkey
+
+    async def test_assign_thread(self):
+        msg = BasicAgentMessage()
+        assert msg._thread_id == msg._id
+        reply = BasicAgentMessage()
+        reply.assign_thread_from(msg)
+        assert reply._thread_id == msg._thread_id
+        assert reply._thread_id != reply._id
