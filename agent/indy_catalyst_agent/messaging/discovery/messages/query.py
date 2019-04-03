@@ -5,8 +5,9 @@ from marshmallow import fields
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import QUERY
 
-HANDLER_CLASS = "indy_catalyst_agent.messaging.discovery.handlers"
-".query_handler.QueryHandler"
+HANDLER_CLASS = (
+    "indy_catalyst_agent.messaging.discovery.handlers.query_handler.QueryHandler"
+)
 
 
 class Query(AgentMessage):

@@ -12,4 +12,4 @@ class DiscloseHandler(BaseHandler):
         self._logger.debug("DiscloseHandler called with context %s", context)
         assert isinstance(context.message, Disclose)
 
-        # no action (currently)
+        print("Received protocols:\n{}".format(context.message.protocols))

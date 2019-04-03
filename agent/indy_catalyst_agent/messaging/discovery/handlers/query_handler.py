@@ -15,4 +15,4 @@ class QueryHandler(BaseHandler):
 
         types = context.message_factory.types_matching_query(context.message.query)
         reply = Disclose(protocols={k: {} for k in types})
-        await self.responder.send_reply(reply)
+        await responder.send_reply(reply)
