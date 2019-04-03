@@ -13,7 +13,7 @@ class QueryResultSchema(Schema):
 
 
 @docs(
-    tags=["discovery"],
+    tags=["server"],
     summary="Query supported protocols",
     parameters=[
         {
