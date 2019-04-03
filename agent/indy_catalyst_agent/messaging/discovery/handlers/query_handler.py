@@ -13,6 +13,6 @@ class QueryHandler(BaseHandler):
         self._logger.debug("QueryHandler called with context %s", context)
         assert isinstance(context.message, Query)
 
-        types = context.message_factory.types_matching_query(context.message.query)
+        types = context.message_factory.protocols_matching_query(context.message.query)
         reply = Disclose(protocols={k: {} for k in types})
         await responder.send_reply(reply)

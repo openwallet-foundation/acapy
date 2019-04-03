@@ -37,7 +37,7 @@ async def query_protocols(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    results = context.message_factory.types_matching_query(
+    results = context.message_factory.protocols_matching_query(
         request.query.get("query", "*")
     )
 
