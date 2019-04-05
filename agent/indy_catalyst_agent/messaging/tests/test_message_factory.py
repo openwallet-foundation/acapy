@@ -62,8 +62,8 @@ class TestMessageFactory(TestCase):
             {self.test_message_type: self.test_message_handler}
         )
         for q in self.test_message_type_queries:
-            matches = self.factory.types_matching_query(q)
+            matches = self.factory.protocols_matching_query(q)
             assert matches == (self.test_message_type,)
         for q in self.test_message_type_queries_fail:
-            matches = self.factory.types_matching_query(q)
+            matches = self.factory.protocols_matching_query(q)
             assert matches == ()
