@@ -74,6 +74,7 @@ class ConnectionRecord(BaseModel):
         error_msg: str = None,
         created_at: str = None,
         updated_at: str = None,
+        active_menu: dict = None,
     ):
         """Initialize a new ConnectionRecord."""
         self._id = connection_id
@@ -114,6 +115,7 @@ class ConnectionRecord(BaseModel):
                 "their_label": self.their_label,
                 "created_at": self.created_at,
                 "updated_at": self.updated_at,
+                "active_menu": self.active_menu,
             }
         )
         return ret
