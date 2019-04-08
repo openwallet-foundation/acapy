@@ -9,7 +9,7 @@ SOURCE_FILE=./config/blacklist.conf
 OUTPUT_FORMAT=json
 OUTPUT_FILE=blacklist-conf-configmap_DeploymentConfig.json
 
-generateConfigMap() {  
+generateConfigMap() {
   _config_map_name=${1}
   _source_file=${2}
   _output_format=${3}

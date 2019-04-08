@@ -266,8 +266,9 @@ build-api() {
   docker build -q \
     -t 'indycat-indyapi-build' \
     -f '../../../credential-registry/server/python-indy-api/Dockerfile' '../../../credential-registry/server/python-indy-api/'
+  
   BASE_IMAGE="indycat-indyapi-build"
-  #BASE_IMAGE="bcgovimages/von-image:py36-1.7-ew-0-s2i"
+  
   echo -e "\nBuilding django image from ${BASE_IMAGE}..."
   ${S2I_EXE} build \
     -e "HTTP_PROXY=${HTTP_PROXY}" \
@@ -277,6 +278,12 @@ build-api() {
     '../server/tob-api' \
     "$BASE_IMAGE" \
     'django'
+  
+  # this is only required in Windows, but it won't hurt to run it regardless of the platform
+  echo -e "\nFixing file permissions in final tob-api (django) image"
+  docker build -q \
+    -t 'django' \
+    -f '../../../credential-registry/server/Dockerfile' '../../../credential-registry/server'
 }
 
 buildImages() {
