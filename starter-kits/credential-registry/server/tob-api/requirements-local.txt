@@ -1,4 +1,0 @@
-# dependant indycat libraries
--e file:///Users/icostanzo/Projects/indy-catalyst/credential-registry/server/django-icat-api/
--e file:///Users/icostanzo/Projects/indy-catalyst/credential-registry/server/python-indy-api/
-
