@@ -48,3 +48,8 @@ ptvsd==4.1.1a1
 # aiohttp
 aiohttp~=3.4.0
 aiohttp-wsgi~=0.8.1
+
+# rest hooks and related
+django-rest-hooks==1.5.0
+drf-nested-routers
+celery~=4.3.0
