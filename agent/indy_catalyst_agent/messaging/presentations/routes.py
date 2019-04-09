@@ -1,5 +1,7 @@
+"""Admin routes for presentations."""
+
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
+from aiohttp_apispec import docs, request_schema
 from marshmallow import fields, Schema
 from urllib.parse import parse_qs
 
@@ -15,10 +17,14 @@ class PresentationRequestRequestSchema(Schema):
     """Request schema for sending a proof request."""
 
     class RequestedAttribute(Schema):
+        """RequestedAttribute model."""
+
         name = fields.Str(required=True)
         restrictions = fields.List(fields.Dict(), required=False)
 
     class RequestedPredicate(Schema):
+        """RequestedPredicate model."""
+
         name = fields.Str(required=True)
         p_type = fields.Str(required=True)
         p_value = fields.Str(required=True)

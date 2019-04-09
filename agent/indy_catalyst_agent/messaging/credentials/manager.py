@@ -127,7 +127,10 @@ class CredentialManager:
                 credential_definition_id
             )
 
-        credential_request, credential_request_metadata = await self.context.holder.create_credential_request(
+        (
+            credential_request,
+            credential_request_metadata,
+        ) = await self.context.holder.create_credential_request(
             credential_offer, credential_definition, did
         )
 

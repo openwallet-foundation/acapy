@@ -13,10 +13,6 @@ from ..messaging.credential_definitions.routes import (
 from ..messaging.basicmessage.routes import register as register_basicmessages
 from ..messaging.trustping.routes import register as register_trustping
 
-from ..messaging.basicmessage.routes import register as register_basicmessages
-from ..messaging.trustping.routes import register as register_trustping
-
-
 
 async def register_module_routes(app: web.Application):
     """

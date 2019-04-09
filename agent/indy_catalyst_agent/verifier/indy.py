@@ -26,7 +26,7 @@ class IndyVerifier(BaseVerifier):
         self, presentation_request, presentation, schemas, credential_definitions
     ) -> bool:
         """
-        Verify a presentation
+        Verify a presentation.
 
         Args:
             presentation_request: Presentation request data

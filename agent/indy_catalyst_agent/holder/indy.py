@@ -129,7 +129,8 @@ class IndyHolder(BaseHolder):
 
         # TODO: use prover_search_credentials_for_proof_req instead of getting all
         #       creds at once. The API is odd, need to collate all referents from
-        #       proof request then make n calls to prover_fetch_credentials_for_proof_req?
+        #       proof request then make n calls to
+        #       prover_fetch_credentials_for_proof_req?
         #       Each request has the same extra_query filters applied to it?
 
         #
@@ -144,7 +145,8 @@ class IndyHolder(BaseHolder):
         #     # TODO: move cursor in chunks to avoid exploding memory
         #     await indy.anoncreds.prover_fetch_credentials(search_handle, start)
         #
-        # credentials_json = await indy.anoncreds.prover_fetch_credentials_for_proof_req(
+        # credentials_json =
+        #      await indy.anoncreds.prover_fetch_credentials_for_proof_req(
         #     search_handle, count
         # )
         # await indy.anoncreds.prover_close_credentials_search(search_handle)

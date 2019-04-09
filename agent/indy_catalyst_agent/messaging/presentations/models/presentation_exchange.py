@@ -72,7 +72,7 @@ class PresentationExchange(BaseModel):
 
     @property
     def value(self) -> dict:
-        """Accessor for the JSON record value generated for this presentation exchange."""
+        """Accessor for JSON record value generated for this presentation exchange."""
         ret = self.tags
         ret.update({"error_msg": self.error_msg})
         return ret
@@ -88,7 +88,7 @@ class PresentationExchange(BaseModel):
             "state",
             "presentation_request",
             "presentation",
-            "verified"
+            "verified",
         ):
             val = getattr(self, prop)
             if val:
@@ -166,7 +166,7 @@ class PresentationExchange(BaseModel):
 
 
 class PresentationExchangeSchema(BaseModelSchema):
-    """Schema to allow serialization/deserialization of presentation exchange records."""
+    """Schema for serialization/deserialization of presentation exchange records."""
 
     class Meta:
         """PresentationExchangeSchema metadata."""

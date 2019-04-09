@@ -45,10 +45,7 @@ class PresentationManager:
     async def create_request(
         self, requested_attributes: list, requested_predicates: list, connection_id
     ):
-        """
-        Create a proof request.
-
-        """
+        """Create a proof request."""
 
         presentation_request = {
             "name": str(uuid4()),
@@ -171,7 +168,9 @@ class PresentationManager:
 
             # Build credential_definitions for anoncreds
             for credential_definition_id in credential_definition_ids:
-                credential_definition = await self.context.ledger.get_credential_definition(
+                (
+                    credential_definition
+                ) = await self.context.ledger.get_credential_definition(
                     credential_definition_id
                 )
                 credential_definitions[credential_definition_id] = credential_definition
@@ -201,10 +200,10 @@ class PresentationManager:
         return presentation_exchange_record, presentation_message
 
     async def receive_presentation(self, presentation: dict, thread_id: str):
-        """
-        Receive a presentation request.
-        """
-        presentation_exchange_record = await PresentationExchange.retrieve_by_tag_filter(
+        """Receive a presentation request."""
+        (
+            presentation_exchange_record
+        ) = await PresentationExchange.retrieve_by_tag_filter(
             self.context.storage, tag_filter={"thread_id": thread_id}
         )
 
@@ -217,9 +216,7 @@ class PresentationManager:
     async def verify_presentation(
         self, presentation_exchange_record: PresentationExchange
     ):
-        """
-        Verify a presentation request.
-        """
+        """Verify a presentation request."""
 
         presentation_request = presentation_exchange_record.presentation_request
         presentation = presentation_exchange_record.presentation
@@ -244,7 +241,9 @@ class PresentationManager:
 
             # Build credential_definitions for anoncreds
             for credential_definition_id in credential_definition_ids:
-                credential_definition = await self.context.ledger.get_credential_definition(
+                (
+                    credential_definition
+                ) = await self.context.ledger.get_credential_definition(
                     credential_definition_id
                 )
                 credential_definitions[credential_definition_id] = credential_definition
