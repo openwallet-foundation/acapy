@@ -12,6 +12,9 @@ from rest_hooks.models import Hook
 
 from api_v2.auth import generate_random_username
 from api_v2.models.CredentialType import CredentialType
+from api_v2.models.User import User
+from icat_hooks.models.HookUser import HookUser
+
 from ..models.Subscription import Subscription
 
 SUBSCRIBERS_GROUP_NAME = "subscriber"
@@ -64,18 +67,28 @@ class RegistrationSerializer(serializers.Serializer):
         # TODO generate password (?) for now user must supply
         # tmp_password = get_random_password()
         # validated_data['password'] = tmp_password
-        validated_data["registration_expiry"] = get_password_expiry()
+        # validated_data["registration_expiry"] = get_password_expiry()
 
         print(
             "Create user with", validated_data["username"], validated_data["password"]
         )
 
-        user = get_user_model().objects.create_user(**validated_data)
-
+        # create api_v2 user
+        user_data = {}
+        user_data["reg_id"] = validated_data["reg_id"]
+        user_data["email"] = validated_data["email"]
+        user_data["username"] = validated_data["username"]
+        user_data["password"] = validated_data["password"]
+        user = get_user_model().objects.create_user(**user_data)
         user.groups.add(get_subscribers_group())
         user.save()
 
-        # validated_data['gen_password'] = tmp_password
+        hookuser_data = {}
+        hookuser_data["user"] = User.objects.get_by_natural_key(username=validated_data["username"])
+        hookuser_data["registration_expiry"] = validated_data["registration_expiry"]
+        hookuser_data["org_name"] = validated_data["org_name"]
+        hookuser_data["target_url"] = validated_data["target_url"]
+        hookuser_data["hook_token"] = validated_data["hook_token"]
 
         return user
 

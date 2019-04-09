@@ -1,13 +1,14 @@
+import django.db.models.deletion
+from django.contrib.auth import get_user_model
 from django.db import models
 
 from api_v2.models.Auditable import Auditable
 
 
 class HookUser(Auditable):
-    # these fields are the same as the api_v2 user
-    DID = models.TextField(max_length=60, blank=True, unique=True)
-    verkey = models.BinaryField(blank=True)
-    display_name = models.TextField(blank=True)
+    user = models.ForeignKey(
+        get_user_model(), on_delete=django.db.models.deletion.CASCADE
+    )
 
     # the following are for web hook registration
     # userid = re-used generated for web hooks subscribers
