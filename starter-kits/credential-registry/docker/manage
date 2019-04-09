@@ -94,7 +94,7 @@ EOF
 # -----------------------------------------------------------------------------------------------------------------
 # Default Settings:
 # -----------------------------------------------------------------------------------------------------------------
-DEFAULT_CONTAINERS="wallet-db tob-db tob-solr tob-api schema-spy tob-web"
+DEFAULT_CONTAINERS="wallet-db tob-db tob-solr tob-api schema-spy tob-web rabbitmq tob-worker"
 # -----------------------------------------------------------------------------------------------------------------
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
@@ -503,7 +503,7 @@ case "${COMMAND}" in
 start|up)
   _startupParams=$(getStartupParams $@)
   configureEnvironment $@
-  docker-compose up -d ${_startupParams} 
+  docker-compose up --scale tob-worker=2 -d ${_startupParams} 
   docker-compose logs -f
  ;;
 logs)
