@@ -4,7 +4,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly, AllowAny
 
-from api_v2.views import misc, rest, search, hooks
+from api_v2.views import misc, rest, search
 
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -58,26 +58,6 @@ miscPatterns = [
     path("feedback", misc.send_feedback),
     path("quickload", misc.quickload),
 ]
-
-# hook management (registration, add/update/delete hooks)
-router.register(
-    r"registration",
-    hooks.RegistrationViewSet,
-    "Web Hook Registration",
-)
-router.register(
-    r"subscription",
-    hooks.SubscriptionViewSet,
-    "Web Hook Subscription Management",
-)
-#hookPatterns = [
-    #path('registration/', hooks.registration_list, name='registration-list'),
-    #path('registration/<int:pk>/', hooks.registration_detail, name='registration-detail'),
-    #path("hook_registration/", hooks.registration_create),
-    #path("hook_registration/<str:userid>/", hooks.registration),
-    #path("hook_subscription/", hooks.subscription_create),
-    #path("hook_subscription/<str:userid>/<pk>/", hooks.subscription),
-#]
 
 swaggerPatterns = [
     path("", schema_view.with_ui("swagger", cache_timeout=None), name="api-docs")

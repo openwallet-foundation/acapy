@@ -278,12 +278,14 @@ build-api() {
     '../server/tob-api' \
     "$BASE_IMAGE" \
     'django'
-  
-  # this is only required in Windows, but it won't hurt to run it regardless of the platform
-  echo -e "\nFixing file permissions in final tob-api (django) image"
-  docker build -q \
-    -t 'django' \
-    -f '../../../credential-registry/server/Dockerfile' '../../../credential-registry/server'
+
+  # this is only required in Windows
+  if [[ "$OSTYPE" == "msys" ]]; then
+    echo -e "\nFixing file permissions in final tob-api (django) image"
+    docker build -q \
+      -t 'django' \
+      -f '../../../credential-registry/server/Dockerfile' '../../../credential-registry/server'
+  fi
 }
 
 buildImages() {

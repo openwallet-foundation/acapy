@@ -110,6 +110,8 @@ services:
       - TOB_THEME=${TOB_THEME}
       - ENABLE_REALTIME_INDEXING=${ENABLE_REALTIME_INDEXING}
       - APPLICATION_URL=${APPLICATION_URL}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
     volumes:
       - ../server/tob-api/api:/home/indy/api
       - ../server/tob-api/tob_api:/home/indy/tob_api
@@ -135,6 +137,55 @@ services:
         else
           ${STI_SCRIPTS_PATH}/run;
         fi"
+
+  tob-worker:
+    image: django
+    environment:
+      - APP_CONFIG=${APP_CONFIG}
+      - APP_MODULE=${APP_MODULE}
+      - DATABASE_SERVICE_NAME=${DATABASE_SERVICE_NAME}
+      - DATABASE_ENGINE=${DATABASE_ENGINE}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DEBUG=${DEBUG}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - SQL_DEBUG=${SQL_DEBUG}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_DEBUG=${DJANGO_DEBUG}
+      - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL}
+      - SOLR_SERVICE_NAME=${SOLR_SERVICE_NAME}
+      - SOLR_CORE_NAME=${SOLR_CORE_NAME}
+      - TOB_DB_SERVICE_HOST=${DATABASE_SERVICE_NAME}
+      - TOB_DB_SERVICE_PORT=5432
+      - TOB_SOLR_SERVICE_HOST=${SOLR_SERVICE_NAME}
+      - TOB_SOLR_SERVICE_PORT=8983
+      - INDY_WALLET_SEED=${INDY_WALLET_SEED}
+      - LEDGER_URL=${LEDGER_URL}
+      - INDY_WALLET_TYPE=${INDY_WALLET_TYPE}
+      - INDY_WALLET_URL=${INDY_WALLET_URL}
+      - STI_SCRIPTS_PATH=${STI_SCRIPTS_PATH}
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-1}
+      - RUST_LOG=${RUST_LOG}
+      - RUST_BACKTRACE=${RUST_BACKTRACE}
+      - TOB_THEME=${TOB_THEME}
+      - APP_SCRIPT=${APP_SCRIPT:-start-celery-worker.sh}
+    volumes:
+      - ../tob-api/api:/home/indy/api
+      - ../tob-api/api_v2:/home/indy/api_v2
+      - tob-wallet:/home/indy/.indy_client/wallet
+    networks:
+      - tob
+    depends_on:
+      - tob-db
+      - tob-solr
+      - rabbitmq
+    command: >
+        /bin/bash -c "
+        echo waiting for solr ...;
+        sleep 10;
+        ${STI_SCRIPTS_PATH}/run;"
 
   # 
   # schema-spy
@@ -214,6 +265,19 @@ services:
     #command:
     #  postgres -c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr'
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    networks:
+      - tob
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - tob-rabbit:/var/lib/rabbitmq
+
 networks:
   tob:
 
@@ -222,3 +286,4 @@ volumes:
   tob-wallet:
   tob-wallet-db:
   tob-web-empty:
+  tob-rabbit:
