@@ -46,6 +46,20 @@ read -r -d '' _CONFIG_SECTION << EOF
             ${_FORWARDED_HEADERS}
             proxy_pass ${1};
         }
+        location /hooks/ {
+            limit_except OPTIONS {
+                ${HTTP_BASIC}
+            }
+            proxy_set_header Authorization "";
+            ${_FORWARDED_HEADERS}
+            proxy_pass ${1%api/v2/}hooks/;
+        }
+        location = /hooks/ {
+            # allow access to swagger
+            proxy_set_header Authorization "";
+            ${_FORWARDED_HEADERS}
+            proxy_pass ${1%api/v2/}hooks/;
+        }
 EOF
 
 echo "${_CONFIG_SECTION}"

@@ -15,5 +15,5 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     path("api/v2/", include("api_v2.urls")),
     path("health", views.health),
-    path("api/hooks/", include("icat_hooks.urls")),
+    path("hooks/", include("icat_hooks.urls")),
 ]
