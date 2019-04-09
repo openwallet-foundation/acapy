@@ -2,7 +2,7 @@ from unittest import mock, TestCase
 
 from ..message_factory import MessageFactory, MessageParseError
 
-from ..proofs.messages.proof_request import ProofRequest
+from ..presentations.messages.proof_request import ProofRequest
 
 
 class TestMessageFactory(TestCase):

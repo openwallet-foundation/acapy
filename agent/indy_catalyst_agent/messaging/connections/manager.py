@@ -613,9 +613,9 @@ class ConnectionManager:
             try:
                 my_info = await self.context.wallet.get_local_did_for_verkey(to_verkey)
                 ctx.recipient_did = my_info.did
-                # TODO set ctx.recipient_did_public if DID is published to the ledger
-                # could also choose to set ctx.default_endpoint and ctx.default_label
-                # (these things could be stored on did_info.metadata)
+                if "public" in my_info.metadata and my_info.metadata["public"] is True:
+                    ctx.recipient_did_public = True
+
             except WalletNotFoundError:
                 pass
 

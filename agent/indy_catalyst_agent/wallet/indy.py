@@ -1,8 +1,10 @@
 """Indy implementation of BaseWallet interface."""
 
 import json
+import logging
 from typing import Sequence
 
+import indy.anoncreds
 import indy.did
 import indy.crypto
 import indy.pairwise
@@ -30,6 +32,8 @@ class IndyWallet(BaseWallet):
             config: {name, key, seed, did, auto-create, auto-remove}
 
         """
+        self.logger = logging.getLogger(__name__)
+
         if not config:
             config = {}
         super(IndyWallet, self).__init__(config)
@@ -40,6 +44,7 @@ class IndyWallet(BaseWallet):
         self._key = config.get("key") or self.DEFAULT_KEY
         self._name = config.get("name") or self.DEFAULT_NAME
         self._storage_type = config.get("storage_type") or self.DEFAULT_STORAGE_TYPE
+        self._master_secret_id = None
 
     @property
     def handle(self):
@@ -73,6 +78,17 @@ class IndyWallet(BaseWallet):
 
         """
         return self._name
+
+    @property
+    def master_secret_id(self) -> str:
+        """
+        Accessor for the master secret id.
+
+        Returns:
+            The master secret id
+
+        """
+        return self._master_secret_id
 
     @property
     def _wallet_config(self) -> dict:
@@ -193,6 +209,17 @@ class IndyWallet(BaseWallet):
                     raise WalletError("Wallet is already open: {}".format(self.name))
                 else:
                     raise WalletError(str(x_indy))
+
+        self.logger.info("Creating master secret...")
+        try:
+            self._master_secret_id = await indy.anoncreds.prover_create_master_secret(
+                self.handle, self.name
+            )
+        except IndyError as error:
+            if error.error_code == ErrorCode.AnoncredsMasterSecretDuplicateNameError:
+                self.logger.info("Master secret already exists")
+            else:
+                raise
 
     async def close(self):
         """Close previously-opened wallet, removing it if so configured."""
