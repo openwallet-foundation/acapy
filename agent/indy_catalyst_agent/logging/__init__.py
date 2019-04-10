@@ -38,6 +38,7 @@ class LoggingConfigurator:
         cls,
         inbound_transports,
         outbound_transports,
+        public_did_info,
         admin_server=None,
         banner_length=40,
         border_character=":",
@@ -48,6 +49,8 @@ class LoggingConfigurator:
         Args:
             inbound_transports: Configured inbound transports
             outbound_transports: Configured outbound transports
+            admin_server: Admin server info
+            public_did_info: Public DID info
             banner_length: (Default value = 40) Length of the banner
             border_character: (Default value = ":") Character to use in banner
                 border
@@ -103,6 +106,16 @@ class LoggingConfigurator:
         version_string = f"ver: {__version__}"
         version_string_spacer = " " * (banner_length - len(version_string))
 
+        public_did_subtitle_string = "Public DID Information:"
+        public_did_subtitle_spacer = " " * (
+            banner_length - len(public_did_subtitle_string)
+        )
+
+        public_did_strings = []
+        did_string = f"  - DID: {public_did_info.did}"
+        did_spacer = " " * (banner_length - len(did_string))
+        public_did_strings.append((did_string, did_spacer))
+
         admin_subtitle_string = "Administration API:"
         admin_subtitle_spacer = " " * (banner_length - len(admin_subtitle_string))
 
@@ -116,11 +129,14 @@ class LoggingConfigurator:
             disabled_spacer = " " * (banner_length - len(disabled_string))
             admin_strings.append((disabled_string, disabled_spacer))
 
+        # Title
         print()
         print(f"{banner_border}")
         print(lr_pad(f"{banner_title_string}{banner_title_spacer}"))
         print(f"{banner_spacer}")
         print(f"{banner_spacer}")
+
+        # Inbound transports
         print(
             lr_pad(
                 str(inbound_transports_subtitle_string)
@@ -131,6 +147,8 @@ class LoggingConfigurator:
         for transport_string in inbound_transport_strings:
             print(lr_pad(f"{transport_string[0]}{transport_string[1]}"))
         print(f"{banner_spacer}")
+
+        # Outbound transports
         print(
             lr_pad(
                 str(outbound_transports_subtitle_string)
@@ -141,6 +159,15 @@ class LoggingConfigurator:
         for transport_string in outbound_transport_strings:
             print(lr_pad(f"{transport_string[0]}{transport_string[1]}"))
         print(f"{banner_spacer}")
+
+        # DID info
+        print(lr_pad(str(public_did_subtitle_string) + str(public_did_subtitle_spacer)))
+        print(f"{banner_spacer}")
+        for public_did_string in public_did_strings:
+            print(lr_pad(f"{public_did_string[0]}{public_did_string[1]}"))
+        print(f"{banner_spacer}")
+
+        # Admin server info
         print(lr_pad(str(admin_subtitle_string) + str(admin_subtitle_spacer)))
         print(f"{banner_spacer}")
         for admin_string in admin_strings:
