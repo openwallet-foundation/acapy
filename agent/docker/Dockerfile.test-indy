@@ -1,4 +1,8 @@
-FROM bcgovimages/von-image:py36-1.8-0
+FROM bcgovimages/von-image:py36-1.8-2
+
+RUN mkdir src test-reports
+
+WORKDIR /home/indy/src
 
 ADD requirements.txt requirements.dev.txt ./
 
