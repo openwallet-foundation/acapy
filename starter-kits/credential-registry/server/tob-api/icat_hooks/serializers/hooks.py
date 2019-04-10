@@ -36,8 +36,8 @@ def get_random_password():
 
 
 def get_password_expiry():
-    now = datetime.utcnow().replace(tzinfo=pytz.utc)
-    return now + timedelta(days=90)
+    now = datetime.now()
+    return (now + timedelta(days=90)).date()
 
 
 class RegistrationSerializer(serializers.Serializer):
@@ -48,7 +48,7 @@ class RegistrationSerializer(serializers.Serializer):
     hook_token = serializers.CharField(required=False, max_length=240)
     username = serializers.CharField(required=False, max_length=40)
     password = serializers.CharField(required=True, max_length=40, write_only=True)
-    registration_expiry = serializers.DateTimeField(required=False, read_only=True)
+    registration_expiry = serializers.DateField(required=False, read_only=True)
 
     def create(self, validated_data):
         """

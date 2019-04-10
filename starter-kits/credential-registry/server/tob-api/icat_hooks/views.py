@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import *
-from rest_framework.viewsets import ModelViewSet
+from rest_framework import viewsets, mixins
 from rest_hooks.models import Hook
 
 from .models.CredentialHook import CredentialHook
@@ -11,8 +12,31 @@ from .serializers.hooks import (
     SubscriptionSerializer,
 )
 
+from .icatrestauth import IcatRestAuthentication
+
 SUBSCRIBERS_GROUP_NAME = "subscriber"
 
+
+# return authenticated user, or check basic auth info
+def get_request_user(request):
+    if request.user.is_authenticated:
+        print("request_user returning request.user")
+        request_user = get_request_user(request)
+        return request.user
+    if 'HTTP_AUTHORIZATION' in request.META:
+        print("request_user checking for basic auth")
+        auth = request.META['HTTP_AUTHORIZATION'].split()
+        if len(auth) == 2:
+            if auth[0].lower() == "basic":
+                print(" ... checking basic auth credentials")
+                uname, passwd = base64.b64decode(auth[1]).split(':')
+                user = authenticate(username=uname, password=passwd)
+                if user is not None and user.is_active:
+                    print(" ... authenticated user")
+                    request.user = user
+                    return user
+    print("User is not authenticated and no basic auth")
+    return None
 
 class IsOwnerOrCreateOnly(BasePermission):
     """
@@ -21,6 +45,7 @@ class IsOwnerOrCreateOnly(BasePermission):
 
     def has_permission(self, request, view):
         print("IsOwnerOrCreateOnly view permission check ...")
+        request_user = get_request_user(request)
         if request.user.is_authenticated:
             print("request.user", request.user)
         else:
@@ -31,6 +56,7 @@ class IsOwnerOrCreateOnly(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         print("IsOwnerOrCreateOnly.has_object_permission()")
+        request_user = get_request_user(request)
         if isinstance(obj, get_user_model()):
             print("user", request.user)
             if request.user.is_authenticated:
@@ -69,10 +95,10 @@ class IsOwnerOnly(BasePermission):
         return False
 
 
-class RegistrationViewSet(ModelViewSet):
+class RegistrationCreateViewSet(mixins.CreateModelMixin, 
+                                viewsets.GenericViewSet):
     """
-    This viewset automatically provides `list`, `create`, `retrieve`,
-    `update` and `destroy` actions.
+    This viewset automatically provides `create` actions.
 
     {
       "org_name": "Anon Solutions Inc",
@@ -83,14 +109,34 @@ class RegistrationViewSet(ModelViewSet):
       "password": "pass12345"
     }
     """
-
     serializer_class = RegistrationSerializer
-    lookup_field = "username"
-    # TODO enable permissions on subscriptions
-    # permission_classes = (IsOwnerOrCreateOnly,)
+    authentication_classes = ()
     permission_classes = ()
 
     def get_queryset(self):
+        return get_user_model().objects.filter(groups__name=SUBSCRIBERS_GROUP_NAME).all()
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class RegistrationViewSet(mixins.RetrieveModelMixin, 
+                          mixins.UpdateModelMixin,
+                          mixins.DestroyModelMixin,
+                          mixins.ListModelMixin,
+                          viewsets.GenericViewSet):
+    """
+    This viewset automatically provides `list`, `retrieve`,
+    `update` and `destroy` actions.
+    """
+
+    serializer_class = RegistrationSerializer
+    lookup_field = "username"
+    authentication_classes = (IcatRestAuthentication,)
+    permission_classes = (IsOwnerOrCreateOnly,)
+
+    def get_queryset(self):
+        get_request_user(self.request)
         if self.request.user.is_authenticated:
             return (
                 get_user_model()
@@ -101,14 +147,10 @@ class RegistrationViewSet(ModelViewSet):
                 .all()
             )
         else:
-            return (
-                get_user_model()
-                .objects.filter(groups__name=SUBSCRIBERS_GROUP_NAME)
-                .all()
-            )
-            # raise NotAuthenticated()
+            raise NotAuthenticated()
 
     def get_object(self):
+        get_request_user(self.request)
         if self.request.user.is_authenticated:
             if self.request.user.username == self.kwargs["username"]:
                 obj = get_object_or_404(
@@ -117,17 +159,12 @@ class RegistrationViewSet(ModelViewSet):
                 self.check_object_permissions(self.request, obj)
                 return obj
             else:
-                self.check_object_permissions(self.request, obj)
-                # raise PermissionDenied()
+                raise PermissionDenied()
         else:
-            self.check_object_permissions(self.request, obj)
-            # raise NotAuthenticated()
-
-    def perform_create(self, serializer):
-        serializer.save()
+            raise NotAuthenticated()
 
 
-class SubscriptionViewSet(ModelViewSet):
+class SubscriptionViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides `list`, `create`, `retrieve`,
     `update` and `destroy` actions.
@@ -142,9 +179,8 @@ class SubscriptionViewSet(ModelViewSet):
     """
 
     serializer_class = SubscriptionSerializer
-    # TODO enable permissions on subscriptions
-    # permission_classes = (IsAuthenticated, IsOwnerOnly,)
-    permission_classes = ()
+    authentication_classes = (IcatRestAuthentication,)
+    permission_classes = (IsAuthenticated, IsOwnerOnly,)
 
     def get_queryset(self):
         if "registration_username" in self.kwargs:
@@ -159,7 +195,8 @@ class SubscriptionViewSet(ModelViewSet):
     def perform_create(self, serializer):
         subscription = None
         if self.request.user.is_authenticated:
-            subscription = serializer.save(owner=self.request.user, hook=hook)
+            owner = self.request.user
+            subscription = serializer.save(owner=owner)
         else:
             username = None
             if "registration_username" in self.kwargs:
@@ -179,7 +216,7 @@ class SubscriptionViewSet(ModelViewSet):
             subscription.save()
 
 
-class HookViewSet(ModelViewSet):
+class HookViewSet(viewsets.ModelViewSet):
     """
     Retrieve, create, update or destroy webhooks.
     """

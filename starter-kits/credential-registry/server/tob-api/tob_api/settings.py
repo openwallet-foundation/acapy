@@ -295,6 +295,7 @@ if custom_settings_file.exists():
 
 
 # django-rest-hooks settings
+AUTHENTICATION_BACKENDS = ['icat_hooks.icatrestauth.IcatAuthBackend']
 
 HOOK_DELIVERER = "icat_hooks.tasks.deliver_hook_wrapper"
 

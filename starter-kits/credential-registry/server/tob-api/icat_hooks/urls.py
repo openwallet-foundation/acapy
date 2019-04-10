@@ -9,11 +9,12 @@ from rest_framework.urlpatterns import format_suffix_patterns
 # see https://github.com/alanjds/drf-nested-routers
 from rest_framework_nested import routers
 
-from icat_hooks.views import HookViewSet, RegistrationViewSet, SubscriptionViewSet
+from icat_hooks.views import HookViewSet, RegistrationCreateViewSet, RegistrationViewSet, SubscriptionViewSet
 
 router = SimpleRouter(trailing_slash=False)
 
 # hook management (registration, add/update/delete hooks)
+router.register(r"register", RegistrationCreateViewSet, "Web Hook Registration")
 router.register(r"registration", RegistrationViewSet, "Web Hook Registration")
 registrations_router = routers.NestedSimpleRouter(
     router, r"registration", lookup="registration"
