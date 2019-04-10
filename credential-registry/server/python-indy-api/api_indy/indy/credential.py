@@ -22,6 +22,7 @@ from api_v2.models.CredentialSet import CredentialSet
 from api_v2.models.CredentialType import CredentialType
 from api_v2.models.Credential import Credential as CredentialModel
 from api_v2.models.Claim import Claim
+from icat_hooks.models.HookableCredential import HookableCredential
 
 from api_v2.models.Address import Address
 from api_v2.models.Attribute import Attribute
@@ -91,6 +92,7 @@ class Credential(object):
         claim_data = credential_data["values"]
         for claim_attribute in claim_data:
             self._claim_attributes.append(claim_attribute)
+
     def __getattr__(self, name: str):
         """Make claim values accessible on class instance"""
         try:
@@ -403,10 +405,10 @@ class CredentialManager(object):
         Create a Topic, allowing for other threads which may have created it first
         """
         try:
-            return Topic.objects.get(**topic_spec)
+            return (Topic.objects.get(**topic_spec), False)
         except Topic.DoesNotExist:
             try:
-                return Topic.objects.create(**topic_spec)
+                return (Topic.objects.create(**topic_spec), True)
             except ValidationError:
                 if not retry:
                     raise CredentialException("Django validation error while creating topic")
@@ -416,7 +418,7 @@ class CredentialManager(object):
         return cls.find_or_create_topic(topic_spec, retry=False)
 
     @classmethod
-    def resolve_credential_topics(cls, credential, processor_config) -> (Topic, Topic):
+    def resolve_credential_topics(cls, credential, processor_config) -> (Topic, Topic, bool, bool):
         """
         Resolve the related topic(s) for a credential based on the processor config
         """
@@ -425,7 +427,9 @@ class CredentialManager(object):
         if type(topic_defs) is dict:
             topic_defs = [topic_defs]
 
-        result = (None, None)
+        topic_created = False
+        related_topic_created = False
+        result = (None, None, topic_created, related_topic_created)
 
         # Issuer can register multiple topic selectors to fall back on
         # We use the first valid topic and related parent if applicable
@@ -478,14 +482,16 @@ class CredentialManager(object):
             elif topic_source_id and topic_type:
                 # Create a new topic if our query comes up empty
                 topic_spec = {"source_id": topic_source_id, "type": topic_type}
-                topic = cls.find_or_create_topic(topic_spec)
+
+                # need to return the fact that the new Topic was created
+                (topic, topic_created) = cls.find_or_create_topic(topic_spec)
 
             # We stick with the first topic that we resolve
             if topic:
                 if not related_topic and related_topic_source_id and related_topic_type:
                     topic_spec = {"source_id": related_topic_source_id, "type": related_topic_type}
-                    related_topic = cls.find_or_create_topic(topic_spec)
-                result = (topic, related_topic)
+                    (related_topic, related_topic_created) = cls.find_or_create_topic(topic_spec)
+                result = (topic, related_topic, topic_created, related_topic_created)
         return result
 
     @classmethod
@@ -714,7 +720,7 @@ class CredentialManager(object):
         start_time = time.perf_counter()
         processor_config = credential_type.processor_config
 
-        topic, related_topic = cls.resolve_credential_topics(credential, processor_config)
+        (topic, related_topic, topic_created, related_topic_created) = cls.resolve_credential_topics(credential, processor_config)
 
         # If we couldn't resolve _any_ topics from the configuration,
         # we can't continue
@@ -749,8 +755,10 @@ class CredentialManager(object):
             db_credential = topic.credentials.create(**credential_args)
 
             # Create and associate claims for this credential
+            cred_claims = {}
             for claim_attribute in credential.claim_attributes:
                 claim_value = getattr(credential, claim_attribute)
+                cred_claims[claim_attribute] = claim_value
                 Claim.objects.create(
                     credential=db_credential, name=claim_attribute, value=claim_value
                 )
@@ -777,6 +785,21 @@ class CredentialManager(object):
             # Update last issue date for credential type
             credential_type.last_issue_date = datetime.now(timezone.utc)
             credential_type.save()
+
+            # add to the set of "hookable credentials"
+            # TODO make this a configurable step of the process
+            if topic_created:
+                topic_status = 'New'
+            else:
+                topic_status = 'Stream'
+            hookable_cred_data = {'cred_def_id': credential.cred_def_id, 'schema_name': credential.schema_name, 'attributes': cred_claims}
+            hookable_cred = HookableCredential(
+                    topic_status=topic_status,
+                    corp_num=topic.source_id, 
+                    credential_type=credential_type.schema.name, 
+                    credential_json=hookable_cred_data
+                )
+            hookable_cred.save()
 
         LOGGER.warn(
             "<<< store cred in local database: " + str(time.perf_counter() - start_time)
