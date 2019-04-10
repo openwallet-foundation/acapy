@@ -391,6 +391,10 @@ configureEnvironment() {
   export RealIpFrom='127.0.0.0/16'
   export HTTP_BASIC_USERNAME=${HTTP_BASIC_USERNAME:-}
   export HTTP_BASIC_PASSWORD=${HTTP_BASIC_PASSWORD:-}
+
+  # rabbitmq
+  export RABBITMQ_USER="RABBITMQ_USER"
+  export RABBITMQ_PASSWORD="RABBITMQ_PASSWORD"
 }
 
 getStartupParams() {
