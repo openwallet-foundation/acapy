@@ -9,7 +9,6 @@ import uuid
 from aiohttp import web
 from aiohttp_apispec import docs, response_schema, setup_aiohttp_apispec
 import aiohttp_cors
-from aiohttp_swagger import setup_swagger
 
 from marshmallow import fields, Schema
 
@@ -93,7 +92,12 @@ class AdminServer(BaseAdminServer):
         for route in self.app.router.routes():
             cors.add(route)
 
-        setup_aiohttp_apispec(app=self.app, title="Indy Catalyst Agent", version="v1")
+        setup_aiohttp_apispec(
+            app=self.app,
+            title="Indy Catalyst Agent",
+            version="v1",
+            swagger_path="/api/doc",
+        )
         self.app.on_startup.append(self.on_startup)
 
         runner = web.AppRunner(self.app)
@@ -114,7 +118,6 @@ class AdminServer(BaseAdminServer):
 
     async def on_startup(self, app: web.Application):
         """Perform webserver startup actions."""
-        setup_swagger(app=app, swagger_url="/api/doc", swagger_info=app["swagger_dict"])
 
     @docs(tags=["server"], summary="Fetch the list of loaded modules")
     @response_schema(AdminModulesSchema(), 200)
