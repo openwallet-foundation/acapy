@@ -67,30 +67,36 @@ class RegistrationSerializer(serializers.Serializer):
         # TODO generate password (?) for now user must supply
         # tmp_password = get_random_password()
         # validated_data['password'] = tmp_password
-        # validated_data["registration_expiry"] = get_password_expiry()
 
         print(
             "Create user with", validated_data["username"], validated_data["password"]
         )
 
         # create api_v2 user
-        user_data = {}
-        user_data["reg_id"] = validated_data["reg_id"]
-        user_data["email"] = validated_data["email"]
-        user_data["username"] = validated_data["username"]
-        user_data["password"] = validated_data["password"]
+        user_data_keys = ["email", "username", "password"]
+        user_data = {x: validated_data[x] for x in user_data_keys}
         user = get_user_model().objects.create_user(**user_data)
         user.groups.add(get_subscribers_group())
         user.save()
 
-        hookuser_data = {}
-        hookuser_data["user"] = User.objects.get_by_natural_key(username=validated_data["username"])
-        hookuser_data["registration_expiry"] = validated_data["registration_expiry"]
-        hookuser_data["org_name"] = validated_data["org_name"]
-        hookuser_data["target_url"] = validated_data["target_url"]
-        hookuser_data["hook_token"] = validated_data["hook_token"]
+        # create icat_hooks user
+        hookuser_data_keys = ["org_name", "target_url", "hook_token"]
+        hookuser_data = {x: validated_data[x] for x in hookuser_data_keys}
+        hookuser_data["user"] = user
+        hookuser_data["registration_expiry"] = get_password_expiry()
+        hookuser = HookUser.objects.create(**hookuser_data)
 
-        return user
+        # prepare serializable response
+        response = {}
+        response["id"] = user.id
+        response["email"] = user.email
+        response["username"] = user.username
+        response["org_name"] = hookuser.org_name
+        response["target_url"] = hookuser.target_url
+        response["hook_token"] = hookuser.hook_token
+        response["registration_expiry"] = hookuser.registration_expiry
+
+        return response
 
     def update(self, instance, validated_data):
         """
