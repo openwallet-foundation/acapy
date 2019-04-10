@@ -33,4 +33,5 @@ async def store():
 
 class TestIndyStorage(test_basic_storage.TestBasicStorage):
     """ """
+
     pass

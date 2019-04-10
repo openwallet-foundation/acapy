@@ -3,7 +3,13 @@
 from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
-from ...message_types import MessageTypes
+from ..message_types import CREDENTIAL_OFFER
+
+
+HANDLER_CLASS = (
+    "indy_catalyst_agent.messaging.credentials.handlers."
+    + "credential_offer_handler.CredentialOfferHandler"
+)
 
 
 class CredentialOffer(AgentMessage):
@@ -12,19 +18,28 @@ class CredentialOffer(AgentMessage):
     class Meta:
         """CredentialOffer metadata."""
 
-        # handler_class = CredentialOfferHandler
+        handler_class = HANDLER_CLASS
         schema_class = "CredentialOfferSchema"
-        message_type = MessageTypes.CREDENTIAL_OFFER.value
+        message_type = CREDENTIAL_OFFER
 
-    def __init__(self, *, offer_json: str = None, **kwargs):
+    def __init__(
+        self,
+        *,
+        offer_json: str = None,
+        credential_preview: dict = None,
+        comment: str = None,
+        **kwargs
+    ):
         """
         Initialize credential offer object.
 
         Args:
-            offer_json (str): Credential offer json
+            offer_json: Credential offer json
         """
         super(CredentialOffer, self).__init__(**kwargs)
         self.offer_json = offer_json
+        self.credential_preview = credential_preview
+        self.comment = comment
 
 
 class CredentialOfferSchema(AgentMessageSchema):
@@ -36,3 +51,5 @@ class CredentialOfferSchema(AgentMessageSchema):
         model_class = CredentialOffer
 
     offer_json = fields.Str(required=True)
+    credential_preview = fields.Dict(required=False)
+    comment = fields.Str(required=False)

@@ -113,6 +113,48 @@ class BaseWallet(ABC):
 
         """
 
+    async def create_public_did(
+        self, seed: str = None, did: str = None, metadata: dict = {}
+    ) -> DIDInfo:
+        """
+        Create and store a new public DID.
+
+        Implicitly flags all other dids as not public.
+
+        Args:
+            seed: Optional seed to use for did
+            did: The DID to use
+            metadata: Metadata to store with DID
+
+        Returns:
+            The created `DIDInfo`
+
+        """
+
+        metadata["public"] = True
+        dids = await self.get_local_dids()
+        for info in dids:
+            info_meta = info.metadata
+            info_meta["public"] = False
+            await self.replace_local_did_metadata(info.did, info_meta)
+        return await self.create_local_did(seed, did, metadata)
+
+    async def get_public_did(self) -> DIDInfo:
+        """
+        Retrieve the public did.
+
+        Returns:
+            The created `DIDInfo`
+
+        """
+
+        dids = await self.get_local_dids()
+        for info in dids:
+            if "public" in info.metadata and info.metadata["public"] is True:
+                return info
+
+        return None
+
     @abstractmethod
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
@@ -286,7 +328,7 @@ class BaseWallet(ABC):
         Decrypt a message assembled by auth_crypt or anon_crypt.
 
         Args:
-            message: The encrypted message content
+            enc_message: The encrypted message content
             to_verkey: The verkey of the recipient. If provided then auth_decrypt is
                 used, otherwise anon_decrypt is used.
 

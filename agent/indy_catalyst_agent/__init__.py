@@ -1,8 +1,9 @@
 """Entrypoint."""
 
+import os
+
 import argparse
 import asyncio
-import os
 
 from .conductor import Conductor
 from .defaults import default_message_factory
@@ -10,6 +11,7 @@ from .logging import LoggingConfigurator
 from .transport.inbound import InboundTransportConfiguration
 
 PARSER = argparse.ArgumentParser(description="Runs an Indy Agent.")
+
 
 PARSER.add_argument(
     "-it",
@@ -71,6 +73,15 @@ PARSER.add_argument(
     + " connection invitations and requests",
 )
 
+
+PARSER.add_argument(
+    "--seed",
+    type=str,
+    metavar="<wallet-seed>",
+    help="Seed to use when creating the public DID",
+)
+
+
 PARSER.add_argument(
     "--wallet-key",
     type=str,
@@ -90,6 +101,18 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--pool-name", type=str, metavar="<pool-name>", help="Specify the pool name"
+)
+
+PARSER.add_argument(
+    "--genesis-transactions",
+    type=str,
+    dest="genesis_transactions",
+    metavar="<genesis-transactions>",
+    help="Specify the genesis transactions as a string",
+)
+
+PARSER.add_argument(
     "--admin",
     type=str,
     nargs=2,
@@ -100,7 +123,11 @@ PARSER.add_argument(
 PARSER.add_argument("--debug", action="store_true", help="Enable debugging features")
 
 PARSER.add_argument(
-    "--seed", type=str, metavar="<did-seed>", help="Specify the default seed to use"
+    "--debug-seed",
+    dest="debug_seed",
+    type=str,
+    metavar="<debug-did-seed>",
+    help="Specify the debug seed to use",
 )
 
 PARSER.add_argument(
@@ -182,6 +209,11 @@ def main():
     if args.label:
         settings["default_label"] = args.label
 
+    if args.genesis_transactions:
+        settings["ledger.genesis_transactions"] = args.genesis_transactions
+
+    if args.seed:
+        settings["wallet.seed"] = args.seed
     if args.wallet_key:
         settings["wallet.key"] = args.wallet_key
     if args.wallet_name:
@@ -200,8 +232,8 @@ def main():
 
     if args.debug:
         settings["debug.enabled"] = True
-    if args.seed:
-        settings["debug.seed"] = args.seed
+    if args.debug_seed:
+        settings["debug.seed"] = args.debug_seed
     if args.invite:
         settings["debug.print_invitation"] = True
     if args.send_invite:
@@ -216,8 +248,11 @@ def main():
 
     loop = asyncio.get_event_loop()
     try:
-        asyncio.ensure_future(
-            start(inbound_transport_configs, outbound_transports, settings), loop=loop
+        # asyncio.ensure_future(
+        #     start(inbound_transport_configs, outbound_transports, settings), loop=loop
+        # )
+        loop.run_until_complete(
+            start(inbound_transport_configs, outbound_transports, settings)
         )
         loop.run_forever()
     except KeyboardInterrupt:
