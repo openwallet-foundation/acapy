@@ -8,7 +8,11 @@ from ..message_factory import MessageFactory, MessageParseError
 class TestMessageFactory(TestCase):
     no_type_message = {"a": "b"}
     unknown_type_message = {"@type": 1}
-    test_message_type = "MESSAGE"
+    test_message_type = "PROTOCOL/MESSAGE"
+    test_protocol = "PROTOCOL"
+    test_protocol_queries = ["*", "PROTOCOL", "PROTO*"]
+    test_protocol_queries_fail = ["", "nomatch", "nomatch*"]
+    test_message_handler = "fake_handler"
 
     def setUp(self):
         self.factory = MessageFactory()
@@ -53,3 +57,14 @@ class TestMessageFactory(TestCase):
 
     #     mock_proof_request.deserialize.assert_called_once_with(obj)
     #     assert return_value is mock_proof_request.deserialize.return_value
+
+    def test_message_type_query(self):
+        self.factory.register_message_types(
+            {self.test_message_type: self.test_message_handler}
+        )
+        for q in self.test_protocol_queries:
+            matches = self.factory.protocols_matching_query(q)
+            assert matches == (self.test_protocol,)
+        for q in self.test_protocol_queries_fail:
+            matches = self.factory.protocols_matching_query(q)
+            assert matches == ()

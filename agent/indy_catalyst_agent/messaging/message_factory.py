@@ -1,5 +1,7 @@
 """Handle identification of message types and instantiation of message classes."""
 
+from typing import Sequence
+
 from ..classloader import ClassLoader
 from ..error import BaseError
 
@@ -17,6 +19,37 @@ class MessageFactory:
     def __init__(self):
         """Initialize a MessageFactory instance."""
         self._typemap = {}
+
+    @property
+    def protocols(self) -> Sequence[str]:
+        """Accessor for a list of all message protocols."""
+        prots = {}
+        for message_type in self._typemap.keys():
+            pos = message_type.rfind("/")
+            if pos:
+                family = message_type[:pos]
+                prots[family] = True
+        return tuple(prots.keys())
+
+    @property
+    def message_types(self) -> Sequence[str]:
+        """Accessor for a list of all message types."""
+        return tuple(self._typemap.keys())
+
+    def protocols_matching_query(self, query: str) -> Sequence[str]:
+        """Return a list of message protocols matching a query string."""
+        all_types = self.protocols
+        result = None
+
+        if query == "*":
+            result = all_types
+        elif query:
+            if query.endswith("*"):
+                match = query[:-1]
+                result = tuple(k for k in all_types if k.startswith(match))
+            elif query in all_types:
+                result = (query,)
+        return result or ()
 
     def register_message_types(self, *types):
         """
