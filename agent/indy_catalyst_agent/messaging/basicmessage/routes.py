@@ -47,6 +47,7 @@ async def connections_send_message(request: web.BaseRequest):
 
         await connection.log_activity(
             context.storage,
+            context.service_factory,
             "message",
             connection.DIRECTION_SENT,
             {"content": params["content"]},
@@ -79,7 +80,9 @@ async def connections_expire_message(request: web.BaseRequest):
     meta = activity.get("meta") or {}
     if meta.get("copy_invite"):
         meta["copied"] = 1
-        await connection.update_activity_meta(context.storage, activity_id, meta)
+        await connection.update_activity_meta(
+            context.storage, context.service_factory, activity_id, meta
+        )
 
     return web.HTTPOk()
 

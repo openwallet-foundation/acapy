@@ -12,6 +12,7 @@ from .agent_message import AgentMessage
 from .connections.models.connection_record import ConnectionRecord
 from .connections.models.connection_target import ConnectionTarget
 from .message_factory import MessageFactory
+from ..service.base import BaseServiceFactory
 from ..storage.base import BaseStorage
 from ..wallet.base import BaseWallet
 
@@ -35,6 +36,7 @@ class RequestContext:
         self._transport_type = None
         self._message_factory = None
         self._message = None
+        self._service_factory = None
         self._settings = {}
         self._storage = None
         self._wallet = None
@@ -338,6 +340,28 @@ class RequestContext:
             msg: This context's new agent message
         """
         self._message = msg
+
+    @property
+    def service_factory(self) -> BaseServiceFactory:
+        """
+        Accessor for the service factory instance.
+
+        Returns:
+            This context's service factory
+
+        """
+        return self._service_factory
+
+    @service_factory.setter
+    def service_factory(self, factory: BaseServiceFactory):
+        """
+        Setter for the service factory instance.
+
+        Args:
+            factory: This context's new service factory
+
+        """
+        self._service_factory = factory
 
     @property
     def settings(self) -> dict:

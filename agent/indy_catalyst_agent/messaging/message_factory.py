@@ -50,7 +50,7 @@ class MessageFactory:
 
     def make_message(self, serialized_msg: dict) -> AgentMessage:
         """
-        Desererialize a message dict into a relevant message instance.
+        Deserialize a message dict into a relevant message instance.
 
         Given a dict describing a message, this method
         returns an instance of the related message class.

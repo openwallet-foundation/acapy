@@ -12,8 +12,8 @@ import logging
 
 from typing import Coroutine, Union
 
-from .admin.manager import AdminManager
 from .admin.server import AdminServer
+from .admin.service import AdminService
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
 from .error import BaseError
@@ -27,6 +27,7 @@ from .messaging.connections.manager import ConnectionManager
 from .messaging.connections.models.connection_target import ConnectionTarget
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
+from .service.factory import ServiceRegistry
 from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
@@ -78,6 +79,7 @@ class Conductor:
         self.message_factory = message_factory
         self.inbound_transport_configs = transport_configs
         self.outbound_transports = outbound_transports
+        self.service_registry = None
         self.settings = settings.copy() if settings else {}
 
     async def start(self) -> None:
@@ -131,6 +133,9 @@ class Conductor:
         self.context = context
         self.connection_mgr = ConnectionManager(context)
         self.dispatcher = Dispatcher()
+        self.service_registry = ServiceRegistry[RequestContext]()
+        # Replaced in expand_message when context is cloned
+        context.service_factory = self.service_registry.get_factory(context)
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -165,7 +170,9 @@ class Conductor:
                     admin_host, admin_port, context, self.outbound_message_router
                 )
                 await self.admin_server.start()
-                AdminManager.set_server(self.admin_server)
+                self.service_registry.register_service_handler(
+                    "admin", AdminService.service_handler(self.admin_server)
+                )
             except Exception:
                 self.logger.exception("Unable to start administration API")
 
@@ -221,7 +228,7 @@ class Conductor:
         """
         try:
             context = await self.connection_mgr.expand_message(
-                message_body, transport_type
+                message_body, transport_type, self.service_registry.get_factory
             )
         except Exception:
             self.logger.exception("Error expanding message")
