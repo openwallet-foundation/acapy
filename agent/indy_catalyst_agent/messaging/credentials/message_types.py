@@ -1,6 +1,6 @@
 """Message type identifiers for Connections."""
 
-MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/credential-issuance/"
+MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/credential-issuance/0.1/"
 
 CREDENTIAL_OFFER = f"{MESSAGE_FAMILY}credential-offer"
 CREDENTIAL_REQUEST = f"{MESSAGE_FAMILY}credential-request"
