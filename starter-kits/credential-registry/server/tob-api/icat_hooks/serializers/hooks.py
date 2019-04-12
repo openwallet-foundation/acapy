@@ -40,87 +40,84 @@ def get_password_expiry():
     return (now + timedelta(days=90)).date()
 
 
-class HookUserSerializer(serializers.Serializer):
+# data specific to hook registration that is not part of the User model (but is 1:1)
+class UserCredentialSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=False, max_length=40)
+    password = serializers.CharField(required=True, max_length=40, write_only=True)
+
+    class Meta:
+        model = get_user_model()
+        fields = ('username', 'password',)
+
+# registration maps to a user object (user registers and owns subscriptions)
+class RegistrationSerializer(serializers.ModelSerializer):
+    reg_id = serializers.ReadOnlyField(source="id")
+    email = serializers.CharField(required=True, max_length=128)
     org_name = serializers.CharField(required=True, max_length=240)
     target_url = serializers.CharField(required=False, max_length=240)
     hook_token = serializers.CharField(required=False, max_length=240)
     registration_expiry = serializers.DateField(required=False, read_only=True)
+    credentials = UserCredentialSerializer(required=False, source='user')
 
-class RegistrationSerializer(serializers.Serializer):
-    reg_id = serializers.ReadOnlyField(source="id")
-    org_name = serializers.PrimaryKeyRelatedField(required=True, queryset=HookUser.objects.all(), source="hook_user.org_name", many=True)
-    email = serializers.CharField(required=True, max_length=128)
-    target_url = serializers.PrimaryKeyRelatedField(required=False, queryset=HookUser.objects.all(), source="hook_user.target_url", many=True)
-    hook_token = serializers.PrimaryKeyRelatedField(required=False, queryset=HookUser.objects.all(), source="hook_user.hook_token", many=True)
-    username = serializers.CharField(required=False, max_length=40)
-    password = serializers.CharField(required=True, max_length=40, write_only=True)
-    registration_expiry = serializers.PrimaryKeyRelatedField(required=False, source="hook_user.registration_expiry", read_only=True, many=True)
+    class Meta:
+        model = HookUser
+        fields = ('reg_id', 'email', 'org_name', 'target_url', 'hook_token', 'registration_expiry', 'credentials',)
 
     def create(self, validated_data):
         """
         Create and return a new instance, given the validated data.
         """
-        if "username" in validated_data and 0 < len(validated_data["username"]):
-            prefix = validated_data["username"][:16] + "-"
+        print("create() with ", validated_data)
+        credentials_data = validated_data['user']
+        if "username" in credentials_data and 0 < len(credentials_data["username"]):
+            prefix = credentials_data["username"][:16] + "-"
         else:
             prefix = "hook-"
         self.username = generate_random_username(length=32, prefix=prefix, split=None)
-        validated_data["username"] = self.username
+        credentials_data["username"] = generate_random_username(length=32, prefix=prefix, split=None)
 
         # TODO must populate unique DID due to database constraints
-        validated_data["DID"] = "not:a:did:" + self.username
+        credentials_data["DID"] = "not:a:did:" + credentials_data["username"]
 
         # TODO generate password (?) for now user must supply
         # tmp_password = get_random_password()
         # validated_data['password'] = tmp_password
 
         print(
-            "Create user with", validated_data["username"], validated_data["password"]
+            "Create user with", credentials_data["username"], credentials_data["password"]
         )
+        credentials_data['email'] = validated_data['email']
 
         # create api_v2 user
-        user_data_keys = ["email", "username", "password", "DID"]
-        user_data = {x: validated_data[x] for x in user_data_keys}
-        user = get_user_model().objects.create_user(**user_data)
+        user = get_user_model().objects.create_user(**credentials_data)
         user.groups.add(get_subscribers_group())
         user.save()
 
         # create icat_hooks user
-        hookuser_data_keys = ["org_name", "target_url", "hook_token"]
-        hookuser_data = {x: validated_data[x] for x in hookuser_data_keys}
+        hookuser_data = validated_data
         hookuser_data["user"] = user
         hookuser_data["registration_expiry"] = get_password_expiry()
         hookuser = HookUser.objects.create(**hookuser_data)
 
-        # prepare serializable response
-        response = {}
-        response["id"] = user.id
-        response["email"] = user.email
-        response["username"] = user.username
-        response["org_name"] = hookuser.org_name
-        response["target_url"] = hookuser.target_url
-        response["hook_token"] = hookuser.hook_token
-        response["registration_expiry"] = hookuser.registration_expiry
+        print("create() with response ", hookuser)
 
-        return response
+        return hookuser
 
     def update(self, instance, validated_data):
-        """
-        Update and return an existing instance, given the validated data.
-        """
-        instance.email = validated_data.get("email", instance.email)
-        hook_user = instance.hook_user
-        instance.org_name = validated_data.get("org_name", hook_user.org_name)
-        instance.target_url = validated_data.get("target_url", hook_user.target_url)
-        instance.hook_token = validated_data.get("hook_token", hook_user.hook_token)
+        """Update user and hook_user. Assumes there is a hook_user for every user."""
+        credentials_data = validated_data.pop('credentials')
+        validated_data["registration_expiry"] = get_password_expiry()
+        super().update(instance, validated_data)
+
+        user = instance.user
+        user.email = validated_data['email']
 
         # TODO potentially update password on each update?
         # instance['password'] = get_random_password()
-        if "password" in validated_data:
-            instance.set_password(validated_data.get("password"))
-            validated_data["registration_expiry"] = get_password_expiry()
+        if "password" in credentials_data:
+            user.set_password(validated_data.get("password"))
+        user.save()
 
-        instance.save()
         return instance
 
 

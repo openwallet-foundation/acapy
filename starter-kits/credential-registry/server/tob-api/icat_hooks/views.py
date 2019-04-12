@@ -5,6 +5,7 @@ from rest_framework import viewsets, mixins
 from rest_hooks.models import Hook
 
 from .models.CredentialHook import CredentialHook
+from .models.HookUser import HookUser
 from .models.Subscription import Subscription
 from .serializers.hooks import (
     HookSerializer,
@@ -75,12 +76,14 @@ class RegistrationCreateViewSet(mixins.CreateModelMixin,
     This viewset automatically provides `create` actions.
 
     {
-      "org_name": "Anon Solutions Inc",
       "email": "anon@anon-solutions.ca",
+      "org_name": "Anon Solutions Inc",
       "target_url": "https://anon-solutions.ca/api/hook",
       "hook_token": "ashdkjahsdkjhaasd88a7d9a8sd9asasda",
-      "username": "anon",
-      "password": "pass12345"
+      "credentials": {
+        "username": "anon",
+        "password": "pass12345"
+      }
     }
     """
     serializer_class = RegistrationSerializer
@@ -88,7 +91,7 @@ class RegistrationCreateViewSet(mixins.CreateModelMixin,
     permission_classes = ()
 
     def get_queryset(self):
-        return get_user_model().objects.filter(groups__name=SUBSCRIBERS_GROUP_NAME).all()
+        return HookUser.objects.all()
 
     def perform_create(self, serializer):
         serializer.save()
@@ -113,10 +116,9 @@ class RegistrationViewSet(mixins.RetrieveModelMixin,
         get_request_user(self.request)
         if self.request.user.is_authenticated:
             return (
-                get_user_model()
-                .objects.filter(
-                    groups__name=SUBSCRIBERS_GROUP_NAME,
-                    username=self.request.user.username,
+                HookUser.objects.filter(
+                    user__groups__name=SUBSCRIBERS_GROUP_NAME,
+                    user__username=self.request.user.username,
                 )
                 .all()
             )

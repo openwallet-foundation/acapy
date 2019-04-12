@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('api_v2', '0025_auto_20190409_0929'),
+        ('api_v2', '0023_issuer_endpoint'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
