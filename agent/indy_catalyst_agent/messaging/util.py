@@ -5,7 +5,7 @@ import aiohttp
 
 LOGGER = logging.getLogger(__name__)
 
-WEBHOOK_URL = os.environ.get()
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 
 async def send_webhook(topic, payload, retries=5):
