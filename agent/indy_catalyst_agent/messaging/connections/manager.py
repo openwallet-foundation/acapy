@@ -1,5 +1,6 @@
 """Classes to manage connections."""
 
+import asyncio
 import aiohttp
 import json
 import logging
@@ -135,7 +136,7 @@ class ConnectionManager:
             else ConnectionRecord.ROUTING_STATE_NONE,
         )
         await connection.save(self.context.storage)
-        await send_webhook("connections", connection.serialize())
+        asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         self._log_state(
             "Created new connection record",
@@ -150,7 +151,8 @@ class ConnectionManager:
         await connection.attach_invitation(self.context.storage, invitation)
 
         await connection.log_activity(
-            self.context.storage, "invitation", connection.DIRECTION_SENT)
+            self.context.storage, "invitation", connection.DIRECTION_SENT
+        )
 
         return connection, invitation
 
@@ -205,7 +207,7 @@ class ConnectionManager:
             else ConnectionRecord.ROUTING_STATE_NONE,
         )
         await connection.save(self.context.storage)
-        await send_webhook("connections", connection.serialize())
+        asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         self._log_state(
             "Created new connection record",
@@ -220,7 +222,8 @@ class ConnectionManager:
         await connection.attach_invitation(self.context.storage, invitation)
 
         await connection.log_activity(
-            self.context.storage, "invitation", connection.DIRECTION_RECEIVED)
+            self.context.storage, "invitation", connection.DIRECTION_RECEIVED
+        )
 
         return connection
 
@@ -262,11 +265,12 @@ class ConnectionManager:
         connection.request_id = request._id
         connection.state = ConnectionRecord.STATE_REQUEST
         await connection.save(self.context.storage)
-        await send_webhook("connections", connection.serialize())
+        asyncio.ensure_future(send_webhook("connections", connection.serialize()))
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context.storage, "request", connection.DIRECTION_SENT)
+            self.context.storage, "request", connection.DIRECTION_SENT
+        )
 
         return request
 
@@ -321,7 +325,7 @@ class ConnectionManager:
             connection.their_did = request.connection.did
             connection.state = ConnectionRecord.STATE_REQUEST
             await connection.save(self.context.storage)
-            await send_webhook("connections", connection.serialize())
+            asyncio.ensure_future(send_webhook("connections", connection.serialize()))
             self._log_state("Updated connection state", {"connection": connection})
         else:
             connection = ConnectionRecord(
@@ -333,7 +337,7 @@ class ConnectionManager:
                 routing_state=ConnectionRecord.ROUTING_STATE_NONE,
             )
             await connection.save(self.context.storage)
-            await send_webhook("connections", connection.serialize())
+            asyncio.ensure_future(send_webhook("connections", connection.serialize()))
             self._log_state(
                 "Created new connection record",
                 {
@@ -347,7 +351,8 @@ class ConnectionManager:
         await connection.attach_request(self.context.storage, request)
 
         await connection.log_activity(
-            self.context.storage, "request", connection.DIRECTION_RECEIVED)
+            self.context.storage, "request", connection.DIRECTION_RECEIVED
+        )
 
         return connection
 
@@ -376,10 +381,12 @@ class ConnectionManager:
         )
 
         if connection.state not in (
-            connection.STATE_REQUEST, connection.STATE_RESPONSE
+            connection.STATE_REQUEST,
+            connection.STATE_RESPONSE,
         ):
             raise ConnectionManagerError(
-                "Connection is not in the request or response state")
+                "Connection is not in the request or response state"
+            )
 
         request = await connection.retrieve_request(self.context.storage)
         if connection.my_did:
@@ -422,11 +429,12 @@ class ConnectionManager:
         # Update connection state
         connection.state = ConnectionRecord.STATE_RESPONSE
         await connection.save(self.context.storage)
-        await send_webhook("connections", connection.serialize())
+        asyncio.ensure_future(send_webhook("connections", connection.serialize()))
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context.storage, "response", connection.DIRECTION_SENT)
+            self.context.storage, "response", connection.DIRECTION_SENT
+        )
 
         return response
 
@@ -496,10 +504,11 @@ class ConnectionManager:
         connection.their_did = their_did
         connection.state = ConnectionRecord.STATE_RESPONSE
         await connection.save(self.context.storage)
-        await send_webhook("connections", connection.serialize())
+        asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         await connection.log_activity(
-            self.context.storage, "response", connection.DIRECTION_RECEIVED)
+            self.context.storage, "response", connection.DIRECTION_RECEIVED
+        )
 
         return connection
 
@@ -543,12 +552,12 @@ class ConnectionManager:
         ):
             connection.state = ConnectionRecord.STATE_ACTIVE
             await connection.save(self.context.storage)
-            await send_webhook("connections", connection.serialize())
+            asyncio.ensure_future(send_webhook("connections", connection.serialize()))
             self._log_state("Connection promoted to active", {"connection": connection})
         elif connection and connection.state == ConnectionRecord.STATE_INACTIVE:
             connection.state = ConnectionRecord.STATE_ACTIVE
             await connection.save(self.context.storage)
-            await send_webhook("connections", connection.serialize())
+            asyncio.ensure_future(send_webhook("connections", connection.serialize()))
             self._log_state("Connection restored to active", {"connection": connection})
 
         if not connection and my_verkey:
@@ -674,7 +683,7 @@ class ConnectionManager:
                         # Forwards are anon packed
                         recip_keys = [router_key]
                         message = await self.context.wallet.pack_message(
-                            fwd_msg.to_json(), recip_keys,
+                            fwd_msg.to_json(), recip_keys
                         )
             else:
                 message = message_json

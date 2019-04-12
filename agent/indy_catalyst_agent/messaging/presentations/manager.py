@@ -1,5 +1,6 @@
 """Classes to manage presentations."""
 
+import asyncio
 import json
 import logging
 from uuid import uuid4
@@ -79,7 +80,9 @@ class PresentationManager:
             thread_id=presentation_request_message._thread_id,
         )
         await presentation_exchange.save(self.context.storage)
-        await send_webhook("presentations", presentation_exchange.serialize())
+        asyncio.ensure_future(
+            send_webhook("presentations", presentation_exchange.serialize())
+        )
 
         return presentation_exchange, presentation_request_message
 
@@ -101,7 +104,9 @@ class PresentationManager:
             presentation_request=json.loads(presentation_request_message.request),
         )
         await presentation_exchange.save(self.context.storage)
-        await send_webhook("presentations", presentation_exchange.serialize())
+        asyncio.ensure_future(
+            send_webhook("presentations", presentation_exchange.serialize())
+        )
 
     async def create_presentation(
         self,
@@ -200,7 +205,9 @@ class PresentationManager:
         )
         presentation_exchange_record.presentation = presentation
         await presentation_exchange_record.save(self.context.storage)
-        await send_webhook("presentations", presentation_exchange_record.serialize())
+        asyncio.ensure_future(
+            send_webhook("presentations", presentation_exchange_record.serialize())
+        )
 
         return presentation_exchange_record, presentation_message
 
@@ -217,7 +224,9 @@ class PresentationManager:
             PresentationExchange.STATE_PRESENTATION_RECEIVED
         )
         await presentation_exchange_record.save(self.context.storage)
-        await send_webhook("presentations", presentation_exchange_record.serialize())
+        asyncio.ensure_future(
+            send_webhook("presentations", presentation_exchange_record.serialize())
+        )
 
     async def verify_presentation(
         self, presentation_exchange_record: PresentationExchange
@@ -262,6 +271,8 @@ class PresentationManager:
         presentation_exchange_record.state = PresentationExchange.STATE_VERIFIED
 
         await presentation_exchange_record.save(self.context.storage)
-        await send_webhook("presentations", presentation_exchange_record.serialize())
+        asyncio.ensure_future(
+            send_webhook("presentations", presentation_exchange_record.serialize())
+        )
 
         return presentation_exchange_record
