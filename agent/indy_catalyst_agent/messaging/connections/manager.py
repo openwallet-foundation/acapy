@@ -23,6 +23,8 @@ from ...wallet.base import DIDInfo
 from ...wallet.error import WalletError, WalletNotFoundError
 from ...wallet.util import bytes_to_b64
 
+from ..util import send_webhook
+
 from von_anchor.a2a import DIDDoc
 from von_anchor.a2a.publickey import PublicKey, PublicKeyType
 from von_anchor.a2a.service import Service
@@ -133,6 +135,7 @@ class ConnectionManager:
             else ConnectionRecord.ROUTING_STATE_NONE,
         )
         await connection.save(self.context.storage)
+        await send_webhook("connections", connection.serialize())
 
         self._log_state(
             "Created new connection record",
@@ -202,6 +205,7 @@ class ConnectionManager:
             else ConnectionRecord.ROUTING_STATE_NONE,
         )
         await connection.save(self.context.storage)
+        await send_webhook("connections", connection.serialize())
 
         self._log_state(
             "Created new connection record",
@@ -258,6 +262,7 @@ class ConnectionManager:
         connection.request_id = request._id
         connection.state = ConnectionRecord.STATE_REQUEST
         await connection.save(self.context.storage)
+        await send_webhook("connections", connection.serialize())
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
@@ -316,6 +321,7 @@ class ConnectionManager:
             connection.their_did = request.connection.did
             connection.state = ConnectionRecord.STATE_REQUEST
             await connection.save(self.context.storage)
+            await send_webhook("connections", connection.serialize())
             self._log_state("Updated connection state", {"connection": connection})
         else:
             connection = ConnectionRecord(
@@ -327,6 +333,7 @@ class ConnectionManager:
                 routing_state=ConnectionRecord.ROUTING_STATE_NONE,
             )
             await connection.save(self.context.storage)
+            await send_webhook("connections", connection.serialize())
             self._log_state(
                 "Created new connection record",
                 {
@@ -415,6 +422,7 @@ class ConnectionManager:
         # Update connection state
         connection.state = ConnectionRecord.STATE_RESPONSE
         await connection.save(self.context.storage)
+        await send_webhook("connections", connection.serialize())
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
@@ -488,6 +496,7 @@ class ConnectionManager:
         connection.their_did = their_did
         connection.state = ConnectionRecord.STATE_RESPONSE
         await connection.save(self.context.storage)
+        await send_webhook("connections", connection.serialize())
 
         await connection.log_activity(
             self.context.storage, "response", connection.DIRECTION_RECEIVED)
@@ -534,10 +543,12 @@ class ConnectionManager:
         ):
             connection.state = ConnectionRecord.STATE_ACTIVE
             await connection.save(self.context.storage)
+            await send_webhook("connections", connection.serialize())
             self._log_state("Connection promoted to active", {"connection": connection})
         elif connection and connection.state == ConnectionRecord.STATE_INACTIVE:
             connection.state = ConnectionRecord.STATE_ACTIVE
             await connection.save(self.context.storage)
+            await send_webhook("connections", connection.serialize())
             self._log_state("Connection restored to active", {"connection": connection})
 
         if not connection and my_verkey:

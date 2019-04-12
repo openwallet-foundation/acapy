@@ -13,6 +13,8 @@ from .models.presentation_exchange import PresentationExchange
 from .messages.presentation_request import PresentationRequest
 from .messages.credential_presentation import CredentialPresentation
 
+from ..util import send_webhook
+
 
 class PresentationManagerError(BaseError):
     """Presentation error."""
@@ -77,6 +79,7 @@ class PresentationManager:
             thread_id=presentation_request_message._thread_id,
         )
         await presentation_exchange.save(self.context.storage)
+        await send_webhook("presentations", presentation_exchange.serialize())
 
         return presentation_exchange, presentation_request_message
 
@@ -98,6 +101,7 @@ class PresentationManager:
             presentation_request=json.loads(presentation_request_message.request),
         )
         await presentation_exchange.save(self.context.storage)
+        await send_webhook("presentations", presentation_exchange.serialize())
 
     async def create_presentation(
         self,
@@ -196,6 +200,7 @@ class PresentationManager:
         )
         presentation_exchange_record.presentation = presentation
         await presentation_exchange_record.save(self.context.storage)
+        await send_webhook("presentations", presentation_exchange_record.serialize())
 
         return presentation_exchange_record, presentation_message
 
@@ -212,6 +217,7 @@ class PresentationManager:
             PresentationExchange.STATE_PRESENTATION_RECEIVED
         )
         await presentation_exchange_record.save(self.context.storage)
+        await send_webhook("presentations", presentation_exchange_record.serialize())
 
     async def verify_presentation(
         self, presentation_exchange_record: PresentationExchange
@@ -256,4 +262,6 @@ class PresentationManager:
         presentation_exchange_record.state = PresentationExchange.STATE_VERIFIED
 
         await presentation_exchange_record.save(self.context.storage)
+        await send_webhook("presentations", presentation_exchange_record.serialize())
+
         return presentation_exchange_record
