@@ -40,15 +40,21 @@ def get_password_expiry():
     return (now + timedelta(days=90)).date()
 
 
-class RegistrationSerializer(serializers.Serializer):
-    reg_id = serializers.ReadOnlyField(source="id")
+class HookUserSerializer(serializers.Serializer):
     org_name = serializers.CharField(required=True, max_length=240)
-    email = serializers.CharField(required=True, max_length=128)
     target_url = serializers.CharField(required=False, max_length=240)
     hook_token = serializers.CharField(required=False, max_length=240)
+    registration_expiry = serializers.DateField(required=False, read_only=True)
+
+class RegistrationSerializer(serializers.Serializer):
+    reg_id = serializers.ReadOnlyField(source="id")
+    org_name = serializers.PrimaryKeyRelatedField(required=True, queryset=HookUser.objects.all(), source="hook_user.org_name", many=True)
+    email = serializers.CharField(required=True, max_length=128)
+    target_url = serializers.PrimaryKeyRelatedField(required=False, queryset=HookUser.objects.all(), source="hook_user.target_url", many=True)
+    hook_token = serializers.PrimaryKeyRelatedField(required=False, queryset=HookUser.objects.all(), source="hook_user.hook_token", many=True)
     username = serializers.CharField(required=False, max_length=40)
     password = serializers.CharField(required=True, max_length=40, write_only=True)
-    registration_expiry = serializers.DateField(required=False, read_only=True)
+    registration_expiry = serializers.PrimaryKeyRelatedField(required=False, source="hook_user.registration_expiry", read_only=True, many=True)
 
     def create(self, validated_data):
         """
@@ -73,7 +79,7 @@ class RegistrationSerializer(serializers.Serializer):
         )
 
         # create api_v2 user
-        user_data_keys = ["email", "username", "password"]
+        user_data_keys = ["email", "username", "password", "DID"]
         user_data = {x: validated_data[x] for x in user_data_keys}
         user = get_user_model().objects.create_user(**user_data)
         user.groups.add(get_subscribers_group())
@@ -102,10 +108,11 @@ class RegistrationSerializer(serializers.Serializer):
         """
         Update and return an existing instance, given the validated data.
         """
-        instance.org_name = validated_data.get("org_name", instance.org_name)
         instance.email = validated_data.get("email", instance.email)
-        instance.target_url = validated_data.get("target_url", instance.target_url)
-        instance.hook_token = validated_data.get("hook_token", instance.hook_token)
+        hook_user = instance.hook_user
+        instance.org_name = validated_data.get("org_name", hook_user.org_name)
+        instance.target_url = validated_data.get("target_url", hook_user.target_url)
+        instance.hook_token = validated_data.get("hook_token", hook_user.hook_token)
 
         # TODO potentially update password on each update?
         # instance['password'] = get_random_password()

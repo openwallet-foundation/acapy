@@ -20,22 +20,16 @@ SUBSCRIBERS_GROUP_NAME = "subscriber"
 # return authenticated user, or check basic auth info
 def get_request_user(request):
     if request.user.is_authenticated:
-        print("request_user returning request.user")
-        request_user = get_request_user(request)
         return request.user
     if 'HTTP_AUTHORIZATION' in request.META:
-        print("request_user checking for basic auth")
         auth = request.META['HTTP_AUTHORIZATION'].split()
         if len(auth) == 2:
             if auth[0].lower() == "basic":
-                print(" ... checking basic auth credentials")
                 uname, passwd = base64.b64decode(auth[1]).split(':')
                 user = authenticate(username=uname, password=passwd)
                 if user is not None and user.is_active:
-                    print(" ... authenticated user")
                     request.user = user
                     return user
-    print("User is not authenticated and no basic auth")
     return None
 
 class IsOwnerOrCreateOnly(BasePermission):
@@ -44,28 +38,18 @@ class IsOwnerOrCreateOnly(BasePermission):
     """
 
     def has_permission(self, request, view):
-        print("IsOwnerOrCreateOnly view permission check ...")
         request_user = get_request_user(request)
-        if request.user.is_authenticated:
-            print("request.user", request.user)
-        else:
-            print("request.user is not authenticated")
         ret = super().has_permission(request, view)
-        print(" >>> returns ", ret)
         return ret
 
     def has_object_permission(self, request, view, obj):
-        print("IsOwnerOrCreateOnly.has_object_permission()")
         request_user = get_request_user(request)
         if isinstance(obj, get_user_model()):
-            print("user", request.user)
             if request.user.is_authenticated:
-                print("obj", obj)
                 return obj == request.user
             elif request.method == "POST":
                 # creating a new user is ok
                 return True
-        print("IsOwnerOrCreateOnly obj permission check returns False")
         return False
 
 
@@ -75,23 +59,13 @@ class IsOwnerOnly(BasePermission):
     """
 
     def has_permission(self, request, view):
-        print("IsOwnerOnly view permission check ...")
-        if request.user.is_authenticated:
-            print("request.user", request.user)
-        else:
-            print("request.user is not authenticated")
         ret = super().has_permission(request, view)
-        print(" >>> returns ", ret)
         return ret
 
     def has_object_permission(self, request, view, obj):
-        print("IsOwnerOnly.has_object_permission()")
         if isinstance(obj, Subscription):
-            print("user", request.user)
             if request.user.is_authenticated:
-                print("obj.owner", obj.owner)
                 return obj.owner == request.user
-        print("IsOwnerOnly obj permission check returns False")
         return False
 
 

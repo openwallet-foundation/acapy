@@ -19,13 +19,11 @@ class DeliverHook(Task):
         """
         try:
             logger.info("Delivering hook to: {}".format(target))
-            print("   >>> DELIVERING hook to: {}".format(target))
             response = requests.post(
                 url=target,
                 data=json.dumps(payload),
                 headers={"Content-Type": "application/json"},
             )
-            print("   >>> DELIVERED hook: {}".format(response.status_code))
             if response.status_code >= 500:
                 response.raise_for_response()
         except requests.ConnectionError:
@@ -43,6 +41,4 @@ def deliver_hook_wrapper(target, payload, instance, hook):
     kwargs = dict(
         target=target, payload=payload, instance_id=instance_id, hook_id=hook.id
     )
-    print("   >>> ABOUT TO DELIVER A HOOK!!!!!!!!!!!")
     DeliverHook.apply_async(kwargs=kwargs)
-    print("   >>> DELIVERED ...")
