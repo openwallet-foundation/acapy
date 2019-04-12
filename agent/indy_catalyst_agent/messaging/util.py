@@ -14,7 +14,7 @@ async def send_webhook(topic, payload, retries=5):
         LOGGER.warning("WEBHOOK_URL is not set")
 
     async with aiohttp.ClientSession() as session:
-        full_webhook_url = f"{WEBHOOK_URL}/topic/{topic}"
+        full_webhook_url = f"{WEBHOOK_URL}/topic/{topic}/"
         LOGGER.info(f"Sending webhook to {full_webhook_url}")
         try:
             response = await session.post(full_webhook_url, json=payload)
