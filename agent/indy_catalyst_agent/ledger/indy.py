@@ -4,6 +4,7 @@ import json
 import logging
 import tempfile
 from os import path
+import re
 
 import indy.anoncreds
 import indy.ledger
