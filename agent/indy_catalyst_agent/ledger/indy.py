@@ -137,7 +137,12 @@ class IndyLedger(BaseLedger):
         request_json = await indy.ledger.build_schema_request(
             public_did.did, schema_json
         )
-        await self._submit(request_json)
+
+        try:
+            await self._submit(request_json)
+        except LedgerTransactionError:
+            # Schema already exists, so return id
+            schema_id = f"{public_did.did}:{2}:{schema_name}:{schema_version}"
 
         # TODO: validate response
 
