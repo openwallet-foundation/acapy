@@ -185,17 +185,31 @@ class IndyLedger(BaseLedger):
         schema = await self.get_schema(schema_id)
 
         # TODO: add support for tag, sig type, and config
-        (
-            credential_definition_id,
-            credential_definition_json,
-        ) = await indy.anoncreds.issuer_create_and_store_credential_def(
-            self.wallet.handle,
-            public_did.did,
-            json.dumps(schema),
-            tag,
-            "CL",
-            json.dumps({"support_revocation": False}),
-        )
+        try:
+            (
+                credential_definition_id,
+                credential_definition_json,
+            ) = await indy.anoncreds.issuer_create_and_store_credential_def(
+                self.wallet.handle,
+                public_did.did,
+                json.dumps(schema),
+                tag,
+                "CL",
+                json.dumps({"support_revocation": False}),
+            )
+        # If the cred def already exists in the wallet, we need some way of obtaining
+        # that cred def id (from schema id passed) since we can now assume we can use
+        # it in future operations.
+        except IndyError as error:
+            if error.error_code == ErrorCode.AnoncredsCredDefAlreadyExistsError:
+                try:
+                    cred_def_id = re.search(r"\w*:\d:CL:\d:\w*", error.message).group(0)
+                    return cred_def_id
+                # The regex search failed so let the error bubble up
+                except AttributeError:
+                    raise error
+            else:
+                raise
 
         request_json = await indy.ledger.build_cred_def_request(
             public_did.did, credential_definition_json
