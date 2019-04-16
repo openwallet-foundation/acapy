@@ -2,7 +2,6 @@ import random
 from datetime import datetime, timedelta
 from string import ascii_lowercase, digits
 
-import pytz
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -191,7 +190,7 @@ class SubscriptionSerializer(serializers.Serializer):
                     "A target_url must be specified, no default value set in registration."
                 )
             else:
-                hook_url = hook_user.target_url
+                data['target_url'] = hook_user.target_url
 
         if hook_token is None:
             if hook_user.hook_token is None:
@@ -199,10 +198,10 @@ class SubscriptionSerializer(serializers.Serializer):
                     "A hook-token must be specified, no default value set in registration."
                 )
             else:
-                hook_token = hook_user.hook_token
+                data['hook_token'] = hook_user.hook_token
 
         # check hook url is valid
-        self.check_live_url(hook_url, hook_token)
+        self.check_live_url(data['target_url'], data['hook_token'])
 
         return data
 
@@ -224,9 +223,11 @@ class SubscriptionSerializer(serializers.Serializer):
         Create and return a new instance, given the validated data.
         """
         # note owner is assigned in the view
-        credential_type = CredentialType.objects.filter(
-            schema__name=validated_data["credential_type"]
-        ).first()
+        credential_type = None
+        if "credential_type" in validated_data:
+            credential_type = CredentialType.objects.filter(
+                schema__name=validated_data["credential_type"]
+            ).first()
         validated_data["credential_type"] = credential_type
         return Subscription.objects.create(**validated_data)
 

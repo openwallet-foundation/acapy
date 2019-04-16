@@ -6,5 +6,12 @@ class CredentialHook(AbstractHook):
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return str(self.id) + " " + self.user.username + " " + self.event + " " + self.target
-
+        return (
+            str(self.id)
+            + " "
+            + self.user.username
+            + " "
+            + self.event
+            + " "
+            + self.target
+        )
