@@ -204,7 +204,7 @@ class IndyLedger(BaseLedger):
         except IndyError as error:
             if error.error_code == ErrorCode.AnoncredsCredDefAlreadyExistsError:
                 try:
-                    cred_def_id = re.search(r"\w*:\d:CL:\d:\w*", error.message).group(0)
+                    cred_def_id = re.search(r"\w*:\d*:CL:\d*:\w*", error.message).group(0)
                     return cred_def_id
                 # The regex search failed so let the error bubble up
                 except AttributeError:
