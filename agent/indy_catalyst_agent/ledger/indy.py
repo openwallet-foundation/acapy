@@ -146,7 +146,7 @@ class IndyLedger(BaseLedger):
             self.logger.warn(
                 "Failed to submit schema to ledger. "
                 + "Assuming already exists and returning id. "
-                + f"Error: {e.message}"
+                + f"Error: {str(e)}"
             )
             schema_id = f"{public_did.did}:{2}:{schema_name}:{schema_version}"
 
