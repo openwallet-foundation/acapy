@@ -183,7 +183,7 @@ class CredentialManager:
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
         await credential_exchange_record.save(self.context.storage)
         asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange.serialize())
+            send_webhook("credentials", credential_exchange_record.serialize())
         )
 
     async def issue_credential(
