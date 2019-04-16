@@ -190,7 +190,7 @@ class SubscriptionSerializer(serializers.Serializer):
                     "A target_url must be specified, no default value set in registration."
                 )
             else:
-                data['target_url'] = hook_user.target_url
+                data["target_url"] = hook_user.target_url
 
         if hook_token is None:
             if hook_user.hook_token is None:
@@ -198,10 +198,10 @@ class SubscriptionSerializer(serializers.Serializer):
                     "A hook-token must be specified, no default value set in registration."
                 )
             else:
-                data['hook_token'] = hook_user.hook_token
+                data["hook_token"] = hook_user.hook_token
 
         # check hook url is valid
-        self.check_live_url(data['target_url'], data['hook_token'])
+        self.check_live_url(data["target_url"], data["hook_token"])
 
         return data
 
@@ -235,8 +235,31 @@ class SubscriptionSerializer(serializers.Serializer):
         """
         Update and return an existing instance, given the validated data.
         """
-        # TODO
-        pass
+        # get id from url
+        uri = self.context.get("request").build_absolute_uri()
+        subscription_id = uri.split("subscriptions/")[1]
+
+        subscription = Subscription.objects.get(id=subscription_id)
+
+        if subscription is None:
+            raise serializers.ValidationError(
+                "No subscription found for is {}".format(id)
+            )
+
+        if "subscription_type" in validated_data:
+            subscription.subscription_type = validated_data["subscription_type"]
+        if "topic_source_id" in validated_data:
+            subscription.topic_source_id = validated_data["topic_source_id"]
+        if "credential_type" in validated_data:
+            subscription.credential_type = validated_data["credential_type"]
+        if "target_url" in validated_data:
+            subscription.target_url = validated_data["target_url"]
+        if "target_url" in validated_data:
+            subscription.target_url = validated_data["target_url"]
+
+        subscription.save()
+
+        return subscription
 
 
 class SubscriptionResponseSerializer(SubscriptionSerializer):
