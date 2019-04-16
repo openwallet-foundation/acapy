@@ -212,7 +212,7 @@ class SubscriptionSerializer(serializers.Serializer):
             data = {"subscription": "test"}
             response = requests.post(target_url, json=data, headers=head)
 
-            if response.status_code != "200":
+            if response.status_code != requests.codes.ok:
                 raise serializers.ValidationError(
                     "The url {} does not appear to be valid.".format(target_url)
                 )
