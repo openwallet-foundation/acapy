@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from string import ascii_lowercase, digits
 
 import pytz
+import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -47,7 +48,8 @@ class UserCredentialSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ('username', 'password',)
+        fields = ("username", "password")
+
 
 # registration maps to a user object (user registers and owns subscriptions)
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -57,24 +59,34 @@ class RegistrationSerializer(serializers.ModelSerializer):
     target_url = serializers.CharField(required=False, max_length=240)
     hook_token = serializers.CharField(required=False, max_length=240)
     registration_expiry = serializers.DateField(required=False, read_only=True)
-    credentials = UserCredentialSerializer(required=False, source='user')
+    credentials = UserCredentialSerializer(required=False, source="user")
 
     class Meta:
         model = HookUser
-        fields = ('reg_id', 'email', 'org_name', 'target_url', 'hook_token', 'registration_expiry', 'credentials',)
+        fields = (
+            "reg_id",
+            "email",
+            "org_name",
+            "target_url",
+            "hook_token",
+            "registration_expiry",
+            "credentials",
+        )
 
     def create(self, validated_data):
         """
         Create and return a new instance, given the validated data.
         """
         print("create() with ", validated_data)
-        credentials_data = validated_data['user']
+        credentials_data = validated_data["user"]
         if "username" in credentials_data and 0 < len(credentials_data["username"]):
             prefix = credentials_data["username"][:16] + "-"
         else:
             prefix = "hook-"
         self.username = generate_random_username(length=32, prefix=prefix, split=None)
-        credentials_data["username"] = generate_random_username(length=32, prefix=prefix, split=None)
+        credentials_data["username"] = generate_random_username(
+            length=32, prefix=prefix, split=None
+        )
 
         # TODO must populate unique DID due to database constraints
         credentials_data["DID"] = "not:a:did:" + credentials_data["username"]
@@ -84,9 +96,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
         # validated_data['password'] = tmp_password
 
         print(
-            "Create user with", credentials_data["username"], credentials_data["password"]
+            "Create user with",
+            credentials_data["username"],
+            credentials_data["password"],
         )
-        credentials_data['email'] = validated_data['email']
+        credentials_data["email"] = validated_data["email"]
 
         # create api_v2 user
         user = get_user_model().objects.create_user(**credentials_data)
@@ -105,12 +119,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update user and hook_user. Assumes there is a hook_user for every user."""
-        credentials_data = validated_data.pop('credentials')
+        credentials_data = validated_data.pop("credentials")
         validated_data["registration_expiry"] = get_password_expiry()
         super().update(instance, validated_data)
 
         user = instance.user
-        user.email = validated_data['email']
+        user.email = validated_data["email"]
 
         # TODO potentially update password on each update?
         # instance['password'] = get_random_password()
@@ -143,10 +157,77 @@ class SubscriptionSerializer(serializers.Serializer):
             return value
         raise serializers.ValidationError("Error not a valid credential type")
 
+    def validate(self, data):
+        # validate subscription parameters
+        subscription_type = (
+            data["subscription_type"] if "subscription_type" in data else None
+        )
+        topic_source_id = data["topic_source_id"] if "topic_source_id" in data else None
+        credential_type = data["credential_type"] if "credential_type" in data else None
+        if subscription_type == "New" and topic_source_id is None:
+            raise serializers.ValidationError(
+                "A topic id is required for subscription of type 'New'"
+            )
+        if subscription_type == "Stream" and (
+            topic_source_id is None or credential_type is None
+        ):
+            raise serializers.ValidationError(
+                "A topic id and a credential type are required for subscription of type 'Topic'"
+            )
+
+        # get current user from url
+        uri = self.context.get("request").build_absolute_uri()
+        context_user = uri.split("registration/")[1].split("/")[0]
+        v2_user = User.objects.get(username=context_user)
+
+        # validate hook url and token
+        hook_url = data["target_url"] if "target_url" in data else None
+        hook_token = data["hook_token"] if "hook_token" in data else None
+        hook_user = HookUser.objects.get(user_id=v2_user.id)
+
+        if hook_url is None:
+            if hook_user.target_url is None:
+                raise serializers.ValidationError(
+                    "A target_url must be specified, no default value set in registration."
+                )
+            else:
+                hook_url = hook_user.target_url
+
+        if hook_token is None:
+            if hook_user.hook_token is None:
+                raise serializers.ValidationError(
+                    "A hook-token must be specified, no default value set in registration."
+                )
+            else:
+                hook_token = hook_user.hook_token
+
+        # check hook url is valid
+        self.check_live_url(hook_url, hook_token)
+
+        return data
+
+    def check_live_url(self, target_url, hook_token):
+        if target_url is not None and hook_token is not None:
+            head = {"Authorization": "Bearer " + hook_token}
+            data = {"subscription": "test"}
+            response = requests.post(target_url, json=data, headers=head)
+
+            if response.status_code != "200":
+                raise serializers.ValidationError(
+                    "The url {} does not appear to be valid.".format(target_url)
+                )
+
+        return "SUCCESS"
+
     def create(self, validated_data):
         """
         Create and return a new instance, given the validated data.
         """
+        if "target_url" in validated_data and "hook_token" in validated_data:
+            self.check_live_url(
+                validated_data["target_url"], validated_data["hook_token"]
+            )
+
         # note owner is assigned in the view
         credential_type = CredentialType.objects.filter(
             schema__name=validated_data["credential_type"]
