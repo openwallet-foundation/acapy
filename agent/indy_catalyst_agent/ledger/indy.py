@@ -141,8 +141,13 @@ class IndyLedger(BaseLedger):
 
         try:
             await self._submit(request_json)
-        except LedgerTransactionError:
+        except LedgerTransactionError as e:
             # Schema already exists, so return id
+            self.logger.warn(
+                "Failed to submit schema to ledger. "
+                + "Assuming already exists and returning id. "
+                + f"Error: {e.message}"
+            )
             schema_id = f"{public_did.did}:{2}:{schema_name}:{schema_version}"
 
         # TODO: validate response
@@ -204,7 +209,9 @@ class IndyLedger(BaseLedger):
         except IndyError as error:
             if error.error_code == ErrorCode.AnoncredsCredDefAlreadyExistsError:
                 try:
-                    cred_def_id = re.search(r"\w*:\d*:CL:\d*:\w*", error.message).group(0)
+                    cred_def_id = re.search(r"\w*:\d*:CL:\d*:\w*", error.message).group(
+                        0
+                    )
                     return cred_def_id
                 # The regex search failed so let the error bubble up
                 except AttributeError:
