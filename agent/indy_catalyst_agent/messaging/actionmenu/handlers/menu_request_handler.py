@@ -1,6 +1,7 @@
 """Action menu request message handler."""
 
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ..base_service import BaseMenuService
 from ..messages.menu_request import MenuRequest
 
 
@@ -20,4 +21,13 @@ class MenuRequestHandler(BaseHandler):
 
         self._logger.info("Received action menu request")
 
-        # TODO: if menu service is registered, ask it to generate a menu
+        service: BaseMenuService = await context.service_factory.resolve_service(
+            "actionmenu"
+        )
+        if service:
+            menu = await service.get_active_menu()
+            if menu:
+                await responder.send_reply(menu)
+        else:
+            # send problem report?
+            pass

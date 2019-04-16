@@ -2,6 +2,7 @@
 
 from .messaging.message_factory import MessageFactory
 
+from .messaging.actionmenu.message_types import MESSAGE_TYPES as ACTIONMENU_MESSAGES
 from .messaging.basicmessage.message_types import MESSAGE_TYPES as BASICMESSAGE_MESSAGES
 from .messaging.connections.message_types import MESSAGE_TYPES as CONNECTION_MESSAGES
 from .messaging.discovery.message_types import MESSAGE_TYPES as DISCOVERY_MESSAGES
@@ -19,6 +20,7 @@ def default_message_factory() -> MessageFactory:
     factory = MessageFactory()
 
     factory.register_message_types(
+        ACTIONMENU_MESSAGES,
         BASICMESSAGE_MESSAGES,
         CONNECTION_MESSAGES,
         DISCOVERY_MESSAGES,

@@ -2,6 +2,7 @@
 
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
 from ..messages.menu import Menu
+from ..util import save_connection_menu
 
 
 class MenuHandler(BaseHandler):
@@ -20,5 +21,13 @@ class MenuHandler(BaseHandler):
 
         self._logger.info("Received action menu: %s", context.message)
 
-        context.connection_record.active_menu = context.message.serialize()
-        await context.connection_record.save(context.storage)
+        await save_connection_menu(
+            context.message,
+            context.connection_record.connection_id,
+            context.storage,
+            context.service_factory,
+        )
+        self._logger.debug(
+            "Updated action menu on connection: %s",
+            context.connection_record.connection_id,
+        )
