@@ -251,7 +251,9 @@ class SubscriptionSerializer(serializers.Serializer):
         if "topic_source_id" in validated_data:
             subscription.topic_source_id = validated_data["topic_source_id"]
         if "credential_type" in validated_data:
-            subscription.credential_type = validated_data["credential_type"]
+            subscription.credential_type = CredentialType.objects.filter(
+                schema__name=validated_data["credential_type"]
+            ).first()
         if "target_url" in validated_data:
             subscription.target_url = validated_data["target_url"]
         if "target_url" in validated_data:
