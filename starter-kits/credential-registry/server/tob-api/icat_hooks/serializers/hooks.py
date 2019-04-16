@@ -223,11 +223,6 @@ class SubscriptionSerializer(serializers.Serializer):
         """
         Create and return a new instance, given the validated data.
         """
-        if "target_url" in validated_data and "hook_token" in validated_data:
-            self.check_live_url(
-                validated_data["target_url"], validated_data["hook_token"]
-            )
-
         # note owner is assigned in the view
         credential_type = CredentialType.objects.filter(
             schema__name=validated_data["credential_type"]
