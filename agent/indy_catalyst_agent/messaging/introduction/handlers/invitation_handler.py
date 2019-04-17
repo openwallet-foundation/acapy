@@ -1,6 +1,7 @@
 """Handler for incoming invitation messages."""
 
-from ...base_handler import BaseHandler, BaseResponder, HandlerError, RequestContext
+from ...base_handler import BaseHandler, BaseResponder, HandlerException, RequestContext
+from ..base_service import BaseIntroductionService
 from ..messages.invitation import Invitation
 
 
@@ -13,7 +14,19 @@ class InvitationHandler(BaseHandler):
         assert isinstance(context.message, Invitation)
 
         if not context.connection_active:
-            raise HandlerError("No connection established for invitation message")
+            raise HandlerException("No connection established for invitation message")
 
-        # Look up existing invitation request by thread
-        # Create an invitation forward message and send to the responder
+        svc_factory = context.service_factory
+        service: BaseIntroductionService = await svc_factory.resolve_service(
+            "introduction"
+        )
+        if service:
+            await service.return_invitation(
+                context.connection_record.connection_id,
+                context.message,
+                responder.send_outbound,
+            )
+        else:
+            raise HandlerException(
+                "Cannot handle Invitation message with no introduction service"
+            )

@@ -43,4 +43,4 @@ class InvitationRequestSchema(AgentMessageSchema):
         model_class = InvitationRequest
 
     responder = fields.Str(required=True)
-    message = fields.Str(required=False)
+    message = fields.Str(required=False, allow_none=True)

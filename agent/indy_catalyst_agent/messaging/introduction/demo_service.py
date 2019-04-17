@@ -1,147 +1,118 @@
-"""Demo action menu service classes."""
+"""Introduction service demo classes."""
 
+import json
 import logging
 
-from ..agent_message import AgentMessage
-from .base_service import BaseMenuService
-from .messages.menu import Menu
-from .models.menu_form import MenuForm
-from .models.menu_option import MenuOption
-from .models.menu_form_param import MenuFormParam
+from .base_service import BaseIntroductionService, IntroductionError
+from ..connections.manager import ConnectionManager
+from ..connections.models.connection_record import ConnectionRecord
+from .messages.forward_invitation import ForwardInvitation
+from .messages.invitation import Invitation
+from .messages.invitation_request import InvitationRequest
+from ...storage.base import StorageRecord, StorageNotFoundError
 
 LOGGER = logging.getLogger(__name__)
 
 
-class DemoMenuService(BaseMenuService):
-    """Demo action menu service."""
+class DemoIntroductionService(BaseIntroductionService):
+    """Service handler for allowing connections to exchange invitations."""
 
-    async def get_active_menu(self) -> Menu:
-        """Render the current menu."""
-        search_form = MenuForm(
-            title="Search introductions",
-            description="Enter an attendee name below to perform a search.",
-            submit_label="Search",
-            params=(MenuFormParam(name="query", title="Attendee name", required=True),),
-        )
-        return Menu(
-            title="Welcome to IIWBook",
-            description="IIWBook facilitates connections between attendees by "
-            + "verifying attendance and distributing connection invitations.",
-            options=(
-                MenuOption(
-                    name="search-intros",
-                    title="Search introductions",
-                    description="Filter attendee records to make a connection",
-                    form=search_form,
-                ),
-            ),
-        )
+    RECORD_TYPE = "introduction_record"
 
-    async def perform_menu_action(
-        self, action_name: str, action_params: dict
-    ) -> AgentMessage:
+    async def start_introduction(
+        self,
+        init_connection_id: str,
+        target_connection_id: str,
+        message: str,
+        outbound_handler,
+    ):
         """
-        Perform an action defined by the active menu.
+        Start the introduction process between two connections.
 
         Args:
-            action_name: The unique name of the action being performed
-            action_params: A collection of parameters for the action
-            responder: The responder instance for sending a reply
+            init_connection_id: The connection initiating the request
+            target_connection_id: The connection which is asked for an invitation
+            outbound_handler: The outbound handler coroutine for sending a message
+            message: The message to use when requesting the invitation
         """
 
-        intros = [
-            {
-                "name": "info;bob",
-                "title": "Bob Terwilliger",
-                "description": "The Krusty the Clown Show",
+        connection_mgr = ConnectionManager(self._context)
+
+        try:
+            init_connection = await ConnectionRecord.retrieve_by_id(
+                self._context.storage, init_connection_id
+            )
+        except StorageNotFoundError:
+            raise IntroductionError("Initiator connection not found")
+
+        if init_connection.state != "active":
+            raise IntroductionError("Initiator connection is not active")
+
+        try:
+            target_connection = await ConnectionRecord.retrieve_by_id(
+                self._context.storage, target_connection_id
+            )
+        except StorageNotFoundError:
+            raise IntroductionError("Target connection not found")
+
+        if target_connection.state != "active":
+            raise IntroductionError("Target connection is not active")
+
+        msg = InvitationRequest(responder=init_connection.their_label, message=message)
+
+        record = StorageRecord(
+            type=self.RECORD_TYPE,
+            value=json.dumps({"thread_id": msg._id, "state": "pending"}),
+            tags={
+                "init_connection_id": init_connection_id,
+                "target_connection_id": target_connection_id,
             },
-            {"name": "info;ananse", "title": "Kwaku Ananse", "description": "Ghana"},
-            {"name": "info;megatron", "title": "Megatron", "description": "Cybertron"},
-        ]
-
-        return_option = MenuOption(
-            name="index", title="Back", description="Return to options"
         )
+        await self._context.storage.add_record(record)
 
-        if action_name == "index":
-            return await self.get_active_menu()
+        target = await connection_mgr.get_connection_target(target_connection)
+        await outbound_handler(msg, target)
 
-        elif action_name == "search-intros":
-            LOGGER.debug("search intros %s", action_params)
-            query = action_params.get("query", "").lower()
-            options = []
-            for row in intros:
-                if (
-                    not query
-                    or query in row["name"].lower()
-                    or query in row["description"].lower()
-                ):
-                    options.append(MenuOption(**row))
-            if not options:
-                return Menu(
-                    title="Search results",
-                    description="No attendees were found matching your query.",
-                    options=[return_option],
+    async def return_invitation(
+        self, target_connection_id: str, invitation: Invitation, outbound_handler
+    ):
+        """
+        Handle the forwarding of an invitation to the responder.
+
+        Args:
+            target_connection_id: The ID of the connection sending the Invitation
+            invitation: The received Invitation message
+            outbound_handler: The outbound handler coroutine for sending a message
+        """
+
+        connection_mgr = ConnectionManager(self._context)
+        thread_id = invitation._thread_id
+
+        tag_filter = {"target_connection_id": target_connection_id}
+        records = await self._context.storage.search_records(
+            self.RECORD_TYPE, tag_filter
+        ).fetch_all()
+
+        found = False
+        for row in records:
+            value = json.loads(row.value)
+            if value["thread_id"] == thread_id and value["state"] == "pending":
+                msg = ForwardInvitation(
+                    invitation=invitation.invitation, message=invitation.message
                 )
+                msg.assign_thread_from(invitation)
 
-            return Menu(
-                title="Search results",
-                description="The following attendees were found matching your query.",
-                options=options,
-            )
+                value["state"] = "complete"
+                await self._context.storage.update_record_value(row, json.dumps(value))
 
-        elif action_name.startswith("info;"):
-            for row in intros:
-                if row["name"] == action_name:
-                    request_form = MenuForm(
-                        title="Request an introduction",
-                        description="Ask to connect with this user.",
-                        submit_label="Send Request",
-                        params=(MenuFormParam(name="comments", title="Comments"),),
-                    )
-                    return Menu(
-                        title=row["title"],
-                        description=row["description"],
-                        options=[
-                            MenuOption(
-                                name="request;" + action_name[5:],
-                                title="Request an introduction",
-                                description="Ask to connect with this user",
-                                form=request_form,
-                            ),
-                            MenuOption(
-                                name="index",
-                                title="Back",
-                                description="Return to options",
-                            ),
-                        ],
-                    )
+                init_connection = await ConnectionRecord.retrieve_by_id(
+                    self._context.storage, row.tags["init_connection_id"]
+                )
+                target = await connection_mgr.get_connection_target(init_connection)
+                await outbound_handler(msg, target)
+                found = True
+                LOGGER.info("Forwarded invitation to %s", init_connection.connection_id)
+                break
 
-            return Menu(
-                title="Attendee not found",
-                description="The attendee could not be located.",
-                options=[return_option],
-            )
-
-        elif action_name.startswith("request;"):
-            LOGGER.info("requested intro to %s", action_name[8:])
-            name = "info;" + action_name[8:]
-            for row in intros:
-                if row["name"] == name:
-
-                    # send introduction proposal to user and ..
-
-                    return Menu(
-                        title="Request sent to {}".format(row["title"]),
-                        description="""Your request for an introduction has been received,
-                            and IIWBook will now ask the attendee for a connection
-                            invitation. Once received by IIWBook this invitation will be
-                            forwarded to your agent.""",
-                        options=[
-                            MenuOption(
-                                name="index",
-                                title="Done",
-                                description="Return to options",
-                            )
-                        ],
-                    )
+        if not found:
+            LOGGER.error("Could not forward invitation, no pending introduction found")

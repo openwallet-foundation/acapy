@@ -49,4 +49,4 @@ class InvitationSchema(AgentMessageSchema):
         model_class = Invitation
 
     invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
-    message = fields.Str(required=False)
+    message = fields.Str(required=False, allow_none=True)
