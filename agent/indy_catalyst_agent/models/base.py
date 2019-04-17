@@ -181,7 +181,12 @@ class BaseModel(ABC):
             A human readable string for this class
 
         """
-        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
+        exclude = resolve_meta_property(self, "repr_exclude", [])
+        items = (
+            "{}={}".format(k, repr(v))
+            for k, v in self.__dict__.items()
+            if k not in exclude
+        )
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
 
 

@@ -28,6 +28,7 @@ class BasicMessageHandler(BaseHandler):
 
         await context.connection_record.log_activity(
             context.storage,
+            context.service_factory,
             "message",
             context.connection_record.DIRECTION_RECEIVED,
             meta,
@@ -52,6 +53,7 @@ class BasicMessageHandler(BaseHandler):
             await responder.send_reply(reply_msg)
             await context.connection_record.log_activity(
                 context.storage,
+                context.service_factory,
                 "message",
                 context.connection_record.DIRECTION_SENT,
                 {"content": reply},
