@@ -42,7 +42,7 @@ def find_and_fire_hook(event_name, instance, **kwargs):
 
 def is_registration_valid(hook: CredentialHook):
     is_valid = True
-    hook_user = HookUser.objects.get(id=hook.user_id)
+    hook_user = HookUser.objects.get(user__id=hook.user_id)
 
     if hook_user.registration_expiry < datetime.datetime.now().date():
         is_valid = False
