@@ -3,6 +3,7 @@ import logging
 
 import requests
 from celery.task import Task
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,9 @@ class DeliverHook(Task):
             if response.status_code >= 500:
                 response.raise_for_response()
         except requests.ConnectionError:
-            delay_in_seconds = 2 ** self.request.retries
-            self.retry(countdown=delay_in_seconds)
+            if self.request.retries < settings.HOOK_RETRY_THRESHOLD:
+                delay_in_seconds = 2 ** self.request.retries
+                self.retry(countdown=delay_in_seconds)
 
 
 def deliver_hook_wrapper(target, payload, instance, hook):

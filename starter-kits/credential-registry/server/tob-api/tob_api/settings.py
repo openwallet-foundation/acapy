@@ -316,3 +316,7 @@ CELERY_BROKER_HEARTBEAT = 0
 CELERY_BROKER_URL = "pyamqp://{}:{}@rabbitmq//".format(
     os.environ.get("RABBITMQ_USER"), os.environ.get("RABBITMQ_PASSWORD")
 )
+
+# custom hook settings
+
+HOOK_RETRY_THRESHOLD = os.environ.get("HOOK_RETRY_THRESHOLD", 3)
