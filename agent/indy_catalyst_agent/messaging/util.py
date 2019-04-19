@@ -12,6 +12,7 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 async def send_webhook(topic, payload, retries=5):
     if not WEBHOOK_URL:
         LOGGER.warning("WEBHOOK_URL is not set")
+        return
 
     async with aiohttp.ClientSession() as session:
         full_webhook_url = f"{WEBHOOK_URL}/topic/{topic}/"
