@@ -25,5 +25,8 @@ class PingResponseHandler(BaseHandler):
         # Nothing to do, Connection should be automatically promoted to 'active'
 
         await context.connection_record.log_activity(
-            context.storage, "ping", context.connection_record.DIRECTION_RECEIVED
+            context.storage,
+            context.service_factory,
+            "ping",
+            context.connection_record.DIRECTION_RECEIVED,
         )

@@ -5,6 +5,7 @@ from .messaging.message_factory import MessageFactory
 from .messaging.basicmessage.message_types import MESSAGE_TYPES as BASICMESSAGE_MESSAGES
 from .messaging.connections.message_types import MESSAGE_TYPES as CONNECTION_MESSAGES
 from .messaging.discovery.message_types import MESSAGE_TYPES as DISCOVERY_MESSAGES
+from .messaging.introduction.message_types import MESSAGE_TYPES as INTRODUCTION_MESSAGES
 from .messaging.presentations.message_types import (
     MESSAGE_TYPES as PRESENTATION_MESSAGES,
 )
@@ -21,6 +22,7 @@ def default_message_factory() -> MessageFactory:
         BASICMESSAGE_MESSAGES,
         CONNECTION_MESSAGES,
         DISCOVERY_MESSAGES,
+        INTRODUCTION_MESSAGES,
         PRESENTATION_MESSAGES,
         CREDENTIAL_MESSAGES,
         ROUTING_MESSAGES,
