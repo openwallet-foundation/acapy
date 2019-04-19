@@ -46,13 +46,18 @@ class PresentationManager:
         return self._context
 
     async def create_request(
-        self, requested_attributes: list, requested_predicates: list, connection_id
+        self,
+        name: str,
+        version: str,
+        requested_attributes: list,
+        requested_predicates: list,
+        connection_id,
     ):
         """Create a proof request."""
 
         presentation_request = {
-            "name": str(uuid4()),
-            "version": str(uuid4()),
+            "name": name,
+            "version": version,
             "nonce": str(uuid4().int),
             "requested_attributes": {},
             "requested_predicates": {},
