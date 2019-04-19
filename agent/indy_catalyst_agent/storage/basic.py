@@ -159,20 +159,72 @@ class BasicStorage(BaseStorage):
         return BasicStorageRecordSearch(self, type_filter, tag_query, page_size)
 
 
-def basic_tag_query_match(tags: dict, tag_query: dict) -> bool:
-    """Match simple tag filters (string values).
+def basic_tag_value_match(value: str, match: dict) -> bool:
+    """Match a single tag against a tag subquery.
 
-    TODO: implement more complex queries like $or
+    TODO: What type coercion is needed? (support int or float values?)
     """
+    if len(match) != 1:
+        raise StorageSearchError("Unsupported subquery: {}".format(match))
+    if value is None:
+        return False
+    op = match.keys()[0]
+    cmp_val = match[op]
+    if op == "$in":
+        if not isinstance(cmp_val, list):
+            raise StorageSearchError("Expected list for $in value")
+        chk = cmp_val in op
+    else:
+        if not isinstance(cmp_val, str):
+            raise StorageSearchError("Expected string for filter value")
+        if op == "$neq":
+            chk = value != cmp_val
+        elif op == "$gt":
+            chk = value > cmp_val
+        elif op == "$gte":
+            chk = value >= cmp_val
+        elif op == "$lt":
+            chk = value < cmp_val
+        elif op == "$lte":
+            chk = value <= cmp_val
+        # elif op == "$like":  NYI
+        else:
+            raise StorageSearchError("Unsupported match operator: ".format(op))
+    return chk
+
+
+def basic_tag_query_match(tags: dict, tag_query: dict) -> bool:
+    """Match simple tag filters (string values)."""
     result = True
     if not tags:
         tags = {}
     if tag_query:
         for k, v in tag_query.items():
-            if isinstance(v, str):  # not handling complex queries
-                if tags.get(k) != v:
-                    result = False
-                    break
+            if k == "$or":
+                if not isinstance(v, list):
+                    raise StorageSearchError("Expected list for $or filter value")
+                chk = False
+                for opt in v:
+                    if basic_tag_query_match(tags, opt):
+                        chk = True
+                        break
+            elif k == "$not":
+                if not isinstance(v, dict):
+                    raise StorageSearchError("Expected dict for $not filter value")
+                chk = not basic_tag_query_match(tags, v)
+            elif k[0] == "$":
+                raise StorageSearchError("Unexpected filter operator: {}".format(k))
+            elif isinstance(v, str):
+                chk = tags.get(k) == v
+            elif isinstance(v, dict):
+                chk = basic_tag_value_match(tags.get(k), v)
+            else:
+                raise StorageSearchError(
+                    "Expected string or dict for filter value, got {}".format(v)
+                )
+            if not chk:
+                result = False
+                break
     return result
 
 
