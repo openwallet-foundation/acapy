@@ -3,10 +3,14 @@ import pytest
 from ....responder import BaseResponder
 from ....connections.models.connection_record import ConnectionRecord
 from ...handlers.route_query_request_handler import RouteQueryRequestHandler
+from ...handlers.route_update_request_handler import RouteUpdateRequestHandler
 from .....messaging.request_context import RequestContext
 from ...messages.route_query_request import RouteQueryRequest
+from ...messages.route_query_response import RouteQueryResponse
 from ...messages.route_update_request import RouteUpdateRequest
+from ...messages.route_update_response import RouteUpdateResponse
 from ...models.route_update import RouteUpdate
+from ...models.route_updated import RouteUpdated
 from .....storage.basic import BasicStorage
 
 TEST_CONN_ID = "conn-id"
@@ -45,14 +49,28 @@ class TestQueryUpdateHandlers:
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert result.routes == []
+        assert isinstance(result, RouteQueryResponse) and result.routes == []
         assert target is None
 
     @pytest.mark.asyncio
     async def test_query_route(self, request_context):
-        request_context.message = RouteUpdateRequest()
-        update_handler = RouteQueryRequestHandler()
+        request_context.message = RouteUpdateRequest(
+            updates=[
+                RouteUpdate(recipient_key=TEST_VERKEY, action=RouteUpdate.ACTION_CREATE)
+            ]
+        )
+        update_handler = RouteUpdateRequestHandler()
         update_responder = MockResponder()
+        await update_handler.handle(request_context, update_responder)
+        messages = update_responder.messages
+        assert len(messages) == 1
+        result, target = messages[0]
+        assert isinstance(result, RouteUpdateResponse)
+        assert len(result.updated) == 1
+        assert result.updated[0].recipient_key == TEST_VERKEY
+        assert result.updated[0].action == RouteUpdate.ACTION_CREATE
+        assert result.updated[0].result == RouteUpdated.RESULT_SUCCESS
+        assert target is None
 
         request_context.message = RouteQueryRequest()
         query_handler = RouteQueryRequestHandler()
@@ -61,5 +79,6 @@ class TestQueryUpdateHandlers:
         messages = query_responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert result.routes == []
+        assert isinstance(result, RouteQueryResponse)
+        assert result.routes[0].recipient_key == TEST_VERKEY
         assert target is None
