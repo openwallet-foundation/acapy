@@ -4,6 +4,7 @@ import json
 import logging
 import tempfile
 from os import path
+import re
 
 import indy.anoncreds
 import indy.ledger
@@ -137,7 +138,17 @@ class IndyLedger(BaseLedger):
         request_json = await indy.ledger.build_schema_request(
             public_did.did, schema_json
         )
-        await self._submit(request_json)
+
+        try:
+            await self._submit(request_json)
+        except LedgerTransactionError as e:
+            # Schema already exists, so return id
+            self.logger.warn(
+                "Failed to submit schema to ledger. "
+                + "Assuming already exists and returning id. "
+                + f"Error: {str(e)}"
+            )
+            schema_id = f"{public_did.did}:{2}:{schema_name}:{schema_version}"
 
         # TODO: validate response
 
@@ -180,17 +191,33 @@ class IndyLedger(BaseLedger):
         schema = await self.get_schema(schema_id)
 
         # TODO: add support for tag, sig type, and config
-        (
-            credential_definition_id,
-            credential_definition_json,
-        ) = await indy.anoncreds.issuer_create_and_store_credential_def(
-            self.wallet.handle,
-            public_did.did,
-            json.dumps(schema),
-            tag,
-            "CL",
-            json.dumps({"support_revocation": False}),
-        )
+        try:
+            (
+                credential_definition_id,
+                credential_definition_json,
+            ) = await indy.anoncreds.issuer_create_and_store_credential_def(
+                self.wallet.handle,
+                public_did.did,
+                json.dumps(schema),
+                tag,
+                "CL",
+                json.dumps({"support_revocation": False}),
+            )
+        # If the cred def already exists in the wallet, we need some way of obtaining
+        # that cred def id (from schema id passed) since we can now assume we can use
+        # it in future operations.
+        except IndyError as error:
+            if error.error_code == ErrorCode.AnoncredsCredDefAlreadyExistsError:
+                try:
+                    cred_def_id = re.search(r"\w*:\d*:CL:\d*:\w*", error.message).group(
+                        0
+                    )
+                    return cred_def_id
+                # The regex search failed so let the error bubble up
+                except AttributeError:
+                    raise error
+            else:
+                raise
 
         request_json = await indy.ledger.build_cred_def_request(
             public_did.did, credential_definition_json

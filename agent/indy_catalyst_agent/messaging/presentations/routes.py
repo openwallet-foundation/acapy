@@ -38,6 +38,8 @@ class PresentationRequestRequestSchema(Schema):
 class SendPresentationRequestSchema(Schema):
     """Request schema for sending a presentation."""
 
+    name = fields.String(required=True)
+    version = fields.String(required=True)
     self_attested_attributes = fields.Dict(required=True)
     requested_attributes = fields.Dict(required=True)
     requested_predicates = fields.Dict(required=True)
@@ -182,6 +184,9 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
     body = await request.json()
 
     connection_id = body.get("connection_id")
+
+    name = body.get("name")
+    version = body.get("version")
     requested_attributes = body.get("requested_attributes")
     requested_predicates = body.get("requested_predicates")
 
@@ -200,7 +205,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
         presentation_exchange_record,
         presentation_request_message,
     ) = await presentation_manager.create_request(
-        requested_attributes, requested_predicates, connection_id
+        name, version, requested_attributes, requested_predicates, connection_id
     )
 
     await outbound_handler(presentation_request_message, connection_target)
