@@ -1,4 +1,4 @@
-"""Utils for messages"""
+"""Utils for messages."""
 
 import asyncio
 import os
@@ -12,7 +12,7 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 
 async def send_webhook(topic, payload, retries=5):
-    """Send a webhook to WEBHOOK_URL if set"""
+    """Send a webhook to WEBHOOK_URL if set."""
     if not WEBHOOK_URL:
         LOGGER.warning("WEBHOOK_URL is not set")
         return
