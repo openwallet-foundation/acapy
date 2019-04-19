@@ -37,6 +37,7 @@ class PresentationRequestRequestSchema(Schema):
 
 class SendPresentationRequestSchema(Schema):
     """Request schema for sending a presentation."""
+
     name = fields.String(required=True)
     version = fields.String(required=True)
     self_attested_attributes = fields.Dict(required=True)

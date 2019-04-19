@@ -1,3 +1,5 @@
+"""Utils for messages"""
+
 import asyncio
 import os
 import logging
@@ -10,6 +12,7 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 
 async def send_webhook(topic, payload, retries=5):
+    """Send a webhook to WEBHOOK_URL if set"""
     if not WEBHOOK_URL:
         LOGGER.warning("WEBHOOK_URL is not set")
         return
@@ -21,7 +24,7 @@ async def send_webhook(topic, payload, retries=5):
             response = await session.post(full_webhook_url, json=payload)
             if response.status < 200 or response.status > 299:
                 raise Exception()
-        except:
+        except Exception:
             if retries > 0:
                 await asyncio.sleep(5)
                 await send_webhook(topic, payload, retries - 1)

@@ -262,4 +262,3 @@ class CredentialManager:
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
-
