@@ -25,7 +25,7 @@ class MenuRequestHandler(BaseHandler):
             "actionmenu"
         )
         if service:
-            menu = await service.get_active_menu()
+            menu = await service.get_active_menu(context.message._thread_id)
             if menu:
                 await responder.send_reply(menu)
         else:

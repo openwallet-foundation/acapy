@@ -25,12 +25,17 @@ class BaseMenuService(ABC):
         return get_instance
 
     @abstractmethod
-    async def get_active_menu(self) -> Menu:
-        """Render the current menu."""
+    async def get_active_menu(self, thread_id: str = None) -> Menu:
+        """
+        Render the current menu.
+
+        Args:
+            thread_id: The thread identifier from the requesting message.
+        """
 
     @abstractmethod
     async def perform_menu_action(
-        self, action_name: str, action_params: dict
+        self, action_name: str, action_params: dict, thread_id: str = None
     ) -> AgentMessage:
         """
         Perform an action defined by the active menu.
@@ -38,5 +43,5 @@ class BaseMenuService(ABC):
         Args:
             action_name: The unique name of the action being performed
             action_params: A collection of parameters for the action
-            responder: The responder instance for sending a reply
+            thread_id: The thread identifier from the requesting message.
         """

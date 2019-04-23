@@ -26,7 +26,9 @@ class PerformHandler(BaseHandler):
         )
         if service:
             reply = await service.perform_menu_action(
-                context.message.name, context.message.params or {}
+                context.message.name,
+                context.message.params or {},
+                context.message._thread_id,
             )
             if reply:
                 await responder.send_reply(reply)
