@@ -1,6 +1,6 @@
 import pytest
 
-from ....responder import BaseResponder
+from ....base_handler import HandlerException
 from ....connections.models.connection_record import ConnectionRecord
 from ...handlers.route_query_request_handler import RouteQueryRequestHandler
 from ...handlers.route_update_request_handler import RouteUpdateRequestHandler
@@ -11,6 +11,7 @@ from ...messages.route_update_request import RouteUpdateRequest
 from ...messages.route_update_response import RouteUpdateResponse
 from ...models.route_update import RouteUpdate
 from ...models.route_updated import RouteUpdated
+from ....responder import BaseResponder
 from .....storage.basic import BasicStorage
 
 TEST_CONN_ID = "conn-id"
@@ -51,6 +52,21 @@ class TestQueryUpdateHandlers:
         result, target = messages[0]
         assert isinstance(result, RouteQueryResponse) and result.routes == []
         assert target is None
+
+    @pytest.mark.asyncio
+    async def test_no_connection(self, request_context):
+        request_context.connection_active = False
+        request_context.message = RouteQueryRequest()
+        handler = RouteQueryRequestHandler()
+        responder = MockResponder()
+        with pytest.raises(HandlerException):
+            await handler.handle(request_context, responder)
+
+        request_context.message = RouteUpdateRequest()
+        handler = RouteUpdateRequestHandler()
+        responder = MockResponder()
+        with pytest.raises(HandlerException):
+            await handler.handle(request_context, responder)
 
     @pytest.mark.asyncio
     async def test_query_route(self, request_context):
