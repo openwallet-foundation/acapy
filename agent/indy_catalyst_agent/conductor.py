@@ -23,8 +23,10 @@ from .issuer.indy import IndyIssuer
 from .holder.indy import IndyHolder
 from .verifier.indy import IndyVerifier
 from .messaging.agent_message import AgentMessage
+from .messaging.actionmenu.driver_service import DriverMenuService
 from .messaging.connections.manager import ConnectionManager
 from .messaging.connections.models.connection_target import ConnectionTarget
+from .messaging.introduction.demo_service import DemoIntroductionService
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
 from .service.factory import ServiceRegistry
@@ -126,7 +128,8 @@ class Conductor:
         # TODO: Load holder implementation from command line args
         context.verifier = IndyVerifier(context.wallet)
 
-        storage_type = self.settings.get("storage.type", "basic").lower()
+        storage_default_type = "indy" if wallet_type == "indy" else "basic"
+        storage_type = self.settings.get("storage.type", storage_default_type).lower()
         storage_type = self.STORAGE_TYPES.get(storage_type, storage_type)
         context.storage = ClassLoader.load_class(storage_type)(context.wallet)
 
@@ -210,6 +213,14 @@ class Conductor:
                 await self.connection_mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
+
+        # Allow action menu to be provided by driver
+        self.service_registry.register_service_handler(
+            "actionmenu", DriverMenuService.service_handler()
+        )
+        self.service_registry.register_service_handler(
+            "introduction", DemoIntroductionService.service_handler()
+        )
 
     async def inbound_message_router(
         self,

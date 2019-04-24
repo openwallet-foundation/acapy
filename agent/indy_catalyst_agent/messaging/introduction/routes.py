@@ -1,9 +1,13 @@
 """Introduction service admin routes."""
 
+import logging
+
 from aiohttp import web
 from aiohttp_apispec import docs
 
 from .base_service import BaseIntroductionService
+
+LOGGER = logging.getLogger(__name__)
 
 
 @docs(
@@ -32,10 +36,11 @@ async def introduction_start(request: web.BaseRequest):
         request: aiohttp request object
 
     """
+    LOGGER.info("Introduction requested")
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
     init_connection_id = request.match_info["id"]
-    target_connection_id = request.query["target_connection_id"]
+    target_connection_id = request.query.get("target_connection_id")
     message = request.query.get("message")
 
     service: BaseIntroductionService = await context.service_factory.resolve_service(
