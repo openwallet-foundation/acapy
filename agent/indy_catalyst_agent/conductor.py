@@ -126,7 +126,8 @@ class Conductor:
         # TODO: Load holder implementation from command line args
         context.verifier = IndyVerifier(context.wallet)
 
-        storage_type = self.settings.get("storage.type", "basic").lower()
+        storage_default_type = "indy" if wallet_type == "indy" else "basic"
+        storage_type = self.settings.get("storage.type", storage_default_type).lower()
         storage_type = self.STORAGE_TYPES.get(storage_type, storage_type)
         context.storage = ClassLoader.load_class(storage_type)(context.wallet)
 
