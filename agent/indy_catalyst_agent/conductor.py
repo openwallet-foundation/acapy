@@ -26,6 +26,7 @@ from .messaging.agent_message import AgentMessage
 from .messaging.actionmenu.driver_service import DriverMenuService
 from .messaging.connections.manager import ConnectionManager
 from .messaging.connections.models.connection_target import ConnectionTarget
+from .messaging.introduction.demo_service import DemoIntroductionService
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
 from .service.factory import ServiceRegistry
@@ -216,6 +217,9 @@ class Conductor:
         # Allow action menu to be provided by driver
         self.service_registry.register_service_handler(
             "actionmenu", DriverMenuService.service_handler()
+        )
+        self.service_registry.register_service_handler(
+            "introduction", DemoIntroductionService.service_handler()
         )
 
     async def inbound_message_router(
