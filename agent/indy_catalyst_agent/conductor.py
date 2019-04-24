@@ -16,7 +16,7 @@ from .admin.server import AdminServer
 from .admin.service import AdminService
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
-from .error import BaseError
+from .error import BaseError, StartupError
 from .logging import LoggingConfigurator
 from .ledger.indy import IndyLedger
 from .issuer.indy import IndyIssuer
@@ -34,10 +34,6 @@ from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.queue.basic import BasicOutboundMessageQueue
-
-
-class ConductorError(BaseError):
-    """Conductor error."""
 
 
 class Conductor:
@@ -111,7 +107,14 @@ class Conductor:
 
         wallet_seed = self.settings.get("wallet.seed")
         public_did_info = await context.wallet.get_public_did()
-        if not public_did_info:
+
+        if public_did_info and seed_to_did(wallet_seed) != public_did_info.did:
+            raise StartupError(
+                f"New seed '{wallet_seed}' provided"
+                + f"but public seed is already set to {public_did_info.did}"
+            )
+
+        if wallet_seed:
             public_did_info = await context.wallet.create_public_did(seed=wallet_seed)
 
         # TODO: Load ledger implementation from command line args

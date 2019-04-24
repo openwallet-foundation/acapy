@@ -73,6 +73,13 @@ def random_seed() -> bytes:
     return pysodium.randombytes(pysodium.crypto_secretbox_KEYBYTES)
 
 
+def seed_to_did(seed: str) -> str:
+    seed = validate_seed(seed)
+    verkey, _ = create_keypair(seed)
+    did = bytes_to_b58(verkey[:16])
+    return did
+
+
 def validate_seed(seed: (str, bytes)) -> bytes:
     """
     Convert a seed parameter to standard format and check length.
