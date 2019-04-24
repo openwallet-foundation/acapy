@@ -34,6 +34,7 @@ from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.queue.basic import BasicOutboundMessageQueue
+from .wallet.crypto import seed_to_did
 
 
 class Conductor:
