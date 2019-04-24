@@ -111,7 +111,7 @@ class Conductor:
 
         if public_did_info and seed_to_did(wallet_seed) != public_did_info.did:
             raise StartupError(
-                f"New seed '{wallet_seed}' provided"
+                f"New seed '{wallet_seed}' provided "
                 + f"but public seed is already set to {public_did_info.did}"
             )
 
