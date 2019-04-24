@@ -48,6 +48,7 @@ class DriverMenuService(BaseMenuService):
                 "perform-menu-action",
                 {
                     "connection_id": self._context.connection_record.connection_id,
+                    "thread_id": thread_id,
                     "action_name": action_name,
                     "action_params": action_params,
                 },

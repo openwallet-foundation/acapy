@@ -23,6 +23,7 @@ from .issuer.indy import IndyIssuer
 from .holder.indy import IndyHolder
 from .verifier.indy import IndyVerifier
 from .messaging.agent_message import AgentMessage
+from .messaging.actionmenu.driver_service import DriverMenuService
 from .messaging.connections.manager import ConnectionManager
 from .messaging.connections.models.connection_target import ConnectionTarget
 from .messaging.message_factory import MessageFactory
@@ -211,6 +212,11 @@ class Conductor:
                 await self.connection_mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
+
+        # Allow action menu to be provided by driver
+        self.service_registry.register_service_handler(
+            "actionmenu", DriverMenuService.service_handler()
+        )
 
     async def inbound_message_router(
         self,

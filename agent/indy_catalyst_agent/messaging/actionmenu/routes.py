@@ -160,7 +160,12 @@ async def actionmenu_send(request: web.BaseRequest):
     connection_mgr = ConnectionManager(context)
     outbound_handler = request.app["outbound_message_router"]
     menu_json = await request.json()
-    msg = Menu(**menu_json["menu"])
+    LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
+    try:
+        msg = Menu.deserialize(menu_json["menu"])
+    except Exception:
+        LOGGER.exception("Exception deserializing menu")
+        raise
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(
