@@ -107,15 +107,18 @@ class Conductor:
         await context.wallet.open()
 
         wallet_seed = self.settings.get("wallet.seed")
-        public_did_info = await context.wallet.get_public_did()
-
-        if public_did_info and seed_to_did(wallet_seed) != public_did_info.did:
-            raise StartupError(
-                f"New seed '{wallet_seed}' provided "
-                + f"but public seed is already set to {public_did_info.did}"
-            )
-
         if wallet_seed:
+            public_did_info = await context.wallet.get_public_did()
+
+            # If we already have a registered public did and it doesn't match
+            # the one derived from `wallet_seed` then we error out.
+            # TODO: Add a command to change public did explicitly
+            if public_did_info and seed_to_did(wallet_seed) != public_did_info.did:
+                raise StartupError(
+                    "New seed provided which doesn't match the registered"
+                    + f" public did {public_did_info.did}"
+                )
+
             public_did_info = await context.wallet.create_public_did(seed=wallet_seed)
 
         # TODO: Load ledger implementation from command line args
