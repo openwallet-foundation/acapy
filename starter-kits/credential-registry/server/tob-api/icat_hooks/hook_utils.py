@@ -10,32 +10,37 @@ def find_and_fire_hook(event_name, instance, **kwargs):
 
     hooks = CredentialHook.objects.filter(**filters)
     for hook in hooks:
-        if hook.is_active and is_registration_valid(hook):
+        if is_registration_valid(hook):
             send_hook = False
-            # TODO find subscription(s) related to this hook
+            # find subscription(s) related to this hook
             subscriptions = Subscription.objects.filter(hook=hook).all()
             if 0 < len(subscriptions):
-                # TODO check if we should fire per subscription
+                # check if we should fire per subscription
                 for subscription in subscriptions:
-                    if subscription.subscription_type == "New":
-                        if subscription.subscription_type == instance.topic_status:
-                            send_hook = True
-                    elif subscription.subscription_type == "Stream":
-                        if (
-                            subscription.topic_source_id == instance.corp_num
-                            and subscription.credential_type == instance.credential_type
-                        ):
-                            send_hook = True
-                    elif subscription.subscription_type == "Topic":
-                        if subscription.topic_source_id == instance.corp_num:
-                            send_hook = True
+                    if (
+                        subscription.subscription_type == "New"
+                        and subscription.subscription_type == instance.topic_status
+                    ):
+                        send_hook = True
+                    elif (
+                        subscription.subscription_type == "Stream"
+                        and subscription.topic_source_id == instance.corp_num
+                        and subscription.credential_type == instance.credential_type
+                    ):
+                        send_hook = True
+                    elif (
+                        subscription.subscription_type == "Topic"
+                        and subscription.topic_source_id == instance.corp_num
+                    ):
+                        send_hook = True
                     else:
                         print(
                             "      >>> Error invalid subscription type:",
                             subscription.subscription_type,
                         )
+                        raise Exception("Invalid subscription type")
 
-            # TODO logic around whether we hook or not
+            # logic around whether we hook or not
             if send_hook:
                 hook.deliver_hook(instance)
 
