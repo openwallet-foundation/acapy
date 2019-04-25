@@ -16,7 +16,7 @@ from .admin.server import AdminServer
 from .admin.service import AdminService
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
-from .error import BaseError, StartupError
+from .error import StartupError
 from .logging import LoggingConfigurator
 from .ledger.indy import IndyLedger
 from .issuer.indy import IndyIssuer
