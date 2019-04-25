@@ -1,5 +1,7 @@
 """Connection handling admin routes."""
 
+from asyncio import shield
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
@@ -50,8 +52,8 @@ async def schemas_send_schema(request: web.BaseRequest):
     attributes = body.get("attributes")
 
     async with context.ledger:
-        schema_id = await context.ledger.send_schema(
-            schema_name, schema_version, attributes
+        schema_id = await shield(
+            context.ledger.send_schema(schema_name, schema_version, attributes)
         )
 
     return web.json_response({"schema_id": schema_id})
