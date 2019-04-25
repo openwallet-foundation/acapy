@@ -161,11 +161,12 @@ class LoggingConfigurator:
         print(f"{banner_spacer}")
 
         # DID info
-        print(lr_pad(str(public_did_subtitle_string) + str(public_did_subtitle_spacer)))
-        print(f"{banner_spacer}")
-        for public_did_string in public_did_strings:
-            print(lr_pad(f"{public_did_string[0]}{public_did_string[1]}"))
-        print(f"{banner_spacer}")
+        if public_did:
+            print(lr_pad(str(public_did_subtitle_string) + str(public_did_subtitle_spacer)))
+            print(f"{banner_spacer}")
+            for public_did_string in public_did_strings:
+                print(lr_pad(f"{public_did_string[0]}{public_did_string[1]}"))
+            print(f"{banner_spacer}")
 
         # Admin server info
         print(lr_pad(str(admin_subtitle_string) + str(admin_subtitle_spacer)))
