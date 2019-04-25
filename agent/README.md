@@ -1,5 +1,9 @@
 # Hyperledger Indy Catalyst Agent <!-- omit in toc -->
 
+[![CircleCI](https://circleci.com/gh/bcgov/indy-catalyst.svg?style=shield)](https://circleci.com/gh/bcgov/indy-catalyst)
+[![codecov](https://codecov.io/gh/bcgov/indy-catalyst/branch/master/graph/badge.svg)](https://codecov.io/gh/bcgov/indy-catalyst)
+[![Known Vulnerabilities](https://snyk.io/test/github/bcgov/indy-catalyst/badge.svg?targetFile=agent%2Frequirements.txt)](https://snyk.io/test/github/bcgov/indy-catalyst?targetFile=agent%2Frequirements.txt)
+
 ![logo](/docs/assets/indy-catalyst-logo-bw.png)
 
 # Table of Contents <!-- omit in toc -->

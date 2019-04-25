@@ -1,5 +1,7 @@
 """Connection handling admin routes."""
 
+from asyncio import shield
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
@@ -49,8 +51,8 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     schema_id = body.get("schema_id")
 
     async with context.ledger:
-        credential_definition_id = await context.ledger.send_credential_definition(
-            schema_id
+        credential_definition_id = await shield(
+            context.ledger.send_credential_definition(schema_id)
         )
 
     return web.json_response({"credential_definition_id": credential_definition_id})
