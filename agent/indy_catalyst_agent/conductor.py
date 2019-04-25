@@ -16,7 +16,7 @@ from .admin.server import AdminServer
 from .admin.service import AdminService
 from .classloader import ClassLoader
 from .dispatcher import Dispatcher
-from .error import BaseError
+from .error import StartupError
 from .logging import LoggingConfigurator
 from .ledger.indy import IndyLedger
 from .issuer.indy import IndyIssuer
@@ -34,10 +34,7 @@ from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.queue.basic import BasicOutboundMessageQueue
-
-
-class ConductorError(BaseError):
-    """Conductor error."""
+from .wallet.crypto import seed_to_did
 
 
 class Conductor:
@@ -111,8 +108,20 @@ class Conductor:
 
         wallet_seed = self.settings.get("wallet.seed")
         public_did_info = await context.wallet.get_public_did()
-        if not public_did_info:
+        public_did = None
+        if public_did_info:
+            public_did = public_did_info.did
+            # If we already have a registered public did and it doesn't match
+            # the one derived from `wallet_seed` then we error out.
+            # TODO: Add a command to change public did explicitly
+            if seed_to_did(wallet_seed) != public_did_info.did:
+                raise StartupError(
+                    "New seed provided which doesn't match the registered"
+                    + f" public did {public_did_info.did}"
+                )
+        elif wallet_seed:
             public_did_info = await context.wallet.create_public_did(seed=wallet_seed)
+            public_did = public_did_info.did
 
         # TODO: Load ledger implementation from command line args
         genesis_transactions = self.settings.get("ledger.genesis_transactions")
@@ -183,7 +192,7 @@ class Conductor:
         LoggingConfigurator.print_banner(
             self.inbound_transport_manager.transports,
             self.outbound_transport_manager.registered_transports,
-            public_did_info,
+            public_did,
             self.admin_server,
         )
 
