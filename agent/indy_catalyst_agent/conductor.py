@@ -120,7 +120,9 @@ class Conductor:
                     + f" public did {public_did_info.did}"
                 )
 
-            public_did_info = await context.wallet.create_public_did(seed=wallet_seed)
+            if not public_did_info:
+                public_did_info = await context.wallet.create_public_did(seed=wallet_seed)
+                
             public_did = public_did_info.did
 
         # TODO: Load ledger implementation from command line args
