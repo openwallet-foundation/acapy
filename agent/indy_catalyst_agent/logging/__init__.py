@@ -38,7 +38,7 @@ class LoggingConfigurator:
         cls,
         inbound_transports,
         outbound_transports,
-        public_did_info,
+        public_did,
         admin_server=None,
         banner_length=40,
         border_character=":",
@@ -50,7 +50,7 @@ class LoggingConfigurator:
             inbound_transports: Configured inbound transports
             outbound_transports: Configured outbound transports
             admin_server: Admin server info
-            public_did_info: Public DID info
+            public_did: Public DID
             banner_length: (Default value = 40) Length of the banner
             border_character: (Default value = ":") Character to use in banner
                 border
@@ -112,7 +112,7 @@ class LoggingConfigurator:
         )
 
         public_did_strings = []
-        did_string = f"  - DID: {public_did_info.did}"
+        did_string = f"  - DID: {public_did}"
         did_spacer = " " * (banner_length - len(did_string))
         public_did_strings.append((did_string, did_spacer))
 

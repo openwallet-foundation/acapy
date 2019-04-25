@@ -107,6 +107,7 @@ class Conductor:
         await context.wallet.open()
 
         wallet_seed = self.settings.get("wallet.seed")
+        public_did = None
         if wallet_seed:
             public_did_info = await context.wallet.get_public_did()
 
@@ -120,6 +121,7 @@ class Conductor:
                 )
 
             public_did_info = await context.wallet.create_public_did(seed=wallet_seed)
+            public_did = public_did_info.did
 
         # TODO: Load ledger implementation from command line args
         genesis_transactions = self.settings.get("ledger.genesis_transactions")
@@ -190,7 +192,7 @@ class Conductor:
         LoggingConfigurator.print_banner(
             self.inbound_transport_manager.transports,
             self.outbound_transport_manager.registered_transports,
-            public_did_info,
+            public_did,
             self.admin_server,
         )
 
