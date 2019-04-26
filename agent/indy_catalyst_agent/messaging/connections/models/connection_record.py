@@ -318,7 +318,9 @@ class ConnectionRecord(BaseModel):
         ).fetch_single()
         return ConnectionRequest.from_json(result.value)
 
-    async def delete_record(self, storage: BaseStorage):
+    async def delete_record(
+        self, storage: BaseStorage, svc_factory: BaseServiceFactory = None
+    ):
         """Remove the connection record.
 
         Args:
@@ -326,6 +328,7 @@ class ConnectionRecord(BaseModel):
         """
         if self.connection_id:
             await storage.delete_record(self.storage_record)
+        await self.admin_send_update(storage, svc_factory)
 
     async def log_activity(
         self,
