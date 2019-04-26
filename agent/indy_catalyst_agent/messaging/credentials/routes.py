@@ -6,7 +6,7 @@ from marshmallow import fields, Schema
 from urllib.parse import parse_qs
 
 from .manager import CredentialManager
-from .models.credential_exchange import CredentialExchange
+from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema
 
 from ..connections.manager import ConnectionManager
 from ..connections.models.connection_record import ConnectionRecord
@@ -43,6 +43,12 @@ class CredentialIssueResultSchema(Schema):
     """Result schema for sending a credential issue admin message."""
 
     credential_id = fields.Str()
+
+
+class CredentialExchangeListSchema(Schema):
+    """Result schema for a credential exchange query."""
+
+    results = fields.List(fields.Nested(CredentialExchangeSchema()))
 
 
 @docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
@@ -117,7 +123,7 @@ async def credentials_list(request: web.BaseRequest):
 
 
 @docs(tags=["credential_exchange"], summary="Fetch all credential exchange records")
-# @response_schema(ConnectionListSchema(), 200)
+@response_schema(CredentialExchangeListSchema(), 200)
 async def credential_exchange_list(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -145,7 +151,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 
 
 @docs(tags=["credential_exchange"], summary="Fetch a single credential exchange record")
-# @response_schema(ConnectionRecordSchema(), 200)
+@response_schema(CredentialExchangeSchema(), 200)
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
     Request handler for fetching a single connection record.
