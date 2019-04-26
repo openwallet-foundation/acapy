@@ -55,9 +55,8 @@ class IndyStorage(BaseStorage):
         _validate_record(record)
         tags_json = json.dumps(record.tags) if record.tags else None
         try:
-            value = record.value if record.value is not None else ""
             await non_secrets.add_wallet_record(
-                self._wallet.handle, record.type, record.id, value, tags_json
+                self._wallet.handle, record.type, record.id, record.value, tags_json
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
@@ -121,10 +120,7 @@ class IndyStorage(BaseStorage):
         _validate_record(record)
         try:
             await non_secrets.update_wallet_record_value(
-                self._wallet.handle,
-                record.type,
-                record.id,
-                value if value is not None else "",
+                self._wallet.handle, record.type, record.id, value
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:

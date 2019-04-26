@@ -783,7 +783,7 @@ class ConnectionManager:
             did: The DID to associate with this key
             key: The verkey to be added
         """
-        record = StorageRecord(self.RECORD_TYPE_DID_KEY, None, {"did": did, "key": key})
+        record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
         await self.context.storage.add_record(record)
 
     async def find_did_for_key(self, key: str) -> str:
