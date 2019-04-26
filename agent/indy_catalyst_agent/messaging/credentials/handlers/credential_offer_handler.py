@@ -1,6 +1,6 @@
 """Basic message handler."""
 
-from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ...base_handler import BaseHandler, BaseResponder, HandlerException, RequestContext
 
 from ..manager import CredentialManager
 from ..messages.credential_offer import CredentialOffer
@@ -22,6 +22,9 @@ class CredentialOfferHandler(BaseHandler):
         assert isinstance(context.message, CredentialOffer)
 
         self._logger.info("Received credential offer: %s", context.message.offer_json)
+
+        if not context.connection_active:
+            raise HandlerException("No connection established for credential offer")
 
         credential_manager = CredentialManager(context)
 
