@@ -159,6 +159,15 @@ class PresentationExchange(BaseModel):
             )
         return result
 
+    async def delete_record(self, storage: BaseStorage):
+        """Remove the presentation exchange record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
+        if self.presentation_exchange_id:
+            await storage.delete_record(self.storage_record)
+
 
 class PresentationExchangeSchema(BaseModelSchema):
     """Schema for serialization/deserialization of presentation exchange records."""

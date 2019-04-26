@@ -327,24 +327,45 @@ async def credential_exchange_issue(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
+@docs(
+    tags=["credential_exchange"],
+    summary="Remove an existing credential exchange record",
+)
+async def credential_exchange_remove(request: web.BaseRequest):
+    """
+    Request handler for removing a credential exchange record.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    credential_exchange_id = request.match_info["id"]
+    try:
+        credential_exchange_id = request.match_info["id"]
+        credential_exchange_record = await CredentialExchange.retrieve_by_id(
+            context.storage, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        return web.HTTPNotFound()
+    await credential_exchange_record.delete_record(context.storage)
+    return web.HTTPOk()
+
+
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.get("/credential/{id}", credentials_get)])
-    app.add_routes([web.get("/credentials", credentials_list)])
-    app.add_routes([web.get("/credential_exchange", credential_exchange_list)])
-    app.add_routes([web.get("/credential_exchange/{id}", credential_exchange_retrieve)])
-    app.add_routes(
-        [web.post("/credential_exchange/send-offer", credential_exchange_send_offer)]
-    )
     app.add_routes(
         [
+            web.get("/credential/{id}", credentials_get),
+            web.get("/credentials", credentials_list),
+            web.get("/credential_exchange", credential_exchange_list),
+            web.get("/credential_exchange/{id}", credential_exchange_retrieve),
+            web.post("/credential_exchange/send-offer", credential_exchange_send_offer),
             web.post(
                 "/credential_exchange/{id}/send-request",
                 credential_exchange_send_request,
-            )
+            ),
+            web.post("/credential_exchange/{id}/issue", credential_exchange_issue),
+            web.post("/credential_exchange/{id}/remove", credential_exchange_remove),
         ]
-    )
-    app.add_routes(
-        [web.post("/credential_exchange/{id}/issue", credential_exchange_issue)]
     )

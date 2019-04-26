@@ -313,42 +313,55 @@ async def presentation_exchange_verify_credential_presentation(
     return web.json_response(presentation_exchange_record.serialize())
 
 
+@docs(
+    tags=["presentation_exchange"],
+    summary="Remove an existing presentation exchange record",
+)
+async def presentation_exchange_remove(request: web.BaseRequest):
+    """
+    Request handler for removing a presentation exchange record.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    presentation_exchange_id = request.match_info["id"]
+    try:
+        presentation_exchange_id = request.match_info["id"]
+        presentation_exchange_record = await PresentationExchange.retrieve_by_id(
+            context.storage, presentation_exchange_id
+        )
+    except StorageNotFoundError:
+        return web.HTTPNotFound()
+    await presentation_exchange_record.delete_record(context.storage)
+    return web.HTTPOk()
+
+
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.get("/presentation_exchange", presentation_exchange_list)])
-    app.add_routes(
-        [web.get("/presentation_exchange/{id}", presentation_exchange_retrieve)]
-    )
     app.add_routes(
         [
+            web.get("/presentation_exchange", presentation_exchange_list),
+            web.get("/presentation_exchange/{id}", presentation_exchange_retrieve),
             web.get(
                 "/presentation_exchange/{id}/credentials",
                 presentation_exchange_credentials_list,
-            )
-        ]
-    )
-    app.add_routes(
-        [
+            ),
             web.post(
                 "/presentation_exchange/send_request",
                 presentation_exchange_send_request,
-            )
-        ]
-    )
-    app.add_routes(
-        [
+            ),
             web.post(
                 "/presentation_exchange/{id}/send_presentation",
                 presentation_exchange_send_credential_presentation,
-            )
-        ]
-    )
-    app.add_routes(
-        [
+            ),
             web.post(
                 "/presentation_exchange/{id}/verify_presentation",
                 presentation_exchange_verify_credential_presentation,
-            )
+            ),
+            web.post(
+                "/presentation_exchange/{id}/remove", presentation_exchange_remove
+            ),
         ]
     )

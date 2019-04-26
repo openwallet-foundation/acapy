@@ -175,6 +175,15 @@ class CredentialExchange(BaseModel):
             result.append(CredentialExchange(credential_exchange_id=record.id, **vals))
         return result
 
+    async def delete_record(self, storage: BaseStorage):
+        """Remove the credential exchange record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
+        if self.credential_exchange_id:
+            await storage.delete_record(self.storage_record)
+
 
 class CredentialExchangeSchema(BaseModelSchema):
     """Schema to allow serialization/deserialization of credential exchange records."""

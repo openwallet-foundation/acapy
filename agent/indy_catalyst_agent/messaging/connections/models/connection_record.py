@@ -318,6 +318,15 @@ class ConnectionRecord(BaseModel):
         ).fetch_single()
         return ConnectionRequest.from_json(result.value)
 
+    async def delete_record(self, storage: BaseStorage):
+        """Remove the connection record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
+        if self.connection_id:
+            await storage.delete_record(self.storage_record)
+
     async def log_activity(
         self,
         storage: BaseStorage,
