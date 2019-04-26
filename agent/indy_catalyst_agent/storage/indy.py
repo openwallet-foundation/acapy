@@ -24,6 +24,8 @@ def _validate_record(record: StorageRecord):
         raise StorageError("Record has no ID")
     if not record.type:
         raise StorageError("Record has no type")
+    if not record.value:
+        raise StorageError("Record must have a non-empty value")
 
 
 class IndyStorage(BaseStorage):
