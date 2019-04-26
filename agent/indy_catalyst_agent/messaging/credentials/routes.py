@@ -6,7 +6,7 @@ from marshmallow import fields, Schema
 from urllib.parse import parse_qs
 
 from .manager import CredentialManager
-from .models.credential_exchange import CredentialExchange
+from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema
 
 from ..connections.manager import ConnectionManager
 from ..connections.models.connection_record import ConnectionRecord
@@ -45,8 +45,26 @@ class CredentialIssueResultSchema(Schema):
     credential_id = fields.Str()
 
 
+class CredentialExchangeListSchema(Schema):
+    """Result schema for a credential exchange query."""
+
+    results = fields.List(fields.Nested(CredentialExchangeSchema()))
+
+
+class CredentialSchema(Schema):
+    """Result schema for a credential query."""
+
+    # properties undefined
+
+
+class CredentialListSchema(Schema):
+    """Result schema for a credential query."""
+
+    results = fields.List(fields.Nested(CredentialSchema()))
+
+
 @docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
-# @response_schema(ConnectionListSchema(), 200)
+@response_schema(CredentialSchema(), 200)
 async def credentials_get(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -86,7 +104,7 @@ async def credentials_get(request: web.BaseRequest):
     ],
     summary="Fetch credentials from wallet",
 )
-# @response_schema(ConnectionListSchema(), 200)
+@response_schema(CredentialListSchema(), 200)
 async def credentials_list(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -113,11 +131,11 @@ async def credentials_list(request: web.BaseRequest):
 
     credentials = await context.holder.get_credentials(start, count, wql)
 
-    return web.json_response(credentials)
+    return web.json_response({"results": credentials})
 
 
 @docs(tags=["credential_exchange"], summary="Fetch all credential exchange records")
-# @response_schema(ConnectionListSchema(), 200)
+@response_schema(CredentialExchangeListSchema(), 200)
 async def credential_exchange_list(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -145,7 +163,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 
 
 @docs(tags=["credential_exchange"], summary="Fetch a single credential exchange record")
-# @response_schema(ConnectionRecordSchema(), 200)
+@response_schema(CredentialExchangeSchema(), 200)
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
     Request handler for fetching a single connection record.
@@ -309,24 +327,45 @@ async def credential_exchange_issue(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
+@docs(
+    tags=["credential_exchange"],
+    summary="Remove an existing credential exchange record",
+)
+async def credential_exchange_remove(request: web.BaseRequest):
+    """
+    Request handler for removing a credential exchange record.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    credential_exchange_id = request.match_info["id"]
+    try:
+        credential_exchange_id = request.match_info["id"]
+        credential_exchange_record = await CredentialExchange.retrieve_by_id(
+            context.storage, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        return web.HTTPNotFound()
+    await credential_exchange_record.delete_record(context.storage)
+    return web.HTTPOk()
+
+
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.get("/credential/{id}", credentials_get)])
-    app.add_routes([web.get("/credentials", credentials_list)])
-    app.add_routes([web.get("/credential_exchange", credential_exchange_list)])
-    app.add_routes([web.get("/credential_exchange/{id}", credential_exchange_retrieve)])
-    app.add_routes(
-        [web.post("/credential_exchange/send-offer", credential_exchange_send_offer)]
-    )
     app.add_routes(
         [
+            web.get("/credential/{id}", credentials_get),
+            web.get("/credentials", credentials_list),
+            web.get("/credential_exchange", credential_exchange_list),
+            web.get("/credential_exchange/{id}", credential_exchange_retrieve),
+            web.post("/credential_exchange/send-offer", credential_exchange_send_offer),
             web.post(
                 "/credential_exchange/{id}/send-request",
                 credential_exchange_send_request,
-            )
+            ),
+            web.post("/credential_exchange/{id}/issue", credential_exchange_issue),
+            web.post("/credential_exchange/{id}/remove", credential_exchange_remove),
         ]
-    )
-    app.add_routes(
-        [web.post("/credential_exchange/{id}/issue", credential_exchange_issue)]
     )

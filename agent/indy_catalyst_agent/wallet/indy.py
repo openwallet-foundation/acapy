@@ -218,6 +218,7 @@ class IndyWallet(BaseWallet):
         except IndyError as error:
             if error.error_code == ErrorCode.AnoncredsMasterSecretDuplicateNameError:
                 self.logger.info("Master secret already exists")
+                self._master_secret_id = self.name
             else:
                 raise
 

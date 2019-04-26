@@ -80,9 +80,17 @@ class CredentialExchange(BaseModel):
     @property
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this credential exchange."""
-        ret = self.tags
-        ret.update({"error_msg": self.error_msg})
-        return ret
+        result = self.tags
+        for prop in (
+            "credential_offer",
+            "credential_request",
+            "credential_request_metadata",
+            "error_msg",
+        ):
+            val = getattr(self, prop)
+            if val:
+                result[prop] = val
+        return result
 
     @property
     def tags(self) -> dict:
@@ -95,9 +103,6 @@ class CredentialExchange(BaseModel):
             "state",
             "credential_definition_id",
             "schema_id",
-            "credential_offer",
-            "credential_request",
-            "credential_request_metadata",
             "credential_id",
         ):
             val = getattr(self, prop)
@@ -169,6 +174,15 @@ class CredentialExchange(BaseModel):
             vals.update(record.tags)
             result.append(CredentialExchange(credential_exchange_id=record.id, **vals))
         return result
+
+    async def delete_record(self, storage: BaseStorage):
+        """Remove the credential exchange record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
+        if self.credential_exchange_id:
+            await storage.delete_record(self.storage_record)
 
 
 class CredentialExchangeSchema(BaseModelSchema):

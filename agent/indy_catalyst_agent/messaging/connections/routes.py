@@ -295,20 +295,39 @@ async def connections_accept_request(request: web.BaseRequest):
     return web.json_response(connection.serialize())
 
 
+@docs(tags=["connection"], summary="Remove an existing connection record")
+async def connections_remove(request: web.BaseRequest):
+    """
+    Request handler for removing a connection record.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    connection_id = request.match_info["id"]
+    try:
+        connection = await ConnectionRecord.retrieve_by_id(
+            context.storage, connection_id
+        )
+    except StorageNotFoundError:
+        return web.HTTPNotFound()
+    await connection.delete_record(context.storage, context.service_factory)
+    return web.HTTPOk()
+
+
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.get("/connections", connections_list)])
-    app.add_routes([web.get("/connections/{id}", connections_retrieve)])
     app.add_routes(
-        [web.post("/connections/create-invitation", connections_create_invitation)]
-    )
-    app.add_routes(
-        [web.post("/connections/receive-invitation", connections_receive_invitation)]
-    )
-    app.add_routes(
-        [web.post("/connections/{id}/accept-invitation", connections_accept_invitation)]
-    )
-    app.add_routes(
-        [web.post("/connections/{id}/accept-request", connections_accept_request)]
+        [
+            web.get("/connections", connections_list),
+            web.get("/connections/{id}", connections_retrieve),
+            web.post("/connections/create-invitation", connections_create_invitation),
+            web.post("/connections/receive-invitation", connections_receive_invitation),
+            web.post(
+                "/connections/{id}/accept-invitation", connections_accept_invitation
+            ),
+            web.post("/connections/{id}/accept-request", connections_accept_request),
+            web.post("/connections/{id}/remove", connections_remove),
+        ]
     )

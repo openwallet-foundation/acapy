@@ -1,16 +1,25 @@
 """Admin routes for presentations."""
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema
+from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
 from urllib.parse import parse_qs
 
 from .manager import PresentationManager
-from .models.presentation_exchange import PresentationExchange
+from .models.presentation_exchange import (
+    PresentationExchange,
+    PresentationExchangeSchema,
+)
 from ..connections.manager import ConnectionManager
 
 from ...storage.error import StorageNotFoundError
 from ..connections.models.connection_record import ConnectionRecord
+
+
+class PresentationExchangeListSchema(Schema):
+    """Result schema for a presentation exchange query."""
+
+    results = fields.List(fields.Nested(PresentationExchangeSchema()))
 
 
 class PresentationRequestRequestSchema(Schema):
@@ -46,7 +55,7 @@ class SendPresentationRequestSchema(Schema):
 
 
 @docs(tags=["presentation_exchange"], summary="Fetch all presentation exchange records")
-# @response_schema(ConnectionListSchema(), 200)
+@response_schema(PresentationExchangeListSchema(), 200)
 async def presentation_exchange_list(request: web.BaseRequest):
     """
     Request handler for searching presentation exchange records.
@@ -55,7 +64,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The connection list response
+        The presentation exchange list response
 
     """
     context = request.app["request_context"]
@@ -77,16 +86,16 @@ async def presentation_exchange_list(request: web.BaseRequest):
     tags=["presentation_exchange"],
     summary="Fetch a single presentation exchange record",
 )
-# @response_schema(ConnectionRecordSchema(), 200)
+@response_schema(PresentationExchangeSchema(), 200)
 async def presentation_exchange_retrieve(request: web.BaseRequest):
     """
-    Request handler for fetching a single connection record.
+    Request handler for fetching a single presentation exchange record.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The connection record response
+        The presentation exchange record response
 
     """
     context = request.app["request_context"]
@@ -215,6 +224,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
 
 @docs(tags=["presentation_exchange"], summary="Sends a credential presentation")
 @request_schema(SendPresentationRequestSchema())
+@response_schema(PresentationExchangeSchema())
 async def presentation_exchange_send_credential_presentation(request: web.BaseRequest):
     """
     Request handler for sending a presentation request.
@@ -267,6 +277,7 @@ async def presentation_exchange_send_credential_presentation(request: web.BaseRe
 @docs(
     tags=["presentation_exchange"], summary="Verify a received credential presentation"
 )
+@response_schema(PresentationExchangeSchema())
 async def presentation_exchange_verify_credential_presentation(
     request: web.BaseRequest
 ):
@@ -302,42 +313,55 @@ async def presentation_exchange_verify_credential_presentation(
     return web.json_response(presentation_exchange_record.serialize())
 
 
+@docs(
+    tags=["presentation_exchange"],
+    summary="Remove an existing presentation exchange record",
+)
+async def presentation_exchange_remove(request: web.BaseRequest):
+    """
+    Request handler for removing a presentation exchange record.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    presentation_exchange_id = request.match_info["id"]
+    try:
+        presentation_exchange_id = request.match_info["id"]
+        presentation_exchange_record = await PresentationExchange.retrieve_by_id(
+            context.storage, presentation_exchange_id
+        )
+    except StorageNotFoundError:
+        return web.HTTPNotFound()
+    await presentation_exchange_record.delete_record(context.storage)
+    return web.HTTPOk()
+
+
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.get("/presentation_exchange", presentation_exchange_list)])
-    app.add_routes(
-        [web.get("/presentation_exchange/{id}", presentation_exchange_retrieve)]
-    )
     app.add_routes(
         [
+            web.get("/presentation_exchange", presentation_exchange_list),
+            web.get("/presentation_exchange/{id}", presentation_exchange_retrieve),
             web.get(
                 "/presentation_exchange/{id}/credentials",
                 presentation_exchange_credentials_list,
-            )
-        ]
-    )
-    app.add_routes(
-        [
+            ),
             web.post(
                 "/presentation_exchange/send_request",
                 presentation_exchange_send_request,
-            )
-        ]
-    )
-    app.add_routes(
-        [
+            ),
             web.post(
                 "/presentation_exchange/{id}/send_presentation",
                 presentation_exchange_send_credential_presentation,
-            )
-        ]
-    )
-    app.add_routes(
-        [
+            ),
             web.post(
                 "/presentation_exchange/{id}/verify_presentation",
                 presentation_exchange_verify_credential_presentation,
-            )
+            ),
+            web.post(
+                "/presentation_exchange/{id}/remove", presentation_exchange_remove
+            ),
         ]
     )

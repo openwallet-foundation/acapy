@@ -1,6 +1,6 @@
 """Credential request handler."""
 
-from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ...base_handler import BaseHandler, BaseResponder, HandlerException, RequestContext
 
 
 from ..manager import CredentialManager
@@ -25,6 +25,9 @@ class CredentialRequestHandler(BaseHandler):
         self._logger.info(
             "Received credential request: %s", context.message.serialize(as_string=True)
         )
+
+        if not context.connection_active:
+            raise HandlerException("No connection established for credential request")
 
         credential_manager = CredentialManager(context)
         await credential_manager.receive_request(context.message)

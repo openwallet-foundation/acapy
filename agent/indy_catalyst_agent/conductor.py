@@ -94,7 +94,7 @@ class Conductor:
         context.settings = self.settings
 
         wallet_type = self.settings.get("wallet.type", "basic").lower()
-        wallet_type = self.WALLET_TYPES.get(wallet_type, wallet_type)
+        wallet_class = self.WALLET_TYPES.get(wallet_type, wallet_type)
 
         self.logger.info(wallet_type)
 
@@ -103,7 +103,7 @@ class Conductor:
             wallet_cfg["key"] = self.settings["wallet.key"]
         if "wallet.name" in self.settings:
             wallet_cfg["name"] = self.settings["wallet.name"]
-        context.wallet = ClassLoader.load_class(wallet_type)(wallet_cfg)
+        context.wallet = ClassLoader.load_class(wallet_class)(wallet_cfg)
         await context.wallet.open()
 
         wallet_seed = self.settings.get("wallet.seed")
@@ -139,8 +139,8 @@ class Conductor:
 
         storage_default_type = "indy" if wallet_type == "indy" else "basic"
         storage_type = self.settings.get("storage.type", storage_default_type).lower()
-        storage_type = self.STORAGE_TYPES.get(storage_type, storage_type)
-        context.storage = ClassLoader.load_class(storage_type)(context.wallet)
+        storage_class = self.STORAGE_TYPES.get(storage_type, storage_type)
+        context.storage = ClassLoader.load_class(storage_class)(context.wallet)
 
         self.context = context
         self.connection_mgr = ConnectionManager(context)

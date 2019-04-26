@@ -73,23 +73,18 @@ class PresentationExchange(BaseModel):
     @property
     def value(self) -> dict:
         """Accessor for JSON record value generated for this presentation exchange."""
-        ret = self.tags
-        ret.update({"error_msg": self.error_msg})
-        return ret
+        result = self.tags
+        for prop in ("presentation_request", "presentation", "error_msg"):
+            val = getattr(self, prop)
+            if val:
+                result[prop] = val
+        return result
 
     @property
     def tags(self) -> dict:
         """Accessor for the record tags generated for this presentation exchange."""
         result = {}
-        for prop in (
-            "connection_id",
-            "thread_id",
-            "initiator",
-            "state",
-            "presentation_request",
-            "presentation",
-            "verified",
-        ):
+        for prop in ("connection_id", "thread_id", "initiator", "state", "verified"):
             val = getattr(self, prop)
             if val:
                 result[prop] = val
@@ -163,6 +158,15 @@ class PresentationExchange(BaseModel):
                 PresentationExchange(presentation_exchange_id=record.id, **vals)
             )
         return result
+
+    async def delete_record(self, storage: BaseStorage):
+        """Remove the presentation exchange record.
+
+        Args:
+            storage: The `BaseStorage` instance to use
+        """
+        if self.presentation_exchange_id:
+            await storage.delete_record(self.storage_record)
 
 
 class PresentationExchangeSchema(BaseModelSchema):

@@ -1,6 +1,6 @@
 """Basic message handler."""
 
-from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ...base_handler import BaseHandler, BaseResponder, HandlerException, RequestContext
 
 from ..manager import CredentialManager
 from ..messages.credential_issue import CredentialIssue
@@ -20,6 +20,9 @@ class CredentialIssueHandler(BaseHandler):
         self._logger.debug(f"CredentialHandler called with context {context}")
         assert isinstance(context.message, CredentialIssue)
         self._logger.info(f"Received credential: {context.message.issue}")
+
+        if not context.connection_active:
+            raise HandlerException("No connection established for credential request")
 
         credential_manager = CredentialManager(context)
 

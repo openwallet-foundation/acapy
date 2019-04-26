@@ -1,4 +1,4 @@
-"""Connection handling admin routes."""
+"""Credential schema admin routes."""
 
 from asyncio import shield
 
