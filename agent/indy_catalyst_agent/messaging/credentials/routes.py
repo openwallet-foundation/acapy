@@ -51,8 +51,20 @@ class CredentialExchangeListSchema(Schema):
     results = fields.List(fields.Nested(CredentialExchangeSchema()))
 
 
+class CredentialSchema(Schema):
+    """Result schema for a credential query."""
+
+    # properties undefined
+
+
+class CredentialListSchema(Schema):
+    """Result schema for a credential query."""
+
+    results = fields.List(fields.Nested(CredentialSchema()))
+
+
 @docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
-# @response_schema(ConnectionListSchema(), 200)
+@response_schema(CredentialSchema(), 200)
 async def credentials_get(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -92,7 +104,7 @@ async def credentials_get(request: web.BaseRequest):
     ],
     summary="Fetch credentials from wallet",
 )
-# @response_schema(ConnectionListSchema(), 200)
+@response_schema(CredentialListSchema(), 200)
 async def credentials_list(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -119,7 +131,7 @@ async def credentials_list(request: web.BaseRequest):
 
     credentials = await context.holder.get_credentials(start, count, wql)
 
-    return web.json_response(credentials)
+    return web.json_response({"results": credentials})
 
 
 @docs(tags=["credential_exchange"], summary="Fetch all credential exchange records")
