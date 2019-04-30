@@ -272,7 +272,7 @@ class PresentationManager:
             presentation_request, presentation, schemas, credential_definitions
         )
 
-        presentation_exchange_record.verified = verified
+        presentation_exchange_record.verified = "true" if verified else "false"
         presentation_exchange_record.state = PresentationExchange.STATE_VERIFIED
 
         await presentation_exchange_record.save(self.context.storage)
