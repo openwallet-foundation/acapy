@@ -1,0 +1,132 @@
+"""Configuration base classes."""
+
+from abc import ABC, abstractmethod
+from typing import Mapping
+
+from ..error import BaseError
+
+
+class SettingsError(BaseError):
+    """The base exception raised by `BaseSettings` implementations."""
+
+
+class BaseSettings(Mapping[str, object]):
+    """Base settings class."""
+
+    @abstractmethod
+    def get_value(self, *var_names, default=None):
+        """Fetch a setting.
+
+        Args:
+            var_names: A list of variable name alternatives
+            default: The default value to return if none are defined
+
+        Returns:
+            The setting value, if defined, otherwise the default value
+
+        """
+
+    def get_bool(self, *var_names, default=None) -> bool:
+        """Fetch a setting as a boolean value.
+
+        Args:
+            var_names: A list of variable name alternatives
+            default: The default value to return if none are defined
+        """
+        value = self.get_value(*var_names, default)
+        if value is not None:
+            value = bool(value and value not in ("false", "False", "0"))
+        return value
+
+    def get_int(self, *var_names, default=None) -> int:
+        """Fetch a setting as an integer value.
+
+        Args:
+            var_names: A list of variable name alternatives
+            default: The default value to return if none are defined
+        """
+        value = self.get_value(*var_names, default)
+        if value is not None:
+            value = int(value)
+        return value
+
+    def get_str(self, *var_names, default=None) -> str:
+        """Fetch a setting as a string value.
+
+        Args:
+            var_names: A list of variable name alternatives
+            default: The default value to return if none are defined
+        """
+        value = self.get_value(*var_names, default=default)
+        if value is not None:
+            value = str(value)
+        return value
+
+    @abstractmethod
+    def __iter__(self):
+        """Iterate settings keys."""
+
+    def __getitem__(self, index):
+        """Fetch as an array index."""
+        if not isinstance(index, str):
+            raise TypeError("Index must be a string")
+        missing = object()
+        result = self.get_value(index, default=missing)
+        if result is missing:
+            raise KeyError("Undefined index: {}".format(index))
+        return self.get_value(index)
+
+    @abstractmethod
+    def __len__(self):
+        """Fetch the length of the mapping."""
+
+    @abstractmethod
+    def copy(self) -> "BaseSettings":
+        """Produce a copy of the settings instance."""
+
+    @abstractmethod
+    def extend(self, other: Mapping[str, object]) -> "BaseSettings":
+        """Merge another mapping to produce a new settings instance."""
+
+
+class InjectorError(BaseError):
+    """The base exception raised by `BaseInjector` implementations."""
+
+
+class BaseInjector(ABC):
+    """Base injector class."""
+
+    @abstractmethod
+    async def inject(
+        self,
+        base_cls: type,
+        settings: Mapping[str, object] = None,
+        *,
+        required: bool = True
+    ) -> object:
+        """
+        Get the provided instance of a given class identifier.
+
+        Args:
+            cls: The base class to retrieve an instance of
+            settings: An optional mapping providing configuration to the provider
+
+        Returns:
+            An instance of the base class, or None
+
+        """
+
+    @abstractmethod
+    def copy(self) -> "BaseInjector":
+        """Produce a copy of the injector instance."""
+
+
+class ProviderError(BaseError):
+    """The base exception raised by `BaseProvider` implementations."""
+
+
+class BaseProvider(ABC):
+    """Base provider class."""
+
+    async def provide(self, settings: BaseSettings, injector: BaseInjector):
+        """Provide the object instance given a config and injector."""
