@@ -19,14 +19,15 @@ class IcatAuthBackend(ModelBackend):
 
 class IcatRestAuthentication(BasicAuthentication):
 
+    # TODO: check whether this is being used or not, and whether it is a duplicate of views.get_request_user
     def authenticate(self, request):
         try:
             # Check for valid basic auth header
-            if 'HTTP_AUTHORIZATION' in request.META:
-                (authmeth, auth) = request.META['HTTP_AUTHORIZATION'].split(' ',1)
+            if "HTTP_AUTHORIZATION" in request.META:
+                (authmeth, auth) = request.META["HTTP_AUTHORIZATION"].split(" ", 1)
                 if authmeth.lower() == "basic":
-                    auth = base64.b64decode(auth).decode('utf-8')
-                    (username, password) = auth.split(':',1)
+                    auth = base64.b64decode(auth).decode("utf-8")
+                    (username, password) = auth.split(":", 1)
                     user = authenticate(username=username, password=password)
                     if user is not None and user.is_active:
                         request.user = user
@@ -35,5 +36,4 @@ class IcatRestAuthentication(BasicAuthentication):
             # if we get any exceptions, treat as auth failure
             pass
 
-        raise exceptions.AuthenticationFailed('No credentials provided.')
-
+        raise exceptions.AuthenticationFailed("No credentials provided.")
