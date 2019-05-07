@@ -27,7 +27,10 @@ class RoutingManager:
         self._context = context
         if not context:
             raise RoutingManagerError("Missing request context")
-        if not context.sender_verkey:
+        self._sender_verkey = (
+            context.message_delivery and context.message_delivery.sender_verkey
+        )
+        if not self._sender_verkey:
             raise RoutingManagerError("Missing sender verkey")
 
     @property
@@ -65,7 +68,7 @@ class RoutingManager:
         """
         results = []
         async for record in self._context.storage.search_records(
-            self.RECORD_TYPE, {"to": self.context.sender_verkey}
+            self.RECORD_TYPE, {"to": self._sender_verkey}
         ):
             results.append(record.value)
         return results
@@ -81,7 +84,7 @@ class RoutingManager:
         for route in updates:
             await self._context.storage.add_record(
                 StorageRecord(
-                    self.RECORD_TYPE, route, {"to": self.context.sender_verkey}, route
+                    self.RECORD_TYPE, route, {"to": self._sender_verkey}, route
                 )
             )
 

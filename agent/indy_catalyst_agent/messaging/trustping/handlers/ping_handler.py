@@ -24,13 +24,14 @@ class PingHandler(BaseHandler):
 
         if not context.connection_active:
             self._logger.info(
-                "Connection not active, skipping ping response: %s", context.sender_did
+                "Connection not active, skipping ping response: %s",
+                context.message_delivery.sender_did,
             )
             return
 
         await context.connection_record.log_activity(
             context.storage,
-            context.service_factory,
+            context,
             "ping",
             context.connection_record.DIRECTION_RECEIVED,
         )
@@ -41,7 +42,7 @@ class PingHandler(BaseHandler):
             await responder.send_reply(reply)
             await context.connection_record.log_activity(
                 context.storage,
-                context.service_factory,
+                context,
                 "ping",
                 context.connection_record.DIRECTION_SENT,
             )

@@ -1,6 +1,9 @@
 """Service provider implementations."""
 
+from typing import Union
+
 from .base import BaseProvider, BaseSettings, BaseInjector
+from ..classloader import ClassLoader
 
 
 class InstanceProvider(BaseProvider):
@@ -20,7 +23,13 @@ class InstanceProvider(BaseProvider):
 class ClassProvider(BaseProvider):
     """Provider for a particular class."""
 
-    def __init__(self, instance_cls, *ctor_args, async_init: str = None, **ctor_kwargs):
+    def __init__(
+        self,
+        instance_cls: Union[str, type],
+        *ctor_args,
+        async_init: str = None,
+        **ctor_kwargs
+    ):
         """Initialize the class provider."""
         self._async_init = async_init
         self._ctor_args = ctor_args
@@ -29,7 +38,11 @@ class ClassProvider(BaseProvider):
 
     async def provide(self, config: BaseSettings, injector: BaseInjector):
         """Provide the object instance given a config and injector."""
-        instance = self._instance_cls(*self._ctor_args, **self._ctor_kwargs)
+        instance_cls = self._instance_cls
+        if isinstance(instance_cls, str):
+            instance_cls = ClassLoader.load_class(instance_cls)
+            self._instance_cls = instance_cls
+        instance = instance_cls(*self._ctor_args, **self._ctor_kwargs)
         if self._async_init:
             await getattr(instance, self._async_init)()
         return instance

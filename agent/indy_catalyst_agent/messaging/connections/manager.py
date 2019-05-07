@@ -5,14 +5,16 @@ import aiohttp
 import json
 import logging
 
-from typing import Callable, Tuple, Union
+from typing import Tuple, Union
 
 from ...error import BaseError
 from ..agent_message import AgentMessage
+from ...config.base import InjectorError
+from ..message_delivery import MessageDelivery
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
-from ..message_factory import MessageParseError
+from ..message_factory import MessageFactory, MessageParseError
 from .models.connection_detail import ConnectionDetail
 from .models.connection_record import ConnectionRecord
 from .models.connection_target import ConnectionTarget
@@ -20,7 +22,7 @@ from ..request_context import RequestContext
 from ..routing.messages.forward import Forward
 from ...storage.error import StorageError, StorageNotFoundError
 from ...storage.record import StorageRecord
-from ...wallet.base import DIDInfo
+from ...wallet.base import BaseWallet, DIDInfo
 from ...wallet.error import WalletError, WalletNotFoundError
 from ...wallet.util import bytes_to_b64
 
@@ -136,7 +138,7 @@ class ConnectionManager:
             else ConnectionRecord.ROUTING_STATE_NONE,
         )
 
-        await connection.save(self.context.storage, self.context.service_factory)
+        await connection.save(self.context.storage, self.context)
         asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         self._log_state(
@@ -152,7 +154,7 @@ class ConnectionManager:
         await connection.attach_invitation(self.context.storage, invitation)
 
         await connection.log_activity(
-            self.context.storage, self.context.service_factory, "invitation",
+            self.context.storage, self.context, "invitation",
             connection.DIRECTION_SENT,
         )
 
@@ -209,7 +211,7 @@ class ConnectionManager:
             else ConnectionRecord.ROUTING_STATE_NONE,
         )
 
-        await connection.save(self.context.storage, self.context.service_factory)
+        await connection.save(self.context.storage, self.context)
         asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         self._log_state(
@@ -225,7 +227,7 @@ class ConnectionManager:
         await connection.attach_invitation(self.context.storage, invitation)
 
         await connection.log_activity(
-            self.context.storage, self.context.service_factory, "invitation",
+            self.context.storage, self.context, "invitation",
             connection.DIRECTION_RECEIVED,
         )
 
@@ -269,12 +271,12 @@ class ConnectionManager:
         connection.request_id = request._id
         connection.state = ConnectionRecord.STATE_REQUEST
 
-        await connection.save(self.context.storage, self.context.service_factory)
+        await connection.save(self.context.storage, self.context)
         asyncio.ensure_future(send_webhook("connections", connection.serialize()))
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context.storage, self.context.service_factory, "request",
+            self.context.storage, self.context, "request",
             connection.DIRECTION_SENT,
         )
 
@@ -331,7 +333,7 @@ class ConnectionManager:
             connection.their_did = request.connection.did
             connection.state = ConnectionRecord.STATE_REQUEST
 
-            await connection.save(self.context.storage, self.context.service_factory)
+            await connection.save(self.context.storage, self.context)
             asyncio.ensure_future(send_webhook("connections", connection.serialize()))
             self._log_state("Updated connection state", {"connection": connection})
         else:
@@ -344,7 +346,7 @@ class ConnectionManager:
                 routing_state=ConnectionRecord.ROUTING_STATE_NONE,
             )
 
-            await connection.save(self.context.storage, self.context.service_factory)
+            await connection.save(self.context.storage, self.context)
             asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
             self._log_state(
@@ -360,7 +362,7 @@ class ConnectionManager:
         await connection.attach_request(self.context.storage, request)
 
         await connection.log_activity(
-            self.context.storage, self.context.service_factory, "request",
+            self.context.storage, self.context, "request",
             connection.DIRECTION_RECEIVED,
         )
 
@@ -439,12 +441,12 @@ class ConnectionManager:
         # Update connection state
         connection.state = ConnectionRecord.STATE_RESPONSE
 
-        await connection.save(self.context.storage, self.context.service_factory)
+        await connection.save(self.context.storage, self.context)
         asyncio.ensure_future(send_webhook("connections", connection.serialize()))
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context.storage, self.context.service_factory, "response",
+            self.context.storage, self.context, "response",
             connection.DIRECTION_SENT,
         )
 
@@ -487,8 +489,8 @@ class ConnectionManager:
             try:
                 connection = await ConnectionRecord.retrieve_by_did(
                     self.context.storage,
-                    self.context.sender_did,
-                    self.context.recipient_did,
+                    self.context.message_delivery.sender_did,
+                    self.context.message_delivery.recipient_did,
                 )
             except StorageNotFoundError:
                 pass
@@ -516,11 +518,11 @@ class ConnectionManager:
         connection.their_did = their_did
         connection.state = ConnectionRecord.STATE_RESPONSE
 
-        await connection.save(self.context.storage, self.context.service_factory)
+        await connection.save(self.context.storage, self.context)
         asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         await connection.log_activity(
-            self.context.storage, self.context.service_factory, "response",
+            self.context.storage, self.context, "response",
             connection.DIRECTION_RECEIVED,
         )
 
@@ -566,12 +568,12 @@ class ConnectionManager:
         ):
             connection.state = ConnectionRecord.STATE_ACTIVE
 
-            await connection.save(self.context.storage, self.context.service_factory)
+            await connection.save(self.context.storage, self.context)
             asyncio.ensure_future(send_webhook("connections", connection.serialize()))
             self._log_state("Connection promoted to active", {"connection": connection})
         elif connection and connection.state == ConnectionRecord.STATE_INACTIVE:
             connection.state = ConnectionRecord.STATE_ACTIVE
-            await connection.save(self.context.storage, self.context.service_factory)
+            await connection.save(self.context.storage, self.context)
             asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
             self._log_state("Connection restored to active", {"connection": connection})
@@ -590,7 +592,6 @@ class ConnectionManager:
         self,
         message_body: Union[str, bytes],
         transport_type: str,
-        svc_factory_init: Callable,
     ) -> RequestContext:
         """
         Deserialize an incoming message and further populate the request context.
@@ -607,9 +608,16 @@ class ConnectionManager:
             MessageParseError: If the JSON parsing failed
 
         """
-        if not self.context.message_factory:
+        self.context.start_scope("message")
+
+        try:
+            message_factory: MessageFactory = await self.context.inject(MessageFactory)
+        except InjectorError:
             raise MessageParseError("Message factory not defined")
-        if not self.context.wallet:
+
+        try:
+            wallet: BaseWallet = await self.context.inject(BaseWallet)
+        except InjectorError:
             raise MessageParseError("Wallet not defined")
 
         message_dict = None
@@ -624,7 +632,7 @@ class ConnectionManager:
 
         if "@type" not in message_dict:
             try:
-                unpacked = await self.context.wallet.unpack_message(message_body)
+                unpacked = await wallet.unpack_message(message_body)
                 message_json, from_verkey, to_verkey = unpacked
             except WalletError:
                 self._logger.debug("Message unpack failed, falling back to JSON")
@@ -636,45 +644,45 @@ class ConnectionManager:
 
         self._logger.debug(f"Expanded message: {message_dict}")
 
-        ctx = self.context.copy()
-        ctx.message = ctx.message_factory.make_message(message_dict)
-        ctx.transport_type = transport_type
-        ctx.service_factory = svc_factory_init(ctx)
+        self.context.message = message_factory.make_message(message_dict)
+        delivery = MessageDelivery()
+        delivery.transport_type = transport_type
 
         if from_verkey and to_verkey:
             # must be a packed message for from_verke and to_verkey to be populated
-            ctx.recipient_verkey = to_verkey
-            ctx.sender_verkey = from_verkey
+            delivery.recipient_verkey = to_verkey
+            delivery.sender_verkey = from_verkey
             try:
-                ctx.sender_did = await self.find_did_for_key(from_verkey)
+                delivery.sender_did = await self.find_did_for_key(from_verkey)
             except StorageNotFoundError:
                 pass
 
             try:
-                my_info = await self.context.wallet.get_local_did_for_verkey(to_verkey)
-                ctx.recipient_did = my_info.did
+                my_info = await wallet.get_local_did_for_verkey(to_verkey)
+                delivery.recipient_did = my_info.did
                 if "public" in my_info.metadata and my_info.metadata["public"] is True:
-                    ctx.recipient_did_public = True
+                    delivery.recipient_did_public = True
 
             except WalletNotFoundError:
                 pass
 
             connection = await self.find_connection(
-                ctx.sender_did, ctx.recipient_did, to_verkey, True
+                delivery.sender_did, delivery.recipient_did, to_verkey, True
             )
             if connection:
                 self._log_state("Found connection", {"connection": connection})
-                ctx.connection_active = (
+                self.context.connection_active = (
                     connection.state == ConnectionRecord.STATE_ACTIVE
                 )
-                ctx.connection_record = connection
-                ctx.connection_target = await self.get_connection_target(connection)
+                self.context.connection_record = connection
+                self.context.connection_target = await self.get_connection_target(
+                    connection)
 
         # look up thread information
 
         # handle any other decorators having special behaviour (timing, trace, etc)
 
-        return ctx
+        return self.context
 
     async def compact_message(
         self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
@@ -690,10 +698,13 @@ class ConnectionManager:
             The compacted message
 
         """
+
+        wallet: BaseWallet = self.context.inject(BaseWallet)
+
         if isinstance(message, AgentMessage):
             message_json = message.to_json()
             if target.sender_key and target.recipient_keys:
-                message = await self.context.wallet.pack_message(
+                message = await wallet.pack_message(
                     message_json, target.recipient_keys, target.sender_key
                 )
                 if target.routing_keys:
@@ -702,7 +713,7 @@ class ConnectionManager:
                         fwd_msg = Forward(to=recip_keys[0], msg=message)
                         # Forwards are anon packed
                         recip_keys = [router_key]
-                        message = await self.context.wallet.pack_message(
+                        message = await wallet.pack_message(
                             fwd_msg.to_json(), recip_keys
                         )
             else:

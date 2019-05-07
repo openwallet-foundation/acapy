@@ -59,9 +59,7 @@ async def actionmenu_close(request: web.BaseRequest):
     if not menu:
         return web.HTTPNotFound()
 
-    await save_connection_menu(
-        None, connection_id, context.storage, context.service_factory
-    )
+    await save_connection_menu(None, connection_id, context)
     return web.HTTPOk()
 
 

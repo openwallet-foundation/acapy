@@ -43,6 +43,16 @@ class Settings(BaseSettings):
             raise ValueError("Setting name must be non-empty")
         self._values[var_name] = value
 
+    def set_default(self, var_name: str, value):
+        """Add a setting if not currently defined.
+
+        Args:
+            var_name: The name of the setting
+            value: The value to assign
+        """
+        if var_name not in self:
+            self.set_value(var_name, value)
+
     def clear_value(self, var_name: str):
         """Remove a setting.
 

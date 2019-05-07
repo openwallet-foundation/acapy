@@ -36,7 +36,7 @@ async def connections_send_ping(request: web.BaseRequest):
         await outbound_handler(msg, target)
 
         await connection.log_activity(
-            context.storage, context.service_factory, "ping", connection.DIRECTION_SENT
+            context.storage, context, "ping", connection.DIRECTION_SENT
         )
 
     return web.HTTPOk()

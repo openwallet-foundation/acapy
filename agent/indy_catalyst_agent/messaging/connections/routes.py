@@ -311,7 +311,7 @@ async def connections_remove(request: web.BaseRequest):
         )
     except StorageNotFoundError:
         return web.HTTPNotFound()
-    await connection.delete_record(context.storage, context.service_factory)
+    await connection.delete_record(context.storage, context)
     return web.HTTPOk()
 
 

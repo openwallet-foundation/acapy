@@ -10,10 +10,10 @@ from typing import Sequence
 from marshmallow import fields
 
 from ....admin.service import AdminService
+from ....config.context import InjectionContext
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
 from ....models.base import BaseModel, BaseModelSchema
-from ....service.base import BaseServiceFactory
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
 
@@ -138,9 +138,7 @@ class ConnectionRecord(BaseModel):
                 result[prop] = val
         return result
 
-    async def save(
-        self, storage: BaseStorage, svc_factory: BaseServiceFactory = None
-    ) -> str:
+    async def save(self, storage: BaseStorage, context: InjectionContext = None) -> str:
         """Persist the connection record to storage.
 
         Args:
@@ -155,7 +153,7 @@ class ConnectionRecord(BaseModel):
             record = self.storage_record
             await storage.update_record_value(record, record.value)
             await storage.update_record_tags(record, record.tags)
-        await self.admin_send_update(storage, svc_factory)
+        await self.admin_send_update(storage, context)
         return self._id
 
     @classmethod
@@ -319,7 +317,7 @@ class ConnectionRecord(BaseModel):
         return ConnectionRequest.from_json(result.value)
 
     async def delete_record(
-        self, storage: BaseStorage, svc_factory: BaseServiceFactory = None
+        self, storage: BaseStorage, context: InjectionContext = None
     ):
         """Remove the connection record.
 
@@ -328,12 +326,12 @@ class ConnectionRecord(BaseModel):
         """
         if self.connection_id:
             await storage.delete_record(self.storage_record)
-        await self.admin_send_update(storage, svc_factory)
+        await self.admin_send_update(storage, context)
 
     async def log_activity(
         self,
         storage: BaseStorage,
-        svc_factory: BaseServiceFactory,
+        context: InjectionContext,
         activity_type: str,
         direction: str,
         meta: dict = None,
@@ -357,7 +355,7 @@ class ConnectionRecord(BaseModel):
             },
         )
         await storage.add_record(record)
-        await self.admin_send_update(storage, svc_factory)
+        await self.admin_send_update(storage, context)
 
     async def fetch_activity(
         self, storage: BaseStorage, activity_type: str = None, direction: str = None
@@ -400,7 +398,7 @@ class ConnectionRecord(BaseModel):
     async def update_activity_meta(
         self,
         storage: BaseStorage,
-        svc_factory: BaseServiceFactory,
+        context: InjectionContext,
         activity_id: str,
         meta: dict,
     ) -> Sequence[dict]:
@@ -415,29 +413,27 @@ class ConnectionRecord(BaseModel):
         value = json.loads(record.value)
         value["meta"] = meta
         await storage.update_record_value(record, json.dumps(value))
-        await self.admin_send_update(storage, svc_factory)
+        await self.admin_send_update(storage, context)
 
     async def admin_delayed_update(
-        self, storage: BaseStorage, svc_factory: BaseServiceFactory, delay: float
+        self, storage: BaseStorage, context: InjectionContext, delay: float
     ):
         """Wait a specified time before sending a connection update event."""
         if delay:
             await asyncio.sleep(delay)
         record = self.serialize()
         record["activity"] = await self.fetch_activity(storage)
-        if svc_factory:
-            service: AdminService = await svc_factory.resolve_service("admin")
+        if context:
+            service: AdminService = await context.inject(AdminService)
             if service:
                 await service.add_event("connection_update", {"connection": record})
 
-    async def admin_send_update(
-        self, storage: BaseStorage, svc_factory: BaseServiceFactory
-    ):
+    async def admin_send_update(self, storage: BaseStorage, context: InjectionContext):
         """Send updated connection status to websocket listener."""
         if self._admin_timer:
             self._admin_timer.cancel()
         self._admin_timer = asyncio.ensure_future(
-            self.admin_delayed_update(storage, svc_factory, 0.1)
+            self.admin_delayed_update(storage, context, 0.1)
         )
 
     @property
