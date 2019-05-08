@@ -1,7 +1,7 @@
 """Action menu utility methods."""
 
 from ...admin.service import AdminService
-from ...config.context import InjectionContext
+from ...config.injection_context import InjectionContext
 from .messages.menu import Menu
 from ...storage.base import BaseStorage, StorageRecord, StorageNotFoundError
 

@@ -10,7 +10,7 @@ from typing import Sequence
 from marshmallow import fields
 
 from ....admin.service import AdminService
-from ....config.context import InjectionContext
+from ....config.injection_context import InjectionContext
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
 from ....models.base import BaseModel, BaseModelSchema

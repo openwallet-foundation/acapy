@@ -5,8 +5,10 @@ A request context provides everything required by handlers and other parts
 of the system to process a message.
 """
 
+from typing import Mapping
+
 from .agent_message import AgentMessage
-from ..config.context import InjectionContext
+from ..config.injection_context import InjectionContext
 from .connections.models.connection_record import ConnectionRecord
 from .connections.models.connection_target import ConnectionTarget
 from .message_delivery import MessageDelivery
@@ -18,13 +20,12 @@ from ..wallet.base import BaseWallet
 class RequestContext(InjectionContext):
     """Context established by the Conductor and passed into message handlers."""
 
-    def __init__(self):
+    def __init__(self, *, settings: Mapping[str, object] = None):
         """Initialize an instance of RequestContext."""
+        super().__init__(settings=settings)
         self._connection_active = False
         self._connection_record = None
         self._connection_target = None
-        self._default_endpoint = None
-        self._default_label = None
         self._ledger = None
         self._message = None
         self._message_delivery = None
@@ -98,7 +99,7 @@ class RequestContext(InjectionContext):
             The default agent endpoint
 
         """
-        return self._default_endpoint
+        return self.settings["default_endpoint"]
 
     @default_endpoint.setter
     def default_endpoint(self, endpoint: str):
@@ -109,7 +110,7 @@ class RequestContext(InjectionContext):
             endpoint: The new default endpoint
 
         """
-        self._default_endpoint = endpoint
+        self.settings["default_endpoint"] = endpoint
 
     @property
     def default_label(self) -> str:
@@ -120,7 +121,7 @@ class RequestContext(InjectionContext):
             The default label
 
         """
-        return self._default_label
+        return self.settings["default_label"]
 
     @default_label.setter
     def default_label(self, label: str):
@@ -131,7 +132,7 @@ class RequestContext(InjectionContext):
             label: The new default label
 
         """
-        self._default_label = label
+        self.settings["default_label"] = label
 
     @property
     def message(self) -> AgentMessage:
@@ -253,3 +254,7 @@ class RequestContext(InjectionContext):
             if k not in skip
         )
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
+
+    def copy(self) -> "RequestContext":
+        """Produce a copy of the request context instance."""
+        return super().copy()

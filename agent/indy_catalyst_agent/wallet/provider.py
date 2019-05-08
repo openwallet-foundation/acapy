@@ -19,7 +19,7 @@ class WalletProvider(BaseProvider):
     async def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create and open the wallet instance."""
 
-        wallet_type = settings.get_value("wallet.type", "basic").lower()
+        wallet_type = settings.get_value("wallet.type", default="basic").lower()
         wallet_class = self.WALLET_TYPES.get(wallet_type, wallet_type)
 
         LOGGER.info("Opening wallet type: %s", wallet_type)

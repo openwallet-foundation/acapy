@@ -299,13 +299,13 @@ class ConnectionManager:
         connection_key = None
 
         # Determine what key will need to sign the response
-        if self.context.recipient_did_public:
+        if self.context.message_delivery.recipient_did_public:
             my_info = await self.context.wallet.get_local_did(
                 self.context.recipient_did
             )
             connection_key = my_info.verkey
         else:
-            connection_key = self.context.recipient_verkey
+            connection_key = self.context.message_delivery.recipient_verkey
             try:
                 connection = await ConnectionRecord.retrieve_by_invitation_key(
                     self.context.storage,
@@ -608,15 +608,15 @@ class ConnectionManager:
             MessageParseError: If the JSON parsing failed
 
         """
-        self.context.start_scope("message")
+        context = self.context.start_scope("message")
 
         try:
-            message_factory: MessageFactory = await self.context.inject(MessageFactory)
+            message_factory: MessageFactory = await context.inject(MessageFactory)
         except InjectorError:
             raise MessageParseError("Message factory not defined")
 
         try:
-            wallet: BaseWallet = await self.context.inject(BaseWallet)
+            wallet: BaseWallet = await context.inject(BaseWallet)
         except InjectorError:
             raise MessageParseError("Wallet not defined")
 
@@ -644,7 +644,7 @@ class ConnectionManager:
 
         self._logger.debug(f"Expanded message: {message_dict}")
 
-        self.context.message = message_factory.make_message(message_dict)
+        context.message = message_factory.make_message(message_dict)
         delivery = MessageDelivery()
         delivery.transport_type = transport_type
 
@@ -671,18 +671,20 @@ class ConnectionManager:
             )
             if connection:
                 self._log_state("Found connection", {"connection": connection})
-                self.context.connection_active = (
+                context.connection_active = (
                     connection.state == ConnectionRecord.STATE_ACTIVE
                 )
-                self.context.connection_record = connection
-                self.context.connection_target = await self.get_connection_target(
+                context.connection_record = connection
+                context.connection_target = await self.get_connection_target(
                     connection)
+
+        context.message_delivery = delivery
 
         # look up thread information
 
         # handle any other decorators having special behaviour (timing, trace, etc)
 
-        return self.context
+        return context
 
     async def compact_message(
         self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
@@ -699,7 +701,7 @@ class ConnectionManager:
 
         """
 
-        wallet: BaseWallet = self.context.inject(BaseWallet)
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
 
         if isinstance(message, AgentMessage):
             message_json = message.to_json()

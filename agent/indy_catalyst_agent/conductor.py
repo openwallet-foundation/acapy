@@ -82,30 +82,43 @@ class Conductor:
     def init_context(self):
         """Initialize the global request context."""
 
-        context = RequestContext(self.settings)
-        context.settings.set_default("default_endpoint", "http://localhost:10001")
+        context = RequestContext(settings=self.settings)
+        context.settings.set_default("default_endpoint", "http://localhost:10000")
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
-        context.bind_instance(MessageFactory, self.message_factory)
+        context.injector.bind_instance(MessageFactory, self.message_factory)
 
-        context.bind_instance(BaseStorage, CachedProvider(StorageProvider()))
-        context.bind_instance(BaseWallet, CachedProvider(WalletProvider()))
+        context.injector.bind_provider(BaseStorage, CachedProvider(StorageProvider()))
+        context.injector.bind_provider(BaseWallet, CachedProvider(WalletProvider()))
 
-        context.bind_instance(BaseLedger, CachedProvider(LedgerProvider()))
-        context.bind_instance(
-            BaseIssuer, ClassProvider("indy_catalyst_agent.issuer.indy.IndyIssuer")
+        context.injector.bind_provider(BaseLedger, CachedProvider(LedgerProvider()))
+        context.injector.bind_provider(
+            BaseIssuer,
+            ClassProvider(
+                "indy_catalyst_agent.issuer.indy.IndyIssuer",
+                ClassProvider.Inject(BaseWallet),
+            ),
         )
-        context.bind_instance(
-            BaseHolder, ClassProvider("indy_catalyst_agent.holder.indy.IndyHolder")
+        context.injector.bind_provider(
+            BaseHolder,
+            ClassProvider(
+                "indy_catalyst_agent.holder.indy.IndyHolder",
+                ClassProvider.Inject(BaseWallet),
+            ),
         )
-        context.bind_instance(
+        context.injector.bind_provider(
             BaseVerifier,
-            ClassProvider("indy_catalyst_agent.verifier.indy.IndyVerifier"),
+            ClassProvider(
+                "indy_catalyst_agent.verifier.indy.IndyVerifier",
+                ClassProvider.Inject(BaseWallet),
+            ),
         )
 
         # Allow action menu to be provided by driver
-        context.bind_instance(BaseMenuService, DriverMenuService())
-        context.bind_instance(BaseIntroductionService, DemoIntroductionService())
+        context.injector.bind_instance(BaseMenuService, DriverMenuService(context))
+        context.injector.bind_instance(
+            BaseIntroductionService, DemoIntroductionService(context)
+        )
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -115,12 +128,12 @@ class Conductor:
                 self.admin_server = AdminServer(
                     admin_host, admin_port, context, self.outbound_message_router
                 )
-                context.bind_instance(AdminServer, self.admin_server)
+                context.injector.bind_instance(AdminServer, self.admin_server)
             except Exception:
                 self.logger.exception("Unable to initialize administration API")
 
         self.connection_mgr = ConnectionManager(context)
-        context.bind_instance(ConnectionManager, self.connection_mgr)
+        context.injector.bind_instance(ConnectionManager, self.connection_mgr)
 
         self.context = context
 
@@ -151,12 +164,12 @@ class Conductor:
         # temporary until these are removed
         context.wallet = wallet
         context.storage = await context.inject(BaseStorage)
-        context.issuer = await context.inject(BaseIssuer)
+        # context.issuer = await context.inject(BaseIssuer)
         context.holder = await context.inject(BaseHolder)
-        context.verifier = await context.inject(BaseVerifier)
+        # context.verifier = await context.inject(BaseVerifier)
 
         # should tell the ledger instance to start here?
-        context.ledger = await context.inject(BaseLedger)
+        context.ledger = await context.inject(BaseLedger, required=False)
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -186,7 +199,9 @@ class Conductor:
         if self.admin_server:
             try:
                 await self.admin_server.start()
-                context.bind_instance(AdminService, AdminService(self.admin_server))
+                context.injector.bind_instance(
+                    AdminService, AdminService(self.admin_server)
+                )
             except Exception:
                 self.logger.exception("Unable to start administration API")
 

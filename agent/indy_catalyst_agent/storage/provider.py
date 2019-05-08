@@ -22,9 +22,11 @@ class StorageProvider(BaseProvider):
 
         wallet: BaseWallet = await injector.inject(BaseWallet)
 
-        wallet_type = settings.get_value("wallet.type", "basic").lower()
+        wallet_type = settings.get_value("wallet.type", default="basic").lower()
         storage_default_type = "indy" if wallet_type == "indy" else "basic"
-        storage_type = settings.get("storage.type", storage_default_type).lower()
+        storage_type = settings.get_value(
+            "storage.type", default=storage_default_type
+        ).lower()
         storage_class = self.STORAGE_TYPES.get(storage_type, storage_type)
         storage = ClassLoader.load_class(storage_class)(wallet)
         return storage
