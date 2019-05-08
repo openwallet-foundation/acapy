@@ -70,6 +70,10 @@ class Settings(BaseSettings):
         """Iterate settings keys."""
         return iter(self._values)
 
+    def __setitem__(self, index, value):
+        """Implement update operator for array index."""
+        self.set_value(index, value)
+
     def __delitem__(self, index):
         """Implement del operator for array index."""
         self.clear_value(index)

@@ -2,7 +2,7 @@ from asynctest import TestCase as AsyncTestCase
 
 from ..base import BaseProvider, BaseInjector, BaseSettings, InjectorError
 from ..injector import Injector
-from ..provider import ClassProvider
+from ..provider import ClassProvider, CachedProvider
 
 
 class MockProvider(BaseProvider):
@@ -44,6 +44,8 @@ class TestInjector(AsyncTestCase):
         assert (await self.test_instance.inject(str, required=False)) is None
         with self.assertRaises(InjectorError):
             await self.test_instance.inject(str)
+        with self.assertRaises(ValueError):
+            await self.test_instance.bind_instance(str, None)
         self.test_instance.bind_instance(str, self.test_value)
         assert (await self.test_instance.inject(str)) is self.test_value
 
@@ -68,3 +70,21 @@ class TestInjector(AsyncTestCase):
         assert isinstance(instance, MockInstance)
         assert instance.value is self.test_value
         assert instance.opened
+
+    async def test_inject_cached(self):
+        """Test a provider class injection."""
+        with self.assertRaises(ValueError):
+            CachedProvider(None)
+        provider = ClassProvider(MockInstance, self.test_value, async_init="open")
+        cached = CachedProvider(provider)
+        self.test_instance.bind_provider(str, cached)
+        assert self.test_instance.get_provider(str) is cached
+        i1 = await self.test_instance.inject(str)
+        i2 = await self.test_instance.inject(str)
+        assert i1 is i2
+
+        provider = ClassProvider(MockInstance, self.test_value, async_init="open")
+        self.test_instance.bind_provider(str, provider, cache=True)
+        i1 = await self.test_instance.inject(str)
+        i2 = await self.test_instance.inject(str)
+        assert i1 is i2

@@ -1,6 +1,7 @@
 """Injection context implementation."""
 
 from collections import namedtuple
+import copy
 from typing import Mapping
 
 from .base import BaseInjector, InjectorError
@@ -40,59 +41,54 @@ class InjectionContext(BaseInjector):
         """Accessor for the current scope name."""
         return self._scope_name
 
+    @scope_name.setter
+    def scope_name(self, scope_name: str):
+        """Accessor for the current scope name."""
+        self._scope_name = scope_name
+
     @property
     def settings(self) -> Settings:
         """Accessor for scope-specific settings."""
-        return self._injector.settings
+        return self.injector.settings
 
     @settings.setter
     def settings(self, settings: Settings):
         """Setter for scope-specific settings."""
-        self._injector.settings = settings
+        self.injector.settings = settings
 
     def update_settings(self, settings: Mapping[str, object]):
         """Update the scope with additional settings."""
         if settings:
             self.injector.settings = self.injector.settings.extend(settings)
 
-    def start_scope(self, scope_name: str, settings: Mapping[str, object] = None):
+    def start_scope(
+        self, scope_name: str, settings: Mapping[str, object] = None
+    ) -> "InjectionContext":
         """Begin a new named scope.
 
         Args:
-            scope_name: The unique name for the scope being entered.
+            scope_name: The unique name for the scope being entered
+            settings: An optional mapping of additional settings to apply
+
+        Returns:
+            A new injection context representing the scope
+
         """
         if not scope_name:
             raise InjectionContextError("Scope name must be non-empty")
+        if self.scope_name == scope_name:
+            raise InjectionContextError("Cannot re-enter scope: {}".format(scope_name))
         for scope in self._scopes:
             if scope.name == scope_name:
                 raise InjectionContextError(
                     "Cannot re-enter scope: {}".format(scope_name)
                 )
-        self._scopes.append(Scope(name=self.scope_name, injector=self.injector))
-        self.injector = self.injector.copy()
+        result = self.copy()
+        result._scopes.append(Scope(name=self.scope_name, injector=self.injector))
+        result.scope_name = scope_name
         if settings:
-            self.update_settings(settings)
-        self._scope_name = scope_name
-
-    def end_scope(self, scope_name: str = None):
-        """End the current named scope.
-
-        Args:
-            scope_name: An optional scope name which must match the current scope
-        """
-        if not self._scopes:
-            raise InjectionContextError(
-                "Cannot end current scope, none has been entered"
-            )
-        if scope_name and scope_name != self._scope_name:
-            raise InjectionContextError(
-                "Scope name '{}' does not match current scope: {}".format(
-                    scope_name, self._scope_name
-                )
-            )
-        scope = self._scopes.pop()
-        self._scope_name = scope.name
-        self.injector = scope.injector
+            result.update_settings(settings)
+        return result
 
     def injector_for_scope(self, scope_name: str) -> Injector:
         """Fetch the injector for a specific scope.
@@ -127,10 +123,9 @@ class InjectionContext(BaseInjector):
         """
         return await self.injector.inject(base_cls, settings, required=required)
 
-    def copy(self) -> BaseInjector:
+    def copy(self) -> "InjectionContext":
         """Produce a copy of the injector instance."""
-        result = InjectionContext()
+        result = copy.copy(self)
         result._injector = self.injector.copy()
-        result._scope_name = self._scope_name
         result._scopes = self._scopes.copy()
         return result

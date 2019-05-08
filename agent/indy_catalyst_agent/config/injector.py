@@ -75,7 +75,9 @@ class Injector(BaseInjector):
         else:
             result = None
         if required and not result:
-            raise InjectorError("No instance provided for class: %s", base_cls.__name__)
+            raise InjectorError(
+                "No instance provided for class: {}".format(base_cls.__name__)
+            )
         return result
 
     def copy(self) -> BaseInjector:

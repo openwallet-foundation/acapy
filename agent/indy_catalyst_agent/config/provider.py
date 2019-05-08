@@ -23,6 +23,13 @@ class InstanceProvider(BaseProvider):
 class ClassProvider(BaseProvider):
     """Provider for a particular class."""
 
+    class Inject:
+        """A class for passing injected arguments to the constructor."""
+
+        def __init__(self, base_cls: type):
+            """Initialize the injected argument."""
+            self.base_class = base_cls
+
     def __init__(
         self,
         instance_cls: Union[str, type],
@@ -42,7 +49,17 @@ class ClassProvider(BaseProvider):
         if isinstance(instance_cls, str):
             instance_cls = ClassLoader.load_class(instance_cls)
             self._instance_cls = instance_cls
-        instance = instance_cls(*self._ctor_args, **self._ctor_kwargs)
+        args = []
+        for arg in self._ctor_args:
+            if isinstance(arg, self.Inject):
+                arg = await injector.inject(arg.base_class)
+            args.append(arg)
+        kwargs = {}
+        for arg_name, arg in self._ctor_kwargs:
+            if isinstance(arg, self.Inject):
+                arg = await injector.inject(arg.base_class)
+            kwargs[arg_name] = arg
+        instance = instance_cls(*args, **kwargs)
         if self._async_init:
             await getattr(instance, self._async_init)()
         return instance

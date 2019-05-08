@@ -88,6 +88,11 @@ class BaseSettings(Mapping[str, object]):
     def extend(self, other: Mapping[str, object]) -> "BaseSettings":
         """Merge another mapping to produce a new settings instance."""
 
+    def __repr__(self) -> str:
+        """Provide a human readable representation of this object."""
+        items = ("{}={}".format(k, self[k]) for k in self)
+        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
+
 
 class InjectorError(BaseError):
     """The base exception raised by `BaseInjector` implementations."""
