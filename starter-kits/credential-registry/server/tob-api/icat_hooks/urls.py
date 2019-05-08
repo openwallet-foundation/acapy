@@ -9,7 +9,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 # see https://github.com/alanjds/drf-nested-routers
 from rest_framework_nested import routers
 
-from icat_hooks.views import HookViewSet, RegistrationCreateViewSet, RegistrationViewSet, SubscriptionViewSet
+from icat_hooks.views import RegistrationCreateViewSet, RegistrationViewSet, SubscriptionViewSet
 
 router = SimpleRouter(trailing_slash=False)
 

@@ -167,3 +167,44 @@ class Icat_Hooks_Views_RegistrationViewSet_TestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         client.logout()
+
+
+class Icat_Hooks_Views_SubscriptionViewSet_TestCase(APITestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create(
+            username="testuser", password="password"
+        )
+
+        client = APIClient()
+        client.force_authenticate(self.user)
+
+        response = client.post(
+            "/hooks/register",
+            data={
+                "email": "esune@mymail.io",
+                "org_name": "e-Sun Enterprises",
+                "target_url": "https://esune.io/api/hook",
+                "hook_token": "ashdkjahsdkjhaasd88a7d9a8sd9asasda",
+                "credentials": {"username": "esune", "password": "pass54321"},
+            },
+            format="json",
+        )
+
+        self.registered_user = json.loads(response.content)
+
+        client.logout()
+
+    def test_create(self):
+        pass
+
+    def test_get_all(self):
+        pass
+
+    def test_get_one(self):
+        pass
+
+    def test_patch(self):
+        pass
+
+    def test_delete(self):
+        pass
