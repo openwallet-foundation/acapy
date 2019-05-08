@@ -17,21 +17,22 @@ from .icatrestauth import IcatRestAuthentication
 
 SUBSCRIBERS_GROUP_NAME = "subscriber"
 
-
+# TODO: check whether this is being used or not, and whether it is a duplicate of icatrestauth.IcatRestAuthentication.authenticate
 # return authenticated user, or check basic auth info
 def get_request_user(request):
     if request.user.is_authenticated:
         return request.user
-    if 'HTTP_AUTHORIZATION' in request.META:
-        auth = request.META['HTTP_AUTHORIZATION'].split()
+    if "HTTP_AUTHORIZATION" in request.META:
+        auth = request.META["HTTP_AUTHORIZATION"].split()
         if len(auth) == 2:
             if auth[0].lower() == "basic":
-                uname, passwd = base64.b64decode(auth[1]).split(':')
+                uname, passwd = base64.b64decode(auth[1]).split(":")
                 user = authenticate(username=uname, password=passwd)
                 if user is not None and user.is_active:
                     request.user = user
                     return user
     return None
+
 
 class IsOwnerOnly(BasePermission):
     """
@@ -51,8 +52,7 @@ class IsOwnerOnly(BasePermission):
         return False
 
 
-class RegistrationCreateViewSet(mixins.CreateModelMixin, 
-                                viewsets.GenericViewSet):
+class RegistrationCreateViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
     This viewset automatically provides `create` actions.
 
@@ -67,6 +67,7 @@ class RegistrationCreateViewSet(mixins.CreateModelMixin,
       }
     }
     """
+
     serializer_class = RegistrationSerializer
     authentication_classes = ()
     permission_classes = ()
@@ -78,11 +79,13 @@ class RegistrationCreateViewSet(mixins.CreateModelMixin,
         serializer.save()
 
 
-class RegistrationViewSet(mixins.RetrieveModelMixin, 
-                          mixins.UpdateModelMixin,
-                          mixins.DestroyModelMixin,
-                          mixins.ListModelMixin,
-                          viewsets.GenericViewSet):
+class RegistrationViewSet(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     """
     This viewset automatically provides `list`, `retrieve`,
     `update` and `destroy` actions.
@@ -96,13 +99,10 @@ class RegistrationViewSet(mixins.RetrieveModelMixin,
     def get_queryset(self):
         get_request_user(self.request)
         if self.request.user.is_authenticated:
-            return (
-                HookUser.objects.filter(
-                    user__groups__name=SUBSCRIBERS_GROUP_NAME,
-                    user__username=self.request.user.username,
-                )
-                .all()
-            )
+            return HookUser.objects.filter(
+                user__groups__name=SUBSCRIBERS_GROUP_NAME,
+                user__username=self.request.user.username,
+            ).all()
         else:
             raise NotAuthenticated()
 
@@ -137,7 +137,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
     serializer_class = SubscriptionSerializer
     authentication_classes = (IcatRestAuthentication,)
-    permission_classes = (IsAuthenticated, IsOwnerOnly,)
+    permission_classes = (IsAuthenticated, IsOwnerOnly)
 
     def get_queryset(self):
         if "registration_username" in self.kwargs:

@@ -118,7 +118,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update user and hook_user. Assumes there is a hook_user for every user."""
-        credentials_data = validated_data.pop("credentials")
+        credentials_data = validated_data.pop("user")
         validated_data["registration_expiry"] = get_password_expiry()
         super().update(instance, validated_data)
 
