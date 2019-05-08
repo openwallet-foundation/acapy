@@ -27,7 +27,7 @@ class LoggingConfigurator:
                 path.dirname(path.abspath(__file__)), "default_logging_config.ini"
             )
 
-        fileConfig(config_path, disable_existing_loggers=True)
+        fileConfig(config_path, disable_existing_loggers=False)
 
         if log_level:
             log_level = log_level.upper()
@@ -162,7 +162,11 @@ class LoggingConfigurator:
 
         # DID info
         if public_did:
-            print(lr_pad(str(public_did_subtitle_string) + str(public_did_subtitle_spacer)))
+            print(
+                lr_pad(
+                    str(public_did_subtitle_string) + str(public_did_subtitle_spacer)
+                )
+            )
             print(f"{banner_spacer}")
             for public_did_string in public_did_strings:
                 print(lr_pad(f"{public_did_string[0]}{public_did_string[1]}"))
