@@ -1,12 +1,13 @@
 import json
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
-from django.urls import reverse
-from rest_framework.test import APIClient, APIRequestFactory, APITestCase
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
-from icat_hooks.views import RegistrationCreateViewSet
+from api_v2.models.CredentialType import CredentialType
+from api_v2.models.Issuer import Issuer
+from api_v2.models.Schema import Schema
 
 
 class Icat_Hooks_Views_RegistrationCreateViewSet_TestCase(APITestCase):
@@ -175,9 +176,9 @@ class Icat_Hooks_Views_SubscriptionViewSet_TestCase(APITestCase):
             username="testuser", password="password"
         )
 
+        # create registration user
         client = APIClient()
         client.force_authenticate(self.user)
-
         response = client.post(
             "/hooks/register",
             data={
@@ -189,13 +190,53 @@ class Icat_Hooks_Views_SubscriptionViewSet_TestCase(APITestCase):
             },
             format="json",
         )
-
         self.registered_user = json.loads(response.content)
-
         client.logout()
 
-    def test_create(self):
-        pass
+        # create issuer, schema, credential type
+        self.issuer = Issuer.objects.create(
+            did="not:a:did:123456",
+            name="Test Issuer",
+            abbreviation="TI",
+            email="ti@ssue.it",
+            url="http://www.tissue.it",
+        )
+        self.schema = Schema.objects.create(
+            name="Test Schema", version="0.1", origin_did="not:a:did:987654"
+        )
+        self.credential_type = CredentialType.objects.create(
+            schema=self.schema, issuer=self.issuer
+        )
+
+    @patch(
+        "icat_hooks.serializers.hooks.SubscriptionSerializer.check_live_url",
+        autospec=True,
+    )
+    def test_create(self, mock_url_check):
+        mock_url_check.return_value = "SUCCESS"
+
+        client = APIClient()
+        client.force_authenticate(self.user)
+        response = client.post(
+            "/hooks/registration/{}/subscriptions".format(
+                self.registered_user["credentials"]["username"]
+            ),
+            data={
+                "subscription_type": "New",
+                "topic_source_id": "BC0123456",
+                "credential_type": "Test Schema",
+                "target_url": "https://anon-solutions.ca/api/hook",
+                "hook_token": "ashdkjahsdkjhaasd88a7d9a8sd9asasda",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+            "The status code does not match.",
+        )
+        client.logout()
 
     def test_get_all(self):
         pass
