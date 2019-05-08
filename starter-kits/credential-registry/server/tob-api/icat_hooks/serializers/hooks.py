@@ -1,3 +1,4 @@
+import logging
 import random
 from datetime import datetime, timedelta
 from string import ascii_lowercase, digits
@@ -16,6 +17,8 @@ from api_v2.models.User import User
 from icat_hooks.models.HookUser import HookUser
 
 from ..models.Subscription import Subscription
+
+logger = logging.getLogger(__name__)
 
 SUBSCRIBERS_GROUP_NAME = "subscriber"
 
@@ -76,7 +79,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         """
         Create and return a new instance, given the validated data.
         """
-        print("create() with ", validated_data)
+        logger.debug("create() with {}".format(validated_data))
         credentials_data = validated_data["user"]
         if "username" in credentials_data and 0 < len(credentials_data["username"]):
             prefix = credentials_data["username"][:16] + "-"
@@ -94,10 +97,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
         # tmp_password = get_random_password()
         # validated_data['password'] = tmp_password
 
-        print(
-            "Create user with",
-            credentials_data["username"],
-            credentials_data["password"],
+        logger.debug(
+            (
+                "Create user with",
+                credentials_data["username"],
+                credentials_data["password"],
+            )
         )
         credentials_data["email"] = validated_data["email"]
 
@@ -112,7 +117,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         hookuser_data["registration_expiry"] = get_password_expiry()
         hookuser = HookUser.objects.create(**hookuser_data)
 
-        print("create() with response ", hookuser)
+        logger.debug(("create() with response {}".format(hookuser)))
 
         return hookuser
 
