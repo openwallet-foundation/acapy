@@ -154,8 +154,7 @@ class ConnectionManager:
         await connection.attach_invitation(self.context.storage, invitation)
 
         await connection.log_activity(
-            self.context.storage, self.context, "invitation",
-            connection.DIRECTION_SENT,
+            self.context, "invitation", connection.DIRECTION_SENT,
         )
 
         return connection, invitation
@@ -227,8 +226,7 @@ class ConnectionManager:
         await connection.attach_invitation(self.context.storage, invitation)
 
         await connection.log_activity(
-            self.context.storage, self.context, "invitation",
-            connection.DIRECTION_RECEIVED,
+            self.context, "invitation", connection.DIRECTION_RECEIVED,
         )
 
         return connection
@@ -276,8 +274,7 @@ class ConnectionManager:
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context.storage, self.context, "request",
-            connection.DIRECTION_SENT,
+            self.context, "request", connection.DIRECTION_SENT,
         )
 
         return request
@@ -362,8 +359,7 @@ class ConnectionManager:
         await connection.attach_request(self.context.storage, request)
 
         await connection.log_activity(
-            self.context.storage, self.context, "request",
-            connection.DIRECTION_RECEIVED,
+            self.context, "request", connection.DIRECTION_RECEIVED,
         )
 
         return connection
@@ -446,8 +442,7 @@ class ConnectionManager:
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context.storage, self.context, "response",
-            connection.DIRECTION_SENT,
+            self.context, "response", connection.DIRECTION_SENT,
         )
 
         return response
@@ -522,8 +517,7 @@ class ConnectionManager:
         asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         await connection.log_activity(
-            self.context.storage, self.context, "response",
-            connection.DIRECTION_RECEIVED,
+            self.context, "response", connection.DIRECTION_RECEIVED,
         )
 
         return connection

@@ -32,10 +32,7 @@ class PingHandler(BaseHandler):
             return
 
         await context.connection_record.log_activity(
-            context.storage,
-            context,
-            "ping",
-            context.connection_record.DIRECTION_RECEIVED,
+            context, "ping", context.connection_record.DIRECTION_RECEIVED
         )
 
         if context.message.response_requested:
@@ -43,8 +40,5 @@ class PingHandler(BaseHandler):
             reply.assign_thread_from(context.message)
             await responder.send_reply(reply)
             await context.connection_record.log_activity(
-                context.storage,
-                context,
-                "ping",
-                context.connection_record.DIRECTION_SENT,
+                context, "ping", context.connection_record.DIRECTION_SENT
             )

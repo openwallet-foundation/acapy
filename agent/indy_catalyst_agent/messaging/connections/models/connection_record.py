@@ -330,7 +330,6 @@ class ConnectionRecord(BaseModel):
 
     async def log_activity(
         self,
-        storage: BaseStorage,
         context: InjectionContext,
         activity_type: str,
         direction: str,
@@ -354,6 +353,7 @@ class ConnectionRecord(BaseModel):
                 "connection_id": self.connection_id,
             },
         )
+        storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
         await self.admin_send_update(storage, context)
 

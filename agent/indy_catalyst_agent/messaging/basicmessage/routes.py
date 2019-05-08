@@ -46,7 +46,6 @@ async def connections_send_message(request: web.BaseRequest):
         await outbound_handler(msg, target)
 
         await connection.log_activity(
-            context.storage,
             context,
             "message",
             connection.DIRECTION_SENT,
