@@ -98,3 +98,21 @@ class TestIndyHolder(AsyncTestCase):
             (("search_handle", 3),),
         ]
 
+    @async_mock.patch("indy.anoncreds.prover_get_credentials_for_proof_req")
+    async def test_get_credentials_for_presentation_request(
+        self, mock_get_creds_for_pr
+    ):
+        mock_get_creds_for_pr.return_value = "[1,2,3]"
+
+        mock_wallet = async_mock.MagicMock()
+        holder = IndyHolder(mock_wallet)
+
+        credentials = await holder.get_credentials_for_presentation_request(
+            {}, 2, 3, {}
+        )
+
+        mock_get_creds_for_pr.assert_called_once_with(
+            mock_wallet.handle, json.dumps({})
+        )
+
+        assert credentials == json.loads("[1,2,3]")
