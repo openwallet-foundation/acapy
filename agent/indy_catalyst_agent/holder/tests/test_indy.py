@@ -129,3 +129,29 @@ class TestIndyHolder(AsyncTestCase):
         mock_get_cred.assert_called_once_with(mock_wallet.handle, "credential_id")
 
         assert credential == json.loads("{}")
+
+    @async_mock.patch("indy.anoncreds.prover_create_proof")
+    async def test_create_presentation(self, mock_create_proof):
+        mock_create_proof.return_value = "{}"
+
+        mock_wallet = async_mock.MagicMock()
+        holder = IndyHolder(mock_wallet)
+
+        presentation = await holder.create_presentation(
+            "presentation_request",
+            "requested_credentials",
+            "schemas",
+            "credential_definitions",
+        )
+
+        mock_create_proof.assert_called_once_with(
+            mock_wallet.handle,
+            json.dumps("presentation_request"),
+            json.dumps("requested_credentials"),
+            mock_wallet.master_secret_id,
+            json.dumps("schemas"),
+            json.dumps("credential_definitions"),
+            json.dumps({}),
+        )
+
+        assert presentation == json.loads("{}")
