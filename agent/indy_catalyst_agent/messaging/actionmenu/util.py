@@ -12,7 +12,7 @@ async def retrieve_connection_menu(
     connection_id: str, context: InjectionContext
 ) -> Menu:
     """Retrieve the previously-received action menu."""
-    storage = await context.inject(BaseStorage)
+    storage: BaseStorage = await context.inject(BaseStorage)
     try:
         record = await storage.search_records(
             MENU_RECORD_TYPE, {"connection_id": connection_id}
@@ -27,7 +27,7 @@ async def save_connection_menu(
 ):
     """Save a received action menu."""
 
-    storage = await context.inject(BaseStorage)
+    storage: BaseStorage = await context.inject(BaseStorage)
     try:
         record = await storage.search_records(
             MENU_RECORD_TYPE, {"connection_id": connection_id}

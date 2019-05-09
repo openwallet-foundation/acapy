@@ -138,13 +138,14 @@ class ConnectionRecord(BaseModel):
                 result[prop] = val
         return result
 
-    async def save(self, storage: BaseStorage, context: InjectionContext = None) -> str:
+    async def save(self, context: InjectionContext) -> str:
         """Persist the connection record to storage.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
         """
         self.updated_at = time_now()
+        storage: BaseStorage = await context.inject(BaseStorage)
         if not self._id:
             self._id = str(uuid.uuid4())
             self.created_at = self.updated_at
@@ -153,19 +154,20 @@ class ConnectionRecord(BaseModel):
             record = self.storage_record
             await storage.update_record_value(record, record.value)
             await storage.update_record_tags(record, record.tags)
-        await self.admin_send_update(storage, context)
+        await self.admin_send_update(context)
         return self._id
 
     @classmethod
     async def retrieve_by_id(
-        cls, storage: BaseStorage, connection_id: str
+        cls, context: InjectionContext, connection_id: str
     ) -> "ConnectionRecord":
         """Retrieve a connection record by ID.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             connection_id: The ID of the connection record to find
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.get_record(cls.RECORD_TYPE, connection_id)
         vals = json.loads(result.value)
         if result.tags:
@@ -174,14 +176,15 @@ class ConnectionRecord(BaseModel):
 
     @classmethod
     async def retrieve_by_tag_filter(
-        cls, storage: BaseStorage, tag_filter: dict
+        cls, context: InjectionContext, tag_filter: dict
     ) -> "ConnectionRecord":
         """Retrieve a connection record by tag filter.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             tag_filter: The filter dictionary to apply
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.search_records(
             cls.RECORD_TYPE, tag_filter
         ).fetch_single()
@@ -192,7 +195,7 @@ class ConnectionRecord(BaseModel):
     @classmethod
     async def retrieve_by_did(
         cls,
-        storage: BaseStorage,
+        context: InjectionContext,
         their_did: str = None,
         my_did: str = None,
         initiator: str = None,
@@ -200,7 +203,7 @@ class ConnectionRecord(BaseModel):
         """Retrieve a connection record by target DID.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             their_did: The target DID to filter by
             my_did: One of our DIDs to filter by
             initiator: Filter connections by the initiator value
@@ -212,46 +215,48 @@ class ConnectionRecord(BaseModel):
             tag_filter["my_did"] = my_did
         if initiator:
             tag_filter["initiator"] = initiator
-        return await cls.retrieve_by_tag_filter(storage, tag_filter)
+        return await cls.retrieve_by_tag_filter(context, tag_filter)
 
     @classmethod
     async def retrieve_by_invitation_key(
-        cls, storage: BaseStorage, invitation_key: str, initiator: str = None
+        cls, context: InjectionContext, invitation_key: str, initiator: str = None
     ) -> "ConnectionRecord":
         """Retrieve a connection record by invitation key.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             invitation_key: The key on the originating invitation
             initiator: Filter by the initiator value
         """
         tag_filter = {"invitation_key": invitation_key, "state": cls.STATE_INVITATION}
         if initiator:
             tag_filter["initiator"] = initiator
-        return await cls.retrieve_by_tag_filter(storage, tag_filter)
+        return await cls.retrieve_by_tag_filter(context, tag_filter)
 
     @classmethod
     async def retrieve_by_request_id(
-        cls, storage: BaseStorage, request_id: str
+        cls, context: InjectionContext, request_id: str
     ) -> "ConnectionRecord":
         """Retrieve a connection record from our previous request ID.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             request_id: The ID of the originating connection request
         """
         tag_filter = {"request_id": request_id}
-        return await cls.retrieve_by_tag_filter(storage, tag_filter)
+        return await cls.retrieve_by_tag_filter(context, tag_filter)
 
     @classmethod
     async def query(
-        cls, storage: BaseStorage, tag_filter: dict = None
+        cls, context: InjectionContext, tag_filter: dict = None
     ) -> Sequence["ConnectionRecord"]:
         """Query existing connection records.
 
         Args:
+            context: The injection context to use
             tag_filter: An optional dictionary of tag filter clauses
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         found = await storage.search_records(cls.RECORD_TYPE, tag_filter).fetch_all()
         result = []
         for record in found:
@@ -261,12 +266,12 @@ class ConnectionRecord(BaseModel):
         return result
 
     async def attach_invitation(
-        self, storage: BaseStorage, invitation: ConnectionInvitation
+        self, context: InjectionContext, invitation: ConnectionInvitation
     ):
         """Persist the related connection invitation to storage.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             invitation: The invitation to relate to this connection record
         """
         assert self.connection_id
@@ -275,25 +280,31 @@ class ConnectionRecord(BaseModel):
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
+        storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
 
-    async def retrieve_invitation(self, storage: BaseStorage) -> ConnectionInvitation:
+    async def retrieve_invitation(
+        self, context: InjectionContext
+    ) -> ConnectionInvitation:
         """Retrieve the related connection invitation.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
         """
         assert self.connection_id
+        storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.search_records(
             self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         ).fetch_single()
         return ConnectionInvitation.from_json(result.value)
 
-    async def attach_request(self, storage: BaseStorage, request: ConnectionRequest):
+    async def attach_request(
+        self, context: InjectionContext, request: ConnectionRequest
+    ):
         """Persist the related connection request to storage.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             request: The request to relate to this connection record
         """
         assert self.connection_id
@@ -302,31 +313,32 @@ class ConnectionRecord(BaseModel):
             request.to_json(),
             {"connection_id": self.connection_id},
         )
+        storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
 
-    async def retrieve_request(self, storage: BaseStorage) -> ConnectionRequest:
+    async def retrieve_request(self, context: InjectionContext) -> ConnectionRequest:
         """Retrieve the related connection invitation.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
         """
         assert self.connection_id
+        storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.search_records(
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         ).fetch_single()
         return ConnectionRequest.from_json(result.value)
 
-    async def delete_record(
-        self, storage: BaseStorage, context: InjectionContext = None
-    ):
+    async def delete_record(self, context: InjectionContext):
         """Remove the connection record.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
         """
         if self.connection_id:
+            storage: BaseStorage = await context.inject(BaseStorage)
             await storage.delete_record(self.storage_record)
-        await self.admin_send_update(storage, context)
+            await self.admin_send_update(context)
 
     async def log_activity(
         self,
@@ -338,7 +350,7 @@ class ConnectionRecord(BaseModel):
         """Log an event against this connection record.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             activity_type: The activity type identifier
             direction: The direction of the activity (sent or received)
             meta: Optional metadata for the activity
@@ -355,15 +367,18 @@ class ConnectionRecord(BaseModel):
         )
         storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
-        await self.admin_send_update(storage, context)
+        await self.admin_send_update(context)
 
     async def fetch_activity(
-        self, storage: BaseStorage, activity_type: str = None, direction: str = None
+        self,
+        context: InjectionContext,
+        activity_type: str = None,
+        direction: str = None,
     ) -> Sequence[dict]:
         """Fetch all activity logs for this connection record.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             activity_type: An optional activity type filter
             direction: An optional direction filter
         """
@@ -372,6 +387,7 @@ class ConnectionRecord(BaseModel):
             tag_filter["activity_type"] = activity_type
         if direction:
             tag_filter["direction"] = direction
+        storage: BaseStorage = await context.inject(BaseStorage)
         records = await storage.search_records(
             self.RECORD_TYPE_ACTIVITY, tag_filter
         ).fetch_all()
@@ -383,57 +399,57 @@ class ConnectionRecord(BaseModel):
         return results
 
     async def retrieve_activity(
-        self, storage: BaseStorage, activity_id: str
+        self, context: InjectionContext, activity_id: str
     ) -> Sequence[dict]:
         """Retrieve a single activity record.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             activity_id: The ID of the activity entry
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         record = await storage.get_record(self.RECORD_TYPE_ACTIVITY, activity_id)
         result = dict(id=record.id, **json.loads(record.value), **record.tags)
         return result
 
     async def update_activity_meta(
-        self,
-        storage: BaseStorage,
-        context: InjectionContext,
-        activity_id: str,
-        meta: dict,
+        self, context: InjectionContext, activity_id: str, meta: dict
     ) -> Sequence[dict]:
         """Update metadata for an activity entry.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The injection context to use
             activity_id: The ID of the activity entry
             meta: The metadata stored on the activity
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         record = await storage.get_record(self.RECORD_TYPE_ACTIVITY, activity_id)
         value = json.loads(record.value)
         value["meta"] = meta
         await storage.update_record_value(record, json.dumps(value))
-        await self.admin_send_update(storage, context)
+        await self.admin_send_update(context)
 
-    async def admin_delayed_update(
-        self, storage: BaseStorage, context: InjectionContext, delay: float
-    ):
+    async def admin_delayed_update(self, context: InjectionContext, delay: float):
         """Wait a specified time before sending a connection update event."""
         if delay:
             await asyncio.sleep(delay)
         record = self.serialize()
-        record["activity"] = await self.fetch_activity(storage)
+        record["activity"] = await self.fetch_activity(context)
         if context:
             service: AdminService = await context.inject(AdminService)
             if service:
                 await service.add_event("connection_update", {"connection": record})
 
-    async def admin_send_update(self, storage: BaseStorage, context: InjectionContext):
-        """Send updated connection status to websocket listener."""
+    async def admin_send_update(self, context: InjectionContext):
+        """Send updated connection status to websocket listener.
+
+        Args:
+            context: The injection context to use
+        """
         if self._admin_timer:
             self._admin_timer.cancel()
         self._admin_timer = asyncio.ensure_future(
-            self.admin_delayed_update(storage, context, 0.1)
+            self.admin_delayed_update(context, 0.1)
         )
 
     @property

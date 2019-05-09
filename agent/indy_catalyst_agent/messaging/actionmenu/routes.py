@@ -55,7 +55,7 @@ async def actionmenu_close(request: web.BaseRequest):
     context = request.app["request_context"]
     connection_id = request.match_info["id"]
 
-    menu = await retrieve_connection_menu(connection_id, context.storage)
+    menu = await retrieve_connection_menu(connection_id, context)
     if not menu:
         return web.HTTPNotFound()
 
@@ -75,7 +75,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
     context = request.app["request_context"]
     connection_id = request.match_info["id"]
 
-    menu = await retrieve_connection_menu(connection_id, context.storage)
+    menu = await retrieve_connection_menu(connection_id, context)
     result = {"result": menu.serialize() if menu else None}
     return web.json_response(result)
 
@@ -97,9 +97,7 @@ async def actionmenu_perform(request: web.BaseRequest):
     params = await request.json()
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
 
@@ -127,9 +125,7 @@ async def actionmenu_request(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         LOGGER.debug("Connection not found for action menu request: %s", connection_id)
         return web.HTTPNotFound()
@@ -166,9 +162,7 @@ async def actionmenu_send(request: web.BaseRequest):
         raise
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         LOGGER.debug(
             "Connection not found for action menu send request: %s", connection_id

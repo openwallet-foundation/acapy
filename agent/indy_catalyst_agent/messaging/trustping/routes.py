@@ -24,9 +24,7 @@ async def connections_send_ping(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
 

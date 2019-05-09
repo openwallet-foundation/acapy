@@ -84,7 +84,7 @@ class PresentationManager:
             presentation_request=presentation_request,
             thread_id=presentation_request_message._thread_id,
         )
-        await presentation_exchange.save(self.context.storage)
+        await presentation_exchange.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange.serialize())
         )
@@ -108,7 +108,7 @@ class PresentationManager:
             state=PresentationExchange.STATE_REQUEST_RECEIVED,
             presentation_request=json.loads(presentation_request_message.request),
         )
-        await presentation_exchange.save(self.context.storage)
+        await presentation_exchange.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange.serialize())
         )
@@ -209,7 +209,7 @@ class PresentationManager:
             PresentationExchange.STATE_PRESENTATION_SENT
         )
         presentation_exchange_record.presentation = presentation
-        await presentation_exchange_record.save(self.context.storage)
+        await presentation_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange_record.serialize())
         )
@@ -221,14 +221,14 @@ class PresentationManager:
         (
             presentation_exchange_record
         ) = await PresentationExchange.retrieve_by_tag_filter(
-            self.context.storage, tag_filter={"thread_id": thread_id}
+            self.context, tag_filter={"thread_id": thread_id}
         )
 
         presentation_exchange_record.presentation = presentation
         presentation_exchange_record.state = (
             PresentationExchange.STATE_PRESENTATION_RECEIVED
         )
-        await presentation_exchange_record.save(self.context.storage)
+        await presentation_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange_record.serialize())
         )
@@ -275,7 +275,7 @@ class PresentationManager:
         presentation_exchange_record.verified = "true" if verified else "false"
         presentation_exchange_record.state = PresentationExchange.STATE_VERIFIED
 
-        await presentation_exchange_record.save(self.context.storage)
+        await presentation_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange_record.serialize())
         )

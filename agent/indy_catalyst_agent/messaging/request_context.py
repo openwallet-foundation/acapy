@@ -29,7 +29,6 @@ class RequestContext(InjectionContext):
         self._ledger = None
         self._message = None
         self._message_delivery = None
-        self._storage = None
         self._wallet = None
 
     @property
@@ -175,27 +174,6 @@ class RequestContext(InjectionContext):
             msg: This context's new message delivery information
         """
         self._message_delivery = delivery
-
-    @property
-    def storage(self) -> BaseStorage:
-        """
-        Accessor for the BaseStorage implementation.
-
-        Returns:
-            This context's storage implementation
-
-        """
-        return self._storage
-
-    @storage.setter
-    def storage(self, storage: BaseStorage):
-        """
-        Setter for the BaseStorage implementation.
-
-        Args:
-            storage: This context's new storage driver
-        """
-        self._storage = storage
 
     @property
     def wallet(self) -> BaseWallet:

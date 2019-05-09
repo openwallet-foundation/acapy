@@ -158,7 +158,7 @@ async def credential_exchange_list(request: web.BaseRequest):
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
-    records = await CredentialExchange.query(context.storage, tag_filter)
+    records = await CredentialExchange.query(context, tag_filter)
     return web.json_response({"results": [record.serialize() for record in records]})
 
 
@@ -179,7 +179,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
     credential_exchange_id = request.match_info["id"]
     try:
         record = await CredentialExchange.retrieve_by_id(
-            context.storage, credential_exchange_id
+            context, credential_exchange_id
         )
     except StorageNotFoundError:
         return web.HTTPNotFound()
@@ -212,9 +212,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     connection_manager = ConnectionManager(context)
     credential_manager = CredentialManager(context)
 
-    connection_record = await ConnectionRecord.retrieve_by_id(
-        context.storage, connection_id
-    )
+    connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
     connection_target = await connection_manager.get_connection_target(
         connection_record
@@ -251,7 +249,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
     credential_exchange_id = request.match_info["id"]
     credential_exchange_record = await CredentialExchange.retrieve_by_id(
-        context.storage, credential_exchange_id
+        context, credential_exchange_id
     )
 
     assert credential_exchange_record.state == CredentialExchange.STATE_OFFER_RECEIVED
@@ -260,7 +258,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     connection_manager = ConnectionManager(context)
 
     connection_record = await ConnectionRecord.retrieve_by_id(
-        context.storage, credential_exchange_record.connection_id
+        context, credential_exchange_record.connection_id
     )
 
     connection_target = await connection_manager.get_connection_target(
@@ -300,7 +298,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     credential_exchange_id = request.match_info["id"]
     credential_exchange_record = await CredentialExchange.retrieve_by_id(
-        context.storage, credential_exchange_id
+        context, credential_exchange_id
     )
 
     assert credential_exchange_record.state == CredentialExchange.STATE_REQUEST_RECEIVED
@@ -309,7 +307,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     connection_manager = ConnectionManager(context)
 
     connection_record = await ConnectionRecord.retrieve_by_id(
-        context.storage, credential_exchange_record.connection_id
+        context, credential_exchange_record.connection_id
     )
 
     connection_target = await connection_manager.get_connection_target(
@@ -343,11 +341,11 @@ async def credential_exchange_remove(request: web.BaseRequest):
     try:
         credential_exchange_id = request.match_info["id"]
         credential_exchange_record = await CredentialExchange.retrieve_by_id(
-            context.storage, credential_exchange_id
+            context, credential_exchange_id
         )
     except StorageNotFoundError:
         return web.HTTPNotFound()
-    await credential_exchange_record.delete_record(context.storage)
+    await credential_exchange_record.delete_record(context)
     return web.HTTPOk()
 
 

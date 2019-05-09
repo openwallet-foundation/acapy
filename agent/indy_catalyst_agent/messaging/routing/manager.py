@@ -4,7 +4,7 @@ from typing import Sequence
 
 from ...error import BaseError
 from ..request_context import RequestContext
-from ...storage.base import StorageRecord
+from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageNotFoundError
 
 
@@ -52,8 +52,9 @@ class RoutingManager:
             The verkey associated with the agent which defined this route
 
         """
+        storage: BaseStorage = await self._context.inject(BaseStorage)
         try:
-            record = await self._context.storage.get_record(self.RECORD_TYPE, verkey)
+            record = await storage.get_record(self.RECORD_TYPE, verkey)
         except StorageNotFoundError:
             raise RoutingManagerError("No route defined for verkey: %s", verkey)
         return record.tags["to"]
@@ -67,7 +68,8 @@ class RoutingManager:
 
         """
         results = []
-        async for record in self._context.storage.search_records(
+        storage: BaseStorage = await self._context.inject(BaseStorage)
+        async for record in storage.search_records(
             self.RECORD_TYPE, {"to": self._sender_verkey}
         ):
             results.append(record.value)
@@ -81,8 +83,9 @@ class RoutingManager:
         """
         exist_routes = await self.get_routes()
         updates = set(routes) - set(exist_routes)
+        storage: BaseStorage = await self._context.inject(BaseStorage)
         for route in updates:
-            await self._context.storage.add_record(
+            await storage.add_record(
                 StorageRecord(
                     self.RECORD_TYPE, route, {"to": self._sender_verkey}, route
                 )
@@ -96,7 +99,8 @@ class RoutingManager:
         """
         exist_routes = await self.get_routes()
         removes = set(exist_routes).intersection(routes)
+        storage: BaseStorage = await self._context.inject(BaseStorage)
         for route in removes:
-            await self._context.storage.delete_record(
+            await storage.delete_record(
                 StorageRecord(self.RECORD_TYPE, route, id=route)
             )

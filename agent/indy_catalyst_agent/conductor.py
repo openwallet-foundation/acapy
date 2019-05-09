@@ -163,10 +163,9 @@ class Conductor:
 
         # temporary until these are removed
         context.wallet = wallet
-        context.storage = await context.inject(BaseStorage)
-        # context.issuer = await context.inject(BaseIssuer)
+        context.issuer = await context.inject(BaseIssuer)
         context.holder = await context.inject(BaseHolder)
-        # context.verifier = await context.inject(BaseVerifier)
+        context.verifier = await context.inject(BaseVerifier)
 
         # should tell the ledger instance to start here?
         context.ledger = await context.inject(BaseLedger, required=False)

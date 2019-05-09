@@ -75,7 +75,7 @@ class CredentialManager:
             schema_id=credential_offer["schema_id"],
             credential_offer=credential_offer,
         )
-        await credential_exchange.save(self.context.storage)
+        await credential_exchange.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange.serialize())
         )
@@ -104,7 +104,7 @@ class CredentialManager:
             schema_id=credential_offer["schema_id"],
             credential_offer=credential_offer,
         )
-        await credential_exchange.save(self.context.storage)
+        await credential_exchange.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange.serialize())
         )
@@ -156,7 +156,7 @@ class CredentialManager:
         credential_exchange_record.credential_request_metadata = (
             credential_request_metadata
         )
-        await credential_exchange_record.save(self.context.storage)
+        await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
@@ -175,13 +175,13 @@ class CredentialManager:
         credential_request = json.loads(credential_request_message.request)
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context.storage,
+            self.context,
             tag_filter={"thread_id": credential_request_message._thread_id},
         )
 
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
-        await credential_exchange_record.save(self.context.storage)
+        await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
@@ -217,7 +217,7 @@ class CredentialManager:
         )
 
         credential_exchange_record.state = CredentialExchange.STATE_ISSUED
-        await credential_exchange_record.save(self.context.storage)
+        await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
@@ -241,8 +241,7 @@ class CredentialManager:
         credential = json.loads(credential_message.issue)
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context.storage,
-            tag_filter={"thread_id": credential_message._thread_id},
+            self.context, tag_filter={"thread_id": credential_message._thread_id}
         )
 
         async with self.context.ledger:
@@ -258,7 +257,7 @@ class CredentialManager:
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         credential_exchange_record.credential_id = credential_id
-        await credential_exchange_record.save(self.context.storage)
+        await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
