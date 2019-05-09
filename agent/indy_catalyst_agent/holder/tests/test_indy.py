@@ -116,3 +116,16 @@ class TestIndyHolder(AsyncTestCase):
         )
 
         assert credentials == json.loads("[1,2,3]")
+
+    @async_mock.patch("indy.anoncreds.prover_get_credential")
+    async def test_get_credential(self, mock_get_cred):
+        mock_get_cred.return_value = "{}"
+
+        mock_wallet = async_mock.MagicMock()
+        holder = IndyHolder(mock_wallet)
+
+        credential = await holder.get_credential("credential_id")
+
+        mock_get_cred.assert_called_once_with(mock_wallet.handle, "credential_id")
+
+        assert credential == json.loads("{}")
