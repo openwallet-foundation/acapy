@@ -13,8 +13,6 @@ from .connections.models.connection_record import ConnectionRecord
 from .connections.models.connection_target import ConnectionTarget
 from .message_delivery import MessageDelivery
 from ..ledger.base import BaseLedger
-from ..storage.base import BaseStorage
-from ..wallet.base import BaseWallet
 
 
 class RequestContext(InjectionContext):
@@ -29,7 +27,6 @@ class RequestContext(InjectionContext):
         self._ledger = None
         self._message = None
         self._message_delivery = None
-        self._wallet = None
 
     @property
     def connection_active(self) -> bool:
@@ -174,27 +171,6 @@ class RequestContext(InjectionContext):
             msg: This context's new message delivery information
         """
         self._message_delivery = delivery
-
-    @property
-    def wallet(self) -> BaseWallet:
-        """
-        Accessor for the BaseWallet implementation.
-
-        Returns:
-            This context's wallet implementation
-
-        """
-        return self._wallet
-
-    @wallet.setter
-    def wallet(self, wallet: BaseWallet):
-        """
-        Setter for the BaseWallet implementation.
-
-        Args:
-            wallet: This context's new wallet implementation
-        """
-        self._wallet = wallet
 
     @property
     def ledger(self) -> BaseLedger:

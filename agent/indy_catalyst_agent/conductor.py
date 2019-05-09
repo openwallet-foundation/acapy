@@ -162,7 +162,6 @@ class Conductor:
             public_did = public_did_info.did
 
         # temporary until these are removed
-        context.wallet = wallet
         context.issuer = await context.inject(BaseIssuer)
         context.holder = await context.inject(BaseHolder)
         context.verifier = await context.inject(BaseVerifier)

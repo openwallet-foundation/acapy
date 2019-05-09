@@ -125,7 +125,8 @@ class ConnectionManager:
             my_label = self.context.default_label
 
         # Create and store new invitation key
-        connection_key = await self.context.wallet.create_signing_key()
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        connection_key = await wallet.create_signing_key()
 
         # Create connection record
         connection = ConnectionRecord(
@@ -250,11 +251,12 @@ class ConnectionManager:
             A new `ConnectionRequest` message to send to the other agent
 
         """
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
         if connection.my_did:
-            my_info = await self.context.wallet.get_local_did(connection.my_did)
+            my_info = await wallet.get_local_did(connection.my_did)
         else:
             # Create new DID for connection
-            my_info = await self.context.wallet.create_local_did()
+            my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
 
         # Create connection request message
@@ -298,7 +300,8 @@ class ConnectionManager:
 
         # Determine what key will need to sign the response
         if self.context.message_delivery.recipient_did_public:
-            my_info = await self.context.wallet.get_local_did(
+            wallet: BaseWallet = await self.context.inject(BaseWallet)
+            my_info = await wallet.get_local_did(
                 self.context.recipient_did
             )
             connection_key = my_info.verkey
@@ -398,10 +401,11 @@ class ConnectionManager:
             )
 
         request = await connection.retrieve_request(self.context)
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
         if connection.my_did:
-            my_info = await self.context.wallet.get_local_did(connection.my_did)
+            my_info = await wallet.get_local_did(connection.my_did)
         else:
-            my_info = await self.context.wallet.create_local_did()
+            my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
 
         if my_router_did:
@@ -423,8 +427,9 @@ class ConnectionManager:
         # Assign thread information
         response.assign_thread_from(request)
         # Sign connection field using the invitation key
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
         await response.sign_field(
-            "connection", connection.invitation_key, self.context.wallet
+            "connection", connection.invitation_key, wallet
         )
         self._log_state(
             "Created connection response",
@@ -835,7 +840,8 @@ class ConnectionManager:
             self._logger.debug("No local DID associated with connection")
             return None
 
-        my_info = await self.context.wallet.get_local_did(connection.my_did)
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        my_info = await wallet.get_local_did(connection.my_did)
 
         if (
             connection.state in (connection.STATE_INVITATION, connection.STATE_REQUEST)
