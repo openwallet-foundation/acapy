@@ -6,6 +6,7 @@ from indy_catalyst_agent.messaging.routing.manager import (
     RoutingManager,
     RoutingManagerError,
 )
+from indy_catalyst_agent.storage.base import BaseStorage
 from indy_catalyst_agent.storage.basic import BasicStorage
 
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -16,7 +17,7 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 def request_context() -> RequestContext:
     ctx = RequestContext()
     ctx.message_delivery = MessageDelivery(sender_verkey=TEST_VERKEY)
-    ctx.storage = BasicStorage()
+    ctx.injector.bind_instance(BaseStorage, BasicStorage())
     yield ctx
 
 
@@ -24,7 +25,7 @@ def request_context() -> RequestContext:
 def manager() -> RoutingManager:
     ctx = RequestContext()
     ctx.message_delivery = MessageDelivery(sender_verkey=TEST_VERKEY)
-    ctx.storage = BasicStorage()
+    ctx.injector.bind_instance(BaseStorage, BasicStorage())
     return RoutingManager(ctx)
 
 
