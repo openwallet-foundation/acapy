@@ -14,7 +14,7 @@ class TestLoggingConfigurator:
         LoggingConfigurator.configure()
 
         mock_file_config.assert_called_once_with(
-            mock_os_path_join.return_value, disable_existing_loggers=True
+            mock_os_path_join.return_value, disable_existing_loggers=False
         )
 
     @mock.patch("indy_catalyst_agent.logging.path.join", autospec=True)
@@ -23,4 +23,4 @@ class TestLoggingConfigurator:
         path = "a path"
         LoggingConfigurator.configure(path)
 
-        mock_file_config.assert_called_once_with(path, disable_existing_loggers=True)
+        mock_file_config.assert_called_once_with(path, disable_existing_loggers=False)
