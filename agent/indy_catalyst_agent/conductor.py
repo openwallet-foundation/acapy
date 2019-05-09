@@ -161,12 +161,7 @@ class Conductor:
             public_did_info = await wallet.create_public_did(seed=wallet_seed)
             public_did = public_did_info.did
 
-        # temporary until these are removed
-        context.issuer = await context.inject(BaseIssuer)
-        context.holder = await context.inject(BaseHolder)
-        context.verifier = await context.inject(BaseVerifier)
-
-        # should tell the ledger instance to start here?
+        # Temporary
         context.ledger = await context.inject(BaseLedger, required=False)
 
         # Register all inbound transports

@@ -12,6 +12,7 @@ from .models.presentation_exchange import (
 )
 from ..connections.manager import ConnectionManager
 
+from ...holder.base import BaseHolder
 from ...storage.error import StorageNotFoundError
 from ..connections.models.connection_record import ConnectionRecord
 
@@ -166,7 +167,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    credentials = await context.holder.get_credentials_for_presentation_request(
+    holder: BaseHolder = await context.inject(BaseHolder)
+    credentials = await holder.get_credentials_for_presentation_request(
         presentation_exchange_record.presentation_request, start, count, extra_query
     )
 

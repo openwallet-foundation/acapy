@@ -4,11 +4,13 @@ import asyncio
 import json
 import logging
 
-from ..request_context import RequestContext
 from ...error import BaseError
+from ...holder.base import BaseHolder
+from ...issuer.base import BaseIssuer
 from ...models.thread_decorator import ThreadDecorator
 
 from ..connections.models.connection_record import ConnectionRecord
+from ..request_context import RequestContext
 
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_request import CredentialRequest
@@ -58,9 +60,8 @@ class CredentialManager:
             A tuple (credential_exchange, credential_offer_message)
 
         """
-        credential_offer = await self.context.issuer.create_credential_offer(
-            credential_definition_id
-        )
+        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+        credential_offer = issuer.create_credential_offer(credential_definition_id)
 
         credential_offer_message = CredentialOffer(
             offer_json=json.dumps(credential_offer)
@@ -136,10 +137,11 @@ class CredentialManager:
                 credential_definition_id
             )
 
+        holder: BaseHolder = await self.context.inject(BaseHolder)
         (
             credential_request,
             credential_request_metadata,
-        ) = await self.context.holder.create_credential_request(
+        ) = await holder.create_credential_request(
             credential_offer, credential_definition, did
         )
 
@@ -206,13 +208,11 @@ class CredentialManager:
         credential_offer = credential_exchange_record.credential_offer
         credential_request = credential_exchange_record.credential_request
 
+        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
         async with self.context.ledger:
             schema = await self.context.ledger.get_schema(schema_id)
 
-        (
-            credential,
-            credential_revocation_id,
-        ) = await self.context.issuer.create_credential(
+        (credential, credential_revocation_id) = await issuer.create_credential(
             schema, credential_offer, credential_request, credential_values
         )
 
@@ -249,7 +249,8 @@ class CredentialManager:
                 credential["cred_def_id"]
             )
 
-        credential_id = await self.context.holder.store_credential(
+        holder: BaseHolder = await self.context.inject(BaseHolder)
+        credential_id = await holder.store_credential(
             credential_definition,
             credential,
             credential_exchange_record.credential_request_metadata,

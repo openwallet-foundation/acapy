@@ -11,6 +11,7 @@ from .models.credential_exchange import CredentialExchange, CredentialExchangeSc
 from ..connections.manager import ConnectionManager
 from ..connections.models.connection_record import ConnectionRecord
 
+from ...holder.base import BaseHolder
 from ...storage.error import StorageNotFoundError
 
 
@@ -80,7 +81,8 @@ async def credentials_get(request: web.BaseRequest):
 
     credential_id = request.match_info["id"]
 
-    credential = await context.holder.get_credential(credential_id)
+    holder: BaseHolder = await context.inject(BaseHolder)
+    credential = await holder.get_credential(credential_id)
 
     return web.json_response(credential)
 
@@ -129,7 +131,8 @@ async def credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    credentials = await context.holder.get_credentials(start, count, wql)
+    holder: BaseHolder = await context.inject(BaseHolder)
+    credentials = await holder.get_credentials(start, count, wql)
 
     return web.json_response({"results": credentials})
 

@@ -6,15 +6,17 @@ import logging
 from uuid import uuid4
 
 
-from ..request_context import RequestContext
 from ...error import BaseError
+from ...holder.base import BaseHolder
 from ...models.thread_decorator import ThreadDecorator
+from ...verifier.base import BaseVerifier
+
+from ..request_context import RequestContext
+from ..util import send_webhook
 
 from .models.presentation_exchange import PresentationExchange
 from .messages.presentation_request import PresentationRequest
 from .messages.credential_presentation import CredentialPresentation
-
-from ..util import send_webhook
 
 
 class PresentationManagerError(BaseError):
@@ -163,8 +165,9 @@ class PresentationManager:
         # TODO: Cache this!!!
         schema_ids = []
         credential_definition_ids = []
+        holder: BaseHolder = await self.context.inject(BaseHolder)
         for credential_id in credential_ids:
-            credential = await self.context.holder.get_credential(credential_id)
+            credential = await holder.get_credential(credential_id)
             schema_id = credential["schema_id"]
             credential_definition_id = credential["cred_def_id"]
             schema_ids.append(schema_id)
@@ -189,7 +192,8 @@ class PresentationManager:
                 )
                 credential_definitions[credential_definition_id] = credential_definition
 
-        presentation = await self.context.holder.create_presentation(
+        holder: BaseHolder = await self.context.inject(BaseHolder)
+        presentation = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
             requested_credentials,
             schemas,
@@ -268,7 +272,8 @@ class PresentationManager:
                 )
                 credential_definitions[credential_definition_id] = credential_definition
 
-        verified = await self.context.verifier.verify_presentation(
+        verifier: BaseVerifier = await self.context.inject(BaseVerifier)
+        verified = await verifier.verify_presentation(
             presentation_request, presentation, schemas, credential_definitions
         )
 
