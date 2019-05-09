@@ -53,3 +53,48 @@ class TestIndyHolder(AsyncTestCase):
         )
 
         assert cred_id == "cred_id"
+
+    @async_mock.patch("indy.anoncreds.prover_search_credentials")
+    @async_mock.patch("indy.anoncreds.prover_fetch_credentials")
+    @async_mock.patch("indy.anoncreds.prover_close_credentials_search")
+    async def test_get_credentials(
+        self, mock_close_cred_search, mock_fetch_credentials, mock_search_credentials
+    ):
+        mock_search_credentials.return_value = ("search_handle", "record_count")
+        mock_fetch_credentials.return_value = "[1,2,3]"
+
+        mock_wallet = async_mock.MagicMock()
+        holder = IndyHolder(mock_wallet)
+
+        credentials = await holder.get_credentials(0, 0, {})
+
+        mock_search_credentials.assert_called_once_with(
+            mock_wallet.handle, json.dumps({})
+        )
+
+        mock_fetch_credentials.return_value = "[1,2,3]"
+
+        mock_fetch_credentials.assert_called_once_with("search_handle", 0)
+        mock_close_cred_search.assert_called_once_with("search_handle")
+
+        assert credentials == json.loads("[1,2,3]")
+
+    @async_mock.patch("indy.anoncreds.prover_search_credentials")
+    @async_mock.patch("indy.anoncreds.prover_fetch_credentials")
+    @async_mock.patch("indy.anoncreds.prover_close_credentials_search")
+    async def test_get_credentials_seek(
+        self, mock_close_cred_search, mock_fetch_credentials, mock_search_credentials
+    ):
+        mock_search_credentials.return_value = ("search_handle", "record_count")
+        mock_fetch_credentials.return_value = "[1,2,3]"
+
+        mock_wallet = async_mock.MagicMock()
+        holder = IndyHolder(mock_wallet)
+
+        credentials = await holder.get_credentials(2, 3, {})
+
+        assert mock_fetch_credentials.call_args_list == [
+            (("search_handle", 2),),
+            (("search_handle", 3),),
+        ]
+
