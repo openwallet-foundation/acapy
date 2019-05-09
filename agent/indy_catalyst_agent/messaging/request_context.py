@@ -7,12 +7,12 @@ of the system to process a message.
 
 from typing import Mapping
 
-from .agent_message import AgentMessage
 from ..config.injection_context import InjectionContext
+
+from .agent_message import AgentMessage
 from .connections.models.connection_record import ConnectionRecord
 from .connections.models.connection_target import ConnectionTarget
 from .message_delivery import MessageDelivery
-from ..ledger.base import BaseLedger
 
 
 class RequestContext(InjectionContext):
@@ -24,7 +24,6 @@ class RequestContext(InjectionContext):
         self._connection_active = False
         self._connection_record = None
         self._connection_target = None
-        self._ledger = None
         self._message = None
         self._message_delivery = None
 
@@ -171,27 +170,6 @@ class RequestContext(InjectionContext):
             msg: This context's new message delivery information
         """
         self._message_delivery = delivery
-
-    @property
-    def ledger(self) -> BaseLedger:
-        """
-        Accessor for the BaseLedger implementation.
-
-        Returns:
-            This context's ledger implementation
-
-        """
-        return self._ledger
-
-    @ledger.setter
-    def ledger(self, ledger: BaseLedger):
-        """
-        Setter for the BaseLedger implementation.
-
-        Args:
-            ledger: This context's new ledger implementation
-        """
-        self._ledger = ledger
 
     def __repr__(self) -> str:
         """

@@ -161,9 +161,6 @@ class Conductor:
             public_did_info = await wallet.create_public_did(seed=wallet_seed)
             public_did = public_did_info.did
 
-        # Temporary
-        context.ledger = await context.inject(BaseLedger, required=False)
-
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
         for inbound_transport_config in self.inbound_transport_configs:

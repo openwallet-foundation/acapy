@@ -7,6 +7,7 @@ import logging
 from ...error import BaseError
 from ...holder.base import BaseHolder
 from ...issuer.base import BaseIssuer
+from ...ledger.base import BaseLedger
 from ...models.thread_decorator import ThreadDecorator
 
 from ..connections.models.connection_record import ConnectionRecord
@@ -132,8 +133,9 @@ class CredentialManager:
 
         did = connection_record.my_did
 
-        async with self.context.ledger:
-            credential_definition = await self.context.ledger.get_credential_definition(
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
+            credential_definition = await ledger.get_credential_definition(
                 credential_definition_id
             )
 
@@ -208,10 +210,11 @@ class CredentialManager:
         credential_offer = credential_exchange_record.credential_offer
         credential_request = credential_exchange_record.credential_request
 
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-        async with self.context.ledger:
-            schema = await self.context.ledger.get_schema(schema_id)
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
+            schema = await ledger.get_schema(schema_id)
 
+        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
         (credential, credential_revocation_id) = await issuer.create_credential(
             schema, credential_offer, credential_request, credential_values
         )
@@ -244,8 +247,9 @@ class CredentialManager:
             self.context, tag_filter={"thread_id": credential_message._thread_id}
         )
 
-        async with self.context.ledger:
-            credential_definition = await self.context.ledger.get_credential_definition(
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
+            credential_definition = await ledger.get_credential_definition(
                 credential["cred_def_id"]
             )
 

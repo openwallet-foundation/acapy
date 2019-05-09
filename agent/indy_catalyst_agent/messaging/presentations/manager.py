@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from ...error import BaseError
 from ...holder.base import BaseHolder
+from ...ledger.base import BaseLedger
 from ...models.thread_decorator import ThreadDecorator
 from ...verifier.base import BaseVerifier
 
@@ -176,18 +177,17 @@ class PresentationManager:
         schemas = {}
         credential_definitions = {}
 
-        async with self.context.ledger:
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
 
             # Build schemas for anoncreds
             for schema_id in schema_ids:
-                schema = await self.context.ledger.get_schema(schema_id)
+                schema = await ledger.get_schema(schema_id)
                 schemas[schema_id] = schema
 
             # Build credential_definitions for anoncreds
             for credential_definition_id in credential_definition_ids:
-                (
-                    credential_definition
-                ) = await self.context.ledger.get_credential_definition(
+                (credential_definition) = await ledger.get_credential_definition(
                     credential_definition_id
                 )
                 credential_definitions[credential_definition_id] = credential_definition
@@ -256,18 +256,17 @@ class PresentationManager:
         schemas = {}
         credential_definitions = {}
 
-        async with self.context.ledger:
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
 
             # Build schemas for anoncreds
             for schema_id in schema_ids:
-                schema = await self.context.ledger.get_schema(schema_id)
+                schema = await ledger.get_schema(schema_id)
                 schemas[schema_id] = schema
 
             # Build credential_definitions for anoncreds
             for credential_definition_id in credential_definition_ids:
-                (
-                    credential_definition
-                ) = await self.context.ledger.get_credential_definition(
+                (credential_definition) = await ledger.get_credential_definition(
                     credential_definition_id
                 )
                 credential_definitions[credential_definition_id] = credential_definition
