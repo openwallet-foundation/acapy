@@ -82,6 +82,10 @@ class Settings(BaseSettings):
         """Fetch the length of the mapping."""
         return len(self._values)
 
+    def __bool__(self):
+        """Convert settings to a boolean."""
+        return True
+
     def copy(self) -> BaseSettings:
         """Produce a copy of the settings instance."""
         return Settings(self._values)

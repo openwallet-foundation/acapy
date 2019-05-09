@@ -72,6 +72,16 @@ class TestInjector(AsyncTestCase):
         assert instance.value is self.test_value
         assert instance.opened
 
+    async def test_inject_class_name(self):
+        """Test a provider class injection with a named class."""
+        provider = ClassProvider("indy_catalyst_agent.config.settings.Settings")
+        self.test_instance.bind_provider(BaseSettings, provider)
+        instance = await self.test_instance.inject(BaseSettings)
+        assert (
+            isinstance(instance, BaseSettings)
+            and instance.__class__.__name__ == "Settings"
+        )
+
     async def test_inject_class_dependency(self):
         """Test a provider class injection with a dependency."""
         test_str = "TEST"
