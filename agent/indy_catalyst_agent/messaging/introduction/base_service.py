@@ -1,16 +1,19 @@
 """Introduction service base classes."""
 
+from abc import ABC, abstractmethod
+
 from ...error import BaseError
+
 from ..base_context import BaseRequestContext
+
 from .messages.invitation import Invitation
-from ...service.base import BaseService
 
 
 class IntroductionError(BaseError):
     """Generic introduction service error."""
 
 
-class BaseIntroductionService(BaseService):
+class BaseIntroductionService(ABC):
     """Service handler for allowing connections to exchange invitations."""
 
     def __init__(self, context: BaseRequestContext):
@@ -27,6 +30,7 @@ class BaseIntroductionService(BaseService):
 
         return get_instance
 
+    @abstractmethod
     async def start_introduction(
         self,
         init_connection_id: str,
@@ -44,6 +48,7 @@ class BaseIntroductionService(BaseService):
             message: The message to use when requesting the invitation
         """
 
+    @abstractmethod
     async def return_invitation(
         self, target_connection_id: str, invitation: Invitation, outbound_handler
     ):
