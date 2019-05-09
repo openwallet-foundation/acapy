@@ -18,9 +18,10 @@ class MockProvider(BaseProvider):
 
 
 class MockInstance:
-    def __init__(self, value):
+    def __init__(self, value, **kwargs):
         self.opened = False
         self.value = value
+        self.kwargs = kwargs
 
     async def open(self):
         self.opened = True
@@ -70,6 +71,20 @@ class TestInjector(AsyncTestCase):
         assert isinstance(instance, MockInstance)
         assert instance.value is self.test_value
         assert instance.opened
+
+    async def test_inject_class_dependency(self):
+        """Test a provider class injection with a dependency."""
+        test_str = "TEST"
+        test_int = 1
+        self.test_instance.bind_instance(str, test_str)
+        self.test_instance.bind_instance(int, test_int)
+        provider = ClassProvider(
+            MockInstance, ClassProvider.Inject(str), param=ClassProvider.Inject(int)
+        )
+        self.test_instance.bind_provider(object, provider)
+        instance = await self.test_instance.inject(object)
+        assert instance.value is test_str
+        assert instance.kwargs["param"] is test_int
 
     async def test_inject_cached(self):
         """Test a provider class injection."""

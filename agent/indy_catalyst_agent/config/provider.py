@@ -55,7 +55,7 @@ class ClassProvider(BaseProvider):
                 arg = await injector.inject(arg.base_class)
             args.append(arg)
         kwargs = {}
-        for arg_name, arg in self._ctor_kwargs:
+        for arg_name, arg in self._ctor_kwargs.items():
             if isinstance(arg, self.Inject):
                 arg = await injector.inject(arg.base_class)
             kwargs[arg_name] = arg
