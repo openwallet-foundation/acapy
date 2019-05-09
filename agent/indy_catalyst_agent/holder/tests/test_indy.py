@@ -31,3 +31,25 @@ class TestIndyHolder(AsyncTestCase):
         )
 
         assert cred_req == ({}, {})
+
+    @async_mock.patch("indy.anoncreds.prover_store_credential")
+    async def test_store_credential(self, mock_store_cred):
+        mock_store_cred.return_value = "cred_id"
+        mock_wallet = async_mock.MagicMock()
+
+        holder = IndyHolder(mock_wallet)
+
+        cred_id = await holder.store_credential(
+            "credential_definition", "credential_data", "credential_request_metadata"
+        )
+
+        mock_store_cred.assert_called_once_with(
+            mock_wallet.handle,
+            None,
+            json.dumps("credential_request_metadata"),
+            json.dumps("credential_data"),
+            json.dumps("credential_definition"),
+            None,
+        )
+
+        assert cred_id == "cred_id"
