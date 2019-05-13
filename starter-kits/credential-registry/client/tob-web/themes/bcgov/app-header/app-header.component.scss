@@ -1,0 +1,62 @@
+@import "../common";
+
+.navbar-brand {
+  font-size: 26px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+
+  .tag {
+    border: 1px solid #fff;
+    border-radius: 2px;
+    cursor: default;
+    display: inline-block;
+    font-size: 14px;
+    line-height: 1;
+    margin-left: 0.5em;
+    padding: 0.25em 0.5em 0;
+    vertical-align: 3px;
+  }
+
+  @include media-breakpoint-down(sm) {
+    font-size: 20px;
+    text-align: center;
+    .title {
+      display: block;
+      line-height: 1.2;
+    }
+    .tag {
+      display: block;
+      margin: 0;
+      vertical-align: middle;
+    }
+  }
+}
+
+.navbar-collapse:not(.show) {
+  justify-content: flex-end;
+
+  .nav-item {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 10px 10px 8px;
+    @include hover-focus {
+      background: initial;
+      border-color: $navbar-dark-hover-color;
+    }
+  }
+}
+
+
+.navbar-toggler-icon {
+  vertical-align: -.5em;
+}
+
+.navbar-toggler-label {
+  font-size: 80%;
+}
+
+.debug-msg {
+  text-align: center;
+  background: theme-color-level(danger, -9);
+  border-bottom: 2px solid theme-color-level(danger, -4);
+}

@@ -1,0 +1,15 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-web
+# Template File: templates/angular-on-nginx/angular-on-nginx-build.json
+#=========================================================
+NAME=angular-on-nginx
+SOURCE_IMAGE_NAMESPACE=devex-von-tools
+SOURCE_IMAGE_NAME=angular-app
+SOURCE_IMAGE_TAG=latest
+RUNTIME_IMAGE_NAMESPACE=devex-von-tools
+RUNTIME_IMAGE_NAME=nginx-runtime
+RUNTIME_IMAGE_TAG=latest
+OUTPUT_IMAGE_TAG=latest
+CPU_LIMIT=1
+MEMORY_LIMIT=4Gi

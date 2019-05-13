@@ -1,0 +1,21 @@
+<div class="search-nav row">
+  <div class="col-6 col-sm-4 col-left">
+    <button *ngIf="showButtons" tabIndex="0" type="button" [title]="'general.prev-link' | translate" class="btn btn-primary btn-md nav-button nav-previous" [disabled]="!havePrevious" (click)="performNav($event, 'previous')">
+      <span class="fa fa-arrow-left"></span>
+      <span translate>general.prev-link</span>
+    </button>
+  </div>
+  <div class="col-sm-4 d-none d-sm-block text-center nav-text">
+    <span tabIndex="0" *ngIf="! loading">{{'search.records-prefix' | translate}} {{info.firstIndex}}-{{info.lastIndex}} of {{info.totalCount}}</span>
+    <loading-indicator [loading]="loading && showStatus"></loading-indicator>
+  </div>
+  <div class="col-6 col-sm-4 text-right col-right">
+    <button *ngIf="showButtons" tabIndex="0" type="button" [title]="'general.next-link' | translate" class="btn btn-primary btn-md nav-button nav-next" [disabled]="!haveNext" (click)="performNav($event, 'next')">
+      <span translate>general.next-link</span>
+      <span class="fa fa-arrow-right"></span>
+    </button>
+  </div>
+  <div class="col-12 d-sm-none text-center">
+    <span tabIndex="0" *ngIf="! loading">{{'search.records-prefix' | translate}} {{info.firstIndex}}-{{info.lastIndex}} of {{info.totalCount}}</span>
+  </div>
+</div>

@@ -1,0 +1,580 @@
+#!/bin/bash
+export MSYS_NO_PATHCONV=1
+export DOCKERHOST=${APPLICATION_URL-$(docker run --rm --net=host codenvy/che-ip)}
+set -e
+
+S2I_EXE=s2i
+if [ -z $(type -P "$S2I_EXE") ]; then
+  echo -e "The ${S2I_EXE} executable is needed and not on your path."
+  echo -e "It can be downloaded from here: https://github.com/openshift/source-to-image"
+  echo -e "Make sure you place it in a directory on your path."
+  exit 1
+fi
+
+SCRIPT_HOME="$(cd "$(dirname "$0")" && pwd)"
+
+# =================================================================================================================
+# Usage:
+# -----------------------------------------------------------------------------------------------------------------
+usage() {
+  cat <<-EOF
+    
+      Usage: $0 [command] [options]
+    
+      Commands:
+    
+      build - Build the docker images for the project.
+              You need to do this first, since the builds require
+              a combination of Docker and S2I builds.
+    
+              You can build individual components as shown below, components that have dependencies
+              will have these dependencies built too.
+    
+              Examples:
+               - Build the web UI only.
+    
+                $0 build tob-web
+
+               - Build the web UI using a custom theme.
+    
+                $0 build tob-web TOB_THEME=<theme-name> TOB_THEME_PATH=<absolute-path-to-themes-folder>
+     
+               - Build the API server only.
+     
+                $0 build tob-api
+    
+               - Build the Solr Search Engine server only.
+           
+                $0 build tob-solr
+    
+              By default all containers that components comprise of, will be rebuilt.
+    
+                $0 build 
+    
+      up -  Creates the application containers from the built images
+            and starts the services based on the docker-compose.yml file.
+
+            You can pass in a list of containers to start.  
+            By default all containers will be started.
+            
+            The API_URL used by tob-web can also be redirected.
+
+            Examples:
+            $0 start
+            $0 start tob-solr
+            $0 start tob-web
+            $0 start tob-web API_URL=http://docker.for.win.localhost:56325/api/v1
+            $0 start tob-api
+
+      start - Same as up
+
+      logs - Display the logs from the docker compose run (ctrl-c to exit).
+
+      web-dev - Builds and runs a live development version of tob-web, along with
+                the required supporting components. Once started, the website is
+                automatically compiled and updated in response to file modifications.
+                To use a custom theme, use the TOB_THEME and TOB_THEME_PATH environment
+                variables described in the build step.
+
+      stop - Stops the services.  This is a non-destructive process.  The volumes and containers
+             are not deleted so they will be reused the next time you run start.
+    
+      down - Brings down the services and removes the volumes (storage) and containers.
+      rm - Same as down
+    
+      registerDids - Register the DIDs for the issuer services.
+                     This is intended for development use.
+    
+                     Examples:
+                     $0 registerDids seed=the_org_book_0000000000000000000
+                     - This will register the DID using the provided seed with the locally running von-network instance.
+EOF
+  exit 1
+}
+# -----------------------------------------------------------------------------------------------------------------
+# Default Settings:
+# -----------------------------------------------------------------------------------------------------------------
+DEFAULT_CONTAINERS="wallet-db tob-db tob-solr tob-api schema-spy tob-web rabbitmq tob-worker"
+# -----------------------------------------------------------------------------------------------------------------
+# Functions:
+# -----------------------------------------------------------------------------------------------------------------
+build-web() {
+  #
+  # tob-web
+  #
+  # The nginx-runtime image is used for the final runtime image.
+  # The nodejs-build image is used to build the artifacts for the angular distribution.
+  # The angular-on-nginx image is copy of the nginx-runtime image complete with a copy of the build artifacts.
+  #
+  echo -e "\nBuilding nginx-runtime image ..."
+  docker build -q \
+    -t 'nginx-runtime' \
+    -f '../../../credential-registry/client/tob-web/openshift/templates/nginx-runtime/Dockerfile' '../../../credential-registry/client/tob-web/openshift/templates/nginx-runtime/'
+
+  # This image only exists to pre-create the npm cache directory
+  # so it can be properly used as a volume, it doesn't apply to openshift
+  echo -e "\nBuilding nodejs-build image ..."
+  docker build -q \
+    -t 'nodejs-build' \
+    -f '../../../credential-registry/client/tob-web/openshift/templates/nodejs-build/Dockerfile' '../../../credential-registry/client/tob-web/openshift/templates/nodejs-build/'
+
+  if [ -t 0 ]; then
+    # color npm output in interactive terminal
+	  NPM_COLOR="always"
+  else
+    NPM_COLOR="true"
+  fi
+
+  
+  echo -e "\nBuilding angular-on-nginx image ..."
+  if [ -z "$TOB_THEME_PATH" ]; then
+    # No custom theme was specified
+    ${S2I_EXE} build \
+      -e "NPM_CONFIG_COLOR=${NPM_COLOR}" \
+      -e "NPM_CONFIG_LOGLEVEL=timing" \
+      -e "HTTP_PROXY=${HTTP_PROXY}" \
+      -e "HTTPS_PROXY=${HTTPS_PROXY}" \
+      -e "NG_BASE_HREF=${WEB_BASE_HREF}" \
+      -e "NG_DEPLOY_URL=${WEB_DEPLOY_URL}" \
+      -e "TOB_THEME=${TOB_THEME}" \
+      -v "${COMPOSE_PROJECT_NAME}_tob-npm-cache:/opt/app-root/src/.npm" \
+      --runtime-image nginx-runtime \
+      -a /opt/app-root/src/dist:app \
+      '../../../credential-registry/client/tob-web' \
+      'nodejs-build' \
+      'angular-on-nginx'
+  else
+    # Use the custom theme
+    ${S2I_EXE} build \
+      -e "NPM_CONFIG_COLOR=${NPM_COLOR}" \
+      -e "NPM_CONFIG_LOGLEVEL=timing" \
+      -e "HTTP_PROXY=${HTTP_PROXY}" \
+      -e "HTTPS_PROXY=${HTTPS_PROXY}" \
+      -e "NG_BASE_HREF=${WEB_BASE_HREF}" \
+      -e "NG_DEPLOY_URL=${WEB_DEPLOY_URL}" \
+      -e "TOB_THEME=${TOB_THEME}" \
+      -e "TOB_THEME_PATH=/tmp/tob-theme" \
+      -v "${TOB_THEME_PATH}:/tmp/tob-theme" \
+      -v "${COMPOSE_PROJECT_NAME}_tob-npm-cache:/opt/app-root/src/.npm" \
+      --runtime-image nginx-runtime \
+      -a /opt/app-root/src/dist:app \
+      '../../../credential-registry/client/tob-web' \
+      'nodejs-build' \
+      'angular-on-nginx'
+  fi
+}
+
+build-web-dev() {
+  #
+  # tob-web-dev
+  # Alternative version of tob-web for live development
+  #
+  echo -e "\nBuilding nodejs-build image ..."
+  docker build -q \
+    -t 'nodejs-build' \
+    -f '../client/tob-web/openshift/templates/nodejs-build/Dockerfile' '../client/tob-web/openshift/templates/nodejs-build/'
+
+  # NB: We build with DEV_MODE=true but run with DEV_MODE=false
+  echo -e "\nBuilding angular-dev image ..."
+  if [ -z "$TOB_THEME_PATH" ]
+  then
+    # set TOB_THEME_PATH so that an empty dummy volume will be mounted - see docker-compose.yml
+    TOB_THEME_PATH="tob-web-empty"
+
+    # No custom theme was specified
+    ${S2I_EXE} build \
+      -e "DEV_MODE=true" \
+      -e "HTTP_PROXY=${HTTP_PROXY}" \
+      -e "HTTPS_PROXY=${HTTPS_PROXY}" \
+      -e "NG_BASE_HREF=${WEB_BASE_HREF}" \
+      -e "NG_DEPLOY_URL=${WEB_DEPLOY_URL}" \
+      -e "TOB_THEME=${TOB_THEME}" \
+      -v "${COMPOSE_PROJECT_NAME}_tob-npm-cache:/opt/app-root/src/.npm" \
+      '../client/tob-web' \
+      'nodejs-build' \
+      'angular-dev'
+  else
+    # Use the custom theme
+    export TOB_THEME_PATH_DEV="/tmp/tob-theme"
+
+    ${S2I_EXE} build \
+      -e "DEV_MODE=true" \
+      -e "HTTP_PROXY=${HTTP_PROXY}" \
+      -e "HTTPS_PROXY=${HTTPS_PROXY}" \
+      -e "NG_BASE_HREF=${WEB_BASE_HREF}" \
+      -e "NG_DEPLOY_URL=${WEB_DEPLOY_URL}" \
+      -e "TOB_THEME=${TOB_THEME}" \
+      -e "TOB_THEME_PATH=${TOB_THEME_PATH_DEV}" \
+      -v "${TOB_THEME_PATH}:/tmp/tob-theme" \
+      -v "${COMPOSE_PROJECT_NAME}_tob-npm-cache:/opt/app-root/src/.npm" \
+      '../client/tob-web' \
+      'nodejs-build' \
+      'angular-dev'
+  fi
+}
+
+build-solr() {
+  #
+  # tob-solr
+  #
+  echo -e "\nBuilding solr-base image ..."
+  docker build \
+    https://github.com/bcgov/openshift-solr.git \
+    -t 'solr-base'
+
+  echo -e "\nBuilding solr image ..."
+  ${S2I_EXE} build \
+    -e "HTTP_PROXY=${HTTP_PROXY}" \
+    -e "HTTPS_PROXY=${HTTPS_PROXY}" \
+    '../server/tob-solr/cores' \
+    'solr-base' \
+    'solr'
+}
+
+build-db() {
+  #
+  # tob-db
+  #
+  echo -e "\nBuilding postgresql image ..."
+  ${S2I_EXE} build \
+    -e "HTTP_PROXY=${HTTP_PROXY}" \
+    -e "HTTPS_PROXY=${HTTPS_PROXY}" \
+    '../server/tob-db/config' \
+    'registry.access.redhat.com/rhscl/postgresql-10-rhel7:latest' \
+    'postgresql'
+}
+
+build-schema-spy() {
+  #
+  # schema-spy
+  #
+  echo -e "\nBuilding schema-spy image ..."
+  docker build \
+    https://github.com/bcgov/SchemaSpy.git \
+    -t 'schema-spy'
+}
+
+build-api() {
+  #
+  # tob-api
+  #
+  echo -e "\nBuilding indy cat api image ..."
+  docker build -q \
+    -t 'indycat-api-build' \
+    -f '../../../credential-registry/server/django-icat-api/Dockerfile' '../../../credential-registry/server/django-icat-api/'
+  echo -e "\nBuilding indy cat indy api image ..."
+  docker build -q \
+    -t 'indycat-indyapi-build' \
+    -f '../../../credential-registry/server/python-indy-api/Dockerfile' '../../../credential-registry/server/python-indy-api/'
+  
+  BASE_IMAGE="indycat-indyapi-build"
+  
+  echo -e "\nBuilding django image from ${BASE_IMAGE}..."
+  ${S2I_EXE} build \
+    -e "HTTP_PROXY=${HTTP_PROXY}" \
+    -e "HTTPS_PROXY=${HTTPS_PROXY}" \
+    -e "PIP_NO_CACHE_DIR=" \
+    -v "${COMPOSE_PROJECT_NAME}_tob-pip-cache:/home/indy/.cache/pip" \
+    '../server/tob-api' \
+    "$BASE_IMAGE" \
+    'django'
+
+  # this is only required in Windows
+  if [[ "$OSTYPE" == "msys" ]]; then
+    echo -e "\nFixing file permissions in final tob-api (django) image"
+    docker build -q \
+      -t 'django' \
+      -f '../../../credential-registry/server/Dockerfile' '../../../credential-registry/server'
+  fi
+}
+
+buildImages() {
+  build-web
+  build-solr
+  build-db
+  build-schema-spy
+  build-api
+}
+
+configureEnvironment() {
+
+  if [ -f .env ]; then
+    while read line; do
+      if [[ ! "$line" =~ ^\# ]] && [[ "$line" =~ .*= ]]; then
+        export ${line//[$'\r\n']}
+      fi
+    done <.env
+  fi
+
+  for arg in $@; do
+    case "$arg" in
+      *=*)
+        export ${arg}
+        ;;
+    esac
+  done
+
+  seed=${INDY_WALLET_SEED:-$seed}
+
+  if [ "$COMMAND" == "start" ] || [ "$COMMAND" == "registerdids" ]; then
+    if [ -z "$seed" ]; then
+      echo "You must provide a seed parameter. For example: seed=my_seed_000000000000000000000000."
+      exit 1
+    fi
+  fi
+
+  export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-tob}"
+
+  export INDY_WALLET_SEED=${seed}
+  export STI_SCRIPTS_PATH=${STI_SCRIPTS_PATH:-/usr/libexec/s2i}
+  export RUST_LOG=${RUST_LOG:-warn}
+  export RUST_BACKTRACE=${RUST_BACKTRACE:-full}
+
+  # tob-db
+  export POSTGRESQL_DATABASE="THE_ORG_BOOK"
+  export POSTGRESQL_USER="DB_USER"
+  export POSTGRESQL_PASSWORD="DB_PASSWORD"
+  export ENABLE_REALTIME_INDEXING="1"
+
+  # wallet-db
+  export WALLET_TYPE="postgres_storage"
+  export WALLET_ENCRYPTION_KEY="key"
+  export POSTGRESQL_WALLET_HOST="wallet-db"
+  export POSTGRESQL_WALLET_PORT="5432"
+  export POSTGRESQL_ADMIN_USER="postgres"
+  export POSTGRESQL_ADMIN_PASSWORD="mysecretpassword"
+
+  # schema-spy
+  export DATABASE_SERVICE_NAME="tob-db"
+  export POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+  export POSTGRESQL_USER=${POSTGRESQL_USER}
+  export POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+
+  # tob-solr
+  export CORE_NAME="the_org_book"
+
+  # tob-api
+  export APP_FILE=app-vonx.py
+  export APP_CONFIG=${APP_CONFIG:-}
+  export APP_MODULE=api_indy.tob_anchor.boot:init_app
+  export API_HTTP_PORT=${API_HTTP_PORT:-8081}
+  export DATABASE_SERVICE_NAME="tob-db"
+  export DATABASE_ENGINE="postgresql"
+  export DATABASE_NAME=${POSTGRESQL_DATABASE}
+  export DATABASE_USER=${POSTGRESQL_USER}
+  export DATABASE_PASSWORD=${POSTGRESQL_PASSWORD}
+  export DEBUG=${DEBUG}
+  export DEMO_SITE=${DEMO_SITE-True}
+  export DJANGO_SECRET_KEY=wpn1GZrouOryH2FshRrpVHcEhMfMLtmTWMC2K5Vhx8MAi74H5y
+  export DJANGO_DEBUG=True
+  export DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL-INFO}
+  export OPTIMIZE_TABLE_ROW_COUNTS=${OPTIMIZE_TABLE_ROW_COUNTS-}
+  export INDY_DISABLED=${INDY_DISABLED-}
+  export SOLR_SERVICE_NAME="tob-solr"
+  export SOLR_CORE_NAME=${CORE_NAME}
+  export SKIP_INDEXING_ON_STARTUP=${SKIP_INDEXING_ON_STARTUP-}
+  export GENESIS_URL=${GENESIS_URL-}
+  export LEDGER_URL=${LEDGER_URL-http://$DOCKERHOST:9000}
+  export LEDGER_PROTOCOL_VERSION=${LEDGER_PROTOCOL_VERSION-}
+  export SQL_DEBUG=${SQL_DEBUG:-}
+  export WEB_CONCURRENCY=${WEB_CONCURRENCY:-5}
+  export APPLICATION_URL=${APPLICATION_URL-http://localhost:8080}
+
+  # tob-web
+  export TOB_THEME=${TOB_THEME:-default}
+  export TOB_THEME_PATH=${TOB_THEME_PATH-}
+  export WEB_HTTP_PORT=${WEB_HTTP_PORT:-8080}
+  export WEB_BASE_HREF=${WEB_BASE_HREF:-/}
+  export WEB_DEPLOY_URL=${WEB_DEPLOY_URL:-/}
+  export API_URL=${API_URL-http://tob-api:8080/api/v2/}
+  export IpFilterRules='#allow all; deny all;'
+  export RealIpFrom='127.0.0.0/16'
+  export HTTP_BASIC_USERNAME=${HTTP_BASIC_USERNAME:-}
+  export HTTP_BASIC_PASSWORD=${HTTP_BASIC_PASSWORD:-}
+
+  # rabbitmq
+  export RABBITMQ_USER="RABBITMQ_USER"
+  export RABBITMQ_PASSWORD="RABBITMQ_PASSWORD"
+}
+
+getStartupParams() {
+  CONTAINERS=""
+  ARGS="--force-recreate"
+
+  for arg in $@; do
+    case "$arg" in
+    *=*)
+      # Skip it
+      ;;
+    -*)
+      ARGS+=" $arg"
+      ;;
+    *)
+      CONTAINERS+=" $arg"
+      ;;
+    esac
+  done
+
+  if [ -z "$CONTAINERS" ]; then
+    CONTAINERS="$DEFAULT_CONTAINERS"
+  fi
+
+  echo ${ARGS} ${CONTAINERS}
+}
+
+deleteVolumes() {
+  _projectName=${COMPOSE_PROJECT_NAME:-docker}
+
+  echo "Stopping and removing any running containers ..."
+  docker-compose down -v
+
+  _pattern="^${_projectName}_\|^docker_"
+  _volumes=$(docker volume ls -q | grep ${_pattern})
+
+  if [ ! -z "${_volumes}" ]; then
+    echo "Removing project volumes ..."
+    echo ${_volumes} | xargs docker volume rm
+  else
+    echo "No project volumes exist."
+  fi
+
+  echo "Removing build cache ..."
+  rm -Rf ../client/tob-web/.cache
+}
+
+registerDids() {
+  _seeds=${@}
+  if [ -z "${_seeds}" ]; then
+    echo -e \\n"registerDids; Missing parameter!"\\n
+    exit 1
+  fi
+
+  for _seed in ${_seeds}; do
+    registerDid ${_seed}
+  done
+}
+
+registerDid() {
+  _seed=${1}
+  if [ -z "${_seed}" ]; then
+    echo -e \\n"registerDid; Missing parameter!"\\n
+    exit 1
+  fi
+  _seedJson=$(getSeedJson ${_seed})
+  _ledgerUri=$(getLedgerRegistrationUrl)
+
+  echo -e \\n"Registering ${_seed} with the ledger ..."
+  curl -X POST \
+    ${_ledgerUri} \
+    -H 'content-type: application/json' \
+    -d "${_seedJson}"
+}
+
+getSeedJson() {
+  _seed=${1}
+  if [ -z "${_seed}" ]; then
+    echo -e \\n"getSeedJson; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echo "{\"seed\": \"${_seed}\"}"
+}
+
+generateSeeds() {
+  echo ${INDY_WALLET_SEED}
+}
+
+getLedgerRegistrationUrl() {
+  if [[ ("${LEDGER_URL}" == "http://${DOCKERHOST}:9000") && ("${DOCKERHOST}" != "localhost") ]]; then
+    _ledgerUrl="http://localhost:9000"
+  else
+    _ledgerUrl="${LEDGER_URL}"
+  fi
+
+  echo "${_ledgerUrl}/register"
+}
+
+toLower() {
+  echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
+}
+# =================================================================================================================
+
+pushd ${SCRIPT_HOME} >/dev/null
+COMMAND=$(toLower ${1})
+shift || COMMAND=usage
+
+case "${COMMAND}" in
+start|up)
+  _startupParams=$(getStartupParams $@)
+  configureEnvironment $@
+  docker-compose up --scale tob-worker=2 -d ${_startupParams} 
+  docker-compose logs -f
+ ;;
+logs)
+  configureEnvironment $@
+  docker-compose logs -f
+  ;;
+web-dev)
+  _startupParams=$(getStartupParams $@)
+  configureEnvironment $@
+  [ -z "$SKIP_BUILD" ] && build-web-dev
+  docker-compose run --rm --service-ports tob-web-dev
+  ;;
+stop)
+  configureEnvironment
+  docker-compose stop 
+  ;;
+startdb)
+  configureEnvironment $@
+  docker-compose up -d wallet-db
+  docker-compose logs -f
+ ;;
+stopdb)
+  configureEnvironment
+  docker-compose stop wallet-db
+ ;;
+rm|down)
+  configureEnvironment
+  deleteVolumes
+  ;;
+registerdids)
+  configureEnvironment $@
+  registerDids $(generateSeeds)
+  ;;
+build)
+  _startupParams=$(getStartupParams $@)
+  configureEnvironment $@
+  case "$@" in
+  tob-api)
+    build-api
+    ;;
+  tob-web)
+    build-web
+    ;;
+  tob-solr)
+    build-solr
+    ;;
+  tob-db)
+    build-db
+    ;;
+  *)
+    buildImages
+    ;;
+  esac
+  ;;
+shell)
+  _startupParams=$(getStartupParams $@)
+  configureEnvironment $@
+  docker-compose run tob-api bash
+  ;;
+django)
+  _startupParams=$(getStartupParams $@)
+  configureEnvironment $@
+  docker-compose run tob-api python manage.py $@
+  ;;
+*)
+  usage
+  ;;
+esac
+
+popd >/dev/null

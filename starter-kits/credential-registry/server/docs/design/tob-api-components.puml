@@ -1,0 +1,27 @@
+@startuml
+
+package tob_services {
+  package tob_api_core {
+    package tob_query_services
+
+    package tob_model
+  }
+
+  package tob_update_services
+
+  tob_api_core -[hidden]left- tob_update_services
+
+  package tob_indy_services {
+    package indy_services
+
+    tob_update_services <-right- indy_services
+  }
+}
+
+package indy
+
+tob_query_services -down-> tob_model
+tob_update_services -down-> tob_model
+indy_services -down-> indy
+
+@enduml

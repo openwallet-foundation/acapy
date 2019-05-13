@@ -1,0 +1,13 @@
+.name-row {
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+  &:not(:first-child) {
+    border-top: 1px solid #ddd;
+  }
+  &:nth-of-type(odd) {
+    background-color: #f9f9f9;
+  }
+  .row-title {
+    font-size: 1.2rem;
+  }
+}

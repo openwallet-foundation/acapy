@@ -1,0 +1,151 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "angular-on-nginx"
+  },
+  "objects": [
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}"
+      }
+    },
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}-build",
+        "labels": {
+          "app": "${NAME}"
+        }
+      },
+      "spec": {
+        "runPolicy": "Parallel",
+        "completionDeadlineSeconds": 1800,
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          },
+          {
+            "type": "ImageChange"
+          }
+        ],
+        "source": {
+          "type": "Dockerfile",
+          "dockerfile": "FROM ${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}\nCOPY * /tmp/app/dist/\nCMD  /usr/libexec/s2i/run",
+          "images": [
+            {
+              "from": {
+                "kind": "ImageStreamTag",
+                "namespace": "${SOURCE_IMAGE_NAMESPACE}",
+                "name": "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}"
+              },
+              "paths": [
+                {
+                  "sourcePath": "/opt/app-root/src/dist/.",
+                  "destinationDir": "tmp"
+                }
+              ]
+            }
+          ]
+        },
+        "strategy": {
+          "type": "Docker",
+          "dockerStrategy": {
+            "from": {
+              "kind": "ImageStreamTag",
+              "namespace": "${RUNTIME_IMAGE_NAMESPACE}",
+              "name": "${RUNTIME_IMAGE_NAME}:${RUNTIME_IMAGE_TAG}"
+            }
+          }
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "${NAME}:${OUTPUT_IMAGE_TAG}"
+          }
+        },
+        "resources": {
+          "limits": {
+            "cpu": "${CPU_LIMIT}",
+            "memory": "${MEMORY_LIMIT}"
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "NAME",
+      "displayName": "Name",
+      "description": "The name assigned to all of the objects defined in this template.",
+      "required": true,
+      "value": "angular-on-nginx"
+    },
+    {
+      "name": "SOURCE_IMAGE_NAMESPACE",
+      "displayName": "Source Image Namespace",
+      "description": "The namespace containing the source image.",
+      "required": false,
+      "value": ""
+    },
+    {
+      "name": "SOURCE_IMAGE_NAME",
+      "displayName": "Source Image Name",
+      "description": "The name of the source image.",
+      "required": true,
+      "value": "angular-app"
+    },
+    {
+      "name": "SOURCE_IMAGE_TAG",
+      "displayName": "Source Image Tag",
+      "description": "The tag of the source image.",
+      "required": true,
+      "value": "latest"
+    },
+    {
+      "name": "RUNTIME_IMAGE_NAMESPACE",
+      "displayName": "Runtime Image Namespace",
+      "description": "The namespace containing the runtime image.",
+      "required": false,
+      "value": "devex-von-tools"
+    },
+    {
+      "name": "RUNTIME_IMAGE_NAME",
+      "displayName": "Runtime Image Name",
+      "description": "The name of the runtime image.",
+      "required": true,
+      "value": "nginx-runtime"
+    },
+    {
+      "name": "RUNTIME_IMAGE_TAG",
+      "displayName": "Runtime Image Tag",
+      "description": "The tag of the Runtime image.",
+      "required": true,
+      "value": "latest"
+    },
+    {
+      "name": "OUTPUT_IMAGE_TAG",
+      "displayName": "Output Image Tag",
+      "description": "The tag given to the built image.",
+      "required": true,
+      "value": "latest"
+    },
+    {
+      "name": "CPU_LIMIT",
+      "displayName": "Resources CPU Limit",
+      "description": "The resources CPU limit (in cores) for this build.",
+      "required": true,
+      "value": "1"
+    },
+    {
+      "name": "MEMORY_LIMIT",
+      "displayName": "Resources Memory Limit",
+      "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
+      "required": true,
+      "value": "4Gi"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-api
+# Template File: templates/schema-spy/schema-spy-deploy.json
+#=========================================================
+# NAME=schema-spy
+# IMAGE_NAMESPACE=devex-von-tools
+APPLICATION_DOMAIN=schema-spy-devex-von-bc-tob-test.pathfinder.gov.bc.ca
+# DATABASE_SERVICE_NAME=postgresql
+# DATABASE_NAME=TheOrgBook_Database
+# OUTPUT_PATH=/var/www/html/doc
+# SCHEMASPY_USER=[a-zA-Z_][a-zA-Z0-9_]{10}
+# SCHEMASPY_PASSWORD=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+TAG_NAME=bc-tob-test
+# DATABASE_DEPLOYMENT_NAME=postgresql
+# CONFIG_FILE_NAME=Caddyfile
+# CONFIG_MAP_NAME=caddy-conf
+# CONFIG_MOUNT_PATH=/etc/
+# CPU_REQUEST=0m
+# CPU_LIMIT=0m
+# MEMORY_REQUEST=0Mi
+# MEMORY_LIMIT=0Mi

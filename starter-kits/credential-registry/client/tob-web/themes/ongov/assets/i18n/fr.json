@@ -1,0 +1,195 @@
+{
+  "ROUTES": {
+    "home": "accueil"
+  },
+  "app": {
+    "title": "TheOrgBook de l'Ontario",
+    "switch-language": "Changer de langue",
+    "breadcrumb": "Accueil",
+    "header": {
+      "title": "TheOrgBook",
+      "logo-alt-text": "Logo du gouvernement de l'Ontario"
+    },
+    "footer": {
+      "disclaimer": "Conditions d'utilisation",
+      "privacy": "Confidentialité",
+      "accessibility": "Accessibilité",
+      "copyright": "Imprimeur de la Reine pour l'Ontario, 2015",
+      "contact": "Pour nous joindre",
+      "link-title": "Ce lien ouvrira la page dans une nouvelle fenêtre du navigateur"
+    }
+  },
+  "address": {
+    "registered-office": "Bureau inscrit"
+  },
+  "contact": {
+    "email": "Adresse de courriel",
+    "phone": "Téléphone",
+    "phone-business": "Téléphone au travail",
+    "skype": "Adresse Skype",
+    "website": "Adresse du site Web"
+  },
+  "cred": {
+    "addresses": "Adresses",
+    "breadcrumb": "Dossiers vérifiables",
+    "contact": "Coordonnées",
+    "corp-num": "Identifiant unique:",
+    "end-date": "Date de fin",
+    "history-link": "Voir historique",
+    "issuer": "Délivreur:",
+    "last-updated": "Dernière mise à jour",
+    "names": "Noms",
+    "people": "Personnes",
+    "start-date": "Date d'enregistrement:",
+    "effective-date": "Date d'entrée en vigueur de l'Statut:",
+    "verify-button-label": "Vérifier le dossier",
+    "view-link": "Voir les titres de compétences",
+    "whats-this-link": "Qu'est-ce que c'est?",
+    "verify-status": "Statut de la vérification:",
+    "status": "Statut:",
+    "type": "Type d'entreprise:",
+    "business_registration": "Renseignements fondamentaux sur l'enregistrement de l'entreprise",
+    "municipality": "Municipalité:",
+    "jurisdiction": "Compétence territoriale:",
+    "verifying-record": "Vérification les titres de compétences",
+    "verify-info": "Informations vérifiables",
+    "error": "La signature numérique associée à cet enregistrement n'a pas pu être vérifiée. Veuillez réessayer plus tard.",
+    "success": "Vérification réussie! La signature numérique associée à cet enregistrement tel que signé par le délivreur a été validée cryptographiquement.",
+    "note": "Remarque:",
+    "disclaimer": "Les informations commerciales ci-dessus ne sont pas en temps réel et sont destinées à des fins d'information uniquement. Ceci ne remplace pas un rapport officiel du dossier public tenu par le ministère des Services gouvernementaux et des Services aux consommateurs. Pour savoir comment faire une recherche dans les dossiers publics,",
+    "click-here": "cliquez ici."
+  },
+  "general": {
+    "none": "Aucun",
+    "map-link": "Indiquer sur la carte",
+    "next-link": "Suivant",
+    "prev-link": "Précédent",
+    "verified": "Vérifié"
+  },
+  "home": {
+    "beta": "ce projet est en phase bêta",
+    "breadcrumb": "Recherche",
+    "title-orgs": "organisations",
+    "title-certs": "permis et licences",
+    "title": "Entreprises vérifiables de l'Ontario",
+    "message":
+      "Ce service vous permet de rechercher des enregistrements, des certificats, des licences ou des permis qu'une entreprise ontarienne peut avoir, et de vérifier l'authenticité de chacun d'entre eux à l'aide de la technologie du grand livre distribué (chaîne de blocs). Le service est actuellement offert en mode bêta, et tous les documents proviennent du Système d'enregistrement des entreprises de l'Ontario, le registre officiel des renseignements sur les entités commerciales et les organismes sans but lucratif de l'Ontario.",
+    "search-input": "Inscrire le nom commercial"
+  },
+  "issuer": {
+    "breadcrumb": "Service du délivreur",
+    "cred-types": "Types de titres de compétences",
+    "end-date": "Date de fin",
+    "start-date": "Date d'entrée en vigueur",
+    "website": "Site Web du délivreur:",
+    "email": "Adresse:"
+  },
+  "name": {
+    "doing-business-as": "Nom commercial enregistré par une société",
+    "legal-name": "Nom légal"
+  },
+  "not-found": {
+    "breadcrumb": "Non trouvé",
+    "title": "Page non trouvée",
+    "error": "Cette page n'a pas pu être localisée. Veuillez vérifier l'URL ou suivre le lien ci-dessous.",
+    "return-link-title": "Retour à la page d'accueil"
+  },
+  "person": {
+    "director": "Directeur"
+  },
+  "recipe": {
+    "breadcrumb": "Recette",
+    "cert-depends-on": "Dépend de",
+    "cert-view-link": "Voir le dossier",
+    "cert-not-found": "Certificat non trouvé",
+    "find-org-title": "Trouver votre organisation",
+    "org-view-link": "Voir le dossier de l'organisation",
+    "register-link": "Enregistrer votre organisation",
+    "title": "Recette"
+  },
+  "topic": {
+    "breadcrumb": "Renseignements sur l'organisation",
+    "return-link": "Retour aux renseignements sur l'organisation",  
+    "note": "Remarque:",
+    "disclaimer": "Les informations commerciales ci-dessus ne sont pas en temps réel et sont destinées à des fins d'information uniquement. Ceci ne remplace pas un rapport officiel du dossier public tenu par le ministère des Services gouvernementaux et des Services aux consommateurs. Pour savoir comment faire une recherche dans les dossiers publics,",
+    "click-here": "cliquez ici.",
+    "incorporation": "Incorporation",
+    "doing_business_as": "Nom commercial enregistré par une société"
+  },
+  "search": {
+    "by-name": "Recherche par nom",
+    "by-location": "Recherche par emplacement",
+    "no-results": "Aucun résultat",
+    "placeholder": "recherche",
+    "results-title": "Résultats de la recherche",
+    "return-link": "Retour à la recherche",
+    "results-error": "Votre requête n'a pas pu être complétée pour le moment.",
+    "title": "Trouver une organisation",
+    "records-prefix": "Des dossiers"
+  },
+  "business_type": {
+    "ONBIS_BUSINESS_TYPE_A": "Sociétés par actions de l'Ontario",
+    "ONBIS_BUSINESS_TYPE_B": "Sociétés sans cap-actions de l'Ontario",
+    "ONBIS_BUSINESS_TYPE_C": "Caisse populaire/Credit union", 
+    "ONBIS_BUSINESS_TYPE_D": "Société d'assurance",
+    "ONBIS_BUSINESS_TYPE_F": "Club social à cap-actions",
+    "ONBIS_BUSINESS_TYPE_G": "Club social sans cap-actions",
+    "ONBIS_BUSINESS_TYPE_H": "Coopérative sans cap-actions",
+    "ONBIS_BUSINESS_TYPE_J": "Coopérative à cap-actions",
+    "ONBIS_BUSINESS_TYPE_K": "Société étrangère extraprovinciale à cap-actions",
+    "ONBIS_BUSINESS_TYPE_L": "Non disponible",
+    "ONBIS_BUSINESS_TYPE_M": "Société de condominiums",
+    "ONBIS_BUSINESS_TYPE_P": "Société de prêt et de fiducie",
+    "ONBIS_BUSINESS_TYPE_R": "Société fédérale à cap-actions",
+    "ONBIS_BUSINESS_TYPE_S": "Société fédérale sans cap-actions",
+    "ONBIS_BUSINESS_TYPE_T": "Société d'assurance étrangère extraprovinciale",
+    "ONBIS_BUSINESS_TYPE_U": "Société étrangère extraprovinciale sans cap-actions",
+    "ONBIS_BUSINESS_TYPE_W": "Agence, conseil et commision",
+    "ONBIS_BUSINESS_TYPE_X": "Société extraprovinciale canadienne sans cap-actions",
+    "ONBIS_BUSINESS_TYPE_Y": "Société extraprovinciale canadienne à cap-actions",
+    "ONBIS_BUSINESS_TYPE_Z": "Non disponible",
+    "ONBIS_BUSINESS_TYPE_SP":	"Entreprise individuelle",
+    "ONBIS_BUSINESS_TYPE_GP":	"Société en nom collectif",
+    "ONBIS_BUSINESS_TYPE_AN":	"Nom commercial enregistré par une société",
+    "ONBIS_BUSINESS_TYPE_LP":	"Société en commandite",
+    "ONBIS_BUSINESS_TYPE_PN":	"Nom commercial de la société en commandite",
+    "ONBIS_BUSINESS_TYPE_OP":	"Société à responsabilité limitée de l'Ontario",
+    "ONBIS_BUSINESS_TYPE_EP":	"Société à responsabilité limitée extraprovinciale",
+    "ONBIS_BUSINESS_TYPE_CO":	"Compagnie à responsabilité limitée extraprovinciale"
+  },
+  "business_status": {
+    "ONBIS_BUSINESS_STATUS_A": "Annulation pour défaut de conformité à la Loi sur les valeurs mobilières de l'Ontario", 
+    "ONBIS_BUSINESS_STATUS_K": "Annulation - article 240 de la Loi sur les sociétés par actions ou 317 (1) de la Loi sur les personnes morales et  besoin d'une loi spéciale pour la reconstitution",
+    "ONBIS_BUSINESS_STATUS_B": "Annulation pour défaut de conformité à la Loi sur l'imposition des sociétés",
+    "ONBIS_BUSINESS_STATUS_U": "Annulation pour défaut de conformité à la loi fiscale du ministère des Finances",
+    "ONBIS_BUSINESS_STATUS_C": "Annulation pour défaut - article 241 de la Loi sur les sociétés par actions ou article 317 (9) de la Loi sur les personnes morales",
+    "ONBIS_BUSINESS_STATUS_F": "A fusionné",
+    "ONBIS_BUSINESS_STATUS_P": "Fin des activités en Ontario",
+    "ONBIS_BUSINESS_STATUS_N": "Cessation - Condominium",
+    "ONBIS_BUSINESS_STATUS_Y": "La société poursuit ses activités à l'extérieur de l'Ontario",
+    "ONBIS_BUSINESS_STATUS_M": "Dissoute",
+    "ONBIS_BUSINESS_STATUS_H": "Dissoute - Loi sur les sociétés coopératives",
+    "ONBIS_BUSINESS_STATUS_W": "Dissoute - Loi sur les caisses populaires et les credit unions",
+    "ONBIS_BUSINESS_STATUS_G": "Société extraprovinciale canadienne - n'exploite plus en Ontario",
+    "ONBIS_BUSINESS_STATUS_X":	"Société extraprovinciale - a été dissoute",
+    "ONBIS_BUSINESS_STATUS_E":	"Société extraprovinciale - n'exploite plus en Ontario",
+    "ONBIS_BUSINESS_STATUS_D":	"La société a été dissoute volontairement",
+    "ONBIS_BUSINESS_STATUS_V":	 "Liquidation (liquidateur)",
+    "ONBIS_BUSINESS_STATUS_Z":	"Retrait de l'enregistrement",
+    "ONBIS_BUSINESS_STATUS_L":	"Non disponible",
+    "ONBIS_BUSINESS_STATUS_I":	"Annulée",
+    "ONBIS_BUSINESS_STATUS_T":	"Non disponible",
+    "ONBIS_BUSINESS_STATUS_J":	"Dissolved Limited Partnership",
+    "ONBIS_BUSINESS_STATUS_R":	"Reconstitution",
+    "ONBIS_BUSINESS_STATUS_0":	"Active",
+    "ONBIS_BUSINESS_STATUS_6":	"Non disponible",
+    "ONBIS_BUSINESS_STATUS_7":	"Transférée en Ontario d'une autre compétence territoriale",
+    "ONBIS_BUSINESS_STATUS_3":	"En défaut - Loi sur les renseignements exigés des personnes morales",
+    "ONBIS_BUSINESS_STATUS_2":	"En défaut - Loi sur l'imposition des sociétés",
+    "ONBIS_BUSINESS_STATUS_1":	"En défaut - Loi sur les valeurs mobilières",
+    "ONBIS_BUSINESS_STATUS_5":	"En défaut - Loi sur les valeurs mobilières",
+    "ONBIS_BUSINESS_STATUS_ 4":	"Non disponible"
+  },
+  "MGCS": "Ministère des Services gouvernementaux et des Services aux consommateurs"
+
+}

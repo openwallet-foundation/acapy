@@ -1,0 +1,370 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "${NAME}-deployment-template",
+    "annotations": {
+      "description": "Deployment template for a Schema Spy instance.",
+      "tags": "schema-spy"
+    }
+  },
+  "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "labels": {
+          "app": "${NAME}",          
+          "app-group": "${APP_GROUP}"
+        }
+      },
+      "data": {
+        "password": "${SCHEMASPY_PASSWORD}",
+        "user": "${SCHEMASPY_USER}"
+      },
+      "type": "Opaque"
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "annotations": {
+          "description": "Exposes and load balances the application pods"
+        }
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "8080-tcp",
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ],
+        "selector": {
+          "name": "${NAME}"
+        }
+      }
+    },
+    {
+      "kind": "Route",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "labels": {
+          "app": "${NAME}",          
+          "app-group": "${APP_GROUP}"
+        }
+      },
+      "spec": {
+        "host": "${NAME}-${APPLICATION_DOMAIN}",
+        "tls": {
+          "insecureEdgeTerminationPolicy": "Redirect",
+          "termination": "edge"
+        },
+        "to": {
+          "kind": "Service",
+          "name": "${NAME}"
+        }
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "annotations": {
+          "description": "Defines how to deploy the container."
+        },
+        "labels": {
+          "app": "${NAME}",          
+          "app-group": "${APP_GROUP}"
+        }
+      },
+      "spec": {
+        "strategy": {
+          "type": "Rolling",
+          "rollingParams": {
+            "updatePeriodSeconds": 1,
+            "intervalSeconds": 1,
+            "timeoutSeconds": 600,
+            "maxUnavailable": "25%",
+            "maxSurge": "25%"
+          }
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          },
+          {
+            "type": "ImageChange",
+            "imageChangeParams": {
+              "automatic": true,
+              "containerNames": [
+                "${NAME}"
+              ],
+              "from": {
+                "kind": "ImageStreamTag",
+                "namespace": "${IMAGE_NAMESPACE}",
+                "name": "${NAME}:${TAG_NAME}"
+              }
+            }
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "${NAME}"
+        },
+        "template": {
+          "metadata": {
+            "name": "${NAME}",
+            "labels": {
+              "name": "${NAME}"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "${NAME}",
+                "image": " ",
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "DATABASE_SERVICE_NAME",
+                    "value": "${DATABASE_SERVICE_NAME}"
+                  },
+                  {
+                    "name": "POSTGRESQL_DATABASE",
+                    "value": "${DATABASE_NAME}"
+                  },
+                  {
+                    "name": "POSTGRESQL_USER",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "${DATABASE_DEPLOYMENT_NAME}",
+                        "key": "database-user"
+                      }
+                    }
+                  },
+                  {
+                    "name": "POSTGRESQL_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "${DATABASE_DEPLOYMENT_NAME}",
+                        "key": "database-password"
+                      }
+                    }
+                  },
+                  {
+                    "name": "SCHEMASPY_USER",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "${NAME}",
+                        "key": "user"
+                      }
+                    }
+                  },
+                  {
+                    "name": "SCHEMASPY_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "${NAME}",
+                        "key": "password"
+                      }
+                    }
+                  },
+                  {
+                    "name": "OUTPUT_PATH",
+                    "value": "${OUTPUT_PATH}"
+                  }
+                ],
+                "readinessProbe": {
+                  "timeoutSeconds": 30,
+                  "initialDelaySeconds": 3,
+                  "httpGet": {
+                    "path": "/health",
+                    "port": 8080
+                  }
+                },
+                "livenessProbe": {
+                  "timeoutSeconds": 30,
+                  "initialDelaySeconds": 300,
+                  "httpGet": {
+                    "path": "/health",
+                    "port": 8080
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "${CPU_REQUEST}",
+                    "memory": "${MEMORY_REQUEST}"
+                  },
+                  "limits": {
+                    "cpu": "${CPU_LIMIT}",
+                    "memory": "${MEMORY_LIMIT}"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "${NAME}-config-volume",
+                    "mountPath": "${CONFIG_MOUNT_PATH}${CONFIG_FILE_NAME}",
+                    "subPath": "${CONFIG_FILE_NAME}"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "${NAME}-config-volume",
+                "configMap": {
+                  "name": "${CONFIG_MAP_NAME}",
+                  "items": [
+                    {
+                      "key": "${CONFIG_FILE_NAME}",
+                      "path": "${CONFIG_FILE_NAME}"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "NAME",
+      "displayName": "Schema Spy Name",
+      "description": "The name assigned to all of the schema spy objects defined in this template.",
+      "required": true,
+      "value": "schema-spy"
+    },
+    {
+      "name": "APP_GROUP",
+      "displayName": "App Group",
+      "description": "The name assigned to all of the deployments in this project.",
+      "required": true,
+      "value": "tob"
+    },
+    {
+      "name": "IMAGE_NAMESPACE",
+      "displayName": "Image Namespace",
+      "required": true,
+      "description": "The namespace of the OpenShift project containing the imagestream for the application.",
+      "value": "devex-von-tools"
+    },
+    {
+      "name": "APPLICATION_DOMAIN",
+      "displayName": "Application Hostname",
+      "description": "The exposed hostname that will route to the Django service, if left blank a value will be defaulted.",
+      "value": ""
+    },
+    {
+      "name": "DATABASE_SERVICE_NAME",
+      "displayName": "Database Service Name",
+      "required": true,
+      "value": "postgresql"
+    },
+    {
+      "name": "DATABASE_NAME",
+      "displayName": "Database Name",
+      "required": true,
+      "description": "Name of the deployed database (see environment variables in deployed database).",
+      "value": "TheOrgBook_Database"
+    },
+    {
+      "name": "OUTPUT_PATH",
+      "displayName": "Output Path",
+      "required": true,
+      "description": "The SchemSpy output path.",
+      "value": "/var/www/html/doc"
+    },
+    {
+      "name": "SCHEMASPY_USER",
+      "displayName": "Username for the SchemaSpy Instance",
+      "description": "Username for the SchemaSpy Instance.  Needs to be basee64 encoded.",
+      "required": true,
+      "generate": "expression",
+      "from": "[a-zA-Z_][a-zA-Z0-9_]{10}"
+    },
+    {
+      "name": "SCHEMASPY_PASSWORD",
+      "displayName": "Password for the SchemaSpy Instance",
+      "description": "Password for the SchemaSpy Instance.  Needs to be basee64 encoded.",
+      "required": true,
+      "generate": "expression",
+      "from": "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+    },
+    {
+      "name": "TAG_NAME",
+      "displayName": "Environment TAG name",
+      "description": "The TAG name for this environment, e.g., dev, test, prod",
+      "value": "dev",
+      "required": true
+    },
+    {
+      "name": "DATABASE_DEPLOYMENT_NAME",
+      "displayName": "Database Deployment Name",
+      "description": "The name associated to the database deployment resources.  In particular, this is used to wrie up the credentials associated to the database.",
+      "required": true,
+      "value": "postgresql"
+    },
+    {
+      "name": "CONFIG_FILE_NAME",
+      "displayName": "Config File Name",
+      "description": "The name of the configuration file.",
+      "required": true,
+      "value": "Caddyfile"
+    },
+    {
+      "name": "CONFIG_MAP_NAME",
+      "displayName": "Config Map Name",
+      "description": "The name of the configuration map.",
+      "required": true,
+      "value": "caddy-conf"
+    },
+    {
+      "name": "CONFIG_MOUNT_PATH",
+      "displayName": "Config Mount Path",
+      "description": "The path to use to mount the config file.",
+      "required": true,
+      "value": "/etc/"
+    },
+    {
+      "name": "CPU_REQUEST",
+      "displayName": "Resources CPU Request",
+      "description": "The resources CPU request (in cores) for this build.",
+      "required": true,
+      "value": "0m"
+    },
+    {
+      "name": "CPU_LIMIT",
+      "displayName": "Resources CPU Limit",
+      "description": "The resources CPU limit (in cores) for this build.",
+      "required": true,
+      "value": "0m"
+    },
+    {
+      "name": "MEMORY_REQUEST",
+      "displayName": "Resources Memory Request",
+      "description": "The resources Memory request (in Mi, Gi, etc) for this build.",
+      "required": true,
+      "value": "0Mi"
+    },
+    {
+      "name": "MEMORY_LIMIT",
+      "displayName": "Resources Memory Limit",
+      "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
+      "required": true,
+      "value": "0Mi"
+    }
+  ]
+}

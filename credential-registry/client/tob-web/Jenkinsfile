@@ -1,0 +1,16 @@
+node {
+  if( triggerBuild(CONTEXT_DIRECTORY) ) {
+    load 'pipeline/config.groovy'
+
+    // load and run closure from pipeline file
+    node {
+      load 'pipeline/pipeline.groovy'
+    }()
+  }
+  else {
+    stage('No Changes') {
+      echo "No changes ..."
+      currentBuild.result = 'SUCCESS'
+    }
+  }
+}

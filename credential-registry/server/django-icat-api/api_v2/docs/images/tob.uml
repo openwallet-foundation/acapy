@@ -1,0 +1,134 @@
+@startuml
+
+entity "address" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  addressee
+  civic_address
+  city
+  province
+  postal_code
+  country
+  credential_id
+}
+
+entity "claim" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  name
+  value
+  credential_id
+}
+
+entity "contact" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  text
+  type
+  credential_id
+}
+
+entity "credential" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  start_date
+  end_date
+  credential_type_id
+}
+
+entity "credential_topics" {
+  + id [PK]
+  --
+  credential_id
+  topic_id
+}
+
+entity "credential_type" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  description
+  processor_config
+  issuer_id
+  schema_id
+}
+
+entity "issuer" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  did
+  name
+  abbreviation
+  email
+  url
+}
+
+entity "name" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  text
+  language
+  credential_id
+}
+
+entity "person" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  full_name
+  credential_id
+}
+
+entity "schema" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  name
+  version
+  origin_did
+}
+
+entity "topic" {
+  + id [PK]
+  --
+  create_timestamp
+  update_timestamp
+  source_id
+  type
+}
+
+ address }-- credential
+
+ claim }-- credential
+
+ contact }-- credential
+
+ credential }-- credential_type
+
+ credential_topics }-- credential
+
+ credential_topics }-- topic
+
+ credential_type }-- issuer
+
+ credential_type }-- schema
+
+ name }-- credential
+
+ person }-- credential
+@enduml

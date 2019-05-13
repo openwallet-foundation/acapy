@@ -1,0 +1,15 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-solr
+# Template File: templates/solr-deploy.json
+#=========================================================
+# NAME=solr
+# IMAGE_NAMESPACE=ontvon-von-tools
+TAG_NAME=prod
+PERSISTENT_VOLUME_SIZE=12Gi
+# MOUNT_PATH=/opt/solr/server/solr/mycores
+# CORE_NAME=the_org_book
+# CPU_REQUEST=0
+# CPU_LIMIT=0
+# MEMORY_REQUEST=0Mi
+# MEMORY_LIMIT=0Mi

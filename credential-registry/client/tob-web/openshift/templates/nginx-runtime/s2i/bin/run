@@ -1,0 +1,192 @@
+#!/bin/bash
+
+getApiProxyConfigSection (){
+# ================================================================================
+# Generate the /api proxy configuration section.
+#
+# Assumes there is a default for API_URL
+# --------------------------------------------------------------------------------
+# API_URL:
+#  - The URL for the API endpoint.
+# ================================================================================
+read -r -d '' _FORWARDED_HEADERS << EOF
+            proxy_set_header X-Forwarded-Host \$host:\$proxy_port;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$proxy_scheme;
+            proxy_pass_request_headers on;
+            proxy_pass_header Authorization;
+EOF
+
+read -r -d '' _CONFIG_SECTION << EOF
+        # proxy requests to the API
+        location /api/indy/ {
+            proxy_pass ${1}indy/;
+        }
+        location /api/static/ {
+            ${_FORWARDED_HEADERS}
+            proxy_pass ${1%v2/}static/;
+        }
+        location /api/ {
+            limit_except OPTIONS {
+                ${HTTP_BASIC}
+            }
+            proxy_set_header Authorization "";
+            ${_FORWARDED_HEADERS}
+            proxy_pass ${1};
+        }
+        location /api/v2/ {
+            limit_except OPTIONS {
+                ${HTTP_BASIC}
+            }
+            proxy_set_header Authorization "";
+            ${_FORWARDED_HEADERS}
+            proxy_pass ${1};
+        }
+        location = /api/v2/ {
+            # allow access to swagger
+            proxy_set_header Authorization "";
+            ${_FORWARDED_HEADERS}
+            proxy_pass ${1};
+        }
+        location /hooks/ {
+            limit_except OPTIONS {
+                ${HTTP_BASIC}
+            }
+            #proxy_set_header Authorization "";
+            ${_FORWARDED_HEADERS}
+            proxy_pass ${1%api/v2/}hooks/;
+        }
+        location = /hooks/ {
+            # allow access to swagger
+            #proxy_set_header Authorization "";
+            ${_FORWARDED_HEADERS}
+            proxy_pass ${1%api/v2/}hooks/;
+        }
+EOF
+
+echo "${_CONFIG_SECTION}"
+}
+
+getApiUrl (){
+  # ================================================================================
+  # Extract the API URL from the container's environment variables based on
+  # OpenShift service conventions.
+  # --------------------------------------------------------------------------------
+  # API_URL:
+  #  - The default URL for the API endpoint.
+  #  - Used in the case API_SERVICE_NAME or one of the related service resource
+  #    variables is not defined.
+  #
+  # API_SERVICE_NAME:
+  #  - The name of the service endpoint for the API.
+  #  - For example; django
+  #
+  # API_PATH:
+  #  - The root path for the API.
+  #  - For example /api/v2/
+  # --------------------------------------------------------------------------------
+  # Examples:
+  #
+  # 1)
+  #   API_URL=https://dev-demo-api.orgbook.gov.bc.ca/api/v2/
+  #   API_SERVICE_NAME=django
+  #   DJANGO_SERVICE_HOST=172.50.105.217
+  #   DJANGO_SERVICE_PORT=8080
+  #   API_PATH=/api/v2/
+  #
+  #   Results in API_URL=http://172.50.105.217:8080/api/v2/
+  #
+  # 2)
+  #   API_URL=https://dev-demo-api.orgbook.gov.bc.ca/api/v2/
+  #   API_SERVICE_NAME=django
+  #   DJANGO_SERVICE_HOST=172.50.105.217
+  #   API_PATH=/api/v2/
+  #
+  #   Results in API_URL=http://172.50.105.217/api/v2/
+  #
+  # 3)
+  #   If either API_SERVICE_NAME or *_SERVICE_HOST are not defined...
+  #
+  #   API_URL=https://dev-demo-api.orgbook.gov.bc.ca/api/v2/
+  #
+  #   Results in API_URL=https://dev-demo-api.orgbook.gov.bc.ca/api/v2/
+  # ================================================================================
+  if [ ! -z "${API_SERVICE_NAME}" ]; then
+    _SERVICE_NAME="$(tr '[:lower:]' '[:upper:]' <<< ${API_SERVICE_NAME/-/_})"
+    _SERVICE_HOST_NAME=${_SERVICE_NAME}_SERVICE_HOST
+    _SERVICE_PORT_NAME=${_SERVICE_NAME}_SERVICE_PORT
+
+    if [ ! -z "${!_SERVICE_HOST_NAME}" ]; then
+      if [ ! -z "${!_SERVICE_PORT_NAME}" ]; then
+        API_URL="http://${!_SERVICE_HOST_NAME}:${!_SERVICE_PORT_NAME}${API_PATH}"
+      else
+        API_URL="http://${!_SERVICE_HOST_NAME}${API_PATH}"
+      fi
+    fi
+  fi
+
+  echo ${API_URL}
+}
+
+getRemoveBaseHref() {
+  # If we are nested under a subpath, remove the subpath before processing URLs
+  # Base href must have a leading and trailing slash
+  BASE="$1"
+  if [ ! -z "${BASE}" ] && [ "${BASE}" != "/" ]; then
+    echo "rewrite ^${BASE}(.*)\$ /\$1 last;"
+  fi
+}
+
+if [ -n "$HTTP_BASIC_USERNAME" ] && [ -n "$HTTP_BASIC_PASSWORD" ]; then
+    echo "---> Generating .htpasswd file"
+    `echo "$HTTP_BASIC_USERNAME:$(openssl passwd -crypt $HTTP_BASIC_PASSWORD)" > /tmp/.htpasswd`
+    if [ -z "${HTTP_BASIC+test}" ] || [ "on" == "${HTTP_BASIC}" ] || [ "1" == "${HTTP_BASIC}" ]; then
+      HTTP_BASIC="auth_basic 'restricted';"
+    elif [ "0" == "${HTTP_BASIC}" ] || [ "off" == "${HTTP_BASIC}" ]; then
+      HTTP_BASIC=""
+    fi
+fi
+
+export RealIpFrom="${RealIpFrom:-172.51.0.0/16}"
+export WEB_BASE_HREF="${WEB_BASE_HREF:-/}"
+export REMOVE_BASE_HREF=$(getRemoveBaseHref ${WEB_BASE_HREF})
+export API_URL=$(getApiUrl)
+if [ ! -z "${API_URL}" ]; then
+	# ================================================================================
+	# If an API_URL is defined, generate an /api proxy configuration section and
+	# escape it so sed can digest it and process it properly.
+	# Otherwise leave things undefined so the placeholder in the template gets
+	# replaced with a blank string.
+	# ================================================================================
+	API_CONFIG_SECTION=$(getApiProxyConfigSection "${API_URL}")
+	API_CONFIG_SECTION="$(echo "${API_CONFIG_SECTION}" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/\$/\\$/g')"
+fi
+
+makeReplacementPattern() {
+  # Generate a replacement pattern for sed in order to replace our variables in
+  # the nginx configuration template
+  REPLACE=""
+  for VAR in $@; do
+    REPLACE+="s~%${VAR}%~${!VAR}~g; "
+  done
+  echo "${REPLACE}"
+}
+
+echo "---> Replacing Configuration ..."
+echo "Setting:"
+echo "RealIpFrom = ${RealIpFrom}"
+echo "IpFilterRules = ${IpFilterRules}"
+echo "AdditionalRealIpFromRules = ${AdditionalRealIpFromRules}"
+echo "API_URL = ${API_URL}"
+echo "HTTP_BASIC = ${HTTP_BASIC}"
+echo "WEB_BASE_HREF = ${WEB_BASE_HREF}"
+
+REPLACE_VARS="
+  RealIpFrom IpFilterRules AdditionalRealIpFromRules
+  HTTP_BASIC WEB_BASE_HREF REMOVE_BASE_HREF API_CONFIG_SECTION
+"
+
+sed "$(makeReplacementPattern $REPLACE_VARS)" /tmp/nginx.conf.template > /etc/nginx/nginx.conf
+
+echo "---> Starting nginx ..."
+/usr/sbin/nginx -g "daemon off;"
