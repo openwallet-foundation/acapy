@@ -19,4 +19,4 @@ RUN pip3 install --no-cache-dir \
 
 ADD . .
 
-CMD [ "pytest" ]
+ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]

@@ -4,4 +4,4 @@ cd $(dirname $0)
 
 docker build -t indy-cat-test -f ../docker/Dockerfile.test-indy .. || exit 1
 
-docker run --rm -ti --name indy-cat-runner indy-cat-test
+docker run --rm -ti --name indy-cat-runner indy-cat-test "$@"
