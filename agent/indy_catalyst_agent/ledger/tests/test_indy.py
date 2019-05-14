@@ -173,3 +173,67 @@ class TestIndyLedger(AsyncTestCase):
                 await ledger._submit("{}", False)
             assert "Ledger rejected transaction request" in str(context.exception)
 
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("indy.anoncreds.issuer_create_schema")
+    @async_mock.patch("indy.ledger.build_schema_request")
+    async def test_send_schema(
+        self,
+        mock_build_schema_req,
+        mock_create_schema,
+        mock_submit,
+        mock_aexit,
+        mock_aenter,
+    ):
+        mock_did = async_mock.MagicMock()
+
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.get_public_did.return_value = mock_did
+
+        ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
+
+        async with ledger:
+            schema_id = await ledger.send_schema(
+                "schema_name", "schema_version", [1, 2, 3]
+            )
+
+            mock_wallet.get_public_did.assert_called_once_with()
+            mock_create_schema.assert_called_once_with(
+                mock_did.did, "schema_name", "schema_version", json.dumps([1, 2, 3])
+            )
+
+            mock_build_schema_req.assert_called_once_with(
+                mock_did.did, mock_create_schema.return_value[1]
+            )
+
+            mock_submit.assert_called_once_with(mock_build_schema_req.return_value)
+
+            assert schema_id == mock_create_schema.return_value[0]
+
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("indy.anoncreds.issuer_create_schema")
+    @async_mock.patch("indy.ledger.build_schema_request")
+    async def test_send_schema_already_exists(
+        self,
+        mock_build_schema_req,
+        mock_create_schema,
+        mock_submit,
+        mock_aexit,
+        mock_aenter,
+    ):
+        mock_did = async_mock.MagicMock()
+
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.get_public_did.return_value = mock_did
+
+        mock_submit.side_effect = LedgerTransactionError()
+
+        ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
+
+        async with ledger:
+            schema_id = await ledger.send_schema("schema_name", "schema_version", [1, 2, 3])
+            assert schema_id == f"{mock_did.did}:{2}:schema_name:schema_version"
+            
