@@ -234,6 +234,41 @@ class TestIndyLedger(AsyncTestCase):
         ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
 
         async with ledger:
-            schema_id = await ledger.send_schema("schema_name", "schema_version", [1, 2, 3])
+            schema_id = await ledger.send_schema(
+                "schema_name", "schema_version", [1, 2, 3]
+            )
             assert schema_id == f"{mock_did.did}:{2}:schema_name:schema_version"
-            
+
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("indy.anoncreds.issuer_create_schema")
+    @async_mock.patch("indy.ledger.build_get_schema_request")
+    @async_mock.patch("indy.ledger.parse_get_schema_response")
+    async def test_get_schema(
+        self,
+        mock_parse_get_schema_req,
+        mock_build_get_schema_req,
+        mock_create_schema,
+        mock_submit,
+        mock_aexit,
+        mock_aenter,
+    ):
+        mock_did = async_mock.MagicMock()
+
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.get_public_did.return_value = mock_did
+
+        mock_parse_get_schema_req.return_value = (None, "{}")
+
+        ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
+
+        async with ledger:
+            response = await ledger.get_schema("schema_id")
+
+            mock_wallet.get_public_did.assert_called_once_with()
+            mock_build_get_schema_req.assert_called_once_with(mock_did.did, "schema_id")
+            mock_submit.assert_called_once_with(mock_build_get_schema_req.return_value)
+            mock_parse_get_schema_req.assert_called_once_with(mock_submit.return_value)
+
+            assert response == json.loads(mock_parse_get_schema_req.return_value[1])
