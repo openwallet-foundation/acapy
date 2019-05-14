@@ -41,8 +41,8 @@ class Injector(BaseInjector):
 
     def clear_binding(self, base_cls: type):
         """Remove a previously-added binding."""
-        if base_cls in self._bindings:
-            del self._bindings[base_cls]
+        if base_cls in self._providers:
+            del self._providers[base_cls]
 
     def get_provider(self, base_cls: type):
         """Find the provider associated with a class binding."""
@@ -74,9 +74,16 @@ class Injector(BaseInjector):
             result = await provider.provide(ext_settings, self)
         else:
             result = None
-        if required and not result:
+        if result is None:
+            if required:
+                raise InjectorError(
+                    "No instance provided for class: {}".format(base_cls.__name__)
+                )
+        elif not isinstance(result, base_cls):
             raise InjectorError(
-                "No instance provided for class: {}".format(base_cls.__name__)
+                "Provided instance does not implement the base class: {}".format(
+                    base_cls.__name__
+                )
             )
         return result
 

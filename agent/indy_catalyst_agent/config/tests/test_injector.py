@@ -62,12 +62,24 @@ class TestInjector(AsyncTestCase):
         assert mock_provider.settings[self.test_key] == override_settings[self.test_key]
         assert mock_provider.injector is self.test_instance
 
+    async def test_bad_provider(self):
+        """Test empty and invalid provider results."""
+        self.test_instance.bind_provider(str, MockProvider(None))
+        with self.assertRaises(InjectorError):
+            await self.test_instance.inject(str)
+        await self.test_instance.inject(str, required=False)
+        self.test_instance.bind_provider(str, MockProvider(1))
+        self.test_instance.clear_binding(str)
+        assert self.test_instance.get_provider(str) is None
+        with self.assertRaises(InjectorError):
+            await self.test_instance.inject(str)
+
     async def test_inject_class(self):
         """Test a provider class injection."""
         provider = ClassProvider(MockInstance, self.test_value, async_init="open")
-        self.test_instance.bind_provider(str, provider)
-        assert self.test_instance.get_provider(str) is provider
-        instance = await self.test_instance.inject(str)
+        self.test_instance.bind_provider(MockInstance, provider)
+        assert self.test_instance.get_provider(MockInstance) is provider
+        instance = await self.test_instance.inject(MockInstance)
         assert isinstance(instance, MockInstance)
         assert instance.value is self.test_value
         assert instance.opened
@@ -102,14 +114,14 @@ class TestInjector(AsyncTestCase):
             CachedProvider(None)
         provider = ClassProvider(MockInstance, self.test_value, async_init="open")
         cached = CachedProvider(provider)
-        self.test_instance.bind_provider(str, cached)
-        assert self.test_instance.get_provider(str) is cached
-        i1 = await self.test_instance.inject(str)
-        i2 = await self.test_instance.inject(str)
+        self.test_instance.bind_provider(MockInstance, cached)
+        assert self.test_instance.get_provider(MockInstance) is cached
+        i1 = await self.test_instance.inject(MockInstance)
+        i2 = await self.test_instance.inject(MockInstance)
         assert i1 is i2
 
         provider = ClassProvider(MockInstance, self.test_value, async_init="open")
-        self.test_instance.bind_provider(str, provider, cache=True)
-        i1 = await self.test_instance.inject(str)
-        i2 = await self.test_instance.inject(str)
+        self.test_instance.bind_provider(MockInstance, provider, cache=True)
+        i1 = await self.test_instance.inject(MockInstance)
+        i2 = await self.test_instance.inject(MockInstance)
         assert i1 is i2
