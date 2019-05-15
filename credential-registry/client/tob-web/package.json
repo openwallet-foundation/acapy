@@ -32,7 +32,7 @@
     "@ng-bootstrap/ng-bootstrap": "^3.0.0",
     "@ngx-translate/core": "^10.0.0",
     "@ngx-translate/http-loader": "^3.0.0",
-    "bootstrap": "~4.1.0",
+    "bootstrap": "~4.3.1",
     "compare-versions": "~3.1.0",
     "core-js": "~2.5.4",
     "font-awesome": "^4.7.0",
@@ -43,7 +43,7 @@
     "zone.js": "^0.8.26"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "~0.6.8",
+    "@angular-devkit/build-angular": "^0.13.9",
     "@angular-devkit/build-optimizer": "~0.6.8",
     "@angular/cli": "^6.2.0",
     "@angular/compiler-cli": "^7.2.6",
