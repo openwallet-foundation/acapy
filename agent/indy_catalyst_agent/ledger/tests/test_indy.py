@@ -272,3 +272,35 @@ class TestIndyLedger(AsyncTestCase):
             mock_parse_get_schema_req.assert_called_once_with(mock_submit.return_value)
 
             assert response == json.loads(mock_parse_get_schema_req.return_value[1])
+
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.get_schema")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
+    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("indy.anoncreds.issuer_create_schema")
+    @async_mock.patch("indy.ledger.build_schema_request")
+    async def test_send_credential_definition(
+        self,
+        mock_build_schema_req,
+        mock_create_schema,
+        mock_submit,
+        mock_aexit,
+        mock_aenter,
+        mock_get_schema,
+    ):
+        mock_did = async_mock.MagicMock()
+
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.get_public_did.return_value = mock_did
+
+        mock_get_schema.return_value = "{}"
+
+        ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
+
+        async with ledger:
+            credential_definition_id = await ledger.get_schema("schema_id", "tag")
+
+            mock_wallet.get_public_did.assert_called_once_with()
+            mock_get_schema.assert_called_once_with(mock_wallet.get_public_did.return_value)
+
+            
