@@ -62,7 +62,9 @@ class CredentialManager:
 
         """
         issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-        credential_offer = issuer.create_credential_offer(credential_definition_id)
+        credential_offer = await issuer.create_credential_offer(
+            credential_definition_id
+        )
 
         credential_offer_message = CredentialOffer(
             offer_json=json.dumps(credential_offer)
