@@ -48,6 +48,7 @@ class Conductor:
     STORAGE_TYPES = {
         "basic": "indy_catalyst_agent.storage.basic.BasicStorage",
         "indy": "indy_catalyst_agent.storage.indy.IndyStorage",
+        "postgres_storage": "indy_catalyst_agent.storage.indy.IndyStorage",
     }
     WALLET_TYPES = {
         "basic": "indy_catalyst_agent.wallet.basic.BasicWallet",
@@ -96,6 +97,10 @@ class Conductor:
         wallet_type = self.settings.get("wallet.type", "basic").lower()
         wallet_class = self.WALLET_TYPES.get(wallet_type, wallet_type)
 
+        storage_default_type = "indy" if wallet_type == "indy" else "basic"
+        storage_type = self.settings.get("storage.type", storage_default_type).lower()
+        storage_class = self.STORAGE_TYPES.get(storage_type, storage_type)
+
         self.logger.info(wallet_type)
 
         wallet_cfg = {}
@@ -103,6 +108,13 @@ class Conductor:
             wallet_cfg["key"] = self.settings["wallet.key"]
         if "wallet.name" in self.settings:
             wallet_cfg["name"] = self.settings["wallet.name"]
+        if "storage.type" in self.settings:
+            wallet_cfg["storage_type"] = self.settings["storage.type"]
+        # storage.config and storage.creds are required if using postgres plugin
+        if "storage.config" in self.settings:
+            wallet_cfg["storage_config"] = self.settings["storage.config"]
+        if "storage.creds" in self.settings:
+            wallet_cfg["storage_creds"] = self.settings["storage.creds"]
         context.wallet = ClassLoader.load_class(wallet_class)(wallet_cfg)
         await context.wallet.open()
 
@@ -137,9 +149,6 @@ class Conductor:
         # TODO: Load holder implementation from command line args
         context.verifier = IndyVerifier(context.wallet)
 
-        storage_default_type = "indy" if wallet_type == "indy" else "basic"
-        storage_type = self.settings.get("storage.type", storage_default_type).lower()
-        storage_class = self.STORAGE_TYPES.get(storage_type, storage_type)
         context.storage = ClassLoader.load_class(storage_class)(context.wallet)
 
         self.context = context

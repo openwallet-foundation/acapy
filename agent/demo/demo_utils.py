@@ -82,6 +82,10 @@ def background_hook_thread(urls, g_vars):
 
 
 ####################################################
+# postgres wallet stuff
+####################################################
+
+####################################################
 # run indy-cat agent as a sub-process
 ####################################################
 s_print_lock = threading.Lock()
@@ -101,8 +105,19 @@ def stderr_reader(proc):
         s_print('got line: {0}'.format(line.decode('utf-8')), end='')
         pass
 
-def start_agent_subprocess(genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
-                            wallet_type, wallet_name, wallet_key, python_path, webhook_url):
+def write_agent_startup_script(agent_name, agent_args):
+    cmd = ""
+    for arg in agent_args:
+        if '{' in arg:
+            cmd = cmd + "'" + arg + "' "
+        else:
+            cmd = cmd + arg + " "
+    file2 = open(agent_name,"w+") 
+    file2.write(cmd)
+    file2.close()
+
+def start_agent_subprocess(agent_name, genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
+                            wallet_type, wallet_name, wallet_key, python_path, webhook_url, run_subprocess=True):
     my_env = os.environ.copy()
     my_env["PYTHONPATH"] = python_path
 
@@ -111,29 +126,43 @@ def start_agent_subprocess(genesis, seed, endpoint_url, in_port_1, in_port_2, in
     print("Webhook url is at", my_env["WEBHOOK_URL"])
 
     # start agent sub-process
-    agent_proc = subprocess.Popen(['python3', '../scripts/icatagent', 
-                            '--inbound-transport', 'http', '0.0.0.0', str(in_port_1), 
-                            '--inbound-transport', 'http', '0.0.0.0', str(in_port_2), 
-                            '--inbound-transport', 'ws', '0.0.0.0', str(in_port_3),
-                            '--endpoint', endpoint_url,
-                            '--outbound-transport', 'ws', 
-                            '--outbound-transport', 'http', 
-                            '--genesis-transactions', genesis,
-                            '--auto-respond-messages',
-                            '--accept-invites', '--accept-requests',
-                            '--wallet-type', wallet_type,
-                            '--wallet-name', wallet_name,
-                            '--wallet-key', wallet_key,
-                            '--seed', seed,
-                            '--admin', '0.0.0.0', str(admin_port)],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            env=my_env)
-    time.sleep(0.5)
-    t1 = threading.Thread(target=output_reader, args=(agent_proc,))
-    t1.start()
-    t2 = threading.Thread(target=stderr_reader, args=(agent_proc,))
-    t2.start()
+    agent_args = ['python3', '../scripts/icatagent', 
+            '--inbound-transport', 'http', '0.0.0.0', str(in_port_1), 
+            '--inbound-transport', 'http', '0.0.0.0', str(in_port_2), 
+            '--inbound-transport', 'ws', '0.0.0.0', str(in_port_3),
+            '--endpoint', endpoint_url,
+            '--outbound-transport', 'ws', 
+            '--outbound-transport', 'http', 
+            '--genesis-transactions', genesis,
+            '--auto-respond-messages',
+            '--accept-invites', '--accept-requests',
+            '--wallet-type', wallet_type,
+            '--wallet-name', wallet_name,
+            '--wallet-key', wallet_key,
+            '--storage-type', 'postgres_storage',
+            '--storage-config', '{"url":"localhost:5432"}', 
+            '--storage-creds',  '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}', 
+            '--seed', seed,
+            '--admin', '0.0.0.0', str(admin_port)]
 
-    return (agent_proc, t1, t2)
+    # what are we doing?  write out to a command file
+    write_agent_startup_script(agent_name + ".sh", agent_args)
+
+    if run_subprocess:
+        # now startup our sub-process
+        agent_proc = subprocess.Popen(agent_args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=my_env)
+        time.sleep(0.5)
+        t1 = threading.Thread(target=output_reader, args=(agent_proc,))
+        t1.start()
+        t2 = threading.Thread(target=stderr_reader, args=(agent_proc,))
+        t2.start()
+        return (agent_proc, t1, t2)
+    else:
+        # pause and tell user to manually run script
+        print("Please run PYTHONPATH=.. ./" + agent_name + ".sh and then hit <enter> to continue")
+        option = input("Do it!")
+        return (None, None, None)
 

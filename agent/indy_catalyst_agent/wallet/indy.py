@@ -29,7 +29,8 @@ class IndyWallet(BaseWallet):
         Initialize a `IndyWallet` instance.
 
         Args:
-            config: {name, key, seed, did, auto-create, auto-remove}
+            config: {name, key, seed, did, auto-create, auto-remove,
+                     storage_type, storage_config, storage_creds}
 
         """
         self.logger = logging.getLogger(__name__)
@@ -44,6 +45,8 @@ class IndyWallet(BaseWallet):
         self._key = config.get("key") or self.DEFAULT_KEY
         self._name = config.get("name") or self.DEFAULT_NAME
         self._storage_type = config.get("storage_type") or self.DEFAULT_STORAGE_TYPE
+        self._storage_config = config.get("storage_config", None)
+        self._storage_creds = config.get("storage_creds", None)
         self._master_secret_id = None
 
     @property
@@ -99,11 +102,15 @@ class IndyWallet(BaseWallet):
             The wallet config
 
         """
-        return {
+        ret = {
             "id": self._name,
             "freshness_time": self._freshness_time,
             "storage_type": self._storage_type,
+            # storage_config
         }
+        if self._storage_config is not None:
+            ret["storage_config"] = json.loads(self._storage_config)
+        return ret
 
     @property
     def _wallet_access(self) -> dict:
@@ -114,11 +121,14 @@ class IndyWallet(BaseWallet):
             The wallet access
 
         """
-        return {
+        ret = {
             "key": self._key,
             # key_derivation_method
             # storage_credentials
         }
+        if self._storage_creds is not None:
+            ret["storage_credentials"] = json.loads(self._storage_creds)
+        return ret
 
     async def create(self, replace: bool = False):
         """

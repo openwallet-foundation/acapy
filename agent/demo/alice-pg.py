@@ -93,6 +93,7 @@ def main():
     # TODO genesis transactions from file or url
     with open('local-genesis.txt', 'r') as genesis_file:
         genesis = genesis_file.read()
+    #genesis = genesis.replace("\n", " ")
     #print(genesis)
 
     # TODO seed from input parameter; optionally register the DID
@@ -123,8 +124,8 @@ def main():
     wallet_key  = 'alice'+rand_name
     python_path = ".."
     webhook_url = "http://localhost:" + str(webhook_port) + "/webhooks"
-    (agent_proc, t1, t2) =  start_agent_subprocess(genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
-                                            'indy', wallet_name, wallet_key, python_path, webhook_url)
+    (agent_proc, t1, t2) =  start_agent_subprocess('alice', genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
+                                            'indy', wallet_name, wallet_key, python_path, webhook_url, run_subprocess=True)
     time.sleep(3.0)
     print("Admin url is at:", admin_url)
     print("Endpoint url is at:", endpoint_url)
@@ -158,13 +159,14 @@ def main():
     except Exception as e:
         print(e)
     finally:
-        time.sleep(2.0)
-        agent_proc.terminate()
-        try:
-            agent_proc.wait(timeout=0.5)
-            print('== subprocess exited with rc =', agent_proc.returncode)
-        except subprocess.TimeoutExpired:
-            print('subprocess did not terminate in time')
+        if agent_proc:
+            time.sleep(2.0)
+            agent_proc.terminate()
+            try:
+                agent_proc.wait(timeout=0.5)
+                print('== subprocess exited with rc =', agent_proc.returncode)
+            except subprocess.TimeoutExpired:
+                print('subprocess did not terminate in time')
         sys.exit()
 
 if __name__ == "__main__":
