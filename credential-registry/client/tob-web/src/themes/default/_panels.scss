@@ -1,0 +1,61 @@
+@import "./common";
+
+$well-border-color: $table-border-color;
+
+.well {
+  border: 1px solid $well-border-color;
+  border-radius: 8px;
+  padding: 2em;
+  word-wrap: break-word;
+  box-shadow: inset 0 0 1.8em rgba(0, 0, 0, 0.2);
+}
+
+.well-title {
+  margin-top: 0;
+}
+
+$creds-panel-header-bg: rgba(0, 0, 0, 0.1);
+$creds-panel-header-border-color: $card-border-color;
+
+.creds-panel {
+  // border: 1px solid $creds-panel-border-color;
+  // border-radius: 8px;
+  display: flex;
+  flex-flow: column nowrap;
+  max-height: 40em;
+  overflow: hidden;
+  .filters {
+    background: $creds-panel-header-bg;
+  }
+  .columns {
+    background: $creds-panel-header-bg;
+    border-bottom: 3px double $creds-panel-header-border-color;
+    a {
+      border-bottom: 1px solid #999;
+      color: #555;
+      text-decoration: none;
+    }
+  }
+  > .card-body {
+    overflow: auto;
+    padding-bottom: 0;
+    padding-top: 0;
+    word-wrap: break-word;
+    .loading {
+      padding: 0.5em 0;
+    }
+  }
+}
+
+.name-panel {
+  > .panel-heading {
+    .name-meta {
+      align-self: flex-end;
+      flex: 0 0 25em;
+      font-size: 75%;
+    }
+  }
+  > .panel-body {
+    word-wrap: break-word;
+  }
+}

@@ -1,0 +1,68 @@
+.cred-row {
+  padding-bottom: 0.5em;
+  padding-top: 0.5em;
+  padding-left: 0.5em;
+  .cred-link {
+      margin-left: 0em;
+      &::before {
+        padding-right: 0em;
+      }
+      &.location {
+        content: "";
+      }
+      &.name::before {
+        content: "";
+      }
+  }
+  .cred-info{
+    //margin-left: 0em;
+    //padding-left: 0px;
+  }
+  .cred-address {
+    float: right;
+    //padding-right: 0.3em;
+  }
+}
+
+.claim-info {
+  float: left;
+  padding-left: 0px;
+  padding-right: 0em;
+  &::before {
+    padding-right: 0em;
+  }
+  &.location::before {
+    content: "";
+  }
+  &.date::before {
+    content: "";
+  }
+}
+.disclaimer {
+  margin-top: 25px;
+  font-size: 12px;
+}
+
+.disclaimer-cred{
+  padding: 15px;
+}
+.cred {
+  max-width: 30%;
+}
+
+.btn-verify{
+  vertical-align: baseline;
+  margin-top: 15px;
+}
+
+.header-link {
+  color: white;
+}
+
+.panel-success > .panel-body {
+  color: #3c763d;
+}
+
+.form-group {
+  margin-bottom: 0px;
+}

@@ -1,0 +1,15 @@
+<ng-container *ngIf="record; else ifBlank" [ngSwitch]="format">
+  <span *ngSwitchCase="'category'">{{categoryValue | async}}</span>
+  <span *ngSwitchCase="'contact'" class="claim-info contact">{{record.value}}</span>
+  <span *ngSwitchCase="'date'" class="claim-info date">{{record.value | dateFormat: 'effectiveDate' : record.timezone}}</span>
+  <span *ngSwitchCase="'datetime'" class="claim-info date">{{record.value | dateFormat: 'effectiveDateTime'}}</span>
+  <span *ngSwitchCase="'id'" class="text-identifier">{{record.value}}</span>
+  <span *ngSwitchCase="'jurisdiction'" class="claim-info location">{{jurisdictionValue | async}}</span>
+  <span *ngSwitchCase="'location'" class="claim-info location">{{record.value}}</span>
+  <span *ngSwitchCase="'number'" class="text-number">{{numberValue}}</span>
+  <span *ngSwitchCase="'person'" class="claim-info person">{{record.value}}</span>
+  <span *ngSwitchDefault>{{record.value}}</span>
+</ng-container>
+<ng-template #ifBlank>
+  {{'cred.empty-attribute' | translate}}
+</ng-template>

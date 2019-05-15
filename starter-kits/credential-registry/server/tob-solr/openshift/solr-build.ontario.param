@@ -1,0 +1,13 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-solr
+# Template File: templates/solr-build.json
+#=========================================================
+NAME=solr
+GIT_REPO_URL=https://github.com/bcgov/TheOrgBook.git
+GIT_REF=master
+SOURCE_CONTEXT_DIR=tob-solr/cores
+SOURCE_IMAGE_NAME=solr-base
+SOURCE_IMAGE_TAG=latest
+SOURCE_IMAGE_NAMESPACE=ontvon-von-tools
+OUTPUT_IMAGE_TAG=latest

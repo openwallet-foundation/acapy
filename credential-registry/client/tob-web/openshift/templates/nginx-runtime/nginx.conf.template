@@ -1,0 +1,125 @@
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  4096;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    server_tokens off;
+
+    # ip filtering
+    %IpFilterRules%
+
+    # logging rules
+    geo $loggable {
+        default 1;
+        %RealIpFrom% 0;
+    }
+
+    # Use a w3c standard log format
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for" '
+                      'rt=$request_time urt=$upstream_response_time $pipe';
+
+    access_log  /var/log/nginx/access.log  main if=$loggable;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    #real_ip module
+    set_real_ip_from %RealIpFrom%;
+    %AdditionalRealIpFromRules%
+    real_ip_recursive on;
+    real_ip_header    X-Forwarded-For;
+
+    #throttle zones
+    limit_req_zone $binary_remote_addr zone=bra1:10m rate=1r/s;
+    limit_req_zone $binary_remote_addr zone=bra3:10m rate=3r/s;
+    limit_req_zone $binary_remote_addr zone=bra5:10m rate=5r/s;
+    limit_req_zone $binary_remote_addr zone=bra25:10m rate=25r/s;
+    limit_req_zone $binary_remote_addr zone=bra100:10m rate=100r/s;
+
+    #default throttle; not inherited if set in nested level
+    limit_req zone=bra5 burst=100;
+
+    # HTTP Basic rules
+    auth_basic_user_file /tmp/.htpasswd;
+
+    # Set variable for API proxy
+    map $http_x_forwarded_proto $proxy_scheme {
+        default $scheme;
+        https "https";
+    }
+    map $http_x_forwarded_port $proxy_port {
+        default $http_x_forwarded_port;
+        '' $server_port;
+    }
+
+    server {
+        listen       8080;
+        server_name  localhost;
+
+        # add in most common security headers
+        add_header Content-Security-Policy "default-src * data: blob: filesystem: 'unsafe-inline' 'unsafe-eval'";
+        add_header Strict-Transport-Security "max-age=86400; includeSubDomains";
+        add_header X-Content-Type-Options "nosniff";
+        add_header X-XSS-Protection 1;
+        add_header X-Frame-Options DENY;
+
+        %REMOVE_BASE_HREF%
+
+        %API_CONFIG_SECTION%
+
+        # serve our angular app here
+        location / {
+            root   /tmp/app/dist;
+            index  index.html index.htm;
+            try_files $uri $uri/ /index.html =404;
+            gzip            on;
+            gzip_min_length 1000;
+            gzip_types      *;
+
+            # Deploy-time configurable
+            %HTTP_BASIC%
+        }
+
+        # redirect server error pages to the static page /50x.html
+        error_page   500 502 503 504  /50x.html;
+        location = 50x.html {
+            root   /usr/share/nginx/html;
+        }
+
+        # For status of ngnix service, OpenShift is configured to call this
+        location /nginx_status {
+            # Enable Nginx stats
+            stub_status on;
+
+            # Only allow access from localhost
+            allow all;
+
+            # Other request should be denied
+            # deny all;
+
+            # No need to log this request, its just noise
+            access_log off;
+        }
+
+        # serve the fathom analytics tracking code, if available
+        location =/fathom.js {
+            root /tmp;
+            gzip            on;
+            gzip_min_length 1000;
+            gzip_types      *;
+        }
+    }
+}

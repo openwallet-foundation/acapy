@@ -1,0 +1,96 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "annotations": {
+      "description": "Build template for a schema-spy server.",
+      "tags": "schema-spy"
+    },
+    "name": "${NAME}-build-template"
+  },
+  "objects": [
+    {
+        "kind": "ImageStream",
+        "apiVersion": "v1",
+        "metadata": {
+            "name": "${NAME}"
+        }
+    },
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "labels": {
+          "app": "${NAME}",
+          "buildconfig": "${NAME}"                    
+        }                  
+      },
+      "spec": {
+        "source": {
+          "type": "Git",
+          "git": {
+            "uri": "${GIT_REPO_URL}",
+            "ref": "${GIT_REF}"
+          },
+          "contextDir": "${SOURCE_CONTEXT_DIR}"
+        },
+        "strategy": {
+          "type": "Docker"
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "${NAME}:${OUTPUT_IMAGE_TAG}"
+          }
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          },
+          {
+            "type": "ImageChange"
+          }
+        ]
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "NAME",
+      "displayName": "Schema Spy Name",
+      "description": "The name assigned to all of the schema spy objects defined in this template.",
+      "required": true,
+      "value": "schema-spy"
+    },
+    {
+      "name": "GIT_REPO_URL",
+      "displayName": "Git Repo URL",
+      "description": "The URL to the schema spy implementation.",
+      "required": true,
+      "value": "https://github.com/bcgov/SchemaSpy.git"
+
+    },
+    {
+      "name": "GIT_REF",
+      "displayName": "Git Reference",
+      "description": "The git reference or branch.",
+      "required": true,
+      "value": "master"
+    },
+    {
+      "name": "SOURCE_CONTEXT_DIR",
+      "displayName": "Source Context Directory",
+      "description": "The source context directory.",
+      "required": false,
+      "value": ""
+    },
+    {
+      "name": "OUTPUT_IMAGE_TAG",
+      "displayName": "Output Image Tag",
+      "description": "The tag given to the built image.",
+      "required": true,
+      "value": "latest"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+    "name": "OrgBook BC",
+    "short_name": "OrgBook BC",
+    "icons": [
+        {
+            "src": "${APPLICATION_URL}/assets/bootstrap/bcid-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "${APPLICATION_URL}/assets/bootstrap/bcid-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "scope": "/",
+    "start_url": "${APPLICATION_URL}",
+    "theme_color": "#036",
+    "background_color": "#fff",
+    "display": "standalone"
+}

@@ -1,0 +1,17 @@
+.issuer-info, .issuer-creds {
+}
+
+.field-value + .field-value {
+  margin-top: 0.7em;
+}
+
+.field-list {
+  padding-left: 1em;
+}
+
+.issuer-logo img {
+  max-height: 80px;
+  width: auto;
+}
+
+@import "../../_active/issuer/form.component.custom";

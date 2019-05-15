@@ -1,0 +1,363 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "annotations": {
+            "description": "Deployment template for a postgresql server with persistent storage.",
+            "tags": "${NAME}"
+        },
+        "name": "${NAME}-persistent-template"
+    },
+    "objects": [
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}",
+                "generation": 1,
+                "labels": {
+                    "app": "${NAME}-persistent",
+                    "template": "${NAME}-persistent-template",          
+                    "app-group": "${APP_GROUP}"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Recreate",
+                    "recreateParams": {
+                        "timeoutSeconds": 600
+                    },
+                    "resources": {},
+                    "activeDeadlineSeconds": 21600
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${NAME}"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "namespace": "${IMAGE_NAMESPACE}",
+                                "name": "${SOURCE_IMAGE_NAME}:${TAG_NAME}"
+                            }
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "test": false,
+                "selector": {
+                    "name": "${NAME}"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "name": "${NAME}"
+                        }
+                    },
+                    "spec": {
+                        "volumes": [
+                            {
+                                "name": "${NAME}-data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "${NAME}"
+                                }
+                            }
+                        ],
+                        "containers": [
+                            {
+                                "name": "${NAME}",
+                                "image": " ",
+                                "ports": [
+                                    {
+                                        "containerPort": 5432,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "env": [
+                                    {
+                                        "name": "POSTGRESQL_USER",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "${NAME}",
+                                                "key": "database-user"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "POSTGRESQL_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "${NAME}",
+                                                "key": "database-password"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "POSTGRESQL_ADMIN_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "${NAME}",
+                                                "key": "admin-password"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "POSTGRESQL_DATABASE",
+                                        "value": "${POSTGRESQL_DATABASE_NAME}"
+                                    }
+                                ],
+                                "resources": {
+                                    "requests": {
+                                        "cpu": "${CPU_REQUEST}",
+                                        "memory": "${MEMORY_REQUEST}"
+                                    },
+                                    "limits": {
+                                        "cpu": "${CPU_LIMIT}",
+                                        "memory": "${MEMORY_LIMIT}"
+                                    }
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "name": "${NAME}-data",
+                                        "mountPath": "${MOUNT_PATH}"
+                                    }
+                                ],
+                                "livenessProbe": {
+                                    "tcpSocket": {
+                                        "port": 5432
+                                    },
+                                    "initialDelaySeconds": 30,
+                                    "timeoutSeconds": 1,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "failureThreshold": 3
+                                },
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/sh",
+                                            "-i",
+                                            "-c",
+                                            "psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'"
+                                        ]
+                                    },
+                                    "initialDelaySeconds": 5,
+                                    "timeoutSeconds": 1,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "failureThreshold": 3
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "imagePullPolicy": "IfNotPresent",
+                                "securityContext": {
+                                    "capabilities": {},
+                                    "privileged": false
+                                }
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "terminationGracePeriodSeconds": 30,
+                        "dnsPolicy": "ClusterFirst",
+                        "securityContext": {},
+                        "schedulerName": "default-scheduler"
+                    }
+                }
+            }
+        },
+        {
+            "kind": "PersistentVolumeClaim",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}",
+                "labels": {
+                    "app": "${NAME}-persistent",
+                    "template": "${NAME}-persistent-template",          
+                    "app-group": "${APP_GROUP}"
+                }
+            },
+            "spec": {
+                "storageClassName": "${PERSISTENT_VOLUME_CLASS}",
+                "accessModes": [
+                    "ReadWriteOnce"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "${PERSISTENT_VOLUME_SIZE}"
+                    }
+                }
+            }
+        },
+        {
+            "kind": "Secret",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}",
+                "labels": {
+                    "app": "${NAME}-persistent",          
+                    "app-group": "${APP_GROUP}"
+                }
+            },
+            "data": {
+                "admin-password": "${POSTGRESQL_ADMIN_PASSWORD}",
+                "database-password": "${POSTGRESQL_PASSWORD}",
+                "database-user": "${POSTGRESQL_USER}"
+            },
+            "type": "Opaque"
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}",
+                "labels": {
+                    "app": "${NAME}-persistent",
+                    "template": "${NAME}-persistent-template",          
+                    "app-group": "${APP_GROUP}"
+                },
+                "annotations": {
+                    "template.openshift.io/expose-uri": "postgres://{.spec.clusterIP}:{.spec.ports[?(.name==\"postgresql\")].port}"
+                }
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "postgresql",
+                        "protocol": "TCP",
+                        "port": 5432,
+                        "targetPort": 5432
+                    }
+                ],
+                "selector": {
+                    "name": "${NAME}"
+                },
+                "type": "ClusterIP",
+                "sessionAffinity": "None"
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "NAME",
+            "displayName": "Name",
+            "description": "The name assigned to all of the OpenShift resources associated to the server instance.",
+            "required": true,
+            "value": "postgresql"
+        },
+        {
+          "name": "APP_GROUP",
+          "displayName": "App Group",
+          "description": "The name assigned to all of the deployments in this project.",
+          "required": true,
+          "value": "tob"
+        },
+        {
+            "name": "IMAGE_NAMESPACE",
+            "displayName": "Image Namespace",
+            "required": true,
+            "description": "The namespace of the OpenShift project containing the imagestream for the application.",
+            "value": "devex-von-tools"
+        },
+        {
+            "name": "SOURCE_IMAGE_NAME",
+            "displayName": "Source Image Name",
+            "description": "The name of the image to use for this resource.",
+            "required": true,
+            "value": "postgresql"
+        },
+        {
+            "name": "TAG_NAME",
+            "displayName": "Environment TAG name",
+            "description": "The TAG name for this environment, e.g., dev, test, prod",
+            "required": true,
+            "value": "dev"
+        },
+        {
+            "name": "POSTGRESQL_DATABASE_NAME",
+            "displayName": "PostgreSQL Database Name",
+            "description": "The name of the PostgreSQL database.",
+            "required": true,
+            "generate": "expression",
+            "from": "[a-zA-Z_][a-zA-Z0-9_]{10}"
+        },
+        {
+            "name": "POSTGRESQL_USER",
+            "displayName": "PostgreSQL Connection Username",
+            "description": "Username for PostgreSQL user that will be used for accessing the database.  Needs to be basee64 encoded/",
+            "required": true,
+            "generate": "expression",
+            "from": "[a-zA-Z_][a-zA-Z0-9_]{10}"
+        },
+        {
+            "name": "POSTGRESQL_PASSWORD",
+            "displayName": "PostgreSQL Connection Password",
+            "description": "Password for the PostgreSQL connection user.  Needs to be basee64 encoded/",
+            "required": true,
+            "generate": "expression",
+            "from": "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+        },
+        {
+            "name": "POSTGRESQL_ADMIN_PASSWORD",
+            "displayName": "PostgreSQL Admin Password",
+            "description": "Password for the 'postgres' PostgreSQL administrative account.  Needs to be basee64 encoded.",
+            "required": true,
+            "generate": "expression",
+            "from": "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+        },
+        {
+            "name": "MOUNT_PATH",
+            "displayName": "Mount Path",
+            "description": "The path to mount the persistent volume.",
+            "required": true,
+            "value": "/var/lib/pgsql/data"
+        },
+        {
+            "name": "PERSISTENT_VOLUME_SIZE",
+            "displayName": "Persistent Volume Size",
+            "description": "The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.",
+            "required": true,
+            "value": "1Gi"
+        },
+        {
+            "name": "PERSISTENT_VOLUME_CLASS",
+            "displayName": "Persistent Volume Class name",
+            "description": "The class of the volume; gluster-file, gluster-block, gluster-file-db",
+            "required": false,
+            "value": "gluster-file-db"
+        },
+        {
+            "name": "CPU_REQUEST",
+            "displayName": "Resources CPU Request",
+            "description": "The resources CPU request (in cores) for this build.",
+            "required": true,
+            "value": "100m"
+        },
+        {
+            "name": "CPU_LIMIT",
+            "displayName": "Resources CPU Limit",
+            "description": "The resources CPU limit (in cores) for this build.",
+            "required": true,
+            "value": "750m"
+        },
+        {
+            "name": "MEMORY_REQUEST",
+            "displayName": "Resources Memory Request",
+            "description": "The resources Memory request (in Mi, Gi, etc) for this build.",
+            "required": true,
+            "value": "100Mi"
+        },
+        {
+            "name": "MEMORY_LIMIT",
+            "displayName": "Resources Memory Limit",
+            "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
+            "required": true,
+            "value": "4Gi"
+        }
+    ]
+}

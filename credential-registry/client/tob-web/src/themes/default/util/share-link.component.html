@@ -1,0 +1,23 @@
+<a href="#" (click)="openModal(shareDialog, $event)" class="title-link share-link"><span class="fa fa-share left"></span>{{'general.share-link' | translate}}</a>
+<ng-template #shareDialog let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title" translate>general.share-title</h4>
+    <button type="button" class="close" aria-label="Close" (click)="dismissModal('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group">
+      <label class="control-label" for="share-link">Link</label>
+      <div class="input-group">
+        <input id="share-link" class="form-control" size="25" #shareLinkInput readonly [value]="shareLink" (focus)="$event.target.select()">
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary copy-button" (click)="copyShareLink(shareLinkInput)" type="button"><span class="fa fa-clipboard"></span></button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group text-success" *ngIf="copied">
+      {{'general.link-copied' | translate}}
+    </div>
+  </div>
+</ng-template>

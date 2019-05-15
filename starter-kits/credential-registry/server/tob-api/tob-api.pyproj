@@ -1,0 +1,257 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <Name>tob-api</Name>
+    <RootNamespace>tob-api</RootNamespace>
+    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
+    <WebBrowserPort>56325</WebBrowserPort>
+    <Environment>
+    </Environment>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>c4c461d8-6940-49a9-97e7-44f5f727fec9</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <ProjectTypeGuids>{5F0BE9CA-D677-4A4D-8806-6076C0FAAD37};{349c5851-65df-11da-9384-00065b846f21};{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <StartupFile>manage.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <LaunchProvider>Django launcher</LaunchProvider>
+    <DjangoSettingsModule>tob_api.settings</DjangoSettingsModule>
+    <WebBrowserUrl>http://localhost</WebBrowserUrl>
+    <OutputPath>.</OutputPath>
+    <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="api\admin.py" />
+    <Compile Include="api\apps.py" />
+    <Compile Include="api\auth.py" />
+    <Compile Include="api\claimDefProcesser.py" />
+    <Compile Include="api\claimProcesser.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\eventloop.py" />
+    <Compile Include="api\exceptions\OrganizationNotRegisteredException.py" />
+    <Compile Include="api\exceptions\ClaimTypeNotRegisteredException.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\exceptions\__init__.py" />
+    <Compile Include="api\fakedata.py" />
+    <Compile Include="api\indy\agent.py" />
+    <Compile Include="api\indy\claimDefParser.py" />
+    <Compile Include="api\indy\claimParser.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\indy\eventloop.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\indy\issuer.py" />
+    <Compile Include="api\indy\proofRequestBuilder.py" />
+    <Compile Include="api\indy\__init__.py" />
+    <Compile Include="api\indy_views.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\management\commands\migrate.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\management\commands\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\management\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\migrations\0001_initial.py" />
+    <Compile Include="api\migrations\__init__.py" />
+    <Compile Include="api\models.py" />
+    <Compile Include="api\models\DoingBusinessAs.py" />
+    <Compile Include="api\models\InactiveClaimReason.py" />
+    <Compile Include="api\models\IssuerService.py" />
+    <Compile Include="api\models\Jurisdiction.py" />
+    <Compile Include="api\models\Location.py" />
+    <Compile Include="api\models\LocationType.py" />
+    <Compile Include="api\models\User.py" />
+    <Compile Include="api\models\VerifiableClaim.py" />
+    <Compile Include="api\models\VerifiableClaimType.py" />
+    <Compile Include="api\models\VerifiableOrg.py" />
+    <Compile Include="api\models\VerifiableOrgType.py" />
+    <Compile Include="api\models\__init__.py" />
+    <Compile Include="api\proofRequestProcesser.py" />
+    <Compile Include="api\search_indexes.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\search_serializers.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\search_views.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="api\serializers.py" />
+    <Compile Include="api\tests.py" />
+    <Compile Include="api\test_api_complex.py" />
+    <Compile Include="api\test_api_custom.py" />
+    <Compile Include="api\test_api_search.py" />
+    <Compile Include="api\test_api_simple.py" />
+    <Compile Include="api\urls.py" />
+    <Compile Include="api\views.py" />
+    <Compile Include="api\views_custom.py" />
+    <Compile Include="api\__init__.py" />
+    <Compile Include="api_v2\decorators\jsonschema.py" />
+    <Compile Include="api_v2\indy\credential.py" />
+    <Compile Include="api_v2\indy\credential_offer.py" />
+    <Compile Include="api_v2\indy\issuer.py" />
+    <Compile Include="api_v2\indy\proof.py" />
+    <Compile Include="api_v2\indy\proof_request.py" />
+    <Compile Include="api_v2\indy\verifier.py" />
+    <Compile Include="api_v2\indy\__init__.py" />
+    <Compile Include="api_v2\jsonschema\construct_proof.py" />
+    <Compile Include="api_v2\jsonschema\credential.py" />
+    <Compile Include="api_v2\jsonschema\credential_offer.py" />
+    <Compile Include="api_v2\jsonschema\issuer.py" />
+    <Compile Include="api_v2\migrations\0001_initial.py" />
+    <Compile Include="api_v2\migrations\__init__.py" />
+    <Compile Include="api_v2\models\Address.py" />
+    <Compile Include="api_v2\models\Claim.py" />
+    <Compile Include="api_v2\models\Contact.py" />
+    <Compile Include="api_v2\models\Credential.py" />
+    <Compile Include="api_v2\models\CredentialType.py" />
+    <Compile Include="api_v2\models\Issuer.py" />
+    <Compile Include="api_v2\models\Name.py" />
+    <Compile Include="api_v2\models\Person.py" />
+    <Compile Include="api_v2\models\Schema.py" />
+    <Compile Include="api_v2\models\Topic.py" />
+    <Compile Include="api_v2\models\__init__.py" />
+    <Compile Include="api_v2\processor\string_helpers.py" />
+    <Compile Include="api_v2\processor\__init__.py" />
+    <Compile Include="api_v2\serializers.py" />
+    <Compile Include="api_v2\swagger.py" />
+    <Compile Include="api_v2\urls.py" />
+    <Compile Include="api_v2\views\indy.py" />
+    <Compile Include="api_v2\views\rest.py" />
+    <Compile Include="api_v2\views\__init__.py" />
+    <Compile Include="api_v2\__init__.py" />
+    <Compile Include="auditable\admin.py" />
+    <Compile Include="auditable\apps.py" />
+    <Compile Include="auditable\migrations\__init__.py" />
+    <Compile Include="auditable\models.py" />
+    <Compile Include="auditable\tests.py" />
+    <Compile Include="auditable\views.py" />
+    <Compile Include="auditable\__init__.py" />
+    <Compile Include="manage.py" />
+    <Compile Include="tob_api\custom_settings_bcgov.py" />
+    <Compile Include="tob_api\custom_settings_ongov.py" />
+    <Compile Include="tob_api\authentication.py" />
+    <Compile Include="tob_api\permissions.py" />
+    <Compile Include="tob_api\database.py" />
+    <Compile Include="tob_api\haystack.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tob_api\hyperledger_indy.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tob_api\views.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tob_api\__init__.py" />
+    <Compile Include="tob_api\settings.py" />
+    <Compile Include="tob_api\urls.py" />
+    <Compile Include="wsgi.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="api\LICENSE" />
+    <Content Include="api\templates\search\indexes\api\location_text.txt" />
+    <Content Include="api\templates\search\indexes\api\verifiableorg_text.txt" />
+    <Content Include="api\templates\search\indexes\api\doingbusinessas_text.txt" />
+    <Content Include="api_v2\docs\images\tob.png" />
+    <Content Include="api_v2\docs\images\tob.uml" />
+    <Content Include="api_v2\processor\README.md" />
+    <Content Include="api_v2\README.md" />
+    <Content Include="requirements.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="api\" />
+    <Folder Include="api\indy\" />
+    <Folder Include="api\management\" />
+    <Folder Include="api\management\commands\" />
+    <Folder Include="api\migrations\" />
+    <Folder Include="api\models\" />
+    <Folder Include="api\exceptions\" />
+    <Folder Include="api\templates\" />
+    <Folder Include="api\templates\search\" />
+    <Folder Include="api\templates\search\indexes\" />
+    <Folder Include="api\templates\search\indexes\api\" />
+    <Folder Include="api_v2\" />
+    <Folder Include="api_v2\decorators\" />
+    <Folder Include="api_v2\docs\" />
+    <Folder Include="api_v2\docs\images\" />
+    <Folder Include="api_v2\indy\" />
+    <Folder Include="api_v2\jsonschema\" />
+    <Folder Include="api_v2\migrations\" />
+    <Folder Include="api_v2\models\" />
+    <Folder Include="api_v2\processor\" />
+    <Folder Include="api_v2\views\" />
+    <Folder Include="auditable\" />
+    <Folder Include="auditable\migrations\" />
+    <Folder Include="tob_api\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="env\">
+      <Id>env</Id>
+      <Version>3.6</Version>
+      <Description>env (Python 3.6 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Django.targets" />
+  <!-- Specify pre- and post-build commands in the BeforeBuild and 
+       AfterBuild targets below. -->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <AutoAssignPort>True</AutoAssignPort>
+          <UseCustomServer>True</UseCustomServer>
+          <CustomServerUrl>http://localhost</CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}" User="">
+        <WebProjectProperties>
+          <StartPageUrl>
+          </StartPageUrl>
+          <StartAction>CurrentPage</StartAction>
+          <AspNetDebugging>True</AspNetDebugging>
+          <SilverlightDebugging>False</SilverlightDebugging>
+          <NativeDebugging>False</NativeDebugging>
+          <SQLDebugging>False</SQLDebugging>
+          <ExternalProgram>
+          </ExternalProgram>
+          <StartExternalURL>
+          </StartExternalURL>
+          <StartCmdLineArguments>
+          </StartCmdLineArguments>
+          <StartWorkingDirectory>
+          </StartWorkingDirectory>
+          <EnableENC>False</EnableENC>
+          <AlwaysStartWebServerOnDebug>False</AlwaysStartWebServerOnDebug>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

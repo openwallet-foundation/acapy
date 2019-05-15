@@ -1,0 +1,10 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-solr
+# Template File: templates/solr-base-build.json
+#=========================================================
+NAME=solr-base
+GIT_REPO_URL=https://github.com/bcgov/openshift-solr.git
+GIT_REF=master
+SOURCE_CONTEXT_DIR=
+OUTPUT_IMAGE_TAG=latest

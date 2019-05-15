@@ -1,0 +1,170 @@
+{
+  "ROUTES": {
+    "home": "home"
+  },
+  "app": {
+    "breadcrumb": "Home",
+    "header": {
+      "title": "OrgBook",
+      "logo-alt-text": "OrgBook Logo"
+    },
+    "footer": {
+      "disclaimer": "Disclaimer",
+      "privacy": "Privacy",
+      "accessibility": "Accessibility",
+      "copyright": "Copyright",
+      "contact": "Contact Us"
+    },
+    "title": "OrgBook Beta",
+    "title-prefix": "OrgBook Beta | "
+  },
+  "address": {
+    "registered-office": "Registered Office"
+  },
+  "connect": {
+    "breadcrumb": "Connect with us",
+    "contact-title": "Contact Us",
+    "title": "Connect with us"
+  },
+  "contact": {
+    "email": "Email Address",
+    "phone": "Phone",
+    "phone-business": "Business Phone",
+    "skype": "Skype Address",
+    "website": "Website Address"
+  },
+  "cred": {
+    "addresses": "Addresses",
+    "attributes": "Attributes",
+    "breadcrumb": "Credential Information",
+    "claims-proven": "Claims Proven and Verified",
+    "contact": "Contact",
+    "cred-type": "Credential Type",
+    "crypto-data": "Cryptographic Proof Data",
+    "date": "Credential Date",
+    "description": "Description",
+    "empty-attribute": "–",
+    "end-date": "End Date",
+    "expired": "Expired",
+    "expired-message": "This credential is expired and no longer verifiable.",
+    "history-link": "See history",
+    "inactive": "Archived",
+    "inactive-message": "This credential has been issued for archival purposes only. It does not represent a currently active registration, permit, or licence.",
+    "issuer": "Issuer",
+    "last-issued": "Last Issued",
+    "last-updated": "Last Updated",
+    "latest-link": "Go to the latest credential",
+    "names": "Names",
+    "not-verified": "Not verified",
+    "proof-details": "Credential and Proof Details",
+    "proof-of-claims": "Proof of Claims",
+    "requesting-proof": "Requesting proof...",
+    "schema-info": "Credential Schema",
+    "select-cred-type": "(Select type)",
+    "select-issuer": "(Select issuer)",
+    "start-date": "Effective Date",
+    "status": "Revocation Status",
+    "timeline-title": "Timeline",
+    "topic-title": "Credentials",
+    "verify-button-label": "Verify Credential",
+    "view-link": "View credential",
+    "whats-this-link": "What's this?",
+    "verified": "Verified",
+    "verify-breadcrumb": "Credential Verification",
+    "verify-link": "See data for this credential",
+    "verify-status": "Verification Status:"
+  },
+  "general": {
+    "about-site-title": "About this site",
+    "date-entered": "Date Entered",
+    "date-issued": "Issued Date",
+    "display-cards": "Cards",
+    "display-list": "List",
+    "display-timeline": "Timeline",
+    "hide-filters": "Hide Filters",
+    "demo-site": "Demo Site",
+    "details": "Details",
+    "feedback-link": "Submit Feedback",
+    "feedback-title": "Submit Feedback",
+    "feedback-button-label": "Send Feedback",
+    "link-copied": "Link copied to clipboard",
+    "links-title": "External Links and Resources",
+    "map-link": "Show on map",
+    "next-link": "Next",
+    "none": "None",
+    "not-found": "This record could not be located.",
+    "other-error": "An unknown error occurred.",
+    "period-current": "Current",
+    "period-historical": "Archived",
+    "prev-link": "Previous",
+    "share-link": "Share",
+    "share-title": "Share Link",
+    "show-filters": "Show Filters",
+    "show-inactive": "Show Archived",
+    "show-revoked": "Show Revoked",
+    "skip-link-about": "Skip to \"About this site\"",
+    "skip-link-content": "Skip to main content",
+    "status-nonrevoked": "Not Revoked",
+    "status-revoked": "Revoked",
+    "status-any": "Any",
+    "verified": "Verified"
+  },
+  "home": {
+    "about-title": "About the OrgBook",
+    "breadcrumb": "Home",
+    "title": "Welcome to The OrgBook",
+    "title-certs": "Verifiable credentials held",
+    "title-orgs": "Active legal entities",
+    "title-this-week": "Credentials added this week"
+  },
+  "issuer": {
+    "breadcrumb": "Issuer Service",
+    "cred-types": "Credential Types",
+    "did": "DID",
+    "end-date": "End Date",
+    "logo-image": "Logo Image",
+    "start-date": "Effective Date",
+    "website": "Issuer Website"
+  },
+  "name": {
+    "doing-business-as": "Doing Business As",
+    "incorporation": "Incorporation",
+    "legal-name": "Legal Name",
+    "registration": "Registration"
+  },
+  "not-found": {
+    "breadcrumb": "Not Found",
+    "title": "Page not found",
+    "error": "This page could not be located. Please check the URL or follow the link below.",
+    "return-link-title": "Return to the home page"
+  },
+  "person": {
+    "director": "Director"
+  },
+  "schema": {
+    "name": "Schema Name",
+    "version": "Schema Version"
+  },
+  "search": {
+    "breadcrumb": "Search",
+    "by-name": "Search by Name",
+    "by-location": "Search by Location",
+    "input-label": "Organization Name or Registration ID",
+    "no-results": "No results",
+    "placeholder": "search",
+    "prompt": "Please enter your search query above in order to proceed.",
+    "records-prefix": "Records ",
+    "results-error": "Your query could not be completed at this time.",
+    "results-title": "Search Results",
+    "return-link": "Back to Search",
+    "running": "Performing search ...",
+    "title": "Find an organization"
+  },
+  "topic": {
+    "breadcrumb": "Organization",
+    "related-to": "Related To",
+    "return-link": "Back to Organization",
+    "source-id": "Registration ID",
+    "view-link": "Show Details"
+  }
+}

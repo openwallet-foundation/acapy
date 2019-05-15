@@ -1,0 +1,55 @@
+# Main
+django>=2.1.6<2.2
+djangorestframework==3.9.1
+djangorestframework-bulk>=0.2.1,<1
+django-cors-headers>=2.4.0,<3
+django-filter>=1.1.0
+
+# Database managment
+psycopg2-binary>=2.7.3.1,<3
+
+# Web Server
+gunicorn>=19.7.1,<20
+whitenoise>=4.1.0,<4.2
+
+# Documentation
+# django_rest_swagger>=2.1.2,<3
+drf-yasg>=1.10.2,<2
+flex>=6.13.2,<7
+swagger-spec-validator>=2.4.0,<3
+
+# Testing
+pytest-cov>=2.5.1,<3
+pytest-django>=3.1.2,<4
+
+# Search
+drf-haystack>=1.6.1,<2
+django-haystack>=2.7.dev0,<3
+pysolr>=3.6.0,<4
+
+# Generator
+drf-generators>=0.3.0
+
+# ==================================================================
+# Von Agent
+# ------------------------------------------------------------------
+# Override versions here
+# ------------------------------------------------------------------
+# python3-indy==1.3.1-dev-441
+#von-agent==1.6.9
+
+asyncio>=3.4.3,<4
+#git+https://github.com/PSPC-SPAC-buyandsell/didauth.git@v1.1
+# ==================================================================
+
+# Debugging
+ptvsd==4.1.1a1
+
+# aiohttp
+aiohttp~=3.4.0
+aiohttp-wsgi~=0.8.1
+
+# rest hooks and related
+django-rest-hooks==1.5.0
+drf-nested-routers
+celery~=4.3.0
