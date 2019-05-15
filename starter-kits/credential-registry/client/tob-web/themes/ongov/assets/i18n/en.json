@@ -1,0 +1,194 @@
+{
+  "ROUTES": {
+    "home": "home"
+  },
+  "app": {
+    "title": "Ontario's TheOrgBook",
+    "switch-language": "Switch the language",
+    "breadcrumb": "Home",
+    "header": {
+      "title": "TheOrgBook",
+      "logo-alt-text": "Ontario Government Logo"
+    },
+    "footer": {
+      "disclaimer": "Terms of Use",
+      "privacy": "Privacy",
+      "accessibility": "Accessibility",
+      "copyright": "Queen's Printer for Ontario 2015",
+      "contact": "Contact Us",
+      "link-title": "This link will open the page in a new browser window"
+    }
+  },
+  "address": {
+    "registered-office": "Registered Office"
+  },
+  "contact": {
+    "email": "Email Address",
+    "phone": "Phone",
+    "phone-business": "Business Phone",
+    "skype": "Skype Address",
+    "website": "Website Address"
+  },
+  "cred": {
+    "addresses": "Addresses",
+    "breadcrumb": "Verifiable Records",
+    "contact": "Contact",
+    "corp-num": "Unique Identifier:",
+    "end-date": "End Date",
+    "history-link": "See history",
+    "issuer": "Issuer:",
+    "last-updated": "Last Updated",
+    "names": "Names",
+    "people": "People",
+    "start-date": "Registration Date:",
+    "effective-date": "Status Effective Date:",
+    "verify-button-label": "Verify Record",
+    "view-link": "View credential",
+    "whats-this-link": "What's this?",
+    "verify-status": "Verification Status:",
+    "status": "Status:",
+    "type": "Business Type:",
+    "business_registration": "Foundational Business Registration Information",
+    "municipality": "Municipality:",
+    "jurisdiction": "Jurisdiction:",
+    "verifying-record": "Verifying Record",
+    "verify-info": "Verifiable Information",
+    "error": "The digital signature associated with this record could not be verified. Please try again later.",
+    "success": "Verification Successful! The digital signature associated with this record as signed by the issuer has been cryptographically validated.",
+    "note": "Note:",
+    "disclaimer": "The business information above is not real-time and is intended for informational purposes only. This is not a substitute for an official report from the Public Record maintained by the Ministry of Government and Consumer Services. To find out how to search the official Public Record,",
+    "click-here": "click here."
+  },
+  "general": {
+    "none": "None",
+    "map-link": "Show on map",
+    "next-link": "Next",
+    "prev-link": "Previous",
+    "verified": "Verified"
+  },
+  "home": {
+    "beta": "This project is in the beta stage",
+    "breadcrumb": "Search",
+    "title-orgs": "organizations",
+    "title-certs": "permits and licences",
+    "title": "Ontario's Verifiable Businesses",
+    "message":
+      "This service allows you to search for registrations, certificates, licenses, or permits that an Ontario business may have, and verify authenticity of each using Distributed Ledger Technology (blockchain). The service is currently offered in beta mode, with all the records sourced from Ontario Business Registration System, Ontario's official record of information on business entities and not-for-profit organizations operating in Ontario.",
+    "search-input": "Enter Business Name"
+  },
+  "issuer": {
+    "breadcrumb": "Issuer Service",
+    "cred-types": "Credential Types",
+    "end-date": "End Date",
+    "start-date": "Effective Date",
+    "website": "Issuer Website:",
+    "email": "Address:"
+  },
+  "name": {
+    "doing-business-as": "Business Name registered by a corporation",
+    "legal-name": "Legal Name"
+  },
+  "not-found": {
+    "breadcrumb": "Not Found",
+    "title": "Page not found",
+    "error": "This page could not be located. Please check the URL or follow the link below.",
+    "return-link-title": "Return to the home page"
+  },
+  "person": {
+    "director": "Director"
+  },
+  "recipe": {
+    "breadcrumb": "Recipe",
+    "cert-depends-on": "Depends on",
+    "cert-view-link": "View record",
+    "cert-not-found": "Certificate not found",
+    "find-org-title": "Find your Organization",
+    "org-view-link": "View organization record",
+    "register-link": "Register your Organization",
+    "title": "Recipe"
+  },
+  "topic": {
+    "breadcrumb": "Organization Information",
+    "return-link": "Back to Organization Information",  
+    "note": "Note:",
+    "disclaimer": "The business information above is not real-time and is intended for informational purposes only. This is not a substitute for an official report from the Public Record maintained by the Ministry of Government and Consumer Services. To find out how to search the official Public Record,",
+    "click-here": "click here.",
+    "incorporation": "Incorporation",
+    "doing_business_as": "Business Name registered by a corporation"
+  },
+  "search": {
+    "by-name": "Search by Name",
+    "by-location": "Search by Location",
+    "no-results": "No results",
+    "placeholder": "search",
+    "results-title": "Search Results",
+    "return-link": "Back to Search",
+    "records-prefix": "Records ",
+    "title": "Find an Organization"
+  },
+  "business_type": {
+    "ONBIS_BUSINESS_TYPE_A": "Ontario Business Corporation",
+    "ONBIS_BUSINESS_TYPE_B": "Ontario Corporation Non-Share",
+    "ONBIS_BUSINESS_TYPE_C": "Credit Union", 
+    "ONBIS_BUSINESS_TYPE_D": "Insurer",
+    "ONBIS_BUSINESS_TYPE_F": "Social Club With share",
+    "ONBIS_BUSINESS_TYPE_G": "Social Club non-share",
+    "ONBIS_BUSINESS_TYPE_H": "Co-operative non-share",
+    "ONBIS_BUSINESS_TYPE_J": "Co-operative with share",
+    "ONBIS_BUSINESS_TYPE_K": "Extra-Provincial Foreign with share",
+    "ONBIS_BUSINESS_TYPE_L": "Not Available",
+    "ONBIS_BUSINESS_TYPE_M": "Condominium Corporation",
+    "ONBIS_BUSINESS_TYPE_P": "Loan and Trust Corporation",
+    "ONBIS_BUSINESS_TYPE_R": "Federal Corporation with share",
+    "ONBIS_BUSINESS_TYPE_S": "Federal Corporation non-share",
+    "ONBIS_BUSINESS_TYPE_T": "Extra-Provincial Foreign insurer",
+    "ONBIS_BUSINESS_TYPE_U": "Extra-Provincial Foreign non-share",
+    "ONBIS_BUSINESS_TYPE_W": "Agencies, Boards, and Commissions",
+    "ONBIS_BUSINESS_TYPE_X": "Extra-Provincial Domestic non-share",
+    "ONBIS_BUSINESS_TYPE_Y": "Extra-Provincial Domestic with-share",
+    "ONBIS_BUSINESS_TYPE_Z": "Not Available",
+    "ONBIS_BUSINESS_TYPE_SP":	"Sole Proprietorship",
+    "ONBIS_BUSINESS_TYPE_GP":	"General Partnership",
+    "ONBIS_BUSINESS_TYPE_AN":	"Business Name registered by a corporation",
+    "ONBIS_BUSINESS_TYPE_LP":	"Limited Partnership",
+    "ONBIS_BUSINESS_TYPE_PN":	"Partnership Business Name",
+    "ONBIS_BUSINESS_TYPE_OP":	"Ontario Limited Liability Partnership",
+    "ONBIS_BUSINESS_TYPE_EP":	"Extra-Provincial Limited Liability Partnership",
+    "ONBIS_BUSINESS_TYPE_CO":	"Extra-Provincial Limited Liability Company"
+  },
+  "business_status": {
+    "ONBIS_BUSINESS_STATUS_A": "Cancelled for failure to comply with the Ontario Securities Act", 
+    "ONBIS_BUSINESS_STATUS_K": "Cancelled - section 240 Business Corporations Act or 317(1) Corporations Act & need special act to revive",
+    "ONBIS_BUSINESS_STATUS_B": "Cancelled for failure to comply with the Corporations Tax Act",
+    "ONBIS_BUSINESS_STATUS_U": "Cancelled for failure to comply with Ministry of Finance tax statute",
+    "ONBIS_BUSINESS_STATUS_C": "Cancelled for default - section 241 Business Corporations Act or section 317(9) Corporations Act",
+    "ONBIS_BUSINESS_STATUS_F": "Amalgamated",
+    "ONBIS_BUSINESS_STATUS_P": "Ceased in Ontario",
+    "ONBIS_BUSINESS_STATUS_N": "Condominium Termination",
+    "ONBIS_BUSINESS_STATUS_Y": "Corporation continues out of Ontario",
+    "ONBIS_BUSINESS_STATUS_M":	"Dissolved",
+    "ONBIS_BUSINESS_STATUS_H": "Dissolved - Co-operative Corporations Act",
+    "ONBIS_BUSINESS_STATUS_W": "Dissolved - Credit Unions and Caisses Populaires Act",
+    "ONBIS_BUSINESS_STATUS_G": "Extra-Provincial Domestic Corporation - no longer operating in Ontario",
+    "ONBIS_BUSINESS_STATUS_X":	"Extra-Provincial Corporation - has dissolved",
+    "ONBIS_BUSINESS_STATUS_E":	"Extra-Provincial - no longer operating in Ontario",
+    "ONBIS_BUSINESS_STATUS_D":	"Corporation was voluntarily dissolved",
+    "ONBIS_BUSINESS_STATUS_V":	 "Winding up (liquidator)",
+    "ONBIS_BUSINESS_STATUS_Z":	"Withdrawal of Registration",
+    "ONBIS_BUSINESS_STATUS_L":	"Not Available",
+    "ONBIS_BUSINESS_STATUS_I":	"Cancelled",
+    "ONBIS_BUSINESS_STATUS_T":	"Not Available",
+    "ONBIS_BUSINESS_STATUS_J":	"Dissolved Limited Partnership",
+    "ONBIS_BUSINESS_STATUS_R":	"Revival",
+    "ONBIS_BUSINESS_STATUS_0":	"Active",
+    "ONBIS_BUSINESS_STATUS_6":	"Not Available",
+    "ONBIS_BUSINESS_STATUS_7":	"Transferred to Ontario from another jurisdiction",
+    "ONBIS_BUSINESS_STATUS_3":	"In default - Corporations Information Act",
+    "ONBIS_BUSINESS_STATUS_2":	"In default - Corporations Tax Act",
+    "ONBIS_BUSINESS_STATUS_1":	"In default - Ontario Securities Act",
+    "ONBIS_BUSINESS_STATUS_5":	"In default - Ministry of Finance tax statute",
+    "ONBIS_BUSINESS_STATUS_ 4":	"Not Available"
+  },
+  "MGCS": "Ministry of Government and Consumer Services"
+
+}

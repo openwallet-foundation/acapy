@@ -1,0 +1,89 @@
+<div class="creds-grid" *ngIf="format==='cards' && records?.length">
+  <div class="cred-card" *ngFor="let cred of records">
+    <div class="cred-icon" *ngIf="cred.issuer.has_logo">
+      <img [src]="cred.issuer.logo_url | resolveUrl" [alt]="'issuer.logo-image' | translate">
+    </div>
+    <div class="cred-detail">
+      <p class="cred-title">
+        <a class="body-link cred-link" [routerLink]="cred.topic.extLink('cred', cred.id) | localize">{{cred.credential_type.description}}</a>
+      </p>
+      <p *ngIf="cred.related_topics?.length">
+        <a [routerLink]="cred.related_topics[0].link | localize" class="body-link cred-link related">{{cred.related_topics[0].names[0].text}}</a>
+      </p>
+      <p class="cred-date" *ngIf="cred.effective_date">
+        <span class="claim-info date">{{cred.effective_date | dateFormat: 'effectiveDate'}}</span>
+      </p>
+      <p class="cred-issuer" *ngIf="cred.issuer">
+        <a class="body-link issuer-link" [routerLink]="['/issuer', cred.issuer.id] | localize">{{cred.issuer.name}}</a>
+      </p>
+      <div class="cred-status">
+        <div class="badge badge-warning" *ngIf="cred.inactive" translate>cred.inactive</div>
+        <div class="badge badge-danger" *ngIf="cred.revoked" translate>cred.expired</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="creds-list" *ngIf="format==='rows'">
+  <div class="row cred-row" *ngFor="let cred of records">
+    <div class="col-sm-4">
+      <div class="cred-title">
+        <a class="body-link cred-link" [routerLink]="cred.topic.extLink('cred', cred.id) | localize">{{cred.credential_type.description}}</a>
+      </div>
+      <div class="cred-date" *ngIf="cred.effective_date">
+        <span class="claim-info date">{{cred.effective_date | dateFormat: 'effectiveDate'}}</span>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="cred-issuer" *ngIf="cred.issuer">
+        <a class="body-link issuer-link" [routerLink]="['/issuer', cred.issuer.id] | localize">{{cred.issuer.name}}</a>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <ng-container *ngIf="cred.related_topics?.length; then relatedName; else topicName">
+      </ng-container>
+      <ng-template #relatedName>
+        <a [routerLink]="cred.related_topics[0].link | localize" class="body-link cred-link related" *ngIf="cred.related_topics[0].names?.length">{{cred.related_topics[0].names[0].text}}</a>
+      </ng-template>
+      <ng-template #topicName>
+        <a [routerLink]="cred.topic.link | localize" class="body-link cred-link name" *ngIf="cred.topic.names?.length">{{cred.topic.names[0].text}}</a>
+      </ng-template>
+      <div class="badge badge-warning" *ngIf="cred.inactive" translate>cred.inactive</div>
+      <div class="badge badge-danger" *ngIf="cred.revoked" translate>cred.expired</div>
+    </div>
+  </div>
+</div>
+<div class="creds-list creds-search" *ngIf="format==='search'">
+  <div class="row cred-row" *ngFor="let cred of records">
+    <div class="col-lg-8">
+      <div class="cred-title">
+        <a [routerLink]="cred.topic.link | localize"
+          class="body-link cred-link name">{{cred.names[0].text}}</a>
+      </div>
+      <div class="cred-topic small" *ngIf="cred.topic as topic">
+        {{topic.typeLabel | translate}}<span class="cred-entity-status" *ngIf="topic.attribute_map.entity_status as status">:
+          <attribute-view [record]="status"></attribute-view>
+        </span>
+        <span class="cred-entity-type" *ngIf="topic.attribute_map.entity_type as type">
+          &mdash; <attribute-view [record]="type"></attribute-view>
+        </span>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <small *ngIf="cred.issuer">
+        <label>
+          <span translate>cred.issuer</span>:
+        </label>
+        <a [routerLink]="['/issuer', cred.issuer.id] | localize" class="body-link issuer-link">{{cred.issuer.name}}</a>
+      </small>
+      <br>
+      <small>
+        <label>
+          <span translate>cred.start-date</span>:
+        </label>
+        <span class="claim-info date">{{cred.effective_date | dateFormat: 'effectiveDate'}}</span>
+      </small>
+      <div class="badge badge-warning" *ngIf="cred.inactive" translate>cred.inactive</div>
+      <div class="badge badge-danger" *ngIf="cred.revoked" translate>cred.expired</div>
+    </div>
+  </div>
+</div>

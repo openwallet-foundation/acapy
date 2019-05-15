@@ -5,23 +5,14 @@ cd $(dirname $0)
 docker build -t indy-cat-run -f ../docker/Dockerfile.run .. || exit 1
 
 ARGS=""
-if [ -z "$PORTS" ]; then
-	ARGS="-p 5000:5000 -p 10000-10050:10000-10050"
-else
-	for PORT in $PORTS; do
-		ARGS="${ARGS} -p $PORT"
-	done
-fi
+for PORT in $PORTS; do
+	ARGS="${ARGS} -p $PORT"
+done
 
 PTVSD_PORT="${PTVSD_PORT-5678}"
-PYDEVD_PORT="${PYDEVD_PORT-18765}"
 
-if [ ! -z "${ENABLE_PTVSD}" ] || [[ "$@" == *--debug-vs* ]]; then
-	ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\""
-fi
-
-if [ ! -z "${ENABLE_PYDEVD}" ] || [[ "$@" == *--debug* ]]; then
-	ARGS="${ARGS} -e ENABLE_PYDEVD=\"${ENABLE_PYDEVD}\" -e PYDEVD_PORT=${PYDEVD_PORT}"
+if [ ! -z "${ENABLE_PTVSD}" ] || [[ "$@" == *--debug* ]]; then
+	ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
 
 RAND_NAME=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)

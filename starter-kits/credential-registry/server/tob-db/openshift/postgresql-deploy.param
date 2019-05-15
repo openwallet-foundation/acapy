@@ -1,0 +1,20 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-db
+# Template File: templates/postgresql-deploy.json
+#=========================================================
+NAME=postgresql
+IMAGE_NAMESPACE=devex-von-tools
+SOURCE_IMAGE_NAME=postgresql
+TAG_NAME=dev
+POSTGRESQL_DATABASE_NAME=TheOrgBook_Database
+POSTGRESQL_USER=[a-zA-Z_][a-zA-Z0-9_]{10}
+POSTGRESQL_PASSWORD=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+POSTGRESQL_ADMIN_PASSWORD=[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}
+MOUNT_PATH=/var/lib/pgsql/data
+PERSISTENT_VOLUME_SIZE=3Gi
+PERSISTENT_VOLUME_CLASS=gluster-file-db
+CPU_REQUEST=100m
+CPU_LIMIT=750m
+MEMORY_REQUEST=100Mi
+MEMORY_LIMIT=4Gi

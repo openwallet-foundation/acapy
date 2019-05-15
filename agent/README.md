@@ -20,15 +20,15 @@
 
 # Introduction
 
-Indy Catalyst Agent is a configurable instance of a Hyperledger Indy "Cloud Agent".
+Indy Catalyst Agent is a configurable instance of a "Cloud Agent".
 
 # Installing
 
-Instructions forthcoming. `indy_catalyst_agent` will be made available as a python package at [pypi.org](https://pypi.org).
+Instructions forthcoming. `indy_catalyst_agent` will be made available in the future as a python package at [pypi.org](https://pypi.org).
 
 # Running
 
-After install the package, `icatagent` should be available in your PATH.
+After installing the package, `icatagent` should be available in your PATH.
 
 Find out more about the available command line parameters by running:
 
@@ -60,21 +60,23 @@ Currently, Indy Catalyst Agent ships with both inbound and outbound transport dr
 
 To run the locally, we recommend using the provided Docker images to run the software.
 
-```bash
+```
 ./scripts/run_docker <args>
 ```
 
-To enable the [ptvsd](https://github.com/Microsoft/ptvsd) Python debugger for Visual Studio/VSCode set the `ENABLE_PTVSD` environment variable, for example:
+```
+./scripts/run_docker --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
+```
 
-```bash
-ENABLE_PTVSD=1 ./scripts/run_docker --inbound-transport http 0.0.0.0 10000 --outbound-transport http
+To enable the [ptvsd](https://github.com/Microsoft/ptvsd) Python debugger for Visual Studio/VSCode use the `debug` flag
+
+For any ports you will be using, you can publish these ports from the docker container using the PORTS environment variable. For example:
+
+```
+PORTS="5000:5000 8000:8000 1000:1000" ./scripts/run_docker --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
 ```
 
 Refer to [the previous section](#Running) for instructions on how to run the software.
-
-### Caveats
-
-The development docker environment exposes ports 10000 - 10050. When specifying inbound transport ports, you must use ports in that range if you want to make a connection from outside the docker network.
 
 ## Running Tests
 

@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  agent-build:
     docker:
       - image: bcgovimages/von-image:py36-1.8-0
     steps:
@@ -45,3 +45,61 @@ jobs:
       - store_artifacts:
           path: test-reports
 
+
+  django-build:
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages
+      - restore_cache:
+          keys:
+            - tob_api-pip-dependencies-{{ .Branch }}-{{ checksum "starter-kits/credential-registry/server/tob-api/requirements.txt" }}
+            - tob_api-pip-dependencies-{{ .Branch }}-
+
+      - run:
+          name: Install Python Dependencies
+          command: |
+            cd ./starter-kits/credential-registry/server/tob-api
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt \
+              codecov \
+              coverage
+            pip install \
+              -e ../../../../credential-registry/server/django-icat-api/ \
+              -e ../../../../credential-registry/server/python-indy-api/
+
+      - save_cache:
+          paths:
+            - starter-kits/credential-registry/server/tob-api/venv
+          key: tob_api-pip-dependencies-{{ .Branch }}-{{ checksum "starter-kits/credential-registry/server/tob-api/requirements.txt" }}
+
+      - run:
+          name: Run Django Tests and submit results to Codecov.io
+          command: |
+            mkdir test-reports
+            mkdir test-reports/unittest
+            cd ./starter-kits/credential-registry/server/tob-api
+            . venv/bin/activate
+            coverage run --source='.' manage.py test
+            codecov
+
+      # - run:
+      #     name: Push to Codecov.io
+      #     command: |
+      #         codecov
+
+      - store_test_results:
+          path: test-reports
+
+      - store_artifacts:
+          path: test-reports
+
+workflows:
+ version: 2
+ indy_catalyst:
+   jobs:
+     - agent-build
+     - django-build

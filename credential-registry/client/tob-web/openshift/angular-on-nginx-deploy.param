@@ -1,0 +1,20 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: tob-web
+# Template File: templates/angular-on-nginx/angular-on-nginx-deploy.json
+#=========================================================
+NAME=angular-on-nginx
+IMAGE_NAMESPACE=devex-von-tools
+REAL_IP_FROM=172.51.0.0/16
+API_URL=https://dev-demo-api.orgbook.gov.bc.ca/api/V2/
+API_SERVICE_NAME=django
+API_PATH=/api/v2/
+AdditionalRealIpFromRules=
+IpFilterRules=
+APPLICATION_DOMAIN=dev-demo.orgbook.gov.bc.ca
+TAG_NAME=dev
+HTTP_BASIC=
+CPU_REQUEST=10m
+CPU_LIMIT=250m
+MEMORY_REQUEST=100Mi
+MEMORY_LIMIT=256Mi

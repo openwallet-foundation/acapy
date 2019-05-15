@@ -1,0 +1,20 @@
+<ng-container #tableLayout *ngIf="style=='table'; else rowLayout">
+  <table class="table attribute-table">
+    <tr class="attribute-row" *ngFor="let row of rows">
+      <td>
+        <label class="control-label attribute-type">{{row.label}}</label>
+      </td>
+      <td>
+        <attribute-view [record]="row.attr"></attribute-view>
+      </td>
+    </tr>
+  </table>
+</ng-container>
+<ng-template #rowLayout>
+  <div class="row form-group attribute-row" *ngFor="let row of rows">
+    <label class="col-sm-4 control-label attribute-type">{{row.label}}</label>
+    <div class="col-sm-8 form-field">
+      <attribute-view [record]="row.attr"></attribute-view>
+    </div>
+  </div>
+</ng-template>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="0" width="0">
+<defs>
+<filter id="color-red">
+<feColorMatrix
+  type="matrix"
+  values="2.2 0   0   0 0
+          0.6 0.3 0.1 0 0
+          0.6 0.1 0.3 0 0
+          0   0   0   1 0" />
+</filter>
+<filter id="color-blue">
+<feColorMatrix
+  type="matrix"
+  values="0.3 0   0.7 0 0
+          0.0 0.3 0.9 0 0
+          0.1 0.1 2.3 0 0
+          0   0   0   1 0" />
+</filter>
+<filter id="color-purple">
+<feColorMatrix
+      type="matrix"
+      values="0.7 0    0.6 0 0
+              0.2  0.3 0.5 0 0
+              0.2 0.1  1.4 0 0
+              0 0 0 1 0 "/>
+</filter>
+<filter id="color-green">
+    <feColorMatrix
+      type="matrix"
+      values="0.5 0.4 0.1 0 0
+              0.1 1.7 0.1   0 0
+              0.1  0.4 0.5 0 0
+              0 0 0 1 0 "/>
+</filter>
+<filter id="color-orange">
+    <feColorMatrix
+      type="matrix"
+      values="1.5 0.5 0 0 0
+              0.5 1.1 0 0 0
+              0.5 0.5 0 0 0
+              0 0 0 1 0 "/>
+</filter>
+</defs>
+</svg>

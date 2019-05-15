@@ -1,0 +1,4 @@
+{
+  "APPLICATION_URL": "${APPLICATION_URL-https://dev.orgbook.gov.bc.ca}",
+  "TOPIC_CREDS_FORMAT": "timeline"
+}

@@ -1,0 +1,131 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "annotations": {
+      "description": "Build template for a django server.",
+      "tags": "django",
+      "iconClass": "icon-python"
+    },
+    "name": "${NAME}-build-template"
+  },
+  "objects": [
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}"
+      }
+    },
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "labels": {
+          "app": "${NAME}"
+        }
+      },
+      "spec": {
+        "source": {
+          "type": "Git",
+          "git": {
+            "uri": "${GIT_REPO_URL}",
+            "ref": "${GIT_REF}"
+          },
+          "contextDir": "${SOURCE_CONTEXT_DIR}"
+        },
+        "strategy": {
+          "type": "Source",
+          "sourceStrategy": {
+            "from": {
+              "kind": "${SOURCE_IMAGE_KIND}",
+              "name": "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}"
+            },
+            "env": [
+              {
+                "name": "PIP_INDEX_URL",
+                "value": "${PIP_INDEX_URL}"
+              }
+            ]
+          }
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "${NAME}:${OUTPUT_IMAGE_TAG}"
+          }
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          }
+        ]
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "NAME",
+      "displayName": "Name",
+      "description": "The name assigned to all of the objects defined in this template.  You should keep this as default unless your know what your doing.",
+      "required": true,
+      "value": "django"
+    },
+    {
+      "name": "GIT_REPO_URL",
+      "displayName": "Git Repo URL",
+      "description": "The URL to your GIT repo, don't use the this default unless your just experimenting.",
+      "required": true,
+      "value": "https://github.com/bcgov/TheOrgBook"
+    },
+    {
+      "name": "GIT_REF",
+      "displayName": "Git Reference",
+      "description": "The git reference or branch.",
+      "required": true,
+      "value": "master"
+    },
+    {
+      "name": "SOURCE_CONTEXT_DIR",
+      "displayName": "Source Context Directory",
+      "description": "The source context directory.",
+      "required": true,
+      "value": "tob-api"
+    },
+    {
+      "name": "SOURCE_IMAGE_KIND",
+      "displayName": "Source Image Kind",
+      "required": true,
+      "description": "The 'kind' (type) of the  source image; typically ImageStreamTag, or DockerImage.",
+      "value": "DockerImage"
+    },
+    {
+      "name": "SOURCE_IMAGE_NAME",
+      "displayName": "Source Image Name",
+      "required": true,
+      "description": "The name of the source image.",
+      "value": "bcgovimages/von-image"
+    },
+    {
+      "name": "SOURCE_IMAGE_TAG",
+      "displayName": "Source Image Tag",
+      "required": true,
+      "description": "The tag of the source image.",
+      "value": "py36-1.7-ew-0-s2i"
+    },
+    {
+      "name": "PIP_INDEX_URL",
+      "displayName": "Custom PyPi Index URL",
+      "description": "The custom PyPi index URL",
+      "value": ""
+    },
+    {
+      "name": "OUTPUT_IMAGE_TAG",
+      "displayName": "Output Image Tag",
+      "description": "The tag given to the built image.",
+      "required": true,
+      "value": "latest"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+# Caddyfile for the protected SchemaSpy Oracle deployment.
+#
+# This file is loaded as a config map and used to transparently replace the default Caddyfile.
+# It adds basic authentication to limit access to the database documentation.
+#
+# The root is redirected to /doc to allow an unauthenticated /health path for OpenShift
+# The deployment therefore needs to be configured to redirect the SchemaSpy
+# output to /var/www/html/doc using the OUTPUT_PATH variable.
+#
+# The username and password need to be injected into the environment using secretes,
+# this allows the use of a generic Caddyfile for all environments while using
+# randomly generated usernames and passwords for each environment.
+
+0.0.0.0:8080 {
+  root /var/www/html
+  
+  # Openly exposed health check endpoint for OpenShift
+  status 200 /health
+  
+  # Wrap the SchemaSpy content in basic authentication
+  basicauth /doc {$SCHEMASPY_USER} {$SCHEMASPY_PASSWORD}
+  
+  # Rewrite requests to the correct location.
+  rewrite / /doc  
+  log stdout
+  errors stdouta
+}

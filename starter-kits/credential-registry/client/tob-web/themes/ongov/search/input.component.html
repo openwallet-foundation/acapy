@@ -1,0 +1,11 @@
+<div [class]="'large-search' + (focused ? ' active' : '')">
+  <input #queryInput type="text" id="queryInput" name="query"
+    [placeholder]="'home.search-input' | translate"  size="40"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+    [ngbTypeahead]="typeaheadSearch"
+    (selectItem)="typeaheadSelected($event)">
+  <button #queryButton [title]="'search.by-name' | translate" class="btn btn-primary">
+    <span class="load" *ngIf="loading"><div class="loading-indicator"></div></span>
+    <span class="fa fa-search" *ngIf="! loading"></span>
+  </button>
+</div>

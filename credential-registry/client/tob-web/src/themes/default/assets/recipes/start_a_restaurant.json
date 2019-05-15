@@ -1,0 +1,52 @@
+{
+  "title": "dFlow Demo - Using Verifiable Credentials in Business",
+  "claimTypes": [
+    {
+      "title": "BC Registries Business Incorporation",
+      "schemaName": "incorporation.bc_registries",
+      "regText": "Register your business with BC Registries"
+    },
+    {
+      "title": "Worksafe BC Clearance Letter",
+      "schemaName": "restaurant_clearance_letter.worksafe_bc",
+      "regText": "Enrolment for a Clearance Letter with WorkSafe BC",
+      "depends": [
+        "incorporation.bc_registries"
+      ]
+    },
+    {
+      "title": "BC Provincial Sales Tax Number",
+      "schemaName": "pst_number.ministry_of_finance",
+      "regText": "Enroll with the BC Ministry of Finance for your Provincial Sales Tax",
+      "depends": [
+        "incorporation.bc_registries"
+      ]
+    },
+    {
+      "title": "Fraser Valley Health Operating Permit",
+      "schemaName": "operating_permit.fraser_valley_health_authority",
+      "regText": "Enrolment with the Fraser Valley Health Authority",
+      "depends": [
+        "restaurant_clearance_letter.worksafe_bc"
+      ]
+    },
+    {
+      "title": "BC Liquor License",
+      "schemaName": "liquor_license.liquor_control_and_licensing_branch",
+      "regText": "Enrolment with the BC Liquor Control and Licensing Branch",
+      "depends": [
+        "operating_permit.fraser_valley_health_authority",
+        "pst_number.ministry_of_finance"
+      ],
+      "optional": true
+    },
+    {
+      "title": "City of Surrey Business License",
+      "schemaName": "business_license.city_of_surrey",
+      "regText": "Enrolment for your Business Licence with the City of Surrey",
+      "depends": [
+        "liquor_license.liquor_control_and_licensing_branch"
+      ]
+    }
+  ]
+}

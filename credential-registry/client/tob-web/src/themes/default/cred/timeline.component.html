@@ -1,0 +1,6 @@
+<ng-container *ngIf="(result$ | async) as creds">
+    <loading-indicator [loading]="creds.loading"></loading-indicator>
+    <error-message [error]="creds.error"></error-message>
+    <timeline-view [rows]="timelineRows" [range]="timelineRange" *ngIf="timelineRows.length" class="flush"></timeline-view>
+    <p class="text-muted m-3" *ngIf="creds.loaded && ! timelineRows.length" translate>search.no-results</p>
+</ng-container>

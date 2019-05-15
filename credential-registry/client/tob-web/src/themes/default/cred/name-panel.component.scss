@@ -1,0 +1,10 @@
+.name-label {
+  .badge {
+    font-size: 65%;
+    margin-left: 1em;
+    vertical-align: middle;
+  }
+}
+
+//place all overrides for a specific theme in this file inside your theme/cred directory
+@import "../../_active/cred/cred.custom";
