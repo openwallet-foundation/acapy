@@ -26,7 +26,7 @@ fi
 
 # on Windows, docker run needs to be prefixed by winpty
 if [[ "$OSTYPE" == "msys" ]]; then
-  winpty docker run --name $AGENT --rm -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE -it faber-alice-demo $AGENT_FILE $AGENT_PORT
+  winpty docker run --name $AGENT --rm -e RUNMODE=docker -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE -it faber-alice-demo $AGENT_FILE $AGENT_PORT
 else
-  docker run --name $AGENT --rm -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE -it faber-alice-demo $AGENT_FILE $AGENT_PORT
+  docker run --name $AGENT --rm -e RUNMODE=docker -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE -it faber-alice-demo $AGENT_FILE $AGENT_PORT
 fi
