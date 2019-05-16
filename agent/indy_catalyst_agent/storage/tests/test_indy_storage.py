@@ -46,7 +46,7 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
         postgres_wallet = IndyWallet(
             {"auto_create": False, "auto_remove": False, "name": "test_pg_wallet", "key": "my_postgres",
              "storage_type": "postgres_storage", 
-             "storage_config": '{"url":"host.docker.internal:5432"}',
+             "storage_config": '{"url":"host.docker.internal:5432", "max_connections":5}',
              "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}'
              }
         )
