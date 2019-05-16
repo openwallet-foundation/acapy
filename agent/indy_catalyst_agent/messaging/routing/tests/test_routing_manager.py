@@ -1,10 +1,12 @@
 import pytest
 
+from indy_catalyst_agent.messaging.message_delivery import MessageDelivery
 from indy_catalyst_agent.messaging.request_context import RequestContext
 from indy_catalyst_agent.messaging.routing.manager import (
     RoutingManager,
     RoutingManagerError,
 )
+from indy_catalyst_agent.storage.base import BaseStorage
 from indy_catalyst_agent.storage.basic import BasicStorage
 
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -14,20 +16,20 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 @pytest.fixture()
 def request_context() -> RequestContext:
     ctx = RequestContext()
-    ctx.sender_verkey = TEST_VERKEY
-    ctx.storage = BasicStorage()
+    ctx.message_delivery = MessageDelivery(sender_verkey=TEST_VERKEY)
+    ctx.injector.bind_instance(BaseStorage, BasicStorage())
     yield ctx
 
 
 @pytest.fixture()
 def manager() -> RoutingManager:
     ctx = RequestContext()
-    ctx.sender_verkey = TEST_VERKEY
-    ctx.storage = BasicStorage()
+    ctx.message_delivery = MessageDelivery(sender_verkey=TEST_VERKEY)
+    ctx.injector.bind_instance(BaseStorage, BasicStorage())
     return RoutingManager(ctx)
 
 
-class TestBasicStorage:
+class TestRoutingManager:
     @pytest.mark.asyncio
     async def test_require_sender(self):
         with pytest.raises(RoutingManagerError):

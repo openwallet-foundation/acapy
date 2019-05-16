@@ -22,7 +22,7 @@ def resolve_class(the_cls, relative_cls: type = None):
         The resolved class
 
     Raises:
-        ImportError: If the class could not be loaded
+        ClassNotFoundError: If the class could not be loaded
 
     """
     resolved = None
@@ -31,8 +31,6 @@ def resolve_class(the_cls, relative_cls: type = None):
     elif isinstance(the_cls, str):
         default_module = relative_cls and relative_cls.__module__
         resolved = ClassLoader.load_class(the_cls, default_module)
-    if not isinstance(resolved, type):
-        raise ImportError("Class could not be loaded: {}".format(the_cls))
     return resolved
 
 

@@ -105,11 +105,11 @@ async def connections_list(request: web.BaseRequest):
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
-    records = await ConnectionRecord.query(context.storage, tag_filter)
+    records = await ConnectionRecord.query(context, tag_filter)
     results = []
     for record in records:
         row = record.serialize()
-        row["activity"] = await record.fetch_activity(context.storage)
+        row["activity"] = await record.fetch_activity(context)
         results.append(row)
     results.sort(key=connection_sort_key)
     return web.json_response({"results": results})
@@ -131,7 +131,7 @@ async def connections_retrieve(request: web.BaseRequest):
     context = request.app["request_context"]
     connection_id = request.match_info["id"]
     try:
-        record = await ConnectionRecord.retrieve_by_id(context.storage, connection_id)
+        record = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
     return web.json_response(record.serialize())
@@ -224,9 +224,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
     connection_id = request.match_info["id"]
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
     connection_mgr = ConnectionManager(context)
@@ -278,9 +276,7 @@ async def connections_accept_request(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
     connection_id = request.match_info["id"]
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
     connection_mgr = ConnectionManager(context)
@@ -306,12 +302,10 @@ async def connections_remove(request: web.BaseRequest):
     context = request.app["request_context"]
     connection_id = request.match_info["id"]
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
-    await connection.delete_record(context.storage, context.service_factory)
+    await connection.delete_record(context)
     return web.HTTPOk()
 
 

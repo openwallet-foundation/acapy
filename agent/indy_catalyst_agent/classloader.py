@@ -11,13 +11,9 @@ from .error import BaseError
 class ModuleLoadError(BaseError):
     """Module load error."""
 
-    pass
-
 
 class ClassNotFoundError(BaseError):
     """Class not found error."""
-
-    pass
 
 
 class ClassLoader:
@@ -111,8 +107,15 @@ class ClassLoader:
         try:
             mod = import_module(mod_path)
         except ModuleNotFoundError:
-            error_message = f"Unable to import module {mod_path}"
-            raise ModuleLoadError(error_message)
+            raise ModuleLoadError(f"Unable to import module: {mod_path}")
 
         resolved = getattr(mod, class_name, None)
+        if not resolved:
+            raise ClassNotFoundError(
+                f"Class '{class_name}' not defined in module: {mod_path}"
+            )
+        if not isinstance(resolved, type):
+            raise ClassNotFoundError(
+                f"Resolved value is not a class: {mod_path}.{class_name}"
+            )
         return resolved

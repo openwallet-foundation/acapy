@@ -4,11 +4,14 @@ import asyncio
 import json
 import logging
 
-from ..request_context import RequestContext
 from ...error import BaseError
+from ...holder.base import BaseHolder
+from ...issuer.base import BaseIssuer
+from ...ledger.base import BaseLedger
 from ...models.thread_decorator import ThreadDecorator
 
 from ..connections.models.connection_record import ConnectionRecord
+from ..request_context import RequestContext
 
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_request import CredentialRequest
@@ -58,7 +61,8 @@ class CredentialManager:
             A tuple (credential_exchange, credential_offer_message)
 
         """
-        credential_offer = await self.context.issuer.create_credential_offer(
+        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+        credential_offer = await issuer.create_credential_offer(
             credential_definition_id
         )
 
@@ -75,7 +79,7 @@ class CredentialManager:
             schema_id=credential_offer["schema_id"],
             credential_offer=credential_offer,
         )
-        await credential_exchange.save(self.context.storage)
+        await credential_exchange.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange.serialize())
         )
@@ -104,7 +108,7 @@ class CredentialManager:
             schema_id=credential_offer["schema_id"],
             credential_offer=credential_offer,
         )
-        await credential_exchange.save(self.context.storage)
+        await credential_exchange.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange.serialize())
         )
@@ -131,15 +135,17 @@ class CredentialManager:
 
         did = connection_record.my_did
 
-        async with self.context.ledger:
-            credential_definition = await self.context.ledger.get_credential_definition(
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
+            credential_definition = await ledger.get_credential_definition(
                 credential_definition_id
             )
 
+        holder: BaseHolder = await self.context.inject(BaseHolder)
         (
             credential_request,
             credential_request_metadata,
-        ) = await self.context.holder.create_credential_request(
+        ) = await holder.create_credential_request(
             credential_offer, credential_definition, did
         )
 
@@ -156,7 +162,7 @@ class CredentialManager:
         credential_exchange_record.credential_request_metadata = (
             credential_request_metadata
         )
-        await credential_exchange_record.save(self.context.storage)
+        await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
@@ -175,13 +181,13 @@ class CredentialManager:
         credential_request = json.loads(credential_request_message.request)
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context.storage,
+            self.context,
             tag_filter={"thread_id": credential_request_message._thread_id},
         )
 
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
-        await credential_exchange_record.save(self.context.storage)
+        await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
@@ -206,18 +212,17 @@ class CredentialManager:
         credential_offer = credential_exchange_record.credential_offer
         credential_request = credential_exchange_record.credential_request
 
-        async with self.context.ledger:
-            schema = await self.context.ledger.get_schema(schema_id)
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
+            schema = await ledger.get_schema(schema_id)
 
-        (
-            credential,
-            credential_revocation_id,
-        ) = await self.context.issuer.create_credential(
+        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+        (credential, credential_revocation_id) = await issuer.create_credential(
             schema, credential_offer, credential_request, credential_values
         )
 
         credential_exchange_record.state = CredentialExchange.STATE_ISSUED
-        await credential_exchange_record.save(self.context.storage)
+        await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
@@ -241,16 +246,17 @@ class CredentialManager:
         credential = json.loads(credential_message.issue)
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context.storage,
-            tag_filter={"thread_id": credential_message._thread_id},
+            self.context, tag_filter={"thread_id": credential_message._thread_id}
         )
 
-        async with self.context.ledger:
-            credential_definition = await self.context.ledger.get_credential_definition(
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
+            credential_definition = await ledger.get_credential_definition(
                 credential["cred_def_id"]
             )
 
-        credential_id = await self.context.holder.store_credential(
+        holder: BaseHolder = await self.context.inject(BaseHolder)
+        credential_id = await holder.store_credential(
             credential_definition,
             credential,
             credential_exchange_record.credential_request_metadata,
@@ -258,7 +264,7 @@ class CredentialManager:
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         credential_exchange_record.credential_id = credential_id
-        await credential_exchange_record.save(self.context.storage)
+        await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )

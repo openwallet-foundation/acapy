@@ -7,6 +7,8 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
+from ...ledger.base import BaseLedger
+
 
 class CredentialDefinitionSendRequestSchema(Schema):
     """Request schema for schema send request."""
@@ -50,9 +52,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     schema_id = body.get("schema_id")
 
-    async with context.ledger:
+    ledger: BaseLedger = await context.inject(BaseLedger)
+    async with ledger:
         credential_definition_id = await shield(
-            context.ledger.send_credential_definition(schema_id)
+            ledger.send_credential_definition(schema_id)
         )
 
     return web.json_response({"credential_definition_id": credential_definition_id})
@@ -79,8 +82,9 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     credential_definition_id = request.match_info["id"]
 
-    async with context.ledger:
-        credential_definition = await context.ledger.get_credential_definition(
+    ledger: BaseLedger = await context.inject(BaseLedger)
+    async with ledger:
+        credential_definition = await ledger.get_credential_definition(
             credential_definition_id
         )
 

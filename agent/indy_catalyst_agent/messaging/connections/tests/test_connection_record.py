@@ -1,6 +1,8 @@
 from asynctest import TestCase as AsyncTestCase
 
+from ....config.injection_context import InjectionContext
 from ..models.connection_record import ConnectionRecord
+from ....storage.base import BaseStorage
 from ....storage.basic import BasicStorage
 
 
@@ -18,6 +20,8 @@ class TestConfig:
 class TestConnectionRecord(AsyncTestCase, TestConfig):
     def setUp(self):
         self.storage = BasicStorage()
+        self.context = InjectionContext()
+        self.context.injector.bind_instance(BaseStorage, self.storage)
         self.test_info = ConnectionRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
@@ -27,8 +31,8 @@ class TestConnectionRecord(AsyncTestCase, TestConfig):
 
     async def test_save_retrieve_compare(self):
         record = ConnectionRecord(my_did=self.test_did)
-        record_id = await record.save(self.storage)
-        fetched = await ConnectionRecord.retrieve_by_id(self.storage, record_id)
+        record_id = await record.save(self.context)
+        fetched = await ConnectionRecord.retrieve_by_id(self.context, record_id)
         assert fetched and fetched == record
 
         bad_record = ConnectionRecord(my_did=None)

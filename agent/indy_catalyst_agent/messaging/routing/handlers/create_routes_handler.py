@@ -14,9 +14,11 @@ class CreateRoutesHandler(BaseHandler):
         self._logger.debug("CreateRoutesHandler called with context %s", context)
         assert isinstance(context.message, CreateRoutes)
 
-        if not context.connection_active or not context.sender_verkey:
+        if not context.connection_active or not context.message_delivery.sender_verkey:
             raise HandlerError("Cannot create routes: no connection")
-        self._logger.info("Received create routes from: %s", context.sender_verkey)
+        self._logger.info(
+            "Received create routes from: %s", context.message_delivery.sender_verkey
+        )
 
         mgr = RoutingManager(context)
         await mgr.create_routes(context.message.recipient_keys)

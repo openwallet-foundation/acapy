@@ -34,9 +34,7 @@ async def connections_send_message(request: web.BaseRequest):
     params = await request.json()
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
 
@@ -46,8 +44,7 @@ async def connections_send_message(request: web.BaseRequest):
         await outbound_handler(msg, target)
 
         await connection.log_activity(
-            context.storage,
-            context.service_factory,
+            context,
             "message",
             connection.DIRECTION_SENT,
             {"content": params["content"]},
@@ -69,20 +66,16 @@ async def connections_expire_message(request: web.BaseRequest):
     connection_id = request.match_info["id"]
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(
-            context.storage, connection_id
-        )
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
 
     activity_id = request.match_info["activity_id"]
-    activity = await connection.retrieve_activity(context.storage, activity_id)
+    activity = await connection.retrieve_activity(context, activity_id)
     meta = activity.get("meta") or {}
     if meta.get("copy_invite"):
         meta["copied"] = 1
-        await connection.update_activity_meta(
-            context.storage, context.service_factory, activity_id, meta
-        )
+        await connection.update_activity_meta(context, activity_id, meta)
 
     return web.HTTPOk()
 
