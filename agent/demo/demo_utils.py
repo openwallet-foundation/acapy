@@ -165,4 +165,3 @@ def start_agent_subprocess(agent_name, genesis, seed, endpoint_url, in_port_1, i
         print("Please run PYTHONPATH=.. ./" + agent_name + ".sh and then hit <enter> to continue")
         option = input("Do it!")
         return (None, None, None)
-
