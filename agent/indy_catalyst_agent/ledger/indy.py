@@ -36,6 +36,7 @@ class IndyLedger(BaseLedger):
 
         self.name = name
         self.wallet = wallet
+        self.pool_handle = None
 
         # TODO: ensure wallet type is indy
 
