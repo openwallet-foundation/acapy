@@ -43,8 +43,8 @@ async def introduction_start(request: web.BaseRequest):
     target_connection_id = request.query.get("target_connection_id")
     message = request.query.get("message")
 
-    service: BaseIntroductionService = await context.service_factory.resolve_service(
-        "introduction"
+    service: BaseIntroductionService = await context.inject(
+        BaseIntroductionService, required=False
     )
     if service:
         await service.start_introduction(

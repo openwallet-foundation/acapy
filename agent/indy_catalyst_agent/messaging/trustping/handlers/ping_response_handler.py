@@ -20,13 +20,12 @@ class PingResponseHandler(BaseHandler):
         self._logger.debug("PingResponseHandler called with context: %s", context)
         assert isinstance(context.message, PingResponse)
 
-        self._logger.info("Received trust ping response from: %s", context.sender_did)
+        self._logger.info(
+            "Received trust ping response from: %s", context.message_delivery.sender_did
+        )
 
         # Nothing to do, Connection should be automatically promoted to 'active'
 
         await context.connection_record.log_activity(
-            context.storage,
-            context.service_factory,
-            "ping",
-            context.connection_record.DIRECTION_RECEIVED,
+            context, "ping", context.connection_record.DIRECTION_RECEIVED
         )

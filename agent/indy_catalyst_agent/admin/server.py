@@ -165,8 +165,8 @@ class AdminServer(BaseAdminServer):
             {
                 "type": "settings",
                 "context": {
-                    "label": self.context.default_label,
-                    "endpoint": self.context.default_endpoint,
+                    "label": self.context.settings.get("default_label"),
+                    "endpoint": self.context.settings.get("default_endpoint"),
                     "no_receive_invites": self.context.settings.get(
                         "admin.no_receive_invites", False
                     ),

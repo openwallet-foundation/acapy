@@ -6,15 +6,18 @@ import logging
 from uuid import uuid4
 
 
-from ..request_context import RequestContext
 from ...error import BaseError
+from ...holder.base import BaseHolder
+from ...ledger.base import BaseLedger
 from ...models.thread_decorator import ThreadDecorator
+from ...verifier.base import BaseVerifier
+
+from ..request_context import RequestContext
+from ..util import send_webhook
 
 from .models.presentation_exchange import PresentationExchange
 from .messages.presentation_request import PresentationRequest
 from .messages.credential_presentation import CredentialPresentation
-
-from ..util import send_webhook
 
 
 class PresentationManagerError(BaseError):
@@ -84,7 +87,7 @@ class PresentationManager:
             presentation_request=presentation_request,
             thread_id=presentation_request_message._thread_id,
         )
-        await presentation_exchange.save(self.context.storage)
+        await presentation_exchange.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange.serialize())
         )
@@ -108,7 +111,7 @@ class PresentationManager:
             state=PresentationExchange.STATE_REQUEST_RECEIVED,
             presentation_request=json.loads(presentation_request_message.request),
         )
-        await presentation_exchange.save(self.context.storage)
+        await presentation_exchange.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange.serialize())
         )
@@ -163,8 +166,9 @@ class PresentationManager:
         # TODO: Cache this!!!
         schema_ids = []
         credential_definition_ids = []
+        holder: BaseHolder = await self.context.inject(BaseHolder)
         for credential_id in credential_ids:
-            credential = await self.context.holder.get_credential(credential_id)
+            credential = await holder.get_credential(credential_id)
             schema_id = credential["schema_id"]
             credential_definition_id = credential["cred_def_id"]
             schema_ids.append(schema_id)
@@ -173,23 +177,23 @@ class PresentationManager:
         schemas = {}
         credential_definitions = {}
 
-        async with self.context.ledger:
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
 
             # Build schemas for anoncreds
             for schema_id in schema_ids:
-                schema = await self.context.ledger.get_schema(schema_id)
+                schema = await ledger.get_schema(schema_id)
                 schemas[schema_id] = schema
 
             # Build credential_definitions for anoncreds
             for credential_definition_id in credential_definition_ids:
-                (
-                    credential_definition
-                ) = await self.context.ledger.get_credential_definition(
+                (credential_definition) = await ledger.get_credential_definition(
                     credential_definition_id
                 )
                 credential_definitions[credential_definition_id] = credential_definition
 
-        presentation = await self.context.holder.create_presentation(
+        holder: BaseHolder = await self.context.inject(BaseHolder)
+        presentation = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
             requested_credentials,
             schemas,
@@ -209,7 +213,7 @@ class PresentationManager:
             PresentationExchange.STATE_PRESENTATION_SENT
         )
         presentation_exchange_record.presentation = presentation
-        await presentation_exchange_record.save(self.context.storage)
+        await presentation_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange_record.serialize())
         )
@@ -221,14 +225,14 @@ class PresentationManager:
         (
             presentation_exchange_record
         ) = await PresentationExchange.retrieve_by_tag_filter(
-            self.context.storage, tag_filter={"thread_id": thread_id}
+            self.context, tag_filter={"thread_id": thread_id}
         )
 
         presentation_exchange_record.presentation = presentation
         presentation_exchange_record.state = (
             PresentationExchange.STATE_PRESENTATION_RECEIVED
         )
-        await presentation_exchange_record.save(self.context.storage)
+        await presentation_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange_record.serialize())
         )
@@ -252,30 +256,30 @@ class PresentationManager:
         schemas = {}
         credential_definitions = {}
 
-        async with self.context.ledger:
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
 
             # Build schemas for anoncreds
             for schema_id in schema_ids:
-                schema = await self.context.ledger.get_schema(schema_id)
+                schema = await ledger.get_schema(schema_id)
                 schemas[schema_id] = schema
 
             # Build credential_definitions for anoncreds
             for credential_definition_id in credential_definition_ids:
-                (
-                    credential_definition
-                ) = await self.context.ledger.get_credential_definition(
+                (credential_definition) = await ledger.get_credential_definition(
                     credential_definition_id
                 )
                 credential_definitions[credential_definition_id] = credential_definition
 
-        verified = await self.context.verifier.verify_presentation(
+        verifier: BaseVerifier = await self.context.inject(BaseVerifier)
+        verified = await verifier.verify_presentation(
             presentation_request, presentation, schemas, credential_definitions
         )
 
         presentation_exchange_record.verified = "true" if verified else "false"
         presentation_exchange_record.state = PresentationExchange.STATE_VERIFIED
 
-        await presentation_exchange_record.save(self.context.storage)
+        await presentation_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange_record.serialize())
         )

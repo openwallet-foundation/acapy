@@ -9,7 +9,7 @@ from ..connections.models.connection_record import ConnectionRecord
 from .messages.forward_invitation import ForwardInvitation
 from .messages.invitation import Invitation
 from .messages.invitation_request import InvitationRequest
-from ...storage.base import StorageRecord, StorageNotFoundError
+from ...storage.base import BaseStorage, StorageRecord, StorageNotFoundError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class DemoIntroductionService(BaseIntroductionService):
 
         try:
             init_connection = await ConnectionRecord.retrieve_by_id(
-                self._context.storage, init_connection_id
+                self._context, init_connection_id
             )
         except StorageNotFoundError:
             raise IntroductionError("Initiator connection not found")
@@ -50,7 +50,7 @@ class DemoIntroductionService(BaseIntroductionService):
 
         try:
             target_connection = await ConnectionRecord.retrieve_by_id(
-                self._context.storage, target_connection_id
+                self._context, target_connection_id
             )
         except StorageNotFoundError:
             raise IntroductionError("Target connection not found")
@@ -68,7 +68,8 @@ class DemoIntroductionService(BaseIntroductionService):
                 "target_connection_id": target_connection_id,
             },
         )
-        await self._context.storage.add_record(record)
+        storage: BaseStorage = await self._context.inject(BaseStorage)
+        await storage.add_record(record)
 
         target = await connection_mgr.get_connection_target(target_connection)
         await outbound_handler(msg, target)
@@ -89,9 +90,8 @@ class DemoIntroductionService(BaseIntroductionService):
         thread_id = invitation._thread_id
 
         tag_filter = {"target_connection_id": target_connection_id}
-        records = await self._context.storage.search_records(
-            self.RECORD_TYPE, tag_filter
-        ).fetch_all()
+        storage: BaseStorage = await self._context.inject(BaseStorage)
+        records = await storage.search_records(self.RECORD_TYPE, tag_filter).fetch_all()
 
         found = False
         for row in records:
@@ -103,10 +103,10 @@ class DemoIntroductionService(BaseIntroductionService):
                 msg.assign_thread_from(invitation)
 
                 value["state"] = "complete"
-                await self._context.storage.update_record_value(row, json.dumps(value))
+                await storage.update_record_value(row, json.dumps(value))
 
                 init_connection = await ConnectionRecord.retrieve_by_id(
-                    self._context.storage, row.tags["init_connection_id"]
+                    self._context, row.tags["init_connection_id"]
                 )
                 target = await connection_mgr.get_connection_target(init_connection)
                 await outbound_handler(msg, target)

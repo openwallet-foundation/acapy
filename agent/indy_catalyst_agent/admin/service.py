@@ -1,27 +1,14 @@
 """Admin API service classes."""
 
 from .base_server import BaseAdminServer
-from ..messaging.base_context import BaseRequestContext
-from ..service.base import BaseService
 
 
-class AdminService(BaseService):
+class AdminService:
     """Admin service handler for letting back-end code send event notifications."""
 
-    def __init__(self, context: BaseRequestContext, server: BaseAdminServer):
+    def __init__(self, server: BaseAdminServer):
         """Init admin service."""
-        self._context = context
         self._server = server
-
-    @classmethod
-    def service_handler(cls, server: BaseAdminServer):
-        """Quick accessor for conductor to use."""
-
-        async def get_instance(context: BaseRequestContext):
-            """Return registered server."""
-            return AdminService(context, server)
-
-        return get_instance
 
     async def add_event(self, event_type: str, event_context: dict = None):
         """

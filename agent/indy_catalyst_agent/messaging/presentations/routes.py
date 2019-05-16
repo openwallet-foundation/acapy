@@ -12,6 +12,7 @@ from .models.presentation_exchange import (
 )
 from ..connections.manager import ConnectionManager
 
+from ...holder.base import BaseHolder
 from ...storage.error import StorageNotFoundError
 from ..connections.models.connection_record import ConnectionRecord
 
@@ -78,7 +79,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
-    records = await PresentationExchange.query(context.storage, tag_filter)
+    records = await PresentationExchange.query(context, tag_filter)
     return web.json_response({"results": [record.serialize() for record in records]})
 
 
@@ -102,7 +103,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
     presentation_exchange_id = request.match_info["id"]
     try:
         record = await PresentationExchange.retrieve_by_id(
-            context.storage, presentation_exchange_id
+            context, presentation_exchange_id
         )
     except StorageNotFoundError:
         return web.HTTPNotFound()
@@ -150,7 +151,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     presentation_exchange_id = request.match_info["id"]
     try:
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(
-            context.storage, presentation_exchange_id
+            context, presentation_exchange_id
         )
     except StorageNotFoundError:
         return web.HTTPNotFound()
@@ -166,7 +167,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    credentials = await context.holder.get_credentials_for_presentation_request(
+    holder: BaseHolder = await context.inject(BaseHolder)
+    credentials = await holder.get_credentials_for_presentation_request(
         presentation_exchange_record.presentation_request, start, count, extra_query
     )
 
@@ -202,9 +204,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
     connection_manager = ConnectionManager(context)
     presentation_manager = PresentationManager(context)
 
-    connection_record = await ConnectionRecord.retrieve_by_id(
-        context.storage, connection_id
-    )
+    connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
     connection_target = await connection_manager.get_connection_target(
         connection_record
@@ -244,7 +244,7 @@ async def presentation_exchange_send_credential_presentation(request: web.BaseRe
     body = await request.json()
 
     presentation_exchange_record = await PresentationExchange.retrieve_by_id(
-        context.storage, presentation_exchange_id
+        context, presentation_exchange_id
     )
 
     assert (
@@ -256,7 +256,7 @@ async def presentation_exchange_send_credential_presentation(request: web.BaseRe
     presentation_manager = PresentationManager(context)
 
     connection_record = await ConnectionRecord.retrieve_by_id(
-        context.storage, presentation_exchange_record.connection_id
+        context, presentation_exchange_record.connection_id
     )
 
     connection_target = await connection_manager.get_connection_target(
@@ -296,7 +296,7 @@ async def presentation_exchange_verify_credential_presentation(
     presentation_exchange_id = request.match_info["id"]
 
     presentation_exchange_record = await PresentationExchange.retrieve_by_id(
-        context.storage, presentation_exchange_id
+        context, presentation_exchange_id
     )
 
     assert (
@@ -329,11 +329,11 @@ async def presentation_exchange_remove(request: web.BaseRequest):
     try:
         presentation_exchange_id = request.match_info["id"]
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(
-            context.storage, presentation_exchange_id
+            context, presentation_exchange_id
         )
     except StorageNotFoundError:
         return web.HTTPNotFound()
-    await presentation_exchange_record.delete_record(context.storage)
+    await presentation_exchange_record.delete_record(context)
     return web.HTTPOk()
 
 

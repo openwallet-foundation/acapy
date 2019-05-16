@@ -20,19 +20,19 @@ class PingHandler(BaseHandler):
         self._logger.debug(f"PingHandler called with context {context}")
         assert isinstance(context.message, Ping)
 
-        self._logger.info("Received trust ping from: %s", context.sender_did)
+        self._logger.info(
+            "Received trust ping from: %s", context.message_delivery.sender_did
+        )
 
         if not context.connection_active:
             self._logger.info(
-                "Connection not active, skipping ping response: %s", context.sender_did
+                "Connection not active, skipping ping response: %s",
+                context.message_delivery.sender_did,
             )
             return
 
         await context.connection_record.log_activity(
-            context.storage,
-            context.service_factory,
-            "ping",
-            context.connection_record.DIRECTION_RECEIVED,
+            context, "ping", context.connection_record.DIRECTION_RECEIVED
         )
 
         if context.message.response_requested:
@@ -40,8 +40,5 @@ class PingHandler(BaseHandler):
             reply.assign_thread_from(context.message)
             await responder.send_reply(reply)
             await context.connection_record.log_activity(
-                context.storage,
-                context.service_factory,
-                "ping",
-                context.connection_record.DIRECTION_SENT,
+                context, "ping", context.connection_record.DIRECTION_SENT
             )

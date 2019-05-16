@@ -22,10 +22,7 @@ class MenuHandler(BaseHandler):
         self._logger.info("Received action menu: %s", context.message)
 
         await save_connection_menu(
-            context.message,
-            context.connection_record.connection_id,
-            context.storage,
-            context.service_factory,
+            context.message, context.connection_record.connection_id, context
         )
         self._logger.debug(
             "Updated action menu on connection: %s",
