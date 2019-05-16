@@ -19,7 +19,7 @@ in_port_1  = webhook_port + 1
 in_port_2  = webhook_port + 2
 in_port_3  = webhook_port + 3
 admin_port = webhook_port + 4
-admin_url  = 'http://127.0.0.1:' + str(admin_port)
+admin_url  = 'http://host.docker.internal:' + str(admin_port)
 
 # url mapping for rest hook callbacks
 urls = (
@@ -91,9 +91,10 @@ class alice_webhooks(webhooks):
 
 def main():
     # TODO genesis transactions from file or url
-    with open('local-genesis.txt', 'r') as genesis_file:
-        genesis = genesis_file.read()
+    # with open('local-genesis.txt', 'r') as genesis_file:
+    #     genesis = genesis_file.read()
     #print(genesis)
+    genesis = requests.get('http://host.docker.internal:9000/genesis').text
 
     # TODO seed from input parameter; optionally register the DID
     rand_name = str(random.randint(100000, 999999))
@@ -102,7 +103,7 @@ def main():
     register_did = False # Alice doesn't need to register her did
     if register_did:
         print("Registering", alias, "with seed", seed)
-        ledger_url = 'http://localhost:9000'
+        ledger_url = 'http://host.docker.internal:9000'
         headers = {"accept": "application/json"}
         data = {"alias": alias, "seed": seed, "role": "TRUST_ANCHOR"}
         resp = requests.post(ledger_url+'/register', json=data)
@@ -118,11 +119,11 @@ def main():
 
     print("#7 Provision an agent and wallet, get back configuration details")
     # start agent sub-process
-    endpoint_url  = 'http://127.0.0.1:' + str(in_port_1)
+    endpoint_url  = 'http://host.docker.internal:' + str(in_port_1)
     wallet_name = 'alice'+rand_name
     wallet_key  = 'alice'+rand_name
     python_path = ".."
-    webhook_url = "http://localhost:" + str(webhook_port) + "/webhooks"
+    webhook_url = "http://host.docker.internal:" + str(webhook_port) + "/webhooks"
     (agent_proc, t1, t2) =  start_agent_subprocess(genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
                                             'indy', wallet_name, wallet_key, python_path, webhook_url)
     time.sleep(3.0)
