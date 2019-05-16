@@ -14,26 +14,32 @@ from typing import Coroutine, Union
 
 from .admin.server import AdminServer
 from .admin.service import AdminService
-from .classloader import ClassLoader
+from .config.provider import CachedProvider, ClassProvider
 from .dispatcher import Dispatcher
 from .error import StartupError
 from .logging import LoggingConfigurator
-from .ledger.indy import IndyLedger
-from .issuer.indy import IndyIssuer
-from .holder.indy import IndyHolder
-from .verifier.indy import IndyVerifier
+from .ledger.base import BaseLedger
+from .ledger.provider import LedgerProvider
+from .issuer.base import BaseIssuer
+from .holder.base import BaseHolder
+from .verifier.base import BaseVerifier
 from .messaging.agent_message import AgentMessage
+from .messaging.actionmenu.base_service import BaseMenuService
 from .messaging.actionmenu.driver_service import DriverMenuService
 from .messaging.connections.manager import ConnectionManager
 from .messaging.connections.models.connection_target import ConnectionTarget
+from .messaging.introduction.base_service import BaseIntroductionService
 from .messaging.introduction.demo_service import DemoIntroductionService
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
-from .service.factory import ServiceRegistry
+from .storage.base import BaseStorage
+from .storage.provider import StorageProvider
 from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.queue.basic import BasicOutboundMessageQueue
+from .wallet.base import BaseWallet
+from .wallet.provider import WalletProvider
 from .wallet.crypto import seed_to_did
 
 
@@ -44,16 +50,6 @@ class Conductor:
     Class responsible for initializing concrete implementations
     of our require interfaces and routing inbound and outbound message data.
     """
-
-    STORAGE_TYPES = {
-        "basic": "indy_catalyst_agent.storage.basic.BasicStorage",
-        "indy": "indy_catalyst_agent.storage.indy.IndyStorage",
-        "postgres_storage": "indy_catalyst_agent.storage.indy.IndyStorage",
-    }
-    WALLET_TYPES = {
-        "basic": "indy_catalyst_agent.wallet.basic.BasicWallet",
-        "indy": "indy_catalyst_agent.wallet.indy.IndyWallet",
-    }
 
     def __init__(
         self,
@@ -75,51 +71,81 @@ class Conductor:
         self.admin_server = None
         self.context = None
         self.connection_mgr = None
+        self.dispatcher = Dispatcher()
         self.logger = logging.getLogger(__name__)
         self.message_factory = message_factory
         self.inbound_transport_configs = transport_configs
         self.outbound_transports = outbound_transports
-        self.service_registry = None
         self.settings = settings.copy() if settings else {}
+        self.init_context()
+
+    def init_context(self):
+        """Initialize the global request context."""
+
+        context = RequestContext(settings=self.settings)
+        context.settings.set_default("default_endpoint", "http://localhost:10000")
+        context.settings.set_default("default_label", "Indy Catalyst Agent")
+
+        context.injector.bind_instance(MessageFactory, self.message_factory)
+
+        context.injector.bind_provider(BaseStorage, CachedProvider(StorageProvider()))
+        context.injector.bind_provider(BaseWallet, CachedProvider(WalletProvider()))
+
+        context.injector.bind_provider(BaseLedger, CachedProvider(LedgerProvider()))
+        context.injector.bind_provider(
+            BaseIssuer,
+            ClassProvider(
+                "indy_catalyst_agent.issuer.indy.IndyIssuer",
+                ClassProvider.Inject(BaseWallet),
+            ),
+        )
+        context.injector.bind_provider(
+            BaseHolder,
+            ClassProvider(
+                "indy_catalyst_agent.holder.indy.IndyHolder",
+                ClassProvider.Inject(BaseWallet),
+            ),
+        )
+        context.injector.bind_provider(
+            BaseVerifier,
+            ClassProvider(
+                "indy_catalyst_agent.verifier.indy.IndyVerifier",
+                ClassProvider.Inject(BaseWallet),
+            ),
+        )
+
+        # Allow action menu to be provided by driver
+        context.injector.bind_instance(BaseMenuService, DriverMenuService(context))
+        context.injector.bind_instance(
+            BaseIntroductionService, DemoIntroductionService(context)
+        )
+
+        # Admin API
+        if context.settings.get("admin.enabled"):
+            try:
+                admin_host = context.settings.get("admin.host", "0.0.0.0")
+                admin_port = context.settings.get("admin.port", "80")
+                self.admin_server = AdminServer(
+                    admin_host, admin_port, context, self.outbound_message_router
+                )
+                context.injector.bind_instance(AdminServer, self.admin_server)
+            except Exception:
+                self.logger.exception("Unable to initialize administration API")
+
+        self.connection_mgr = ConnectionManager(context)
+        context.injector.bind_instance(ConnectionManager, self.connection_mgr)
+
+        self.context = context
 
     async def start(self) -> None:
         """Start the agent."""
-        context = RequestContext()
-        context.default_endpoint = self.settings.get(
-            "default_endpoint", "http://localhost:10001"
-        )
-        context.default_label = self.settings.get(
-            "default_label", "Indy Catalyst Agent"
-        )
-        context.message_factory = self.message_factory
-        context.settings = self.settings
 
-        wallet_type = self.settings.get("wallet.type", "basic").lower()
-        wallet_class = self.WALLET_TYPES.get(wallet_type, wallet_type)
+        context = self.context
 
-        storage_default_type = "indy" if wallet_type == "indy" else "basic"
-        storage_type = self.settings.get("storage.type", storage_default_type).lower()
-        storage_class = self.STORAGE_TYPES.get(storage_type, storage_type)
+        wallet: BaseWallet = await context.inject(BaseWallet)
 
-        self.logger.info(wallet_type)
-
-        wallet_cfg = {}
-        if "wallet.key" in self.settings:
-            wallet_cfg["key"] = self.settings["wallet.key"]
-        if "wallet.name" in self.settings:
-            wallet_cfg["name"] = self.settings["wallet.name"]
-        if "storage.type" in self.settings:
-            wallet_cfg["storage_type"] = self.settings["storage.type"]
-        # storage.config and storage.creds are required if using postgres plugin
-        if "storage.config" in self.settings:
-            wallet_cfg["storage_config"] = self.settings["storage.config"]
-        if "storage.creds" in self.settings:
-            wallet_cfg["storage_creds"] = self.settings["storage.creds"]
-        context.wallet = ClassLoader.load_class(wallet_class)(wallet_cfg)
-        await context.wallet.open()
-
-        wallet_seed = self.settings.get("wallet.seed")
-        public_did_info = await context.wallet.get_public_did()
+        wallet_seed = context.settings.get("wallet.seed")
+        public_did_info = await wallet.get_public_did()
         public_did = None
         if public_did_info:
             public_did = public_did_info.did
@@ -132,31 +158,8 @@ class Conductor:
                     + f" public did {public_did_info.did}"
                 )
         elif wallet_seed:
-            public_did_info = await context.wallet.create_public_did(seed=wallet_seed)
+            public_did_info = await wallet.create_public_did(seed=wallet_seed)
             public_did = public_did_info.did
-
-        # TODO: Load ledger implementation from command line args
-        genesis_transactions = self.settings.get("ledger.genesis_transactions")
-        if genesis_transactions:
-            context.ledger = IndyLedger("default", context.wallet, genesis_transactions)
-
-        # TODO: Load issuer implementation from command line args
-        context.issuer = IndyIssuer(context.wallet)
-
-        # TODO: Load holder implementation from command line args
-        context.holder = IndyHolder(context.wallet)
-
-        # TODO: Load holder implementation from command line args
-        context.verifier = IndyVerifier(context.wallet)
-
-        context.storage = ClassLoader.load_class(storage_class)(context.wallet)
-
-        self.context = context
-        self.connection_mgr = ConnectionManager(context)
-        self.dispatcher = Dispatcher()
-        self.service_registry = ServiceRegistry[RequestContext]()
-        # Replaced in expand_message when context is cloned
-        context.service_factory = self.service_registry.get_factory(context)
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -183,16 +186,11 @@ class Conductor:
         await self.outbound_transport_manager.start_all()
 
         # Admin API
-        if self.settings.get("admin.enabled"):
+        if self.admin_server:
             try:
-                admin_host = self.settings.get("admin.host", "0.0.0.0")
-                admin_port = self.settings.get("admin.port", "80")
-                self.admin_server = AdminServer(
-                    admin_host, admin_port, context, self.outbound_message_router
-                )
                 await self.admin_server.start()
-                self.service_registry.register_service_handler(
-                    "admin", AdminService.service_handler(self.admin_server)
+                context.injector.bind_instance(
+                    AdminService, AdminService(self.admin_server)
                 )
             except Exception:
                 self.logger.exception("Unable to start administration API")
@@ -206,15 +204,15 @@ class Conductor:
         )
 
         # Debug settings
-        test_seed = self.settings.get("debug.seed")
-        if self.settings.get("debug.enabled"):
+        test_seed = context.settings.get("debug.seed")
+        if context.settings.get("debug.enabled"):
             if not test_seed:
                 test_seed = "testseed000000000000000000000001"
         if test_seed:
-            await context.wallet.create_local_did(test_seed)
+            await wallet.create_local_did(test_seed)
 
         # Print an invitation to the terminal
-        if self.settings.get("debug.print_invitation"):
+        if context.settings.get("debug.print_invitation"):
             try:
                 _connection, invitation = await self.connection_mgr.create_invitation()
                 invite_url = invitation.to_url()
@@ -224,21 +222,13 @@ class Conductor:
                 self.logger.exception("Error sending invitation")
 
         # Auto-send an invitation to another agent
-        send_invite_to = self.settings.get("debug.send_invitation_to")
+        send_invite_to = context.settings.get("debug.send_invitation_to")
         if send_invite_to:
             try:
                 _connection, invitation = await self.connection_mgr.create_invitation()
                 await self.connection_mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
-
-        # Allow action menu to be provided by driver
-        self.service_registry.register_service_handler(
-            "actionmenu", DriverMenuService.service_handler()
-        )
-        self.service_registry.register_service_handler(
-            "introduction", DemoIntroductionService.service_handler()
-        )
 
     async def inbound_message_router(
         self,
@@ -257,7 +247,7 @@ class Conductor:
         """
         try:
             context = await self.connection_mgr.expand_message(
-                message_body, transport_type, self.service_registry.get_factory
+                message_body, transport_type
             )
         except Exception:
             self.logger.exception("Error expanding message")

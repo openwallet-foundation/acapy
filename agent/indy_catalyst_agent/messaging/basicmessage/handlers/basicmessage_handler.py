@@ -27,11 +27,7 @@ class BasicMessageHandler(BaseHandler):
             meta["copy_invite"] = True
 
         await context.connection_record.log_activity(
-            context.storage,
-            context.service_factory,
-            "message",
-            context.connection_record.DIRECTION_RECEIVED,
-            meta,
+            context, "message", context.connection_record.DIRECTION_RECEIVED, meta
         )
 
         body = context.message.content
@@ -52,8 +48,7 @@ class BasicMessageHandler(BaseHandler):
             reply_msg = BasicMessage(content=reply, _l10n=context.message._l10n)
             await responder.send_reply(reply_msg)
             await context.connection_record.log_activity(
-                context.storage,
-                context.service_factory,
+                context,
                 "message",
                 context.connection_record.DIRECTION_SENT,
                 {"content": reply},

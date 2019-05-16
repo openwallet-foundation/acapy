@@ -47,7 +47,7 @@ class Dispatcher:
         """
 
         try:
-            responder = self.make_responder(send, context, transport_reply)
+            responder = await self.make_responder(send, context, transport_reply)
             handler_cls = context.message.Handler
             handler_response = await handler_cls().handle(context, responder)
         except Exception:
@@ -58,7 +58,7 @@ class Dispatcher:
         # This is for persistent connections waiting on that response.
         return handler_response
 
-    def make_responder(
+    async def make_responder(
         self, send: Coroutine, context: RequestContext, reply: Union[Coroutine, None]
     ) -> "DispatcherResponder":
         """
@@ -73,7 +73,8 @@ class Dispatcher:
             The created `DispatcherResponder`
 
         """
-        responder = DispatcherResponder(send, context.wallet, reply=reply)
+        wallet: BaseWallet = await context.inject(BaseWallet)
+        responder = DispatcherResponder(send, wallet, reply=reply)
         # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
         # responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
         # responder.add_target(

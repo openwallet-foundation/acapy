@@ -14,9 +14,11 @@ class ForwardHandler(BaseHandler):
         self._logger.debug("ForwardHandler called with context %s", context)
         assert isinstance(context.message, Forward)
 
-        if not context.recipient_verkey:
+        if not context.message_delivery.recipient_verkey:
             raise HandlerError("Cannot forward message: unknown recipient")
-        self._logger.info("Received forward for: %s", context.recipient_verkey)
+        self._logger.info(
+            "Received forward for: %s", context.message_delivery.recipient_verkey
+        )
 
         packed = context.message.msg.encode("ascii")
         rt_mgr = RoutingManager(context)

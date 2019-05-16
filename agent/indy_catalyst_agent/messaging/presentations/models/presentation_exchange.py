@@ -7,6 +7,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
+from ....config.injection_context import InjectionContext
 from ....models.base import BaseModel, BaseModelSchema
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
@@ -90,12 +91,13 @@ class PresentationExchange(BaseModel):
                 result[prop] = val
         return result
 
-    async def save(self, storage: BaseStorage):
+    async def save(self, context: InjectionContext):
         """Persist the presentation exchange record to storage.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The `InjectionContext` instance to use
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         if not self._id:
             self._id = str(uuid.uuid4())
             await storage.add_record(self.storage_record)
@@ -106,14 +108,15 @@ class PresentationExchange(BaseModel):
 
     @classmethod
     async def retrieve_by_id(
-        cls, storage: BaseStorage, presentation_exchange_id: str
+        cls, context: InjectionContext, presentation_exchange_id: str
     ) -> "PresentationExchange":
         """Retrieve a presentation exchange record by ID.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The `InjectionContext` instance to use
             presentation_exchange_id: The ID of the presentation exchange record to find
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.get_record(cls.RECORD_TYPE, presentation_exchange_id)
         vals = json.loads(result.value)
         if result.tags:
@@ -124,14 +127,15 @@ class PresentationExchange(BaseModel):
 
     @classmethod
     async def retrieve_by_tag_filter(
-        cls, storage: BaseStorage, tag_filter: dict
+        cls, context: InjectionContext, tag_filter: dict
     ) -> "PresentationExchange":
         """Retrieve a presentation exchange record by tag filter.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The `InjectionContext` instance to use
             tag_filter: The filter dictionary to apply
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.search_records(
             cls.RECORD_TYPE, tag_filter
         ).fetch_single()
@@ -141,14 +145,15 @@ class PresentationExchange(BaseModel):
 
     @classmethod
     async def query(
-        cls, storage: BaseStorage, tag_filter: dict = None
+        cls, context: InjectionContext, tag_filter: dict = None
     ) -> Sequence["PresentationExchange"]:
         """Query existing presentation exchange records.
 
         Args:
-            storage: Storage implementation to use
+            context: The `InjectionContext` instance to use
             tag_filter: An optional dictionary of tag filter clauses
         """
+        storage: BaseStorage = await context.inject(BaseStorage)
         found = await storage.search_records(cls.RECORD_TYPE, tag_filter).fetch_all()
         result = []
         for record in found:
@@ -159,13 +164,14 @@ class PresentationExchange(BaseModel):
             )
         return result
 
-    async def delete_record(self, storage: BaseStorage):
+    async def delete_record(self, context: InjectionContext):
         """Remove the presentation exchange record.
 
         Args:
-            storage: The `BaseStorage` instance to use
+            context: The `InjectionContext` instance to use
         """
         if self.presentation_exchange_id:
+            storage: BaseStorage = await context.inject(BaseStorage)
             await storage.delete_record(self.storage_record)
 
 
@@ -184,5 +190,5 @@ class PresentationExchangeSchema(BaseModelSchema):
     state = fields.Str(required=False)
     presentation_request = fields.Dict(required=False)
     presentation = fields.Dict(required=False)
-    verified = fields.Bool(required=False)
+    verified = fields.Str(required=False)
     error_msg = fields.Str(required=False)

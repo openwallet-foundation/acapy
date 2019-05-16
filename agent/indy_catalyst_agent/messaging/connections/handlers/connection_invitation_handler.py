@@ -21,13 +21,13 @@ class ConnectionInvitationHandler(BaseHandler):
         assert isinstance(context.message, ConnectionInvitation)
 
         # Prevent invitation from being submitted by normal means (POST/websocket)
-        # if context.transport_type != "invitation":
+        # if context.message_delivery.transport_type != "invitation":
         #    raise ConnectionError(
         #       "Invitation must be submitted as part of a GET request"
         #    )
 
         role = None
-        if context.transport_type == "router_invitation":
+        if context.message_delivery.transport_type == "router_invitation":
             role = ConnectionRecord.ROLE_ROUTER
 
         mgr = ConnectionManager(context)

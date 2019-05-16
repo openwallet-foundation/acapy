@@ -12,8 +12,10 @@ class RoutesHandler(BaseHandler):
         self._logger.debug("RoutesHandler called with context %s", context)
         assert isinstance(context.message, Routes)
 
-        if not context.connection_active or not context.sender_verkey:
+        if not context.connection_active or not context.message_delivery.sender_verkey:
             raise HandlerError("Unknown sender for routes message")
-        self._logger.info("Received routes from: %s", context.sender_verkey)
+        self._logger.info(
+            "Received routes from: %s", context.message_delivery.sender_verkey
+        )
 
         # TODO: send admin message
