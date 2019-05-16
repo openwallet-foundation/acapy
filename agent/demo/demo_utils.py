@@ -117,7 +117,8 @@ def write_agent_startup_script(agent_name, agent_args):
     file2.close()
 
 def start_agent_subprocess(agent_name, genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
-                            wallet_type, wallet_name, wallet_key, python_path, webhook_url, run_subprocess=True):
+                            wallet_type, wallet_name, wallet_key, python_path, webhook_url, 
+                            scripts_dir, run_subprocess=True):
     my_env = os.environ.copy()
     my_env["PYTHONPATH"] = python_path
 
@@ -126,7 +127,7 @@ def start_agent_subprocess(agent_name, genesis, seed, endpoint_url, in_port_1, i
     print("Webhook url is at", my_env["WEBHOOK_URL"])
 
     # start agent sub-process
-    agent_args = ['python3', '../scripts/icatagent', 
+    agent_args = ['python3', scripts_dir + 'icatagent', 
             '--inbound-transport', 'http', '0.0.0.0', str(in_port_1), 
             '--inbound-transport', 'http', '0.0.0.0', str(in_port_2), 
             '--inbound-transport', 'ws', '0.0.0.0', str(in_port_3),
@@ -139,11 +140,14 @@ def start_agent_subprocess(agent_name, genesis, seed, endpoint_url, in_port_1, i
             '--wallet-type', wallet_type,
             '--wallet-name', wallet_name,
             '--wallet-key', wallet_key,
-            '--storage-type', 'postgres_storage',
-            '--storage-config', '{"url":"localhost:5432"}', 
-            '--storage-creds',  '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}', 
             '--seed', seed,
             '--admin', '0.0.0.0', str(admin_port)]
+    use_postgres = False
+    if use_postgres:
+        agent_args.extend(['--storage-type', 'postgres_storage',
+            '--storage-config', '{"url":"localhost:5432","max_connections":5}', 
+            '--storage-creds',  '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}', 
+            ])
 
     # what are we doing?  write out to a command file
     write_agent_startup_script(agent_name + ".sh", agent_args)
