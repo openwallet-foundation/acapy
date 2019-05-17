@@ -23,13 +23,13 @@ class MessageFactory:
     @property
     def protocols(self) -> Sequence[str]:
         """Accessor for a list of all message protocols."""
-        prots = {}
+        prots = set()
         for message_type in self._typemap.keys():
             pos = message_type.rfind("/")
-            if pos:
+            if pos > 0:
                 family = message_type[:pos]
-                prots[family] = True
-        return tuple(prots.keys())
+                prots.add(family)
+        return prots
 
     @property
     def message_types(self) -> Sequence[str]:
