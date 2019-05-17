@@ -23,13 +23,13 @@ class MessageFactory:
     @property
     def protocols(self) -> Sequence[str]:
         """Accessor for a list of all message protocols."""
-        prots = {}
+        prots = set()
         for message_type in self._typemap.keys():
             pos = message_type.rfind("/")
-            if pos:
+            if pos > 0:
                 family = message_type[:pos]
-                prots[family] = True
-        return tuple(prots.keys())
+                prots.add(family)
+        return prots
 
     @property
     def message_types(self) -> Sequence[str]:
@@ -41,7 +41,7 @@ class MessageFactory:
         all_types = self.protocols
         result = None
 
-        if query == "*":
+        if query == "*" or query is None:
             result = all_types
         elif query:
             if query.endswith("*"):
@@ -51,22 +51,22 @@ class MessageFactory:
                 result = (query,)
         return result or ()
 
-    def register_message_types(self, *types):
+    def register_message_types(self, *typesets):
         """
         Add new supported message types.
 
         Args:
-            *types: Message types to register
+            *typesets: Mappings of message types to register
 
         """
-        for typeset in types:
+        for typeset in typesets:
             self._typemap.update(typeset)
 
     def resolve_message_class(self, message_type: str) -> type:
         """
         Resolve a message_type to a message class.
 
-        Given a dict describing a message, this method
+        Given a message type identifier, this method
         returns the corresponding registered message class.
 
         Args:
