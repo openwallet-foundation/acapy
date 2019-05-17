@@ -27,36 +27,12 @@ class TestMessageFactory(TestCase):
             self.factory.make_message(self.unknown_type_message)
         assert "Unrecognized message type" in str(context.exception)
 
-    # def test_message_class_registration(self):
-    #     mock_message = mock.MagicMock()
-    #     mock_message.deserialize.return_value = ProofRequest()
-
-    #     self.factory.register_message_types({self.test_message_type: mock_message})
-
-    #     obj = {"@type": self.test_message_type}
-    #     return_value = self.factory.make_message(obj)
-
-    #     mock_message.deserialize.assert_called_once_with(obj)
-    #     assert return_value is mock_message.deserialize.return_value
-
-    # @mock.patch(
-    #     "indy_catalyst_agent.messaging.proofs.messages.proof_request.ProofRequest"
-    # )
-    # def test_message_class_name_registration(self, mock_proof_request):
-    #     self.factory.register_message_types(
-    #         {
-    #             self.test_message_type: (
-    #                 "indy_catalyst_agent.messaging.proofs.messages."
-    #                 + "proof_request.ProofRequest"
-    #             )
-    #         }
-    #     )
-
-    #     obj = {"@type": self.test_message_type}
-    #     return_value = self.factory.make_message(obj)
-
-    #     mock_proof_request.deserialize.assert_called_once_with(obj)
-    #     assert return_value is mock_proof_request.deserialize.return_value
+    def test_protocols(self):
+        self.factory.register_message_types(
+            {self.test_message_type: self.test_message_handler}
+        )
+        protocols = self.factory.protocols
+        assert tuple(protocols) == (self.test_protocol,)
 
     def test_message_type_query(self):
         self.factory.register_message_types(
@@ -64,7 +40,7 @@ class TestMessageFactory(TestCase):
         )
         for q in self.test_protocol_queries:
             matches = self.factory.protocols_matching_query(q)
-            assert matches == (self.test_protocol,)
+            assert tuple(matches) == (self.test_protocol,)
         for q in self.test_protocol_queries_fail:
             matches = self.factory.protocols_matching_query(q)
             assert matches == ()
