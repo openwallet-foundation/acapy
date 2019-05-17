@@ -13,7 +13,6 @@ from .messaging.agent_message import AgentMessage
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder, ResponderError
 from .messaging.connections.models.connection_target import ConnectionTarget
-from .wallet.base import BaseWallet
 
 
 class Dispatcher:
@@ -81,9 +80,8 @@ class Dispatcher:
             The created `DispatcherResponder`
 
         """
-        wallet: BaseWallet = await context.inject(BaseWallet)
         responder = DispatcherResponder(
-            send, wallet, reply=reply, direct_response=direct_response
+            send, context, reply=reply, direct_response=direct_response
         )
         # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
         # responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
@@ -101,7 +99,7 @@ class DispatcherResponder(BaseResponder):
     def __init__(
         self,
         send: Coroutine,
-        wallet: BaseWallet,
+        context: RequestContext,
         *targets,
         reply: Coroutine = None,
         direct_response: Future = None,
@@ -116,11 +114,11 @@ class DispatcherResponder(BaseResponder):
             reply: Function to reply on incoming channel
 
         """
+        self._context = context
         self._direct_response = direct_response
         self._targets = list(targets)
         self._send = send
         self._reply = reply
-        self._wallet = wallet
 
     def add_target(self, target: ConnectionTarget):
         """
@@ -165,7 +163,7 @@ class DispatcherResponder(BaseResponder):
             message: `AgentMessage` to send
             target: `ConnectionTarget` to send to
         """
-        await self._send(message, target)
+        await self._send(self._context, message, target)
 
     async def send_admin_message(self, message: AgentMessage):
         """Todo."""

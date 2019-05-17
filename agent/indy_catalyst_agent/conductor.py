@@ -33,6 +33,8 @@ from .messaging.introduction.base_service import BaseIntroductionService
 from .messaging.introduction.demo_service import DemoIntroductionService
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
+from .messaging.util import datetime_now
+from .models.timing_decorator import TimingDecorator
 from .storage.base import BaseStorage
 from .storage.provider import StorageProvider
 from .transport.inbound import InboundTransportConfiguration
@@ -272,21 +274,36 @@ class Conductor:
             await dispatch
 
         if direct_response and direct_response.done():
-            response = await self.connection_mgr.compact_message(
-                direct_response.result(), None
-            )
-            print(f"returning direct {response}")
-            return response
+            return await self.compact_message(context, direct_response.result(), None)
+
+    async def compact_message(
+        self,
+        context: RequestContext,
+        message: Union[AgentMessage, str, bytes],
+        target: ConnectionTarget,
+    ):
+        """Prepare a response message for transmission."""
+        if context.settings.get("timing.enabled") and isinstance(message, AgentMessage):
+            in_time = context.message_delivery and context.message_delivery.in_time
+            if not message._timing:
+                message._timing = TimingDecorator(
+                    in_time=in_time, out_time=datetime_now()
+                )
+        return await self.connection_mgr.compact_message(message, target)
 
     async def outbound_message_router(
-        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
+        self,
+        context: RequestContext,
+        message: Union[AgentMessage, str, bytes],
+        target: ConnectionTarget,
     ) -> None:
         """
         Route an outbound message.
 
         Args:
+            context: The request context active when processing the message
             message: An agent message to be sent
             target: Target to send message to
         """
-        payload = await self.connection_mgr.compact_message(message, target)
+        payload = await self.compact_message(context, message, target)
         await self.outbound_transport_manager.send_message(payload, target.endpoint)
