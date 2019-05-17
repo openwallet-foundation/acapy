@@ -51,22 +51,22 @@ class MessageFactory:
                 result = (query,)
         return result or ()
 
-    def register_message_types(self, *types):
+    def register_message_types(self, *typesets):
         """
         Add new supported message types.
 
         Args:
-            *types: Message types to register
+            *typesets: Mappings of message types to register
 
         """
-        for typeset in types:
+        for typeset in typesets:
             self._typemap.update(typeset)
 
     def resolve_message_class(self, message_type: str) -> type:
         """
         Resolve a message_type to a message class.
 
-        Given a dict describing a message, this method
+        Given a message type identifier, this method
         returns the corresponding registered message class.
 
         Args:
