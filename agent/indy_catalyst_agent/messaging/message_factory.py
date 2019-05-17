@@ -41,7 +41,7 @@ class MessageFactory:
         all_types = self.protocols
         result = None
 
-        if query == "*":
+        if query == "*" or query is None:
             result = all_types
         elif query:
             if query.endswith("*"):
