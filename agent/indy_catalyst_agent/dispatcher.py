@@ -5,6 +5,7 @@ The dispatcher is responsible for coordinating data flow between handlers, provi
 lifecycle hook callbacks storing state for message threads, etc.
 """
 
+from asyncio import Future
 import logging
 from typing import Coroutine, Union
 
@@ -32,6 +33,7 @@ class Dispatcher:
         context: RequestContext,
         send: Coroutine,
         transport_reply: Coroutine = None,
+        direct_response: Future = None,
     ):
         """
         Configure responder and dispatch message context to message handler.
@@ -47,7 +49,9 @@ class Dispatcher:
         """
 
         try:
-            responder = await self.make_responder(send, context, transport_reply)
+            responder = await self.make_responder(
+                send, context, transport_reply, direct_response
+            )
             handler_cls = context.message.Handler
             handler_response = await handler_cls().handle(context, responder)
         except Exception:
@@ -59,7 +63,11 @@ class Dispatcher:
         return handler_response
 
     async def make_responder(
-        self, send: Coroutine, context: RequestContext, reply: Union[Coroutine, None]
+        self,
+        send: Coroutine,
+        context: RequestContext,
+        reply: Coroutine,
+        direct_response: Future,
     ) -> "DispatcherResponder":
         """
         Build a responder object.
@@ -74,7 +82,9 @@ class Dispatcher:
 
         """
         wallet: BaseWallet = await context.inject(BaseWallet)
-        responder = DispatcherResponder(send, wallet, reply=reply)
+        responder = DispatcherResponder(
+            send, wallet, reply=reply, direct_response=direct_response
+        )
         # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
         # responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
         # responder.add_target(
@@ -89,7 +99,12 @@ class DispatcherResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
     def __init__(
-        self, send: Coroutine, wallet: BaseWallet, *targets, reply: Coroutine = None
+        self,
+        send: Coroutine,
+        wallet: BaseWallet,
+        *targets,
+        reply: Coroutine = None,
+        direct_response: Future = None,
     ):
         """
         Initialize an instance of `DispatcherResponder`.
@@ -101,6 +116,7 @@ class DispatcherResponder(BaseResponder):
             reply: Function to reply on incoming channel
 
         """
+        self._direct_response = direct_response
         self._targets = list(targets)
         self._send = send
         self._reply = reply
@@ -126,7 +142,10 @@ class DispatcherResponder(BaseResponder):
             ResponderError: If there is no active connection
 
         """
-        if self._reply:
+        if self._direct_response:
+            self._direct_response.set_result(message)
+            self._direct_response = None
+        elif self._reply:
             # 'reply' is a temporary solution to support responses to websocket requests
             # a better solution would likely use a queue to deliver the replies
             await self._reply(message.serialize())

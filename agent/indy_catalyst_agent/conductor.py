@@ -8,6 +8,7 @@ wallet.
 
 """
 
+import asyncio
 import logging
 
 from typing import Coroutine, Union
@@ -235,6 +236,7 @@ class Conductor:
         message_body: Union[str, bytes],
         transport_type: str,
         reply: Coroutine = None,
+        allow_direct_response: bool = False,
     ):
         """
         Route inbound messages.
@@ -243,22 +245,38 @@ class Conductor:
             message_body: Body of the incoming message
             transport_type: Type of transport this message came from
             reply: Function to reply to this message
+            allow_direct_response: Flag indicating that the transport
+                supports direct responses
 
         """
         try:
             context = await self.connection_mgr.expand_message(
-                message_body, transport_type
+                message_body, transport_type, allow_direct_response
             )
         except Exception:
             self.logger.exception("Error expanding message")
             raise
 
-        result = await self.dispatcher.dispatch(
-            context, self.outbound_message_router, reply
+        if context.message_delivery.direct_response:
+            direct_response = asyncio.Future()
+        else:
+            direct_response = None
+
+        dispatch = self.dispatcher.dispatch(
+            context, self.outbound_message_router, reply, direct_response
         )
-        # TODO: need to use callback instead?
-        #       respond immediately after message parse in case of req-res transport?
-        return result.serialize() if result else None
+        if direct_response:
+            # wait until either the handler completes or a direct response is received
+            await asyncio.gather(dispatch, direct_response)
+        else:
+            await dispatch
+
+        if direct_response and direct_response.done():
+            response = await self.connection_mgr.compact_message(
+                direct_response.result(), None
+            )
+            print(f"returning direct {response}")
+            return response
 
     async def outbound_message_router(
         self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget

@@ -79,8 +79,11 @@ class Transport(BaseInboundTransport):
             body = await request.text()
         else:
             body = await request.read()
+
         try:
-            await self.message_router(body, self._scheme)
+            response = await self.message_router(
+                body, self._scheme, allow_direct_response=True
+            )
         except Exception as e:
             self.logger.exception("Error handling message")
             error_message = f"Error handling message: {str(e)}"
@@ -88,6 +91,8 @@ class Transport(BaseInboundTransport):
                 {"success": False, "message": error_message}, status=400
             )
 
+        if response:
+            return web.Response(text=response, status=200)
         return web.Response(status=200)
 
     async def invite_message_handler(self, request: web.BaseRequest):

@@ -1,8 +1,10 @@
 """Utils for messages."""
 
 import asyncio
+import datetime
 import os
 import logging
+from typing import Union
 
 import aiohttp
 
@@ -28,3 +30,11 @@ async def send_webhook(topic, payload, retries=5):
             if retries > 0:
                 await asyncio.sleep(5)
                 await send_webhook(topic, payload, retries - 1)
+
+
+def time_now(datetime_format=False) -> Union[str, datetime.datetime]:
+    """Timestamp in ISO format."""
+    dt = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+    if datetime_format:
+        return dt
+    return dt.isoformat(" ")

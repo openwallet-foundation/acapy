@@ -1,5 +1,7 @@
 """Classes for representing message delivery details."""
 
+from datetime import datetime
+
 
 class MessageDelivery:
     """Properties of an agent message's delivery."""
@@ -9,6 +11,8 @@ class MessageDelivery:
     def __init__(
         self,
         *,
+        direct_response: bool = False,
+        in_time: datetime = None,
         recipient_verkey: str = None,
         recipient_did: str = None,
         recipient_did_public: str = None,
@@ -17,12 +21,58 @@ class MessageDelivery:
         transport_type: str = None,
     ):
         """Initialize the message delivery instance."""
+        self._direct_response = direct_response
+        self._in_time = in_time
         self._recipient_verkey = recipient_verkey
         self._recipient_did = recipient_did
         self._recipient_did_public = recipient_did_public
         self._sender_did = sender_did
         self._sender_verkey = sender_verkey
         self._transport_type = transport_type
+
+    @property
+    def direct_response(self) -> str:
+        """
+        Accessor for the flag indicating that direct responses are preferred.
+
+        Returns:
+            This context's direct response flag
+
+        """
+        return self._direct_response
+
+    @direct_response.setter
+    def direct_response(self, direct: bool):
+        """
+        Setter for the flag indicating that direct responses are preferred.
+
+        Args:
+            transport: This context's new direct response flag
+
+        """
+        self._direct_response = direct
+
+    @property
+    def in_time(self) -> str:
+        """
+        Accessor for the datetime the message was received.
+
+        Returns:
+            This context's received time
+
+        """
+        return self._in_time
+
+    @in_time.setter
+    def in_time(self, in_time: datetime):
+        """
+        Setter for the datetime the message was received.
+
+        Args:
+            transport: This context's new received time
+
+        """
+        self._in_time = in_time
 
     @property
     def recipient_verkey(self) -> str:
