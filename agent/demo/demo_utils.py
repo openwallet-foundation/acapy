@@ -111,7 +111,7 @@ def start_agent_subprocess(genesis, seed, endpoint_url, in_port_1, in_port_2, in
     print("Webhook url is at", my_env["WEBHOOK_URL"])
 
     # start agent sub-process
-    agent_proc = subprocess.Popen(['python3', '../scripts/icatagent', 
+    agent_proc = subprocess.Popen(['python3', 'scripts/icatagent', 
                             '--inbound-transport', 'http', '0.0.0.0', str(in_port_1), 
                             '--inbound-transport', 'http', '0.0.0.0', str(in_port_2), 
                             '--inbound-transport', 'ws', '0.0.0.0', str(in_port_3),

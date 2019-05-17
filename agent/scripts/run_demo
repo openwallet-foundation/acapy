@@ -1,0 +1,32 @@
+#!/bin/bash
+
+shopt -s nocasematch
+
+cd $(dirname $0)
+
+AGENT=$1
+if [[ $AGENT == "faber" ]] || [[ $AGENT == "alice" ]]; then
+	echo "Preparing agent image..."
+	docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
+else
+  echo "Please specify which agent you want to run. Choose from 'faber' or 'alice'.";
+	exit 1;
+fi
+
+echo "Starting $AGENT..."
+if [[ $AGENT == "faber" ]]; then
+  AGENT_FILE="demo/faber-pg.py"
+	AGENT_PORT=8020
+	AGENT_PORT_RANGE=8020-8027
+else
+  AGENT_FILE="demo/alice-pg.py"
+	AGENT_PORT=8030
+	AGENT_PORT_RANGE=8030-8037
+fi
+
+# on Windows, docker run needs to be prefixed by winpty
+if [[ "$OSTYPE" == "msys" ]]; then
+  winpty docker run --name $AGENT --rm -e RUNMODE=docker -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE -it faber-alice-demo $AGENT_FILE $AGENT_PORT
+else
+  docker run --name $AGENT --rm -e RUNMODE=docker -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE -it faber-alice-demo $AGENT_FILE $AGENT_PORT
+fi
