@@ -25,8 +25,8 @@ class BaseResponder(ABC):
         """
         Send outbound message.
 
-        Send a message to a given connection target (endpoint). The
-        message may be queued for later delivery.
+        Send a message to a given connection target (endpoint). The message may be
+        queued for later delivery.
 
         Args:
             message: AgentMessage to be sent
@@ -37,10 +37,10 @@ class BaseResponder(ABC):
         """
         Send message as reply.
 
-        Send a message back to the same agent. This relies
-        on the presence of an active connection. The message
-        may be multicast to multiple endpoints or queued for
-        later delivery.
+        Send a message back to the same agent. Unless direct responses or
+        queuing are used, this relies on the presence of an active connection.
+        The message may be multicast to multiple endpoints or queued for later
+        delivery.
 
         Args:
             message: AgentMessage to be sent

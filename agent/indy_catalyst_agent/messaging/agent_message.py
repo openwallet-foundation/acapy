@@ -27,6 +27,7 @@ from ..models.localization_decorator import (
 )
 from ..models.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
 from ..models.timing_decorator import TimingDecorator, TimingDecoratorSchema
+from ..models.transport_decorator import TransportDecorator, TransportDecoratorSchema
 from ..wallet.base import BaseWallet
 
 
@@ -51,14 +52,18 @@ class AgentMessage(BaseModel):
         _signatures: Dict[str, FieldSignature] = None,
         _thread: ThreadDecorator = None,
         _timing: TimingDecorator = None,
+        _transport: TransportDecorator = None,
     ):
         """
         Initialize base agent message object.
 
         Args:
             _id: Agent message id
+            _l10n: LocalizationDecorator instance
             _signatures: Message signatures
-            _thread: ThreadDecorator object
+            _thread: ThreadDecorator instance
+            _timing: TimingDecorator instance
+            _transport: TransportDecorator instance
 
         Raises:
             TypeError: If message type is missing on subclass Meta class
@@ -74,6 +79,7 @@ class AgentMessage(BaseModel):
         self._message_l10n = _l10n
         self._message_thread = _thread
         self._message_timing = _timing
+        self._message_transport = _transport
         self._message_signatures = _signatures.copy() if _signatures else {}
         if not self.Meta.message_type:
             raise TypeError(
@@ -311,6 +317,16 @@ class AgentMessage(BaseModel):
         """Set the timing decorator."""
         self._message_timing = val
 
+    @property
+    def _transport(self) -> TransportDecorator:
+        """Accessor for the transport decorator."""
+        return self._message_transport
+
+    @_transport.setter
+    def _transport(self, val: TransportDecorator):
+        """Set the transport decorator."""
+        self._message_transport = val
+
 
 class AgentMessageSchema(BaseModelSchema):
     """AgentMessage schema."""
@@ -328,11 +344,16 @@ class AgentMessageSchema(BaseModelSchema):
     # Localization decorator
     _l10n = fields.Nested(LocalizationDecoratorSchema, data_key="~l10n", required=False)
 
-    # Thread decorator value
+    # Thread decorator
     _thread = fields.Nested(ThreadDecoratorSchema, data_key="~thread", required=False)
 
-    # Localization decorator
+    # Timing decorator
     _timing = fields.Nested(TimingDecoratorSchema, data_key="~timing", required=False)
+
+    # Transport decorator
+    _transport = fields.Nested(
+        TransportDecoratorSchema, data_key="~transport", required=False
+    )
 
     def __init__(self, *args, **kwargs):
         """
