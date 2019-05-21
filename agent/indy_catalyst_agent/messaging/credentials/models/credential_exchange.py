@@ -47,6 +47,8 @@ class CredentialExchange(BaseModel):
         credential_request: dict = None,
         credential_request_metadata: dict = None,
         credential_id: str = None,
+        credential_values: dict = None,
+        auto_issue: bool = False,
         error_msg: str = None,
     ):
         """Initialize a new CredentialExchange."""
@@ -61,6 +63,8 @@ class CredentialExchange(BaseModel):
         self.credential_request = credential_request
         self.credential_request_metadata = credential_request_metadata
         self.credential_id = credential_id
+        self.credential_values = credential_values
+        self.auto_issue = auto_issue
         self.error_msg = error_msg
 
     @property

@@ -20,6 +20,8 @@ class CredentialOfferRequestSchema(Schema):
 
     connection_id = fields.Str(required=True)
     credential_definition_id = fields.Str(required=True)
+    auto_issue = fields.Str(required=False, default=False)
+    credential_values = fields.Dict(required=False)
 
 
 class CredentialOfferResultSchema(Schema):
@@ -211,6 +213,13 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     credential_definition_id = body.get("credential_definition_id")
+    auto_issue = body.get("auto_issue")
+    credential_values = body.get("credential_values")
+
+    if auto_issue and not credential_values:
+        raise web.HTTPBadRequest(
+            "If auto_issue is set to true then credential_values must also be provided."
+        )
 
     connection_manager = ConnectionManager(context)
     credential_manager = CredentialManager(context)
@@ -226,7 +235,9 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     (
         credential_exchange_record,
         credential_offer_message,
-    ) = await credential_manager.create_offer(credential_definition_id, connection_id)
+    ) = await credential_manager.create_offer(
+        credential_definition_id, connection_id, auto_issue, credential_values
+    )
 
     await outbound_handler(credential_offer_message, connection_target)
 
@@ -319,12 +330,12 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     (
         credential_exchange_record,
-        credential_request_message,
+        credential_issue_message,
     ) = await credential_manager.issue_credential(
         credential_exchange_record, credential_values
     )
 
-    await outbound_handler(credential_request_message, connection_target)
+    await outbound_handler(credential_issue_message, connection_target)
     return web.json_response(credential_exchange_record.serialize())
 
 
