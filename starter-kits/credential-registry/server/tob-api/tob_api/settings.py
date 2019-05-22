@@ -70,8 +70,8 @@ INSTALLED_APPS = [
     "api_v2",
     "tob_api",
     "corsheaders",
-    "rest_hooks",
-    "icat_hooks",
+    "rest_hooks", # only required when using webhook subscriptions
+    "icat_hooks", # only required when using webhook subscriptions
 ]
 
 HAYSTACK_CONNECTIONS = {"default": haystack.config()}
@@ -293,6 +293,11 @@ if custom_settings_file.exists():
         exec(source_file.read())
 
 
+################################################################################################
+# The next section includes configurations specific to the webhook subscription functionality. #
+# If you are not using the webhooks, you can comment out the following settings.               #
+################################################################################################
+
 # django-rest-hooks settings
 AUTHENTICATION_BACKENDS = ['icat_hooks.icatrestauth.IcatAuthBackend']
 
@@ -308,14 +313,15 @@ HOOK_EVENTS = {
 }
 
 # celery settings
-
-# see https://github.com/celery/celery/issues/4817
-CELERY_BROKER_HEARTBEAT = 0
+CELERY_BROKER_HEARTBEAT = 0 # see https://github.com/celery/celery/issues/4817
 
 CELERY_BROKER_URL = "pyamqp://{}:{}@rabbitmq//".format(
     os.environ.get("RABBITMQ_USER"), os.environ.get("RABBITMQ_PASSWORD")
 )
 
 # custom hook settings
-
 HOOK_RETRY_THRESHOLD = os.environ.get("HOOK_RETRY_THRESHOLD", 3)
+
+###########################
+# Enf of webhook settings #
+###########################
