@@ -9,3 +9,8 @@ class ClosedPoolError(BaseError):
 
 class LedgerTransactionError(BaseError):
     """The ledger rejected the transaction."""
+
+
+class DuplicateSchemaError(BaseError):
+    """The schema already exists on the ledger."""
+
