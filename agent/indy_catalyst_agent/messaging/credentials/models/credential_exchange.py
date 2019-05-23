@@ -91,6 +91,8 @@ class CredentialExchange(BaseModel):
             "credential_request",
             "credential_request_metadata",
             "error_msg",
+            "auto_issue",
+            "credential_values"
         ):
             val = getattr(self, prop)
             if val:
@@ -109,6 +111,7 @@ class CredentialExchange(BaseModel):
             "credential_definition_id",
             "schema_id",
             "credential_id",
+
         ):
             val = getattr(self, prop)
             if val:
@@ -214,4 +217,6 @@ class CredentialExchangeSchema(BaseModelSchema):
     credential_request = fields.Dict(required=False)
     credential_request_metadata = fields.Dict(required=False)
     credential_id = fields.Str(required=False)
+    auto_issue = fields.Bool(required=False)
+    credential_values = fields.Dict(required=False)
     error_msg = fields.Str(required=False)

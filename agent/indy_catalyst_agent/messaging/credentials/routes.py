@@ -218,7 +218,8 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
 
     if auto_issue and not credential_values:
         raise web.HTTPBadRequest(
-            "If auto_issue is set to true then credential_values must also be provided."
+            reason="If auto_issue is set to"
+            + " true then credential_values must also be provided."
         )
 
     connection_manager = ConnectionManager(context)
