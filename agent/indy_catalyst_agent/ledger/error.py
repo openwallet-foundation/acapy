@@ -13,4 +13,3 @@ class LedgerTransactionError(BaseError):
 
 class DuplicateSchemaError(BaseError):
     """The schema already exists on the ledger."""
-

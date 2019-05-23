@@ -1,16 +1,9 @@
 """Basic message handler."""
 
-import json
-
-from asyncio import shield
-
 from ...base_handler import BaseHandler, BaseResponder, HandlerException, RequestContext
 
 from ..manager import CredentialManager
 from ..messages.credential_offer import CredentialOffer
-
-from ....ledger.base import BaseLedger
-from ....holder.base import BaseHolder
 
 
 class CredentialOfferHandler(BaseHandler):
@@ -41,19 +34,7 @@ class CredentialOfferHandler(BaseHandler):
 
         # If auto respond is turned on, automatically reply with credential request
         if context.settings.get("auto_respond_credential_offer"):
-
-            ledger: BaseLedger = await context.inject(BaseLedger)
-            holder: BaseHolder = await context.inject(BaseHolder)
-
-            credential_offer = json.loads(context.message.offer_json)
-
-            async with ledger:
-                credential_definition = await ledger.get_credential_definition(
-                    credential_offer["cred_def_id"]
-                )
-
             (_, credential_request_message) = await credential_manager.create_request(
                 credential_exchange_record, context.connection_record
             )
-
             await responder.send_reply(credential_request_message)
