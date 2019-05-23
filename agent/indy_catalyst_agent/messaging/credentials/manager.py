@@ -117,6 +117,9 @@ class CredentialManager:
             credential_offer: Credential offer to receive
             connection_id: Connection to receive offer on
 
+        Returns:
+            The credential_exchange_record
+
         """
 
         credential_offer = json.loads(credential_offer_message.offer_json)
@@ -134,6 +137,8 @@ class CredentialManager:
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange.serialize())
         )
+
+        return credential_exchange
 
     async def create_request(
         self,

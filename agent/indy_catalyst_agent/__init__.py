@@ -145,6 +145,12 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--auto-respond-credential-offer",
+    action="store_true",
+    help="Auto-respond to credential offers with credential request",
+)
+
+PARSER.add_argument(
     "--no-receive-invites",
     action="store_true",
     help="Disable the receive invitations administration function",
@@ -238,6 +244,9 @@ def main():
         settings["debug.print_invitation"] = True
     if args.send_invite:
         settings["debug.send_invitation_to"] = args.send_invite
+
+    if args.auto_respond_credential_offer:
+        settings["auto_respond_credential_offer"] = True
 
     if args.accept_invites:
         settings["accept_invites"] = True
