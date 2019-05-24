@@ -41,6 +41,7 @@ class PresentationRequestRequestSchema(Schema):
         restrictions = fields.List(fields.Dict(), required=False)
 
     connection_id = fields.Str(required=True)
+    extra_query = fields.Dict(required=False)
     requested_attributes = fields.Nested(RequestedAttribute, many=True)
     requested_predicates = fields.Nested(RequestedPredicate, many=True)
 
@@ -195,6 +196,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
     body = await request.json()
 
     connection_id = body.get("connection_id")
+    extra_query = body.get("extra_query")
 
     name = body.get("name")
     version = body.get("version")
@@ -214,7 +216,12 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
         presentation_exchange_record,
         presentation_request_message,
     ) = await presentation_manager.create_request(
-        name, version, requested_attributes, requested_predicates, connection_id
+        name,
+        version,
+        requested_attributes,
+        requested_predicates,
+        connection_id,
+        extra_query,
     )
 
     await outbound_handler(presentation_request_message, connection_target)

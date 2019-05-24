@@ -28,3 +28,12 @@ class PresentationRequestHandler(BaseHandler):
         await presentation_manager.receive_request(
             context.message, context.connection_record.connection_id
         )
+
+        # If auto_respond_presentation_request is set, try to build a presentation
+        if context.settings.get("auto_respond_presentation_request"):
+
+            
+
+            pass
+
+

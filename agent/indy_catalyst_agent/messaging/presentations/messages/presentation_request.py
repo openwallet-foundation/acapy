@@ -25,7 +25,7 @@ class PresentationRequest(AgentMessage):
         self,
         request: str = None,
         comment: str = None,
-        extra_query: dict = None,
+        extra_query: str = None,
         **kwargs,
     ):
         """
@@ -50,4 +50,4 @@ class PresentationRequestSchema(AgentMessageSchema):
 
     request = fields.Str(required=True)
     comment = fields.Str(required=False)
-    extra_query = fields.Dict(required=False)
+    extra_query = fields.Str(required=False)
