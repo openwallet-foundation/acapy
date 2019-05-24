@@ -18,6 +18,7 @@ class CredentialPresentationHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
         self._logger.debug(
             f"CredentialPresentationHandler called with context {context}"
@@ -32,3 +33,4 @@ class CredentialPresentationHandler(BaseHandler):
         await presentation_manager.receive_presentation(
             json.loads(context.message.presentation), context.message._thread_id
         )
+

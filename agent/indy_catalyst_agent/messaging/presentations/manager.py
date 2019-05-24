@@ -237,6 +237,8 @@ class PresentationManager:
             send_webhook("presentations", presentation_exchange_record.serialize())
         )
 
+        return presentation_exchange_record
+
     async def verify_presentation(
         self, presentation_exchange_record: PresentationExchange
     ):

@@ -151,6 +151,13 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--auto-respond-presentation-request",
+    action="store_true",
+    help="Auto-respond to presentation requests with a presentation "
+    + "if exactly one credential exists to satisfy the request",
+)
+
+PARSER.add_argument(
     "--no-receive-invites",
     action="store_true",
     help="Disable the receive invitations administration function",
@@ -247,6 +254,9 @@ def main():
 
     if args.auto_respond_credential_offer:
         settings["auto_respond_credential_offer"] = True
+
+    if args.auto_respond_presentation_request:
+        settings["auto_respond_presentation_request"] = True
 
     if args.accept_invites:
         settings["accept_invites"] = True
