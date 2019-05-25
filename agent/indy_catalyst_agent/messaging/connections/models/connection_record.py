@@ -450,6 +450,11 @@ class ConnectionRecord(BaseModel):
         )
 
     @property
+    def is_active(self) -> bool:
+        """Accessor to check if the connection is active."""
+        return self.state == self.STATE_ACTIVE
+
+    @property
     def requires_routing(self) -> bool:
         """Accessor to check if routing actions are needed."""
         return self.routing_state in (

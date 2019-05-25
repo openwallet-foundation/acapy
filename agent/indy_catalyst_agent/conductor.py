@@ -8,7 +8,6 @@ wallet.
 
 """
 
-import asyncio
 import logging
 
 from typing import Coroutine, Union
@@ -27,12 +26,13 @@ from .verifier.base import BaseVerifier
 from .messaging.agent_message import AgentMessage
 from .messaging.actionmenu.base_service import BaseMenuService
 from .messaging.actionmenu.driver_service import DriverMenuService
-from .messaging.connections.manager import ConnectionManager
 from .messaging.connections.models.connection_target import ConnectionTarget
+from .messaging.error import MessageParseError
 from .messaging.introduction.base_service import BaseIntroductionService
 from .messaging.introduction.demo_service import DemoIntroductionService
 from .messaging.message_factory import MessageFactory
 from .messaging.request_context import RequestContext
+from .messaging.serializer import MessageSerializer
 from .messaging.util import datetime_now
 from .models.timing_decorator import TimingDecorator
 from .storage.base import BaseStorage
@@ -72,11 +72,11 @@ class Conductor:
 
         """
         self.admin_server = None
-        self.context = None
-        self.connection_mgr = None
-        self.dispatcher = Dispatcher()
+        self.context: RequestContext = None
+        self.dispatcher: Dispatcher = None
         self.logger = logging.getLogger(__name__)
         self.message_factory = message_factory
+        self.message_serializer: MessageSerializer = MessageSerializer()
         self.inbound_transport_configs = transport_configs
         self.outbound_transports = outbound_transports
         self.settings = settings.copy() if settings else {}
@@ -90,6 +90,7 @@ class Conductor:
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
         context.injector.bind_instance(MessageFactory, self.message_factory)
+        context.injector.bind_instance(MessageSerializer, self.message_serializer)
 
         context.injector.bind_provider(BaseStorage, CachedProvider(StorageProvider()))
         context.injector.bind_provider(BaseWallet, CachedProvider(WalletProvider()))
@@ -135,10 +136,8 @@ class Conductor:
             except Exception:
                 self.logger.exception("Unable to initialize administration API")
 
-        self.connection_mgr = ConnectionManager(context)
-        context.injector.bind_instance(ConnectionManager, self.connection_mgr)
-
         self.context = context
+        self.dispatcher = Dispatcher(self.context)
 
     async def start(self) -> None:
         """Start the agent."""
@@ -237,7 +236,7 @@ class Conductor:
         self,
         message_body: Union[str, bytes],
         transport_type: str,
-        reply: Coroutine = None,
+        transport_reply: Coroutine = None,
         allow_direct_response: bool = False,
     ):
         """
@@ -246,35 +245,29 @@ class Conductor:
         Args:
             message_body: Body of the incoming message
             transport_type: Type of transport this message came from
-            reply: Function to reply to this message
+            transport_reply: Function to reply to this message
             allow_direct_response: Flag indicating that the transport
                 supports direct responses
 
         """
+
         try:
-            context = await self.connection_mgr.expand_message(
-                message_body, transport_type, allow_direct_response
+            parsed_msg, delivery = await self.message_serializer.parse_message(
+                self.context, message_body, transport_type
             )
-        except Exception:
+        except MessageParseError:
             self.logger.exception("Error expanding message")
             raise
 
-        if context.message_delivery.direct_response:
-            direct_response = asyncio.Future()
-        else:
-            direct_response = None
-
-        dispatch = self.dispatcher.dispatch(
-            context, self.outbound_message_router, reply, direct_response
+        direct_response = await self.dispatcher.dispatch(
+            parsed_msg,
+            delivery,
+            self.outbound_message_router,
+            transport_reply,
+            allow_direct_response,
         )
         if direct_response:
-            # wait until either the handler completes or a direct response is received
-            await asyncio.gather(dispatch, direct_response)
-        else:
-            await dispatch
-
-        if direct_response and direct_response.done():
-            return await self.compact_message(context, direct_response.result(), None)
+            return await self.compact_message(self.context, direct_response, None)
 
     async def compact_message(
         self,
@@ -289,7 +282,7 @@ class Conductor:
                 message._timing = TimingDecorator(
                     in_time=in_time, out_time=datetime_now()
                 )
-        return await self.connection_mgr.compact_message(message, target)
+        return await self.message_serializer.serialize_message(context, message, target)
 
     async def outbound_message_router(
         self,

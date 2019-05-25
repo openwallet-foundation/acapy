@@ -12,7 +12,9 @@ class MessageDelivery:
         self,
         *,
         direct_response: bool = False,
+        direct_response_requested: str = None,
         in_time: datetime = None,
+        raw_message: str = None,
         recipient_verkey: str = None,
         recipient_did: str = None,
         recipient_did_public: str = None,
@@ -22,7 +24,9 @@ class MessageDelivery:
     ):
         """Initialize the message delivery instance."""
         self._direct_response = direct_response
+        self._direct_response_requested = direct_response_requested
         self._in_time = in_time
+        self._raw_message = raw_message
         self._recipient_verkey = recipient_verkey
         self._recipient_did = recipient_did
         self._recipient_did_public = recipient_did_public
@@ -31,7 +35,7 @@ class MessageDelivery:
         self._transport_type = transport_type
 
     @property
-    def direct_response(self) -> str:
+    def direct_response(self) -> bool:
         """
         Accessor for the flag indicating that direct responses are preferred.
 
@@ -51,6 +55,28 @@ class MessageDelivery:
 
         """
         self._direct_response = direct
+
+    @property
+    def direct_response_requested(self) -> str:
+        """
+        Accessor for the requested direct response mode.
+
+        Returns:
+            This context's requested direct response mode
+
+        """
+        return self._direct_response_requested
+
+    @direct_response_requested.setter
+    def direct_response_requested(self, direct_mode: str):
+        """
+        Setter for the string indicating the requested direct responses mode.
+
+        Args:
+            transport: This context's new direct response mode
+
+        """
+        self._direct_response_requested = direct_mode
 
     @property
     def in_time(self) -> str:
@@ -73,6 +99,28 @@ class MessageDelivery:
 
         """
         self._in_time = in_time
+
+    @property
+    def raw_message(self) -> str:
+        """
+        Accessor for the raw message text.
+
+        Returns:
+            The raw message text
+
+        """
+        return self._raw_message
+
+    @raw_message.setter
+    def raw_message(self, message: str):
+        """
+        Setter for the raw message text.
+
+        Args:
+            message: The new message text
+
+        """
+        self._raw_message = message
 
     @property
     def recipient_verkey(self) -> str:

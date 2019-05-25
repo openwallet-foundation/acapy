@@ -14,6 +14,11 @@ from .messaging.credentials.message_types import MESSAGE_TYPES as CREDENTIAL_MES
 from .messaging.trustping.message_types import MESSAGE_TYPES as TRUSTPING_MESSAGES
 from .messaging.routing.message_types import MESSAGE_TYPES as ROUTING_MESSAGES
 
+from .messaging.problem_report.message import (
+    MESSAGE_TYPE as PROBLEM_REPORT,
+    ProblemReport,
+)
+
 
 def default_message_factory() -> MessageFactory:
     """Message factory for default message types."""
@@ -29,6 +34,7 @@ def default_message_factory() -> MessageFactory:
         CREDENTIAL_MESSAGES,
         ROUTING_MESSAGES,
         TRUSTPING_MESSAGES,
+        {PROBLEM_REPORT: ProblemReport},
     )
 
     return factory

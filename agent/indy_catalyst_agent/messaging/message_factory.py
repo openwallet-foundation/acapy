@@ -3,14 +3,6 @@
 from typing import Sequence
 
 from ..classloader import ClassLoader
-from ..error import BaseError
-
-from .agent_message import AgentMessage
-from ..models.base import BaseModelError
-
-
-class MessageParseError(BaseError):
-    """Message parse error."""
 
 
 class MessageFactory:
@@ -80,41 +72,6 @@ class MessageFactory:
         if isinstance(msg_cls, str):
             msg_cls = ClassLoader.load_class(msg_cls)
         return msg_cls
-
-    def make_message(self, serialized_msg: dict) -> AgentMessage:
-        """
-        Deserialize a message dict into a relevant message instance.
-
-        Given a dict describing a message, this method
-        returns an instance of the related message class.
-
-        Args:
-            serialized_msg: The serialized message
-
-        Returns:
-            An instance of the corresponding message class for this message
-
-        Raises:
-            MessageParseError: If the message doesn't specify @type
-            MessageParseError: If there is no message class registered to handle
-                the given type
-
-        """
-
-        msg_type = serialized_msg.get("@type")
-        if not msg_type:
-            raise MessageParseError("Message does not contain '@type' parameter")
-
-        msg_cls = self.resolve_message_class(msg_type)
-        if not msg_cls:
-            raise MessageParseError(f"Unrecognized message type {msg_type}")
-
-        try:
-            instance = msg_cls.deserialize(serialized_msg)
-        except BaseModelError as e:
-            raise MessageParseError(f"Error deserializing message: {e}") from e
-
-        return instance
 
     def __repr__(self) -> str:
         """Return a string representation for this class."""
