@@ -42,6 +42,8 @@ class PresentationRequestRequestSchema(Schema):
 
     connection_id = fields.Str(required=True)
     extra_query = fields.Dict(required=False)
+    name = fields.String(required=True)
+    version = fields.String(required=True)
     requested_attributes = fields.Nested(RequestedAttribute, many=True)
     requested_predicates = fields.Nested(RequestedPredicate, many=True)
 
@@ -150,6 +152,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["id"]
+    presentation_referent = request.match_info["referent"]
+
     try:
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(
             context, presentation_exchange_id
@@ -169,8 +173,12 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     count = int(count) if isinstance(count, str) else 10
 
     holder: BaseHolder = await context.inject(BaseHolder)
-    credentials = await holder.get_credentials_for_presentation_request(
-        presentation_exchange_record.presentation_request, start, count, extra_query
+    credentials = await holder.get_credentials_for_presentation_request_by_referent(
+        presentation_exchange_record.presentation_request,
+        presentation_referent,
+        start,
+        count,
+        extra_query,
     )
 
     return web.json_response(credentials)
@@ -352,7 +360,7 @@ async def register(app: web.Application):
             web.get("/presentation_exchange", presentation_exchange_list),
             web.get("/presentation_exchange/{id}", presentation_exchange_retrieve),
             web.get(
-                "/presentation_exchange/{id}/credentials",
+                "/presentation_exchange/{id}/credentials/{referent}",
                 presentation_exchange_credentials_list,
             ),
             web.post(
