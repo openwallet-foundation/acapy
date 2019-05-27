@@ -47,12 +47,13 @@ class PresentationRequestHandler(BaseHandler):
             }
 
             presentation_request = json.loads(context.message.request)
+            extra_query = json.loads(context.message.extra_query) or {}
 
             for referent in presentation_request["requested_attributes"]:
                 (
                     credentials
                 ) = await holder.get_credentials_for_presentation_request_by_referent(
-                    presentation_request, referent, 0, 2, {}
+                    presentation_request, referent, 0, 2, extra_query
                 )
                 if len(credentials) != 1:
                     self._logger.warn(
@@ -74,7 +75,7 @@ class PresentationRequestHandler(BaseHandler):
                 (
                     credentials
                 ) = await holder.get_credentials_for_presentation_request_by_referent(
-                    presentation_request, referent, 0, 2, {}
+                    presentation_request, referent, 0, 2, extra_query
                 )
                 if len(credentials) != 1:
                     self._logger.warn(
