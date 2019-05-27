@@ -156,7 +156,7 @@ class ConnectionManager:
         await connection.attach_invitation(self.context, invitation)
 
         await connection.log_activity(
-            self.context, "invitation", connection.DIRECTION_SENT,
+            self.context, "invitation", connection.DIRECTION_SENT
         )
 
         return connection, invitation
@@ -228,7 +228,7 @@ class ConnectionManager:
         await connection.attach_invitation(self.context, invitation)
 
         await connection.log_activity(
-            self.context, "invitation", connection.DIRECTION_RECEIVED,
+            self.context, "invitation", connection.DIRECTION_RECEIVED
         )
 
         return connection
@@ -277,7 +277,7 @@ class ConnectionManager:
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context, "request", connection.DIRECTION_SENT,
+            self.context, "request", connection.DIRECTION_SENT
         )
 
         return request
@@ -301,17 +301,13 @@ class ConnectionManager:
         # Determine what key will need to sign the response
         if self.context.message_delivery.recipient_did_public:
             wallet: BaseWallet = await self.context.inject(BaseWallet)
-            my_info = await wallet.get_local_did(
-                self.context.recipient_did
-            )
+            my_info = await wallet.get_local_did(self.context.recipient_did)
             connection_key = my_info.verkey
         else:
             connection_key = self.context.message_delivery.recipient_verkey
             try:
                 connection = await ConnectionRecord.retrieve_by_invitation_key(
-                    self.context,
-                    connection_key,
-                    ConnectionRecord.INITIATOR_SELF,
+                    self.context, connection_key, ConnectionRecord.INITIATOR_SELF
                 )
             except StorageNotFoundError:
                 raise ConnectionManagerError(
@@ -363,7 +359,7 @@ class ConnectionManager:
         await connection.attach_request(self.context, request)
 
         await connection.log_activity(
-            self.context, "request", connection.DIRECTION_RECEIVED,
+            self.context, "request", connection.DIRECTION_RECEIVED
         )
 
         return connection
@@ -428,9 +424,7 @@ class ConnectionManager:
         response.assign_thread_from(request)
         # Sign connection field using the invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
-        await response.sign_field(
-            "connection", connection.invitation_key, wallet
-        )
+        await response.sign_field("connection", connection.invitation_key, wallet)
         self._log_state(
             "Created connection response",
             {
@@ -448,7 +442,7 @@ class ConnectionManager:
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context, "response", connection.DIRECTION_SENT,
+            self.context, "response", connection.DIRECTION_SENT
         )
 
         return response
@@ -523,7 +517,7 @@ class ConnectionManager:
         asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         await connection.log_activity(
-            self.context, "response", connection.DIRECTION_RECEIVED,
+            self.context, "response", connection.DIRECTION_RECEIVED
         )
 
         return connection
@@ -589,9 +583,7 @@ class ConnectionManager:
         return connection
 
     async def expand_message(
-        self,
-        message_body: Union[str, bytes],
-        transport_type: str,
+        self, message_body: Union[str, bytes], transport_type: str
     ) -> RequestContext:
         """
         Deserialize an incoming message and further populate the request context.
@@ -675,8 +667,7 @@ class ConnectionManager:
                     connection.state == ConnectionRecord.STATE_ACTIVE
                 )
                 context.connection_record = connection
-                context.connection_target = await self.get_connection_target(
-                    connection)
+                context.connection_target = await self.get_connection_target(connection)
 
         context.message_delivery = delivery
 

@@ -301,6 +301,6 @@ class TestIndyLedger(AsyncTestCase):
             credential_definition_id = await ledger.get_schema("schema_id", "tag")
 
             mock_wallet.get_public_did.assert_called_once_with()
-            mock_get_schema.assert_called_once_with(mock_wallet.get_public_did.return_value)
-
-            
+            mock_get_schema.assert_called_once_with(
+                mock_wallet.get_public_did.return_value
+            )

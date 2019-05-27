@@ -51,8 +51,6 @@ class PresentationRequestRequestSchema(Schema):
 class SendPresentationRequestSchema(Schema):
     """Request schema for sending a presentation."""
 
-    name = fields.String(required=True)
-    version = fields.String(required=True)
     self_attested_attributes = fields.Dict(required=True)
     requested_attributes = fields.Dict(required=True)
     requested_predicates = fields.Dict(required=True)
@@ -242,7 +240,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
 @response_schema(PresentationExchangeSchema())
 async def presentation_exchange_send_credential_presentation(request: web.BaseRequest):
     """
-    Request handler for sending a presentation request.
+    Request handler for sending a credential presentation.
 
     Args:
         request: aiohttp request object
