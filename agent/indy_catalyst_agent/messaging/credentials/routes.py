@@ -1,5 +1,7 @@
 """Connection handling admin routes."""
 
+import json
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
@@ -126,8 +128,8 @@ async def credentials_list(request: web.BaseRequest):
     count = request.query.get("count")
 
     # url encoded json wql
-    encoded_wql = request.query.get("wql") or ""
-    wql = parse_qs(encoded_wql)
+    encoded_wql = request.query.get("wql") or "{}"
+    wql = json.loads(encoded_wql)
 
     # defaults
     start = int(start) if isinstance(start, str) else 0
