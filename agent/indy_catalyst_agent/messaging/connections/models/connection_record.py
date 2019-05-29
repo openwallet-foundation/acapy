@@ -65,7 +65,6 @@ class ConnectionRecord(BaseModel):
         request_id: str = None,
         state: str = None,
         routing_state: str = None,
-        direct_response: str = None,
         error_msg: str = None,
         created_at: str = None,
         updated_at: str = None,
@@ -82,7 +81,6 @@ class ConnectionRecord(BaseModel):
         self.request_id = request_id
         self.state = state or self.STATE_INIT
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
-        self.direct_response = direct_response
         self.error_msg = error_msg
         self.created_at = created_at
         self.updated_at = updated_at
@@ -106,7 +104,6 @@ class ConnectionRecord(BaseModel):
         ret = self.tags
         ret.update(
             {
-                "direct_response": self.direct_response,
                 "error_msg": self.error_msg,
                 "their_label": self.their_label,
                 "created_at": self.created_at,
@@ -478,7 +475,6 @@ class ConnectionRecordSchema(BaseModelSchema):
         model_class = ConnectionRecord
 
     connection_id = fields.Str(required=False)
-    direct_response = fields.Str(required=False)
     my_did = fields.Str(required=False)
     my_router_did = fields.Str(required=False)
     their_did = fields.Str(required=False)
