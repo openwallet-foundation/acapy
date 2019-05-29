@@ -27,7 +27,7 @@ from ...wallet.base import BaseWallet, DIDInfo
 from ...wallet.error import WalletError, WalletNotFoundError
 from ...wallet.util import bytes_to_b64
 
-from ..util import send_webhook
+from ..util import send_webhook, time_now
 
 from von_anchor.a2a import DIDDoc
 from von_anchor.a2a.publickey import PublicKey, PublicKeyType
@@ -583,13 +583,18 @@ class ConnectionManager:
         return connection
 
     async def expand_message(
-        self, message_body: Union[str, bytes], transport_type: str
+        self,
+        message_body: Union[str, bytes],
+        transport_type: str,
+        allow_direct_response: bool = False,
     ) -> RequestContext:
         """
         Deserialize an incoming message and further populate the request context.
 
-        message_body: The body of the message
-        transport_type: The transport the message was received on
+        Args:
+            message_body: The body of the message
+            transport_type: The transport the message was received on
+            allow_direct_response: Whether direct responses are supported
 
         Returns:
             The `RequestContext` of the expanded message
@@ -638,10 +643,22 @@ class ConnectionManager:
 
         context.message = message_factory.make_message(message_dict)
         delivery = MessageDelivery()
+        delivery.in_time = time_now()
         delivery.transport_type = transport_type
 
+        # handle transport decorator
+        transport_dec = context.message._transport
+        if transport_dec and transport_dec.return_route == "all":
+            if allow_direct_response:
+                delivery.direct_response = True
+            else:
+                self._logger.warning(
+                    "Direct response requested, but not supported by transport %s",
+                    transport_type,
+                )
+
         if from_verkey and to_verkey:
-            # must be a packed message for from_verke and to_verkey to be populated
+            # must be a packed message for from_verkey and to_verkey to be populated
             delivery.recipient_verkey = to_verkey
             delivery.sender_verkey = from_verkey
             try:
@@ -668,10 +685,30 @@ class ConnectionManager:
                 )
                 context.connection_record = connection
                 context.connection_target = await self.get_connection_target(connection)
+                if transport_dec and transport_dec.return_route:
+                    save_conn = False
+                    if transport_dec.return_route == "all":
+                        if not connection.direct_response:
+                            connection.direct_response = "all"
+                            save_conn = True
+                    elif transport_dec.return_route == "none":
+                        if connection.direct_response:
+                            connection.direct_response = None
+                            save_conn = True
+                    else:
+                        self._logger.warning(
+                            "Unsupported transport return route: %s",
+                            transport_dec.return_route,
+                        )
+                    if save_conn:
+                        await connection.save(context)
+                if not transport_dec or not transport_dec.return_route:
+                    if allow_direct_response and connection.direct_response:
+                        delivery.direct_response = True
 
         context.message_delivery = delivery
 
-        # look up thread information
+        # look up thread information?
 
         # handle any other decorators having special behaviour (timing, trace, etc)
 
@@ -696,7 +733,7 @@ class ConnectionManager:
 
         if isinstance(message, AgentMessage):
             message_json = message.to_json()
-            if target.sender_key and target.recipient_keys:
+            if target and target.sender_key and target.recipient_keys:
                 message = await wallet.pack_message(
                     message_json, target.recipient_keys, target.sender_key
                 )

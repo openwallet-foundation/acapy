@@ -5,6 +5,8 @@ from aiohttp_apispec import docs, response_schema
 
 from marshmallow import fields, Schema
 
+from ..message_factory import MessageFactory
+
 
 class QueryResultSchema(Schema):
     """Result schema for connection list."""
@@ -37,9 +39,8 @@ async def query_protocols(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    results = context.message_factory.protocols_matching_query(
-        request.query.get("query", "*")
-    )
+    factory: MessageFactory = await context.inject(MessageFactory)
+    results = factory.protocols_matching_query(request.query.get("query", "*"))
 
     return web.json_response({"results": {k: {} for k in results}})
 

@@ -189,6 +189,12 @@ PARSER.add_argument(
     help="Specify an endpoint to send an invitation to",
 )
 
+PARSER.add_argument(
+    "--timing",
+    action="store_true",
+    help="Including timing information in response messages",
+)
+
 
 async def start(
     inbound_transport_configs: list, outbound_transports: list, settings: dict
@@ -271,6 +277,9 @@ def main():
         settings["accept_requests"] = True
     if args.auto_respond_messages:
         settings["debug.auto_respond_messages"] = True
+
+    if args.timing:
+        settings["timing.enabled"] = True
 
     loop = asyncio.get_event_loop()
     try:
