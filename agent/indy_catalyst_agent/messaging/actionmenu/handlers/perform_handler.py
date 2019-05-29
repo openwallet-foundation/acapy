@@ -26,6 +26,7 @@ class PerformHandler(BaseHandler):
             reply = await service.perform_menu_action(
                 context.message.name,
                 context.message.params or {},
+                context.connection_record,
                 context.message._thread_id,
             )
             if reply:

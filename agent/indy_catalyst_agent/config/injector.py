@@ -53,7 +53,7 @@ class Injector(BaseInjector):
         base_cls: type,
         settings: Mapping[str, object] = None,
         *,
-        required: bool = True
+        required: bool = True,
     ):
         """
         Get the provided instance of a given class identifier.
@@ -92,3 +92,7 @@ class Injector(BaseInjector):
         result = Injector(self.settings)
         result._providers = self._providers.copy()
         return result
+
+    def __repr__(self) -> str:
+        """Provide a human readable representation of this object."""
+        return f"<{self.__class__.__name__}>"

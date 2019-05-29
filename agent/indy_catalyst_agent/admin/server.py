@@ -12,9 +12,12 @@ import aiohttp_cors
 
 from marshmallow import fields, Schema
 
+from ..messaging.outbound_message import OutboundMessage
+from ..messaging.responder import BaseResponder
+from ..messaging.request_context import RequestContext
+
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
-from ..messaging.request_context import RequestContext
 from .routes import register_module_routes
 
 
@@ -26,6 +29,30 @@ class AdminModulesSchema(Schema):
 
 class AdminStatusSchema(Schema):
     """Schema for the status endpoint."""
+
+
+class AdminResponder(BaseResponder):
+    """Handle outgoing messages from message handlers."""
+
+    def __init__(self, send: Coroutine, **kwargs):
+        """
+        Initialize an instance of `AdminResponder`.
+
+        Args:
+            send: Function to send outbound message
+
+        """
+        super().__init__(**kwargs)
+        self._send = send
+
+    async def send_outbound(self, message: OutboundMessage):
+        """
+        Send outbound message.
+
+        Args:
+            message: The `OutboundMessage` to be sent
+        """
+        await self._send(message)
 
 
 class AdminServer(BaseAdminServer):
@@ -53,7 +80,7 @@ class AdminServer(BaseAdminServer):
         self.logger = logging.getLogger(__name__)
         self.loaded_modules = []
         self.notify_queues = {}
-        self.outbound_message_router = outbound_message_router
+        self.responder = AdminResponder(outbound_message_router)
         self.site = None
 
     async def start(self) -> None:
@@ -66,7 +93,7 @@ class AdminServer(BaseAdminServer):
         """
         self.app = web.Application(debug=True)
         self.app["request_context"] = self.context
-        self.app["outbound_message_router"] = self.outbound_message_router
+        self.app["outbound_message_router"] = self.responder.send
 
         self.app.add_routes(
             [

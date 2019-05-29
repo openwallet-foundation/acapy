@@ -11,11 +11,9 @@ from .models.presentation_exchange import (
     PresentationExchange,
     PresentationExchangeSchema,
 )
-from ..connections.manager import ConnectionManager
 
 from ...holder.base import BaseHolder
 from ...storage.error import StorageNotFoundError
-from ..connections.models.connection_record import ConnectionRecord
 
 
 class PresentationExchangeListSchema(Schema):
@@ -208,14 +206,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
     requested_attributes = body.get("requested_attributes")
     requested_predicates = body.get("requested_predicates")
 
-    connection_manager = ConnectionManager(context)
     presentation_manager = PresentationManager(context)
-
-    connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
-
-    connection_target = await connection_manager.get_connection_target(
-        connection_record
-    )
 
     (
         presentation_exchange_record,
@@ -224,7 +215,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
         name, version, requested_attributes, requested_predicates, connection_id
     )
 
-    await outbound_handler(context, presentation_request_message, connection_target)
+    await outbound_handler(presentation_request_message, connection_id=connection_id)
 
     return web.json_response(presentation_exchange_record.serialize())
 
@@ -253,22 +244,14 @@ async def presentation_exchange_send_credential_presentation(request: web.BaseRe
     presentation_exchange_record = await PresentationExchange.retrieve_by_id(
         context, presentation_exchange_id
     )
+    connection_id = presentation_exchange_record.connection_id
 
     assert (
         presentation_exchange_record.state
         == presentation_exchange_record.STATE_REQUEST_RECEIVED
     )
 
-    connection_manager = ConnectionManager(context)
     presentation_manager = PresentationManager(context)
-
-    connection_record = await ConnectionRecord.retrieve_by_id(
-        context, presentation_exchange_record.connection_id
-    )
-
-    connection_target = await connection_manager.get_connection_target(
-        connection_record
-    )
 
     (
         presentation_exchange_record,
@@ -277,7 +260,7 @@ async def presentation_exchange_send_credential_presentation(request: web.BaseRe
         presentation_exchange_record, body
     )
 
-    await outbound_handler(context, presentation_message, connection_target)
+    await outbound_handler(presentation_message, connection_id=connection_id)
     return web.json_response(presentation_exchange_record.serialize())
 
 

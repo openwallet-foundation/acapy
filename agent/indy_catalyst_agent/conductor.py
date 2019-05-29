@@ -504,5 +504,6 @@ class Conductor:
             await self.outbound_transport_manager.send_message(
                 message.payload, message.endpoint
             )
+            return
 
         self.logger.warning("No endpoint or direct route for outbound message, dropped")

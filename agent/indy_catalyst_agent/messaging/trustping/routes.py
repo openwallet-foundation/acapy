@@ -3,7 +3,6 @@
 from aiohttp import web
 from aiohttp_apispec import docs
 
-from ..connections.manager import ConnectionManager
 from ..connections.models.connection_record import ConnectionRecord
 from .messages.ping import Ping
 from ...storage.error import StorageNotFoundError
@@ -20,7 +19,6 @@ async def connections_send_ping(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     connection_id = request.match_info["id"]
-    connection_mgr = ConnectionManager(context)
     outbound_handler = request.app["outbound_message_router"]
 
     try:
@@ -28,10 +26,9 @@ async def connections_send_ping(request: web.BaseRequest):
     except StorageNotFoundError:
         return web.HTTPNotFound()
 
-    if connection.state == "active":
+    if connection.is_active:
         msg = Ping()
-        target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(context, msg, target)
+        await outbound_handler(msg, connection_id=connection_id)
 
         await connection.log_activity(context, "ping", connection.DIRECTION_SENT)
 
