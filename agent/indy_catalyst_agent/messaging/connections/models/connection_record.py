@@ -19,7 +19,7 @@ from ...util import time_now
 
 
 class ConnectionRecord(BaseModel):
-    """Represents a single connection."""
+    """Represents a single pairwise connection."""
 
     class Meta:
         """ConnectionRecord metadata."""

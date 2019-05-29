@@ -21,6 +21,7 @@ class MessageDelivery:
         sender_did: str = None,
         sender_verkey: str = None,
         socket_id: str = None,
+        thread_id: str = None,
         transport_type: str = None,
     ):
         """Initialize the message delivery instance."""
@@ -268,6 +269,28 @@ class MessageDelivery:
 
         """
         self._socket_id = socket
+
+    @property
+    def thread_id(self) -> str:
+        """
+        Accessor for the identifier of the message thread.
+
+        Returns:
+            The delivery thread ID
+
+        """
+        return self._thread_id
+
+    @thread_id.setter
+    def thread_id(self, thread: str):
+        """
+        Setter for the message thread identifier.
+
+        Args:
+            thread: The new thread identifier
+
+        """
+        self._thread_id = thread
 
     @property
     def transport_type(self) -> str:

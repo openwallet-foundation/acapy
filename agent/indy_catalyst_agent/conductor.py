@@ -9,8 +9,10 @@ wallet.
 """
 
 import asyncio
+from collections import OrderedDict
 import logging
-from typing import Union
+from typing import Coroutine, Sequence, Union
+import uuid
 
 from .admin.server import AdminServer
 from .admin.service import AdminService
@@ -31,6 +33,7 @@ from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError, MessagePrepareError
 from .messaging.introduction.base_service import BaseIntroductionService
 from .messaging.introduction.demo_service import DemoIntroductionService
+from .messaging.message_delivery import MessageDelivery
 from .messaging.message_factory import MessageFactory
 from .messaging.outbound_message import OutboundMessage
 from .messaging.request_context import RequestContext
@@ -45,6 +48,120 @@ from .transport.outbound.queue.basic import BasicOutboundMessageQueue
 from .wallet.base import BaseWallet
 from .wallet.provider import WalletProvider
 from .wallet.crypto import seed_to_did
+
+
+class SocketInfo:
+    """Track an open transport connection for direct routing of outbound messages."""
+
+    REPLY_MODE_ALL = "all"
+    REPLY_MODE_NONE = "none"
+    REPLY_MODE_THREAD = "thread"
+
+    def __init__(
+        self,
+        *,
+        connection_id: str = None,
+        handler: Coroutine = None,
+        reply_mode: str = None,
+        reply_thread_ids: Sequence[str] = None,
+        reply_verkeys: Sequence[str] = None,
+        single_response: asyncio.Future = None,
+        socket_id: str = None,
+    ):
+        """Initialize the socket info."""
+        self._closed = False
+        self.connection_id = connection_id
+        self.handler = handler
+        self.reply_thread_ids = set(reply_thread_ids) if reply_thread_ids else set()
+        self.reply_verkeys = set(reply_verkeys) if reply_verkeys else set()
+        self.single_response = single_response
+        self.socket_id = socket_id or str(uuid.uuid4())
+        # calls setter
+        self._reply_mode = None
+        self.reply_mode = reply_mode
+
+    @property
+    def closed(self) -> bool:
+        """Accessor for the socket closed state."""
+        if self._closed:
+            return True
+        if self.single_response and self.single_response.done():
+            self._closed = True
+            return True
+        return False
+
+    @closed.setter
+    def closed(self, flag: bool):
+        """Setter for the socket closed state."""
+        self._closed = flag
+
+    @property
+    def reply_mode(self) -> str:
+        """Accessor for the socket reply mode."""
+        return self._reply_mode
+
+    @reply_mode.setter
+    def reply_mode(self, mode: str):
+        """Setter for the socket reply mode."""
+        if mode != self.REPLY_MODE_THREAD:
+            if mode != self.REPLY_MODE_ALL:
+                mode = None
+            # reset the tracked thread IDs when the mode is changed to all or none
+            self.reply_thread_ids = set()
+        self._reply_mode = mode
+
+    def add_reply_thread_id(self, thid: str):
+        """Add a thread ID to the set of potential reply targets."""
+        if thid:
+            self.reply_thread_ids.add(thid)
+
+    def add_reply_verkey(self, verkey: str):
+        """Add a verkey to the set of potential reply targets."""
+        if verkey:
+            self.reply_verkeys.add(verkey)
+
+    def process_incoming(self, parsed_msg: dict, delivery: MessageDelivery):
+        """."""
+        mode = self.reply_mode = delivery.direct_response_requested
+        self.add_reply_verkey(delivery.sender_verkey)
+        if mode == self.REPLY_MODE_THREAD:
+            self.add_reply_thread_id(delivery.thread_id)
+        delivery.direct_response = bool(mode)
+
+    def dispatch_complete(self):
+        """."""
+        if not self.closed and self.single_response:
+            self.single_response.cancel()
+
+    def select_outgoing(self, message: OutboundMessage) -> bool:
+        """."""
+        mode = self.reply_mode
+        if not self.closed:
+            if (
+                mode == self.REPLY_MODE_ALL
+                and message.reply_socket_id == self.socket_id
+            ):
+                return True
+            if (
+                mode == self.REPLY_MODE_ALL
+                and message.reply_to_verkey
+                and message.reply_to_verkey in self.reply_verkeys
+            ):
+                return True
+            if (
+                mode == self.REPLY_MODE_THREAD
+                and message.reply_thread_id
+                and message.reply_thread_id in self.reply_thread_ids
+            ):
+                return True
+        return False
+
+    async def send(self, message: OutboundMessage):
+        """."""
+        if self.single_response:
+            self.single_response.set_result(message.payload)
+        elif self.handler:
+            await self.handler(message.payload)
 
 
 class Conductor:
@@ -81,7 +198,7 @@ class Conductor:
         self.inbound_transport_configs = transport_configs
         self.outbound_transports = outbound_transports
         self.settings = settings.copy() if settings else {}
-        self.sockets = []
+        self.sockets = OrderedDict()
         self.init_context()
 
     def init_context(self):
@@ -240,7 +357,6 @@ class Conductor:
         message_body: Union[str, bytes],
         transport_type: str = None,
         socket_id: str = None,
-        allow_direct_response: bool = False,
         single_response: asyncio.Future = None,
     ) -> asyncio.Future:
         """
@@ -250,8 +366,6 @@ class Conductor:
             message_body: Body of the incoming message
             transport_type: Type of transport this message came from
             socket_id: The identifier of the incoming socket connection
-            allow_direct_response: Flag indicating that the transport
-                supports direct responses
             single_response: A future to contain the first direct response message
 
         """
@@ -265,36 +379,48 @@ class Conductor:
             raise
 
         if single_response and not socket_id:
-            socket_id = str(id(single_response))
-            socket = {"id": socket_id, "single_response": single_response}
-            self.sockets.append(socket)
+            socket = SocketInfo(single_response=single_response)
+            socket_id = socket.socket_id
+            self.sockets[socket_id] = socket
+
+        if socket_id:
+            if socket_id not in self.sockets:
+                self.logger.warning(
+                    "Inbound message on unregistered socket ID: %s", socket_id
+                )
+                socket_id = None
+            elif self.sockets[socket_id].closed:
+                self.logger.warning(
+                    "Inbound message on closed socket ID: %s", socket_id
+                )
+                socket_id = None
 
         delivery.socket_id = socket_id
-        if delivery.direct_response_requested == "all":
-            if allow_direct_response:
-                delivery.direct_response = True
-            else:
-                self.logger.warning(
-                    "Direct response requested, but not supported by transport: %s",
-                    delivery.transport_type,
-                )
-        elif single_response:
-            single_response.cancel()
+        socket = self.sockets[socket_id] if socket_id else None
+
+        if socket:
+            socket.process_incoming(parsed_msg, delivery)
+        elif (
+            delivery.direct_response_requested
+            and delivery.direct_response_requested != SocketInfo.REPLY_MODE_NONE
+        ):
+            self.logger.warning(
+                "Direct response requested, but not supported by transport: %s",
+                delivery.transport_type,
+            )
 
         future = await self.dispatcher.dispatch(
             parsed_msg, delivery, self.outbound_message_router
         )
-        if single_response:
-            future.add_done_callback(
-                lambda fut: single_response.done() or single_response.cancel()
-            )
+        if socket:
+            future.add_done_callback(lambda fut: socket.dispatch_complete())
         return future
 
     async def prepare_outbound_message(
         self, message: OutboundMessage, context: InjectionContext = None
     ):
         """Prepare a response message for transmission.
-        
+
         Args:
             message: An outbound message to be sent
             context: Optional request context
@@ -354,22 +480,29 @@ class Conductor:
             self.logger.exception("Error preparing outbound message for transmission")
             return
 
-        # try socket connections first
-        if message.reply_socket_id:
-            for sock in self.sockets:
-                if (
-                    sock["id"] == message.reply_socket_id
-                    and not sock["single_response"].cancelled()
-                ):
-                    sock["single_response"].set_result(message.payload)
-                    self.logger.info(
-                        "Returned message to socket %s", message.reply_socket_id
-                    )
-                    return
+        # try socket connections first, preferring the same socket ID
+        socket_id = message.reply_socket_id
+        sel_socket = None
+        if (
+            socket_id
+            and socket_id in self.sockets
+            and self.sockets[socket_id].select_outgoing(message)
+        ):
+            sel_socket = self.sockets[socket_id]
+        else:
+            for socket in self.sockets.values():
+                if socket.select_outgoing(message):
+                    sel_socket = socket
+                    break
+        if sel_socket:
+            await sel_socket.send(message)
+            self.logger.debug("Returned message to socket %s", sel_socket.socket_id)
+            return
 
+        # deliver directly to endpoint
         if message.endpoint:
             await self.outbound_transport_manager.send_message(
                 message.payload, message.endpoint
             )
 
-        self.logger.warning("No route for outbound message, dropped")
+        self.logger.warning("No endpoint or direct route for outbound message, dropped")

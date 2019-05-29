@@ -80,6 +80,12 @@ class MessageSerializer:
 
         LOGGER.debug(f"Expanded message: {message_dict}")
 
+        # parse thread ID
+        thread_dec = message_dict.get("~thread")
+        delivery.thread_id = (
+            thread_dec and thread_dec.get("thid") or message_dict.get("@id")
+        )
+
         # handle transport decorator
         transport_dec = message_dict.get("~transport")
         if transport_dec:

@@ -83,9 +83,7 @@ class Transport(BaseInboundTransport):
 
         try:
             response = asyncio.Future()
-            await self.message_router(
-                body, self._scheme, single_response=response, allow_direct_response=True
-            )
+            await self.message_router(body, self._scheme, single_response=response)
         except Exception:
             self.logger.exception("Error handling message")
             return web.Response(status=400)
