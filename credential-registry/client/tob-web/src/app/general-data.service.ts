@@ -92,7 +92,6 @@ export class GeneralDataService {
         return;
       }
       let baseurl = this.getRequestUrl('');
-      console.log('base url: ' + baseurl);
       if(! baseurl) {
         reject("Base URL not defined");
         return;

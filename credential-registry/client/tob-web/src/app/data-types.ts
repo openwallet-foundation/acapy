@@ -59,6 +59,10 @@ export namespace Model {
     get pageTitle(): string {
       return null;
     }
+
+    get json(): string {
+      return JSON.stringify(this, null, 2);
+    }
   }
 
   function mapByType<T extends {type: string}>(input: T[]): {[key: string]: T} {
@@ -130,6 +134,8 @@ export namespace Model {
     _attributes: Attribute[];
     _attribute_map: {[key: string]: Attribute};
     names: Name[];
+    local_name: Name;
+    remote_name: Name;
     topic: Topic;
     related_topics: Topic[];
 
@@ -177,6 +183,27 @@ export namespace Model {
     }
     get haveNames() {
       return this.names && this.names.length;
+    }
+
+    get relatedPreferredName() : string {
+      let found = '';
+      if('associated_registration_name' in this.attribute_map) {
+        let attr = this.attribute_map['associated_registration_name'];
+        return attr.value;
+      }
+      if(0 < this.related_topics.length) {
+        if(0 < this.related_topics[0].names.length) {
+          for(let name of this.related_topics[0].names) {
+            if(name.type === 'entity_name_assumed') {
+              found = name.text;
+            }
+          }
+          if(! found) {
+            found = this.related_topics[0].names[0].text;
+          }
+        }
+      }
+      return found;
     }
 
     get link() {
@@ -325,6 +352,8 @@ export namespace Model {
     _attributes: Attribute[];
     _attribute_map: {[key: string]: Attribute};
     names: Name[];
+    local_name: Name;
+    remote_name: Name;
 
     static resourceName = 'topic';
 
@@ -356,13 +385,31 @@ export namespace Model {
       let found = null;
       if(this.names) {
         for(let name of this.names) {
-          if(name.type === 'entity_name')
+          if(name.type === 'entity_name_assumed')
             found = name;
         }
         if(! found)
           found = this.names[0];
       }
       return found;
+    }
+
+    get localName(): Name {
+      return this.preferredName;
+    }
+
+    get remoteName(): Name {
+      let p_name = this.preferredName;
+      if (p_name.type === 'entity_name_assumed') {
+        if(this.names) {
+          for(let name of this.names) {
+            if(name.type != 'entity_name_assumed') {
+              return name;
+            }
+          }
+        }
+      }
+      return null;
     }
 
     get typeLabel(): string {
@@ -392,6 +439,106 @@ export namespace Model {
 
   export class TopicRelatedTo extends Topic {
     static childResource = 'related_to';
+  }
+
+  export class TopicRelationship extends BaseModel {
+    topic_id: number;
+    relation_id: number;
+    credential: Credential;
+    topic: Topic;
+    related_topic: Topic;
+    relation_type = 'to';
+
+    _attributes: Attribute[];
+    _attribute_map: {[key: string]: Attribute};
+
+    static resourceName = 'topic_relationship';
+
+    get attributes(): Attribute[] {
+      return this._attributes;
+    }
+    set attributes(attrs: Attribute[]) {
+      this._attributes = attrs;
+      this._attribute_map = mapByType(this._attributes);
+    }
+
+    get attribute_map(): {[key: string]: Attribute} {
+      return this._attribute_map || {};
+    }
+
+    get other_topic() : Topic {
+      if (this.relation_type == 'to') {
+        return this.related_topic;
+      } else {
+        return this.topic;
+      }
+    }
+
+    get preferredName() : Name {
+      let found = null;
+      if('associated_registration_name' in this._attribute_map) {
+        let attr = this._attribute_map['associated_registration_name'];
+        let name = new Name({
+          id: this.credential.id,
+          text: attr.value,
+          type: 'Associated Registration',
+          credential_id: this.credential.id,
+          inactive: false,
+          issuer: this.credential.credential_type.issuer}
+        );
+        return name;
+      }
+      let other = this.other_topic;
+      if(other.names) {
+        for(let name of other.names) {
+          if(name.type === 'entity_name_assumed')
+            found = name;
+        }
+        if(! found)
+          found = other.names[0];
+      }
+      return found;
+    }
+
+    get link() : string[] {
+      // FIXME need to move link generation into general data service
+      let other = this.other_topic;
+      if(other.type === 'registration')
+        return ['/topic/', other.source_id];
+      return ['/topic/', other.type, other.source_id];
+    }
+
+    get typeLabel() : string {
+      let other = this.other_topic;
+      if(other.type) return ('name.'+other.type).replace(/_/g, '-');
+      return '';
+    }
+
+    get relationLabel() : string {
+      return this._attribute_map['relationship_description'].value;
+    }
+
+    get otherEntityStatus() : Attribute {
+      let other = this.other_topic;
+      let other_attribute_map = mapByType(other.attributes);
+      return other_attribute_map['entity_status'];
+    }
+
+    get otherEntityType() : Attribute {
+      let other = this.other_topic;
+      let other_attribute_map = mapByType(other.attributes);
+      return other_attribute_map['entity_type'];
+    }
+  }
+
+  export class TopicRelationshipRelatedFrom extends TopicRelationship {
+    static childResource = 'related_from_relations';
+    relation_type = 'from';
+  }
+
+  export class TopicRelationshipRelatedTo extends TopicRelationship {
+    static childResource = 'related_to_relations';
+    relation_type = 'to';
   }
 
 }

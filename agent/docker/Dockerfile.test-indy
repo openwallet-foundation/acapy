@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py36-1.8-2
+FROM bcgovimages/von-image:py36-1.8-4
 
 RUN mkdir src test-reports
 

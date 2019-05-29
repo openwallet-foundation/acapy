@@ -18,7 +18,7 @@ The Verifiable Organizations Network (VON) envisions the possibility of a number
 
 ## Quick Start Guide
 
-The best way to get started with a new project is by working with a running instance.  The VON [Quick Start Guide](https://github.com/bcgov/dFlow/blob/master/docker/VONNetworkQuickStartGuide.md) will get you started with an [Indy Network](https://github.com/bcgov/von-network), an instance of [TheOrgBook (this repo)](https://github.com/bcgov/TheOrgBook) and an instance of [dFlow](https://github.com/bcgov/dFlow) running on your local machine in Docker.  Give it a try!
+The best way to get started with a new project is by working with a running instance.  The VON [Quick Start Guide](https://github.com/bcgov/greenlight/blob/master/docker/VONQuickStartGuide.md) will get you started with an [Indy Network](https://github.com/bcgov/von-network), an instance of [TheOrgBook (this repo)](https://github.com/bcgov/TheOrgBook) and an instance of [GreenLight](https://github.com/bcgov/greenlight) running on your local machine in Docker.  Give it a try!
 
 ## Running TheOrgBook on OpenShift
 

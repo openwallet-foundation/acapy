@@ -22,7 +22,7 @@ from api_v2.models.Credential import Credential as CredentialModel
 from api_v2.models.CredentialType import CredentialType
 from api_v2.models.Issuer import Issuer
 from api_v2.models.Topic import Topic
-from api_v2.utils import model_counts, solr_counts
+from api_v2.utils import model_counts, solr_counts, record_count
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,15 +40,19 @@ def quickload(request, *args, **kwargs):
     }
     with connection.cursor() as cursor:
         counts = {mname: model_counts(model, cursor) for (mname, model) in count_models.items()}
+        actual_credential_count = record_count(CredentialModel, cursor)
+   
+    counts["actual_credential_count"] = actual_credential_count
     cred_counts = solr_counts()
+    indexes_synced = ((actual_credential_count - cred_counts["total"]) == 0)
     return JsonResponse(
         {
             "counts": counts,
             "credential_counts": cred_counts,
             "demo": settings.DEMO_SITE,
+            "indexes_synced": indexes_synced,
         }
     )
-
 
 @swagger_auto_schema(method='post', manual_parameters=[
     openapi.Parameter(
@@ -71,6 +75,7 @@ def quickload(request, *args, **kwargs):
         type=openapi.TYPE_STRING,
     ),
 ])
+
 @api_view(["POST"])
 @authentication_classes(())
 @permission_classes((permissions.AllowAny,))

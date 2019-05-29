@@ -41,7 +41,7 @@ async def connections_send_message(request: web.BaseRequest):
     if connection.state == "active":
         msg = BasicMessage(content=params["content"])
         target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(msg, target)
+        await outbound_handler(context, msg, target)
 
         await connection.log_activity(
             context,

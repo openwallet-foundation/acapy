@@ -5,21 +5,21 @@ import { Fetch, Model } from '../data-types';
 import { Subscription } from 'rxjs/Subscription';
 
 @Component({
-  selector: 'related-topics',
-  templateUrl: '../../themes/_active/topic/related-list.component.html',
+  selector: 'related-relationships',
+  templateUrl: '../../themes/_active/topic/relations-list.component.html',
 })
 export class TopicRelatedListComponent implements OnInit, OnDestroy {
   protected _topicId: number;
   protected _defaultFormat = 'cards';
   @Input() title: string;
   @Input('related-from') relatedFrom: boolean;
-  @Input('records') inputRecords: Model.Topic[];
+  @Input('records') inputRecords: Model.TopicRelationship[];
   @Output() afterLoad = new EventEmitter<any>();
   loaded: boolean;
   loading: boolean;
   filterActive: string = 'true';
 
-  private _loader: Fetch.ModelListLoader<Model.Topic>;
+  private _loader: Fetch.ModelListLoader<Model.TopicRelationship>;
 
   constructor(
     private _dataService: GeneralDataService,
@@ -29,7 +29,7 @@ export class TopicRelatedListComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this._loader = new Fetch.ModelListLoader(
-      this.relatedFrom ? Model.TopicRelatedFrom : Model.TopicRelatedTo);
+      this.relatedFrom ? Model.TopicRelationshipRelatedFrom : Model.TopicRelationshipRelatedTo);
     this._loader.stream.subscribe(result => {
       this.loading = result.loading;
       this.loaded = result.loaded;
@@ -71,7 +71,7 @@ export class TopicRelatedListComponent implements OnInit, OnDestroy {
       this._dataService.loadList(this._loader, {parentId: this._topicId});
   }
 
-  get topics(): Model.Topic[] {
+  get topics(): Model.TopicRelationship[] {
     return this.inputRecords || this._loader.result.data;
   }
 }
