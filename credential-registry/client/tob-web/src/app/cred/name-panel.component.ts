@@ -17,6 +17,10 @@ export class NamePanelComponent {
     return this.record.preferredName;
   }
 
+  get remote_name(): Model.Name {
+    return this.record.remoteName;
+  }
+
   get issuer(): Model.Issuer {
     return this.name ? this.name.issuer : null;
   }

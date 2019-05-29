@@ -18,7 +18,7 @@
           <a [routerLink]="['/issuer', issuer.id] | localize" class="body-link issuer-link">{{issuer.name}}</a>
         </div>
         <label class="control-label" translate>cred.start-date</label>
-        <div class="form-field">
+        <div class="form-field" *ngIf="name.last_updated > '0100-01-01'">
           <span class="claim-info date">{{name.last_updated | dateFormat: 'effectiveDate'}}</span>
         </div>
       </div>

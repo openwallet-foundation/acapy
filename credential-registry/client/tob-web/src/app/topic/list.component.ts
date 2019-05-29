@@ -10,7 +10,7 @@ import { Model } from '../data-types';
 })
 export class TopicListComponent {
 
-  @Input() public records: Model.Topic[];
+  @Input() public records: Model.TopicRelationship[];
   protected _format = 'rows';
 
   @Input() set format(fmt: string) {
