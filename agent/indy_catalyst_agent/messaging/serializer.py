@@ -2,16 +2,14 @@
 
 import json
 import logging
-from typing import Tuple, Union
+from typing import Sequence, Tuple, Union
 
 from ..config.base import InjectorError
 from ..config.injection_context import InjectionContext
-from ..messaging.connections.models.connection_target import ConnectionTarget
 from ..messaging.routing.messages.forward import Forward
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 
-from .agent_message import AgentMessage
 from .message_delivery import MessageDelivery
 from .error import MessageParseError
 from .util import time_now
@@ -87,7 +85,7 @@ class MessageSerializer:
         if transport_dec:
             delivery.direct_response_requested = transport_dec.get("return_route")
 
-        return delivery, message_dict
+        return message_dict, delivery
 
     def extract_message_type(self, parsed_msg: dict) -> str:
         """
@@ -103,42 +101,42 @@ class MessageSerializer:
             raise MessageParseError("Message does not contain '@type' parameter")
         return msg_type
 
-    async def compact_message(
+    async def encode_message(
         self,
         context: InjectionContext,
-        message: Union[AgentMessage, str, bytes],
-        target: ConnectionTarget,
+        message_json: Union[str, bytes],
+        recipient_keys: Sequence[str],
+        routing_keys: Sequence[str],
+        sender_key: str,
     ) -> Union[str, bytes]:
         """
-        Serialize an outgoing message for transport.
+        Encode an outgoing message for transport.
 
         Args:
             context: The injection context for settings and services
-            message: The `AgentMessage` to compact, or a pre-packed string or bytes
-            target: The `ConnectionTarget` you are compacting for
+            message_json: The message body to serialize
+            recipient_keys: A sequence of recipient verkeys
+            routing_keys: A sequence of routing verkeys
+            sender_key: The verification key of the sending agent
 
         Returns:
-            The serialized message
+            The encoded message
 
         """
 
         wallet: BaseWallet = await context.inject(BaseWallet)
 
-        if isinstance(message, AgentMessage):
-            message_json = message.to_json()
-            if target and target.sender_key and target.recipient_keys:
-                message = await wallet.pack_message(
-                    message_json, target.recipient_keys, target.sender_key
-                )
-                if target.routing_keys:
-                    recip_keys = target.recipient_keys
-                    for router_key in target.routing_keys:
-                        fwd_msg = Forward(to=recip_keys[0], msg=message)
-                        # Forwards are anon packed
-                        recip_keys = [router_key]
-                        message = await wallet.pack_message(
-                            fwd_msg.to_json(), recip_keys
-                        )
-            else:
-                message = message_json
+        if sender_key and recipient_keys:
+            message = await wallet.pack_message(
+                message_json, recipient_keys, sender_key
+            )
+            if routing_keys:
+                recip_keys = recipient_keys
+                for router_key in routing_keys:
+                    fwd_msg = Forward(to=recip_keys[0], msg=message)
+                    # Forwards are anon packed
+                    recip_keys = [router_key]
+                    message = await wallet.pack_message(fwd_msg.to_json(), recip_keys)
+        else:
+            message = message_json
         return message

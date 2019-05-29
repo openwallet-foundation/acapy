@@ -36,4 +36,4 @@ class ForwardHandler(BaseHandler):
             except ConnectionManagerError:
                 self._logger.exception("Error resolving connection for route")
 
-            await self.responder.send_outbound(packed, conn.target)
+            await self.responder.send(packed, connection_id=conn.connection_id)

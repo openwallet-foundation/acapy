@@ -1,5 +1,6 @@
 """Http Transport classes and functions."""
 
+import asyncio
 import logging
 from typing import Callable
 
@@ -81,18 +82,37 @@ class Transport(BaseInboundTransport):
             body = await request.read()
 
         try:
-            response = await self.message_router(
-                body, self._scheme, allow_direct_response=True
+            response = asyncio.Future()
+            await self.message_router(
+                body, self._scheme, single_response=response, allow_direct_response=True
             )
-        except Exception as e:
+        except Exception:
             self.logger.exception("Error handling message")
-            error_message = f"Error handling message: {str(e)}"
-            return web.json_response(
-                {"success": False, "message": error_message}, status=400
-            )
+            return web.Response(status=400)
 
-        if response:
-            return web.Response(text=response, status=200)
+        try:
+            await asyncio.wait_for(response, 30)
+        except asyncio.TimeoutError:
+            if not response.done():
+                response.cancel()
+            return web.Response(status=504)
+        except asyncio.CancelledError:
+            return web.Response(status=200)
+
+        message = response.result()
+        if message:
+            if isinstance(message, bytes):
+                return web.Response(
+                    body=message,
+                    status=200,
+                    headers={"Content-Type": "application/ssi-agent-wire"},
+                )
+            else:
+                return web.Response(
+                    text=message,
+                    status=200,
+                    headers={"Content-Type": "application/json"},
+                )
         return web.Response(status=200)
 
     async def invite_message_handler(self, request: web.BaseRequest):

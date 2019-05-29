@@ -8,12 +8,13 @@ wallet.
 
 """
 
+import asyncio
 import logging
-
-from typing import Coroutine, Union
+from typing import Union
 
 from .admin.server import AdminServer
 from .admin.service import AdminService
+from .config.injection_context import InjectionContext
 from .config.provider import CachedProvider, ClassProvider
 from .dispatcher import Dispatcher
 from .error import StartupError
@@ -23,19 +24,19 @@ from .ledger.provider import LedgerProvider
 from .issuer.base import BaseIssuer
 from .holder.base import BaseHolder
 from .verifier.base import BaseVerifier
-from .messaging.agent_message import AgentMessage
 from .messaging.actionmenu.base_service import BaseMenuService
 from .messaging.actionmenu.driver_service import DriverMenuService
-from .messaging.connections.models.connection_target import ConnectionTarget
-from .messaging.error import MessageParseError
+from .messaging.connections.manager import ConnectionManager, ConnectionManagerError
+from .messaging.connections.models.connection_record import ConnectionRecord
+from .messaging.error import MessageParseError, MessagePrepareError
 from .messaging.introduction.base_service import BaseIntroductionService
 from .messaging.introduction.demo_service import DemoIntroductionService
 from .messaging.message_factory import MessageFactory
+from .messaging.outbound_message import OutboundMessage
 from .messaging.request_context import RequestContext
 from .messaging.serializer import MessageSerializer
-from .messaging.util import datetime_now
-from .models.timing_decorator import TimingDecorator
 from .storage.base import BaseStorage
+from .storage.error import StorageNotFoundError
 from .storage.provider import StorageProvider
 from .transport.inbound import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
@@ -80,13 +81,13 @@ class Conductor:
         self.inbound_transport_configs = transport_configs
         self.outbound_transports = outbound_transports
         self.settings = settings.copy() if settings else {}
+        self.sockets = []
         self.init_context()
 
     def init_context(self):
         """Initialize the global request context."""
 
         context = RequestContext(settings=self.settings)
-        context.settings.set_default("default_endpoint", "http://localhost:10000")
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
         context.injector.bind_instance(MessageFactory, self.message_factory)
@@ -216,7 +217,8 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                _connection, invitation = await self.connection_mgr.create_invitation()
+                mgr = ConnectionManager(self.context)
+                _connection, invitation = await mgr.create_invitation()
                 invite_url = invitation.to_url()
                 print("Invitation URL:")
                 print(invite_url)
@@ -227,27 +229,30 @@ class Conductor:
         send_invite_to = context.settings.get("debug.send_invitation_to")
         if send_invite_to:
             try:
-                _connection, invitation = await self.connection_mgr.create_invitation()
-                await self.connection_mgr.send_invitation(invitation, send_invite_to)
+                mgr = ConnectionManager(self.context)
+                _connection, invitation = await mgr.create_invitation()
+                await mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
 
     async def inbound_message_router(
         self,
         message_body: Union[str, bytes],
-        transport_type: str,
-        transport_reply: Coroutine = None,
+        transport_type: str = None,
+        socket_id: str = None,
         allow_direct_response: bool = False,
-    ):
+        single_response: asyncio.Future = None,
+    ) -> asyncio.Future:
         """
         Route inbound messages.
 
         Args:
             message_body: Body of the incoming message
             transport_type: Type of transport this message came from
-            transport_reply: Function to reply to this message
+            socket_id: The identifier of the incoming socket connection
             allow_direct_response: Flag indicating that the transport
                 supports direct responses
+            single_response: A future to contain the first direct response message
 
         """
 
@@ -259,44 +264,112 @@ class Conductor:
             self.logger.exception("Error expanding message")
             raise
 
-        direct_response = await self.dispatcher.dispatch(
-            parsed_msg,
-            delivery,
-            self.outbound_message_router,
-            transport_reply,
-            allow_direct_response,
-        )
-        if direct_response:
-            return await self.compact_message(self.context, direct_response, None)
+        if single_response and not socket_id:
+            socket_id = str(id(single_response))
+            socket = {"id": socket_id, "single_response": single_response}
+            self.sockets.append(socket)
 
-    async def compact_message(
-        self,
-        context: RequestContext,
-        message: Union[AgentMessage, str, bytes],
-        target: ConnectionTarget,
-    ):
-        """Prepare a response message for transmission."""
-        if context.settings.get("timing.enabled") and isinstance(message, AgentMessage):
-            in_time = context.message_delivery and context.message_delivery.in_time
-            if not message._timing:
-                message._timing = TimingDecorator(
-                    in_time=in_time, out_time=datetime_now()
+        delivery.socket_id = socket_id
+        if delivery.direct_response_requested == "all":
+            if allow_direct_response:
+                delivery.direct_response = True
+            else:
+                self.logger.warning(
+                    "Direct response requested, but not supported by transport: %s",
+                    delivery.transport_type,
                 )
-        return await self.message_serializer.serialize_message(context, message, target)
+        elif single_response:
+            single_response.cancel()
+
+        future = await self.dispatcher.dispatch(
+            parsed_msg, delivery, self.outbound_message_router
+        )
+        if single_response:
+            future.add_done_callback(
+                lambda fut: single_response.done() or single_response.cancel()
+            )
+        return future
+
+    async def prepare_outbound_message(
+        self, message: OutboundMessage, context: InjectionContext = None
+    ):
+        """Prepare a response message for transmission.
+        
+        Args:
+            message: An outbound message to be sent
+            context: Optional request context
+        """
+
+        context = context or self.context
+
+        if not message.target:
+            if message.connection_id:
+                try:
+                    record = await ConnectionRecord.retrieve_by_id(
+                        context, message.connection_id
+                    )
+                except StorageNotFoundError as e:
+                    raise MessagePrepareError(
+                        "Could not locate connection record: {}".format(
+                            message.connection_id
+                        )
+                    ) from e
+                mgr = ConnectionManager(context)
+                try:
+                    target = await mgr.get_connection_target(record)
+                except ConnectionManagerError as e:
+                    raise MessagePrepareError(str(e)) from e
+                if not target:
+                    raise MessagePrepareError(
+                        "No connection target for message: {}".format(
+                            message.connection_id
+                        )
+                    )
+                message.target = target
+
+        if not message.encoded and message.target:
+            target = message.target
+            message.payload = await self.message_serializer.encode_message(
+                context,
+                message.payload,
+                target.recipient_keys,
+                target.routing_keys,
+                target.sender_key,
+            )
+            message.encoded = True
 
     async def outbound_message_router(
-        self,
-        context: RequestContext,
-        message: Union[AgentMessage, str, bytes],
-        target: ConnectionTarget,
+        self, message: OutboundMessage, context: InjectionContext = None
     ) -> None:
         """
         Route an outbound message.
 
         Args:
-            context: The request context active when processing the message
-            message: An agent message to be sent
-            target: Target to send message to
+            message: An outbound message to be sent
+            context: Optional request context
         """
-        payload = await self.compact_message(context, message, target)
-        await self.outbound_transport_manager.send_message(payload, target.endpoint)
+        try:
+            await self.prepare_outbound_message(message, context)
+        except MessagePrepareError:
+            self.logger.exception("Error preparing outbound message for transmission")
+            return
+
+        # try socket connections first
+        if message.reply_socket_id:
+            for sock in self.sockets:
+                if (
+                    sock["id"] == message.reply_socket_id
+                    and not sock["single_response"].cancelled()
+                ):
+                    sock["single_response"].set_result(message.payload)
+                    self.logger.info(
+                        "Returned message to socket %s", message.reply_socket_id
+                    )
+                    return
+
+        if message.endpoint:
+            await self.outbound_transport_manager.send_message(
+                message.payload, message.endpoint
+            )
+
+        self.logger.warning("No route for outbound message, dropped")

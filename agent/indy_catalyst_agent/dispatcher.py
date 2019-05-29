@@ -14,11 +14,13 @@ from .messaging.connections.manager import ConnectionManager
 from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
 from .messaging.message_factory import MessageFactory
+from .messaging.outbound_message import OutboundMessage
 from .messaging.problem_report.message import ProblemReport
 from .messaging.request_context import RequestContext
-from .messaging.responder import BaseResponder, ResponderError
+from .messaging.responder import BaseResponder
 from .messaging.serializer import MessageSerializer
-from .messaging.connections.models.connection_target import ConnectionTarget
+from .messaging.util import datetime_now
+from .models.timing_decorator import TimingDecorator
 from .models.base import BaseModelError
 
 
@@ -36,22 +38,15 @@ class Dispatcher:
         self.logger = logging.getLogger(__name__)
 
     async def dispatch(
-        self,
-        parsed_msg: dict,
-        delivery: MessageDelivery,
-        send: Coroutine,
-        transport_reply: Coroutine = None,
-        allow_direct_response: bool = False,
-    ) -> AgentMessage:
+        self, parsed_msg: dict, delivery: MessageDelivery, send: Coroutine
+    ) -> asyncio.Future:
         """
         Configure responder and dispatch message context to message handler.
 
         Args:
-            parsed_msg:
-            delivery:
+            parsed_msg: The parsed message body
+            delivery: The incoming message delivery metadata
             send: Function to send outbound messages
-            transport_reply: Function to reply on the incoming channel
-            allow_direct_response:
 
         Returns:
             The response from the handler
@@ -68,50 +63,20 @@ class Dispatcher:
         context.message_delivery = delivery
 
         connection_mgr = ConnectionManager(context)
-
-        # updates delivery.direct_response_requested and potentially updates connection
         connection = await connection_mgr.find_message_connection(delivery)
-
-        if delivery.direct_response_requested == "all":
-            if allow_direct_response:
-                delivery.direct_response = True
-            else:
-                self.logger.warning(
-                    "Direct response requested, but not supported by transport: %s",
-                    delivery.transport_type,
-                )
-
         context.connection_active = connection and connection.is_active
         context.connection_record = connection
-        if connection:
-            context.connection_target = await self.connection_mgr.get_connection_target(
-                connection
-            )
 
-        direct_response = delivery.direct_response and asyncio.Future() or None
-
-        try:
-            responder = await self.make_responder(
-                send, context, transport_reply, direct_response
-            )
-            handler_cls = context.message.Handler
-            handler = asyncio.ensure_future(handler_cls().handle(context, responder))
-
-            if direct_response:
-                # wait for either a direct response or the end of the handler
-                await asyncio.wait(
-                    [direct_response, handler], return_when=asyncio.FIRST_COMPLETED
-                )
-            else:
-                await handler
-        except Exception:
-            self.logger.exception("Exception in message handler")
-            raise
-
-        # We return the result to the caller.
-        # This is for persistent connections waiting on that response.
-        if direct_response and direct_response.done():
-            return direct_response.result()
+        responder = DispatcherResponder(
+            send,
+            context,
+            connection_id=connection and connection.connection_id,
+            reply_socket_id=delivery.socket_id,
+            reply_to_verkey=delivery.sender_verkey,
+        )
+        handler_cls = context.message.Handler
+        handler = asyncio.ensure_future(handler_cls().handle(context, responder))
+        return handler
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:
         """
@@ -151,110 +116,46 @@ class Dispatcher:
 
         return instance
 
-    async def make_responder(
-        self,
-        send: Coroutine,
-        context: RequestContext,
-        reply: Coroutine,
-        direct_response: asyncio.Future,
-    ) -> "DispatcherResponder":
-        """
-        Build a responder object.
-
-        Args:
-            send: Function to send outbound messages
-            context: The `RequestContext` to be handled
-            reply: Function to reply on the incoming channel
-
-        Returns:
-            The created `DispatcherResponder`
-
-        """
-        responder = DispatcherResponder(
-            send, context, reply=reply, direct_response=direct_response
-        )
-        # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
-        # responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
-        # responder.add_target(
-        #    ConnectionTarget(endpoint="https://httpbin.org/status/400")
-        # )
-        if context.connection_target:
-            responder.add_target(context.connection_target)
-        return responder
-
 
 class DispatcherResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
-    def __init__(
-        self,
-        send: Coroutine,
-        context: RequestContext,
-        *targets,
-        reply: Coroutine = None,
-        direct_response: asyncio.Future = None,
-    ):
+    def __init__(self, send: Coroutine, context: RequestContext, **kwargs):
         """
         Initialize an instance of `DispatcherResponder`.
 
         Args:
             send: Function to send outbound message
-            wallet: Wallet instance to use
-            targets: List of `ConnectionTarget`s to send to
-            reply: Function to reply on incoming channel
+            context: The request context of the incoming message
 
         """
+        super().__init__(**kwargs)
         self._context = context
-        self._direct_response = direct_response
-        self._targets = list(targets)
         self._send = send
-        self._reply = reply
 
-    def add_target(self, target: ConnectionTarget):
-        """
-        Add target.
+    async def create_outbound(
+        self, message: Union[AgentMessage, str, bytes], **kwargs
+    ) -> OutboundMessage:
+        """Create an OutboundMessage from a message body."""
+        if isinstance(message, AgentMessage) and self._context.settings.get(
+            "timing.enabled"
+        ):
+            # Inject the timing decorator
+            in_time = (
+                self._context.message_delivery
+                and self._context.message_delivery.in_time
+            )
+            if not message._timing:
+                message._timing = TimingDecorator(
+                    in_time=in_time, out_time=datetime_now()
+                )
+        return await super().create_outbound(message, **kwargs)
 
-        Args:
-            target: ConnectionTarget to add
-        """
-        self._targets.append(target)
-
-    async def send_reply(self, message: Union[AgentMessage, str, bytes]):
-        """
-        Send a reply to an incoming message.
-
-        Args:
-            message: the `AgentMessage`, or pre-packed str or bytes to reply with
-
-        Raises:
-            ResponderError: If there is no active connection
-
-        """
-        if self._direct_response:
-            self._direct_response.set_result(message)
-            self._direct_response = None
-        elif self._reply:
-            # 'reply' is a temporary solution to support responses to websocket requests
-            # a better solution would likely use a queue to deliver the replies
-            await self._reply(message.serialize())
-        else:
-            if not self._targets:
-                raise ResponderError("No active connection")
-            for target in self._targets:
-                await self.send_outbound(message, target)
-
-    async def send_outbound(
-        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
-    ):
+    async def send_outbound(self, message: OutboundMessage):
         """
         Send outbound message.
 
         Args:
-            message: `AgentMessage` to send
-            target: `ConnectionTarget` to send to
+            message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context, message, target)
-
-    async def send_admin_message(self, message: AgentMessage):
-        """Todo."""
-        pass
+        await self._send(message)

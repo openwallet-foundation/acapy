@@ -20,6 +20,7 @@ class MessageDelivery:
         recipient_did_public: str = None,
         sender_did: str = None,
         sender_verkey: str = None,
+        socket_id: str = None,
         transport_type: str = None,
     ):
         """Initialize the message delivery instance."""
@@ -32,6 +33,7 @@ class MessageDelivery:
         self._recipient_did_public = recipient_did_public
         self._sender_did = sender_did
         self._sender_verkey = sender_verkey
+        self._socket_id = socket_id
         self._transport_type = transport_type
 
     @property
@@ -244,6 +246,28 @@ class MessageDelivery:
 
         """
         self._sender_verkey = verkey
+
+    @property
+    def socket_id(self) -> str:
+        """
+        Accessor for the identifier of the incoming socket connection.
+
+        Returns:
+            This context's socket identifier
+
+        """
+        return self._socket_id
+
+    @socket_id.setter
+    def socket_id(self, socket: str):
+        """
+        Setter for the incoming socket identifier.
+
+        Args:
+            socket: This context's socket identifier
+
+        """
+        self._socket_id = socket
 
     @property
     def transport_type(self) -> str:

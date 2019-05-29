@@ -21,11 +21,13 @@ class ConnectionRequestHandler(BaseHandler):
         assert isinstance(context.message, ConnectionRequest)
 
         mgr = ConnectionManager(context)
-        connection = await mgr.receive_request(context.message)
+        connection = await mgr.receive_request(
+            context.message, context.message_delivery
+        )
 
         if context.settings.get("accept_requests"):
             response = await mgr.create_response(connection)
             target = await mgr.get_connection_target(connection)
 
             self._logger.debug("Sending connection response to target: %s", target)
-            await responder.send_outbound(response, target)
+            await responder.send(response, target=target)
