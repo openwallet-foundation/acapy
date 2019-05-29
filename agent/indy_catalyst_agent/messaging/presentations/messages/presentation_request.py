@@ -21,13 +21,7 @@ class PresentationRequest(AgentMessage):
         message_type = PRESENTATION_REQUEST
         schema_class = "PresentationRequestSchema"
 
-    def __init__(
-        self,
-        request: str = None,
-        comment: str = None,
-        extra_query: str = None,
-        **kwargs,
-    ):
+    def __init__(self, request: str = None, comment: str = None, **kwargs):
         """
         Initialize presentation request object.
 
@@ -37,7 +31,6 @@ class PresentationRequest(AgentMessage):
         super(PresentationRequest, self).__init__(**kwargs)
         self.request = request
         self.comment = comment
-        self.extra_query = extra_query
 
 
 class PresentationRequestSchema(AgentMessageSchema):
@@ -50,4 +43,3 @@ class PresentationRequestSchema(AgentMessageSchema):
 
     request = fields.Str(required=True)
     comment = fields.Str(required=False)
-    extra_query = fields.Str(required=False)

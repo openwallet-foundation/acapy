@@ -1,5 +1,7 @@
 """Admin routes for presentations."""
 
+import json
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
@@ -41,7 +43,6 @@ class PresentationRequestRequestSchema(Schema):
         restrictions = fields.List(fields.Dict(), required=False)
 
     connection_id = fields.Str(required=True)
-    extra_query = fields.Dict(required=False)
     name = fields.String(required=True)
     version = fields.String(required=True)
     requested_attributes = fields.Nested(RequestedAttribute, many=True)
@@ -163,8 +164,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     count = request.query.get("count")
 
     # url encoded json extra_query
-    encoded_extra_query = request.query.get("extra_query") or ""
-    extra_query = parse_qs(encoded_extra_query)
+    encoded_extra_query = request.query.get("extra_query") or "{}"
+    extra_query = json.loads(encoded_extra_query)
 
     # defaults
     start = int(start) if isinstance(start, str) else 0
@@ -202,7 +203,6 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
     body = await request.json()
 
     connection_id = body.get("connection_id")
-    extra_query = body.get("extra_query")
 
     name = body.get("name")
     version = body.get("version")
@@ -222,12 +222,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
         presentation_exchange_record,
         presentation_request_message,
     ) = await presentation_manager.create_request(
-        name,
-        version,
-        requested_attributes,
-        requested_predicates,
-        connection_id,
-        extra_query,
+        name, version, requested_attributes, requested_predicates, connection_id
     )
 
     await outbound_handler(presentation_request_message, connection_target)

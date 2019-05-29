@@ -115,7 +115,7 @@ class IndyHolder(BaseHolder):
         referent: str,
         start: int,
         count: int,
-        extra_query: dict,
+        extra_query: dict = {},
     ):
         """
         Get credentials stored in the wallet.

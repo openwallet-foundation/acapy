@@ -22,7 +22,7 @@ class CredentialOfferRequestSchema(Schema):
 
     connection_id = fields.Str(required=True)
     credential_definition_id = fields.Str(required=True)
-    auto_issue = fields.Str(required=False, default=False)
+    auto_issue = fields.Bool(required=False, default=False)
     credential_values = fields.Dict(required=False)
 
 
