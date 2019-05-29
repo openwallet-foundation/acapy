@@ -35,6 +35,7 @@ router.register(r"attribute", rest.AttributeViewSet)
 router.register(r"credential", rest.CredentialViewSet)
 router.register(r"name", rest.NameViewSet)
 router.register(r"topic", rest.TopicViewSet)
+router.register(r"topic_relationship", rest.TopicRelationshipViewSet)
 
 # Search endpoints
 router.register(

@@ -56,20 +56,38 @@ def model_counts(model_cls, cursor=None, optimize=None):
             cursor.close()
     return row[0]
 
-
+def record_count(model_cls, cursor=None):
+    close = False
+    try:
+        if not cursor:
+            cursor = connection.cursor()
+            close = True
+        query = 'SELECT count(*) FROM %s' % model_cls._meta.db_table
+        cursor.execute(query)
+        row = cursor.fetchone()
+    finally:
+        if close:
+            cursor.close()
+    return row[0]
+    
 def solr_counts():
-    latest_q = SearchQuerySet().filter(latest=True)
+    total_q = SearchQuerySet()
+    latest_q = total_q.filter(latest=True)
     registrations_q = latest_q.filter(category="entity_status::ACT")
+    last_24h = datetime.now() - timedelta(days=1)
     last_week = datetime.now() - timedelta(days=7)
     last_month = datetime.now() - timedelta(days=30)
-    last_week_q = SearchQuerySet().filter(create_timestamp__gte=last_week)
-    last_month_q = SearchQuerySet().filter(create_timestamp__gte=last_month)
+    last_24h_q = total_q.filter(create_timestamp__gte=last_24h)
+    last_week_q = total_q.filter(create_timestamp__gte=last_week)
+    last_month_q = total_q.filter(create_timestamp__gte=last_month)
     try:
         return {
+            "total": total_q.count(),
             "active": latest_q.count(),
             "registrations": registrations_q.count(),
             "last_month": last_month_q.count(),
             "last_week": last_week_q.count(),
+            "last_24h": last_24h_q.count(),
         }
     except SolrError:
         LOGGER.exception("Error when retrieving quickload counts from Solr")

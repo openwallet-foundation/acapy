@@ -15,6 +15,7 @@ class StorageProvider(BaseProvider):
     STORAGE_TYPES = {
         "basic": "indy_catalyst_agent.storage.basic.BasicStorage",
         "indy": "indy_catalyst_agent.storage.indy.IndyStorage",
+        "postgres_storage": "indy_catalyst_agent.storage.indy.IndyStorage",
     }
 
     async def provide(self, settings: BaseSettings, injector: BaseInjector):

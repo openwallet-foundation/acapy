@@ -186,7 +186,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
     if context.settings.get("accept_invites"):
         request = await connection_mgr.create_request(connection)
         target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(request, target)
+        await outbound_handler(context, request, target)
     return web.json_response(connection.serialize())
 
 
@@ -232,7 +232,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
     my_endpoint = request.query.get("my_endpoint") or None
     request = await connection_mgr.create_request(connection, my_label, my_endpoint)
     target = await connection_mgr.get_connection_target(connection)
-    await outbound_handler(request, target)
+    await outbound_handler(context, request, target)
     return web.json_response(connection.serialize())
 
 
@@ -287,7 +287,7 @@ async def connections_accept_request(request: web.BaseRequest):
         connection, my_endpoint, my_router_did, their_role
     )
     target = await connection_mgr.get_connection_target(connection)
-    await outbound_handler(request, target)
+    await outbound_handler(context, request, target)
     return web.json_response(connection.serialize())
 
 

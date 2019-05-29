@@ -8,6 +8,7 @@ import asyncio
 from .conductor import Conductor
 from .defaults import default_message_factory
 from .logging import LoggingConfigurator
+from .postgres import load_postgres_plugin
 from .transport.inbound import InboundTransportConfiguration
 
 PARSER = argparse.ArgumentParser(description="Runs an Indy Agent.")
@@ -98,6 +99,29 @@ PARSER.add_argument(
     type=str,
     metavar="<wallet-type>",
     help="Specify the wallet implementation to use",
+)
+
+PARSER.add_argument(
+    "--storage-type",
+    type=str,
+    metavar="<storage-type>",
+    help="Specify the storage implementation to use",
+)
+
+PARSER.add_argument(
+    "--storage-config",
+    type=str,
+    metavar="<storage-config>",
+    help="Specify the storage configuration to use (required for postgres) " +
+            "e.g., '{\"url\":\"localhost:5432\"}'",
+)
+
+PARSER.add_argument(
+    "--storage-creds",
+    type=str,
+    metavar="<storage-creds>",
+    help="Specify the storage credentials to use (required for postgres) " +
+            "e.g., '{\"account\":\"postgres\",\"password\":\"mysecretpassword\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}'",
 )
 
 PARSER.add_argument(
@@ -226,6 +250,17 @@ def main():
         settings["wallet.name"] = args.wallet_name
     if args.wallet_type:
         settings["wallet.type"] = args.wallet_type
+    if args.storage_type:
+        settings["storage.type"] = args.storage_type
+        # load postgres plug-in here
+        # TODO where should this live?
+        if args.storage_type == "postgres_storage":
+            load_postgres_plugin()
+
+    if args.storage_config:
+        settings["storage.config"] = args.storage_config
+    if args.storage_creds:
+        settings["storage.creds"] = args.storage_creds
 
     if args.admin:
         settings["admin.enabled"] = True

@@ -228,7 +228,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
         credential_offer_message,
     ) = await credential_manager.create_offer(credential_definition_id, connection_id)
 
-    await outbound_handler(credential_offer_message, connection_target)
+    await outbound_handler(context, credential_offer_message, connection_target)
 
     return web.json_response(credential_exchange_record.serialize())
 
@@ -275,7 +275,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         credential_exchange_record, connection_record
     )
 
-    await outbound_handler(credential_request_message, connection_target)
+    await outbound_handler(context, credential_request_message, connection_target)
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -324,7 +324,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         credential_exchange_record, credential_values
     )
 
-    await outbound_handler(credential_request_message, connection_target)
+    await outbound_handler(context, credential_request_message, connection_target)
     return web.json_response(credential_exchange_record.serialize())
 
 

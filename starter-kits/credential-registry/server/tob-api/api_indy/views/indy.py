@@ -16,13 +16,14 @@ from api_indy.indy.credential import Credential, CredentialManager
 from api_indy.indy.proof_request import ProofRequest
 from api_indy.indy.proof import ProofManager
 
-from api_v2.decorators.jsonschema import validate
-from api_v2.jsonschema.issuer import ISSUER_JSON_SCHEMA
-from api_v2.jsonschema.credential_offer import CREDENTIAL_OFFER_JSON_SCHEMA
-from api_v2.jsonschema.credential import CREDENTIAL_JSON_SCHEMA
-from api_v2.jsonschema.construct_proof import CONSTRUCT_PROOF_JSON_SCHEMA
+from api_indy.decorators.jsonschema import validate
+from api_indy.jsonschema.issuer import ISSUER_JSON_SCHEMA
+from api_indy.jsonschema.credential_offer import CREDENTIAL_OFFER_JSON_SCHEMA
+from api_indy.jsonschema.credential import CREDENTIAL_JSON_SCHEMA
+from api_indy.jsonschema.construct_proof import CONSTRUCT_PROOF_JSON_SCHEMA
 
 from api_indy.tob_anchor.boot import indy_client, indy_holder_id
+
 from vonx.common.eventloop import run_coro
 from vonx.indy.messages import (
     ProofRequest as VonxProofRequest,
@@ -105,19 +106,23 @@ def store_credential(request, *args, **kwargs):
     """
     logger.warn(">>> Store Credential")
 
-    credential_data = request.data["credential_data"]
-    credential_request_metadata = request.data["credential_request_metadata"]
+    return store_credential_int(request.data)
+
+
+def store_credential_int(request_data):
+    print(">>> Store Credential Internal")
+
+    credential_data = request_data["credential_data"]
+    credential_request_metadata = request_data["credential_request_metadata"]
 
     logger.info(credential_data)
 
-    credential = Credential(credential_data)
-    credential_manager = CredentialManager(
-        credential, credential_request_metadata
-    )
+    credential = Credential(credential_data, wallet_id=credential_data["referent"])
+    credential_manager = CredentialManager()
 
-    credential_wallet_id = credential_manager.process()
+    credential_wallet_id = credential_manager.process(credential)
 
-    return Response({"success": True, "result": credential_wallet_id})
+    return Response({"success": True, "result": credential_data["referent"]})
 
 
 @api_view(["POST"])
