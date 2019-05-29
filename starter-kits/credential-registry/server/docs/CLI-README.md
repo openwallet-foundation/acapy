@@ -1,20 +1,18 @@
 # Running the Indy CLI and Creating DIDs
 
 - [Running the Indy CLI and Creating DIDs](#running-the-indy-cli-and-creating-dids)
-    - [Starting the CLI](#starting-the-cli)
-    - [Creating DID's in a Local Wallet](#creating-dids-in-a-local-wallet)
-    - [Creating a DID for the Sovrin Live Network](#creating-a-did-for-the-sovrin-live-network)
-        - [Creating the Seeds](#creating-the-seeds)
-        - [Sharing the Seeds](#sharing-the-seeds)
-        - [Generate the DID and Verkey](#generate-the-did-and-verkey)
-        - [Getting the DID Published to the SLN](#getting-the-did-published-to-the-sln)
-    - [Connecting to a Ledger](#connecting-to-a-ledger)
-    - [Writing DID's to a Ledger](#writing-dids-to-a-ledger)
-    - [Connecting to a Postgres Wallet](#connecting-to-a-postgres-wallet)
-    - [Rotating a Wallet's Encryption Keys](#rotating-a-wallets-encryption-keys)
-- [enter the old "key" and the new "rekey":](#enter-the-old-key-and-the-new-rekey)
-- [now use the "rekey" from above as the new "key":](#now-use-the-rekey-from-above-as-the-new-key)
-    - [Exporting and Importing a Wallet](#exporting-and-importing-a-wallet)
+  - [Starting the CLI](#starting-the-cli)
+  - [Creating DID's in a Local Wallet](#creating-dids-in-a-local-wallet)
+  - [Creating a DID for the Sovrin Live Network](#creating-a-did-for-the-sovrin-live-network)
+    - [Creating the Seeds](#creating-the-seeds)
+    - [Sharing the Seeds](#sharing-the-seeds)
+    - [Generate the DID and Verkey](#generate-the-did-and-verkey)
+    - [Getting the DID Published to the SLN](#getting-the-did-published-to-the-sln)
+  - [Connecting to a Ledger](#connecting-to-a-ledger)
+  - [Writing DID's to a Ledger](#writing-dids-to-a-ledger)
+  - [Connecting to a Postgres Wallet](#connecting-to-a-postgres-wallet)
+  - [Rotating a Wallet's Encryption Keys](#rotating-a-wallets-encryption-keys)
+  - [Exporting and Importing a Wallet](#exporting-and-importing-a-wallet)
 
 This document describes how to create DIDs using the Indy-CLI and how to get those DIDs loaded on other Indy Ledger - especially the Sovrin Live Network (SLN).
 
@@ -111,7 +109,7 @@ Assuming all goes well - when the Registries and TheOrgBook production launches,
 
 ## Connecting to a Ledger
 
-First get a hold of the genesis file for your ledger, and save it somewhere locally (for example save it to "/tmp/genesis.json").  For example, you can download the BCovrin Dev genesis file from "http://dev.dflow.bcovrin.vonx.io/genesis".
+First get a hold of the genesis file for your ledger, and save it somewhere locally (for example save it to "/tmp/genesis.json").  For example, you can download the BCovrin Dev genesis file from "http://dev.greenlight.bcovrin.vonx.io/genesis".
 
 Then create a pool and connect to the ledger with the following CLI commands (substitute your own pool name and genesis file location):
 

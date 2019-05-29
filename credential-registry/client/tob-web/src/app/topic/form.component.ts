@@ -129,7 +129,7 @@ export class TopicFormComponent implements OnInit, OnDestroy {
         if(this._loader.result.error)
           state = true;
         else
-          state = this.isLoaded('topic', 'related_to', 'related_from' /*, 'creds'*/);
+          state = this.isLoaded('topic', /*'related_to', */ 'related_to_relations' /*, 'related_from', 'creds'*/);
       } else if(s === 'topic') {
         state = this._loader.result.loaded;
       } else {

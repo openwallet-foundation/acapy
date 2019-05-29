@@ -36,7 +36,7 @@ from api_indy.indy.issuer import IssuerManager, IssuerException
 from api_indy.indy.proof_request import ProofRequest
 from api_indy.indy.proof import ProofManager
 
-from api_v2.jsonschema.issuer import ISSUER_JSON_SCHEMA
+from api_indy.jsonschema.issuer import ISSUER_JSON_SCHEMA
 
 from api_indy.tob_anchor.boot import (
     indy_client, indy_holder_id, run_django

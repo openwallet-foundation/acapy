@@ -62,13 +62,13 @@
                         {{('business_status.' + topic_status.value) | translate}}
                     </div>
                 </div>
-
-                <div class="row form-group">
+               <!-- as per request from Mar 14, 2019 to now to include this field in the credential display      -->
+               <!-- <div class="row form-group">
                     <label tabIndex="0" class="col-sm-4 control-label" translate>cred.effective-date</label>
                     <div tabIndex="0" class="col-sm-8 form-field" *ngIf="record.attribute_map['entity_status_effective'] as status_date">
                          <attribute-view [record]="status_date" format="date"></attribute-view>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="row form-group" *ngIf="record.attribute_map['home_jurisdiction'] as home_jurisdiction">
                     <label tabIndex="0" class="col-sm-4 control-label" translate>cred.jurisdiction</label>

@@ -110,6 +110,8 @@ class SolrQueue:
             LOGGER.debug("Updating %d row(s) in solr queue: %s", len(ids), ids)
             rows = index.index_queryset(using).filter(id__in=ids)
             backend.update(index, rows)
+        else:
+            LOGGER.error("Failed to get backend.  Unable to update %d row(s) in solr queue: %s", len(ids), ids)
 
     def remove(self, index_cls, using, ids):
         index = index_cls()
@@ -118,3 +120,5 @@ class SolrQueue:
             LOGGER.debug("Removing %d row(s) in solr queue: %s", len(ids), ids)
             # backend.remove has no support for a list of IDs
             backend.conn.delete(id=ids)
+        else:
+            LOGGER.error("Failed to get backend.  Unable to update %d row(s) in solr queue: %s", len(ids), ids)

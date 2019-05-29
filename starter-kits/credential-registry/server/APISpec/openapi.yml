@@ -1615,6 +1615,46 @@ paths:
         required: true
         schema:
           type: integer
+  "/v2/topicrelationship/{id}/related_to_relations":
+    get:
+      operationId: v2_topic_list_related_to_relations
+      description: ""
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+      tags:
+        - v2
+    parameters:
+      - name: id
+        in: path
+        description: A unique integer value identifying this topic.
+        required: true
+        schema:
+          type: integer
+  "/v2/topicrelationship/{id}/related_from_relations":
+    get:
+      operationId: v2_topic_list_related_from_relations
+      description: ""
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+      tags:
+        - v2
+    parameters:
+      - name: id
+        in: path
+        description: A unique integer value identifying this topic.
+        required: true
+        schema:
+          type: integer
   "/indy/construct-proof":
     post:
       operationId: indy_construct_proof
@@ -2760,3 +2800,16 @@ components:
             type: integer
           readOnly: true
           uniqueItems: true
+    TopicRelationship:
+      type: object
+      properties:
+        id:
+          title: ID
+          type: integer
+          readOnly: true
+        topic:
+          title: Topic
+          type: integer
+        related_topic:
+          title: Related Topic
+          type: integer

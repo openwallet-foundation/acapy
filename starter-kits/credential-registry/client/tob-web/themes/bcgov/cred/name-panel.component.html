@@ -23,6 +23,9 @@
         <label class="control-label" translate>attribute.entity_type</label>
         <div class="form-field">
           <attribute-view [record]="record.attribute_map.entity_type"></attribute-view>
+          <div *ngIf="remote_name">
+            ( {{remote_name?.text}} )
+          </div>
         </div>
         <label class="control-label" translate>topic.source-id</label>
         <div class="form-field text-identifier">
@@ -46,7 +49,7 @@
         <div class="form-field">
           <div class="row mb-2 mb-sm-1">
             <label class="col-md-4 mb-0" translate>cred.date</label>
-            <div class="col-md-8">
+            <div class="col-md-8"  *ngIf="name.last_updated > '0100-01-01'">
               <span class="claim-info date">{{name.last_updated | dateFormat: 'effectiveDateTime'}}</span>
             </div>
           </div>

@@ -24,9 +24,9 @@
       </div>
     </div>
 
-    <related-topics (afterLoad)="onLoadSection('related_from')" [records]="topic.related_from" [topicId]="topic.id" defaultFormat="compact" *ngIf="result.loaded" [related-from]="true" [title]="'topic.related-to' | translate"></related-topics>
+    <!-- related-relationships (afterLoad)="onLoadSection('related_from')" [records]="topic.related_from" [topicId]="topic.id" defaultFormat="compact" *ngIf="result.loaded" [related-from]="true" [title]="'topic.related-to' | translate"></related-relationships -->
 
-    <related-topics (afterLoad)="onLoadSection('related_to')" [records]="topic.related_to" [topicId]="topic.id" defaultFormat="compact" *ngIf="result.loaded" [title]="'name.doing-business-as' | translate"></related-topics>
+    <related-relationships (afterLoad)="onLoadSection('related_to_relations')" [records]="topic.related_to" [topicId]="topic.id" defaultFormat="compact" *ngIf="result.loaded" [title]="'topic.related-to' | translate"></related-relationships>
 
     <div class="row creds-outer" *ngIf="result.loaded">
       <div class="col-sm-12">

@@ -16,10 +16,12 @@ run_mode = os.getenv('RUNMODE')
 
 internal_host = "127.0.0.1"
 external_host = "localhost"
+scripts_dir = "../scripts/"
 
 if run_mode == 'docker':
     internal_host = "host.docker.internal"
     external_host = "host.docker.internal"
+    scripts_dir = "scripts/"
 
 # some globals that are required by the hook code
 webhook_port = int(sys.argv[1])
@@ -97,7 +99,6 @@ def main():
     else:
         with open('local-genesis.txt', 'r') as genesis_file:
             genesis = genesis_file.read()
-    #print(genesis)
 
     # TODO seed from input parameter; optionally register the DID
     rand_name = str(random.randint(100_000, 999_999))
@@ -127,8 +128,9 @@ def main():
     wallet_key  = 'faber'+rand_name
     python_path = ".."
     webhook_url = "http://" + external_host + ':' + str(webhook_port) + "/webhooks"
-    (agent_proc, t1, t2) =  start_agent_subprocess(genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
-                                            'indy', wallet_name, wallet_key, python_path, webhook_url)
+    (agent_proc, t1, t2) =  start_agent_subprocess('faber', genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
+                                            'indy', wallet_name, wallet_key, python_path, webhook_url, 
+                                            scripts_dir, run_subprocess=True)
     time.sleep(3.0)
     print("Admin url is at:", admin_url)
     print("Endpoint url is at:", endpoint_url)
@@ -243,13 +245,14 @@ def main():
     except Exception as e:
         print(e)
     finally:
-        time.sleep(2.0)
-        agent_proc.terminate()
-        try:
-            agent_proc.wait(timeout=0.5)
-            print("== subprocess exited with rc =", agent_proc.returncode)
-        except subprocess.TimeoutExpired:
-            print("subprocess did not terminate in time")
+        if agent_proc:
+            time.sleep(2.0)
+            agent_proc.terminate()
+            try:
+                agent_proc.wait(timeout=0.5)
+                print('== subprocess exited with rc =', agent_proc.returncode)
+            except subprocess.TimeoutExpired:
+                print('subprocess did not terminate in time')
         sys.exit()
 
 

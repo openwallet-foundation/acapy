@@ -11,6 +11,7 @@ class Name(Auditable):
     credential = models.ForeignKey(Credential, related_name="names", on_delete=models.CASCADE)
     text = models.TextField(null=True)
     language = models.TextField(null=True)
+    type = models.TextField(null=True)
 
     class Meta:
         db_table = "name"

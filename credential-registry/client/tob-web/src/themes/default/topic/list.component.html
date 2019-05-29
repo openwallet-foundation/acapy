@@ -35,11 +35,13 @@
 <ng-container *ngIf="topic.preferredName as name">
   <div class="col-md-6 row-title">
     <a [routerLink]="topic.link | localize" class="body-link cred-link related">{{name.text}}</a>
+      ( {{topic.relationLabel | translate}} )
     <div class="topic-info small">
-      {{topic.typeLabel | translate}}<span class="cred-entity-status" *ngIf="topic.attribute_map.entity_status as status">:
+      {{topic.typeLabel | translate}}
+      <span class="cred-entity-status" *ngIf="topic.otherEntityStatus as status">:
         <attribute-view [record]="status"></attribute-view>
       </span>
-      <span class="cred-entity-type" *ngIf="topic.attribute_map.entity_type as type">
+      <span class="cred-entity-type" *ngIf="topic.otherEntityType as type">
         &mdash; <attribute-view [record]="type"></attribute-view>
       </span>
     </div>
