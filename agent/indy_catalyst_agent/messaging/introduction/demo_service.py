@@ -72,7 +72,7 @@ class DemoIntroductionService(BaseIntroductionService):
         await storage.add_record(record)
 
         target = await connection_mgr.get_connection_target(target_connection)
-        await outbound_handler(msg, target)
+        await outbound_handler(context, msg, target)
 
     async def return_invitation(
         self, target_connection_id: str, invitation: Invitation, outbound_handler
@@ -109,7 +109,7 @@ class DemoIntroductionService(BaseIntroductionService):
                     self._context, row.tags["init_connection_id"]
                 )
                 target = await connection_mgr.get_connection_target(init_connection)
-                await outbound_handler(msg, target)
+                await outbound_handler(context, msg, target)
                 found = True
                 LOGGER.info("Forwarded invitation to %s", init_connection.connection_id)
                 break

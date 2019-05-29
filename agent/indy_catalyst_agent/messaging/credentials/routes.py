@@ -5,7 +5,6 @@ import json
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
-from urllib.parse import parse_qs
 
 from .manager import CredentialManager
 from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema
@@ -242,7 +241,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
         credential_definition_id, connection_id, auto_issue, credential_values
     )
 
-    await outbound_handler(credential_offer_message, connection_target)
+    await outbound_handler(context, credential_offer_message, connection_target)
 
     return web.json_response(credential_exchange_record.serialize())
 
@@ -289,7 +288,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         credential_exchange_record, connection_record
     )
 
-    await outbound_handler(credential_request_message, connection_target)
+    await outbound_handler(context, credential_request_message, connection_target)
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -338,7 +337,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         credential_exchange_record, credential_values
     )
 
-    await outbound_handler(credential_issue_message, connection_target)
+    await outbound_handler(context, credential_issue_message, connection_target)
     return web.json_response(credential_exchange_record.serialize())
 
 

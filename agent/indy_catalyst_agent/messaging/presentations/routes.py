@@ -5,7 +5,6 @@ import json
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
-from urllib.parse import parse_qs
 
 from .manager import PresentationManager
 from .models.presentation_exchange import (
@@ -225,7 +224,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
         name, version, requested_attributes, requested_predicates, connection_id
     )
 
-    await outbound_handler(presentation_request_message, connection_target)
+    await outbound_handler(context, presentation_request_message, connection_target)
 
     return web.json_response(presentation_exchange_record.serialize())
 
@@ -278,7 +277,7 @@ async def presentation_exchange_send_credential_presentation(request: web.BaseRe
         presentation_exchange_record, body
     )
 
-    await outbound_handler(presentation_message, connection_target)
+    await outbound_handler(context, presentation_message, connection_target)
     return web.json_response(presentation_exchange_record.serialize())
 
 

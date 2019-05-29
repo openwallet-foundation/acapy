@@ -8,7 +8,6 @@ from ..manager import PresentationManager
 from ..messages.presentation_request import PresentationRequest
 
 from ....holder.base import BaseHolder
-from ....error import BaseError
 
 
 class PresentationRequestHandler(BaseHandler):

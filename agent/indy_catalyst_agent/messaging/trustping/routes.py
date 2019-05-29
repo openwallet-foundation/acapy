@@ -31,7 +31,7 @@ async def connections_send_ping(request: web.BaseRequest):
     if connection.state == "active":
         msg = Ping()
         target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(msg, target)
+        await outbound_handler(context, msg, target)
 
         await connection.log_activity(context, "ping", connection.DIRECTION_SENT)
 
