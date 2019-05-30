@@ -2,25 +2,24 @@
 
 import asyncio
 import logging
-from typing import Callable
+from typing import Coroutine
 
 from aiohttp import web
 
-from .base import BaseInboundTransport
-from ...error import BaseError
+from .base import BaseInboundTransport, TransportSetupError
 from ...wallet.util import b64_to_bytes
-
-
-class HttpSetupError(BaseError):
-    """Http setup error."""
-
-    pass
 
 
 class Transport(BaseInboundTransport):
     """Http Transport class."""
 
-    def __init__(self, host: str, port: int, message_router: Callable) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        message_router: Coroutine,
+        register_socket: Coroutine,
+    ) -> None:
         """
         Initialize a Transport instance.
 
@@ -28,11 +27,13 @@ class Transport(BaseInboundTransport):
             host: Host to listen on
             port: Port to listen on
             message_router: Function to pass incoming messages to
+            register_socket: A coroutine for registering a new socket
 
         """
         self.host = host
         self.port = port
         self.message_router = message_router
+        self.register_socket = register_socket
 
         self._scheme = "http"
         self.logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class Transport(BaseInboundTransport):
         Start this transport.
 
         Raises:
-            HttpSetupError: If there was an error starting the webserver
+            TransportSetupError: If there was an error starting the webserver
 
         """
         app = web.Application()
@@ -59,7 +60,7 @@ class Transport(BaseInboundTransport):
         try:
             await site.start()
         except OSError:
-            raise HttpSetupError(
+            raise TransportSetupError(
                 "Unable to start webserver with host "
                 + f"'{self.host}' and port '{self.port}'\n"
             )

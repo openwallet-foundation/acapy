@@ -11,8 +11,7 @@ wallet.
 import asyncio
 from collections import OrderedDict
 import logging
-from typing import Coroutine, Sequence, Union
-import uuid
+from typing import Coroutine, Union
 
 from .admin.server import AdminServer
 from .admin.service import AdminService
@@ -33,11 +32,11 @@ from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError, MessagePrepareError
 from .messaging.introduction.base_service import BaseIntroductionService
 from .messaging.introduction.demo_service import DemoIntroductionService
-from .messaging.message_delivery import MessageDelivery
 from .messaging.message_factory import MessageFactory
 from .messaging.outbound_message import OutboundMessage
 from .messaging.request_context import RequestContext
 from .messaging.serializer import MessageSerializer
+from .messaging.socket import SocketInfo, SocketRef
 from .storage.base import BaseStorage
 from .storage.error import StorageNotFoundError
 from .storage.provider import StorageProvider
@@ -48,120 +47,6 @@ from .transport.outbound.queue.basic import BasicOutboundMessageQueue
 from .wallet.base import BaseWallet
 from .wallet.provider import WalletProvider
 from .wallet.crypto import seed_to_did
-
-
-class SocketInfo:
-    """Track an open transport connection for direct routing of outbound messages."""
-
-    REPLY_MODE_ALL = "all"
-    REPLY_MODE_NONE = "none"
-    REPLY_MODE_THREAD = "thread"
-
-    def __init__(
-        self,
-        *,
-        connection_id: str = None,
-        handler: Coroutine = None,
-        reply_mode: str = None,
-        reply_thread_ids: Sequence[str] = None,
-        reply_verkeys: Sequence[str] = None,
-        single_response: asyncio.Future = None,
-        socket_id: str = None,
-    ):
-        """Initialize the socket info."""
-        self._closed = False
-        self.connection_id = connection_id
-        self.handler = handler
-        self.reply_thread_ids = set(reply_thread_ids) if reply_thread_ids else set()
-        self.reply_verkeys = set(reply_verkeys) if reply_verkeys else set()
-        self.single_response = single_response
-        self.socket_id = socket_id or str(uuid.uuid4())
-        # calls setter
-        self._reply_mode = None
-        self.reply_mode = reply_mode
-
-    @property
-    def closed(self) -> bool:
-        """Accessor for the socket closed state."""
-        if self._closed:
-            return True
-        if self.single_response and self.single_response.done():
-            self._closed = True
-            return True
-        return False
-
-    @closed.setter
-    def closed(self, flag: bool):
-        """Setter for the socket closed state."""
-        self._closed = flag
-
-    @property
-    def reply_mode(self) -> str:
-        """Accessor for the socket reply mode."""
-        return self._reply_mode
-
-    @reply_mode.setter
-    def reply_mode(self, mode: str):
-        """Setter for the socket reply mode."""
-        if mode != self.REPLY_MODE_THREAD:
-            if mode != self.REPLY_MODE_ALL:
-                mode = None
-            # reset the tracked thread IDs when the mode is changed to all or none
-            self.reply_thread_ids = set()
-        self._reply_mode = mode
-
-    def add_reply_thread_id(self, thid: str):
-        """Add a thread ID to the set of potential reply targets."""
-        if thid:
-            self.reply_thread_ids.add(thid)
-
-    def add_reply_verkey(self, verkey: str):
-        """Add a verkey to the set of potential reply targets."""
-        if verkey:
-            self.reply_verkeys.add(verkey)
-
-    def process_incoming(self, parsed_msg: dict, delivery: MessageDelivery):
-        """."""
-        mode = self.reply_mode = delivery.direct_response_requested
-        self.add_reply_verkey(delivery.sender_verkey)
-        if mode == self.REPLY_MODE_THREAD:
-            self.add_reply_thread_id(delivery.thread_id)
-        delivery.direct_response = bool(mode)
-
-    def dispatch_complete(self):
-        """."""
-        if not self.closed and self.single_response:
-            self.single_response.cancel()
-
-    def select_outgoing(self, message: OutboundMessage) -> bool:
-        """."""
-        mode = self.reply_mode
-        if not self.closed:
-            if (
-                mode == self.REPLY_MODE_ALL
-                and message.reply_socket_id == self.socket_id
-            ):
-                return True
-            if (
-                mode == self.REPLY_MODE_ALL
-                and message.reply_to_verkey
-                and message.reply_to_verkey in self.reply_verkeys
-            ):
-                return True
-            if (
-                mode == self.REPLY_MODE_THREAD
-                and message.reply_thread_id
-                and message.reply_thread_id in self.reply_thread_ids
-            ):
-                return True
-        return False
-
-    async def send(self, message: OutboundMessage):
-        """."""
-        if self.single_response:
-            self.single_response.set_result(message.payload)
-        elif self.handler:
-            await self.handler(message.payload)
 
 
 class Conductor:
@@ -289,7 +174,7 @@ class Conductor:
             port = inbound_transport_config.port
 
             self.inbound_transport_manager.register(
-                module, host, port, self.inbound_message_router
+                module, host, port, self.inbound_message_router, self.register_socket
             )
 
         await self.inbound_transport_manager.start_all()
@@ -352,6 +237,19 @@ class Conductor:
             except Exception:
                 self.logger.exception("Error sending invitation")
 
+    async def register_socket(
+        self, *, handler: Coroutine = None, single_response: asyncio.Future = None
+    ) -> SocketRef:
+        """Register a new duplex connection."""
+        socket = SocketInfo(handler=handler, single_response=single_response)
+        socket_id = socket.socket_id
+        self.sockets[socket_id] = socket
+
+        async def close_socket():
+            socket.closed = True
+
+        return SocketRef(socket_id=socket_id, close=close_socket)
+
     async def inbound_message_router(
         self,
         message_body: Union[str, bytes],
@@ -377,6 +275,11 @@ class Conductor:
         except MessageParseError:
             self.logger.exception("Error expanding message")
             raise
+
+        connection_mgr = ConnectionManager(self.context)
+        connection = await connection_mgr.find_message_connection(delivery)
+        if connection:
+            delivery.connection_id = connection.connection_id
 
         if single_response and not socket_id:
             socket = SocketInfo(single_response=single_response)
@@ -410,7 +313,7 @@ class Conductor:
             )
 
         future = await self.dispatcher.dispatch(
-            parsed_msg, delivery, self.outbound_message_router
+            parsed_msg, delivery, connection, self.outbound_message_router
         )
         if socket:
             future.add_done_callback(lambda fut: socket.dispatch_complete())

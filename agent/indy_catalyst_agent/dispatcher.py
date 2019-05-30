@@ -10,7 +10,7 @@ import logging
 from typing import Coroutine, Union
 
 from .messaging.agent_message import AgentMessage
-from .messaging.connections.manager import ConnectionManager
+from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
 from .messaging.message_factory import MessageFactory
@@ -38,7 +38,11 @@ class Dispatcher:
         self.logger = logging.getLogger(__name__)
 
     async def dispatch(
-        self, parsed_msg: dict, delivery: MessageDelivery, send: Coroutine
+        self,
+        parsed_msg: dict,
+        delivery: MessageDelivery,
+        connection: ConnectionRecord,
+        send: Coroutine,
     ) -> asyncio.Future:
         """
         Configure responder and dispatch message context to message handler.
@@ -46,6 +50,7 @@ class Dispatcher:
         Args:
             parsed_msg: The parsed message body
             delivery: The incoming message delivery metadata
+            connection: The related connection record, if any
             send: Function to send outbound messages
 
         Returns:
@@ -61,9 +66,6 @@ class Dispatcher:
         context = self.context.start_scope("message")
         context.message = message
         context.message_delivery = delivery
-
-        connection_mgr = ConnectionManager(context)
-        connection = await connection_mgr.find_message_connection(delivery)
         context.connection_active = connection and connection.is_active
         context.connection_record = connection
 
