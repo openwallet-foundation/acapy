@@ -12,7 +12,7 @@ import indy.pool
 from indy.error import IndyError, ErrorCode
 
 from .base import BaseLedger
-from .error import ClosedPoolError, LedgerTransactionError
+from .error import ClosedPoolError, LedgerTransactionError, DuplicateSchemaError
 
 GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
 GENESIS_TRANSACTION_PATH = path.join(
@@ -106,6 +106,14 @@ class IndyLedger(BaseLedger):
 
         operation = request_result.get("op", "")
 
+        # HACK: If only there were a better way to identify this kind
+        #       of rejected request...
+        if (
+            "can have one and only one SCHEMA with name schema and version"
+            in request_result_json
+        ):
+            raise DuplicateSchemaError()
+
         if operation in ("REQNACK", "REJECT"):
             raise LedgerTransactionError(
                 f"Ledger rejected transaction request: {request_result['reason']}"
@@ -142,16 +150,11 @@ class IndyLedger(BaseLedger):
 
         try:
             await self._submit(request_json)
-        except LedgerTransactionError as e:
-            # Schema already exists, so return id
+        except DuplicateSchemaError as e:
             self.logger.warn(
-                "Failed to submit schema to ledger. "
-                + "Assuming already exists and returning id. "
-                + f"Error: {str(e)}"
+                "Schema already exists on ledger. Returning ID. " + f"Error: {str(e)}"
             )
             schema_id = f"{public_did.did}:{2}:{schema_name}:{schema_version}"
-
-        # TODO: validate response
 
         return schema_id
 

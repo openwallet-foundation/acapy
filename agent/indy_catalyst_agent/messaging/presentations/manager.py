@@ -54,7 +54,7 @@ class PresentationManager:
         version: str,
         requested_attributes: list,
         requested_predicates: list,
-        connection_id,
+        connection_id: str,
     ):
         """Create a proof request."""
 
@@ -115,6 +115,8 @@ class PresentationManager:
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange.serialize())
         )
+
+        return presentation_exchange
 
     async def create_presentation(
         self,
@@ -236,6 +238,8 @@ class PresentationManager:
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange_record.serialize())
         )
+
+        return presentation_exchange_record
 
     async def verify_presentation(
         self, presentation_exchange_record: PresentationExchange

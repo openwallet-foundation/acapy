@@ -1,9 +1,10 @@
 """Admin routes for presentations."""
 
+import json
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
-from urllib.parse import parse_qs
 
 from .manager import PresentationManager
 from .models.presentation_exchange import (
@@ -41,6 +42,8 @@ class PresentationRequestRequestSchema(Schema):
         restrictions = fields.List(fields.Dict(), required=False)
 
     connection_id = fields.Str(required=True)
+    name = fields.String(required=True)
+    version = fields.String(required=True)
     requested_attributes = fields.Nested(RequestedAttribute, many=True)
     requested_predicates = fields.Nested(RequestedPredicate, many=True)
 
@@ -48,8 +51,6 @@ class PresentationRequestRequestSchema(Schema):
 class SendPresentationRequestSchema(Schema):
     """Request schema for sending a presentation."""
 
-    name = fields.String(required=True)
-    version = fields.String(required=True)
     self_attested_attributes = fields.Dict(required=True)
     requested_attributes = fields.Dict(required=True)
     requested_predicates = fields.Dict(required=True)
@@ -149,6 +150,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["id"]
+    presentation_referent = request.match_info["referent"]
+
     try:
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(
             context, presentation_exchange_id
@@ -160,16 +163,20 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     count = request.query.get("count")
 
     # url encoded json extra_query
-    encoded_extra_query = request.query.get("extra_query") or ""
-    extra_query = parse_qs(encoded_extra_query)
+    encoded_extra_query = request.query.get("extra_query") or "{}"
+    extra_query = json.loads(encoded_extra_query)
 
     # defaults
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
     holder: BaseHolder = await context.inject(BaseHolder)
-    credentials = await holder.get_credentials_for_presentation_request(
-        presentation_exchange_record.presentation_request, start, count, extra_query
+    credentials = await holder.get_credentials_for_presentation_request_by_referent(
+        presentation_exchange_record.presentation_request,
+        presentation_referent,
+        start,
+        count,
+        extra_query,
     )
 
     return web.json_response(credentials)
@@ -227,7 +234,7 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
 @response_schema(PresentationExchangeSchema())
 async def presentation_exchange_send_credential_presentation(request: web.BaseRequest):
     """
-    Request handler for sending a presentation request.
+    Request handler for sending a credential presentation.
 
     Args:
         request: aiohttp request object
@@ -345,7 +352,7 @@ async def register(app: web.Application):
             web.get("/presentation_exchange", presentation_exchange_list),
             web.get("/presentation_exchange/{id}", presentation_exchange_retrieve),
             web.get(
-                "/presentation_exchange/{id}/credentials",
+                "/presentation_exchange/{id}/credentials/{referent}",
                 presentation_exchange_credentials_list,
             ),
             web.post(

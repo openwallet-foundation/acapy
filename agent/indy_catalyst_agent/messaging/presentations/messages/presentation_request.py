@@ -21,9 +21,7 @@ class PresentationRequest(AgentMessage):
         message_type = PRESENTATION_REQUEST
         schema_class = "PresentationRequestSchema"
 
-    def __init__(
-        self, request: str = None, comment: str = None, **kwargs
-    ):
+    def __init__(self, request: str = None, comment: str = None, **kwargs):
         """
         Initialize presentation request object.
 

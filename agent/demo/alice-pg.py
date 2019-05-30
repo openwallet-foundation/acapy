@@ -25,27 +25,35 @@ if run_mode == 'docker':
 
 # some globals that are required by the hook code
 webhook_port = int(sys.argv[1])
-in_port_1  = webhook_port + 1
-in_port_2  = webhook_port + 2
-in_port_3  = webhook_port + 3
+in_port_1 = webhook_port + 1
+in_port_2 = webhook_port + 2
+in_port_3 = webhook_port + 3
 admin_port = webhook_port + 4
 admin_url  = 'http://' + internal_host + ':' + str(admin_port)
 
 # url mapping for rest hook callbacks
-urls = (
-  '/webhooks/topic/(.*)/', 'alice_webhooks'
-)
+urls = ("/webhooks/topic/(.*)/", "alice_webhooks")
 
 # agent webhook callbacks
 class alice_webhooks(webhooks):
     def handle_credentials(self, state, message):
         global admin_url
-        credential_exchange_id = message['credential_exchange_id']
-        s_print("Credential: state=", state, ", credential_exchange_id=", credential_exchange_id)
+        credential_exchange_id = message["credential_exchange_id"]
+        s_print(
+            "Credential: state=",
+            state,
+            ", credential_exchange_id=",
+            credential_exchange_id,
+        )
 
-        if state == 'offer_received':
+        if state == "offer_received":
             print("#15 After receiving credential offer, send credential request")
-            resp = requests.post(admin_url + '/credential_exchange/' + credential_exchange_id + '/send-request')
+            resp = requests.post(
+                admin_url
+                + "/credential_exchange/"
+                + credential_exchange_id
+                + "/send-request"
+            )
             assert resp.status_code == 200
             return ""
 
@@ -66,13 +74,25 @@ class alice_webhooks(webhooks):
 
     def handle_presentations(self, state, message):
         global admin_url
-        presentation_exchange_id = message['presentation_exchange_id']
-        s_print("Presentation: state=", state, ", presentation_exchange_id=", presentation_exchange_id)
+        presentation_exchange_id = message["presentation_exchange_id"]
+        s_print(
+            "Presentation: state=",
+            state,
+            ", presentation_exchange_id=",
+            presentation_exchange_id,
+        )
 
-        if state == 'request_received':
-            print("#24 Query for credentials in the wallet that satisfy the proof request")
+        if state == "request_received":
+            print(
+                "#24 Query for credentials in the wallet that satisfy the proof request"
+            )
             # select credentials to provide for the proof
-            creds = requests.get(admin_url + '/presentation_exchange/' + presentation_exchange_id + '/credentials')
+            creds = requests.get(
+                admin_url
+                + "/presentation_exchange/"
+                + presentation_exchange_id
+                + "/credentials"
+            )
             assert creds.status_code == 200
             credentials = json.loads(creds.text)
 
@@ -82,29 +102,40 @@ class alice_webhooks(webhooks):
             predicates = {}
 
             # Use the first available credentials to satisfy the proof request
-            for attr in credentials['attrs']:
-                if 0 < len(credentials['attrs'][attr]):
+            for attr in credentials["attrs"]:
+                if 0 < len(credentials["attrs"][attr]):
                     revealed[attr] = {
-                        'cred_id': credentials['attrs'][attr][0]['cred_info']['referent'],
-                        'revealed': True
+                        "cred_id": credentials["attrs"][attr][0]["cred_info"][
+                            "referent"
+                        ],
+                        "revealed": True,
                     }
                 else:
-                    self_attested[attr] = 'my self-attested value'
+                    self_attested[attr] = "my self-attested value"
 
-            for attr in credentials['predicates']:
-                predicates[attr] = {'cred_id': credentials['predicates'][attr][0]['cred_info']['referent']}
+            for attr in credentials["predicates"]:
+                predicates[attr] = {
+                    "cred_id": credentials["predicates"][attr][0]["cred_info"][
+                        "referent"
+                    ]
+                }
 
             print("#25 Generate the proof")
             proof = {
                 "name": message["presentation_request"]["name"],
-                "version": message["presentation_request"]["version"], 
-                "requested_predicates": predicates, 
-                "requested_attributes": revealed, 
-                "self_attested_attributes": self_attested
+                "version": message["presentation_request"]["version"],
+                "requested_predicates": predicates,
+                "requested_attributes": revealed,
+                "self_attested_attributes": self_attested,
             }
             print("#26 Send the proof to X")
-            resp = requests.post(admin_url + '/presentation_exchange/' + presentation_exchange_id + '/send_presentation',
-                json=proof)
+            resp = requests.post(
+                admin_url
+                + "/presentation_exchange/"
+                + presentation_exchange_id
+                + "/send_presentation",
+                json=proof,
+            )
             assert resp.status_code == 200
 
             return ""
@@ -121,15 +152,15 @@ def main():
 
     # TODO seed from input parameter; optionally register the DID
     rand_name = str(random.randint(100000, 999999))
-    seed = ('my_seed_000000000000000000000000' + rand_name)[-32:]
-    alias = 'Alice Agent'
-    register_did = False # Alice doesn't need to register her did
+    seed = ("my_seed_000000000000000000000000" + rand_name)[-32:]
+    alias = "Alice Agent"
+    register_did = False  # Alice doesn't need to register her did
     if register_did:
         print("Registering", alias, "with seed", seed)
         ledger_url = 'http://' + external_host + ':9000'
         headers = {"accept": "application/json"}
         data = {"alias": alias, "seed": seed, "role": "TRUST_ANCHOR"}
-        resp = requests.post(ledger_url+'/register', json=data)
+        resp = requests.post(ledger_url + "/register", json=data)
         assert resp.status_code == 200
         nym_info = resp.text
         print(nym_info)
@@ -156,29 +187,34 @@ def main():
 
     try:
         # check swagger content
-        resp = requests.get(admin_url+'/api/docs/swagger.json')
+        resp = requests.get(admin_url + "/api/docs/swagger.json")
         assert resp.status_code == 200
         p = resp.text
-        assert 'Indy Catalyst Agent' in p
+        assert "Indy Catalyst Agent" in p
 
         # respond to an invitation
         print("#9 Input faber.py invitation details")
-        details = input('invite details: ')
-        resp = requests.post(admin_url+'/connections/receive-invitation', json=details)
+        details = input("invite details: ")
+        resp = requests.post(
+            admin_url + "/connections/receive-invitation", json=details
+        )
         assert resp.status_code == 200
         connection = json.loads(resp.text)
-        print('invitation response:', connection)
-        conn_id = connection['connection_id']
+        print("invitation response:", connection)
+        conn_id = connection["connection_id"]
 
         time.sleep(3.0)
-        option = input('(3) Send Message (X) Exit? [3/X]')
-        while option != 'X' and option != 'x':
-            if option == '3':
-                msg = input('Enter message:')
-                resp = requests.post(admin_url+'/connections/' + conn_id + '/send-message', json={'content': msg})
+        option = input("(3) Send Message (X) Exit? [3/X]")
+        while option != "X" and option != "x":
+            if option == "3":
+                msg = input("Enter message:")
+                resp = requests.post(
+                    admin_url + "/connections/" + conn_id + "/send-message",
+                    json={"content": msg},
+                )
                 assert resp.status_code == 200
 
-            option = input('(3) Send Message (X) Exit? [3/X]')
+            option = input("(3) Send Message (X) Exit? [3/X]")
 
     except Exception as e:
         print(e)
@@ -192,6 +228,7 @@ def main():
             except subprocess.TimeoutExpired:
                 print('subprocess did not terminate in time')
         sys.exit()
+
 
 if __name__ == "__main__":
     main()

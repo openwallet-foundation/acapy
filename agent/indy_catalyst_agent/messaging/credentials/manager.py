@@ -49,18 +49,38 @@ class CredentialManager:
         """
         return self._context
 
-    async def create_offer(self, credential_definition_id, connection_id):
+    async def create_offer(
+        self,
+        credential_definition_id,
+        connection_id,
+        auto_issue=None,
+        credential_values=None,
+    ):
         """
         Create an offer.
 
         Args:
             credential_definition_id: Credential definition id for offer
             connection_id: Connection to create offer for
+            auto_issue: Should requests for this offer automatically be handled to
+                issue a credential
+            credential_values: The credential values to use if auto_issue is enabled
 
         Returns:
             A tuple (credential_exchange, credential_offer_message)
 
         """
+
+        # If auto_issue is False, ignore credential_values
+        if not auto_issue:
+            credential_values = None
+
+        # If auto_issue is True, credential_values must be provided
+        if auto_issue and not credential_values:
+            raise CredentialManagerError(
+                "auto_issue is True but credential_values is not set"
+            )
+
         issuer: BaseIssuer = await self.context.inject(BaseIssuer)
         credential_offer = await issuer.create_credential_offer(
             credential_definition_id
@@ -78,6 +98,8 @@ class CredentialManager:
             credential_definition_id=credential_definition_id,
             schema_id=credential_offer["schema_id"],
             credential_offer=credential_offer,
+            auto_issue=auto_issue,
+            credential_values=credential_values,
         )
         await credential_exchange.save(self.context)
         asyncio.ensure_future(
@@ -94,6 +116,9 @@ class CredentialManager:
         Args:
             credential_offer: Credential offer to receive
             connection_id: Connection to receive offer on
+
+        Returns:
+            The credential_exchange_record
 
         """
 
@@ -112,6 +137,8 @@ class CredentialManager:
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange.serialize())
         )
+
+        return credential_exchange
 
     async def create_request(
         self,
@@ -191,6 +218,8 @@ class CredentialManager:
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
         )
+
+        return credential_exchange_record
 
     async def issue_credential(
         self, credential_exchange_record: CredentialExchange, credential_values: dict

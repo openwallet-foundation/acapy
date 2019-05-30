@@ -1,9 +1,10 @@
 """Connection handling admin routes."""
 
+import json
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
-from urllib.parse import parse_qs
 
 from .manager import CredentialManager
 from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema
@@ -20,6 +21,8 @@ class CredentialOfferRequestSchema(Schema):
 
     connection_id = fields.Str(required=True)
     credential_definition_id = fields.Str(required=True)
+    auto_issue = fields.Bool(required=False, default=False)
+    credential_values = fields.Dict(required=False)
 
 
 class CredentialOfferResultSchema(Schema):
@@ -124,8 +127,8 @@ async def credentials_list(request: web.BaseRequest):
     count = request.query.get("count")
 
     # url encoded json wql
-    encoded_wql = request.query.get("wql") or ""
-    wql = parse_qs(encoded_wql)
+    encoded_wql = request.query.get("wql") or "{}"
+    wql = json.loads(encoded_wql)
 
     # defaults
     start = int(start) if isinstance(start, str) else 0
@@ -211,6 +214,14 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     credential_definition_id = body.get("credential_definition_id")
+    auto_issue = body.get("auto_issue")
+    credential_values = body.get("credential_values")
+
+    if auto_issue and not credential_values:
+        raise web.HTTPBadRequest(
+            reason="If auto_issue is set to"
+            + " true then credential_values must also be provided."
+        )
 
     connection_manager = ConnectionManager(context)
     credential_manager = CredentialManager(context)
@@ -226,7 +237,9 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     (
         credential_exchange_record,
         credential_offer_message,
-    ) = await credential_manager.create_offer(credential_definition_id, connection_id)
+    ) = await credential_manager.create_offer(
+        credential_definition_id, connection_id, auto_issue, credential_values
+    )
 
     await outbound_handler(context, credential_offer_message, connection_target)
 
@@ -319,12 +332,12 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     (
         credential_exchange_record,
-        credential_request_message,
+        credential_issue_message,
     ) = await credential_manager.issue_credential(
         credential_exchange_record, credential_values
     )
 
-    await outbound_handler(context, credential_request_message, connection_target)
+    await outbound_handler(context, credential_issue_message, connection_target)
     return web.json_response(credential_exchange_record.serialize())
 
 

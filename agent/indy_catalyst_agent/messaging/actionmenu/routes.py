@@ -104,7 +104,7 @@ async def actionmenu_perform(request: web.BaseRequest):
     if connection.state == "active":
         msg = Perform(name=params["name"], params=params.get("params"))
         target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(msg, target)
+        await outbound_handler(context, msg, target)
         return web.HTTPOk()
 
     return web.HTTPForbidden()
@@ -133,7 +133,7 @@ async def actionmenu_request(request: web.BaseRequest):
     if connection.state == "active":
         msg = MenuRequest()
         target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(msg, target)
+        await outbound_handler(context, msg, target)
         return web.HTTPOk()
 
     return web.HTTPForbidden()
@@ -171,7 +171,7 @@ async def actionmenu_send(request: web.BaseRequest):
 
     if connection.state == "active":
         target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(msg, target)
+        await outbound_handler(context, msg, target)
         return web.HTTPOk()
 
     return web.HTTPForbidden()

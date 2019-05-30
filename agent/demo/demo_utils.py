@@ -22,13 +22,13 @@ class webhooks:
 
         # dispatch based on the topic type
         if topic == "connections":
-            return self.handle_connections(message['state'], message)
+            return self.handle_connections(message["state"], message)
 
         elif topic == "credentials":
-            return self.handle_credentials(message['state'], message)
+            return self.handle_credentials(message["state"], message)
 
         elif topic == "presentations":
-            return self.handle_presentations(message['state'], message)
+            return self.handle_presentations(message["state"], message)
 
         elif topic == "get-active-menu":
             return self.handle_get_active_menu(message)
@@ -40,21 +40,31 @@ class webhooks:
             s_print("Callback: topic=", topic, ", message=", message)
             return ""
 
-            return self.handle_connections(message['state'], message)
+            return self.handle_connections(message["state"], message)
 
     def handle_connections(self, state, message):
-        conn_id = message['connection_id']
+        conn_id = message["connection_id"]
         s_print("Connection: state=", state, ", connection_id=", conn_id)
         return ""
 
     def handle_credentials(self, state, message):
-        credential_exchange_id = message['credential_exchange_id']
-        s_print("Credential: state=", state, ", credential_exchange_id=", credential_exchange_id)
+        credential_exchange_id = message["credential_exchange_id"]
+        s_print(
+            "Credential: state=",
+            state,
+            ", credential_exchange_id=",
+            credential_exchange_id,
+        )
         return ""
 
     def handle_presentations(self, state, message):
-        presentation_exchange_id = message['presentation_exchange_id']
-        s_print("Presentation: state=", state, ", presentation_exchange_id=", presentation_exchange_id)
+        presentation_exchange_id = message["presentation_exchange_id"]
+        s_print(
+            "Presentation: state=",
+            state,
+            ", presentation_exchange_id=",
+            presentation_exchange_id,
+        )
         return ""
 
     def handle_get_active_menu(self, message):
@@ -65,16 +75,20 @@ class webhooks:
         s_print("Handle menu action: message=", message)
         return ""
 
+
 def background_hook_service(urls, g_vars):
     # run app and respond to agent webhook callbacks (run in background)
     # port number has to be the first command line arguement
     # pass in urls
     app = web.application(urls, g_vars)
-    app.run()  
+    app.run()
+
 
 def background_hook_thread(urls, g_vars):
     # run app and respond to agent webhook callbacks (run in background)
-    webhook_thread = threading.Thread(target=background_hook_service, args=(urls, g_vars))
+    webhook_thread = threading.Thread(
+        target=background_hook_service, args=(urls, g_vars)
+    )
     webhook_thread.daemon = True
     webhook_thread.start()
     print("Web hooks is running!")
@@ -90,19 +104,22 @@ def background_hook_thread(urls, g_vars):
 ####################################################
 s_print_lock = threading.Lock()
 
+
 def s_print(*a, **b):
     """Thread safe print function"""
     with s_print_lock:
         print(*a, **b)
 
+
 def output_reader(proc):
-    for line in iter(proc.stdout.readline, b''):
-        s_print('got line: {0}'.format(line.decode('utf-8')), end='')
+    for line in iter(proc.stdout.readline, b""):
+        s_print("got line: {0}".format(line.decode("utf-8")), end="")
         pass
 
+
 def stderr_reader(proc):
-    for line in iter(proc.stderr.readline, b''):
-        s_print('got line: {0}'.format(line.decode('utf-8')), end='')
+    for line in iter(proc.stderr.readline, b""):
+        s_print("got line: {0}".format(line.decode("utf-8")), end="")
         pass
 
 def write_agent_startup_script(agent_name, agent_args):

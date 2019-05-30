@@ -29,6 +29,9 @@ class CredentialPresentationHandler(BaseHandler):
 
         presentation_manager = PresentationManager(context)
 
-        await presentation_manager.receive_presentation(
+        presentation_exchange_record = await presentation_manager.receive_presentation(
             json.loads(context.message.presentation), context.message._thread_id
         )
+
+        if context.settings.get("auto_verify_presentation"):
+            await presentation_manager.verify_presentation(presentation_exchange_record)
