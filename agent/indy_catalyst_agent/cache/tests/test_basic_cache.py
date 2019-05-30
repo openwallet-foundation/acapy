@@ -1,3 +1,4 @@
+from asyncio import sleep
 import pytest
 
 from ..basic import BasicCache
@@ -32,6 +33,17 @@ class TestBasicCache:
         item = await cache.set("key", {"dictkey": "dval"})
         assert cache._cache["key"] is not None
         assert cache._cache["key"]["value"] == {"dictkey": "dval"}
+
+    @pytest.mark.asyncio
+    async def test_set_expires(self, cache):
+        item = await cache.set("key", {"dictkey": "dval"}, 0.05)
+        assert cache._cache["key"] is not None
+        assert cache._cache["key"]["value"] == {"dictkey": "dval"}
+
+        await sleep(0.05)
+
+        item = await cache.get("key")
+        assert item is None
 
     @pytest.mark.asyncio
     async def test_flush(self, cache):
