@@ -15,6 +15,8 @@ from typing import Coroutine, Union
 
 from .admin.server import AdminServer
 from .admin.service import AdminService
+from .cache.base import BaseCache
+from .cache.basic import BasicCache
 from .config.provider import CachedProvider, ClassProvider
 from .dispatcher import Dispatcher
 from .error import StartupError
@@ -89,6 +91,7 @@ class Conductor:
         context.settings.set_default("default_endpoint", "http://localhost:10000")
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
+        context.injector.bind_instance(BaseCache, BasicCache())
         context.injector.bind_instance(MessageFactory, self.message_factory)
 
         context.injector.bind_provider(BaseStorage, CachedProvider(StorageProvider()))
