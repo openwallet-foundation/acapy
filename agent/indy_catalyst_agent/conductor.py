@@ -15,6 +15,8 @@ from typing import Coroutine, Sequence, Union
 
 from .admin.server import AdminServer
 from .admin.service import AdminService
+from .cache.base import BaseCache
+from .cache.basic import BasicCache
 from .config.injection_context import InjectionContext
 from .config.provider import CachedProvider, ClassProvider
 from .dispatcher import Dispatcher
@@ -97,6 +99,7 @@ class Conductor:
         context = RequestContext(settings=self.settings)
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
+        context.injector.bind_instance(BaseCache, BasicCache())
         context.injector.bind_instance(MessageFactory, self.message_factory)
         context.injector.bind_instance(MessageSerializer, self.message_serializer)
 
@@ -350,9 +353,7 @@ class Conductor:
                 raise MessagePrepareError(str(e)) from e
             if not target:
                 raise MessagePrepareError(
-                    "No connection target for message: {}".format(
-                        message.connection_id
-                    )
+                    "No connection target for message: {}".format(message.connection_id)
                 )
             message.target = target
 
