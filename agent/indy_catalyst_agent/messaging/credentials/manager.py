@@ -291,8 +291,11 @@ class CredentialManager:
             credential_exchange_record.credential_request_metadata,
         )
 
+        wallet_credential = await holder.get_credential(credential_id)
+
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         credential_exchange_record.credential_id = credential_id
+        credential_exchange_record.credential = wallet_credential
         await credential_exchange_record.save(self.context)
         asyncio.ensure_future(
             send_webhook("credentials", credential_exchange_record.serialize())
