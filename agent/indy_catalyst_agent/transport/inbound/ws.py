@@ -7,7 +7,7 @@ from aiohttp import web, WSMsgType
 
 from ...messaging.socket import SocketRef
 
-from .base import BaseInboundTransport, TransportSetupError
+from .base import BaseInboundTransport, InboundTransportSetupError
 
 
 class Transport(BaseInboundTransport):
@@ -49,7 +49,7 @@ class Transport(BaseInboundTransport):
         Start this transport.
 
         Raises:
-            TransportSetupError: If there was an error starting the webserver
+            InboundTransportSetupError: If there was an error starting the webserver
 
         """
         app = web.Application()
@@ -60,7 +60,7 @@ class Transport(BaseInboundTransport):
         try:
             await site.start()
         except OSError:
-            raise TransportSetupError(
+            raise InboundTransportSetupError(
                 "Unable to start websocket server with host "
                 + f"'{self.host}' and port '{self.port}'\n"
             )

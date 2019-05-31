@@ -11,7 +11,7 @@ wallet.
 import asyncio
 from collections import OrderedDict
 import logging
-from typing import Coroutine, Union
+from typing import Coroutine, Sequence, Union
 
 from .admin.server import AdminServer
 from .admin.service import AdminService
@@ -40,7 +40,7 @@ from .messaging.socket import SocketInfo, SocketRef
 from .storage.base import BaseStorage
 from .storage.error import StorageNotFoundError
 from .storage.provider import StorageProvider
-from .transport.inbound import InboundTransportConfiguration
+from .transport.inbound.base import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.queue.basic import BasicOutboundMessageQueue
@@ -59,8 +59,8 @@ class Conductor:
 
     def __init__(
         self,
-        transport_configs: InboundTransportConfiguration,
-        outbound_transports,
+        inbound_transports: Sequence[InboundTransportConfiguration],
+        outbound_transports: Sequence[str],
         message_factory: MessageFactory,
         settings: dict,
     ) -> None:
@@ -68,8 +68,8 @@ class Conductor:
         Initialize an instance of Conductor.
 
         Args:
-            transport_configs: Configuration for inbound transport
-            outbound_transports: Configuration for outbound transport
+            inbound_transports: Configuration for inbound transports
+            outbound_transports: Configuration for outbound transports
             message_factory: Message factory for discovering and deserializing messages
             settings: Dictionary of various settings
 
@@ -80,7 +80,12 @@ class Conductor:
         self.logger = logging.getLogger(__name__)
         self.message_factory = message_factory
         self.message_serializer: MessageSerializer = MessageSerializer()
-        self.inbound_transport_configs = transport_configs
+        self.inbound_transport_configs = inbound_transports
+        self.inbound_transport_manager = InboundTransportManager()
+        # TODO: Set queue driver dynamically via cli args
+        self.outbound_transport_manager = OutboundTransportManager(
+            BasicOutboundMessageQueue
+        )
         self.outbound_transports = outbound_transports
         self.settings = settings.copy() if settings else {}
         self.sockets = OrderedDict()
@@ -167,7 +172,6 @@ class Conductor:
             public_did = public_did_info.did
 
         # Register all inbound transports
-        self.inbound_transport_manager = InboundTransportManager()
         for inbound_transport_config in self.inbound_transport_configs:
             module = inbound_transport_config.module
             host = inbound_transport_config.host
@@ -179,9 +183,6 @@ class Conductor:
 
         await self.inbound_transport_manager.start_all()
 
-        # TODO: Set queue driver dynamically via cli args
-        queue = BasicOutboundMessageQueue
-        self.outbound_transport_manager = OutboundTransportManager(queue)
         for outbound_transport in self.outbound_transports:
             try:
                 self.outbound_transport_manager.register(outbound_transport)
@@ -331,30 +332,29 @@ class Conductor:
 
         context = context or self.context
 
-        if not message.target:
-            if message.connection_id:
-                try:
-                    record = await ConnectionRecord.retrieve_by_id(
-                        context, message.connection_id
+        if message.connection_id and not message.target:
+            try:
+                record = await ConnectionRecord.retrieve_by_id(
+                    context, message.connection_id
+                )
+            except StorageNotFoundError as e:
+                raise MessagePrepareError(
+                    "Could not locate connection record: {}".format(
+                        message.connection_id
                     )
-                except StorageNotFoundError as e:
-                    raise MessagePrepareError(
-                        "Could not locate connection record: {}".format(
-                            message.connection_id
-                        )
-                    ) from e
-                mgr = ConnectionManager(context)
-                try:
-                    target = await mgr.get_connection_target(record)
-                except ConnectionManagerError as e:
-                    raise MessagePrepareError(str(e)) from e
-                if not target:
-                    raise MessagePrepareError(
-                        "No connection target for message: {}".format(
-                            message.connection_id
-                        )
+                ) from e
+            mgr = ConnectionManager(context)
+            try:
+                target = await mgr.get_connection_target(record)
+            except ConnectionManagerError as e:
+                raise MessagePrepareError(str(e)) from e
+            if not target:
+                raise MessagePrepareError(
+                    "No connection target for message: {}".format(
+                        message.connection_id
                     )
-                message.target = target
+                )
+            message.target = target
 
         if not message.encoded and message.target:
             target = message.target

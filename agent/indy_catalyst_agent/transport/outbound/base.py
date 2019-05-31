@@ -2,7 +2,9 @@
 
 from abc import ABC, abstractmethod, abstractproperty
 
+from ...error import BaseError
 from ...messaging.outbound_message import OutboundMessage
+
 from .queue.base import BaseOutboundMessageQueue
 
 
@@ -49,3 +51,7 @@ class BaseOutboundTransport(ABC):
         """Start this transport."""
         async for message in self.queue:
             await self.handle_message(message)
+
+
+class OutboundTransportRegistrationError(BaseError):
+    """Outbound transport registration error."""

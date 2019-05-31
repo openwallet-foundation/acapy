@@ -9,7 +9,7 @@ from .conductor import Conductor
 from .defaults import default_message_factory
 from .logging import LoggingConfigurator
 from .postgres import load_postgres_plugin
-from .transport.inbound import InboundTransportConfiguration
+from .transport.inbound.base import InboundTransportConfiguration
 
 PARSER = argparse.ArgumentParser(description="Runs an Indy Agent.")
 

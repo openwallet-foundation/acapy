@@ -6,21 +6,14 @@ import logging
 from typing import Type
 from urllib.parse import urlparse
 
-from ...classloader import ClassLoader
-from ...error import BaseError
+from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...messaging.outbound_message import OutboundMessage
 
-from .base import BaseOutboundTransport
+from .base import BaseOutboundTransport, OutboundTransportRegistrationError
 from .queue.base import BaseOutboundMessageQueue
 
 
 MODULE_BASE_PATH = "indy_catalyst_agent.transport.outbound"
-
-
-class OutboundTransportRegistrationError(BaseError):
-    """Outbound transport registration error."""
-
-    pass
 
 
 class OutboundTransportManager:
@@ -48,13 +41,20 @@ class OutboundTransportManager:
             module_path: Module path to register
 
         Raises:
+            OutboundTransportRegistrationError: If the imported class cannot
+                be located
             OutboundTransportRegistrationError: If the imported class does not
                 specify a schemes attribute
             OutboundTransportRegistrationError: If the scheme has already been
                 registered
 
         """
-        imported_class = self.class_loader.load(module_path, True)
+        try:
+            imported_class = self.class_loader.load(module_path, True)
+        except (ModuleLoadError, ClassNotFoundError):
+            raise OutboundTransportRegistrationError(
+                f"Outbound transport module {module_path} could not be resolved."
+            )
 
         try:
             schemes = imported_class.schemes

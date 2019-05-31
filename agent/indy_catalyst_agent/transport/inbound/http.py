@@ -6,7 +6,7 @@ from typing import Coroutine
 
 from aiohttp import web
 
-from .base import BaseInboundTransport, TransportSetupError
+from .base import BaseInboundTransport, InboundTransportSetupError
 from ...wallet.util import b64_to_bytes
 
 
@@ -48,7 +48,7 @@ class Transport(BaseInboundTransport):
         Start this transport.
 
         Raises:
-            TransportSetupError: If there was an error starting the webserver
+            InboundTransportSetupError: If there was an error starting the webserver
 
         """
         app = web.Application()
@@ -60,7 +60,7 @@ class Transport(BaseInboundTransport):
         try:
             await site.start()
         except OSError:
-            raise TransportSetupError(
+            raise InboundTransportSetupError(
                 "Unable to start webserver with host "
                 + f"'{self.host}' and port '{self.port}'\n"
             )

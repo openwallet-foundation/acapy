@@ -1,6 +1,7 @@
 """Base inbound transport class."""
 
 from abc import ABC, abstractmethod
+from collections import namedtuple
 
 from ...error import BaseError
 
@@ -13,5 +14,14 @@ class BaseInboundTransport(ABC):
         """Start listening for on this transport."""
 
 
-class TransportSetupError(BaseError):
+class InboundTransportRegistrationError(BaseError):
+    """Error in loading an inbound transport."""
+
+
+class InboundTransportSetupError(BaseError):
     """Setup error for an inbound transport."""
+
+
+InboundTransportConfiguration = namedtuple(
+    "InboundTransportConfiguration", "module host port"
+)
