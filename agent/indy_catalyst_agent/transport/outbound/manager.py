@@ -6,11 +6,12 @@ import logging
 from typing import Type
 from urllib.parse import urlparse
 
-from .base import BaseOutboundTransport
 from ...classloader import ClassLoader
 from ...error import BaseError
+from ...messaging.outbound_message import OutboundMessage
+
+from .base import BaseOutboundTransport
 from .queue.base import BaseOutboundMessageQueue
-from .message import OutboundMessage
 
 
 MODULE_BASE_PATH = "indy_catalyst_agent.transport.outbound"
@@ -89,7 +90,7 @@ class OutboundTransportManager:
             # asyncio.create_task(self.start(schemes, transport_class))
             asyncio.ensure_future(self.start(schemes, transport_class))
 
-    async def send_message(self, message, uri: str):
+    async def send_message(self, message: OutboundMessage):
         """
         Send a message.
 
@@ -97,14 +98,13 @@ class OutboundTransportManager:
         use it to send the message.
 
         Args:
-            message: The agent message to send
-            uri: Where are you sending the message
+            message: The outbound message to send
 
         """
         # Grab the scheme from the uri
-        scheme = urlparse(uri).scheme
+        scheme = urlparse(message.endpoint).scheme
         if scheme == "":
-            self.logger.warn(f"The uri '{uri}' does not specify a scheme")
+            self.logger.warn(f"The uri '{message.endpoint}' does not specify a scheme")
             return
 
         # Look up transport that is registered to handle this scheme
@@ -118,5 +118,4 @@ class OutboundTransportManager:
             self.logger.warn(f"No transport driver exists to handle scheme '{scheme}'")
             return
 
-        message = OutboundMessage(data=message, uri=uri)
         await transport.queue.enqueue(message)

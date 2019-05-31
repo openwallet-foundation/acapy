@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod, abstractproperty
 
-from .message import OutboundMessage
+from ...messaging.outbound_message import OutboundMessage
 from .queue.base import BaseOutboundMessageQueue
 
 

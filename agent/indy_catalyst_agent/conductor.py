@@ -404,9 +404,7 @@ class Conductor:
 
         # deliver directly to endpoint
         if message.endpoint:
-            await self.outbound_transport_manager.send_message(
-                message.payload, message.endpoint
-            )
+            await self.outbound_transport_manager.send_message(message)
             return
 
         self.logger.warning("No endpoint or direct route for outbound message, dropped")
