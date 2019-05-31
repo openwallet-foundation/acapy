@@ -110,8 +110,6 @@ class alice_webhooks(webhooks):
                 assert creds.status_code == 200
                 credentials = json.loads(creds.text)
 
-                print(credentials)
-
                 if credentials:
                     revealed[referent] = {
                         "cred_id": credentials[0]["cred_info"]["referent"],
@@ -147,7 +145,6 @@ class alice_webhooks(webhooks):
                 "requested_attributes": revealed,
                 "self_attested_attributes": self_attested,
             }
-            print(proof)
             print("#26 Send the proof to X")
             resp = requests.post(
                 admin_url
