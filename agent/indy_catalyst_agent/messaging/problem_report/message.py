@@ -75,6 +75,11 @@ class ProblemReport(AgentMessage):
 class ProblemReportSchema(AgentMessageSchema):
     """Schema for ProblemReport base class."""
 
+    class Meta:
+        """Problem report schema metadata."""
+
+        model_class = ProblemReport
+
     msg_catalog = fields.Str(data_key="@msg_catalog", required=False)
     locale = fields.Str(data_key="@locale", required=False)
     explain_ltxt = fields.Str(data_key="explain-ltxt", required=False)

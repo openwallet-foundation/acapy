@@ -42,3 +42,14 @@ class OutboundMessage:
     def endpoint(self, endp: str) -> None:
         """Set the endpoint of the outbound message."""
         self._endpoint = endp
+
+    def __repr__(self) -> str:
+        """
+        Return a human readable representation of this class.
+
+        Returns:
+            A human readable string for this class
+
+        """
+        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
+        return "<{}({})>".format(self.__class__.__name__, ", ".join(items))

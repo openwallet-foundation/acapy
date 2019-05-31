@@ -305,7 +305,17 @@ class AgentMessage(BaseModel):
         if msg:
             thid = msg._thread and msg._thread.thid or msg._message_id
             pthid = msg._thread and msg._thread.pthid
-            self._thread = ThreadDecorator(thid=thid, pthid=pthid)
+            self.assign_thread_id(thid, pthid)
+
+    def assign_thread_id(self, thid: str, pthid: str = None):
+        """
+        Assign a specific thread ID.
+
+        Args:
+            thid: The thread identifier
+            pthid: The parent thread identifier
+        """
+        self._thread = ThreadDecorator(thid=thid, pthid=pthid)
 
     @property
     def _timing(self) -> TimingDecorator:

@@ -58,10 +58,17 @@ class Dispatcher:
 
         """
 
+        error_result = None
         try:
             message = await self.make_message(parsed_msg)
         except MessageParseError as e:
-            return ProblemReport(explain_ltxt=str(e))
+            self.logger.error(
+                f"Message parsing failed: {str(e)}, sending problem report"
+            )
+            error_result = ProblemReport(explain_ltxt=str(e))
+            if delivery.thread_id:
+                error_result.assign_thread_id(delivery.thread_id)
+            message = None
 
         context = self.context.start_scope("message")
         context.message = message
@@ -76,6 +83,10 @@ class Dispatcher:
             reply_socket_id=delivery.socket_id,
             reply_to_verkey=delivery.sender_verkey,
         )
+
+        if error_result:
+            return asyncio.ensure_future(responder.send_reply(error_result))
+
         handler_cls = context.message.Handler
         handler = asyncio.ensure_future(handler_cls().handle(context, responder))
         return handler

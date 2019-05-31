@@ -56,7 +56,18 @@ class MessageSerializer:
         except ValueError:
             raise MessageParseError("Message JSON parsing failed")
         if not isinstance(message_dict, dict):
-            raise MessageParseError("Message JSON parsing failed")
+            raise MessageParseError("Message JSON result is not an object")
+
+        # parse thread ID
+        thread_dec = message_dict.get("~thread")
+        delivery.thread_id = (
+            thread_dec and thread_dec.get("thid") or message_dict.get("@id")
+        )
+
+        # handle transport decorator
+        transport_dec = message_dict.get("~transport")
+        if transport_dec:
+            delivery.direct_response_requested = transport_dec.get("return_route")
 
         if "@type" not in message_dict:
             try:
@@ -79,17 +90,6 @@ class MessageSerializer:
                     raise MessageParseError("Message JSON parsing failed")
 
         LOGGER.debug(f"Expanded message: {message_dict}")
-
-        # parse thread ID
-        thread_dec = message_dict.get("~thread")
-        delivery.thread_id = (
-            thread_dec and thread_dec.get("thid") or message_dict.get("@id")
-        )
-
-        # handle transport decorator
-        transport_dec = message_dict.get("~transport")
-        if transport_dec:
-            delivery.direct_response_requested = transport_dec.get("return_route")
 
         return message_dict, delivery
 
