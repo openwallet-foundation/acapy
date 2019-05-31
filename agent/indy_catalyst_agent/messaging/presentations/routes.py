@@ -136,13 +136,13 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 # @response_schema(ConnectionListSchema(), 200)
 async def presentation_exchange_credentials_list(request: web.BaseRequest):
     """
-    Request handler for searching connection records.
+    Request handler for searching applicable credential records.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The connection list response
+        The credential list response
 
     """
     context = request.app["request_context"]
