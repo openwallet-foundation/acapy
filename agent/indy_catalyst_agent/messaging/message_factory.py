@@ -1,8 +1,9 @@
 """Handle identification of message types and instantiation of message classes."""
 
-from typing import Sequence
+from typing import Coroutine, Sequence
 
 from ..classloader import ClassLoader
+from ..config.injection_context import InjectionContext
 
 
 class MessageFactory:
@@ -10,6 +11,7 @@ class MessageFactory:
 
     def __init__(self):
         """Initialize a MessageFactory instance."""
+        self._role_checks = []
         self._typemap = {}
 
     @property
@@ -27,6 +29,11 @@ class MessageFactory:
     def message_types(self) -> Sequence[str]:
         """Accessor for a list of all message types."""
         return tuple(self._typemap.keys())
+
+    @property
+    def role_determiners(self) -> Sequence[Coroutine]:
+        """Accessor for a list of all message determiner functions."""
+        return tuple(self._role_checks)
 
     def protocols_matching_query(self, query: str) -> Sequence[str]:
         """Return a list of message protocols matching a query string."""
@@ -54,6 +61,16 @@ class MessageFactory:
         for typeset in typesets:
             self._typemap.update(typeset)
 
+    def register_role_determiners(self, *determiners):
+        """
+        Add new role determiners.
+
+        Args:
+            *determiners: Coroutines to call to determine supported roles
+
+        """
+        self._role_checks.extend(determiners)
+
     def resolve_message_class(self, message_type: str) -> type:
         """
         Resolve a message_type to a message class.
@@ -72,6 +89,21 @@ class MessageFactory:
         if isinstance(msg_cls, str):
             msg_cls = ClassLoader.load_class(msg_cls)
         return msg_cls
+
+    async def determine_roles(
+        self, context: InjectionContext, protocols: Sequence[str]
+    ):
+        """Call role determiners to obtain the currently supported roles."""
+        roles = {}
+        for routine in self._role_checks:
+            result = await routine(context, protocols)
+            if result:
+                for k in result:
+                    if k in roles:
+                        roles[k].update(result[k])
+                    else:
+                        roles[k] = set(result[k])
+        return {k: list(v) for k, v in roles.items()}
 
     def __repr__(self) -> str:
         """Return a string representation for this class."""

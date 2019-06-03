@@ -16,7 +16,12 @@ class QueryHandler(BaseHandler):
         assert isinstance(context.message, Query)
 
         factory: MessageFactory = await context.inject(MessageFactory)
-        types = factory.protocols_matching_query(context.message.query)
-        reply = Disclose(protocols={k: {} for k in types})
+        protocols = factory.protocols_matching_query(context.message.query)
+        roles = await factory.determine_roles(context, protocols)
+        result = {
+            prot: ({"roles": roles[prot]} if prot in roles else {})
+            for prot in protocols
+        }
+        reply = Disclose(protocols=result)
         reply.assign_thread_from(context.message)
         await responder.send_reply(reply)

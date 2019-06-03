@@ -3,6 +3,7 @@
 from .messaging.message_factory import MessageFactory
 
 from .messaging.actionmenu.message_types import MESSAGE_TYPES as ACTIONMENU_MESSAGES
+from .messaging.actionmenu.roles import role_determiner as actionmenu_roles
 from .messaging.basicmessage.message_types import MESSAGE_TYPES as BASICMESSAGE_MESSAGES
 from .messaging.connections.message_types import MESSAGE_TYPES as CONNECTION_MESSAGES
 from .messaging.discovery.message_types import MESSAGE_TYPES as DISCOVERY_MESSAGES
@@ -36,5 +37,7 @@ def default_message_factory() -> MessageFactory:
         TRUSTPING_MESSAGES,
         {PROBLEM_REPORT: ProblemReport},
     )
+
+    factory.register_role_determiners(actionmenu_roles)
 
     return factory
