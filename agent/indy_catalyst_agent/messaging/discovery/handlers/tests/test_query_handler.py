@@ -3,7 +3,7 @@ import pytest
 from ....base_handler import HandlerException
 from ....message_factory import MessageFactory
 from ....request_context import RequestContext
-from ....responder import BaseResponder
+from ....responder import MockResponder
 
 from ...handlers.query_handler import QueryHandler
 from ...messages.disclose import Disclose
@@ -20,17 +20,6 @@ def request_context() -> RequestContext:
     factory.register_message_types({TEST_MESSAGE_TYPE: object()})
     ctx.injector.bind_instance(MessageFactory, factory)
     yield ctx
-
-
-class MockResponder(BaseResponder):
-    def __init__(self):
-        self.messages = []
-
-    async def send_reply(self, message):
-        self.messages.append((message, None))
-
-    async def send_outbound(self, message, target):
-        self.messages.append((message, target))
 
 
 class TestQueryHandler:

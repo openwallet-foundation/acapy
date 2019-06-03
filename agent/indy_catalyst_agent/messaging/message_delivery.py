@@ -11,27 +11,58 @@ class MessageDelivery:
     def __init__(
         self,
         *,
+        connection_id: str = None,
         direct_response: bool = False,
+        direct_response_requested: str = None,
         in_time: datetime = None,
+        raw_message: str = None,
         recipient_verkey: str = None,
         recipient_did: str = None,
         recipient_did_public: str = None,
         sender_did: str = None,
         sender_verkey: str = None,
+        socket_id: str = None,
+        thread_id: str = None,
         transport_type: str = None,
     ):
         """Initialize the message delivery instance."""
+        self._connection_id = connection_id
         self._direct_response = direct_response
+        self._direct_response_requested = direct_response_requested
         self._in_time = in_time
+        self._raw_message = raw_message
         self._recipient_verkey = recipient_verkey
         self._recipient_did = recipient_did
         self._recipient_did_public = recipient_did_public
         self._sender_did = sender_did
         self._sender_verkey = sender_verkey
+        self._socket_id = socket_id
         self._transport_type = transport_type
 
     @property
-    def direct_response(self) -> str:
+    def connection_id(self) -> str:
+        """
+        Accessor for the pairwise connection identifier.
+
+        Returns:
+            This context's connection identifier
+
+        """
+        return self._connection_id
+
+    @connection_id.setter
+    def connection_id(self, connection_id: bool):
+        """
+        Setter for the pairwise connection identifier.
+
+        Args:
+            connection_id: This context's new connection identifier
+
+        """
+        self._connection_id = connection_id
+
+    @property
+    def direct_response(self) -> bool:
         """
         Accessor for the flag indicating that direct responses are preferred.
 
@@ -47,10 +78,32 @@ class MessageDelivery:
         Setter for the flag indicating that direct responses are preferred.
 
         Args:
-            transport: This context's new direct response flag
+            direct: This context's new direct response flag
 
         """
         self._direct_response = direct
+
+    @property
+    def direct_response_requested(self) -> str:
+        """
+        Accessor for the requested direct response mode.
+
+        Returns:
+            This context's requested direct response mode
+
+        """
+        return self._direct_response_requested
+
+    @direct_response_requested.setter
+    def direct_response_requested(self, direct_mode: str):
+        """
+        Setter for the string indicating the requested direct responses mode.
+
+        Args:
+            direct_mode: This context's new direct response mode
+
+        """
+        self._direct_response_requested = direct_mode
 
     @property
     def in_time(self) -> str:
@@ -69,31 +122,32 @@ class MessageDelivery:
         Setter for the datetime the message was received.
 
         Args:
-            transport: This context's new received time
+            in_time: This context's new received time
 
         """
         self._in_time = in_time
 
     @property
-    def recipient_verkey(self) -> str:
+    def raw_message(self) -> str:
         """
-        Accessor for the recipient verkey key used to pack the incoming request.
+        Accessor for the raw message text.
 
         Returns:
-            The recipient verkey
+            The raw message text
 
         """
-        return self._recipient_verkey
+        return self._raw_message
 
-    @recipient_verkey.setter
-    def recipient_verkey(self, verkey: str):
+    @raw_message.setter
+    def raw_message(self, message: str):
         """
-        Setter for the recipient public key used to pack the incoming request.
+        Setter for the raw message text.
 
         Args:
-            verkey: The new recipient verkey
+            message: The new message text
+
         """
-        self._recipient_verkey = verkey
+        self._raw_message = message
 
     @property
     def recipient_did(self) -> str:
@@ -141,6 +195,17 @@ class MessageDelivery:
 
         """
         self._recipient_did_public = public
+
+    @property
+    def recipient_verkey(self) -> str:
+        """
+        Accessor for the recipient verkey key used to pack the incoming request.
+
+        Returns:
+            The recipient verkey
+
+        """
+        return self._recipient_verkey
 
     @recipient_verkey.setter
     def recipient_verkey(self, verkey: str):
@@ -196,6 +261,50 @@ class MessageDelivery:
 
         """
         self._sender_verkey = verkey
+
+    @property
+    def socket_id(self) -> str:
+        """
+        Accessor for the identifier of the incoming socket connection.
+
+        Returns:
+            This context's socket identifier
+
+        """
+        return self._socket_id
+
+    @socket_id.setter
+    def socket_id(self, socket: str):
+        """
+        Setter for the incoming socket identifier.
+
+        Args:
+            socket: This context's socket identifier
+
+        """
+        self._socket_id = socket
+
+    @property
+    def thread_id(self) -> str:
+        """
+        Accessor for the identifier of the message thread.
+
+        Returns:
+            The delivery thread ID
+
+        """
+        return self._thread_id
+
+    @thread_id.setter
+    def thread_id(self, thread: str):
+        """
+        Setter for the message thread identifier.
+
+        Args:
+            thread: The new thread identifier
+
+        """
+        self._thread_id = thread
 
     @property
     def transport_type(self) -> str:

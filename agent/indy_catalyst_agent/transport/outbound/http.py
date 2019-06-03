@@ -4,7 +4,8 @@ import logging
 
 from aiohttp import ClientSession
 
-from .message import OutboundMessage
+from ...messaging.outbound_message import OutboundMessage
+
 from .base import BaseOutboundTransport
 from .queue.base import BaseOutboundMessageQueue
 
@@ -44,12 +45,12 @@ class HttpTransport(BaseOutboundTransport):
         """
         try:
             headers = {}
-            if isinstance(message.data, bytes):
+            if isinstance(message.payload, bytes):
                 headers["Content-Type"] = "application/ssi-agent-wire"
             else:
                 headers["Content-Type"] = "application/json"
             async with self.client_session.post(
-                message.uri, data=message.data, headers=headers
+                message.endpoint, data=message.payload, headers=headers
             ) as response:
                 self.logger.info(response.status)
         except Exception:

@@ -4,7 +4,6 @@ import json
 import logging
 
 from .base_service import BaseIntroductionService, IntroductionError
-from ..connections.manager import ConnectionManager
 from ..connections.models.connection_record import ConnectionRecord
 from .messages.forward_invitation import ForwardInvitation
 from .messages.invitation import Invitation
@@ -35,8 +34,6 @@ class DemoIntroductionService(BaseIntroductionService):
             outbound_handler: The outbound handler coroutine for sending a message
             message: The message to use when requesting the invitation
         """
-
-        connection_mgr = ConnectionManager(self._context)
 
         try:
             init_connection = await ConnectionRecord.retrieve_by_id(
@@ -71,8 +68,7 @@ class DemoIntroductionService(BaseIntroductionService):
         storage: BaseStorage = await self._context.inject(BaseStorage)
         await storage.add_record(record)
 
-        target = await connection_mgr.get_connection_target(target_connection)
-        await outbound_handler(self._context, msg, target)
+        await outbound_handler(msg, connection_id=target_connection_id)
 
     async def return_invitation(
         self, target_connection_id: str, invitation: Invitation, outbound_handler
@@ -86,7 +82,6 @@ class DemoIntroductionService(BaseIntroductionService):
             outbound_handler: The outbound handler coroutine for sending a message
         """
 
-        connection_mgr = ConnectionManager(self._context)
         thread_id = invitation._thread_id
 
         tag_filter = {"target_connection_id": target_connection_id}
@@ -105,13 +100,10 @@ class DemoIntroductionService(BaseIntroductionService):
                 value["state"] = "complete"
                 await storage.update_record_value(row, json.dumps(value))
 
-                init_connection = await ConnectionRecord.retrieve_by_id(
-                    self._context, row.tags["init_connection_id"]
-                )
-                target = await connection_mgr.get_connection_target(init_connection)
-                await outbound_handler(self._context, msg, target)
+                init_connection_id = row.tags["init_connection_id"]
+                await outbound_handler(msg, connection_id=init_connection_id)
                 found = True
-                LOGGER.info("Forwarded invitation to %s", init_connection.connection_id)
+                LOGGER.info("Forwarded invitation to %s", init_connection_id)
                 break
 
         if not found:

@@ -1,4 +1,4 @@
-"""Basic in-memory cache implementation"""
+"""Basic in-memory cache implementation."""
 
 from datetime import datetime, timedelta
 
@@ -8,20 +8,16 @@ from .base import BaseCache
 
 
 class BasicCache(BaseCache):
-    """Basic in-memory cache class"""
+    """Basic in-memory cache class."""
 
     def __init__(self):
-        """
-        Initialize a `BasicCache` instance.
-        """
+        """Initialize a `BasicCache` instance."""
 
         # looks like { "key": { "expires": <epoch timestamp>, "value": <val> } }
         self._cache = {}
 
     def _remove_expired_cache_items(self):
-        """
-        Removes all expired items from cache.
-        """
+        """Remove all expired items from cache."""
         for key in self._cache.copy():  # iterate copy, del from original
             cache_item_expiry = self._cache[key]["expires"]
             if cache_item_expiry is None:
@@ -32,7 +28,7 @@ class BasicCache(BaseCache):
 
     async def get(self, key: Text):
         """
-        Gets an item from the cache
+        Get an item from the cache.
 
         Args:
             key: the key to retrieve an item for
@@ -46,8 +42,9 @@ class BasicCache(BaseCache):
 
     async def set(self, key: Text, value: Any, ttl: int = None):
         """
-        Adds an item to the cache with an optional ttl.
-        Overwrites existing cache entries
+        Add an item to the cache with an optional ttl.
+
+        Overwrites existing cache entries.
 
         Args:
             key: the key to set an item for
@@ -65,8 +62,6 @@ class BasicCache(BaseCache):
             self._cache[key] = {"expires": None, "value": value}
 
     async def flush(self):
-        """
-        Removes all items from the cache
-        """
+        """Remove all items from the cache."""
 
         self._cache = {}

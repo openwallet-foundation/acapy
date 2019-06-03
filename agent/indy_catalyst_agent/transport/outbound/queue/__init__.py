@@ -1,4 +1,0 @@
-class OutboundMessage:
-    """ """
-
-    pass

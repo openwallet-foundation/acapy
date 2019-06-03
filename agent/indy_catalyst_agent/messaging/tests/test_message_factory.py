@@ -1,6 +1,7 @@
 from unittest import mock, TestCase
 
-from ..message_factory import MessageFactory, MessageParseError
+from ..error import MessageParseError
+from ..message_factory import MessageFactory
 
 # from ..presentations.messages.proof_request import ProofRequest
 
@@ -16,16 +17,6 @@ class TestMessageFactory(TestCase):
 
     def setUp(self):
         self.factory = MessageFactory()
-
-    def test_make_message_no_type(self):
-        with self.assertRaises(MessageParseError) as context:
-            self.factory.make_message(self.no_type_message)
-        assert str(context.exception) == "Message does not contain '@type' parameter"
-
-    def test_make_message_unknown_type(self):
-        with self.assertRaises(MessageParseError) as context:
-            self.factory.make_message(self.unknown_type_message)
-        assert "Unrecognized message type" in str(context.exception)
 
     def test_protocols(self):
         self.factory.register_message_types(

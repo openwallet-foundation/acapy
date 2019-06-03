@@ -38,4 +38,4 @@ class ConnectionInvitationHandler(BaseHandler):
         else:
             request = await mgr.create_request(conn)
             target = await mgr.get_connection_target(conn)
-            await responder.send_outbound(request, target)
+            await responder.send(request, target=target)

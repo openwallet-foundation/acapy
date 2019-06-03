@@ -18,4 +18,5 @@ class QueryHandler(BaseHandler):
         factory: MessageFactory = await context.inject(MessageFactory)
         types = factory.protocols_matching_query(context.message.query)
         reply = Disclose(protocols={k: {} for k in types})
+        reply.assign_thread_from(context.message)
         await responder.send_reply(reply)
