@@ -1,5 +1,6 @@
 """Represents a connection problem report message."""
 
+from enum import Enum
 from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
@@ -8,6 +9,11 @@ from ..message_types import PROBLEM_REPORT
 HANDLER_CLASS = (
     "indy_catalyst_agent.messaging.problem_report.handler.ProblemReportHandler"
 )
+
+
+class ProblemReportReason(Enum):
+    REQUEST_NOT_ACCEPTED = "request_not_accepted"
+    RESPONSE_FOR_UNKNOWN_REQUEST = "response_for_unknown_request"
 
 
 class ProblemReport(AgentMessage):
@@ -35,6 +41,11 @@ class ProblemReport(AgentMessage):
 
 class ProblemReportSchema(AgentMessageSchema):
     """Schema for ProblemReport base class."""
+
+    class Meta:
+        """Metadata for problem report schema."""
+
+        model_class = ProblemReport
 
     explain = fields.Str(required=False)
     problem_code = fields.Str(data_key="problem-code", required=False)

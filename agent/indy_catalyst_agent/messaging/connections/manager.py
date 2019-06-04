@@ -26,6 +26,7 @@ from ..util import send_webhook
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
+from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 from .models.connection_record import ConnectionRecord
 from .models.connection_target import ConnectionTarget
@@ -321,8 +322,15 @@ class ConnectionManager:
             self._log_state("Found invitation", {"invitation": invitation})
 
         conn_did_doc = request.connection.did_doc
+        if not conn_did_doc:
+            raise ConnectionManagerError(
+                "No DIDDoc provided; cannot connect to public DID"
+            )
         if request.connection.did != conn_did_doc.did:
-            raise ConnectionManagerError("Connection DID does not match DIDDoc id")
+            raise ConnectionManagerError(
+                "Connection DID does not match DIDDoc id",
+                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+            )
         await self.store_did_document(conn_did_doc)
 
         if connection:
@@ -474,28 +482,26 @@ class ConnectionManager:
         connection = None
         if response._thread:
             # identify the request by the thread ID
-            request_id = response._thread_id
             try:
                 connection = await ConnectionRecord.retrieve_by_request_id(
-                    self.context, request_id
+                    self.context, response._thread_id
                 )
             except StorageNotFoundError:
                 pass
 
-        if not connection:
+        if not connection and delivery.sender_did:
             # identify connection by the DID they used for us
             try:
                 connection = await ConnectionRecord.retrieve_by_did(
-                    self.context,
-                    delivery.sender_did,
-                    delivery.recipient_did,
+                    self.context, delivery.sender_did, delivery.recipient_did
                 )
             except StorageNotFoundError:
                 pass
 
         if not connection:
             raise ConnectionManagerError(
-                "No connection associated with connection response"
+                "No corresponding connection request found",
+                error_code=ProblemReportReason.RESPONSE_FOR_UNKNOWN_REQUEST.value,
             )
 
         if connection.state not in (
@@ -509,6 +515,10 @@ class ConnectionManager:
 
         their_did = response.connection.did
         conn_did_doc = response.connection.did_doc
+        if not conn_did_doc:
+            raise ConnectionManagerError(
+                "No DIDDoc provided; cannot connect to public DID"
+            )
         if their_did != conn_did_doc.did:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
         await self.store_did_document(conn_did_doc)
@@ -778,15 +788,38 @@ class ConnectionManager:
             return None
 
         doc = await self.fetch_did_document(connection.their_did)
+        return self.diddoc_connection_target(
+            doc, my_info.verkey, connection.their_label
+        )
+
+    def diddoc_connection_target(
+        self, doc: DIDDoc, sender_verkey: str, their_label: str = None
+    ) -> ConnectionTarget:
+        """Create a connection target from a DID Document.
+
+        Args:
+            doc: The DID Document to create the target from
+            sender_verkey: The verkey we are using
+            their_label: The connection label they are using
+        """
+
+        if not doc:
+            raise ConnectionManagerError("No DIDDoc provided for connection target")
+        if not doc.did:
+            raise ConnectionManagerError("DIDDoc has no DID")
         if not doc.services:
             raise ConnectionManagerError("No services defined by DIDDoc")
-
         service = doc.services[0]
+        if not service.recip_keys:
+            raise ConnectionManagerError("DIDDoc service has no recipient key(s)")
+        if not service.endpoint:
+            raise ConnectionManagerError("DIDDoc service has no service endpoint")
+
         return ConnectionTarget(
             did=doc.did,
             endpoint=service.endpoint,
-            label=connection.their_label,
+            label=their_label,
             recipient_keys=service.recip_keys,
             routing_keys=service.routing_keys,
-            sender_key=my_info.verkey,
+            sender_key=sender_verkey,
         )
