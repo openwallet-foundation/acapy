@@ -1,5 +1,5 @@
 [run]
-omit = */tests/*
+omit = */tests/* demo/* docker/* docs/* scripts/*
 
 [report]
 exclude_lines =
