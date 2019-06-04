@@ -2,9 +2,9 @@
 
 from ...base_handler import BaseHandler, BaseResponder, HandlerException, RequestContext
 
-
 from ..manager import CredentialManager
 from ..messages.credential_request import CredentialRequest
+from ....cache.base import BaseCache
 
 
 class CredentialRequestHandler(BaseHandler):
@@ -32,6 +32,15 @@ class CredentialRequestHandler(BaseHandler):
         credential_manager = CredentialManager(context)
         credential_exchange_record = await credential_manager.receive_request(
             context.message
+        )
+
+        # We cache some stuff in order to re-issue again in the future
+        # without this roundtrip
+        cache: BaseCache = await context.inject(BaseCache)
+        await cache.set(
+            credential_exchange_record.credential_definition_id,
+            credential_exchange_record.credential_exchange_id,
+            600,
         )
 
         # If auto_issue is enabled, respond immediately
