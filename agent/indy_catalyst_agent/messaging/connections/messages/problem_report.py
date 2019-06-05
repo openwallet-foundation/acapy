@@ -12,6 +12,8 @@ HANDLER_CLASS = (
 
 
 class ProblemReportReason(Enum):
+    """Supported reason codes."""
+
     REQUEST_NOT_ACCEPTED = "request_not_accepted"
     RESPONSE_FOR_UNKNOWN_REQUEST = "response_for_unknown_request"
 
