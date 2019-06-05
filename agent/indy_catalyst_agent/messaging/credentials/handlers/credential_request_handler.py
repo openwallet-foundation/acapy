@@ -35,7 +35,7 @@ class CredentialRequestHandler(BaseHandler):
         )
 
         # We cache some stuff in order to re-issue again in the future
-        # without this roundtrip
+        # without this roundtrip. It is used in credentials/manager.py
         cache: BaseCache = await context.inject(BaseCache)
         await cache.set(
             credential_exchange_record.credential_definition_id,
