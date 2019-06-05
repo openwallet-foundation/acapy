@@ -75,7 +75,11 @@ class CredentialManager:
         # This cache is populated in credential_request_handler.py
         # Do we have a source (parent) credential exchange for which
         # we can re-use the credential request/offer?
-        source_credential_exchange_id = await cache.get(credential_definition_id)
+        source_credential_exchange_id = await cache.get(
+            "credential_exchange::"
+            + f"{credential_definition_id}::"
+            + f"{connection_id}"
+        )
 
         if source_credential_exchange_id:
 

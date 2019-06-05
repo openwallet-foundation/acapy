@@ -38,7 +38,9 @@ class CredentialRequestHandler(BaseHandler):
         # without this roundtrip. It is used in credentials/manager.py
         cache: BaseCache = await context.inject(BaseCache)
         await cache.set(
-            credential_exchange_record.credential_definition_id,
+            "credential_exchange::"
+            + f"{credential_exchange_record.credential_definition_id}::"
+            + f"{credential_exchange_record.connection_id}",
             credential_exchange_record.credential_exchange_id,
             600,
         )
