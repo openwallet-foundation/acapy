@@ -163,6 +163,12 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--auto-ping-connection",
+    action="store_true",
+    help="Automatically send a trust ping when a connection response is accepted",
+)
+
+PARSER.add_argument(
     "--auto-respond-messages",
     action="store_true",
     help="Auto-respond to basic messages",
@@ -310,6 +316,8 @@ def main():
         settings["accept_invites"] = True
     if args.accept_requests:
         settings["accept_requests"] = True
+    if args.auto_ping_connection:
+        settings["auto_ping_connection"] = True
     if args.auto_respond_messages:
         settings["debug.auto_respond_messages"] = True
 

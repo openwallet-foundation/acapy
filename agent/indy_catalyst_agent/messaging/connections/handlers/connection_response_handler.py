@@ -45,5 +45,5 @@ class ConnectionResponseHandler(BaseHandler):
             return
 
         # send trust ping in response
-        if context.settings.get("auto_ping_on_connect"):
+        if context.settings.get("auto_ping_connection"):
             await responder.send(Ping(), connection_id=connection.connection_id)
