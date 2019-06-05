@@ -34,8 +34,8 @@ from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError, MessagePrepareError
 from .messaging.introduction.base_service import BaseIntroductionService
 from .messaging.introduction.demo_service import DemoIntroductionService
-from .messaging.message_factory import MessageFactory
 from .messaging.outbound_message import OutboundMessage
+from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.serializer import MessageSerializer
 from .messaging.socket import SocketInfo, SocketRef
@@ -63,7 +63,7 @@ class Conductor:
         self,
         inbound_transports: Sequence[InboundTransportConfiguration],
         outbound_transports: Sequence[str],
-        message_factory: MessageFactory,
+        protocol_registry: ProtocolRegistry,
         settings: dict,
     ) -> None:
         """
@@ -72,7 +72,7 @@ class Conductor:
         Args:
             inbound_transports: Configuration for inbound transports
             outbound_transports: Configuration for outbound transports
-            message_factory: Message factory for discovering and deserializing messages
+            protocol_registry: Protocol registry for indexing message types
             settings: Dictionary of various settings
 
         """
@@ -80,7 +80,7 @@ class Conductor:
         self.context: RequestContext = None
         self.dispatcher: Dispatcher = None
         self.logger = logging.getLogger(__name__)
-        self.message_factory = message_factory
+        self.protocol_registry = protocol_registry
         self.message_serializer: MessageSerializer = MessageSerializer()
         self.inbound_transport_configs = inbound_transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -100,7 +100,7 @@ class Conductor:
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
         context.injector.bind_instance(BaseCache, BasicCache())
-        context.injector.bind_instance(MessageFactory, self.message_factory)
+        context.injector.bind_instance(ProtocolRegistry, self.protocol_registry)
         context.injector.bind_instance(MessageSerializer, self.message_serializer)
 
         context.injector.bind_provider(BaseStorage, CachedProvider(StorageProvider()))

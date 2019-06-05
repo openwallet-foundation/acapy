@@ -1,17 +1,17 @@
-"""Handle identification of message types and instantiation of message classes."""
+"""Handle registration and publication of supported message families."""
 
-from typing import Coroutine, Sequence
+from typing import Mapping, Sequence
 
 from ..classloader import ClassLoader
 from ..config.injection_context import InjectionContext
 
 
-class MessageFactory:
-    """Message factory for deserializing messages."""
+class ProtocolRegistry:
+    """Protocol registry for indexing message families."""
 
     def __init__(self):
-        """Initialize a MessageFactory instance."""
-        self._role_checks = []
+        """Initialize a `ProtocolRegistry` instance."""
+        self._controllers = {}
         self._typemap = {}
 
     @property
@@ -31,9 +31,9 @@ class MessageFactory:
         return tuple(self._typemap.keys())
 
     @property
-    def role_determiners(self) -> Sequence[Coroutine]:
-        """Accessor for a list of all message determiner functions."""
-        return tuple(self._role_checks)
+    def controllers(self) -> Mapping[str, str]:
+        """Accessor for a list of all protocol controller functions."""
+        return self._controllers.copy()
 
     def protocols_matching_query(self, query: str) -> Sequence[str]:
         """Return a list of message protocols matching a query string."""
@@ -61,15 +61,16 @@ class MessageFactory:
         for typeset in typesets:
             self._typemap.update(typeset)
 
-    def register_role_determiners(self, *determiners):
+    def register_controllers(self, *controller_sets):
         """
-        Add new role determiners.
+        Add new controllers.
 
         Args:
-            *determiners: Coroutines to call to determine supported roles
+            *controller_sets: Mappings of message families to coroutines
 
         """
-        self._role_checks.extend(determiners)
+        for controlset in controller_sets:
+            self._controllers.update(controlset)
 
     def resolve_message_class(self, message_type: str) -> type:
         """
@@ -90,20 +91,29 @@ class MessageFactory:
             msg_cls = ClassLoader.load_class(msg_cls)
         return msg_cls
 
-    async def determine_roles(
+    async def prepare_disclosed(
         self, context: InjectionContext, protocols: Sequence[str]
     ):
-        """Call role determiners to obtain the currently supported roles."""
-        roles = {}
-        for routine in self._role_checks:
-            result = await routine(context, protocols)
-            if result:
-                for k in result:
-                    if k in roles:
-                        roles[k].update(result[k])
-                    else:
-                        roles[k] = set(result[k])
-        return {k: list(v) for k, v in roles.items()}
+        """Call controllers and return publicly supported message families and roles."""
+        published = []
+        for protocol in protocols:
+            result = {"pid": protocol}
+            if protocol in self._controllers:
+                ctl_cls = self._controllers[protocol]
+                if isinstance(ctl_cls, str):
+                    ctl_cls = ClassLoader.load_class(ctl_cls)
+                ctl_instance = ctl_cls(protocol)
+                if hasattr(ctl_instance, "check_access"):
+                    allowed = await ctl_instance.check_access(context)
+                    if not allowed:
+                        # remove from published
+                        continue
+                if hasattr(ctl_instance, "determine_roles"):
+                    roles = await ctl_instance.determine_roles(context)
+                    if roles:
+                        result["roles"] = list(roles)
+            published.append(result)
+        return published
 
     def __repr__(self) -> str:
         """Return a string representation for this class."""

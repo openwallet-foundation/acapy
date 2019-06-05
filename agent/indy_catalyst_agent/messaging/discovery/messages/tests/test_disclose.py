@@ -5,9 +5,12 @@ from unittest import mock, TestCase
 
 
 class TestDisclose(TestCase):
-    test_protocols = {
-        "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/basicmessage/1.0/message": {}
-    }
+    test_protocols = [
+        {
+            "pid": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/basicmessage/1.0/message",
+            "roles": [],
+        }
+    ]
 
     def test_init(self):
         disclose = Disclose(protocols=self.test_protocols)
@@ -42,7 +45,7 @@ class TestDisclose(TestCase):
 
 class TestDiscloseSchema(TestCase):
 
-    disclose = Disclose(protocols={})
+    disclose = Disclose(protocols=[])
 
     def test_make_model(self):
         data = self.disclose.serialize()
