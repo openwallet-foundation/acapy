@@ -43,27 +43,20 @@ router.register(
     search.CredentialTopicSearchView,
     "Credential Topic Search",
 )
+router.register(r"search/credential", search.CredentialSearchView, "Credential Search")
 router.register(
-    r"search/credential",
-    search.CredentialSearchView,
-    "Credential Search",
-)
-router.register(
-    r"search/autocomplete",
-    search.NameAutocompleteView,
-    "Name Autocomplete",
+    r"search/autocomplete", search.NameAutocompleteView, "Name Autocomplete"
 )
 
 # Misc endpoints
 miscPatterns = [
     path("feedback", misc.send_feedback),
     path("quickload", misc.quickload),
+    path("verify", misc.verify_credential),
 ]
 
 swaggerPatterns = [
     path("", schema_view.with_ui("swagger", cache_timeout=None), name="api-docs")
 ]
 
-urlpatterns = format_suffix_patterns(
-    router.urls + miscPatterns + swaggerPatterns
-)
+urlpatterns = format_suffix_patterns(router.urls + miscPatterns + swaggerPatterns)

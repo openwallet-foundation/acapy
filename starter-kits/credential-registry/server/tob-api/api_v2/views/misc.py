@@ -96,3 +96,10 @@ def send_feedback(request, *args, **kwargs):
             "status": "ok"
         }
     )
+
+@api_view(["GET"])
+@authentication_classes(())
+@permission_classes((permissions.AllowAny,))
+def verify_credential(request, *args, **kwargs):
+    #TODO: implement functionality
+    pass
