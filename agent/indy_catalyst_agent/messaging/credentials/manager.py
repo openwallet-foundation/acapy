@@ -73,6 +73,8 @@ class CredentialManager:
         cache: BaseCache = await self._context.inject(BaseCache)
 
         # This cache is populated in credential_request_handler.py
+        # Do we have a source (parent) credential exchange for which
+        # we can re-use the credential request/offer?
         source_credential_exchange_id = await cache.get(credential_definition_id)
 
         if source_credential_exchange_id:
@@ -99,7 +101,7 @@ class CredentialManager:
             ) = await self.issue_credential(credential_exchange, credential_values)
 
             # We use the source credential exchange's thread id as the parent thread id.
-            # This thread is a branch of that parent and the other agent can use the
+            # This thread is a branch of that parent so that the other agent can use the
             # parent thread id to look up its corresponding source credential exchange
             # object as needed
             thread = ThreadDecorator(pthid=source_credential_exchange.thread_id)
