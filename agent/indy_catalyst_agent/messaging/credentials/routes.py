@@ -15,7 +15,6 @@ from ...holder.base import BaseHolder
 from ...storage.error import StorageNotFoundError
 
 
-
 class CredentialSendRequestSchema(Schema):
     """Request schema for sending a credential offer admin message."""
 
@@ -237,10 +236,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not connection_record.is_active:
         return web.HTTPForbidden()
 
-    (
-        credential_exchange_record,
-        message
-    ) = await credential_manager.prepare_send(
+    (credential_exchange_record, message) = await credential_manager.prepare_send(
         credential_definition_id, connection_id, credential_values
     )
 
@@ -281,9 +277,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     (
         credential_exchange_record,
         credential_offer_message,
-    ) = await credential_manager.create_offer(
-        credential_definition_id, connection_id,
-    )
+    ) = await credential_manager.create_offer(credential_definition_id, connection_id)
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
 
