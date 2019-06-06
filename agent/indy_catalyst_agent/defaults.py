@@ -1,8 +1,11 @@
 """Sane defaults for known message definitions."""
 
-from .messaging.message_factory import MessageFactory
+from .messaging.protocol_registry import ProtocolRegistry
 
-from .messaging.actionmenu.message_types import MESSAGE_TYPES as ACTIONMENU_MESSAGES
+from .messaging.actionmenu.message_types import (
+    CONTROLLERS as ACTIONMENU_CONTROLLERS,
+    MESSAGE_TYPES as ACTIONMENU_MESSAGES,
+)
 from .messaging.basicmessage.message_types import MESSAGE_TYPES as BASICMESSAGE_MESSAGES
 from .messaging.connections.message_types import MESSAGE_TYPES as CONNECTION_MESSAGES
 from .messaging.discovery.message_types import MESSAGE_TYPES as DISCOVERY_MESSAGES
@@ -20,11 +23,11 @@ from .messaging.problem_report.message import (
 )
 
 
-def default_message_factory() -> MessageFactory:
-    """Message factory for default message types."""
-    factory = MessageFactory()
+def default_protocol_registry() -> ProtocolRegistry:
+    """Protocol registry for default message types."""
+    registry = ProtocolRegistry()
 
-    factory.register_message_types(
+    registry.register_message_types(
         ACTIONMENU_MESSAGES,
         BASICMESSAGE_MESSAGES,
         CONNECTION_MESSAGES,
@@ -37,4 +40,6 @@ def default_message_factory() -> MessageFactory:
         {PROBLEM_REPORT: ProblemReport},
     )
 
-    return factory
+    registry.register_controllers(ACTIONMENU_CONTROLLERS)
+
+    return registry

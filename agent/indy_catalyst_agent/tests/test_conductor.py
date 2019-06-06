@@ -5,8 +5,8 @@ from asynctest import mock as async_mock
 from ..conductor import Conductor
 from ..messaging.connections.models.connection_target import ConnectionTarget
 from ..messaging.message_delivery import MessageDelivery
-from ..messaging.message_factory import MessageFactory
 from ..messaging.outbound_message import OutboundMessage
+from ..messaging.protocol_registry import ProtocolRegistry
 from ..transport.inbound.base import InboundTransportConfiguration
 
 
@@ -27,7 +27,7 @@ class TestConductor(AsyncTestCase, TestConfig):
         conductor = Conductor(
             self.good_inbound_transports,
             self.good_outbound_transports,
-            MessageFactory(),
+            ProtocolRegistry(),
             self.test_settings,
         )
         mock_inbound_mgr = async_mock.create_autospec(
@@ -61,7 +61,7 @@ class TestConductor(AsyncTestCase, TestConfig):
         conductor = Conductor(
             self.good_inbound_transports,
             self.good_outbound_transports,
-            MessageFactory(),
+            ProtocolRegistry(),
             self.test_settings,
         )
         mock_dispatcher = async_mock.create_autospec(conductor.dispatcher)
@@ -89,7 +89,7 @@ class TestConductor(AsyncTestCase, TestConfig):
         conductor = Conductor(
             self.good_inbound_transports,
             self.good_outbound_transports,
-            MessageFactory(),
+            ProtocolRegistry(),
             self.test_settings,
         )
         mock_serializer = async_mock.create_autospec(conductor.message_serializer)
@@ -101,10 +101,7 @@ class TestConductor(AsyncTestCase, TestConfig):
 
         payload = "{}"
         target = ConnectionTarget(
-            endpoint="endpoint",
-            recipient_keys=(),
-            routing_keys=(),
-            sender_key=""
+            endpoint="endpoint", recipient_keys=(), routing_keys=(), sender_key=""
         )
         message = OutboundMessage(payload=payload, target=target)
 

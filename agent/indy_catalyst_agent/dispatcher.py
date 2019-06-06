@@ -13,9 +13,9 @@ from .messaging.agent_message import AgentMessage
 from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
-from .messaging.message_factory import MessageFactory
 from .messaging.outbound_message import OutboundMessage
 from .messaging.problem_report.message import ProblemReport
+from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
 from .messaging.serializer import MessageSerializer
@@ -111,13 +111,13 @@ class Dispatcher:
 
         """
 
-        factory: MessageFactory = await self.context.inject(MessageFactory)
+        registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
         serializer: MessageSerializer = await self.context.inject(MessageSerializer)
 
         # throws a MessageParseError on failure
         message_type = serializer.extract_message_type(parsed_msg)
 
-        message_cls = factory.resolve_message_class(message_type)
+        message_cls = registry.resolve_message_class(message_type)
 
         if not message_cls:
             raise MessageParseError(f"Unrecognized message type {message_type}")

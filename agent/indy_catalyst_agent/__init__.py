@@ -6,7 +6,7 @@ import argparse
 import asyncio
 
 from .conductor import Conductor
-from .defaults import default_message_factory
+from .defaults import default_protocol_registry
 from .logging import LoggingConfigurator
 from .postgres import load_postgres_plugin
 from .transport.inbound.base import InboundTransportConfiguration
@@ -112,16 +112,16 @@ PARSER.add_argument(
     "--storage-config",
     type=str,
     metavar="<storage-config>",
-    help="Specify the storage configuration to use (required for postgres) " +
-            "e.g., '{\"url\":\"localhost:5432\"}'",
+    help="Specify the storage configuration to use (required for postgres) "
+    + 'e.g., \'{"url":"localhost:5432"}\'',
 )
 
 PARSER.add_argument(
     "--storage-creds",
     type=str,
     metavar="<storage-creds>",
-    help="Specify the storage credentials to use (required for postgres) " +
-            "e.g., '{\"account\":\"postgres\",\"password\":\"mysecretpassword\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}'",
+    help="Specify the storage credentials to use (required for postgres) "
+    + 'e.g., \'{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}\'',
 )
 
 PARSER.add_argument(
@@ -160,6 +160,12 @@ PARSER.add_argument(
 
 PARSER.add_argument(
     "--accept-requests", action="store_true", help="Auto-accept connection requests"
+)
+
+PARSER.add_argument(
+    "--auto-ping-connection",
+    action="store_true",
+    help="Automatically send a trust ping when a connection response is accepted",
 )
 
 PARSER.add_argument(
@@ -224,9 +230,9 @@ async def start(
     inbound_transport_configs: list, outbound_transports: list, settings: dict
 ):
     """Start."""
-    factory = default_message_factory()
+    registry = default_protocol_registry()
     conductor = Conductor(
-        inbound_transport_configs, outbound_transports, factory, settings
+        inbound_transport_configs, outbound_transports, registry, settings
     )
     await conductor.start()
 
@@ -310,6 +316,8 @@ def main():
         settings["accept_invites"] = True
     if args.accept_requests:
         settings["accept_requests"] = True
+    if args.auto_ping_connection:
+        settings["auto_ping_connection"] = True
     if args.auto_respond_messages:
         settings["debug.auto_respond_messages"] = True
 
