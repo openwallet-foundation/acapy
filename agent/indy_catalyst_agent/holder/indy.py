@@ -4,6 +4,9 @@ import json
 import logging
 
 import indy.anoncreds
+from indy.error import ErrorCode, IndyError
+
+from ..wallet.error import WalletNotFoundError
 
 from .base import BaseHolder
 
@@ -148,34 +151,57 @@ class IndyHolder(BaseHolder):
             ) = await indy.anoncreds.prover_fetch_credentials_for_proof_req(
                 search_handle, referent, count
             )
-        except Exception:
+        finally:
             # Always close
             await indy.anoncreds.prover_close_credentials_search_for_proof_req(
                 search_handle
             )
-            raise
-
-        await indy.anoncreds.prover_close_credentials_search_for_proof_req(
-            search_handle
-        )
 
         credentials = json.loads(credentials_json)
         return credentials
 
     async def get_credential(self, credential_id: str):
         """
-        Get credentials stored in the wallet.
+        Get a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to retrieve
 
         """
-        credential_json = await indy.anoncreds.prover_get_credential(
-            self.wallet.handle, credential_id
-        )
+        try:
+            credential_json = await indy.anoncreds.prover_get_credential(
+                self.wallet.handle, credential_id
+            )
+        except IndyError as e:
+            if e.error_code == ErrorCode.WalletItemNotFound:
+                raise WalletNotFoundError(
+                    "Credential not found in the wallet: {}".format(credential_id)
+                )
+            else:
+                raise
 
         credential = json.loads(credential_json)
         return credential
+
+    async def delete_credential(self, credential_id: str):
+        """
+        Remove a credential stored in the wallet.
+
+        Args:
+            credential_id: Credential id to remove
+
+        """
+        try:
+            await indy.anoncreds.prover_delete_credential(
+                self.wallet.handle, credential_id
+            )
+        except IndyError as e:
+            if e.error_code == ErrorCode.WalletItemNotFound:
+                raise WalletNotFoundError(
+                    "Credential not found in the wallet: {}".format(credential_id)
+                )
+            else:
+                raise
 
     async def create_presentation(
         self,

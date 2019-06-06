@@ -15,18 +15,20 @@ fi
 
 echo "Starting $AGENT..."
 if [[ $AGENT == "faber" ]]; then
-  AGENT_FILE="demo/faber-pg.py"
+	AGENT_FILE="demo/faber-pg.py"
 	AGENT_PORT=8020
 	AGENT_PORT_RANGE=8020-8027
 else
-  AGENT_FILE="demo/alice-pg.py"
+	AGENT_FILE="demo/alice-pg.py"
 	AGENT_PORT=8030
 	AGENT_PORT_RANGE=8030-8037
 fi
 
+DOCKER_ENV="-e LOG_LEVEL=${LOG_LEVEL}"
+
 # on Windows, docker run needs to be prefixed by winpty
 if [[ "$OSTYPE" == "msys" ]]; then
-  winpty docker run --name $AGENT --rm -e RUNMODE=docker -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE -it faber-alice-demo $AGENT_FILE $AGENT_PORT
+  winpty docker run --name $AGENT --rm -e RUNMODE=docker -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE $DOCKER_ENV -it faber-alice-demo $AGENT_FILE $AGENT_PORT
 else
-  docker run --name $AGENT --rm -e RUNMODE=docker -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE -it faber-alice-demo $AGENT_FILE $AGENT_PORT
+  docker run --name $AGENT --rm -e RUNMODE=docker -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE $DOCKER_ENV -it faber-alice-demo $AGENT_FILE $AGENT_PORT
 fi
