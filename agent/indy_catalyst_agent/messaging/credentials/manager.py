@@ -339,7 +339,7 @@ class CredentialManager:
             )
         except StorageNotFoundError:
 
-            if not credential_message._thread.pthid:
+            if not credential_message._thread or not credential_message._thread.pthid:
                 raise
 
             # If the thread_id does not return any results, we check the
