@@ -1,4 +1,6 @@
-FROM bcgovimages/von-image:py36-1.8-4
+FROM bcgovimages/von-image:py36-1.9-0
+
+USER indy
 
 RUN mkdir src test-reports
 
@@ -11,6 +13,6 @@ RUN pip3 install --no-cache-dir \
 	-r requirements.dev.txt \
 	pytest
 
-ADD . .
+ADD --chown=indy:root . .
 
 ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]
