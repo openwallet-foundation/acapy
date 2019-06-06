@@ -15,13 +15,25 @@ from ...holder.base import BaseHolder
 from ...storage.error import StorageNotFoundError
 
 
+class CredentialSendRequestSchema(Schema):
+    """Request schema for sending a credential offer admin message."""
+
+    connection_id = fields.Str(required=True)
+    credential_definition_id = fields.Str(required=True)
+    credential_values = fields.Dict(required=False)
+
+
+class CredentialSendResultSchema(Schema):
+    """Result schema for sending a credential offer admin message."""
+
+    credential_id = fields.Str()
+
+
 class CredentialOfferRequestSchema(Schema):
     """Request schema for sending a credential offer admin message."""
 
     connection_id = fields.Str(required=True)
     credential_definition_id = fields.Str(required=True)
-    auto_issue = fields.Bool(required=False, default=False)
-    credential_values = fields.Dict(required=False)
 
 
 class CredentialOfferResultSchema(Schema):
@@ -191,6 +203,48 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
     return web.json_response(record.serialize())
 
 
+@docs(
+    tags=["credential_exchange"],
+    summary="Sends a credential and automates the entire flow",
+)
+@request_schema(CredentialSendRequestSchema())
+@response_schema(CredentialSendResultSchema(), 200)
+async def credential_exchange_send(request: web.BaseRequest):
+    """
+    Request handler for sending a credential offer.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential offer details.
+
+    """
+
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+
+    body = await request.json()
+
+    connection_id = body.get("connection_id")
+    credential_definition_id = body.get("credential_definition_id")
+    credential_values = body.get("credential_values")
+
+    credential_manager = CredentialManager(context)
+    connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
+
+    if not connection_record.is_active:
+        return web.HTTPForbidden()
+
+    (credential_exchange_record, message) = await credential_manager.prepare_send(
+        credential_definition_id, connection_id, credential_values
+    )
+
+    await outbound_handler(message, connection_id=connection_id)
+
+    return web.json_response(credential_exchange_record.serialize())
+
+
 @docs(tags=["credential_exchange"], summary="Sends a credential offer")
 @request_schema(CredentialOfferRequestSchema())
 @response_schema(CredentialOfferResultSchema(), 200)
@@ -213,17 +267,8 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     credential_definition_id = body.get("credential_definition_id")
-    auto_issue = body.get("auto_issue")
-    credential_values = body.get("credential_values")
-
-    if auto_issue and not credential_values:
-        raise web.HTTPBadRequest(
-            reason="If auto_issue is set to"
-            + " true then credential_values must also be provided."
-        )
 
     credential_manager = CredentialManager(context)
-
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
     if not connection_record.is_active:
@@ -232,9 +277,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     (
         credential_exchange_record,
         credential_offer_message,
-    ) = await credential_manager.create_offer(
-        credential_definition_id, connection_id, auto_issue, credential_values
-    )
+    ) = await credential_manager.create_offer(credential_definition_id, connection_id)
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
 
@@ -362,6 +405,7 @@ async def register(app: web.Application):
             web.get("/credentials", credentials_list),
             web.get("/credential_exchange", credential_exchange_list),
             web.get("/credential_exchange/{id}", credential_exchange_retrieve),
+            web.post("/credential_exchange/send", credential_exchange_send),
             web.post("/credential_exchange/send-offer", credential_exchange_send_offer),
             web.post(
                 "/credential_exchange/{id}/send-request",
