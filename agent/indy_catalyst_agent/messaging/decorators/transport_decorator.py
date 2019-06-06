@@ -6,7 +6,7 @@ This decorator allows changes to agent response behaviour and queue status updat
 
 from marshmallow import fields
 
-from .base import BaseModel, BaseModelSchema
+from ..models.base import BaseModel, BaseModelSchema
 
 
 class TransportDecorator(BaseModel):

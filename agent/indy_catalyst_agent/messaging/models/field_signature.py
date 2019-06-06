@@ -7,9 +7,10 @@ import time
 
 from marshmallow import fields
 
-from .base import BaseModel, BaseModelSchema
-from ..wallet.base import BaseWallet
-from ..wallet.util import b64_to_bytes, bytes_to_b64
+from ...wallet.base import BaseWallet
+from ...wallet.util import b64_to_bytes, bytes_to_b64
+
+from ..models.base import BaseModel, BaseModelSchema
 
 
 class FieldSignature(BaseModel):

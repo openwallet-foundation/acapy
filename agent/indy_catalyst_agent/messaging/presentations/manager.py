@@ -9,9 +9,9 @@ from uuid import uuid4
 from ...error import BaseError
 from ...holder.base import BaseHolder
 from ...ledger.base import BaseLedger
-from ...models.thread_decorator import ThreadDecorator
 from ...verifier.base import BaseVerifier
 
+from ..decorators.thread_decorator import ThreadDecorator
 from ..request_context import RequestContext
 from ..util import send_webhook
 

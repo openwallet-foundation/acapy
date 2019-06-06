@@ -13,22 +13,23 @@ from marshmallow import (
     ValidationError,
 )
 
-from ..models.base import (
+from ..wallet.base import BaseWallet
+
+from .models.base import (
     BaseModel,
     BaseModelError,
     BaseModelSchema,
     resolve_class,
     resolve_meta_property,
 )
-from ..models.field_signature import FieldSignature
-from ..models.localization_decorator import (
+from .models.field_signature import FieldSignature
+from .decorators.localization_decorator import (
     LocalizationDecorator,
     LocalizationDecoratorSchema,
 )
-from ..models.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
-from ..models.timing_decorator import TimingDecorator, TimingDecoratorSchema
-from ..models.transport_decorator import TransportDecorator, TransportDecoratorSchema
-from ..wallet.base import BaseWallet
+from .decorators.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
+from .decorators.timing_decorator import TimingDecorator, TimingDecoratorSchema
+from .decorators.transport_decorator import TransportDecorator, TransportDecoratorSchema
 
 
 class AgentMessageError(BaseModelError):

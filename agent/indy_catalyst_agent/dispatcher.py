@@ -11,8 +11,10 @@ from typing import Coroutine, Union
 
 from .messaging.agent_message import AgentMessage
 from .messaging.connections.models.connection_record import ConnectionRecord
+from .messaging.decorators.timing_decorator import TimingDecorator
 from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
+from .messaging.models.base import BaseModelError
 from .messaging.outbound_message import OutboundMessage
 from .messaging.problem_report.message import ProblemReport
 from .messaging.protocol_registry import ProtocolRegistry
@@ -20,8 +22,6 @@ from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
 from .messaging.serializer import MessageSerializer
 from .messaging.util import datetime_now
-from .models.timing_decorator import TimingDecorator
-from .models.base import BaseModelError
 
 
 class Dispatcher:

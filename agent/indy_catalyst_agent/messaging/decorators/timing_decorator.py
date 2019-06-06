@@ -10,9 +10,8 @@ from typing import Union
 
 from marshmallow import fields
 
-from ..messaging.util import datetime_to_str
-
-from .base import BaseModel, BaseModelSchema
+from ..models.base import BaseModel, BaseModelSchema
+from ..util import datetime_to_str
 
 DT_FORMAT = "%Y-%m-%d %H:%M:%S.%fZ"
 

@@ -8,9 +8,10 @@ from typing import Sequence
 from marshmallow import fields
 
 from ....config.injection_context import InjectionContext
-from ....models.base import BaseModel, BaseModelSchema
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
+
+from ...models.base import BaseModel, BaseModelSchema
 
 
 class CredentialExchange(BaseModel):

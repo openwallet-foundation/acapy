@@ -9,7 +9,7 @@ from indy_catalyst_agent.wallet.error import (
     WalletNotFoundError,
 )
 
-from indy_catalyst_agent.models.field_signature import FieldSignature
+from indy_catalyst_agent.messaging.models.field_signature import FieldSignature
 
 
 @pytest.fixture()

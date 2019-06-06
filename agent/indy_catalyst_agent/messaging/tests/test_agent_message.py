@@ -2,7 +2,7 @@ from asynctest import TestCase as AsyncTestCase
 from marshmallow import fields
 
 from ..agent_message import AgentMessage, AgentMessageSchema
-from ...models.field_signature import FieldSignature
+from ..models.field_signature import FieldSignature
 from ...wallet.basic import BasicWallet
 
 

@@ -9,7 +9,7 @@ from typing import Mapping
 
 from marshmallow import fields
 
-from .base import BaseModel, BaseModelSchema
+from ..models.base import BaseModel, BaseModelSchema
 
 
 class ThreadDecorator(BaseModel):

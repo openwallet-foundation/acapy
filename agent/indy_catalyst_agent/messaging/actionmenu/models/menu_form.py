@@ -4,7 +4,8 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....models.base import BaseModel, BaseModelSchema
+from ...models.base import BaseModel, BaseModelSchema
+
 from .menu_form_param import MenuFormParam, MenuFormParamSchema
 
 
