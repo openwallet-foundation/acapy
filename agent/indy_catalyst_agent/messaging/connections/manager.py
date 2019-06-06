@@ -669,17 +669,17 @@ class ConnectionManager:
         pk = PublicKey(
             my_info.did,
             "1",
+            did_key,
             PublicKeyType.ED25519_SIG_2018,
             did_controller,
-            did_key,
             True,
         )
-        did_doc.verkeys.append(pk)
+        did_doc.set(pk)
 
         if not my_endpoint:
             my_endpoint = self.context.settings.get("default_endpoint")
-        service = Service(my_info.did, "indy", "IndyAgent", [did_key], [], my_endpoint)
-        did_doc.services.append(service)
+        service = Service(my_info.did, "indy", "IndyAgent", [pk], [], my_endpoint)
+        did_doc.set(service)
 
         return did_doc
 
@@ -713,7 +713,7 @@ class ConnectionManager:
         else:
             await storage.update_record_value(record, did_doc.value)
         await self.remove_keys_for_did(did_doc.did)
-        for key in did_doc.verkeys:
+        for key in did_doc.pubkey.values():
             if key.controller == did_doc.did:
                 await self.add_key_for_did(did_doc.did, key.value)
 
@@ -807,19 +807,20 @@ class ConnectionManager:
             raise ConnectionManagerError("No DIDDoc provided for connection target")
         if not doc.did:
             raise ConnectionManagerError("DIDDoc has no DID")
-        if not doc.services:
+        if not doc.service:
             raise ConnectionManagerError("No services defined by DIDDoc")
-        service = doc.services[0]
-        if not service.recip_keys:
-            raise ConnectionManagerError("DIDDoc service has no recipient key(s)")
-        if not service.endpoint:
-            raise ConnectionManagerError("DIDDoc service has no service endpoint")
 
-        return ConnectionTarget(
-            did=doc.did,
-            endpoint=service.endpoint,
-            label=their_label,
-            recipient_keys=service.recip_keys,
-            routing_keys=service.routing_keys,
-            sender_key=sender_verkey,
-        )
+        for service in doc.service.values():
+            if not service.recip_keys:
+                raise ConnectionManagerError("DIDDoc service has no recipient key(s)")
+            if not service.endpoint:
+                raise ConnectionManagerError("DIDDoc service has no service endpoint")
+
+            return ConnectionTarget(
+                did=doc.did,
+                endpoint=service.endpoint,
+                label=their_label,
+                recipient_keys=[key.value for key in (service.recip_keys or ())],
+                routing_keys=[key.value for key in (service.routing_keys or ())],
+                sender_key=sender_verkey,
+            )
