@@ -45,7 +45,9 @@ class BasicMessageHandler(BaseHandler):
             reply = body[12:]
 
         if reply:
-            reply_msg = BasicMessage(content=reply, _l10n=context.message._l10n)
+            reply_msg = BasicMessage(content=reply)
+            if "l10n" in context.message._decorators:
+                reply_msg._decorators["l10n"] = context.message._decorators["l10n"]
             await responder.send_reply(reply_msg)
             await context.connection_record.log_activity(
                 context,
