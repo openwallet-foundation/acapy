@@ -114,7 +114,6 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
     volumes:
       - ../server/tob-api/tob_api:/home/indy/tob_api
-      - ../server/tob-api/api_indy:/home/indy/api_indy
       - ../server/tob-api/api_v2:/home/indy/api_v2
       - ../server/tob-api/icat_hooks:/home/indy/icat_hooks
       - tob-wallet:/home/indy/.indy_client/wallet
