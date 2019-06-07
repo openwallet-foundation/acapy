@@ -43,13 +43,13 @@ class BaseDecoratorSet(OrderedDict):
 
     def __setitem__(self, key, value):
         """Add a decorator."""
-        if not isinstance(value, (str, dict, BaseModel)):
+        if not isinstance(value, (bool, int, str, float, dict, OrderedDict, BaseModel)):
             raise ValueError(f"Unsupported decorator value: {value}")
         self.load_decorator(key, value)
 
     def load_decorator(self, key: str, value):
         """Convert a decorator value to its loaded representation."""
-        if key in self._models and isinstance(value, dict):
+        if key in self._models and isinstance(value, (dict, OrderedDict)):
             value = self._models[key](**value)
         if value is not None:
             super().__setitem__(key, value)
