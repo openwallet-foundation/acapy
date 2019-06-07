@@ -1,8 +1,8 @@
 """Agent message base class and schema."""
 
+from collections import OrderedDict
+from typing import Dict, Union
 import uuid
-
-from typing import Dict
 
 from marshmallow import (
     fields,
@@ -267,12 +267,12 @@ class AgentMessage(BaseModel):
         return self._decorators.get("thread")
 
     @_thread.setter
-    def _thread(self, val: ThreadDecorator):
+    def _thread(self, val: Union[ThreadDecorator, dict]):
         """
         Setter for the message's thread decorator.
 
         Args:
-            val: ThreadDecorator to set as the thread
+            val: ThreadDecorator or dict to set as the thread
         """
         self._decorators["thread"] = val
 
@@ -470,7 +470,11 @@ class AgentMessageSchema(BaseModelSchema):
             The modified data
 
         """
-        result = self._decorators_dict.copy()
+        result = OrderedDict()
+        for key in ("@type", "@id"):
+            if key in data:
+                result[key] = data.pop(key)
+        result.update(self._decorators_dict)
         result.update(data)
         return result
 

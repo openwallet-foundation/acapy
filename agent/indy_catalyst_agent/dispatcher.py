@@ -11,7 +11,6 @@ from typing import Coroutine, Union
 
 from .messaging.agent_message import AgentMessage
 from .messaging.connections.models.connection_record import ConnectionRecord
-from .messaging.decorators.timing_decorator import TimingDecorator
 from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
 from .messaging.models.base import BaseModelError
@@ -158,10 +157,11 @@ class DispatcherResponder(BaseResponder):
                 self._context.message_delivery
                 and self._context.message_delivery.in_time
             )
-            if not message._timing:
-                message._timing = TimingDecorator(
-                    in_time=in_time, out_time=datetime_now()
-                )
+            if not message._decorators.get("timing"):
+                message._decorators["timing"] = {
+                    "in_time": in_time,
+                    "out_time": datetime_now(),
+                }
         return await super().create_outbound(message, **kwargs)
 
     async def send_outbound(self, message: OutboundMessage):

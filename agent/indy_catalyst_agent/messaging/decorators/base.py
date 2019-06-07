@@ -45,14 +45,16 @@ class BaseDecoratorSet(OrderedDict):
         """Add a decorator."""
         if not isinstance(value, (str, dict, BaseModel)):
             raise ValueError(f"Unsupported decorator value: {value}")
-        super().__setitem__(key, value)
+        self.load_decorator(key, value)
 
     def load_decorator(self, key: str, value):
         """Convert a decorator value to its loaded representation."""
         if key in self._models and isinstance(value, dict):
-            value = self._models[key].deserialize(value)
+            value = self._models[key](**value)
         if value is not None:
-            self[key] = value
+            super().__setitem__(key, value)
+        elif key in self:
+            del self[key]
 
     def extract_decorators(self, message: Mapping) -> OrderedDict:
         """Extract decorators and return the remaining properties."""
