@@ -15,7 +15,7 @@ class DecoratorError(BaseError):
     """Base error for decorator issues."""
 
 
-class DecoratorSet(OrderedDict):
+class BaseDecoratorSet(OrderedDict):
     """Collection of decorators."""
 
     def __init__(self, models: dict = None):
@@ -67,9 +67,14 @@ class DecoratorSet(OrderedDict):
                     remain[key] = value
         return remain
 
-    def to_dict(self) -> dict:
-        """Convert to a dictionary (serialize)."""
-        result = {}
+    def to_dict(self) -> OrderedDict:
+        """Convert to a dictionary (serialize).
+
+        Raises:
+            BaseModelError: on decorator validation errors
+
+        """
+        result = OrderedDict()
         for k in self:
             value = self[k]
             if isinstance(value, BaseModel):
@@ -79,5 +84,5 @@ class DecoratorSet(OrderedDict):
 
     def __repr__(self) -> str:
         """Create a string representation of the decorator set."""
-        items = ("{}: {}".format(k, repr(v)) for k, v in self.to_dict().items())
+        items = ("{}: {}".format(self._prefix + k, repr(self[k])) for k in self)
         return "<{}{{{}}}>".format(self.__class__.__name__, ", ".join(items))

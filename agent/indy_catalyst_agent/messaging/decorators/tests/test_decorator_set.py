@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from ...models.base import BaseModel, BaseModelSchema
 
-from ..base import DecoratorSet
+from ..base import BaseDecoratorSet
 
 
 class SimpleModel(BaseModel):
@@ -19,7 +19,7 @@ class SimpleModelSchema(BaseModelSchema):
     class Meta:
         model_class = SimpleModel
 
-    value = fields.Str()
+    value = fields.Str(required=True)
 
 
 class TestDecoratorSet(TestCase):
@@ -28,7 +28,7 @@ class TestDecoratorSet(TestCase):
         decor_value = {}
         message = {"~decorator": decor_value, "one": "TWO"}
 
-        decors = DecoratorSet()
+        decors = BaseDecoratorSet()
         remain = decors.extract_decorators(message)
 
         # check original is unmodified
@@ -39,7 +39,7 @@ class TestDecoratorSet(TestCase):
 
     def test_dict(self):
 
-        decors = DecoratorSet()
+        decors = BaseDecoratorSet()
         decors["test"] = "TEST"
         assert decors["test"] == "TEST"
         result = decors.to_dict()
@@ -50,7 +50,7 @@ class TestDecoratorSet(TestCase):
         decor_value = {}
         message = {"~test": {"value": "TEST"}}
 
-        decors = DecoratorSet()
+        decors = BaseDecoratorSet()
         decors.add_model("test", SimpleModel)
         remain = decors.extract_decorators(message)
 

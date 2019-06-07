@@ -15,6 +15,9 @@ from marshmallow import (
 
 from ..wallet.base import BaseWallet
 
+from .decorators.base import BaseDecoratorSet
+from .decorators.default import DecoratorSet
+from .decorators.thread_decorator import ThreadDecorator
 from .models.base import (
     BaseModel,
     BaseModelError,
@@ -23,13 +26,6 @@ from .models.base import (
     resolve_meta_property,
 )
 from .models.field_signature import FieldSignature
-from .decorators.localization_decorator import (
-    LocalizationDecorator,
-    LocalizationDecoratorSchema,
-)
-from .decorators.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
-from .decorators.timing_decorator import TimingDecorator, TimingDecoratorSchema
-from .decorators.transport_decorator import TransportDecorator, TransportDecoratorSchema
 
 
 class AgentMessageError(BaseModelError):
@@ -49,22 +45,16 @@ class AgentMessage(BaseModel):
     def __init__(
         self,
         _id: str = None,
-        _l10n: LocalizationDecorator = None,
+        _decorators: BaseDecoratorSet = None,
         _signatures: Dict[str, FieldSignature] = None,
-        _thread: ThreadDecorator = None,
-        _timing: TimingDecorator = None,
-        _transport: TransportDecorator = None,
     ):
         """
         Initialize base agent message object.
 
         Args:
             _id: Agent message id
-            _l10n: LocalizationDecorator instance
+            _decorators: Message decorators
             _signatures: Message signatures
-            _thread: ThreadDecorator instance
-            _timing: TimingDecorator instance
-            _transport: TransportDecorator instance
 
         Raises:
             TypeError: If message type is missing on subclass Meta class
@@ -77,10 +67,7 @@ class AgentMessage(BaseModel):
         else:
             self._message_id = str(uuid.uuid4())
             self._message_new_id = True
-        self._message_l10n = _l10n
-        self._message_thread = _thread
-        self._message_timing = _timing
-        self._message_transport = _transport
+        self._message_decorators = _decorators or DecoratorSet()
         self._message_signatures = _signatures.copy() if _signatures else {}
         if not self.Meta.message_type:
             raise TypeError(
@@ -144,14 +131,14 @@ class AgentMessage(BaseModel):
         self._message_id = val
 
     @property
-    def _l10n(self) -> LocalizationDecorator:
-        """Accessor for the localization decorator."""
-        return self._message_l10n
+    def _decorators(self) -> BaseDecoratorSet:
+        """Fetch the message's decorator set."""
+        return self._message_decorators
 
-    @_l10n.setter
-    def _l10n(self, val: LocalizationDecorator):
-        """Set the localization decorator."""
-        self._message_l10n = val
+    @_decorators.setter
+    def _decorators(self, value: BaseDecoratorSet):
+        """Fetch the message's decorator set."""
+        self._message_decorators = value
 
     @property
     def _signatures(self) -> Dict[str, FieldSignature]:
@@ -277,7 +264,7 @@ class AgentMessage(BaseModel):
             The ThreadDecorator for this message
 
         """
-        return self._message_thread
+        return self._decorators.get("thread")
 
     @_thread.setter
     def _thread(self, val: ThreadDecorator):
@@ -287,7 +274,7 @@ class AgentMessage(BaseModel):
         Args:
             val: ThreadDecorator to set as the thread
         """
-        self._message_thread = val
+        self._decorators["thread"] = val
 
     @property
     def _thread_id(self) -> str:
@@ -304,8 +291,9 @@ class AgentMessage(BaseModel):
             msg: The received message containing optional thread information
         """
         if msg:
-            thid = msg._thread and msg._thread.thid or msg._message_id
-            pthid = msg._thread and msg._thread.pthid
+            thread = msg._thread
+            thid = thread and thread.thid or msg._message_id
+            pthid = thread and thread.pthid
             self.assign_thread_id(thid, pthid)
 
     def assign_thread_id(self, thid: str, pthid: str = None):
@@ -317,26 +305,6 @@ class AgentMessage(BaseModel):
             pthid: The parent thread identifier
         """
         self._thread = ThreadDecorator(thid=thid, pthid=pthid)
-
-    @property
-    def _timing(self) -> TimingDecorator:
-        """Accessor for the timing decorator."""
-        return self._message_timing
-
-    @_timing.setter
-    def _timing(self, val: TimingDecorator):
-        """Set the timing decorator."""
-        self._message_timing = val
-
-    @property
-    def _transport(self) -> TransportDecorator:
-        """Accessor for the transport decorator."""
-        return self._message_transport
-
-    @_transport.setter
-    def _transport(self, val: TransportDecorator):
-        """Set the transport decorator."""
-        self._message_transport = val
 
 
 class AgentMessageSchema(BaseModelSchema):
@@ -351,20 +319,6 @@ class AgentMessageSchema(BaseModelSchema):
     # Avoid clobbering keywords
     _type = fields.Str(data_key="@type", dump_only=True, required=False)
     _id = fields.Str(data_key="@id", required=False)
-
-    # Localization decorator
-    _l10n = fields.Nested(LocalizationDecoratorSchema, data_key="~l10n", required=False)
-
-    # Thread decorator
-    _thread = fields.Nested(ThreadDecoratorSchema, data_key="~thread", required=False)
-
-    # Timing decorator
-    _timing = fields.Nested(TimingDecoratorSchema, data_key="~timing", required=False)
-
-    # Transport decorator
-    _transport = fields.Nested(
-        TransportDecoratorSchema, data_key="~transport", required=False
-    )
 
     def __init__(self, *args, **kwargs):
         """
@@ -381,7 +335,14 @@ class AgentMessageSchema(BaseModelSchema):
                     self.__class__.__name__
                 )
             )
+        self._decorators = DecoratorSet()
+        self._decorators_dict = None
         self._signatures = {}
+
+    @pre_load
+    def extract_decorators(self, data):
+        """Extract decorator values."""
+        return self._decorators.extract_decorators(data)
 
     @pre_load
     def parse_signed_fields(self, data):
@@ -431,6 +392,21 @@ class AgentMessageSchema(BaseModelSchema):
         return processed
 
     @post_load
+    def populate_decorators(self, obj):
+        """
+        Post-load hook to populate decorators on the message.
+
+        Args:
+            obj: The AgentMessage object
+
+        Returns:
+            The AgentMessage object with populated decorators
+
+        """
+        obj._decorators = self._decorators
+        return obj
+
+    @post_load
     def populate_signatures(self, obj):
         """
         Post-load hook to populate signatures on the message.
@@ -447,15 +423,27 @@ class AgentMessageSchema(BaseModelSchema):
         return obj
 
     @pre_dump
-    def copy_signatures(self, obj):
+    def check_decorators(self, obj):
         """
-        Pre-dump hook to copy the message signatures into the serialized output.
+        Pre-dump hook to validate and load the message decorators.
 
         Args:
             obj: The AgentMessage object
 
-        Returns:
-            The modified object
+        Raises:
+            BaseModelError: If a decorator does not validate
+
+        """
+        self._decorators_dict = obj._decorators.to_dict()
+        return obj
+
+    @pre_dump
+    def check_signatures(self, obj):
+        """
+        Pre-dump hook to check for the presence of required message signatures.
+
+        Args:
+            obj: The AgentMessage object
 
         Raises:
             ValidationError: If a signature is missing
@@ -469,6 +457,22 @@ class AgentMessageSchema(BaseModelSchema):
                     "Missing signature for field: {}".format(field_name)
                 )
         return obj
+
+    @post_dump
+    def dump_decorators(self, data):
+        """
+        Post-dump hook to write the decorators to the serialized output.
+
+        Args:
+            obj: The serialized data
+
+        Returns:
+            The modified data
+
+        """
+        result = self._decorators_dict.copy()
+        result.update(data)
+        return result
 
     @post_dump
     def replace_signatures(self, data):
