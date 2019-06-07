@@ -59,3 +59,18 @@ class TestDecoratorSet(TestCase):
 
         result = decors.to_dict()
         assert result == message
+
+    def test_field_decorator(self):
+
+        decor_value = {}
+        message = {"test~decorator": decor_value, "one": "TWO"}
+
+        decors = BaseDecoratorSet()
+        remain = decors.extract_decorators(message)
+
+        # check original is unmodified
+        assert "test~decorator" in message
+
+        assert decors.field("test")
+        assert decors.field("test")["decorator"] is decor_value
+        assert remain == {"one": "TWO"}

@@ -20,8 +20,45 @@ class BaseDecoratorSet(OrderedDict):
 
     def __init__(self, models: dict = None):
         """Initialize a decorator set."""
+        self._fields = OrderedDict()
         self._models: Mapping[str, Type[BaseModel]] = models.copy() if models else {}
         self._prefix = DECORATOR_PREFIX
+
+    def copy(self) -> "BaseDecoratorSet":
+        """Return a copy of the decorator set."""
+        result = super().copy()
+        result._fields = OrderedDict(
+            (name, field.copy()) for (name, field) in self._fields.items()
+        )
+        result._models = self._models.copy()
+        result._prefix = self._prefix
+        return result
+
+    def _init_field(self) -> "BaseDecoratorSet":
+        """Create a nested decorator set for a named field."""
+        return self.__class__(self._models)
+
+    def field(self, name: str) -> "BaseDecoratorSet":
+        """Access a named decorated field."""
+        if name not in self._fields:
+            self._fields[name] = self._init_field()
+        return self._fields[name]
+
+    def has_field(self, name: str) -> bool:
+        """Check for the existence of a named decorator field."""
+        return bool(self._fields.get(name))
+
+    def remove_field(self, name: str):
+        """Remove a named decorated field."""
+        if name in self._fields:
+            del self._fields[name]
+
+    @property
+    def fields(self) -> OrderedDict:
+        """Acessor for the set of currently defined fields."""
+        return OrderedDict(
+            (name, field) for (name, field) in self._fields.items() if field
+        )
 
     @property
     def models(self) -> dict:
@@ -47,16 +84,19 @@ class BaseDecoratorSet(OrderedDict):
             raise ValueError(f"Unsupported decorator value: {value}")
         self.load_decorator(key, value)
 
-    def load_decorator(self, key: str, value):
+    def load_decorator(self, key: str, value, serialized=False):
         """Convert a decorator value to its loaded representation."""
         if key in self._models and isinstance(value, (dict, OrderedDict)):
-            value = self._models[key](**value)
+            if serialized:
+                value = self._models[key].deserialize(value)
+            else:
+                value = self._models[key](**value)
         if value is not None:
             super().__setitem__(key, value)
         elif key in self:
             del self[key]
 
-    def extract_decorators(self, message: Mapping) -> OrderedDict:
+    def extract_decorators(self, message: Mapping, serialized=True) -> OrderedDict:
         """Extract decorators and return the remaining properties."""
         remain = OrderedDict()
         if message:
@@ -64,24 +104,31 @@ class BaseDecoratorSet(OrderedDict):
             for key, value in message.items():
                 if key.startswith(self._prefix):
                     key = key[pfx_len:]
-                    self.load_decorator(key, value)
+                    self.load_decorator(key, value, serialized)
+                elif self._prefix in key:
+                    field, key = key.split(self._prefix, 1)
+                    self.field(field).load_decorator(key, value, serialized)
                 else:
                     remain[key] = value
         return remain
 
-    def to_dict(self) -> OrderedDict:
+    def to_dict(self, prefix: str = None) -> OrderedDict:
         """Convert to a dictionary (serialize).
 
         Raises:
             BaseModelError: on decorator validation errors
 
         """
+        if prefix is None:
+            prefix = self._prefix
         result = OrderedDict()
         for k in self:
             value = self[k]
             if isinstance(value, BaseModel):
                 value = value.serialize()
-            result[self._prefix + k] = value
+            result[prefix + k] = value
+        for k in self._fields:
+            result.update(self._fields[k].to_dict(k + prefix))
         return result
 
     def __repr__(self) -> str:

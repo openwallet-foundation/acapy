@@ -2,7 +2,7 @@ from asynctest import TestCase as AsyncTestCase
 from marshmallow import fields
 
 from ..agent_message import AgentMessage, AgentMessageSchema
-from ..models.field_signature import FieldSignature
+from ..decorators.signature_decorator import SignatureDecorator
 from ...wallet.basic import BasicWallet
 
 
@@ -66,7 +66,7 @@ class TestAgentMessage(AsyncTestCase):
         msg.value = "Test value"
         await msg.sign_field("value", key_info.verkey, wallet)
         sig = msg.get_signature("value")
-        assert isinstance(sig, FieldSignature)
+        assert isinstance(sig, SignatureDecorator)
 
         assert await sig.verify(wallet)
         assert await msg.verify_signed_field("value", wallet) == key_info.verkey

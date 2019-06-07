@@ -9,7 +9,9 @@ from indy_catalyst_agent.wallet.error import (
     WalletNotFoundError,
 )
 
-from indy_catalyst_agent.messaging.models.field_signature import FieldSignature
+from indy_catalyst_agent.messaging.decorators.signature_decorator import (
+    SignatureDecorator,
+)
 
 
 @pytest.fixture()
@@ -276,7 +278,7 @@ class TestBasicWallet:
         key_info = await wallet.create_signing_key()
         msg = {"test": "signed field"}
         timestamp = int(time.time())
-        sig = await FieldSignature.create(msg, key_info.verkey, wallet, timestamp)
+        sig = await SignatureDecorator.create(msg, key_info.verkey, wallet, timestamp)
         verified = await sig.verify(wallet)
         assert verified
         msg_decode, ts_decode = sig.decode()
