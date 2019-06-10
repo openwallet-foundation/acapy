@@ -26,7 +26,7 @@ async def connections_send_ping(request: web.BaseRequest):
     except StorageNotFoundError:
         return web.HTTPNotFound()
 
-    if connection.is_active:
+    if connection.is_active or connection.state == connection.STATE_RESPONSE:
         msg = Ping()
         await outbound_handler(msg, connection_id=connection_id)
 
