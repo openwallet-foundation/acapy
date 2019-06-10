@@ -243,19 +243,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
             "in": "query",
             "schema": {"type": "string"},
             "required": False,
-        },
-        {
-            "name": "my_router_did",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "their_role",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
+        }
     ],
 )
 @response_schema(ConnectionRecordSchema(), 200)
@@ -279,11 +267,7 @@ async def connections_accept_request(request: web.BaseRequest):
         return web.HTTPNotFound()
     connection_mgr = ConnectionManager(context)
     my_endpoint = request.query.get("my_endpoint") or None
-    my_router_did = request.query.get("my_router_did") or None
-    their_role = request.query.get("their_role") or None
-    request = await connection_mgr.create_response(
-        connection, my_endpoint, my_router_did, their_role
-    )
+    request = await connection_mgr.create_response(connection, my_endpoint)
     await outbound_handler(request, connection_id=connection.connection_id)
     return web.json_response(connection.serialize())
 
