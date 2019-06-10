@@ -79,6 +79,41 @@ class ClassLoader:
 
         return imported_class
 
+
+    # TODO: dedupe logic in these functions
+    @classmethod
+    def load(cls, path: str, default_module: str = None):
+        """
+        Resolve a complete class path (ie. typing.Dict) to the class itself.
+
+        Args:
+            class_name: Class name
+            default_module:  (Default value = None)
+
+        Returns:
+            The resolved class
+
+        Raises:
+            ClassNotFoundError: If the class could not be resolved at path
+            ModuleLoadError: If there was an error loading the module
+
+        """
+        
+        if "." in class_name:
+            # import module and find class
+            mod_path, class_name = class_name.rsplit(".", 1)
+        elif default_module:
+            mod_path = default_module
+        else:
+            raise ClassNotFoundError(f"Cannot resolve class name: {class_name}")
+
+        try:
+            mod = import_module(mod_path)
+        except ModuleNotFoundError:
+            raise ModuleLoadError(f"Unable to import module: {mod_path}")
+
+        return mod
+
     @classmethod
     def load_class(cls, class_name: str, default_module: str = None):
         """
@@ -96,6 +131,9 @@ class ClassLoader:
             ModuleLoadError: If there was an error loading the module
 
         """
+
+        # TODO: Add option to enforce inheritance of specified base class
+
         if "." in class_name:
             # import module and find class
             mod_path, class_name = class_name.rsplit(".", 1)
