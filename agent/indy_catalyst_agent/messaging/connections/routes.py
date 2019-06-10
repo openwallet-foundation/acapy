@@ -272,6 +272,31 @@ async def connections_accept_request(request: web.BaseRequest):
     return web.json_response(connection.serialize())
 
 
+@docs(
+    tags=["connection"], summary="Assign another connection as the inbound connection"
+)
+async def connections_establish_inbound(request: web.BaseRequest):
+    """
+    Request handler for setting the inbound connection on a connection record.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    connection_id = request.match_info["id"]
+    outbound_handler = request.app["outbound_message_router"]
+    inbound_connection_id = request.match_info["ref_id"]
+    try:
+        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
+    except StorageNotFoundError:
+        return web.HTTPNotFound()
+    connection_mgr = ConnectionManager(context)
+    await connection_mgr.establish_inbound(
+        connection, inbound_connection_id, outbound_handler
+    )
+    return web.HTTPOk()
+
+
 @docs(tags=["connection"], summary="Remove an existing connection record")
 async def connections_remove(request: web.BaseRequest):
     """
@@ -303,6 +328,10 @@ async def register(app: web.Application):
                 "/connections/{id}/accept-invitation", connections_accept_invitation
             ),
             web.post("/connections/{id}/accept-request", connections_accept_request),
+            web.post(
+                "/connections/{id}/establish-inbound/{ref_id}",
+                connections_establish_inbound,
+            ),
             web.post("/connections/{id}/remove", connections_remove),
         ]
     )

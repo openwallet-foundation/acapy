@@ -21,6 +21,7 @@ from ...wallet.error import WalletNotFoundError
 from ...wallet.util import bytes_to_b64
 
 from ..message_delivery import MessageDelivery
+from ..routing.manager import RoutingManager
 from ..util import send_webhook
 
 from .messages.connection_invitation import ConnectionInvitation
@@ -141,8 +142,8 @@ class ConnectionManager:
         )
 
         # Create connection invitation message
-        # Note: routing keys would need to be filled in later
-        # Would be better to use create_did_document and convert the result
+        # Note: Need to split this into two stages to support inbound routing of invites
+        # Would want to reuse create_did_document and convert the result
         invitation = ConnectionInvitation(
             label=my_label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint
         )
@@ -656,7 +657,6 @@ class ConnectionManager:
         router_id = inbound_connection_id
         routing_keys = []
         router_idx = 1
-        wallet = None
         while router_id:
             # look up routing connection information
             router = await ConnectionRecord.retrieve_by_id(self.context, router_id)
@@ -664,18 +664,6 @@ class ConnectionManager:
                 raise ConnectionManagerError(
                     f"Router connection not active: {router_id}"
                 )
-            if not wallet:
-                wallet: BaseWallet = await self.context.inject(BaseWallet)
-            my_rk_info = await wallet.get_local_did(router.my_did)
-            rk = PublicKey(
-                my_info.did,
-                f"routing-{router_idx}",
-                my_rk_info.verkey,
-                PublicKeyType.ED25519_SIG_2018,
-                did_controller,
-                True,
-            )
-            routing_keys.append(rk)
             routing_doc = await self.fetch_did_document(router.their_did)
             if not routing_doc.service:
                 raise ConnectionManagerError(
@@ -686,6 +674,19 @@ class ConnectionManager:
                     raise ConnectionManagerError(
                         "Routing DIDDoc service has no service endpoint"
                     )
+                if not service.recip_keys:
+                    raise ConnectionManagerError(
+                        "Routing DIDDoc service has no recipient key(s)"
+                    )
+                rk = PublicKey(
+                    my_info.did,
+                    f"routing-{router_idx}",
+                    service.recip_keys[0].value,
+                    PublicKeyType.ED25519_SIG_2018,
+                    did_controller,
+                    True,
+                )
+                routing_keys.append(rk)
                 my_endpoint = service.endpoint
                 break
             router_id = router.inbound_connection_id
@@ -840,3 +841,82 @@ class ConnectionManager:
                 routing_keys=[key.value for key in (service.routing_keys or ())],
                 sender_key=sender_verkey,
             )
+
+    async def establish_inbound(
+        self,
+        connection: ConnectionRecord,
+        inbound_connection_id: str,
+        outbound_handler
+    ) -> str:
+        """Assign the inbound routing connection for a connection record.
+
+        Returns: the current routing state (request or done)
+
+        """
+
+        # The connection must have a verkey, but in the case of a received
+        # invitation we might not have created one yet
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        if connection.my_did:
+            my_info = await wallet.get_local_did(connection.my_did)
+        else:
+            # Create new DID for connection
+            my_info = await wallet.create_local_did()
+            connection.my_did = my_info.did
+
+        try:
+            router = await ConnectionRecord.retrieve_by_id(
+                self.context,
+                inbound_connection_id
+            )
+        except StorageNotFoundError:
+            raise ConnectionManagerError(
+                f"Routing connection not found: {inbound_connection_id}"
+            )
+        if not router.is_active:
+            raise ConnectionManagerError(
+                f"Routing connection is not active: {inbound_connection_id}"
+            )
+        connection.inbound_connection_id = inbound_connection_id
+
+        route_mgr = RoutingManager(self.context)
+
+        await route_mgr.send_create_route(
+            inbound_connection_id,
+            my_info.verkey,
+            outbound_handler
+        )
+        connection.routing_state = ConnectionRecord.ROUTING_STATE_REQUEST
+        await connection.save(self.context)
+        asyncio.ensure_future(send_webhook("connections", connection.serialize()))
+        return connection.routing_state
+
+    async def update_inbound(
+        self,
+        inbound_connection_id: str,
+        recip_verkey: str,
+        routing_state: str
+    ):
+        """Activate connections once a route has been established.
+
+        Looks up pending connections associated with the inbound routing
+        connection and marks the routing as complete.
+        """
+        conns = await ConnectionRecord.query(
+            self.context, {
+                "inbound_connection_id": inbound_connection_id,
+            }
+        )
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+
+        for connection in conns:
+            # check the recipient key
+            if not connection.my_did:
+                continue
+            conn_info = await wallet.get_local_did(connection.my_did)
+            if conn_info.verkey == recip_verkey:
+                connection.routing_state = routing_state
+                await connection.save(self.context)
+                asyncio.ensure_future(
+                    send_webhook("connections", connection.serialize())
+                )

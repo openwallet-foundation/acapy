@@ -4,13 +4,16 @@ import json
 from typing import Sequence
 
 from ...error import BaseError
+from ...storage.base import BaseStorage, StorageRecord
+from ...storage.error import StorageError, StorageDuplicateError, StorageNotFoundError
+
+from ..request_context import RequestContext
+from ..util import time_now
+
+from .messages.route_update_request import RouteUpdateRequest
 from .models.route_record import RouteRecord
 from .models.route_update import RouteUpdate
 from .models.route_updated import RouteUpdated
-from ..request_context import RequestContext
-from ...storage.base import BaseStorage, StorageRecord
-from ...storage.error import StorageError, StorageDuplicateError, StorageNotFoundError
-from ..util import time_now
 
 
 class RoutingManagerError(BaseError):
@@ -80,13 +83,13 @@ class RoutingManager:
         )
 
     async def get_routes(
-        self, connection_id: str = None, tag_filter: dict = None
+        self, client_connection_id: str = None, tag_filter: dict = None
     ) -> Sequence[RouteRecord]:
         """
         Fetch all routes associated with the current connection.
 
         Args:
-            connection_id: The ID of the connection record
+            client_connection_id: The ID of the connection record
             tag_filter: An optional dictionary of tag filters
 
         Returns:
@@ -94,8 +97,8 @@ class RoutingManager:
 
         """
         filters = {}
-        if connection_id:
-            filters["connection_id"] = connection_id
+        if client_connection_id:
+            filters["connection_id"] = client_connection_id
         if tag_filter:
             for key in ("recipient_key",):
                 if key not in tag_filter:
@@ -119,34 +122,34 @@ class RoutingManager:
         return results
 
     async def create_route_record(
-        self, connection_id: str = None, recipient_key: str = None
+        self, client_connection_id: str = None, recipient_key: str = None
     ) -> RouteRecord:
         """
         Create and store a new RouteRecord.
 
         Args:
-            connection_id: The ID of the connection record
+            client_connection_id: The ID of the connection record
             recipient_key: The recipient verkey of the route
 
         Returns:
             The new routing record
 
         """
-        if not connection_id:
-            raise RoutingManagerError("Missing connection_id")
+        if not client_connection_id:
+            raise RoutingManagerError("Missing client_connection_id")
         if not recipient_key:
             raise RoutingManagerError("Missing recipient_key")
         value = {"created_at": time_now(), "updated_at": time_now()}
         record = StorageRecord(
             self.RECORD_TYPE,
             json.dumps(value),
-            {"connection_id": connection_id, "recipient_key": recipient_key},
+            {"connection_id": client_connection_id, "recipient_key": recipient_key},
         )
         storage: BaseStorage = await self._context.inject(BaseStorage)
         await storage.add_record(record)
         result = RouteRecord(
             record_id=record.id,
-            connection_id=connection_id,
+            connection_id=client_connection_id,
             recipient_key=recipient_key,
             created_at=value["created_at"],
             updated_at=value["updated_at"],
@@ -162,17 +165,17 @@ class RoutingManager:
             )
 
     async def update_routes(
-        self, connection_id: str, updates: Sequence[RouteUpdate]
+        self, client_connection_id: str, updates: Sequence[RouteUpdate]
     ) -> Sequence[RouteUpdated]:
         """
         Update routes associated with the current connection.
 
         Args:
-            connection_id: The ID of the connection record
+            client_connection_id: The ID of the connection record
             updates: The sequence of route updates (create/delete) to perform.
 
         """
-        exist_routes = await self.get_routes(connection_id)
+        exist_routes = await self.get_routes(client_connection_id)
         exist = {}
         for route in exist_routes:
             exist[route.recipient_key] = route
@@ -190,7 +193,7 @@ class RoutingManager:
                     result.result = result.RESULT_NO_CHANGE
                 else:
                     try:
-                        await self.create_route_record(connection_id, recip_key)
+                        await self.create_route_record(client_connection_id, recip_key)
                     except RoutingManagerError:
                         result.result = result.RESULT_SERVER_ERROR
                     else:
@@ -209,3 +212,18 @@ class RoutingManager:
                 result.result = result.RESULT_CLIENT_ERROR
             updated.append(result)
         return updated
+
+    async def send_create_route(
+        self, router_connection_id: str, recip_key: str, outbound_handler
+    ):
+        """Create and send a route update request.
+
+        Returns: the current routing state (request or done)
+
+        """
+        msg = RouteUpdateRequest(
+            updates=[
+                RouteUpdate(recipient_key=recip_key, action=RouteUpdate.ACTION_CREATE)
+            ]
+        )
+        await outbound_handler(msg, connection_id=router_connection_id)
