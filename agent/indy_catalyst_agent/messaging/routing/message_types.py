@@ -12,10 +12,11 @@ ROUTE_UPDATE_RESPONSE = f"{MESSAGE_FAMILY}/route-update-response"
 MESSAGE_PACKAGE = "indy_catalyst_agent.messaging.routing.messages"
 
 MESSAGE_TYPES = {
+    FORWARD: f"{MESSAGE_PACKAGE}.forward.Forward",
     ROUTE_QUERY_REQUEST: f"{MESSAGE_PACKAGE}.route_query_request.RouteQueryRequest",
     ROUTE_QUERY_RESPONSE: f"{MESSAGE_PACKAGE}.route_query_response.RouteQueryResponse",
     ROUTE_UPDATE_REQUEST: f"{MESSAGE_PACKAGE}.route_update_request.RouteUpdateRequest",
     ROUTE_UPDATE_RESPONSE: (
-        f"{MESSAGE_PACKAGE}.route_update_request.RouteUpdateResponse"
+        f"{MESSAGE_PACKAGE}.route_update_response.RouteUpdateResponse"
     ),
 }
