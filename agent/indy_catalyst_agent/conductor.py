@@ -147,6 +147,22 @@ class Conductor:
             except Exception:
                 self.logger.exception("Unable to initialize administration API")
 
+        # Dynamically register externally loaded protocol message types
+        for protocol_module_path in self.settings.get("external_protocols", []):
+            try:
+                external_module = ClassLoader.load_module(
+                    f"{protocol_module_path}.message_types"
+                )
+                self.protocol_registry.register_message_types(
+                    external_module.MESSAGE_TYPES
+                )
+            except Exception as e:
+                self.logger.error(
+                    f"Failed to load external protocol module '{protocol_module_path}'."
+                    + "\n"
+                    + str(e)
+                )
+
         self.context = context
         self.dispatcher = Dispatcher(self.context)
 
