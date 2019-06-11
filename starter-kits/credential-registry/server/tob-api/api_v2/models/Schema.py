@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 
 from .Auditable import Auditable
 
@@ -12,4 +11,4 @@ class Schema(Auditable):
     class Meta:
         db_table = "schema"
         unique_together = (("name", "version", "origin_did"),)
-        ordering = ('id',)
+        ordering = ("id",)

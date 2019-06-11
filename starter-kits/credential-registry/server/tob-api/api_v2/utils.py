@@ -1,15 +1,12 @@
-
 """
 A collection of utility classes for TOB
 """
 
-from datetime import datetime, timedelta
 import logging
-import os
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db import connection
-
 from haystack.query import SearchQuerySet
 from pysolr import SolrError
 
@@ -49,12 +46,14 @@ def model_counts(model_cls, cursor=None, optimize=None):
             close = True
         cursor.execute(
             "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname=%s",
-            [model_cls._meta.db_table])
+            [model_cls._meta.db_table],
+        )
         row = cursor.fetchone()
     finally:
         if close:
             cursor.close()
     return row[0]
+
 
 def record_count(model_cls, cursor=None):
     close = False
@@ -62,14 +61,15 @@ def record_count(model_cls, cursor=None):
         if not cursor:
             cursor = connection.cursor()
             close = True
-        query = 'SELECT count(*) FROM %s' % model_cls._meta.db_table
+        query = "SELECT count(*) FROM %s" % model_cls._meta.db_table
         cursor.execute(query)
         row = cursor.fetchone()
     finally:
         if close:
             cursor.close()
     return row[0]
-    
+
+
 def solr_counts():
     total_q = SearchQuerySet()
     latest_q = total_q.filter(latest=True)

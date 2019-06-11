@@ -4,9 +4,11 @@ from .Auditable import Auditable
 
 
 class Address(Auditable):
-    reindex_related = ['credential']
+    reindex_related = ["credential"]
 
-    credential = models.ForeignKey("Credential", related_name="addresses", on_delete=models.CASCADE)
+    credential = models.ForeignKey(
+        "Credential", related_name="addresses", on_delete=models.CASCADE
+    )
     addressee = models.TextField(null=True)
     civic_address = models.TextField(null=True)
     city = models.TextField(null=True)
@@ -16,4 +18,4 @@ class Address(Auditable):
 
     class Meta:
         db_table = "address"
-        ordering = ('id',)
+        ordering = ("id",)
