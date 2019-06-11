@@ -1,7 +1,6 @@
-from datetime import datetime
 import logging
-from queue import Empty, Full, Queue
 import threading
+from queue import Empty, Full, Queue
 
 from haystack.utils import get_identifier
 
@@ -22,7 +21,7 @@ class SolrQueue:
         ids = [instance.id for instance in instances]
         LOGGER.debug("Solr queue add %s", ids)
         try:
-            self._queue.put( (index_cls, using, ids, 0) )
+            self._queue.put((index_cls, using, ids, 0))
         except Full:
             LOGGER.warning("Solr queue full")
 
@@ -30,7 +29,7 @@ class SolrQueue:
         ids = [get_identifier(instance) for instance in instances]
         LOGGER.debug("Solr queue delete %s", ids)
         try:
-            self._queue.put( (index_cls, using, ids, 1) )
+            self._queue.put((index_cls, using, ids, 1))
         except Full:
             LOGGER.warning("Solr queue full")
 
@@ -88,7 +87,12 @@ class SolrQueue:
                 index_cls, using, ids, delete = self._queue.get_nowait()
             except Empty:
                 index_cls = None
-            if last_index and last_index == index_cls and last_using == using and last_del == delete:
+            if (
+                last_index
+                and last_index == index_cls
+                and last_using == using
+                and last_del == delete
+            ):
                 last_ids.update(ids)
             else:
                 if last_index:
@@ -111,7 +115,11 @@ class SolrQueue:
             rows = index.index_queryset(using).filter(id__in=ids)
             backend.update(index, rows)
         else:
-            LOGGER.error("Failed to get backend.  Unable to update %d row(s) in solr queue: %s", len(ids), ids)
+            LOGGER.error(
+                "Failed to get backend.  Unable to update %d row(s) in solr queue: %s",
+                len(ids),
+                ids,
+            )
 
     def remove(self, index_cls, using, ids):
         index = index_cls()
@@ -121,4 +129,8 @@ class SolrQueue:
             # backend.remove has no support for a list of IDs
             backend.conn.delete(id=ids)
         else:
-            LOGGER.error("Failed to get backend.  Unable to update %d row(s) in solr queue: %s", len(ids), ids)
+            LOGGER.error(
+                "Failed to get backend.  Unable to update %d row(s) in solr queue: %s",
+                len(ids),
+                ids,
+            )

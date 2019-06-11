@@ -1,13 +1,12 @@
 from django.conf import settings
 from django.urls import include, path
-from rest_framework.urlpatterns import format_suffix_patterns
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from rest_framework.permissions import AllowAny, DjangoModelPermissionsOrAnonReadOnly
 from rest_framework.routers import SimpleRouter
-from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly, AllowAny
+from rest_framework.urlpatterns import format_suffix_patterns
 
 from api_v2.views import misc, rest, search
-
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
 
 API_METADATA = settings.API_METADATA
 schema_view = get_schema_view(
@@ -43,27 +42,20 @@ router.register(
     search.CredentialTopicSearchView,
     "Credential Topic Search",
 )
+router.register(r"search/credential", search.CredentialSearchView, "Credential Search")
 router.register(
-    r"search/credential",
-    search.CredentialSearchView,
-    "Credential Search",
-)
-router.register(
-    r"search/autocomplete",
-    search.NameAutocompleteView,
-    "Name Autocomplete",
+    r"search/autocomplete", search.NameAutocompleteView, "Name Autocomplete"
 )
 
 # Misc endpoints
 miscPatterns = [
     path("feedback", misc.send_feedback),
     path("quickload", misc.quickload),
+    path("verify", misc.verify_credential),
 ]
 
 swaggerPatterns = [
     path("", schema_view.with_ui("swagger", cache_timeout=None), name="api-docs")
 ]
 
-urlpatterns = format_suffix_patterns(
-    router.urls + miscPatterns + swaggerPatterns
-)
+urlpatterns = format_suffix_patterns(router.urls) + miscPatterns + swaggerPatterns

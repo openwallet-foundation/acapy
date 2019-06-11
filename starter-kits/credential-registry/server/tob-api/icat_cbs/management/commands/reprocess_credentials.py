@@ -1,15 +1,10 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction, DEFAULT_DB_ALIAS
+from django.core.management.base import BaseCommand
+from django.db import DEFAULT_DB_ALIAS
 from django.db.models import signals
 
-from api_indy.indy.credential import CredentialManager
-
-from api_v2.models.Address import Address
-from api_v2.models.Attribute import Attribute
 from api_v2.models.Credential import Credential
-from api_v2.models.Name import Name
-
-from api_indy.tob_anchor.solrqueue import SolrQueue
+from icat_cbs.utils.credential import CredentialManager
+from tob_api.utils.solrqueue import SolrQueue
 
 
 class Command(BaseCommand):
@@ -40,4 +35,6 @@ class Command(BaseCommand):
             mgr.reprocess(credential)
 
             # Now reindex
-            signals.post_save.send(sender=Credential, instance=credential, using=DEFAULT_DB_ALIAS)
+            signals.post_save.send(
+                sender=Credential, instance=credential, using=DEFAULT_DB_ALIAS
+            )
