@@ -14,7 +14,7 @@ from .messages.register import IssuerRegistration
 
 
 @docs(tags=["issuer_registration"], summary="Send an issuer registration to a target")
-@request_schema(SendMessageSchema())
+# @request_schema(SendMessageSchema())
 async def issuer_registration_send(request: web.BaseRequest):
     """
     Request handler for sending an issuer registration message to a connection.

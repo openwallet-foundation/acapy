@@ -76,4 +76,4 @@ class IssuerRegistrationSchema(AgentMessageSchema):
         visible_fields = fields.List(fields.Str, required=False)
 
     fields.Nested(IssuerSchema, required=True)
-    fields.List(CredentialType, required=False)
+    fields.List(fields.Nested(CredentialType), required=False)
