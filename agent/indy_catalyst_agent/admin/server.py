@@ -12,6 +12,8 @@ import aiohttp_cors
 
 from marshmallow import fields, Schema
 
+from ..classloader import ClassLoader
+
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.responder import BaseResponder
 from ..messaging.request_context import RequestContext
@@ -107,7 +109,7 @@ class AdminServer(BaseAdminServer):
 
         for protocol_module_path in self.context.settings.get("external_protocols", []):
             try:
-                routes_module = ClassLoader.load(f"protocol_module_path.routes")
+                routes_module = ClassLoader.load_module(f"{protocol_module_path}.routes")
             except Exception as e:
                 self.logger.error(
                     f"Failed to load external protocol module '{protocol_module_path}'."

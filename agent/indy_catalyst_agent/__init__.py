@@ -333,7 +333,7 @@ def main():
     if args.timing:
         settings["timing.enabled"] = True
 
-    if args.protocols:
+    if args.external_protocols:
         settings["external_protocols"] = args.external_protocols
 
     loop = asyncio.get_event_loop()

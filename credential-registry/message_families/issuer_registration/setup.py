@@ -3,7 +3,7 @@
 import runpy
 from setuptools import setup, find_packages
 
-PACKAGE_NAME = "indy_catalyst_issuer_registration"
+PACKAGE_NAME = "indy-catalyst-issuer-registration"
 version_meta = runpy.run_path("./version.py".format(PACKAGE_NAME))
 VERSION = version_meta["__version__"]
 
