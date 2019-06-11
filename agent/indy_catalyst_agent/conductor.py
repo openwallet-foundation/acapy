@@ -19,6 +19,7 @@ from .cache.base import BaseCache
 from .cache.basic import BasicCache
 from .config.injection_context import InjectionContext
 from .config.provider import CachedProvider, ClassProvider
+from .classloader import ClassLoader
 from .dispatcher import Dispatcher
 from .error import StartupError
 from .logging import LoggingConfigurator
