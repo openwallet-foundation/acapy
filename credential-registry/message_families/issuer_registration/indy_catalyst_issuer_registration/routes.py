@@ -10,11 +10,11 @@ from indy_catalyst_agent.messaging.connections.models.connection_record import (
 )
 from indy_catalyst_agent.storage.error import StorageNotFoundError
 
-from .messages.register import IssuerRegistration
+from .messages.register import IssuerRegistration, IssuerRegistrationSchema
 
 
 @docs(tags=["issuer_registration"], summary="Send an issuer registration to a target")
-# @request_schema(SendMessageSchema())
+@request_schema(IssuerRegistrationSchema())
 async def issuer_registration_send(request: web.BaseRequest):
     """
     Request handler for sending an issuer registration message to a connection.
