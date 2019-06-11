@@ -83,4 +83,4 @@ async def issuer_registration_send(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-    app.add_routes([web.get("/issuer_registration/send", issuer_registration_send)])
+    app.add_routes([web.post("/issuer_registration/send", issuer_registration_send)])
