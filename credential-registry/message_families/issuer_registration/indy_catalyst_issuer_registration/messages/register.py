@@ -75,5 +75,5 @@ class IssuerRegistrationSchema(AgentMessageSchema):
         endpoint = fields.Str(required=False)
         visible_fields = fields.List(fields.Str, required=False)
 
-    fields.Nested(IssuerSchema, required=True)
-    fields.List(fields.Nested(CredentialType), required=False)
+    issuer = fields.Nested(IssuerSchema, required=True)
+    credential_types = fields.List(fields.Nested(CredentialType), required=False)
