@@ -2,7 +2,8 @@
 
 from marshmallow import fields
 
-from ....models.base import BaseModel, BaseModelSchema
+from ...models.base import BaseModel, BaseModelSchema
+
 from .menu_form import MenuForm, MenuFormSchema
 
 

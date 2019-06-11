@@ -9,7 +9,6 @@ from uuid import uuid4
 from ...error import BaseError
 from ...holder.base import BaseHolder
 from ...ledger.base import BaseLedger
-from ...models.thread_decorator import ThreadDecorator
 from ...verifier.base import BaseVerifier
 
 from ..request_context import RequestContext
@@ -207,8 +206,7 @@ class PresentationManager:
         )
 
         # TODO: Find a more elegant way to do this
-        thread = ThreadDecorator(thid=presentation_exchange_record.thread_id)
-        presentation_message._thread = thread
+        presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
 
         # save presentation exchange state
         presentation_exchange_record.state = (

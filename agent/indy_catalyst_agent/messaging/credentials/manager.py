@@ -9,18 +9,16 @@ from ...cache.base import BaseCache
 from ...holder.base import BaseHolder
 from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
-from ...models.thread_decorator import ThreadDecorator
+from ...storage.error import StorageNotFoundError
 
 from ..connections.models.connection_record import ConnectionRecord
 from ..request_context import RequestContext
+from ..util import send_webhook
 
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_request import CredentialRequest
 from .messages.credential_offer import CredentialOffer
 from .models.credential_exchange import CredentialExchange
-
-from ...storage.error import StorageNotFoundError
-from ..util import send_webhook
 
 
 class CredentialManagerError(BaseError):
@@ -108,8 +106,7 @@ class CredentialManager:
             # This thread is a branch of that parent so that the other agent can use the
             # parent thread id to look up its corresponding source credential exchange
             # object as needed
-            thread = ThreadDecorator(pthid=source_credential_exchange.thread_id)
-            credential_message._thread = thread
+            credential_message._thread = {"pthid": source_credential_exchange.thread_id}
 
             return credential_exchange_record, credential_message
 
@@ -238,8 +235,9 @@ class CredentialManager:
         )
 
         # TODO: Find a more elegant way to do this
-        thread = ThreadDecorator(thid=credential_exchange_record.thread_id)
-        credential_request_message._thread = thread
+        credential_request_message._thread = {
+            "thid": credential_exchange_record.thread_id
+        }
 
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_SENT
         credential_exchange_record.credential_request = credential_request
@@ -316,8 +314,7 @@ class CredentialManager:
         credential_message = CredentialIssue(issue=json.dumps(credential))
 
         # TODO: Find a more elegant way to do this
-        thread = ThreadDecorator(thid=credential_exchange_record.thread_id)
-        credential_message._thread = thread
+        credential_message._thread = {"thid": credential_exchange_record.thread_id}
 
         return credential_exchange_record, credential_message
 

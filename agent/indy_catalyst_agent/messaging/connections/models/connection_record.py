@@ -10,12 +10,14 @@ from marshmallow import fields
 
 from ....admin.service import AdminService
 from ....config.injection_context import InjectionContext
-from ..messages.connection_invitation import ConnectionInvitation
-from ..messages.connection_request import ConnectionRequest
-from ....models.base import BaseModel, BaseModelSchema
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
+
+from ...models.base import BaseModel, BaseModelSchema
 from ...util import time_now
+
+from ..messages.connection_invitation import ConnectionInvitation
+from ..messages.connection_request import ConnectionRequest
 
 
 class ConnectionRecord(BaseModel):
