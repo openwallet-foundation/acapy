@@ -5,10 +5,13 @@ from aiohttp_apispec import docs, request_schema
 
 from marshmallow import fields, Schema
 
-from indy_catalyst_agent.messaging.connections.models.connection_record import ConnectionRecord
+from indy_catalyst_agent.messaging.connections.models.connection_record import (
+    ConnectionRecord,
+)
 from indy_catalyst_agent.storage.error import StorageNotFoundError
 
 from .messages.register import IssuerRegistration
+
 
 @docs(tags=["issuer_registration"], summary="Send an issuer registration to a target")
 @request_schema(SendMessageSchema())

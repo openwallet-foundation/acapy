@@ -23,7 +23,7 @@ class IssuerRegistration(AgentMessage):
         message_type = REGISTER
         schema_class = "IssuerRegistrationSchema"
 
-    def __init__(self, *, issuer, credential_types: list = [] ** kwargs):
+    def __init__(self, *, issuer, credential_types: list = [], **kwargs):
         """
         Initialize issuer registration object.
 

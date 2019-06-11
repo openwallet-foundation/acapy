@@ -109,7 +109,10 @@ class AdminServer(BaseAdminServer):
 
         for protocol_module_path in self.context.settings.get("external_protocols", []):
             try:
-                routes_module = ClassLoader.load_module(f"{protocol_module_path}.routes")
+                routes_module_register = ClassLoader.load_module(
+                    f"{protocol_module_path}.routes.register"
+                )
+                await routes_module_register(self.app)
             except Exception as e:
                 self.logger.error(
                     f"Failed to load external protocol module '{protocol_module_path}'."
@@ -117,7 +120,7 @@ class AdminServer(BaseAdminServer):
                     + str(e)
                 )
 
-            await routes_module.register(self.app)
+            
 
         cors = aiohttp_cors.setup(
             self.app,
