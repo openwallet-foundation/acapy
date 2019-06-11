@@ -1,15 +1,13 @@
-from django.conf import settings
-from django.urls import path
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
-from rest_framework.permissions import AllowAny
+from icat_hooks.views import (
+    RegistrationCreateViewSet,
+    RegistrationViewSet,
+    SubscriptionViewSet,
+)
 from rest_framework.routers import SimpleRouter
 from rest_framework.urlpatterns import format_suffix_patterns
 
 # see https://github.com/alanjds/drf-nested-routers
 from rest_framework_nested import routers
-
-from icat_hooks.views import RegistrationCreateViewSet, RegistrationViewSet, SubscriptionViewSet
 
 router = SimpleRouter(trailing_slash=False)
 
