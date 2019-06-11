@@ -13,7 +13,7 @@ ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-RUN echo 2
+RUN echo 3
 
 RUN pip3 install --no-cache-dir -e "git+https://github.com/nrempel/indy-catalyst.git@issuer-registration-message-family#egg=subdir&subdirectory=credential-registry/message_families/issuer_registration"
 

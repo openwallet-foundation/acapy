@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Union
 
-from marshmallow import fields
+from marshmallow import fields, Schema
 
 from indy_catalyst_agent.messaging.agent_message import AgentMessage, AgentMessageSchema
 from indy_catalyst_agent.messaging.util import datetime_now, datetime_to_str
