@@ -61,9 +61,10 @@ async def issuer_registration_send(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
     outbound_handler = request.app["outbound_message_router"]
-    params = await request.body()
+    body = await request.body()
+
+    connection_id = body.get("connection_id")
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
@@ -71,7 +72,9 @@ async def issuer_registration_send(request: web.BaseRequest):
         return web.HTTPNotFound()
 
     if connection.is_active:
-        msg = IssuerRegistration(**body)
+        msg = IssuerRegistration(
+            issuer=body.get("issuer"), credential_types=body.get("credential_types")
+        )
         await outbound_handler(msg, connection_id=connection_id)
 
         await connection.log_activity(
