@@ -1,5 +1,5 @@
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
 
 from django.core.paginator import Paginator
 from rest_framework.pagination import BasePagination, PageNumberPagination
@@ -10,7 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 class EnhancedPageNumberPagination(PageNumberPagination):
     page_size = 10
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 20
 
     def get_paginated_response(self, data):
@@ -40,11 +40,12 @@ class ResultLimitPagination(BasePagination):
     """
     Used by autocomplete to limit the number of results
     """
+
     django_paginator_class = NullDjangoPaginator
     result_limit = 10
 
     def paginate_queryset(self, queryset, request, view=None):
-        return list(queryset[:self.result_limit])
+        return list(queryset[: self.result_limit])
 
     def get_paginated_response(self, data):
         count = len(data)
