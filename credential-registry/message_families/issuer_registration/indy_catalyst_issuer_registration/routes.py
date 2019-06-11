@@ -48,6 +48,7 @@ class IssuerRegistrationRequestSchema(Schema):
 
     issuer = fields.Nested(IssuerSchema, required=True)
     credential_types = fields.List(fields.Nested(CredentialType), required=False)
+    connection_id = fields.Str(required=True)
 
 
 @docs(tags=["issuer_registration"], summary="Send an issuer registration to a target")
@@ -62,7 +63,7 @@ async def issuer_registration_send(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
-    body = await request.body()
+    body = await request.json()
 
     connection_id = body.get("connection_id")
 
