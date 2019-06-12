@@ -1,38 +1,36 @@
-from rest_framework import status
+import logging
+
+from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import permissions
 
-from icat_cbs.serializers.indy import IndyAgentCallbackSerializer
+from icat_cbs.utils.credential import Credential, CredentialManager
+from icat_cbs.utils.issuer import IssuerManager
 
-from api_indy.views.indy import store_credential_int
+LOGGER = logging.getLogger(__name__)
 
-import json
-
-
-TOPIC_CONNECTIONS   = "connections"
-TOPIC_CREDENTIALS   = "credentials"
+TOPIC_CONNECTIONS = "connections"
+TOPIC_CREDENTIALS = "credentials"
 TOPIC_PRESENTATIONS = "presentations"
 TOPIC_GET_ACTIVE_MENU = "get-active-menu"
 TOPIC_PERFORM_MENU_ACTION = "perform-menu-action"
+TOPIC_REGISTER_ISSUER = "register-issuer"
 
 
-@api_view(['POST',])
-@permission_classes((permissions.AllowAny, ))
+@api_view(["POST"])
+@permission_classes((permissions.AllowAny,))
 def agent_callback(request, topic):
     message = request.data
-    serializer_class = IndyAgentCallbackSerializer
 
     # dispatch based on the topic type
     if topic == TOPIC_CONNECTIONS:
-        return handle_connections(message['state'], message)
+        return handle_connections(message["state"], message)
 
     elif topic == TOPIC_CREDENTIALS:
-        return handle_credentials(message['state'], message)
+        return handle_credentials(message["state"], message)
 
     elif topic == TOPIC_PRESENTATIONS:
-        return handle_presentations(message['state'], message)
+        return handle_presentations(message["state"], message)
 
     elif topic == TOPIC_GET_ACTIVE_MENU:
         return handle_get_active_menu(message)
@@ -40,9 +38,12 @@ def agent_callback(request, topic):
     elif topic == TOPIC_PERFORM_MENU_ACTION:
         return handle_perform_menu_action(message)
 
+    elif topic == TOPIC_REGISTER_ISSUER:
+        return handle_register_issuer(message)
+
     else:
         print("Callback: topic=", topic, ", message=", message)
-        return Response("Invalid topic: "+topic, status=status.HTTP_400_BAD_REQUEST)
+        return Response("Invalid topic: " + topic, status=status.HTTP_400_BAD_REQUEST)
 
 
 def handle_connections(state, message):
@@ -99,30 +100,39 @@ def handle_credentials(state, message):
             "thread_id": "..."
         }
     """
-    #global admin_url
-    credential_exchange_id = message['credential_exchange_id']
-    print("Credential: state=", state, ", credential_exchange_id=", credential_exchange_id)
+    # global admin_url
+    credential_exchange_id = message["credential_exchange_id"]
+    print(
+        "Credential: state=", state, ", credential_exchange_id=", credential_exchange_id
+    )
 
-    if state == 'offer_received':
+    if state == "offer_received":
         print("After receiving credential offer, send credential request")
-        #resp = requests.post(admin_url + '/credential_exchange/' + credential_exchange_id + '/send-request')
-        #assert resp.status_code == 200
+        # resp = requests.post(admin_url + '/credential_exchange/' + credential_exchange_id + '/send-request')
+        # assert resp.status_code == 200
         return Response("")
 
-    elif state == 'stored':
+    elif state == "stored":
         print("After stored credential in wallet")
         # TBD credential info should come with the message
-        #resp = requests.get(admin_url + '/credential/' + message['credential_id'])
-        #assert resp.status_code == 200
+        # resp = requests.get(admin_url + '/credential/' + message['credential_id'])
+        # assert resp.status_code == 200
         print("Stored credential:")
-        print(message['credential'])
-        print("credential_id", message['credential_id'])
-        print("credential_definition_id", message['credential_definition_id'])
-        print("schema_id", message['schema_id'])
-        print("credential_request_metadata", message['credential_request_metadata'])
+        print(message["credential"])
+        print("credential_id", message["credential_id"])
+        print("credential_definition_id", message["credential_definition_id"])
+        print("schema_id", message["schema_id"])
+        print("credential_request_metadata", message["credential_request_metadata"])
 
-        return store_credential_int({"credential_data": message['credential'],
-            "credential_request_metadata": message['credential_request_metadata']})
+        credential_data = message["credential"]
+
+        LOGGER.info(credential_data)
+
+        credential = Credential(credential_data, wallet_id=credential_data["referent"])
+        credential_manager = CredentialManager()
+        credential_manager.process(credential)
+
+        return Response({"success": True, "result": credential_data["referent"]})
 
     # TODO other scenarios
     return Response("")
@@ -145,3 +155,13 @@ def handle_perform_menu_action(message):
     print("handle_perform_menu_action()", message)
     return Response("")
 
+
+def handle_register_issuer(state, message):
+    issuer_manager = IssuerManager()
+
+    # TODO: check message structure is what register_issuer expects
+    data = message.json()
+    didauth = message["didauth"]
+
+    updated = issuer_manager.register_issuer(didauth, data)
+    return {"success": True, "result": updated}

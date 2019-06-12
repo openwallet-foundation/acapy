@@ -9,7 +9,7 @@ from typing import Mapping
 
 from marshmallow import fields
 
-from .base import BaseModel, BaseModelSchema
+from ..models.base import BaseModel, BaseModelSchema
 
 
 class ThreadDecorator(BaseModel):
@@ -49,8 +49,8 @@ class ThreadDecorator(BaseModel):
         super(ThreadDecorator, self).__init__()
         self._thid = thid
         self._pthid = pthid
-        self._sender_order = sender_order or 0
-        self._received_orders = received_orders and dict(received_orders) or {}
+        self._sender_order = sender_order or None
+        self._received_orders = received_orders and dict(received_orders) or None
 
     @property
     def thid(self):

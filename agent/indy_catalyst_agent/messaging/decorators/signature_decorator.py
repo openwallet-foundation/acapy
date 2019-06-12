@@ -7,18 +7,19 @@ import time
 
 from marshmallow import fields
 
-from .base import BaseModel, BaseModelSchema
-from ..wallet.base import BaseWallet
-from ..wallet.util import b64_to_bytes, bytes_to_b64
+from ...wallet.base import BaseWallet
+from ...wallet.util import b64_to_bytes, bytes_to_b64
+
+from ..models.base import BaseModel, BaseModelSchema
 
 
-class FieldSignature(BaseModel):
+class SignatureDecorator(BaseModel):
     """Class representing a field value signed by a known verkey."""
 
     class Meta:
-        """FieldSignature metadata."""
+        """SignatureDecorator metadata."""
 
-        schema_class = "FieldSignatureSchema"
+        schema_class = "SignatureDecoratorSchema"
 
     TYPE_ED25519SHA512 = (
         "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single"
@@ -49,12 +50,12 @@ class FieldSignature(BaseModel):
     @classmethod
     async def create(
         cls, value, signer: str, wallet: BaseWallet, timestamp=None
-    ) -> "FieldSignature":
+    ) -> "SignatureDecorator":
         """
         Create a Signature.
 
-        Sign a field value and return a newly constructed `FieldSignature` representing
-        the resulting signature.
+        Sign a field value and return a newly constructed `SignatureDecorator`
+        representing the resulting signature.
 
         Args:
             value: Value to sign
@@ -62,7 +63,7 @@ class FieldSignature(BaseModel):
             wallet: The wallet to use for the signature
 
         Returns:
-            The created `FieldSignature` object
+            The created `SignatureDecorator` object
 
         """
         if not timestamp:
@@ -73,7 +74,7 @@ class FieldSignature(BaseModel):
         timestamp_bin = struct.pack("!Q", int(timestamp))
         msg_combined_bin = timestamp_bin + json.dumps(value).encode("ascii")
         signature_bin = await wallet.sign_message(msg_combined_bin, signer)
-        return FieldSignature(
+        return SignatureDecorator(
             signature_type=cls.TYPE_ED25519SHA512,
             signature=bytes_to_b64(signature_bin, urlsafe=True),
             sig_data=bytes_to_b64(msg_combined_bin, urlsafe=True),
@@ -119,16 +120,15 @@ class FieldSignature(BaseModel):
         )
 
 
-class FieldSignatureSchema(BaseModelSchema):
-    """FieldSignature schema."""
+class SignatureDecoratorSchema(BaseModelSchema):
+    """SignatureDecorator schema."""
 
     class Meta:
-        """FieldSignatureSchema metadata."""
+        """SignatureDecoratorSchema metadata."""
 
-        model_class = FieldSignature
+        model_class = SignatureDecorator
 
     signature_type = fields.Str(data_key="@type", required=True)
     signature = fields.Str(required=True)
     sig_data = fields.Str(required=True)
     signer = fields.Str(required=True)
-    blah = fields.Str()

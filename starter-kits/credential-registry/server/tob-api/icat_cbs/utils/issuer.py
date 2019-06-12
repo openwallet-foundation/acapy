@@ -1,15 +1,13 @@
 import logging
 
+from api_v2.auth import create_issuer_user
 from api_v2.models.CredentialType import CredentialType
 from api_v2.models.Issuer import Issuer
 from api_v2.models.Schema import Schema
-
-from api_v2.auth import create_issuer_user
-
 from api_v2.serializers.rest import (
+    CredentialTypeSerializer,
     IssuerSerializer,
     SchemaSerializer,
-    CredentialTypeSerializer,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -119,15 +117,23 @@ class IssuerManager:
             credential_type.description = credential_type_def.get("name")
             credential_type.processor_config = credential_type_processor_config
             credential_type.category_labels = credential_type_def.get("category_labels")
-            credential_type.claim_descriptions = credential_type_def.get("claim_descriptions")
+            credential_type.claim_descriptions = credential_type_def.get(
+                "claim_descriptions"
+            )
             credential_type.claim_labels = credential_type_def.get("claim_labels")
             credential_type.logo_b64 = credential_type_def.get("logo_b64")
-            credential_type.credential_def_id = credential_type_def.get("credential_def_id")
+            credential_type.credential_def_id = credential_type_def.get(
+                "credential_def_id"
+            )
             credential_type.url = credential_type_def.get("endpoint")
             visible_fields = credential_type_def.get("visible_fields")
             if isinstance(visible_fields, list):
-                visible_fields = ",".join(x.strip() for x in filter(None, visible_fields))
-            credential_type.visible_fields = visible_fields if isinstance(visible_fields, str) else None
+                visible_fields = ",".join(
+                    x.strip() for x in filter(None, visible_fields)
+                )
+            credential_type.visible_fields = (
+                visible_fields if isinstance(visible_fields, str) else None
+            )
 
             credential_type.save()
             credential_types.append(credential_type)
