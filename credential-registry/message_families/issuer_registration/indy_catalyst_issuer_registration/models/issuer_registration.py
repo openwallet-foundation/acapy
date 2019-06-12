@@ -33,7 +33,7 @@ class IssuerRegistration(BaseModel):
         self,
         *,
         issuer_registration_id: str = None,
-        connection_id: str = None,
+        connection_id: str = None,  
         issuer_registration: dict = None,
         thread_id: str = None,
         initiator: str = None,

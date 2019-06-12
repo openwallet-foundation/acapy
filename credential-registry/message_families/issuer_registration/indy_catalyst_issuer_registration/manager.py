@@ -66,8 +66,10 @@ class IssuerRegistrationManager:
 
         """
 
-        credential_exchange = CredentialExchange(
+        issuer_registration = IssuerRegistration(
             connection_id=connection_id,
             initiator=CredentialExchange.INITIATOR_SELF,
             issuer_registration=issuer_registration,
         )
+
+        await issuer_registration.save(self.context)
