@@ -1,15 +1,11 @@
 # TODO: Figure out how to configure haystack to register indices in
 #       ./indices/<IndexName> instead of this default file...
 
-from itertools import chain
 import logging
 
 from haystack import indexes
-from django.db.models import Prefetch
-from django.utils import timezone
 
 from api_v2.models.Credential import Credential as CredentialModel
-from api_v2.models.Name import Name as NameModel
 from api_v2.search.index import TxnAwareSearchIndex
 
 LOGGER = logging.getLogger(__name__)
@@ -43,53 +39,52 @@ class CredentialIndex(TxnAwareSearchIndex, indexes.Indexable):
 
     @staticmethod
     def prepare_category(obj):
-        return [
-          "{}::{}".format(cat.type, cat.value) for cat in obj.all_categories
-        ]
+        return ["{}::{}".format(cat.type, cat.value) for cat in obj.all_categories]
 
     @staticmethod
     def prepare_location(obj):
         locations = []
         for address in obj.addresses.all():
-            loc = " ".join(filter(None, (
-              address.addressee,
-              address.civic_address,
-              address.city,
-              address.province,
-              address.postal_code,
-              address.country,
-            )))
+            loc = " ".join(
+                filter(
+                    None,
+                    (
+                        address.addressee,
+                        address.civic_address,
+                        address.city,
+                        address.province,
+                        address.postal_code,
+                        address.country,
+                    ),
+                )
+            )
             if loc:
-              locations.append(loc)
+                locations.append(loc)
         return locations
 
     def get_model(self):
         return CredentialModel
 
     def index_queryset(self, using=None):
-        prefetch = (
-            "addresses",
-            "attributes",
-            "names",
-        )
+        prefetch = ("addresses", "attributes", "names")
         select = (
-          "credential_set",
-          "credential_type",
-          "credential_type__schema",
-          "topic",
+            "credential_set",
+            "credential_type",
+            "credential_type__schema",
+            "topic",
         )
-        queryset = super(CredentialIndex, self).index_queryset(using)\
-            .prefetch_related(*prefetch)\
+        queryset = (
+            super(CredentialIndex, self)
+            .index_queryset(using)
+            .prefetch_related(*prefetch)
             .select_related(*select)
+        )
         return queryset
 
     def read_queryset(self, using=None):
-        select = (
-            "credential_type__issuer",
-        )
-        queryset = self.index_queryset(using) \
-            .select_related(*select)
+        select = ("credential_type__issuer",)
+        queryset = self.index_queryset(using).select_related(*select)
         return queryset
 
     def get_updated_field(self):
-      return "update_timestamp"
+        return "update_timestamp"

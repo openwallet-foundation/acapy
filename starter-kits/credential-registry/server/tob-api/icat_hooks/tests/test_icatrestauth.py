@@ -3,9 +3,8 @@ from unittest.mock import Mock, patch
 from django.contrib.auth import get_user_model
 from django.http import HttpRequest
 from django.test import TestCase
-from rest_framework import exceptions
-
 from icat_hooks import icatrestauth
+from rest_framework import exceptions
 
 
 class IcatAuthBackend_TestCase(TestCase):

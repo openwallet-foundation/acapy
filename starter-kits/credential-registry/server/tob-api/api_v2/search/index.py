@@ -39,7 +39,9 @@ class TxnAwareSearchIndex(indexes.SearchIndex):
             if self._backend_queue:
                 self._backend_queue.add(self.__class__, using, [instance])
             else:
-                super(TxnAwareSearchIndex, self).update_object(instance, using, **kwargs)
+                super(TxnAwareSearchIndex, self).update_object(
+                    instance, using, **kwargs
+                )
 
     def remove_object(self, instance, using=None, **kwargs):
         conn = transaction.get_connection()
@@ -59,7 +61,9 @@ class TxnAwareSearchIndex(indexes.SearchIndex):
             if self._backend_queue:
                 self._backend_queue.delete(self.__class__, using, [instance])
             else:
-                super(TxnAwareSearchIndex, self).remove_object(instance, using, **kwargs)
+                super(TxnAwareSearchIndex, self).remove_object(
+                    instance, using, **kwargs
+                )
 
     def transaction_committed(self):
         conn = transaction.get_connection()
@@ -70,26 +74,42 @@ class TxnAwareSearchIndex(indexes.SearchIndex):
         else:
             for using, instances in self._transaction_removed.items():
                 if instances:
-                    LOGGER.debug("Committing %d deferred Solr delete(s) after transaction.", len(instances))
+                    LOGGER.debug(
+                        "Committing %d deferred Solr delete(s) after transaction.",
+                        len(instances),
+                    )
                     if self._backend_queue:
-                        self._backend_queue.delete(self.__class__, using, list(instances.values()))
+                        self._backend_queue.delete(
+                            self.__class__, using, list(instances.values())
+                        )
                     else:
                         backend = self.get_backend(using)
                         if backend is not None:
                             for instance in instances.values():
                                 backend.remove(instance)
                         else:
-                            LOGGER.error("Failed to get backend.  Unable to commit %d deferred Solr delete(s) after transaction.", len(instances))
+                            LOGGER.error(
+                                "Failed to get backend.  Unable to commit %d deferred Solr delete(s) after transaction.",
+                                len(instances),
+                            )
 
             for using, instances in self._transaction_added.items():
                 if instances:
-                    LOGGER.debug("Committing %d deferred Solr update(s) after transaction", len(instances))
+                    LOGGER.debug(
+                        "Committing %d deferred Solr update(s) after transaction",
+                        len(instances),
+                    )
                     if self._backend_queue:
-                        self._backend_queue.add(self.__class__, using, list(instances.values()))
+                        self._backend_queue.add(
+                            self.__class__, using, list(instances.values())
+                        )
                     else:
                         backend = self.get_backend(using)
                         if backend is not None:
                             backend.update(self, instances.values())
                         else:
-                            LOGGER.error("Failed to get backend.  Unable to commit %d deferred Solr update(s) after transaction.", len(instances))
+                            LOGGER.error(
+                                "Failed to get backend.  Unable to commit %d deferred Solr update(s) after transaction.",
+                                len(instances),
+                            )
             self.reset()

@@ -10,6 +10,7 @@
     limitations under the License.
 """
 
+
 def defaults():
     """
     Utility for defining the default authentication classes

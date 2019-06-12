@@ -1,12 +1,8 @@
 from django.db import models
 
-from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
-
-from .Auditable import Auditable
-
 from .Address import Address
 from .Attribute import Attribute
+from .Auditable import Auditable
 from .Name import Name
 
 
@@ -29,7 +25,7 @@ class Topic(Auditable):
     class Meta:
         db_table = "topic"
         unique_together = (("source_id", "type"),)
-        ordering = ('id',)
+        ordering = ("id",)
 
     def save(self, *args, **kwargs):
         """
@@ -41,8 +37,11 @@ class Topic(Auditable):
 
     def get_active_credential_ids(self):
         if self._active_cred_ids is None:
-            self._active_cred_ids = set(self.credentials.filter(latest=True, revoked=False)\
-                .only('id', 'topic_id').values_list('id', flat=True))
+            self._active_cred_ids = set(
+                self.credentials.filter(latest=True, revoked=False)
+                .only("id", "topic_id")
+                .values_list("id", flat=True)
+            )
         return self._active_cred_ids
 
     def get_active_addresses(self):
@@ -54,7 +53,10 @@ class Topic(Auditable):
     def get_active_attributes(self):
         creds = self.get_active_credential_ids()
         if creds:
-            return Attribute.objects.filter(credential_id__in=creds, credential__credential_type__description='Registration')
+            return Attribute.objects.filter(
+                credential_id__in=creds,
+                credential__credential_type__description="Registration",
+            )
         return []
 
     def get_active_names(self):
@@ -69,7 +71,7 @@ class Topic(Auditable):
             names = Name.objects.filter(credential_id__in=creds)
             remote_name = None
             for name in names:
-                if name.type == 'entity_name_assumed':
+                if name.type == "entity_name_assumed":
                     return name
                 else:
                     remote_name = name
@@ -83,7 +85,7 @@ class Topic(Auditable):
             has_assumed_name = False
             remote_name = None
             for name in names:
-                if name.type == 'entity_name_assumed':
+                if name.type == "entity_name_assumed":
                     has_assumed_name = True
                 else:
                     remote_name = name
@@ -93,10 +95,10 @@ class Topic(Auditable):
 
     def get_active_related_to(self):
         return self.related_to.filter(
-            from_rels__credential__latest=True,
-            from_rels__credential__revoked=False)
+            from_rels__credential__latest=True, from_rels__credential__revoked=False
+        )
 
     def get_active_related_from(self):
         return self.related_from.filter(
-            to_rels__credential__latest=True,
-            to_rels__credential__revoked=False)
+            to_rels__credential__latest=True, to_rels__credential__revoked=False
+        )

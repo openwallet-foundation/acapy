@@ -1,55 +1,42 @@
 import base64
 
 from django.db.models import Q
-from django.http import HttpResponse, Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
-
-from rest_framework.exceptions import NotFound
-from rest_framework.decorators import detail_route, list_route
-from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
-from rest_framework.response import Response
-
-from api_v2.serializers.rest import (
-    IssuerSerializer,
-    SchemaSerializer,
-    CredentialTypeSerializer,
-    TopicSerializer,
-    TopicRelationshipSerializer,
-    CredentialSerializer,
-    ExpandedCredentialSerializer,
-    ExpandedCredentialSetSerializer,
-    AddressSerializer,
-    AttributeSerializer,
-    NameSerializer,
-    CredentialTopicExtSerializer,
-)
-
-from rest_framework.serializers import SerializerMethodField
-
-from drf_yasg.utils import swagger_auto_schema
-
 from django_filters import rest_framework as filters
-
-from api_v2.serializers.search import CustomTopicSerializer, CustomTopicRelationshipSerializer
-
-from api_v2.models.Issuer import Issuer
-from api_v2.models.Schema import Schema
-from api_v2.models.CredentialType import CredentialType
-from api_v2.models.Topic import Topic
-from api_v2.models.TopicRelationship import TopicRelationship
-from api_v2.models.Credential import Credential
-from api_v2.models.Address import Address
-from api_v2.models.Attribute import Attribute
-from api_v2.models.Name import Name
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import detail_route, list_route
+from rest_framework.response import Response
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from api_v2 import utils
+from api_v2.models.Address import Address
+from api_v2.models.Attribute import Attribute
+from api_v2.models.Credential import Credential
+from api_v2.models.CredentialType import CredentialType
+from api_v2.models.Issuer import Issuer
+from api_v2.models.Name import Name
+from api_v2.models.Schema import Schema
+from api_v2.models.Topic import Topic
+from api_v2.models.TopicRelationship import TopicRelationship
+from api_v2.serializers.rest import (AddressSerializer, AttributeSerializer,
+                                     CredentialSerializer,
+                                     CredentialTopicExtSerializer,
+                                     CredentialTypeSerializer,
+                                     ExpandedCredentialSerializer,
+                                     ExpandedCredentialSetSerializer,
+                                     IssuerSerializer, NameSerializer,
+                                     SchemaSerializer,
+                                     TopicRelationshipSerializer,
+                                     TopicSerializer)
+from api_v2.serializers.search import CustomTopicSerializer
 
 
 class IssuerViewSet(ReadOnlyModelViewSet):
     serializer_class = IssuerSerializer
     queryset = Issuer.objects.all()
 
-    @swagger_auto_schema(method='get')
+    @swagger_auto_schema(method="get")
     @detail_route(url_path="credentialtype", methods=["get"])
     def list_credential_types(self, request, pk=None):
         item = self.get_object()
@@ -57,7 +44,7 @@ class IssuerViewSet(ReadOnlyModelViewSet):
         serializer = CredentialTypeSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(method='get')
+    @swagger_auto_schema(method="get")
     @detail_route(url_path="logo", methods=["get"])
     def fetch_logo(self, request, pk=None):
         issuer = get_object_or_404(self.queryset, pk=pk)
@@ -74,7 +61,7 @@ class SchemaViewSet(ReadOnlyModelViewSet):
     serializer_class = SchemaSerializer
     queryset = Schema.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ('id', 'name', 'version', 'origin_did',)
+    filterset_fields = ("id", "name", "version", "origin_did")
 
 
 class CredentialTypeViewSet(ReadOnlyModelViewSet):
@@ -258,6 +245,8 @@ class NameViewSet(ReadOnlyModelViewSet):
 # Add environment specific endpoints
 try:
     utils.apply_custom_methods(TopicViewSet, "views", "TopicViewSet", "includeMethods")
-    utils.apply_custom_methods(TopicRelationshipViewSet, "views", "TopicRelationshipViewSet", "includeMethods")
+    utils.apply_custom_methods(
+        TopicRelationshipViewSet, "views", "TopicRelationshipViewSet", "includeMethods"
+    )
 except:
     pass

@@ -1,18 +1,16 @@
 import logging
 
+from django.conf import settings
 from django.http import Http404
-from rest_framework import permissions
-from rest_framework.decorators import list_route
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from drf_haystack.filters import (
-    HaystackOrderingFilter,
-)
+from drf_haystack.filters import HaystackOrderingFilter
 from drf_haystack.mixins import FacetMixin
 from drf_haystack.viewsets import HaystackViewSet
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from haystack.query import RelatedSearchQuerySet
+from rest_framework import permissions
+from rest_framework.decorators import list_route
+from rest_framework.response import Response
 
 from api_v2.models.Credential import Credential
 from api_v2.search.filters import (
@@ -25,12 +23,11 @@ from api_v2.search.filters import (
 )
 from api_v2.serializers.search import (
     CredentialAutocompleteSerializer,
-    CredentialSearchSerializer,
     CredentialFacetSerializer,
+    CredentialSearchSerializer,
     CredentialTopicSearchSerializer,
 )
 from tob_api.pagination import ResultLimitPagination
-from django.conf import settings
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,15 +36,13 @@ class NameAutocompleteView(HaystackViewSet):
     """
     Return autocomplete results for a query string
     """
+
     permission_classes = (permissions.AllowAny,)
     pagination_class = ResultLimitPagination
 
     _swagger_params = [
         openapi.Parameter(
-            "q",
-            openapi.IN_QUERY,
-            description="Query string",
-            type=openapi.TYPE_STRING,
+            "q", openapi.IN_QUERY, description="Query string", type=openapi.TYPE_STRING
         ),
         openapi.Parameter(
             "inactive",
@@ -79,16 +74,18 @@ class NameAutocompleteView(HaystackViewSet):
             description="Filter by credential category. The category name and value should be joined by '::'",
             type=openapi.TYPE_STRING,
         ),
-        #openapi.Parameter(
+        # openapi.Parameter(
         #    "hl", openapi.IN_QUERY, description="Highlight search term", type=openapi.TYPE_BOOLEAN
-        #),
+        # ),
     ]
+
     @swagger_auto_schema(manual_parameters=_swagger_params)
     def list(self, *args, **kwargs):
-        print(' >>> calling autocomplete')
+        print(" >>> calling autocomplete")
         ret = super(NameAutocompleteView, self).list(*args, **kwargs)
-        print(' >>> autocomplete returns', ret)
+        print(" >>> autocomplete returns", ret)
         return ret
+
     retrieve = None
 
     index_models = [Credential]
@@ -101,8 +98,8 @@ class NameAutocompleteView(HaystackViewSet):
         StatusFilter,
         HaystackOrderingFilter,
     ]
-    ordering_fields = ('effective_date', 'revoked_date', 'score')
-    ordering = ('-score')
+    ordering_fields = ("effective_date", "revoked_date", "score")
+    ordering = "-score"
 
 
 class CredentialSearchView(HaystackViewSet, FacetMixin):
@@ -168,12 +165,13 @@ class CredentialSearchView(HaystackViewSet, FacetMixin):
             type=openapi.TYPE_STRING,
         ),
     ]
+
     @swagger_auto_schema(manual_parameters=_swagger_params)
     def list(self, *args, **kwargs):
         print(" >>> calling credentialsearch")
         if self.object_class is TopicSearchQuerySet:
-            query = self.request.GET.get('name')
-            topic_id = self.request.GET.get('topic_id')
+            query = self.request.GET.get("name")
+            topic_id = self.request.GET.get("topic_id")
             if not self.valid_search_query(query, topic_id):
                 raise Http404()
         ret = super(CredentialSearchView, self).list(*args, **kwargs)
@@ -214,8 +212,8 @@ class CredentialSearchView(HaystackViewSet, FacetMixin):
     ]
     facet_serializer_class = CredentialFacetSerializer
     facet_objects_serializer_class = CredentialSearchSerializer
-    ordering_fields = ('effective_date', 'revoked_date', 'score')
-    ordering = ('-score')
+    ordering_fields = ("effective_date", "revoked_date", "score")
+    ordering = "-score"
 
     # FacetMixin provides /facets
     @list_route(methods=["get"], url_path="facets")
@@ -227,22 +225,27 @@ class CredentialSearchView(HaystackViewSet, FacetMixin):
         facet_queryset = self.filter_facet_queryset(queryset)
         result_queryset = self.filter_queryset(queryset)
 
-        #for facet in request.query_params.getlist(self.facet_query_params_text):
-            #if ":" not in facet:
-            #    continue
-            #field, value = facet.split(":", 1)
-            #if value:
-            #    queryset = queryset.narrow('%s:"%s"' % (field, queryset.query.clean(value)))
-        for key in ('category', 'credential_type_id', 'issuer_id'):
+        # for facet in request.query_params.getlist(self.facet_query_params_text):
+        # if ":" not in facet:
+        #    continue
+        # field, value = facet.split(":", 1)
+        # if value:
+        #    queryset = queryset.narrow('%s:"%s"' % (field, queryset.query.clean(value)))
+        for key in ("category", "credential_type_id", "issuer_id"):
             for value in request.query_params.getlist(key):
                 if value:
-                    facet_queryset = facet_queryset.narrow('{}:"{}"'.format(key, queryset.query.clean(value)))
+                    facet_queryset = facet_queryset.narrow(
+                        '{}:"{}"'.format(key, queryset.query.clean(value))
+                    )
 
-        serializer = self.get_facet_serializer(facet_queryset.facet_counts(), objects=result_queryset, many=False)
+        serializer = self.get_facet_serializer(
+            facet_queryset.facet_counts(), objects=result_queryset, many=False
+        )
         return Response(serializer.data)
 
 
-LIMIT = getattr(settings, 'HAYSTACK_MAX_RESULTS', 200)
+LIMIT = getattr(settings, "HAYSTACK_MAX_RESULTS", 200)
+
 
 class TopicSearchQuerySet(RelatedSearchQuerySet):
     """

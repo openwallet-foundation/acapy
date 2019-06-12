@@ -5,9 +5,15 @@ from .Auditable import Auditable
 
 
 class Credential(Auditable):
-    topic = models.ForeignKey("Topic", related_name="credentials", on_delete=models.CASCADE)
-    credential_set = models.ForeignKey("CredentialSet", related_name="credentials", null=True, on_delete=models.CASCADE)
-    credential_type = models.ForeignKey("CredentialType", related_name="credentials", on_delete=models.CASCADE)
+    topic = models.ForeignKey(
+        "Topic", related_name="credentials", on_delete=models.CASCADE
+    )
+    credential_set = models.ForeignKey(
+        "CredentialSet", related_name="credentials", null=True, on_delete=models.CASCADE
+    )
+    credential_type = models.ForeignKey(
+        "CredentialType", related_name="credentials", on_delete=models.CASCADE
+    )
     wallet_id = models.TextField(db_index=True)
     credential_def_id = models.TextField(db_index=True, null=True)
     cardinality_hash = models.TextField(db_index=True, null=True)
@@ -17,7 +23,9 @@ class Credential(Auditable):
     latest = models.BooleanField(db_index=True, default=False)
     revoked = models.BooleanField(db_index=True, default=False)
     revoked_date = models.DateTimeField(null=True)
-    revoked_by = models.ForeignKey("Credential", related_name="+", null=True, on_delete=models.SET_NULL)
+    revoked_by = models.ForeignKey(
+        "Credential", related_name="+", null=True, on_delete=models.SET_NULL
+    )
 
     # Topics related by this credential
     related_topics = models.ManyToManyField(
@@ -31,9 +39,10 @@ class Credential(Auditable):
 
     class Meta:
         db_table = "credential"
-        ordering = ('id',)
+        ordering = ("id",)
 
     _cache = None
+
     def _cached(self, key, val):
         cache = self._cache
         if cache is None:
@@ -46,7 +55,7 @@ class Credential(Auditable):
         names = self.all_names
         remote_name = None
         for name in names:
-            if name.type == 'entity_name_assumed':
+            if name.type == "entity_name_assumed":
                 return name
             else:
                 remote_name = name
@@ -57,7 +66,7 @@ class Credential(Auditable):
         has_assumed_name = False
         remote_name = None
         for name in names:
-            if name.type == 'entity_name_assumed':
+            if name.type == "entity_name_assumed":
                 has_assumed_name = True
             else:
                 remote_name = name
@@ -67,12 +76,12 @@ class Credential(Auditable):
     # used by solr document index
     @property
     def all_names(self):
-        return self._cached('names', self.names.all())
+        return self._cached("names", self.names.all())
 
     @property
     def all_categories(self):
-        return self._cached('categories', self.attributes.filter(format='category'))
+        return self._cached("categories", self.attributes.filter(format="category"))
 
     @property
     def all_attributes(self):
-        return self._cached('attributes', self.attributes.all())
+        return self._cached("attributes", self.attributes.all())
