@@ -7,10 +7,10 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from indy_catalyst_agent. ....config.injection_context import InjectionContext
-from ....models.base import BaseModel, BaseModelSchema
-from ....storage.base import BaseStorage
-from ....storage.record import StorageRecord
+from indy_catalyst_agent.config.injection_context import InjectionContext
+from indy_catalyst_agent.messaging.models.base import BaseModel, BaseModelSchema
+from indy_catalyst_agent.storage.base import BaseStorage
+from indy_catalyst_agent.storage.record import StorageRecord
 
 
 class IssuerRegistrationState(BaseModel):
@@ -33,7 +33,7 @@ class IssuerRegistrationState(BaseModel):
         self,
         *,
         issuer_registration_id: str = None,
-        connection_id: str = None,  
+        connection_id: str = None,
         issuer_registration: dict = None,
         thread_id: str = None,
         initiator: str = None,
@@ -68,10 +68,7 @@ class IssuerRegistrationState(BaseModel):
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this issuer registration."""
         result = self.tags
-        for prop in (
-            "issuer_registration",
-            "error_msg",
-        ):
+        for prop in ("issuer_registration", "error_msg"):
             val = getattr(self, prop)
             if val:
                 result[prop] = val
@@ -81,12 +78,7 @@ class IssuerRegistrationState(BaseModel):
     def tags(self) -> dict:
         """Accessor for the record tags generated for this issuer registration."""
         result = {}
-        for prop in (
-            "connection_id",
-            "thread_id",
-            "initiator",
-            "state",
-        ):
+        for prop in ("connection_id", "thread_id", "initiator", "state"):
             val = getattr(self, prop)
             if val:
                 result[prop] = val
@@ -122,7 +114,9 @@ class IssuerRegistrationState(BaseModel):
         vals = json.loads(result.value)
         if result.tags:
             vals.update(result.tags)
-        return IssuerRegistrationState(issuer_registration_id=issuer_registration_id, **vals)
+        return IssuerRegistrationState(
+            issuer_registration_id=issuer_registration_id, **vals
+        )
 
     @classmethod
     async def retrieve_by_tag_filter(
@@ -153,9 +147,7 @@ class IssuerRegistrationState(BaseModel):
             tag_filter: An optional dictionary of tag filter clauses
         """
         storage: BaseStorage = await context.inject(BaseStorage)
-        found = await storage.search_records(
-            cls.RECORD_TYPE, tag_filter
-        ).fetch_all()
+        found = await storage.search_records(cls.RECORD_TYPE, tag_filter).fetch_all()
         result = []
         for record in found:
             vals = json.loads(record.value)
@@ -177,10 +169,7 @@ class IssuerRegistrationState(BaseModel):
 
 
 class IssuerRegistrationStateSchema(BaseModelSchema):
-    """
-    Schema to allow serialization/deserialization of
-    issuer registration records.
-    """
+    """Schema to allow serialization/deserialization of issuer registration records."""
 
     class Meta:
         """IssuerRegistrationStateSchema metadata."""

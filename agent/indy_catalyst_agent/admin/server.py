@@ -119,6 +119,7 @@ class AdminServer(BaseAdminServer):
                     + "\n"
                     + str(e)
                 )
+                raise
 
         cors = aiohttp_cors.setup(
             self.app,
