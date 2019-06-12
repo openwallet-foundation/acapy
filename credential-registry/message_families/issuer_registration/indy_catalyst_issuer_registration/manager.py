@@ -16,10 +16,12 @@ from indy_catalyst_agent.messaging.connections.models.connection_record import (
 )
 from indy_catalyst_agent.messaging.request_context import RequestContext
 
-from .models.issuer_registration import IssuerRegistration
 
 from indy_catalyst_agent.storage.error import StorageNotFoundError
 from indy_catalyst_agent.messaging.util import send_webhook
+
+from .models.issuer_registration_state import IssuerRegistrationState
+from .messages.register import IssuerRegistration
 
 
 class IssuerRegistrationManagerError(BaseError):
@@ -66,10 +68,22 @@ class IssuerRegistrationManager:
 
         """
 
-        issuer_registration = IssuerRegistration(
+        issuer_registration_state = IssuerRegistrationState(
             connection_id=connection_id,
-            initiator=CredentialExchange.INITIATOR_SELF,
+            initiator=IssuerRegistrationState.INITIATOR_SELF,
+            state=IssuerRegistrationState.STATE_REGISTRATION_SENT,
             issuer_registration=issuer_registration,
         )
+        await issuer_registration_state.save(self.context)
 
-        await issuer_registration.save(self.context)
+        asyncio.ensure_future(
+            send_webhook("issuer_registration", issuer_registration_state.serialize())
+        )
+
+        issuer_registration = IssuerRegistration(
+            issuer=issuer_registration.get("issuer"),
+            credential_types=issuer_registration.get("credential_types"),
+        )
+
+        return issuer_registration_state, issuer_registration
+

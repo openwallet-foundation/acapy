@@ -13,13 +13,13 @@ from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
 
 
-class IssuerRegistration(BaseModel):
+class IssuerRegistrationState(BaseModel):
     """Represents a issuer registration."""
 
     class Meta:
-        """IssuerRegistration metadata."""
+        """IssuerRegistrationState metadata."""
 
-        schema_class = "IssuerRegistrationSchema"
+        schema_class = "IssuerRegistrationStateSchema"
 
     RECORD_TYPE = "issuer_registration"
 
@@ -40,7 +40,7 @@ class IssuerRegistration(BaseModel):
         state: str = None,
         error_msg: str = None,
     ):
-        """Initialize a new IssuerRegistration."""
+        """Initialize a new IssuerRegistrationState."""
         self._id = issuer_registration_id
         self.connection_id = connection_id
         self.issuer_registration = issuer_registration
@@ -110,7 +110,7 @@ class IssuerRegistration(BaseModel):
     @classmethod
     async def retrieve_by_id(
         cls, context: InjectionContext, issuer_registration_id: str
-    ) -> "IssuerRegistration":
+    ) -> "IssuerRegistrationState":
         """Retrieve a issuer registration record by ID.
 
         Args:
@@ -122,12 +122,12 @@ class IssuerRegistration(BaseModel):
         vals = json.loads(result.value)
         if result.tags:
             vals.update(result.tags)
-        return IssuerRegistration(issuer_registration_id=issuer_registration_id, **vals)
+        return IssuerRegistrationState(issuer_registration_id=issuer_registration_id, **vals)
 
     @classmethod
     async def retrieve_by_tag_filter(
         cls, context: InjectionContext, tag_filter: dict
-    ) -> "IssuerRegistration":
+    ) -> "IssuerRegistrationState":
         """Retrieve a issuer registration record by tag filter.
 
         Args:
@@ -140,12 +140,12 @@ class IssuerRegistration(BaseModel):
         ).fetch_single()
         vals = json.loads(result.value)
         vals.update(result.tags)
-        return IssuerRegistration(issuer_registration_id=result.id, **vals)
+        return IssuerRegistrationState(issuer_registration_id=result.id, **vals)
 
     @classmethod
     async def query(
         cls, context: InjectionContext, tag_filter: dict = None
-    ) -> Sequence["IssuerRegistration"]:
+    ) -> Sequence["IssuerRegistrationState"]:
         """Query existing issuer registration records.
 
         Args:
@@ -161,7 +161,7 @@ class IssuerRegistration(BaseModel):
             vals = json.loads(record.value)
             vals.update(record.tags)
             result.append(
-                IssuerRegistration(issuer_registration_id=record.id, **vals)
+                IssuerRegistrationState(issuer_registration_id=record.id, **vals)
             )
         return result
 
@@ -176,16 +176,16 @@ class IssuerRegistration(BaseModel):
             await storage.delete_record(self.storage_record)
 
 
-class IssuerRegistrationSchema(BaseModelSchema):
+class IssuerRegistrationStateSchema(BaseModelSchema):
     """
     Schema to allow serialization/deserialization of
     issuer registration records.
     """
 
     class Meta:
-        """IssuerRegistrationSchema metadata."""
+        """IssuerRegistrationStateSchema metadata."""
 
-        model_class = IssuerRegistration
+        model_class = IssuerRegistrationState
 
     issuer_registration_id = fields.Str(required=False)
     connection_id = fields.Str(required=False)

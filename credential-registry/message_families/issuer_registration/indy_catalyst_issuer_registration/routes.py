@@ -10,7 +10,7 @@ from indy_catalyst_agent.messaging.connections.models.connection_record import (
 )
 from indy_catalyst_agent.storage.error import StorageNotFoundError
 
-from .messages.register import IssuerRegistration
+from .manager import c
 
 
 class IssuerRegistrationRequestSchema(Schema):
@@ -67,16 +67,20 @@ async def issuer_registration_send(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
 
+    issuer_registration_manager = IssuerRegistrationManager(context)
+
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
 
     if connection.is_active:
-        msg = IssuerRegistration(
-            issuer=body.get("issuer"), credential_types=body.get("credential_types")
-        )
-        await outbound_handler(msg, connection_id=connection_id)
+        (
+            _,
+            issuer_registration_message,
+        ) = await issuer_registration_manager.prepare_send()
+
+        await outbound_handler(issuer_registration_message, connection_id=connection_id)
 
         await connection.log_activity(
             context, "issuer_registration", connection.DIRECTION_SENT
