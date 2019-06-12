@@ -58,6 +58,10 @@ class IssuerRegistrationManager:
 
         """
 
+        issuer_registration_message = IssuerRegistration(
+            issuer_registration=issuer_registration
+        )
+
         issuer_registration_state = IssuerRegistrationState(
             connection_id=connection_id,
             initiator=IssuerRegistrationState.INITIATOR_SELF,
@@ -70,8 +74,33 @@ class IssuerRegistrationManager:
             send_webhook("issuer_registration", issuer_registration_state.serialize())
         )
 
-        issuer_registration = IssuerRegistration(
-            issuer_registration=issuer_registration
+        return issuer_registration_state, issuer_registration_message
+
+    async def receive_registration(self, connection_id, issuer_registration_message):
+        """
+        Receive an issuer registration message.
+
+        Args:
+            connection_id: Connection to send the issuer registration to
+            issuer_registration: The issuer registration payload
+
+        Returns:
+            Issuer registration state object
+
+
+        """
+
+        issuer_registration_state = IssuerRegistrationState(
+            connection_id=connection_id,
+            thread_id=issuer_registration_message._thread_id,
+            initiator=IssuerRegistrationState.INITIATOR_EXTERNAL,
+            state=IssuerRegistrationState.STATE_REGISTRATION_RECEIVED,
+            issuer_registration=issuer_registration_message.issuer_registration,
+        )
+        await issuer_registration_state.save(self.context)
+
+        asyncio.ensure_future(
+            send_webhook("issuer_registration", issuer_registration_state.serialize())
         )
 
-        return issuer_registration_state, issuer_registration
+        return issuer_registration_state
