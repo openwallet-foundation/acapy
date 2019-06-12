@@ -10,11 +10,11 @@ from indy_catalyst_agent.messaging.connections.models.connection_record import (
 )
 from indy_catalyst_agent.storage.error import StorageNotFoundError
 
-from .manager import c
+from .manager import IssuerRegistrationManager
 
 
 class IssuerRegistrationRequestSchema(Schema):
-    """Request schema for issuer registration"""
+    """Request schema for issuer registration."""
 
     class IssuerSchema(Schema):
         """Isuer nested schema."""
