@@ -82,7 +82,7 @@ async def issuer_registration_send(request: web.BaseRequest):
 
     if connection.is_active:
         (
-            _,
+            issuer_registration_state,
             issuer_registration_message,
         ) = await issuer_registration_manager.prepare_send(
             connection_id, issuer_registration
@@ -94,7 +94,7 @@ async def issuer_registration_send(request: web.BaseRequest):
             context, "issuer_registration", connection.DIRECTION_SENT
         )
 
-    return web.HTTPOk()
+    return web.json_response(issuer_registration_state.serialize())
 
 
 async def register(app: web.Application):
