@@ -1,19 +1,15 @@
+import base64
+
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from rest_framework import mixins, viewsets
 from rest_framework.permissions import *
-from rest_framework import viewsets, mixins
-from rest_hooks.models import Hook
 
+from .icatrestauth import IcatRestAuthentication
 from .models.CredentialHook import CredentialHook
 from .models.HookUser import HookUser
 from .models.Subscription import Subscription
-from .serializers.hooks import (
-    HookSerializer,
-    RegistrationSerializer,
-    SubscriptionSerializer,
-)
-
-from .icatrestauth import IcatRestAuthentication
+from .serializers.hooks import RegistrationSerializer, SubscriptionSerializer
 
 SUBSCRIBERS_GROUP_NAME = "subscriber"
 

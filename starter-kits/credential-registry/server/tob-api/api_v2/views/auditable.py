@@ -1,5 +1,5 @@
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.response import Response
 
 
 class AuditableMixin(object):
@@ -21,9 +21,7 @@ class AuditableMixin(object):
 
         response = objs[0] if len(objs) == 1 else objs
         headers = self.get_success_headers(response)
-        return Response(
-            response, status=status.HTTP_201_CREATED, headers=headers
-        )
+        return Response(response, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer, request):
         instance = serializer.save()
@@ -33,9 +31,7 @@ class AuditableMixin(object):
         instance = self.get_object()
         http_sm_user = request.META.get("HTTP_SM_USER")
         request.data.update({"UPDATE_USER": http_sm_user})
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=partial
-        )
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 

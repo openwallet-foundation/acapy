@@ -7,9 +7,9 @@ from api_v2.models.Auditable import Auditable
 
 class HookUser(Auditable):
     user = models.ForeignKey(
-        get_user_model(), 
+        get_user_model(),
         related_name="hook_user",
-        on_delete=django.db.models.deletion.CASCADE
+        on_delete=django.db.models.deletion.CASCADE,
     )
 
     # the following are for web hook registration

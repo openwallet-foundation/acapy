@@ -2,13 +2,13 @@ import json
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from icat_hooks.models.Subscription import Subscription
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from api_v2.models.CredentialType import CredentialType
 from api_v2.models.Issuer import Issuer
 from api_v2.models.Schema import Schema
-from icat_hooks.models.Subscription import Subscription
 
 
 class Icat_Hooks_Views_RegistrationCreateViewSet_TestCase(APITestCase):
@@ -281,9 +281,7 @@ class Icat_Hooks_Views_SubscriptionViewSet_TestCase(APITestCase):
         )
 
         self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK,
-            "The status code does not match.",
+            response.status_code, status.HTTP_200_OK, "The status code does not match."
         )
 
         response_content = json.loads(response.content)
@@ -319,9 +317,7 @@ class Icat_Hooks_Views_SubscriptionViewSet_TestCase(APITestCase):
         )
 
         self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK,
-            "The status code does not match.",
+            response.status_code, status.HTTP_200_OK, "The status code does not match."
         )
 
         response_content = json.loads(response.content)
@@ -359,9 +355,7 @@ class Icat_Hooks_Views_SubscriptionViewSet_TestCase(APITestCase):
         )
 
         self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK,
-            "The status code does not match.",
+            response.status_code, status.HTTP_200_OK, "The status code does not match."
         )
 
         response_content = json.loads(response.content)
@@ -388,17 +382,12 @@ class Icat_Hooks_Views_SubscriptionViewSet_TestCase(APITestCase):
             "/hooks/registration/{}/subscriptions/{}".format(
                 self.registered_user_2["credentials"]["username"], 1
             ),
-            data={
-                "subscription_type": "New",
-                "topic_source_id": "AB987654",
-            },
+            data={"subscription_type": "New", "topic_source_id": "AB987654"},
             format="json",
         )
 
         self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK,
-            "The status code does not match.",
+            response.status_code, status.HTTP_200_OK, "The status code does not match."
         )
 
         response_content = json.loads(response.content)
@@ -428,7 +417,7 @@ class Icat_Hooks_Views_SubscriptionViewSet_TestCase(APITestCase):
         response = client.delete(
             "/hooks/registration/{}/subscriptions/{}".format(
                 self.registered_user_2["credentials"]["username"], 1
-            ),
+            )
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
