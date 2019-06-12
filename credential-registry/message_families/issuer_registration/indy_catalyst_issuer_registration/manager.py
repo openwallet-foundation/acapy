@@ -1,23 +1,13 @@
 """Classes to manage issuer registrations."""
 
 import asyncio
-import json
 import logging
 
 from indy_catalyst_agent.error import BaseError
-from indy_catalyst_agent.cache.base import BaseCache
-from indy_catalyst_agent.holder.base import BaseHolder
-from indy_catalyst_agent.issuer.base import BaseIssuer
-from indy_catalyst_agent.ledger.base import BaseLedger
-from indy_catalyst_agent.models.thread_decorator import ThreadDecorator
 
-from indy_catalyst_agent.messaging.connections.models.connection_record import (
-    ConnectionRecord,
-)
+# from indy_catalyst_agent.messaging.decorators.thread_decorator import ThreadDecorator
+
 from indy_catalyst_agent.messaging.request_context import RequestContext
-
-
-from indy_catalyst_agent.storage.error import StorageNotFoundError
 from indy_catalyst_agent.messaging.util import send_webhook
 
 from .models.issuer_registration_state import IssuerRegistrationState
@@ -86,4 +76,3 @@ class IssuerRegistrationManager:
         )
 
         return issuer_registration_state, issuer_registration
-
