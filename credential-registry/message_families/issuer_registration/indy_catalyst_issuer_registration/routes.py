@@ -67,17 +67,10 @@ async def issuer_registration_send(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
 
-    print("============")
-    print(connection_id)
-
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         return web.HTTPNotFound()
-
-    print("============")
-    print(connection)
-    print(connection.is_active)
 
     if connection.is_active:
         msg = IssuerRegistration(
