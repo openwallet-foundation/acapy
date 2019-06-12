@@ -71,8 +71,7 @@ class IssuerRegistrationManager:
         )
 
         issuer_registration = IssuerRegistration(
-            issuer=issuer_registration.get("issuer"),
-            credential_types=issuer_registration.get("credential_types"),
+            issuer_registration=issuer_registration
         )
 
         return issuer_registration_state, issuer_registration
