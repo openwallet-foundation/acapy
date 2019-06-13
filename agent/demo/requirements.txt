@@ -1,1 +1,2 @@
+colored~=1.3.93
 git+https://github.com/webpy/webpy.git#egg=web.py

@@ -14,9 +14,12 @@ ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-# Add and install demo code
-ADD demo ./demo
+RUN mkdir demo
 
+# Add and install demo code
+ADD demo/requirements.txt ./demo/requirements.txt
 RUN pip3 install --no-cache-dir -r demo/requirements.txt
+
+ADD demo ./demo
 
 ENTRYPOINT ["/bin/bash", "-c", "python \"$@\"", "--"]
