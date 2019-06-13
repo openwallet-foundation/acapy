@@ -6,9 +6,11 @@ from indy_catalyst_agent.messaging.routing.manager import (
     RoutingManager,
     RoutingManagerError,
 )
+from indy_catalyst_agent.messaging.routing.models.route_record import RouteRecord
 from indy_catalyst_agent.storage.base import BaseStorage
 from indy_catalyst_agent.storage.basic import BasicStorage
 
+TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
@@ -31,32 +33,29 @@ def manager() -> RoutingManager:
 
 class TestRoutingManager:
     @pytest.mark.asyncio
-    async def test_require_sender(self):
-        with pytest.raises(RoutingManagerError):
-            RoutingManager(None)
-        with pytest.raises(RoutingManagerError):
-            RoutingManager(RequestContext())
-
-    @pytest.mark.asyncio
     async def test_retrieve_none(self, manager):
         results = await manager.get_routes()
         assert results == []
 
     @pytest.mark.asyncio
     async def test_create_retrieve(self, manager):
-        await manager.create_routes([TEST_ROUTE_VERKEY])
-        results = await manager.get_routes()
-        assert results == [TEST_ROUTE_VERKEY]
+        await manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
+        record = await manager.get_recipient(TEST_ROUTE_VERKEY)
+        assert isinstance(record, RouteRecord)
+        assert record.connection_id == TEST_CONN_ID
+        assert record.recipient_key == TEST_ROUTE_VERKEY
 
-        recip = await manager.get_recipient(TEST_ROUTE_VERKEY)
-        assert recip == TEST_VERKEY
+        results = await manager.get_routes()
+        assert len(results) == 1
+        assert results[0].connection_id == TEST_CONN_ID
+        assert results[0].recipient_key == TEST_ROUTE_VERKEY
 
     @pytest.mark.asyncio
     async def test_create_delete(self, manager):
-        await manager.create_routes([TEST_ROUTE_VERKEY])
-        await manager.delete_routes([TEST_ROUTE_VERKEY])
+        record = await manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
+        await manager.delete_route_record(record)
         results = await manager.get_routes()
-        assert results == []
+        assert not results
 
     @pytest.mark.asyncio
     async def test_no_recipient(self, manager):

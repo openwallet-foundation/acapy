@@ -5,8 +5,9 @@ from marshmallow import fields
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import FORWARD
 
-HANDLER_CLASS = "indy_catalyst_agent.messaging.routing.handlers"
-".forward_handler.ForwardHandler"
+HANDLER_CLASS = (
+    "indy_catalyst_agent.messaging.routing.handlers.forward_handler.ForwardHandler"
+)
 
 
 class Forward(AgentMessage):
