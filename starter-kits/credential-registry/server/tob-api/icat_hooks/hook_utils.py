@@ -1,8 +1,8 @@
+import datetime
+
 from .models.CredentialHook import CredentialHook
 from .models.HookUser import HookUser
 from .models.Subscription import Subscription
-
-import datetime
 
 
 def find_and_fire_hook(event_name, instance, **kwargs):
