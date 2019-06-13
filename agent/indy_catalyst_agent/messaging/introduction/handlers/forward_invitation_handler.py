@@ -27,5 +27,4 @@ class ForwardInvitationHandler(BaseHandler):
         # Auto-accept
         if context.settings.get("accept_invites"):
             request = await connection_mgr.create_request(connection)
-            target = await connection_mgr.get_connection_target(connection)
-            await responder.send_outbound(request, target)
+            await responder.send(request, connection_id=connection.connection_id)

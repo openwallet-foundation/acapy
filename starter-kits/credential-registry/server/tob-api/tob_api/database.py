@@ -10,6 +10,7 @@
     limitations under the License.
 """
 import os
+
 from django.conf import settings
 
 engines = {
@@ -20,9 +21,7 @@ engines = {
 
 
 def config():
-    service_name = (
-        os.getenv("DATABASE_SERVICE_NAME", "").upper().replace("-", "_")
-    )
+    service_name = os.getenv("DATABASE_SERVICE_NAME", "").upper().replace("-", "_")
 
     if service_name:
         engine = engines.get(os.getenv("DATABASE_ENGINE"), engines["sqlite"])

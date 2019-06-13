@@ -1,7 +1,6 @@
 """Handle connection information interface with non-secrets storage."""
 
 import asyncio
-import datetime
 import json
 import uuid
 
@@ -11,21 +10,18 @@ from marshmallow import fields
 
 from ....admin.service import AdminService
 from ....config.injection_context import InjectionContext
-from ..messages.connection_invitation import ConnectionInvitation
-from ..messages.connection_request import ConnectionRequest
-from ....models.base import BaseModel, BaseModelSchema
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
 
+from ...models.base import BaseModel, BaseModelSchema
+from ...util import time_now
 
-def time_now() -> str:
-    """Timestamp in ISO format."""
-    dt = datetime.datetime.utcnow()
-    return dt.replace(tzinfo=datetime.timezone.utc).isoformat(" ")
+from ..messages.connection_invitation import ConnectionInvitation
+from ..messages.connection_request import ConnectionRequest
 
 
 class ConnectionRecord(BaseModel):
-    """Represents a single connection."""
+    """Represents a single pairwise connection."""
 
     class Meta:
         """ConnectionRecord metadata."""
@@ -451,6 +447,11 @@ class ConnectionRecord(BaseModel):
         self._admin_timer = asyncio.ensure_future(
             self.admin_delayed_update(context, 0.1)
         )
+
+    @property
+    def is_active(self) -> bool:
+        """Accessor to check if the connection is active."""
+        return self.state == self.STATE_ACTIVE
 
     @property
     def requires_routing(self) -> bool:

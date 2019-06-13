@@ -8,12 +8,16 @@ wallet.
 
 """
 
+import asyncio
+from collections import OrderedDict
 import logging
-
-from typing import Coroutine, Union
+from typing import Coroutine, Sequence, Union
 
 from .admin.server import AdminServer
 from .admin.service import AdminService
+from .cache.base import BaseCache
+from .cache.basic import BasicCache
+from .config.injection_context import InjectionContext
 from .config.provider import CachedProvider, ClassProvider
 from .dispatcher import Dispatcher
 from .error import StartupError
@@ -23,18 +27,22 @@ from .ledger.provider import LedgerProvider
 from .issuer.base import BaseIssuer
 from .holder.base import BaseHolder
 from .verifier.base import BaseVerifier
-from .messaging.agent_message import AgentMessage
 from .messaging.actionmenu.base_service import BaseMenuService
 from .messaging.actionmenu.driver_service import DriverMenuService
-from .messaging.connections.manager import ConnectionManager
-from .messaging.connections.models.connection_target import ConnectionTarget
+from .messaging.connections.manager import ConnectionManager, ConnectionManagerError
+from .messaging.connections.models.connection_record import ConnectionRecord
+from .messaging.error import MessageParseError, MessagePrepareError
 from .messaging.introduction.base_service import BaseIntroductionService
 from .messaging.introduction.demo_service import DemoIntroductionService
-from .messaging.message_factory import MessageFactory
+from .messaging.outbound_message import OutboundMessage
+from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
+from .messaging.serializer import MessageSerializer
+from .messaging.socket import SocketInfo, SocketRef
 from .storage.base import BaseStorage
+from .storage.error import StorageNotFoundError
 from .storage.provider import StorageProvider
-from .transport.inbound import InboundTransportConfiguration
+from .transport.inbound.base import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.queue.basic import BasicOutboundMessageQueue
@@ -53,40 +61,47 @@ class Conductor:
 
     def __init__(
         self,
-        transport_configs: InboundTransportConfiguration,
-        outbound_transports,
-        message_factory: MessageFactory,
+        inbound_transports: Sequence[InboundTransportConfiguration],
+        outbound_transports: Sequence[str],
+        protocol_registry: ProtocolRegistry,
         settings: dict,
     ) -> None:
         """
         Initialize an instance of Conductor.
 
         Args:
-            transport_configs: Configuration for inbound transport
-            outbound_transports: Configuration for outbound transport
-            message_factory: Message factory for discovering and deserializing messages
+            inbound_transports: Configuration for inbound transports
+            outbound_transports: Configuration for outbound transports
+            protocol_registry: Protocol registry for indexing message types
             settings: Dictionary of various settings
 
         """
         self.admin_server = None
-        self.context = None
-        self.connection_mgr = None
-        self.dispatcher = Dispatcher()
+        self.context: RequestContext = None
+        self.dispatcher: Dispatcher = None
         self.logger = logging.getLogger(__name__)
-        self.message_factory = message_factory
-        self.inbound_transport_configs = transport_configs
+        self.protocol_registry = protocol_registry
+        self.message_serializer: MessageSerializer = MessageSerializer()
+        self.inbound_transport_configs = inbound_transports
+        self.inbound_transport_manager = InboundTransportManager()
+        # TODO: Set queue driver dynamically via cli args
+        self.outbound_transport_manager = OutboundTransportManager(
+            BasicOutboundMessageQueue
+        )
         self.outbound_transports = outbound_transports
         self.settings = settings.copy() if settings else {}
+        self.sockets = OrderedDict()
         self.init_context()
 
     def init_context(self):
         """Initialize the global request context."""
 
         context = RequestContext(settings=self.settings)
-        context.settings.set_default("default_endpoint", "http://localhost:10000")
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
-        context.injector.bind_instance(MessageFactory, self.message_factory)
+        context.injector.bind_instance(BaseCache, BasicCache())
+        context.injector.bind_instance(ProtocolRegistry, self.protocol_registry)
+        context.injector.bind_instance(MessageSerializer, self.message_serializer)
 
         context.injector.bind_provider(BaseStorage, CachedProvider(StorageProvider()))
         context.injector.bind_provider(BaseWallet, CachedProvider(WalletProvider()))
@@ -132,10 +147,8 @@ class Conductor:
             except Exception:
                 self.logger.exception("Unable to initialize administration API")
 
-        self.connection_mgr = ConnectionManager(context)
-        context.injector.bind_instance(ConnectionManager, self.connection_mgr)
-
         self.context = context
+        self.dispatcher = Dispatcher(self.context)
 
     async def start(self) -> None:
         """Start the agent."""
@@ -162,21 +175,17 @@ class Conductor:
             public_did = public_did_info.did
 
         # Register all inbound transports
-        self.inbound_transport_manager = InboundTransportManager()
         for inbound_transport_config in self.inbound_transport_configs:
             module = inbound_transport_config.module
             host = inbound_transport_config.host
             port = inbound_transport_config.port
 
             self.inbound_transport_manager.register(
-                module, host, port, self.inbound_message_router
+                module, host, port, self.inbound_message_router, self.register_socket
             )
 
         await self.inbound_transport_manager.start_all()
 
-        # TODO: Set queue driver dynamically via cli args
-        queue = BasicOutboundMessageQueue
-        self.outbound_transport_manager = OutboundTransportManager(queue)
         for outbound_transport in self.outbound_transports:
             try:
                 self.outbound_transport_manager.register(outbound_transport)
@@ -214,7 +223,8 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                _connection, invitation = await self.connection_mgr.create_invitation()
+                mgr = ConnectionManager(self.context)
+                _connection, invitation = await mgr.create_invitation()
                 invite_url = invitation.to_url()
                 print("Invitation URL:")
                 print(invite_url)
@@ -225,50 +235,177 @@ class Conductor:
         send_invite_to = context.settings.get("debug.send_invitation_to")
         if send_invite_to:
             try:
-                _connection, invitation = await self.connection_mgr.create_invitation()
-                await self.connection_mgr.send_invitation(invitation, send_invite_to)
+                mgr = ConnectionManager(self.context)
+                _connection, invitation = await mgr.create_invitation()
+                await mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
+
+    async def register_socket(
+        self, *, handler: Coroutine = None, single_response: asyncio.Future = None
+    ) -> SocketRef:
+        """Register a new duplex connection."""
+        socket = SocketInfo(handler=handler, single_response=single_response)
+        socket_id = socket.socket_id
+        self.sockets[socket_id] = socket
+
+        async def close_socket():
+            socket.closed = True
+
+        return SocketRef(socket_id=socket_id, close=close_socket)
 
     async def inbound_message_router(
         self,
         message_body: Union[str, bytes],
-        transport_type: str,
-        reply: Coroutine = None,
-    ):
+        transport_type: str = None,
+        socket_id: str = None,
+        single_response: asyncio.Future = None,
+    ) -> asyncio.Future:
         """
         Route inbound messages.
 
         Args:
             message_body: Body of the incoming message
             transport_type: Type of transport this message came from
-            reply: Function to reply to this message
+            socket_id: The identifier of the incoming socket connection
+            single_response: A future to contain the first direct response message
 
         """
+
         try:
-            context = await self.connection_mgr.expand_message(
-                message_body, transport_type
+            parsed_msg, delivery = await self.message_serializer.parse_message(
+                self.context, message_body, transport_type
             )
-        except Exception:
+        except MessageParseError:
             self.logger.exception("Error expanding message")
             raise
 
-        result = await self.dispatcher.dispatch(
-            context, self.outbound_message_router, reply
+        connection_mgr = ConnectionManager(self.context)
+        connection = await connection_mgr.find_message_connection(delivery)
+        if connection:
+            delivery.connection_id = connection.connection_id
+
+        if single_response and not socket_id:
+            socket = SocketInfo(single_response=single_response)
+            socket_id = socket.socket_id
+            self.sockets[socket_id] = socket
+
+        if socket_id:
+            if socket_id not in self.sockets:
+                self.logger.warning(
+                    "Inbound message on unregistered socket ID: %s", socket_id
+                )
+                socket_id = None
+            elif self.sockets[socket_id].closed:
+                self.logger.warning(
+                    "Inbound message on closed socket ID: %s", socket_id
+                )
+                socket_id = None
+
+        delivery.socket_id = socket_id
+        socket = self.sockets[socket_id] if socket_id else None
+
+        if socket:
+            socket.process_incoming(parsed_msg, delivery)
+        elif (
+            delivery.direct_response_requested
+            and delivery.direct_response_requested != SocketInfo.REPLY_MODE_NONE
+        ):
+            self.logger.warning(
+                "Direct response requested, but not supported by transport: %s",
+                delivery.transport_type,
+            )
+
+        future = await self.dispatcher.dispatch(
+            parsed_msg, delivery, connection, self.outbound_message_router
         )
-        # TODO: need to use callback instead?
-        #       respond immediately after message parse in case of req-res transport?
-        return result.serialize() if result else None
+        if socket:
+            future.add_done_callback(lambda fut: socket.dispatch_complete())
+        return future
+
+    async def prepare_outbound_message(
+        self, message: OutboundMessage, context: InjectionContext = None
+    ):
+        """Prepare a response message for transmission.
+
+        Args:
+            message: An outbound message to be sent
+            context: Optional request context
+        """
+
+        context = context or self.context
+
+        if message.connection_id and not message.target:
+            try:
+                record = await ConnectionRecord.retrieve_by_id(
+                    context, message.connection_id
+                )
+            except StorageNotFoundError as e:
+                raise MessagePrepareError(
+                    "Could not locate connection record: {}".format(
+                        message.connection_id
+                    )
+                ) from e
+            mgr = ConnectionManager(context)
+            try:
+                target = await mgr.get_connection_target(record)
+            except ConnectionManagerError as e:
+                raise MessagePrepareError(str(e)) from e
+            if not target:
+                raise MessagePrepareError(
+                    "No connection target for message: {}".format(message.connection_id)
+                )
+            message.target = target
+
+        if not message.encoded and message.target:
+            target = message.target
+            message.payload = await self.message_serializer.encode_message(
+                context,
+                message.payload,
+                target.recipient_keys,
+                target.routing_keys,
+                target.sender_key,
+            )
+            message.encoded = True
 
     async def outbound_message_router(
-        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
+        self, message: OutboundMessage, context: InjectionContext = None
     ) -> None:
         """
         Route an outbound message.
 
         Args:
-            message: An agent message to be sent
-            target: Target to send message to
+            message: An outbound message to be sent
+            context: Optional request context
         """
-        payload = await self.connection_mgr.compact_message(message, target)
-        await self.outbound_transport_manager.send_message(payload, target.endpoint)
+        try:
+            await self.prepare_outbound_message(message, context)
+        except MessagePrepareError:
+            self.logger.exception("Error preparing outbound message for transmission")
+            return
+
+        # try socket connections first, preferring the same socket ID
+        socket_id = message.reply_socket_id
+        sel_socket = None
+        if (
+            socket_id
+            and socket_id in self.sockets
+            and self.sockets[socket_id].select_outgoing(message)
+        ):
+            sel_socket = self.sockets[socket_id]
+        else:
+            for socket in self.sockets.values():
+                if socket.select_outgoing(message):
+                    sel_socket = socket
+                    break
+        if sel_socket:
+            await sel_socket.send(message)
+            self.logger.debug("Returned message to socket %s", sel_socket.socket_id)
+            return
+
+        # deliver directly to endpoint
+        if message.endpoint:
+            await self.outbound_transport_manager.send_message(message)
+            return
+
+        self.logger.warning("No endpoint or direct route for outbound message, dropped")

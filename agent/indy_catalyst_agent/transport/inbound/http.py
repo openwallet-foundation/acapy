@@ -1,25 +1,25 @@
 """Http Transport classes and functions."""
 
+import asyncio
 import logging
-from typing import Callable
+from typing import Coroutine
 
 from aiohttp import web
 
-from .base import BaseInboundTransport
-from ...error import BaseError
+from .base import BaseInboundTransport, InboundTransportSetupError
 from ...wallet.util import b64_to_bytes
-
-
-class HttpSetupError(BaseError):
-    """Http setup error."""
-
-    pass
 
 
 class Transport(BaseInboundTransport):
     """Http Transport class."""
 
-    def __init__(self, host: str, port: int, message_router: Callable) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        message_router: Coroutine,
+        register_socket: Coroutine,
+    ) -> None:
         """
         Initialize a Transport instance.
 
@@ -27,11 +27,13 @@ class Transport(BaseInboundTransport):
             host: Host to listen on
             port: Port to listen on
             message_router: Function to pass incoming messages to
+            register_socket: A coroutine for registering a new socket
 
         """
         self.host = host
         self.port = port
         self.message_router = message_router
+        self.register_socket = register_socket
 
         self._scheme = "http"
         self.logger = logging.getLogger(__name__)
@@ -46,7 +48,7 @@ class Transport(BaseInboundTransport):
         Start this transport.
 
         Raises:
-            HttpSetupError: If there was an error starting the webserver
+            InboundTransportSetupError: If there was an error starting the webserver
 
         """
         app = web.Application()
@@ -58,7 +60,7 @@ class Transport(BaseInboundTransport):
         try:
             await site.start()
         except OSError:
-            raise HttpSetupError(
+            raise InboundTransportSetupError(
                 "Unable to start webserver with host "
                 + f"'{self.host}' and port '{self.port}'\n"
             )
@@ -79,15 +81,37 @@ class Transport(BaseInboundTransport):
             body = await request.text()
         else:
             body = await request.read()
-        try:
-            await self.message_router(body, self._scheme)
-        except Exception as e:
-            self.logger.exception("Error handling message")
-            error_message = f"Error handling message: {str(e)}"
-            return web.json_response(
-                {"success": False, "message": error_message}, status=400
-            )
 
+        try:
+            response = asyncio.Future()
+            await self.message_router(body, self._scheme, single_response=response)
+        except Exception:
+            self.logger.exception("Error handling message")
+            return web.Response(status=400)
+
+        try:
+            await asyncio.wait_for(response, 30)
+        except asyncio.TimeoutError:
+            if not response.done():
+                response.cancel()
+            return web.Response(status=504)
+        except asyncio.CancelledError:
+            return web.Response(status=200)
+
+        message = response.result()
+        if message:
+            if isinstance(message, bytes):
+                return web.Response(
+                    body=message,
+                    status=200,
+                    headers={"Content-Type": "application/ssi-agent-wire"},
+                )
+            else:
+                return web.Response(
+                    text=message,
+                    status=200,
+                    headers={"Content-Type": "application/json"},
+                )
         return web.Response(status=200)
 
     async def invite_message_handler(self, request: web.BaseRequest):

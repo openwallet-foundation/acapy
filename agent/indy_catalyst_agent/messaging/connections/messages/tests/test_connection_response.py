@@ -26,13 +26,13 @@ class TestConfig:
         pk = PublicKey(
             self.test_did,
             ident,
+            pk_value,
             PublicKeyType.ED25519_SIG_2018,
             controller,
-            pk_value,
             False,
         )
-        doc.verkeys.append(pk)
-        recip_keys = [pk_value]
+        doc.set(pk)
+        recip_keys = [pk]
         routing_keys = []
         service = Service(
             self.test_did,
@@ -42,7 +42,7 @@ class TestConfig:
             routing_keys,
             self.test_endpoint,
         )
-        doc.services.append(service)
+        doc.set(service)
         return doc
 
 

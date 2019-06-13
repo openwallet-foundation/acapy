@@ -1,8 +1,10 @@
 """Connection request handler."""
 
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
+
+from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_request import ConnectionRequest
-from ..manager import ConnectionManager
+from ..messages.problem_report import ProblemReport
 
 
 class ConnectionRequestHandler(BaseHandler):
@@ -21,11 +23,35 @@ class ConnectionRequestHandler(BaseHandler):
         assert isinstance(context.message, ConnectionRequest)
 
         mgr = ConnectionManager(context)
-        connection = await mgr.receive_request(context.message)
+        try:
+            connection = await mgr.receive_request(
+                context.message, context.message_delivery
+            )
+        except ConnectionManagerError as e:
+            self._logger.exception("Error receiving connection request")
+            if e.error_code:
+                try:
+                    target = mgr.diddoc_connection_target(
+                        context.message.connection.did_doc,
+                        context.message_delivery.recipient_verkey,
+                    )
+                except ConnectionManagerError:
+                    self._logger.exception("Cannot return problem report")
+                    return
+                await responder.send(
+                    ProblemReport(problem_code=e.error_code, explain=str(e)),
+                    target=target,
+                )
+            return
 
         if context.settings.get("accept_requests"):
-            response = await mgr.create_response(connection)
-            target = await mgr.get_connection_target(connection)
+            try:
+                response = await mgr.create_response(connection)
+            except ConnectionManagerError:
+                self._logger.exception("Error creating response to connection request")
+                # no return message
+                return
 
+            target = await mgr.get_connection_target(connection)
             self._logger.debug("Sending connection response to target: %s", target)
-            await responder.send_outbound(response, target)
+            await responder.send(response, target=target)

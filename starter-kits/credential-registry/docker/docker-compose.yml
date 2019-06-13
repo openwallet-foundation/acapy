@@ -113,10 +113,10 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
     volumes:
-      - ../server/tob-api/api:/home/indy/api
       - ../server/tob-api/tob_api:/home/indy/tob_api
       - ../server/tob-api/api_v2:/home/indy/api_v2
       - ../server/tob-api/icat_hooks:/home/indy/icat_hooks
+      - ../server/tob-api/icat_cbs:/home/indy/icat_cbs
       - tob-wallet:/home/indy/.indy_client/wallet
     networks:
       - tob
@@ -173,10 +173,10 @@ services:
       - TOB_THEME=${TOB_THEME}
       - APP_SCRIPT=${APP_SCRIPT:-start-celery-worker.sh}
     volumes:
-      - ../server/tob-api/api:/home/indy/api
       - ../server/tob-api/tob_api:/home/indy/tob_api
       - ../server/tob-api/api_v2:/home/indy/api_v2
       - ../server/tob-api/icat_hooks:/home/indy/icat_hooks
+      - ../server/tob-api/icat_cbs:/home/indy/icat_cbs
       - tob-wallet:/home/indy/.indy_client/wallet
     networks:
       - tob

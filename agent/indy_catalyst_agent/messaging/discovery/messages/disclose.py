@@ -2,7 +2,7 @@
 
 from typing import Mapping
 
-from marshmallow import fields
+from marshmallow import fields, Schema
 
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import DISCLOSE
@@ -30,7 +30,14 @@ class Disclose(AgentMessage):
             protocols: A mapping of protocol names to a dictionary of properties
         """
         super(Disclose, self).__init__(**kwargs)
-        self.protocols = protocols or {}
+        self.protocols = list(protocols) if protocols else []
+
+
+class ProtocolDescriptorSchema(Schema):
+    """Schema for an entry in the protocols list."""
+
+    pid = fields.Str(required=True)
+    roles = fields.List(fields.Str(), required=False, allow_none=True)
 
 
 class DiscloseSchema(AgentMessageSchema):
@@ -41,4 +48,4 @@ class DiscloseSchema(AgentMessageSchema):
 
         model_class = Disclose
 
-    protocols = fields.Dict(fields.Str(), fields.Dict(fields.Str()), required=True)
+    protocols = fields.List(fields.Nested(ProtocolDescriptorSchema()), required=True)

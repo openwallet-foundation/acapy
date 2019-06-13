@@ -1,8 +1,9 @@
 from django.contrib.postgres import fields as contrib
 from django.db import models
 
-from .Subscription import Subscription
 from api_v2.models.Auditable import Auditable
+
+from .Subscription import Subscription
 
 
 class HookableCredential(Auditable):
@@ -24,6 +25,7 @@ class HookableCredential(Auditable):
 
     ... should fire off a hook to the feedback api
     """
+
     # corp_num = models.ForeignKey("Topic", related_name="+", to_field="source_id", on_delete=models.DO_NOTHING)
     # credential_type = models.ForeignKey("CredentialType", related_name="+", on_delete=models.DO_NOTHING)
     # 'New' or 'Stream' depending if it's the first credential for the Topic (corp_num)
@@ -42,19 +44,19 @@ class HookableCredential(Auditable):
         else:
             hook_dict = hook.dict()
         dict = {
-            'subscription': hook_dict,
-            'data': {
-                'id': self.id,
-                'corp_num': self.corp_num,
-                'credential_type': self.credential_type,
-                'credential_json': self.credential_json,
+            "subscription": hook_dict,
+            "data": {
+                "id": self.id,
+                "corp_num": self.corp_num,
+                "credential_type": self.credential_type,
+                "credential_json": self.credential_json,
                 # ... other fields here ...
-            }
+            },
         }
         print("Sending hook", dict)
         return dict
 
     class Meta:
         db_table = "hookable_cred"
-        #unique_together = (("corp_num", "credential_type"),)
+        # unique_together = (("corp_num", "credential_type"),)
         ordering = ("corp_num", "credential_type")

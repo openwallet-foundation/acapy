@@ -2,8 +2,9 @@
 
 from marshmallow import fields
 
-from ....models.base import BaseModel, BaseModelSchema
 from von_anchor.a2a import DIDDoc
+
+from ...models.base import BaseModel, BaseModelSchema
 
 
 class DIDDocWrapper(fields.Field):
@@ -93,5 +94,5 @@ class ConnectionDetailSchema(BaseModelSchema):
 
         model_class = "ConnectionDetail"
 
-    did = fields.Str(data_key="DID")
+    did = fields.Str(data_key="DID", required=False)
     did_doc = DIDDocWrapper(data_key="DIDDoc", required=False)

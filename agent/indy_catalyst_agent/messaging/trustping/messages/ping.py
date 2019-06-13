@@ -6,7 +6,7 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import PING
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.trustping." + "handlers.ping_handler.PingHandler"
+    "indy_catalyst_agent.messaging.trustping.handlers.ping_handler.PingHandler"
 )
 
 

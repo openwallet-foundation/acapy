@@ -19,12 +19,15 @@ export class TimelineCredComponent {
   }
 
   get related_topic_name() {
-    let topic = this._cred && this._cred.related_topics && this._cred.related_topics[0];
-    if(topic && topic.names && topic.names.length) return topic.names[0].text;
+    //let topic = this._cred && this._cred.related_topics && this._cred.related_topics[0];
+    //if(topic && topic.names && topic.names.length) return topic.names[0].text;
+    return this._cred && this._cred.relatedPreferredName;
   }
 
   get topic_name() {
-    return this._cred && this._cred.names.length && this._cred.names[0].text;
+    return this._cred && this._cred.local_name && this._cred.local_name.text;
+    //return this._cred && this._cred.topic && this._cred.topic.local_name.text;
+    //return this._cred && this._cred.names.length && this._cred.names[0].text;
   }
 
 }

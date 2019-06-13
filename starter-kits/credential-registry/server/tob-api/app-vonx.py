@@ -4,30 +4,28 @@
 import argparse
 import os
 
-from aiohttp import web
 import django
-from api_indy.tob_anchor.boot import (
-    init_app, perform_register_services, start_indy_manager,
-    run_django, run_reindex, run_migration,
-)
+from aiohttp import web
+
+from tob_api.utils.boot import init_app, run_django, run_migration, run_reindex
 
 parser = argparse.ArgumentParser(description="aiohttp server example")
-parser.add_argument('--host', default=os.getenv('HTTP_HOST'))
-parser.add_argument('-p', '--port', default=os.getenv('HTTP_PORT'))
-parser.add_argument('-s', '--socket', default=os.getenv('SOCKET_PATH'))
+parser.add_argument("--host", default=os.getenv("HTTP_HOST"))
+parser.add_argument("-p", "--port", default=os.getenv("HTTP_PORT"))
+parser.add_argument("-s", "--socket", default=os.getenv("SOCKET_PATH"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     django.setup()
 
-    disable_migrate = os.environ.get('DISABLE_MIGRATE', 'false')
-    disconnected = os.environ.get('INDY_DISABLED', 'false')
-    skip_indexing = os.environ.get('SKIP_INDEXING_ON_STARTUP', 'false')
+    disable_migrate = os.environ.get("DISABLE_MIGRATE", "false")
+    disconnected = os.environ.get("INDY_DISABLED", "false")
+    skip_indexing = os.environ.get("SKIP_INDEXING_ON_STARTUP", "false")
 
-    if not disable_migrate or disable_migrate == 'false':
+    if not disable_migrate or disable_migrate == "false":
         do_reindex = False
-        if not skip_indexing or skip_indexing == 'false':
-            os.environ['SKIP_INDEXING_ON_STARTUP'] = 'active'
+        if not skip_indexing or skip_indexing == "false":
+            os.environ["SKIP_INDEXING_ON_STARTUP"] = "active"
             do_reindex = True
         run_migration()
         if do_reindex:
@@ -38,13 +36,10 @@ if __name__ == '__main__':
     if not args.socket and not args.port:
         args.port = 8080
 
-    startup = None
-    if not disconnected or disconnected == 'false':
-        start_indy_manager()
-        startup = perform_register_services
-
     web.run_app(
-        init_app(startup),
-        host=args.host, port=args.port, path=args.socket,
-        handle_signals=True
+        init_app(None),
+        host=args.host,
+        port=args.port,
+        path=args.socket,
+        handle_signals=True,
     )

@@ -3,10 +3,10 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-
-from api_v2.models import CredentialType, Issuer, Schema
 from icat_hooks import hook_utils
 from icat_hooks.models import CredentialHook, HookableCredential, HookUser, Subscription
+
+from api_v2.models import CredentialType, Issuer, Schema
 
 today = datetime.datetime.now().date()
 past_date = datetime.datetime.now() - datetime.timedelta(days=2)

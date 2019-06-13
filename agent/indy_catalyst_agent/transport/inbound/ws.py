@@ -1,24 +1,25 @@
 """Websockets Transport classes and functions."""
 
 import logging
-from typing import Callable
+from typing import Coroutine
 
 from aiohttp import web, WSMsgType
 
-from .base import BaseInboundTransport
-from ...error import BaseError
+from ...messaging.socket import SocketRef
 
-
-class WsSetupError(BaseError):
-    """Websocket setup error."""
-
-    pass
+from .base import BaseInboundTransport, InboundTransportSetupError
 
 
 class Transport(BaseInboundTransport):
     """Websockets Transport class."""
 
-    def __init__(self, host: str, port: int, message_router: Callable) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        message_router: Coroutine,
+        register_socket: Coroutine,
+    ) -> None:
         """
         Initialize a Transport instance.
 
@@ -26,11 +27,13 @@ class Transport(BaseInboundTransport):
             host: Host to listen on
             port: Port to listen on
             message_router: Function to pass incoming messages to
+            register_socket: A coroutine for registering a new socket
 
         """
         self.host = host
         self.port = port
         self.message_router = message_router
+        self.register_socket = register_socket
 
         # TODO: set scheme dynamically based on SSL settings (ws/wss)
         self._scheme = "ws"
@@ -46,7 +49,7 @@ class Transport(BaseInboundTransport):
         Start this transport.
 
         Raises:
-            HttpSetupError: If there was an error starting the webserver
+            InboundTransportSetupError: If there was an error starting the webserver
 
         """
         app = web.Application()
@@ -57,8 +60,8 @@ class Transport(BaseInboundTransport):
         try:
             await site.start()
         except OSError:
-            raise WsSetupError(
-                "Unable to start webserver with host "
+            raise InboundTransportSetupError(
+                "Unable to start websocket server with host "
                 + f"'{self.host}' and port '{self.port}'\n"
             )
 
@@ -77,25 +80,22 @@ class Transport(BaseInboundTransport):
         await ws.prepare(request)
 
         async def reply(result):
-            await ws.send_json({"success": True, "message": result})
+            if isinstance(result, str):
+                await ws.send_json(result)
+            else:
+                await ws.send_bytes(result)
+
+        socket: SocketRef = await self.register_socket(handler=reply)
 
         # Listen for incoming messages
         async for msg in ws:
             self.logger.info(f"Received message: {msg.data}")
-            if msg.type == WSMsgType.TEXT and msg.data == "close":
-                await ws.close()
-
-            elif msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
+            if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
                 try:
                     # Route message and provide connection instance as means to respond
-                    result = await self.message_router(msg.data, self._scheme, reply)
-                    if result:
-                        await reply(result)
-                except Exception as e:
+                    await self.message_router(msg.data, self._scheme, socket.socket_id)
+                except Exception:
                     self.logger.exception("Error handling message")
-                    error_message = f"Error handling message: {str(e)}"
-                    await ws.send_json({"success": False, "message": error_message})
-                    continue
 
             elif msg.type == WSMsgType.ERROR:
                 self.logger.error(
@@ -103,4 +103,7 @@ class Transport(BaseInboundTransport):
                 )
 
         self.logger.info("Websocket connection closed")
+
+        await socket.close()
+
         return ws

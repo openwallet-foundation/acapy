@@ -4,6 +4,9 @@ import json
 import logging
 
 import indy.anoncreds
+from indy.error import ErrorCode, IndyError
+
+from ..wallet.error import WalletNotFoundError
 
 from .base import BaseHolder
 
@@ -109,65 +112,96 @@ class IndyHolder(BaseHolder):
         credentials = json.loads(credentials_json)
         return credentials
 
-    async def get_credentials_for_presentation_request(
-        self, presentation_request: dict, start: int, count: int, extra_query: dict
+    async def get_credentials_for_presentation_request_by_referent(
+        self,
+        presentation_request: dict,
+        referent: str,
+        start: int,
+        count: int,
+        extra_query: dict = {},
     ):
         """
         Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid presentation request from issuer
+            referent: Presentation request referent to use to search for creds
             start: Starting index
             count: Number of records to return
             extra_query: wql query dict
 
         """
 
-        credentials_json = await indy.anoncreds.prover_get_credentials_for_proof_req(
-            self.wallet.handle, json.dumps(presentation_request)
+        search_handle = await indy.anoncreds.prover_search_credentials_for_proof_req(
+            self.wallet.handle,
+            json.dumps(presentation_request),
+            json.dumps(extra_query),
         )
 
-        # TODO: use prover_search_credentials_for_proof_req instead of getting all
-        #       creds at once. The API is odd, need to collate all referents from
-        #       proof request then make n calls to
-        #       prover_fetch_credentials_for_proof_req?
-        #       Each request has the same extra_query filters applied to it?
+        # We need to move the database cursor position manually...
+        if start > 0:
+            # TODO: move cursors in chunks to avoid exploding memory
+            await indy.anoncreds.prover_fetch_credentials_for_proof_req(
+                search_handle, referent, start
+            )
 
-        #
-        # search_handle = await indy.anoncreds.prover_search_credentials_for_proof_req(
-        #     self.wallet.handle,
-        #     json.dumps(presentation_request),
-        #     json.dumps(extra_query),
-        # )
-        #
-        # # We need to move the database cursor position manually...
-        # if start > 0:
-        #     # TODO: move cursor in chunks to avoid exploding memory
-        #     await indy.anoncreds.prover_fetch_credentials(search_handle, start)
-        #
-        # credentials_json =
-        #      await indy.anoncreds.prover_fetch_credentials_for_proof_req(
-        #     search_handle, count
-        # )
-        # await indy.anoncreds.prover_close_credentials_search(search_handle)
+        try:
+            (
+                credentials_json
+            ) = await indy.anoncreds.prover_fetch_credentials_for_proof_req(
+                search_handle, referent, count
+            )
+        finally:
+            # Always close
+            await indy.anoncreds.prover_close_credentials_search_for_proof_req(
+                search_handle
+            )
 
         credentials = json.loads(credentials_json)
         return credentials
 
     async def get_credential(self, credential_id: str):
         """
-        Get credentials stored in the wallet.
+        Get a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to retrieve
 
         """
-        credential_json = await indy.anoncreds.prover_get_credential(
-            self.wallet.handle, credential_id
-        )
+        try:
+            credential_json = await indy.anoncreds.prover_get_credential(
+                self.wallet.handle, credential_id
+            )
+        except IndyError as e:
+            if e.error_code == ErrorCode.WalletItemNotFound:
+                raise WalletNotFoundError(
+                    "Credential not found in the wallet: {}".format(credential_id)
+                )
+            else:
+                raise
 
         credential = json.loads(credential_json)
         return credential
+
+    async def delete_credential(self, credential_id: str):
+        """
+        Remove a credential stored in the wallet.
+
+        Args:
+            credential_id: Credential id to remove
+
+        """
+        try:
+            await indy.anoncreds.prover_delete_credential(
+                self.wallet.handle, credential_id
+            )
+        except IndyError as e:
+            if e.error_code == ErrorCode.WalletItemNotFound:
+                raise WalletNotFoundError(
+                    "Credential not found in the wallet: {}".format(credential_id)
+                )
+            else:
+                raise
 
     async def create_presentation(
         self,

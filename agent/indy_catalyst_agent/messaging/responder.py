@@ -5,53 +5,116 @@ The responder is provided to message handlers to enable them to send a new messa
 in response to the message being handled.
 """
 
-from abc import ABC
+from abc import ABC, abstractmethod
+from typing import Union
+
+from ..error import BaseError
 
 from .agent_message import AgentMessage
 from .connections.models.connection_target import ConnectionTarget
-from ..error import BaseError
+from .outbound_message import OutboundMessage
 
 
 class ResponderError(BaseError):
     """Responder error."""
 
-    pass
-
 
 class BaseResponder(ABC):
     """Interface for message handlers to send responses."""
 
-    async def send_outbound(self, message: AgentMessage, target: ConnectionTarget):
-        """
-        Send outbound message.
+    def __init__(
+        self,
+        *,
+        connection_id: str = None,
+        reply_socket_id: str = None,
+        reply_to_verkey: str = None,
+        target: ConnectionTarget = None,
+    ):
+        """Initialize a base responder."""
+        self.connection_id = connection_id
+        self.reply_socket_id = reply_socket_id
+        self.reply_to_verkey = reply_to_verkey
+        self.target = target
 
-        Send a message to a given connection target (endpoint). The
-        message may be queued for later delivery.
+    async def create_outbound(
+        self,
+        message: Union[AgentMessage, str, bytes],
+        *,
+        connection_id: str = None,
+        reply_socket_id: str = None,
+        reply_thread_id: str = None,
+        reply_to_verkey: str = None,
+        target: ConnectionTarget = None,
+    ) -> OutboundMessage:
+        """Create an OutboundMessage from a message payload."""
+        if isinstance(message, AgentMessage):
+            payload = message.to_json()
+            encoded = False
+            if not reply_thread_id:
+                reply_thread_id = message._thread_id
+        else:
+            payload = message
+            encoded = True
+        return OutboundMessage(
+            payload,
+            connection_id=connection_id,
+            encoded=encoded,
+            reply_socket_id=reply_socket_id,
+            reply_thread_id=reply_thread_id,
+            reply_to_verkey=reply_to_verkey,
+            target=target,
+        )
+
+    async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
+        """Convert a message to an OutboundMessage and send it."""
+        outbound = await self.create_outbound(message, **kwargs)
+        await self.send_outbound(outbound)
+
+    async def send_reply(self, message: Union[AgentMessage, str, bytes]):
+        """
+        Send a reply to an incoming message.
 
         Args:
-            message: AgentMessage to be sent
-            target: ConnectionTarget to send this message to
-        """
+            message: the `AgentMessage`, or pre-packed str or bytes to reply with
 
-    async def send_reply(self, message: AgentMessage):
-        """
-        Send message as reply.
+        Raises:
+            ResponderError: If there is no active connection
 
-        Send a message back to the same agent. This relies
-        on the presence of an active connection. The message
-        may be multicast to multiple endpoints or queued for
-        later delivery.
+        """
+        outbound = await self.create_outbound(
+            message,
+            connection_id=self.connection_id,
+            reply_socket_id=self.reply_socket_id,
+            reply_to_verkey=self.reply_to_verkey,
+            target=self.target,
+        )
+        await self.send_outbound(outbound)
+
+    @abstractmethod
+    async def send_outbound(self, message: OutboundMessage):
+        """
+        Send an outbound message.
 
         Args:
-            message: AgentMessage to be sent
+            message: The `OutboundMessage` to be sent
         """
 
-    async def send_admin_message(self, message: AgentMessage):
-        """
-        Send admin message.
 
-        Send an admin message to active listeners.
+class MockResponder(BaseResponder):
+    """Mock responder implementation for use by tests."""
 
-        Args:
-            message: AgentMessage to be sent
-        """
+    def __init__(self):
+        """Initialize the mock responder."""
+        self.messages = []
+
+    async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
+        """Convert a message to an OutboundMessage and send it."""
+        self.messages.append((message, kwargs))
+
+    async def send_reply(self, message: Union[AgentMessage, str, bytes]):
+        """Send a reply to an incoming message."""
+        self.messages.append((message, None))
+
+    async def send_outbound(self, message: OutboundMessage):
+        """Send an outbound message."""
+        self.messages.append((message, None))

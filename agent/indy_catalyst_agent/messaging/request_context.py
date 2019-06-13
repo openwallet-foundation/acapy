@@ -11,7 +11,6 @@ from ..config.injection_context import InjectionContext
 
 from .agent_message import AgentMessage
 from .connections.models.connection_record import ConnectionRecord
-from .connections.models.connection_target import ConnectionTarget
 from .message_delivery import MessageDelivery
 
 
@@ -23,7 +22,6 @@ class RequestContext(InjectionContext):
         super().__init__(settings=settings)
         self._connection_active = False
         self._connection_record = None
-        self._connection_target = None
         self._message = None
         self._message_delivery = None
 
@@ -62,28 +60,6 @@ class RequestContext(InjectionContext):
 
         """
         self._connection_record = record
-
-    @property
-    def connection_target(self) -> ConnectionTarget:
-        """
-        Accessor for the ConnectionTarget associated with the current connection.
-
-        Returns:
-            The connection target for this connection
-
-        """
-        return self._connection_target
-
-    @connection_target.setter
-    def connection_target(self, target: ConnectionTarget):
-        """
-        Setter for the ConnectionTarget associated with the current connection.
-
-        Args:
-            The new connection target
-
-        """
-        self._connection_target = target
 
     @property
     def default_endpoint(self) -> str:

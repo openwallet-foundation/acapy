@@ -9,7 +9,6 @@ from uuid import uuid4
 from ...error import BaseError
 from ...holder.base import BaseHolder
 from ...ledger.base import BaseLedger
-from ...models.thread_decorator import ThreadDecorator
 from ...verifier.base import BaseVerifier
 
 from ..request_context import RequestContext
@@ -54,7 +53,7 @@ class PresentationManager:
         version: str,
         requested_attributes: list,
         requested_predicates: list,
-        connection_id,
+        connection_id: str,
     ):
         """Create a proof request."""
 
@@ -115,6 +114,8 @@ class PresentationManager:
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange.serialize())
         )
+
+        return presentation_exchange
 
     async def create_presentation(
         self,
@@ -205,8 +206,7 @@ class PresentationManager:
         )
 
         # TODO: Find a more elegant way to do this
-        thread = ThreadDecorator(thid=presentation_exchange_record.thread_id)
-        presentation_message._thread = thread
+        presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
 
         # save presentation exchange state
         presentation_exchange_record.state = (
@@ -236,6 +236,8 @@ class PresentationManager:
         asyncio.ensure_future(
             send_webhook("presentations", presentation_exchange_record.serialize())
         )
+
+        return presentation_exchange_record
 
     async def verify_presentation(
         self, presentation_exchange_record: PresentationExchange

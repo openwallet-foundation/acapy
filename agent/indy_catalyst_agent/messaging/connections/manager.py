@@ -2,36 +2,34 @@
 
 import asyncio
 import aiohttp
-import json
 import logging
 
-from typing import Tuple, Union
-
-from ...error import BaseError
-from ..agent_message import AgentMessage
-from ...config.base import InjectorError
-from ..message_delivery import MessageDelivery
-from .messages.connection_invitation import ConnectionInvitation
-from .messages.connection_request import ConnectionRequest
-from .messages.connection_response import ConnectionResponse
-from ..message_factory import MessageFactory, MessageParseError
-from .models.connection_detail import ConnectionDetail
-from .models.connection_record import ConnectionRecord
-from .models.connection_target import ConnectionTarget
-from ..request_context import RequestContext
-from ..routing.messages.forward import Forward
-from ...storage.base import BaseStorage
-from ...storage.error import StorageError, StorageNotFoundError
-from ...storage.record import StorageRecord
-from ...wallet.base import BaseWallet, DIDInfo
-from ...wallet.error import WalletError, WalletNotFoundError
-from ...wallet.util import bytes_to_b64
-
-from ..util import send_webhook
+from typing import Tuple
 
 from von_anchor.a2a import DIDDoc
 from von_anchor.a2a.publickey import PublicKey, PublicKeyType
 from von_anchor.a2a.service import Service
+
+from ...error import BaseError
+from ...config.base import InjectorError
+from ...config.injection_context import InjectionContext
+from ...storage.base import BaseStorage
+from ...storage.error import StorageError, StorageNotFoundError
+from ...storage.record import StorageRecord
+from ...wallet.base import BaseWallet, DIDInfo
+from ...wallet.error import WalletNotFoundError
+from ...wallet.util import bytes_to_b64
+
+from ..message_delivery import MessageDelivery
+from ..util import send_webhook
+
+from .messages.connection_invitation import ConnectionInvitation
+from .messages.connection_request import ConnectionRequest
+from .messages.connection_response import ConnectionResponse
+from .messages.problem_report import ProblemReportReason
+from .models.connection_detail import ConnectionDetail
+from .models.connection_record import ConnectionRecord
+from .models.connection_target import ConnectionTarget
 
 
 class ConnectionManagerError(BaseError):
@@ -44,7 +42,7 @@ class ConnectionManager:
     RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
 
-    def __init__(self, context: RequestContext):
+    def __init__(self, context: InjectionContext):
         """
         Initialize a ConnectionManager.
 
@@ -63,12 +61,12 @@ class ConnectionManager:
         print()
 
     @property
-    def context(self) -> RequestContext:
+    def context(self) -> InjectionContext:
         """
-        Accessor for the current request context.
+        Accessor for the current injection context.
 
         Returns:
-            The request context for this connection
+            The injection context for this connection
 
         """
         return self._context
@@ -120,9 +118,9 @@ class ConnectionManager:
         self._log_state("Creating invitation")
 
         if not my_endpoint:
-            my_endpoint = self.context.default_endpoint
+            my_endpoint = self.context.settings.get("default_endpoint")
         if not my_label:
-            my_label = self.context.default_label
+            my_label = self.context.settings.get("default_label")
 
         # Create and store new invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -156,7 +154,7 @@ class ConnectionManager:
         await connection.attach_invitation(self.context, invitation)
 
         await connection.log_activity(
-            self.context, "invitation", connection.DIRECTION_SENT,
+            self.context, "invitation", connection.DIRECTION_SENT
         )
 
         return connection, invitation
@@ -228,7 +226,7 @@ class ConnectionManager:
         await connection.attach_invitation(self.context, invitation)
 
         await connection.log_activity(
-            self.context, "invitation", connection.DIRECTION_RECEIVED,
+            self.context, "invitation", connection.DIRECTION_RECEIVED
         )
 
         return connection
@@ -262,7 +260,7 @@ class ConnectionManager:
         # Create connection request message
         did_doc = await self.create_did_document(my_info, connection.my_router_did)
         if not my_label:
-            my_label = self.context.default_label
+            my_label = self.context.settings.get("default_label")
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
@@ -277,17 +275,20 @@ class ConnectionManager:
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context, "request", connection.DIRECTION_SENT,
+            self.context, "request", connection.DIRECTION_SENT
         )
 
         return request
 
-    async def receive_request(self, request: ConnectionRequest) -> ConnectionRecord:
+    async def receive_request(
+        self, request: ConnectionRequest, delivery: MessageDelivery
+    ) -> ConnectionRecord:
         """
         Receive and store a connection request.
 
         Args:
             request: The `ConnectionRequest` to accept
+            delivery: The message delivery metadata
 
         Returns:
             The new or updated `ConnectionRecord` instance
@@ -299,19 +300,15 @@ class ConnectionManager:
         connection_key = None
 
         # Determine what key will need to sign the response
-        if self.context.message_delivery.recipient_did_public:
+        if delivery.recipient_did_public:
             wallet: BaseWallet = await self.context.inject(BaseWallet)
-            my_info = await wallet.get_local_did(
-                self.context.recipient_did
-            )
+            my_info = await wallet.get_local_did(self.context.recipient_did)
             connection_key = my_info.verkey
         else:
-            connection_key = self.context.message_delivery.recipient_verkey
+            connection_key = delivery.recipient_verkey
             try:
                 connection = await ConnectionRecord.retrieve_by_invitation_key(
-                    self.context,
-                    connection_key,
-                    ConnectionRecord.INITIATOR_SELF,
+                    self.context, connection_key, ConnectionRecord.INITIATOR_SELF
                 )
             except StorageNotFoundError:
                 raise ConnectionManagerError(
@@ -325,8 +322,15 @@ class ConnectionManager:
             self._log_state("Found invitation", {"invitation": invitation})
 
         conn_did_doc = request.connection.did_doc
+        if not conn_did_doc:
+            raise ConnectionManagerError(
+                "No DIDDoc provided; cannot connect to public DID"
+            )
         if request.connection.did != conn_did_doc.did:
-            raise ConnectionManagerError("Connection DID does not match DIDDoc id")
+            raise ConnectionManagerError(
+                "Connection DID does not match DIDDoc id",
+                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+            )
         await self.store_did_document(conn_did_doc)
 
         if connection:
@@ -363,7 +367,7 @@ class ConnectionManager:
         await connection.attach_request(self.context, request)
 
         await connection.log_activity(
-            self.context, "request", connection.DIRECTION_RECEIVED,
+            self.context, "request", connection.DIRECTION_RECEIVED
         )
 
         return connection
@@ -415,7 +419,7 @@ class ConnectionManager:
             connection.their_role = their_role
 
         if not my_endpoint:
-            my_endpoint = self.context.default_endpoint
+            my_endpoint = self.context.settings.get("default_endpoint")
 
         # Create connection response message
         did_doc = await self.create_did_document(
@@ -428,9 +432,7 @@ class ConnectionManager:
         response.assign_thread_from(request)
         # Sign connection field using the invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
-        await response.sign_field(
-            "connection", connection.invitation_key, wallet
-        )
+        await response.sign_field("connection", connection.invitation_key, wallet)
         self._log_state(
             "Created connection response",
             {
@@ -448,12 +450,14 @@ class ConnectionManager:
         self._log_state("Updated connection state", {"connection": connection})
 
         await connection.log_activity(
-            self.context, "response", connection.DIRECTION_SENT,
+            self.context, "response", connection.DIRECTION_SENT
         )
 
         return response
 
-    async def accept_response(self, response: ConnectionResponse) -> ConnectionRecord:
+    async def accept_response(
+        self, response: ConnectionResponse, delivery: MessageDelivery
+    ) -> ConnectionRecord:
         """
         Accept a connection response.
 
@@ -462,6 +466,7 @@ class ConnectionManager:
 
         Args:
             response: The `ConnectionResponse` to accept
+            delivery: The message delivery metadata
 
         Returns:
             The updated `ConnectionRecord` representing the connection
@@ -477,28 +482,26 @@ class ConnectionManager:
         connection = None
         if response._thread:
             # identify the request by the thread ID
-            request_id = response._thread_id
             try:
                 connection = await ConnectionRecord.retrieve_by_request_id(
-                    self.context, request_id
+                    self.context, response._thread_id
                 )
             except StorageNotFoundError:
                 pass
 
-        if not connection:
+        if not connection and delivery.sender_did:
             # identify connection by the DID they used for us
             try:
                 connection = await ConnectionRecord.retrieve_by_did(
-                    self.context,
-                    self.context.message_delivery.sender_did,
-                    self.context.message_delivery.recipient_did,
+                    self.context, delivery.sender_did, delivery.recipient_did
                 )
             except StorageNotFoundError:
                 pass
 
         if not connection:
             raise ConnectionManagerError(
-                "No connection associated with connection response"
+                "No corresponding connection request found",
+                error_code=ProblemReportReason.RESPONSE_FOR_UNKNOWN_REQUEST.value,
             )
 
         if connection.state not in (
@@ -512,6 +515,10 @@ class ConnectionManager:
 
         their_did = response.connection.did
         conn_did_doc = response.connection.did_doc
+        if not conn_did_doc:
+            raise ConnectionManagerError(
+                "No DIDDoc provided; cannot connect to public DID"
+            )
         if their_did != conn_did_doc.did:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
         await self.store_did_document(conn_did_doc)
@@ -523,7 +530,7 @@ class ConnectionManager:
         asyncio.ensure_future(send_webhook("connections", connection.serialize()))
 
         await connection.log_activity(
-            self.context, "response", connection.DIRECTION_RECEIVED,
+            self.context, "response", connection.DIRECTION_RECEIVED
         )
 
         return connection
@@ -545,7 +552,7 @@ class ConnectionManager:
             auto_complete: Should this connection automatically be promoted to active
 
         Returns:
-            The found `ConnectionRecord`
+            The located `ConnectionRecord`, if any
 
         """
         # self._log_state(
@@ -588,139 +595,58 @@ class ConnectionManager:
 
         return connection
 
-    async def expand_message(
-        self,
-        message_body: Union[str, bytes],
-        transport_type: str,
-    ) -> RequestContext:
+    async def find_message_connection(
+        self, delivery: MessageDelivery
+    ) -> ConnectionRecord:
         """
         Deserialize an incoming message and further populate the request context.
 
-        message_body: The body of the message
-        transport_type: The transport the message was received on
+        Args:
+            delivery: The message delivery details
 
         Returns:
-            The `RequestContext` of the expanded message
-
-        Raises:
-            MessageParseError: If there is no message factory defined
-            MessageParseError: If there is no wallet defined
-            MessageParseError: If the JSON parsing failed
+            The `ConnectionRecord` associated with the expanded message, if any
 
         """
-        context = self.context.start_scope("message")
 
-        try:
-            message_factory: MessageFactory = await context.inject(MessageFactory)
-        except InjectorError:
-            raise MessageParseError("Message factory not defined")
-
-        try:
-            wallet: BaseWallet = await context.inject(BaseWallet)
-        except InjectorError:
-            raise MessageParseError("Wallet not defined")
-
-        message_dict = None
-        message_json = message_body
-        from_verkey = None
-        to_verkey = None
-
-        try:
-            message_dict = json.loads(message_json)
-        except ValueError:
-            raise MessageParseError("Message JSON parsing failed")
-
-        if "@type" not in message_dict:
+        if delivery.sender_verkey:
             try:
-                unpacked = await wallet.unpack_message(message_body)
-                message_json, from_verkey, to_verkey = unpacked
-            except WalletError:
-                self._logger.debug("Message unpack failed, falling back to JSON")
-            else:
-                try:
-                    message_dict = json.loads(message_json)
-                except ValueError:
-                    raise MessageParseError("Message JSON parsing failed")
-
-        self._logger.debug(f"Expanded message: {message_dict}")
-
-        context.message = message_factory.make_message(message_dict)
-        delivery = MessageDelivery()
-        delivery.transport_type = transport_type
-
-        if from_verkey and to_verkey:
-            # must be a packed message for from_verke and to_verkey to be populated
-            delivery.recipient_verkey = to_verkey
-            delivery.sender_verkey = from_verkey
-            try:
-                delivery.sender_did = await self.find_did_for_key(from_verkey)
+                delivery.sender_did = await self.find_did_for_key(
+                    delivery.sender_verkey
+                )
             except StorageNotFoundError:
-                pass
+                self._logger.warning(
+                    "No corresponding DID found for sender verkey: %s",
+                    delivery.sender_verkey,
+                )
 
+        if delivery.recipient_verkey:
             try:
-                my_info = await wallet.get_local_did_for_verkey(to_verkey)
+                wallet: BaseWallet = await self.context.inject(BaseWallet)
+                my_info = await wallet.get_local_did_for_verkey(
+                    delivery.recipient_verkey
+                )
                 delivery.recipient_did = my_info.did
                 if "public" in my_info.metadata and my_info.metadata["public"] is True:
                     delivery.recipient_did_public = True
-
+            except InjectorError:
+                self._logger.warning(
+                    "Cannot resolve recipient verkey, no wallet defined by context: %s",
+                    delivery.recipient_verkey,
+                )
             except WalletNotFoundError:
-                pass
-
-            connection = await self.find_connection(
-                delivery.sender_did, delivery.recipient_did, to_verkey, True
-            )
-            if connection:
-                self._log_state("Found connection", {"connection": connection})
-                context.connection_active = (
-                    connection.state == ConnectionRecord.STATE_ACTIVE
+                self._logger.warning(
+                    "No corresponding DID found for recipient verkey: %s",
+                    delivery.recipient_verkey,
                 )
-                context.connection_record = connection
-                context.connection_target = await self.get_connection_target(
-                    connection)
 
-        context.message_delivery = delivery
+        connection = await self.find_connection(
+            delivery.sender_did, delivery.recipient_did, delivery.recipient_verkey, True
+        )
+        if connection:
+            self._log_state("Found connection", {"connection": connection})
 
-        # look up thread information
-
-        # handle any other decorators having special behaviour (timing, trace, etc)
-
-        return context
-
-    async def compact_message(
-        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
-    ) -> Union[str, bytes]:
-        """
-        Serialize an outgoing message for transport.
-
-        Args:
-            message: The `AgentMessage` to compact, or a pre-packed string or bytes
-            target: The `ConnectionTarget` you are compacting for
-
-        Returns:
-            The compacted message
-
-        """
-
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
-
-        if isinstance(message, AgentMessage):
-            message_json = message.to_json()
-            if target.sender_key and target.recipient_keys:
-                message = await wallet.pack_message(
-                    message_json, target.recipient_keys, target.sender_key
-                )
-                if target.routing_keys:
-                    recip_keys = target.recipient_keys
-                    for router_key in target.routing_keys:
-                        fwd_msg = Forward(to=recip_keys[0], msg=message)
-                        # Forwards are anon packed
-                        recip_keys = [router_key]
-                        message = await wallet.pack_message(
-                            fwd_msg.to_json(), recip_keys
-                        )
-            else:
-                message = message_json
-        return message
+        return connection
 
     async def create_did_document(
         self, my_info: DIDInfo, my_router_did: str = None, my_endpoint: str = None
@@ -743,17 +669,17 @@ class ConnectionManager:
         pk = PublicKey(
             my_info.did,
             "1",
+            did_key,
             PublicKeyType.ED25519_SIG_2018,
             did_controller,
-            did_key,
             True,
         )
-        did_doc.verkeys.append(pk)
+        did_doc.set(pk)
 
         if not my_endpoint:
-            my_endpoint = self.context.default_endpoint
-        service = Service(my_info.did, "indy", "IndyAgent", [did_key], [], my_endpoint)
-        did_doc.services.append(service)
+            my_endpoint = self.context.settings.get("default_endpoint")
+        service = Service(my_info.did, "indy", "IndyAgent", [pk], [], my_endpoint)
+        did_doc.set(service)
 
         return did_doc
 
@@ -787,7 +713,7 @@ class ConnectionManager:
         else:
             await storage.update_record_value(record, did_doc.value)
         await self.remove_keys_for_did(did_doc.did)
-        for key in did_doc.verkeys:
+        for key in did_doc.pubkey.values():
             if key.controller == did_doc.did:
                 await self.add_key_for_did(did_doc.did, key.value)
 
@@ -862,15 +788,39 @@ class ConnectionManager:
             return None
 
         doc = await self.fetch_did_document(connection.their_did)
-        if not doc.services:
+        return self.diddoc_connection_target(
+            doc, my_info.verkey, connection.their_label
+        )
+
+    def diddoc_connection_target(
+        self, doc: DIDDoc, sender_verkey: str, their_label: str = None
+    ) -> ConnectionTarget:
+        """Create a connection target from a DID Document.
+
+        Args:
+            doc: The DID Document to create the target from
+            sender_verkey: The verkey we are using
+            their_label: The connection label they are using
+        """
+
+        if not doc:
+            raise ConnectionManagerError("No DIDDoc provided for connection target")
+        if not doc.did:
+            raise ConnectionManagerError("DIDDoc has no DID")
+        if not doc.service:
             raise ConnectionManagerError("No services defined by DIDDoc")
 
-        service = doc.services[0]
-        return ConnectionTarget(
-            did=doc.did,
-            endpoint=service.endpoint,
-            label=connection.their_label,
-            recipient_keys=service.recip_keys,
-            routing_keys=service.routing_keys,
-            sender_key=my_info.verkey,
-        )
+        for service in doc.service.values():
+            if not service.recip_keys:
+                raise ConnectionManagerError("DIDDoc service has no recipient key(s)")
+            if not service.endpoint:
+                raise ConnectionManagerError("DIDDoc service has no service endpoint")
+
+            return ConnectionTarget(
+                did=doc.did,
+                endpoint=service.endpoint,
+                label=their_label,
+                recipient_keys=[key.value for key in (service.recip_keys or ())],
+                routing_keys=[key.value for key in (service.routing_keys or ())],
+                sender_key=sender_verkey,
+            )

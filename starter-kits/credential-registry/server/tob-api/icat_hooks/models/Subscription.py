@@ -1,5 +1,4 @@
 from django.db import models
-from rest_hooks.models import Hook
 
 from api_v2.models.Auditable import Auditable
 from api_v2.models.User import User

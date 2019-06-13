@@ -7,7 +7,6 @@ from aiohttp_apispec import docs, request_schema
 
 from marshmallow import fields, Schema
 
-from ..connections.manager import ConnectionManager
 from ..connections.models.connection_record import ConnectionRecord
 from .messages.menu import Menu
 from .messages.menu_request import MenuRequest
@@ -92,7 +91,6 @@ async def actionmenu_perform(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     connection_id = request.match_info["id"]
-    connection_mgr = ConnectionManager(context)
     outbound_handler = request.app["outbound_message_router"]
     params = await request.json()
 
@@ -101,10 +99,9 @@ async def actionmenu_perform(request: web.BaseRequest):
     except StorageNotFoundError:
         return web.HTTPNotFound()
 
-    if connection.state == "active":
+    if connection.is_active:
         msg = Perform(name=params["name"], params=params.get("params"))
-        target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(msg, target)
+        await outbound_handler(msg, connection_id=connection_id)
         return web.HTTPOk()
 
     return web.HTTPForbidden()
@@ -121,7 +118,6 @@ async def actionmenu_request(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     connection_id = request.match_info["id"]
-    connection_mgr = ConnectionManager(context)
     outbound_handler = request.app["outbound_message_router"]
 
     try:
@@ -130,10 +126,9 @@ async def actionmenu_request(request: web.BaseRequest):
         LOGGER.debug("Connection not found for action menu request: %s", connection_id)
         return web.HTTPNotFound()
 
-    if connection.state == "active":
+    if connection.is_active:
         msg = MenuRequest()
-        target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(msg, target)
+        await outbound_handler(msg, connection_id=connection_id)
         return web.HTTPOk()
 
     return web.HTTPForbidden()
@@ -151,7 +146,6 @@ async def actionmenu_send(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     connection_id = request.match_info["id"]
-    connection_mgr = ConnectionManager(context)
     outbound_handler = request.app["outbound_message_router"]
     menu_json = await request.json()
     LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
@@ -169,9 +163,8 @@ async def actionmenu_send(request: web.BaseRequest):
         )
         return web.HTTPNotFound()
 
-    if connection.state == "active":
-        target = await connection_mgr.get_connection_target(connection)
-        await outbound_handler(msg, target)
+    if connection.is_active:
+        await outbound_handler(msg, connection_id=connection_id)
         return web.HTTPOk()
 
     return web.HTTPForbidden()

@@ -1,8 +1,8 @@
 """Agent message base class and schema."""
 
+from collections import OrderedDict
+from typing import Union
 import uuid
-
-from typing import Dict
 
 from marshmallow import (
     fields,
@@ -13,21 +13,19 @@ from marshmallow import (
     ValidationError,
 )
 
-from ..models.base import (
+from ..wallet.base import BaseWallet
+
+from .decorators.base import BaseDecoratorSet
+from .decorators.default import DecoratorSet
+from .decorators.signature_decorator import SignatureDecorator
+from .decorators.thread_decorator import ThreadDecorator
+from .models.base import (
     BaseModel,
     BaseModelError,
     BaseModelSchema,
     resolve_class,
     resolve_meta_property,
 )
-from ..models.field_signature import FieldSignature
-from ..models.localization_decorator import (
-    LocalizationDecorator,
-    LocalizationDecoratorSchema,
-)
-from ..models.thread_decorator import ThreadDecorator, ThreadDecoratorSchema
-from ..models.timing_decorator import TimingDecorator, TimingDecoratorSchema
-from ..wallet.base import BaseWallet
 
 
 class AgentMessageError(BaseModelError):
@@ -44,21 +42,13 @@ class AgentMessage(BaseModel):
         schema_class = None
         message_type = None
 
-    def __init__(
-        self,
-        _id: str = None,
-        _l10n: LocalizationDecorator = None,
-        _signatures: Dict[str, FieldSignature] = None,
-        _thread: ThreadDecorator = None,
-        _timing: TimingDecorator = None,
-    ):
+    def __init__(self, _id: str = None, _decorators: BaseDecoratorSet = None):
         """
         Initialize base agent message object.
 
         Args:
             _id: Agent message id
-            _signatures: Message signatures
-            _thread: ThreadDecorator object
+            _decorators: Message decorators
 
         Raises:
             TypeError: If message type is missing on subclass Meta class
@@ -71,10 +61,7 @@ class AgentMessage(BaseModel):
         else:
             self._message_id = str(uuid.uuid4())
             self._message_new_id = True
-        self._message_l10n = _l10n
-        self._message_thread = _thread
-        self._message_timing = _timing
-        self._message_signatures = _signatures.copy() if _signatures else {}
+        self._message_decorators = _decorators or DecoratorSet()
         if not self.Meta.message_type:
             raise TypeError(
                 "Can't instantiate abstract class {} with no message_type".format(
@@ -137,40 +124,29 @@ class AgentMessage(BaseModel):
         self._message_id = val
 
     @property
-    def _l10n(self) -> LocalizationDecorator:
-        """Accessor for the localization decorator."""
-        return self._message_l10n
+    def _decorators(self) -> BaseDecoratorSet:
+        """Fetch the message's decorator set."""
+        return self._message_decorators
 
-    @_l10n.setter
-    def _l10n(self, val: LocalizationDecorator):
-        """Set the localization decorator."""
-        self._message_l10n = val
+    @_decorators.setter
+    def _decorators(self, value: BaseDecoratorSet):
+        """Fetch the message's decorator set."""
+        self._message_decorators = value
 
-    @property
-    def _signatures(self) -> Dict[str, FieldSignature]:
-        """
-        Fetch the dictionary of defined field signatures.
-
-        Returns:
-            A copy of the message_signatures for this message.
-
-        """
-        return self._message_signatures.copy()
-
-    def get_signature(self, field_name: str) -> FieldSignature:
+    def get_signature(self, field_name: str) -> SignatureDecorator:
         """
         Get the signature for a named field.
 
         Args:
-            field_name: Field name to get signatures for
+            field_name: Field name to get the signature for
 
         Returns:
-            A FieldSignature for the requested field name
+            A SignatureDecorator for the requested field name
 
         """
-        return self._message_signatures.get(field_name)
+        return self._decorators.field(field_name).get("sig")
 
-    def set_signature(self, field_name: str, signature: FieldSignature):
+    def set_signature(self, field_name: str, signature: SignatureDecorator):
         """
         Add or replace the signature for a named field.
 
@@ -179,11 +155,11 @@ class AgentMessage(BaseModel):
             signature: Signature for the field
 
         """
-        self._message_signatures[field_name] = signature
+        self._decorators.field(field_name)["sig"] = signature
 
     async def sign_field(
         self, field_name: str, signer_verkey: str, wallet: BaseWallet, timestamp=None
-    ) -> FieldSignature:
+    ) -> SignatureDecorator:
         """
         Create and store a signature for a named field.
 
@@ -194,7 +170,7 @@ class AgentMessage(BaseModel):
             timestamp: Optional timestamp for signature
 
         Returns:
-            A FieldSignature for newly created signature
+            A SignatureDecorator for newly created signature
 
         Raises:
             ValueError: If field_name doesn't exist on this message
@@ -202,12 +178,12 @@ class AgentMessage(BaseModel):
         """
         value = getattr(self, field_name, None)
         if value is None:
-            raise ValueError(
+            raise BaseModelError(
                 "{} field has no value for signature: {}".format(
                     self.__class__.__name__, field_name
                 )
             )
-        sig = await FieldSignature.create(value, signer_verkey, wallet, timestamp)
+        sig = await SignatureDecorator.create(value, signer_verkey, wallet, timestamp)
         self.set_signature(field_name, sig)
         return sig
 
@@ -232,15 +208,15 @@ class AgentMessage(BaseModel):
                 provided verkey
 
         """
-        if field_name not in self._message_signatures:
-            raise ValueError("Missing field signature: {}".format(field_name))
-        sig = self._message_signatures[field_name]
+        sig = self.get_signature(field_name)
+        if not sig:
+            raise BaseModelError("Missing field signature: {}".format(field_name))
         if not await sig.verify(wallet):
-            raise ValueError(
+            raise BaseModelError(
                 "Field signature verification failed: {}".format(field_name)
             )
         if signer_verkey is not None and sig.signer != signer_verkey:
-            raise ValueError(
+            raise BaseModelError(
                 "Signer verkey of signature does not match: {}".format(field_name)
             )
         return sig.signer
@@ -256,8 +232,8 @@ class AgentMessage(BaseModel):
             True if all signatures verify, else false
 
         """
-        for sig in self._message_signatures.values():
-            if not await sig.verify(wallet):
+        for field in self._decorators.fields.values():
+            if "sig" in field and not await field["sig"].verify(wallet):
                 return False
         return True
 
@@ -270,17 +246,17 @@ class AgentMessage(BaseModel):
             The ThreadDecorator for this message
 
         """
-        return self._message_thread
+        return self._decorators.get("thread")
 
     @_thread.setter
-    def _thread(self, val: ThreadDecorator):
+    def _thread(self, val: Union[ThreadDecorator, dict]):
         """
         Setter for the message's thread decorator.
 
         Args:
-            val: ThreadDecorator to set as the thread
+            val: ThreadDecorator or dict to set as the thread
         """
-        self._message_thread = val
+        self._decorators["thread"] = val
 
     @property
     def _thread_id(self) -> str:
@@ -297,19 +273,20 @@ class AgentMessage(BaseModel):
             msg: The received message containing optional thread information
         """
         if msg:
-            thid = msg._thread and msg._thread.thid or msg._message_id
-            pthid = msg._thread and msg._thread.pthid
-            self._thread = ThreadDecorator(thid=thid, pthid=pthid)
+            thread = msg._thread
+            thid = thread and thread.thid or msg._message_id
+            pthid = thread and thread.pthid
+            self.assign_thread_id(thid, pthid)
 
-    @property
-    def _timing(self) -> TimingDecorator:
-        """Accessor for the timing decorator."""
-        return self._message_timing
+    def assign_thread_id(self, thid: str, pthid: str = None):
+        """
+        Assign a specific thread ID.
 
-    @_timing.setter
-    def _timing(self, val: TimingDecorator):
-        """Set the timing decorator."""
-        self._message_timing = val
+        Args:
+            thid: The thread identifier
+            pthid: The parent thread identifier
+        """
+        self._thread = ThreadDecorator(thid=thid, pthid=pthid)
 
 
 class AgentMessageSchema(BaseModelSchema):
@@ -324,15 +301,6 @@ class AgentMessageSchema(BaseModelSchema):
     # Avoid clobbering keywords
     _type = fields.Str(data_key="@type", dump_only=True, required=False)
     _id = fields.Str(data_key="@id", required=False)
-
-    # Localization decorator
-    _l10n = fields.Nested(LocalizationDecoratorSchema, data_key="~l10n", required=False)
-
-    # Thread decorator value
-    _thread = fields.Nested(ThreadDecoratorSchema, data_key="~thread", required=False)
-
-    # Localization decorator
-    _timing = fields.Nested(TimingDecoratorSchema, data_key="~timing", required=False)
 
     def __init__(self, *args, **kwargs):
         """
@@ -349,12 +317,14 @@ class AgentMessageSchema(BaseModelSchema):
                     self.__class__.__name__
                 )
             )
+        self._decorators = DecoratorSet()
+        self._decorators_dict = None
         self._signatures = {}
 
     @pre_load
-    def parse_signed_fields(self, data):
+    def extract_decorators(self, data):
         """
-        Pre-load hook to parse all of the signed fields.
+        Pre-load hook to extract the decorators and check the signed fields.
 
         Args:
             data: Incoming data to parse
@@ -363,80 +333,99 @@ class AgentMessageSchema(BaseModelSchema):
             Parsed and modified data
 
         Raises:
-            ValidationError: If the field name prefix does not exist
-            ValidationError: If the field signature does not correlate
+            ValidationError: If a field signature does not correlate
                 to a field in the message
             ValidationError: If the message defines both a field signature
-                and a value
+                and a value for the same field
             ValidationError: If there is a missing field signature
 
         """
+        processed = self._decorators.extract_decorators(data)
+
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         found_signatures = {}
-        processed = {}
-        for field_name, field_value in data.items():
-            if field_name.endswith("~sig"):
-                pfx = field_name[:-4]
-                if not pfx:
-                    raise ValidationError("Unsupported message property: ~sig")
-                if pfx not in expect_fields:
+        for field_name, field in self._decorators.fields.items():
+            if "sig" in field:
+                if field_name not in expect_fields:
                     raise ValidationError(
-                        "Encountered unexpected field signature: {}".format(pfx)
+                        f"Encountered unexpected field signature: {field_name}"
                     )
-                if pfx in data:
+                if field_name in processed:
                     raise ValidationError(
-                        "Message defines both field signature and value: {}".format(pfx)
+                        f"Message defines both field signature and value: {field_name}"
                     )
-                sig = FieldSignature.deserialize(field_value)
-                found_signatures[pfx] = sig
-                processed[pfx], _ts = sig.decode()
-            else:
-                processed[field_name] = field_value
+                found_signatures[field_name] = field["sig"]
+                processed[field_name], _ts = field["sig"].decode()
         for field_name in expect_fields:
             if field_name not in found_signatures:
-                raise ValidationError("Expected field signature: {}".format(field_name))
-        self._signatures = found_signatures
+                raise ValidationError(f"Expected field signature: {field_name}")
         return processed
 
     @post_load
-    def populate_signatures(self, obj):
+    def populate_decorators(self, obj):
         """
-        Post-load hook to populate signatures on the message.
+        Post-load hook to populate decorators on the message.
 
         Args:
             obj: The AgentMessage object
 
         Returns:
-            The AgentMessage object with populated signatures
+            The AgentMessage object with populated decorators
 
         """
-        for field_name, sig in self._signatures.items():
-            obj.set_signature(field_name, sig)
+        obj._decorators = self._decorators
         return obj
 
     @pre_dump
-    def copy_signatures(self, obj):
+    def check_dump_decorators(self, obj):
         """
-        Pre-dump hook to copy the message signatures into the serialized output.
+        Pre-dump hook to validate and load the message decorators.
 
         Args:
             obj: The AgentMessage object
 
-        Returns:
-            The modified object
-
         Raises:
-            ValidationError: If a signature is missing
+            BaseModelError: If a decorator does not validate
 
         """
-        self._signatures = obj._signatures
+        decorators = obj._decorators.copy()
+        signatures = OrderedDict()
+        for name, field in decorators.fields.items():
+            if "sig" in field:
+                signatures[name] = field["sig"].serialize()
+                del field["sig"]
+        self._decorators_dict = decorators.to_dict()
+        self._signatures = signatures
+
+        # check existence of signatures
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         for field_name in expect_fields:
             if field_name not in self._signatures:
-                raise ValidationError(
+                raise BaseModelError(
                     "Missing signature for field: {}".format(field_name)
                 )
+
         return obj
+
+    @post_dump
+    def dump_decorators(self, data):
+        """
+        Post-dump hook to write the decorators to the serialized output.
+
+        Args:
+            obj: The serialized data
+
+        Returns:
+            The modified data
+
+        """
+        result = OrderedDict()
+        for key in ("@type", "@id"):
+            if key in data:
+                result[key] = data.pop(key)
+        result.update(self._decorators_dict)
+        result.update(data)
+        return result
 
     @post_dump
     def replace_signatures(self, data):
@@ -452,5 +441,5 @@ class AgentMessageSchema(BaseModelSchema):
         """
         for field_name, sig in self._signatures.items():
             del data[field_name]
-            data["{}~sig".format(field_name)] = sig.serialize()
+            data["{}~sig".format(field_name)] = sig
         return data

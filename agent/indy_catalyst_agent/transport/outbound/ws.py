@@ -4,7 +4,8 @@ import logging
 
 from aiohttp import ClientSession
 
-from .message import OutboundMessage
+from ...messaging.outbound_message import OutboundMessage
+
 from .base import BaseOutboundTransport
 from .queue.base import BaseOutboundMessageQueue
 
@@ -45,11 +46,11 @@ class WsTransport(BaseOutboundTransport):
         try:
             # As an example, we can open a websocket channel, send a message, then
             # close the channel immediately. This is not optimal but it works.
-            async with self.client_session.ws_connect(message.uri) as ws:
-                if isinstance(message.data, bytes):
-                    await ws.send_bytes(message.data)
+            async with self.client_session.ws_connect(message.endpoint) as ws:
+                if isinstance(message.payload, bytes):
+                    await ws.send_bytes(message.payload)
                 else:
-                    await ws.send_str(message.data)
+                    await ws.send_str(message.payload)
         except Exception:
             # TODO: add retry logic
             self.logger.exception("Error handling outbound message")

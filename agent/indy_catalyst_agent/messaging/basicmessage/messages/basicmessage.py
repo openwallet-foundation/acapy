@@ -1,11 +1,13 @@
 """Basic message."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Union
 
 from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
+from ...util import datetime_now, datetime_to_str
+
 from ..message_types import BASIC_MESSAGE
 
 HANDLER_CLASS = (
@@ -41,10 +43,8 @@ class BasicMessage(AgentMessage):
         """
         super(BasicMessage, self).__init__(**kwargs)
         if not sent_time:
-            sent_time = datetime.utcnow()
-        if isinstance(sent_time, datetime):
-            sent_time = sent_time.replace(tzinfo=timezone.utc).isoformat(" ")
-        self.sent_time = sent_time
+            sent_time = datetime_now()
+        self.sent_time = datetime_to_str(sent_time)
         self.content = content
         self.localization = localization
 

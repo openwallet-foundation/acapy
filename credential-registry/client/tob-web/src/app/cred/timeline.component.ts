@@ -66,7 +66,11 @@ export class CredSetTimelineComponent implements OnInit, OnDestroy {
       for(let credset of result.data) {
         if(! credset.credentials) continue;
         if(credset.first_effective_date && credset.first_effective_date < range.start) {
-          range.start = credset.first_effective_date;
+          if (credset.first_effective_date < '0100-01-01') {
+            range.start = '1970-01-01T00:00:00-00:00';
+          } else {
+            range.start = credset.first_effective_date;
+          }
         }
         if(credset.last_effective_date && credset.last_effective_date > range.end) {
           range.end = credset.last_effective_date;

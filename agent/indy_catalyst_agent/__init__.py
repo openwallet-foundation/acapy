@@ -6,10 +6,10 @@ import argparse
 import asyncio
 
 from .conductor import Conductor
-from .defaults import default_message_factory
+from .defaults import default_protocol_registry
 from .logging import LoggingConfigurator
 from .postgres import load_postgres_plugin
-from .transport.inbound import InboundTransportConfiguration
+from .transport.inbound.base import InboundTransportConfiguration
 
 PARSER = argparse.ArgumentParser(description="Runs an Indy Agent.")
 
@@ -112,16 +112,16 @@ PARSER.add_argument(
     "--storage-config",
     type=str,
     metavar="<storage-config>",
-    help="Specify the storage configuration to use (required for postgres) " +
-            "e.g., '{\"url\":\"localhost:5432\"}'",
+    help="Specify the storage configuration to use (required for postgres) "
+    + 'e.g., \'{"url":"localhost:5432"}\'',
 )
 
 PARSER.add_argument(
     "--storage-creds",
     type=str,
     metavar="<storage-creds>",
-    help="Specify the storage credentials to use (required for postgres) " +
-            "e.g., '{\"account\":\"postgres\",\"password\":\"mysecretpassword\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}'",
+    help="Specify the storage credentials to use (required for postgres) "
+    + 'e.g., \'{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}\'',
 )
 
 PARSER.add_argument(
@@ -163,9 +163,34 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--auto-ping-connection",
+    action="store_true",
+    help="Automatically send a trust ping when a connection response is accepted",
+)
+
+PARSER.add_argument(
     "--auto-respond-messages",
     action="store_true",
     help="Auto-respond to basic messages",
+)
+
+PARSER.add_argument(
+    "--auto-respond-credential-offer",
+    action="store_true",
+    help="Auto-respond to credential offers with credential request",
+)
+
+PARSER.add_argument(
+    "--auto-respond-presentation-request",
+    action="store_true",
+    help="Auto-respond to presentation requests with a presentation "
+    + "if exactly one credential exists to satisfy the request",
+)
+
+PARSER.add_argument(
+    "--auto-verify-presentation",
+    action="store_true",
+    help="Automatically verify a presentation when it is received",
 )
 
 PARSER.add_argument(
@@ -194,14 +219,20 @@ PARSER.add_argument(
     help="Specify an endpoint to send an invitation to",
 )
 
+PARSER.add_argument(
+    "--timing",
+    action="store_true",
+    help="Including timing information in response messages",
+)
+
 
 async def start(
     inbound_transport_configs: list, outbound_transports: list, settings: dict
 ):
     """Start."""
-    factory = default_message_factory()
+    registry = default_protocol_registry()
     conductor = Conductor(
-        inbound_transport_configs, outbound_transports, factory, settings
+        inbound_transport_configs, outbound_transports, registry, settings
     )
     await conductor.start()
 
@@ -274,12 +305,24 @@ def main():
     if args.send_invite:
         settings["debug.send_invitation_to"] = args.send_invite
 
+    if args.auto_respond_credential_offer:
+        settings["auto_respond_credential_offer"] = True
+    if args.auto_respond_presentation_request:
+        settings["auto_respond_presentation_request"] = True
+    if args.auto_verify_presentation:
+        settings["auto_verify_presentation"] = True
+
     if args.accept_invites:
         settings["accept_invites"] = True
     if args.accept_requests:
         settings["accept_requests"] = True
+    if args.auto_ping_connection:
+        settings["auto_ping_connection"] = True
     if args.auto_respond_messages:
         settings["debug.auto_respond_messages"] = True
+
+    if args.timing:
+        settings["timing.enabled"] = True
 
     loop = asyncio.get_event_loop()
     try:

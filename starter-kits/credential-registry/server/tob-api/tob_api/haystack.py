@@ -10,41 +10,39 @@
     limitations under the License.
 """
 import os
-from django.conf import settings
 
 engines = {
-    'direct': 'haystack.backends.simple_backend.SimpleEngine',
-    'solr': 'haystack.backends.solr_backend.SolrEngine',
+    "direct": "haystack.backends.simple_backend.SimpleEngine",
+    "solr": "haystack.backends.solr_backend.SolrEngine",
 }
 
+
 def getDefaultConfig():
-    return {
-      'ENGINE': engines['direct'],
-    }
+    return {"ENGINE": engines["direct"]}
+
 
 def getSolrUrl():
-    solrUrl = os.getenv('SOLR_URL', '').lower()
+    solrUrl = os.getenv("SOLR_URL", "").lower()
     if not solrUrl:
-      serviceName = os.getenv('SOLR_SERVICE_NAME', '').upper().replace('-', '_')   
-      if serviceName:
-        coreName = os.getenv('SOLR_CORE_NAME', 'autocore')
-        serviceHost = os.getenv('{}_SERVICE_HOST'.format(serviceName))
-        servicePort = os.getenv('{}_SERVICE_PORT'.format(serviceName))
-        solrUrl = 'http://{}:{}/solr/{}'.format(serviceHost, servicePort, coreName)
+        serviceName = os.getenv("SOLR_SERVICE_NAME", "").upper().replace("-", "_")
+        if serviceName:
+            coreName = os.getenv("SOLR_CORE_NAME", "autocore")
+            serviceHost = os.getenv("{}_SERVICE_HOST".format(serviceName))
+            servicePort = os.getenv("{}_SERVICE_PORT".format(serviceName))
+            solrUrl = "http://{}:{}/solr/{}".format(serviceHost, servicePort, coreName)
 
     return solrUrl
 
+
 def getConfig():
-    config = getDefaultConfig() 
+    config = getDefaultConfig()
     solrUrl = getSolrUrl()
     if solrUrl:
-      engine = engines.get(os.getenv('SOLR_ENGINE'), engines['solr'])
-      config = {
-        'ENGINE': engine,
-        'URL': solrUrl,
-      }
+        engine = engines.get(os.getenv("SOLR_ENGINE"), engines["solr"])
+        config = {"ENGINE": engine, "URL": solrUrl}
 
     return config
+
 
 def config():
     return getConfig()

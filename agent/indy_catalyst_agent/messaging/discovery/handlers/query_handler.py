@@ -1,6 +1,8 @@
 """Handler for incoming query messages."""
 
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ...protocol_registry import ProtocolRegistry
+
 from ..messages.disclose import Disclose
 from ..messages.query import Query
 
@@ -13,6 +15,9 @@ class QueryHandler(BaseHandler):
         self._logger.debug("QueryHandler called with context %s", context)
         assert isinstance(context.message, Query)
 
-        types = context.message_factory.protocols_matching_query(context.message.query)
-        reply = Disclose(protocols={k: {} for k in types})
+        registry: ProtocolRegistry = await context.inject(ProtocolRegistry)
+        protocols = registry.protocols_matching_query(context.message.query)
+        result = await registry.prepare_disclosed(context, protocols)
+        reply = Disclose(protocols=result)
+        reply.assign_thread_from(context.message)
         await responder.send_reply(reply)

@@ -2,7 +2,7 @@ version: 2
 jobs:
   agent-build:
     docker:
-      - image: bcgovimages/von-image:py36-1.8-0
+      - image: bcgovimages/von-image:py36-1.9-0
     steps:
       - checkout
       - restore_cache:
@@ -67,9 +67,6 @@ jobs:
             pip install -r requirements.txt \
               codecov \
               coverage
-            pip install \
-              -e ../../../../credential-registry/server/django-icat-api/ \
-              -e ../../../../credential-registry/server/python-indy-api/
 
       - save_cache:
           paths:

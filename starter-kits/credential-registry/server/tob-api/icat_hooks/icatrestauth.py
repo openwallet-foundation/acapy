@@ -1,13 +1,9 @@
 import base64
 
-from django.http import HttpResponse
 from django.contrib.auth import authenticate
-from django.conf import settings
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth import get_user_model
-from rest_framework.authentication import BasicAuthentication
 from rest_framework import exceptions
-from rest_framework import authentication
+from rest_framework.authentication import BasicAuthentication
 
 
 class IcatAuthBackend(ModelBackend):

@@ -5,14 +5,22 @@ The dispatcher is responsible for coordinating data flow between handlers, provi
 lifecycle hook callbacks storing state for message threads, etc.
 """
 
+import asyncio
 import logging
 from typing import Coroutine, Union
 
 from .messaging.agent_message import AgentMessage
+from .messaging.connections.models.connection_record import ConnectionRecord
+from .messaging.error import MessageParseError
+from .messaging.message_delivery import MessageDelivery
+from .messaging.models.base import BaseModelError
+from .messaging.outbound_message import OutboundMessage
+from .messaging.problem_report.message import ProblemReport
+from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
-from .messaging.responder import BaseResponder, ResponderError
-from .messaging.connections.models.connection_target import ConnectionTarget
-from .wallet.base import BaseWallet
+from .messaging.responder import BaseResponder
+from .messaging.serializer import MessageSerializer
+from .messaging.util import datetime_now
 
 
 class Dispatcher:
@@ -23,131 +31,144 @@ class Dispatcher:
     to other agents.
     """
 
-    def __init__(self):
+    def __init__(self, context: RequestContext):
         """Initialize an instance of Dispatcher."""
+        self.context = context
         self.logger = logging.getLogger(__name__)
 
     async def dispatch(
         self,
-        context: RequestContext,
+        parsed_msg: dict,
+        delivery: MessageDelivery,
+        connection: ConnectionRecord,
         send: Coroutine,
-        transport_reply: Coroutine = None,
-    ):
+    ) -> asyncio.Future:
         """
         Configure responder and dispatch message context to message handler.
 
         Args:
-            context: The `RequestContext` to be handled
+            parsed_msg: The parsed message body
+            delivery: The incoming message delivery metadata
+            connection: The related connection record, if any
             send: Function to send outbound messages
-            transport_reply: Function to reply on the incoming channel
 
         Returns:
             The response from the handler
 
         """
 
+        error_result = None
         try:
-            responder = await self.make_responder(send, context, transport_reply)
-            handler_cls = context.message.Handler
-            handler_response = await handler_cls().handle(context, responder)
-        except Exception:
-            self.logger.exception("Exception in message handler")
-            raise
+            message = await self.make_message(parsed_msg)
+        except MessageParseError as e:
+            self.logger.error(
+                f"Message parsing failed: {str(e)}, sending problem report"
+            )
+            error_result = ProblemReport(explain_ltxt=str(e))
+            if delivery.thread_id:
+                error_result.assign_thread_id(delivery.thread_id)
+            message = None
 
-        # We return the result to the caller.
-        # This is for persistent connections waiting on that response.
-        return handler_response
+        context = self.context.start_scope("message")
+        context.message = message
+        context.message_delivery = delivery
+        context.connection_active = connection and connection.is_active
+        context.connection_record = connection
 
-    async def make_responder(
-        self, send: Coroutine, context: RequestContext, reply: Union[Coroutine, None]
-    ) -> "DispatcherResponder":
+        responder = DispatcherResponder(
+            send,
+            context,
+            connection_id=connection and connection.connection_id,
+            reply_socket_id=delivery.socket_id,
+            reply_to_verkey=delivery.sender_verkey,
+        )
+
+        if error_result:
+            return asyncio.ensure_future(responder.send_reply(error_result))
+
+        handler_cls = context.message.Handler
+        handler = asyncio.ensure_future(handler_cls().handle(context, responder))
+        return handler
+
+    async def make_message(self, parsed_msg: dict) -> AgentMessage:
         """
-        Build a responder object.
+        Deserialize a message dict into the appropriate message instance.
+
+        Given a dict describing a message, this method
+        returns an instance of the related message class.
 
         Args:
-            send: Function to send outbound messages
-            context: The `RequestContext` to be handled
-            reply: Function to reply on the incoming channel
+            parsed_msg: The parsed message
 
         Returns:
-            The created `DispatcherResponder`
+            An instance of the corresponding message class for this message
+
+        Raises:
+            MessageParseError: If the message doesn't specify @type
+            MessageParseError: If there is no message class registered to handle
+                the given type
 
         """
-        wallet: BaseWallet = await context.inject(BaseWallet)
-        responder = DispatcherResponder(send, wallet, reply=reply)
-        # responder.add_target(ConnectionTarget(endpoint="wss://0bc6628c.ngrok.io"))
-        # responder.add_target(ConnectionTarget(endpoint="http://25566605.ngrok.io"))
-        # responder.add_target(
-        #    ConnectionTarget(endpoint="https://httpbin.org/status/400")
-        # )
-        if context.connection_target:
-            responder.add_target(context.connection_target)
-        return responder
+
+        registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
+        serializer: MessageSerializer = await self.context.inject(MessageSerializer)
+
+        # throws a MessageParseError on failure
+        message_type = serializer.extract_message_type(parsed_msg)
+
+        message_cls = registry.resolve_message_class(message_type)
+
+        if not message_cls:
+            raise MessageParseError(f"Unrecognized message type {message_type}")
+
+        try:
+            instance = message_cls.deserialize(parsed_msg)
+        except BaseModelError as e:
+            raise MessageParseError(f"Error deserializing message: {e}") from e
+
+        return instance
 
 
 class DispatcherResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
-    def __init__(
-        self, send: Coroutine, wallet: BaseWallet, *targets, reply: Coroutine = None
-    ):
+    def __init__(self, send: Coroutine, context: RequestContext, **kwargs):
         """
         Initialize an instance of `DispatcherResponder`.
 
         Args:
             send: Function to send outbound message
-            wallet: Wallet instance to use
-            targets: List of `ConnectionTarget`s to send to
-            reply: Function to reply on incoming channel
+            context: The request context of the incoming message
 
         """
-        self._targets = list(targets)
+        super().__init__(**kwargs)
+        self._context = context
         self._send = send
-        self._reply = reply
-        self._wallet = wallet
 
-    def add_target(self, target: ConnectionTarget):
-        """
-        Add target.
+    async def create_outbound(
+        self, message: Union[AgentMessage, str, bytes], **kwargs
+    ) -> OutboundMessage:
+        """Create an OutboundMessage from a message body."""
+        if isinstance(message, AgentMessage) and self._context.settings.get(
+            "timing.enabled"
+        ):
+            # Inject the timing decorator
+            in_time = (
+                self._context.message_delivery
+                and self._context.message_delivery.in_time
+            )
+            if not message._decorators.get("timing"):
+                message._decorators["timing"] = {
+                    "in_time": in_time,
+                    "out_time": datetime_now(),
+                }
+        return await super().create_outbound(message, **kwargs)
 
-        Args:
-            target: ConnectionTarget to add
-        """
-        self._targets.append(target)
-
-    async def send_reply(self, message: Union[AgentMessage, str, bytes]):
-        """
-        Send a reply to an incoming message.
-
-        Args:
-            message: the `AgentMessage`, or pre-packed str or bytes to reply with
-
-        Raises:
-            ResponderError: If there is no active connection
-
-        """
-        if self._reply:
-            # 'reply' is a temporary solution to support responses to websocket requests
-            # a better solution would likely use a queue to deliver the replies
-            await self._reply(message.serialize())
-        else:
-            if not self._targets:
-                raise ResponderError("No active connection")
-            for target in self._targets:
-                await self.send_outbound(message, target)
-
-    async def send_outbound(
-        self, message: Union[AgentMessage, str, bytes], target: ConnectionTarget
-    ):
+    async def send_outbound(self, message: OutboundMessage):
         """
         Send outbound message.
 
         Args:
-            message: `AgentMessage` to send
-            target: `ConnectionTarget` to send to
+            message: The `OutboundMessage` to be sent
         """
-        await self._send(message, target)
-
-    async def send_admin_message(self, message: AgentMessage):
-        """Todo."""
-        pass
+        await self._send(message)

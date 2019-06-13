@@ -22,9 +22,7 @@ class CredentialPresentation(AgentMessage):
         schema_class = "CredentialPresentationSchema"
         message_type = CREDENTIAL_PRESENTATION
 
-    def __init__(
-        self, presentation: str = None, comment: str = None, **kwargs
-    ):
+    def __init__(self, presentation: str = None, comment: str = None, **kwargs):
         """
         Initialize credential presentation object.
 

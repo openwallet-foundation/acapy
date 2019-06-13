@@ -1,12 +1,12 @@
 """Message type identifiers for Routing."""
 
-MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/"
+MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0"
 
-CREATE_ROUTES = f"{MESSAGE_FAMILY}create"
-DELETE_ROUTES = f"{MESSAGE_FAMILY}delete"
-FORWARD = f"{MESSAGE_FAMILY}forward"
-GET_ROUTES = f"{MESSAGE_FAMILY}get"
-ROUTES = f"{MESSAGE_FAMILY}routes"
+CREATE_ROUTES = f"{MESSAGE_FAMILY}/create"
+DELETE_ROUTES = f"{MESSAGE_FAMILY}/delete"
+FORWARD = f"{MESSAGE_FAMILY}/forward"
+GET_ROUTES = f"{MESSAGE_FAMILY}/get"
+ROUTES = f"{MESSAGE_FAMILY}/routes"
 
 MESSAGE_PACKAGE = "indy_catalyst_agent.messaging.routing.messages"
 

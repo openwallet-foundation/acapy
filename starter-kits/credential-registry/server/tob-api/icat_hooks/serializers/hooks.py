@@ -8,13 +8,13 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core import exceptions
+from icat_hooks.models.HookUser import HookUser
 from rest_framework import serializers
 from rest_hooks.models import Hook
 
 from api_v2.auth import generate_random_username
 from api_v2.models.CredentialType import CredentialType
 from api_v2.models.User import User
-from icat_hooks.models.HookUser import HookUser
 
 from ..models.Subscription import Subscription
 

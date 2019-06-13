@@ -98,24 +98,39 @@ class TestIndyHolder(AsyncTestCase):
             (("search_handle", 3),),
         ]
 
-    @async_mock.patch("indy.anoncreds.prover_get_credentials_for_proof_req")
-    async def test_get_credentials_for_presentation_request(
-        self, mock_get_creds_for_pr
+    @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
+    @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
+    @async_mock.patch("indy.anoncreds.prover_close_credentials_search_for_proof_req")
+    async def test_get_credentials_for_presentation_request_by_referent(
+        self,
+        mock_prover_close_credentials_search_for_proof_req,
+        mock_prover_fetch_credentials_for_proof_req,
+        mock_prover_search_credentials_for_proof_req,
     ):
-        mock_get_creds_for_pr.return_value = "[1,2,3]"
+        mock_prover_search_credentials_for_proof_req.return_value = "search_handle"
+        mock_prover_fetch_credentials_for_proof_req.return_value = '{"x": "y"}'
 
         mock_wallet = async_mock.MagicMock()
         holder = IndyHolder(mock_wallet)
 
-        credentials = await holder.get_credentials_for_presentation_request(
-            {}, 2, 3, {}
+        credentials = await holder.get_credentials_for_presentation_request_by_referent(
+            {"p": "r"}, "asdb", 2, 3, {"e": "q"}
         )
 
-        mock_get_creds_for_pr.assert_called_once_with(
-            mock_wallet.handle, json.dumps({})
+        mock_prover_search_credentials_for_proof_req.assert_called_once_with(
+            mock_wallet.handle, json.dumps({"p": "r"}), json.dumps({"e": "q"})
         )
 
-        assert credentials == json.loads("[1,2,3]")
+        assert mock_prover_fetch_credentials_for_proof_req.call_args_list == [
+            (("search_handle", "asdb", 2),),
+            (("search_handle", "asdb", 3),),
+        ]
+
+        mock_prover_close_credentials_search_for_proof_req.assert_called_once_with(
+            "search_handle"
+        )
+
+        assert credentials == json.loads('{"x": "y"}')
 
     @async_mock.patch("indy.anoncreds.prover_get_credential")
     async def test_get_credential(self, mock_get_cred):
@@ -129,6 +144,15 @@ class TestIndyHolder(AsyncTestCase):
         mock_get_cred.assert_called_once_with(mock_wallet.handle, "credential_id")
 
         assert credential == json.loads("{}")
+
+    @async_mock.patch("indy.anoncreds.prover_delete_credential")
+    async def test_get_credential(self, mock_del_cred):
+        mock_wallet = async_mock.MagicMock()
+        holder = IndyHolder(mock_wallet)
+
+        credential = await holder.delete_credential("credential_id")
+
+        mock_del_cred.assert_called_once_with(mock_wallet.handle, "credential_id")
 
     @async_mock.patch("indy.anoncreds.prover_create_proof")
     async def test_create_presentation(self, mock_create_proof):

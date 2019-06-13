@@ -5,4 +5,4 @@
 <strong *ngIf="topic_name && ! related_topic_name">
   <span class="fa fa-tag"></span> {{topic_name}}
 </strong>
-<br>{{credential.effective_date | dateFormat: 'effectiveDateTime'}}
+<br><span *ngIf="credential.effective_date > '0100-01-01'">{{credential.effective_date | dateFormat: 'effectiveDateTime'}}</span>
