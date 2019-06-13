@@ -19,16 +19,20 @@ from api_v2.models.Name import Name
 from api_v2.models.Schema import Schema
 from api_v2.models.Topic import Topic
 from api_v2.models.TopicRelationship import TopicRelationship
-from api_v2.serializers.rest import (AddressSerializer, AttributeSerializer,
-                                     CredentialSerializer,
-                                     CredentialTopicExtSerializer,
-                                     CredentialTypeSerializer,
-                                     ExpandedCredentialSerializer,
-                                     ExpandedCredentialSetSerializer,
-                                     IssuerSerializer, NameSerializer,
-                                     SchemaSerializer,
-                                     TopicRelationshipSerializer,
-                                     TopicSerializer)
+from api_v2.serializers.rest import (
+    AddressSerializer,
+    AttributeSerializer,
+    CredentialSerializer,
+    CredentialTopicExtSerializer,
+    CredentialTypeSerializer,
+    ExpandedCredentialSerializer,
+    ExpandedCredentialSetSerializer,
+    IssuerSerializer,
+    NameSerializer,
+    SchemaSerializer,
+    TopicRelationshipSerializer,
+    TopicSerializer,
+)
 from api_v2.serializers.search import CustomTopicSerializer
 
 

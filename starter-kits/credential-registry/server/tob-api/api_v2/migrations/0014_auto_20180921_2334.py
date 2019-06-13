@@ -7,14 +7,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0013_auto_20180921_1844'),
-    ]
+    dependencies = [("api_v2", "0013_auto_20180921_1844")]
 
     operations = [
         migrations.AlterField(
-            model_name='attribute',
-            name='type',
-            field=models.TextField(db_index=True, default='text'),
-        ),
+            model_name="attribute",
+            name="type",
+            field=models.TextField(db_index=True, default="text"),
+        )
     ]

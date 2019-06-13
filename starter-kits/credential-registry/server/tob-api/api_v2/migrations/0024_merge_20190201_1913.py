@@ -5,10 +5,6 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0023_name_type'),
-        ('api_v2', '0023_issuer_endpoint'),
-    ]
+    dependencies = [("api_v2", "0023_name_type"), ("api_v2", "0023_issuer_endpoint")]
 
-    operations = [
-    ]
+    operations = []

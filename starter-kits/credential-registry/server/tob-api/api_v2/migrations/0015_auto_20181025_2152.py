@@ -8,26 +8,27 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0014_auto_20180921_2334'),
-    ]
+    dependencies = [("api_v2", "0014_auto_20180921_2334")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='category',
-            name='credential',
+        migrations.RemoveField(model_name="category", name="credential"),
+        migrations.AlterField(
+            model_name="topicrelationship",
+            name="related_topic",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="from_rels",
+                to="api_v2.Topic",
+            ),
         ),
         migrations.AlterField(
-            model_name='topicrelationship',
-            name='related_topic',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='from_rels', to='api_v2.Topic'),
+            model_name="topicrelationship",
+            name="topic",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="to_rels",
+                to="api_v2.Topic",
+            ),
         ),
-        migrations.AlterField(
-            model_name='topicrelationship',
-            name='topic',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='to_rels', to='api_v2.Topic'),
-        ),
-        migrations.DeleteModel(
-            name='Category',
-        ),
+        migrations.DeleteModel(name="Category"),
     ]
