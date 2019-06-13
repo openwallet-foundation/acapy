@@ -16,7 +16,7 @@ class RouteQueryRequestHandler(BaseHandler):
         )
         assert isinstance(context.message, RouteQueryRequest)
 
-        if not context.connection_active or not context.sender_verkey:
+        if not context.connection_active:
             raise HandlerException("Cannot query routes: no active connection")
 
         # TODO implement pagination

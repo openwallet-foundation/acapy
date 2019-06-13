@@ -16,7 +16,7 @@ class RouteUpdateRequestHandler(BaseHandler):
         )
         assert isinstance(context.message, RouteUpdateRequest)
 
-        if not context.connection_active or not context.sender_verkey:
+        if not context.connection_active:
             raise HandlerException("Cannot update routes: no active connection")
 
         mgr = RoutingManager(context)

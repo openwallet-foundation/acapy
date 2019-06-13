@@ -3,11 +3,11 @@
 import json
 from typing import Sequence
 
+from ...config.injection_context import InjectionContext
 from ...error import BaseError
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError, StorageDuplicateError, StorageNotFoundError
 
-from ..request_context import RequestContext
 from ..util import time_now
 
 from .messages.route_update_request import RouteUpdateRequest
@@ -29,7 +29,7 @@ class RoutingManager:
 
     RECORD_TYPE = "forward_route"
 
-    def __init__(self, context: RequestContext):
+    def __init__(self, context: InjectionContext):
         """
         Initialize a RoutingManager.
 
@@ -41,7 +41,7 @@ class RoutingManager:
             raise RoutingManagerError("Missing request context")
 
     @property
-    def context(self) -> RequestContext:
+    def context(self) -> InjectionContext:
         """
         Accessor for the current request context.
 
