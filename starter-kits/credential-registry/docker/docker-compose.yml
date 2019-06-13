@@ -75,15 +75,15 @@ services:
       - DATABASE_NAME=${DATABASE_NAME}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - WALLET_TYPE=${WALLET_TYPE}
-      - POSTGRESQL_WALLET_HOST=${POSTGRESQL_WALLET_HOST}
-      - POSTGRESQL_WALLET_PORT=${POSTGRESQL_WALLET_PORT}
-      - POSTGRESQL_WALLET_USER=${POSTGRESQL_USER}
-      - POSTGRESQL_WALLET_PASSWORD=${POSTGRESQL_PASSWORD}
-      - POSTGRESQL_WALLET_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
-      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
-      - INDY_WALLET_SEED=${INDY_WALLET_SEED}
-      - INDY_WALLET_DID=${INDY_WALLET_DID}
+      #- WALLET_TYPE=${WALLET_TYPE}
+      #- POSTGRESQL_WALLET_HOST=${POSTGRESQL_WALLET_HOST}
+      #- POSTGRESQL_WALLET_PORT=${POSTGRESQL_WALLET_PORT}
+      #- POSTGRESQL_WALLET_USER=${POSTGRESQL_USER}
+      #- POSTGRESQL_WALLET_PASSWORD=${POSTGRESQL_PASSWORD}
+      #- POSTGRESQL_WALLET_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
+      #- WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+      #- INDY_WALLET_SEED=${INDY_WALLET_SEED}
+      #- INDY_WALLET_DID=${INDY_WALLET_DID}
       - DEBUG=${DEBUG}
       - DEMO_SITE=${DEMO_SITE}
       - SQL_DEBUG=${SQL_DEBUG}
@@ -112,6 +112,8 @@ services:
       - APPLICATION_URL=${APPLICATION_URL}
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - AGENT_ADMIN_URL=http://tob-api:${AGENT_ADMIN_PORT}
+      - AGENT_WEBHOOK_PORT=${AGENT_WEBHOOK_PORT}
     volumes:
       - ../server/tob-api/tob_api:/home/indy/tob_api
       - ../server/tob-api/api_v2:/home/indy/api_v2
@@ -123,10 +125,12 @@ services:
     ports:
       - "${API_HTTP_PORT}:8080"
       - 3000:3000
+      - "${AGENT_WEBHOOK_PORT}:${AGENT_WEBHOOK_PORT}"
     depends_on:
       - tob-db
       - wallet-db
       - tob-solr
+      - tob-agent
     command: >
         /bin/bash -c "
         echo waiting for solr ...;
@@ -138,6 +142,52 @@ services:
         else
           ${STI_SCRIPTS_PATH}/run;
         fi"
+
+  tob-agent:
+    image: tob-agent
+    environment:
+      - WALLET_TYPE=${WALLET_TYPE}
+      - POSTGRESQL_WALLET_HOST=${POSTGRESQL_WALLET_HOST}
+      - POSTGRESQL_WALLET_PORT=${POSTGRESQL_WALLET_PORT}
+      - POSTGRESQL_WALLET_USER=${POSTGRESQL_USER}
+      - POSTGRESQL_WALLET_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_WALLET_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+      - INDY_WALLET_SEED=${INDY_WALLET_SEED}
+      - INDY_WALLET_DID=${INDY_WALLET_DID}
+      - WEBHOOK_URL=http://tob-api:${AGENT_WEBHOOK_PORT}/callback
+      - AGENT_IN_PORT_1=${AGENT_IN_PORT_1}
+      - AGENT_IN_PORT_2=${AGENT_IN_PORT_2}
+      - AGENT_IN_PORT_3=${AGENT_IN_PORT_3}
+      - AGENT_ADMIN_PORT=${AGENT_ADMIN_PORT}
+      - AGENT_NAME=${AGENT_NAME}
+    networks:
+      - tob
+    ports:
+      - ${AGENT_IN_PORT_1}:${AGENT_IN_PORT_1}
+      - ${AGENT_IN_PORT_2}:${AGENT_IN_PORT_2}
+      - ${AGENT_IN_PORT_3}:${AGENT_IN_PORT_3}
+      - ${AGENT_ADMIN_PORT}:${AGENT_ADMIN_PORT}
+    depends_on:
+      - wallet-db
+    entrypoint: /bin/bash
+    command: ["-c", "icatagent --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_1} \
+            --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_2} \
+            --inbound-transport ws '0.0.0.0' ${AGENT_IN_PORT_3} \
+            --endpoint endpoint_url \
+            --outbound-transport ws \
+            --outbound-transport http \
+            --genesis-transactions genesis \
+            --auto-respond-messages \
+            --accept-invites \
+            --accept-requests \
+            --auto-ping-connection \
+            --wallet-type wallet_type \
+            --wallet-name wallet_name \
+            --wallet-key wallet_key \
+            --seed seed \
+            --admin '0.0.0.0' ${AGENT_ADMIN_PORT} \
+            --label ${AGENT_NAME}"]
 
   tob-worker:
     image: django
