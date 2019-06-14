@@ -1,5 +1,6 @@
 """Indy ledger implementation."""
 
+import asyncio
 import json
 import logging
 import tempfile
@@ -13,6 +14,7 @@ from indy.error import IndyError, ErrorCode
 
 from .base import BaseLedger
 from .error import ClosedPoolError, LedgerTransactionError, DuplicateSchemaError
+from ..wallet.base import BaseWallet
 
 GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
 GENESIS_TRANSACTION_PATH = path.join(
@@ -23,7 +25,7 @@ GENESIS_TRANSACTION_PATH = path.join(
 class IndyLedger(BaseLedger):
     """Indy ledger class."""
 
-    def __init__(self, name, wallet, genesis_transactions):
+    def __init__(self, name: str, wallet: BaseWallet, genesis_transactions):
         """
         Initialize an IndyLedger instance.
 
@@ -34,6 +36,12 @@ class IndyLedger(BaseLedger):
         """
         self.logger = logging.getLogger(__name__)
 
+        self.created = False
+        self.opened = False
+        self.ref_count = 0
+        self.ref_lock = asyncio.Lock()
+        self.keepalive = 5
+        self.close_task: asyncio.Future = None
         self.name = name
         self.wallet = wallet
         self.pool_handle = None
@@ -45,14 +53,8 @@ class IndyLedger(BaseLedger):
         with open(GENESIS_TRANSACTION_PATH, "w") as genesis_file:
             genesis_file.write(genesis_transactions)
 
-    async def __aenter__(self) -> "IndyLedger":
-        """
-        Context manager entry.
-
-        Returns:
-            The current instance
-
-        """
+    async def create(self):
+        """Create the pool ledger, if necessary."""
         pool_config = json.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
 
         # We only support proto ver 2
@@ -66,15 +68,65 @@ class IndyLedger(BaseLedger):
                 self.logger.debug("Pool ledger already created.")
             else:
                 raise
+        self.created = True
+
+    async def open(self):
+        """Open the pool ledger, creating it if necessary."""
+        if not self.created:
+            await self.create()
 
         # TODO: allow ledger config in init?
         self.pool_handle = await indy.pool.open_pool_ledger(self.name, "{}")
+        self.opened = True
+
+    async def close(self):
+        """Close the pool ledger."""
+        if self.opened:
+            await indy.pool.close_pool_ledger(self.pool_handle)
+            self.pool_handle = None
+            self.opened = False
+
+    async def _context_open(self):
+        """Open the wallet if necessary and increase the number of active references."""
+        async with self.ref_lock:
+            if self.close_task:
+                self.close_task.cancel()
+            if not self.opened:
+                self.logger.debug("Opening the pool ledger")
+                await self.open()
+            self.ref_count += 1
+
+    async def _context_close(self):
+        """Release the wallet reference and schedule closing of the pool ledger."""
+
+        async def closer(timeout: int = 0):
+            """Close the pool ledger after a timeout."""
+            if timeout:
+                await asyncio.sleep(timeout)
+            async with self.ref_lock:
+                if not self.ref_count:
+                    self.logger.debug("Closing pool ledger after timeout")
+                    await self.close()
+
+        async with self.ref_lock:
+            self.ref_count -= 1
+            if not self.ref_count:
+                self.close_task = asyncio.ensure_future(closer(self.keepalive))
+
+    async def __aenter__(self) -> "IndyLedger":
+        """
+        Context manager entry.
+
+        Returns:
+            The current instance
+
+        """
+        await self._context_open()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         """Context manager exit."""
-        await indy.pool.close_pool_ledger(self.pool_handle)
-        self.pool_handle = None
+        await self._context_close()
 
     async def _submit(self, request_json: str, sign=True) -> str:
         """
