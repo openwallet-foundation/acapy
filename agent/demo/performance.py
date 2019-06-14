@@ -11,16 +11,18 @@ from agent import DemoAgent, print_color
 
 LOGGER = logging.getLogger(__name__)
 
-# detect runmode and set hostnames accordingly
-run_mode = os.getenv("RUNMODE")
-
 AGENT_PORT = int(sys.argv[1])
+
+# detect runmode and set hostnames accordingly
+RUN_MODE = os.getenv("RUNMODE")
+
+TIMING = True
 
 internal_host = "127.0.0.1"
 external_host = "localhost"
 scripts_dir = "../scripts/"
 
-if run_mode == "docker":
+if RUN_MODE == "docker":
     internal_host = "host.docker.internal"
     external_host = "host.docker.internal"
     scripts_dir = "scripts/"
@@ -37,7 +39,9 @@ def log_msg(msg: str):
 
 
 class BaseAgent(DemoAgent):
-    def __init__(self, ident: str, port: int, genesis: str = None, timing: bool = True):
+    def __init__(
+        self, ident: str, port: int, genesis: str = None, timing: bool = TIMING
+    ):
         super().__init__(
             ident,
             port,
@@ -150,7 +154,7 @@ async def test():
     genesis = None
 
     try:
-        if run_mode == "docker":
+        if RUN_MODE == "docker":
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"http://{external_host}:9000/genesis") as resp:
                     genesis = await resp.text()
@@ -203,6 +207,10 @@ async def test():
 
         log_msg(f"Connect duration: {connect_time - publish_done_time:.2f}s")
 
+        if TIMING:
+            await alice.reset_timing()
+            await faber.reset_timing()
+
         issue_count = 300
         batch_size = 100
         batch_start = connect_time
@@ -240,15 +248,16 @@ async def test():
 
         done_time = default_timer()
 
-        timing = await alice.fetch_timing()
-        if timing:
-            for line in alice.format_timing(timing):
-                alice.log(line)
+        if TIMING:
+            timing = await alice.fetch_timing()
+            if timing:
+                for line in alice.format_timing(timing):
+                    alice.log(line)
 
-        timing = await faber.fetch_timing()
-        if timing:
-            for line in faber.format_timing(timing):
-                faber.log(line)
+            timing = await faber.fetch_timing()
+            if timing:
+                for line in faber.format_timing(timing):
+                    faber.log(line)
 
     finally:
         terminated = True

@@ -256,3 +256,6 @@ class DemoAgent:
             "{:35} | {:12d} {:12.3f} {:10.3f} {:10.3f} {:10.3f}".format(*row)
             for row in result
         )
+
+    async def reset_timing(self):
+        await self.admin_POST("/status/reset", text=True)

@@ -91,7 +91,7 @@ class Dispatcher:
         handler_obj = handler_cls()
         collector: Collector = await context.inject(Collector, required=False)
         if collector:
-            collector.wrap(handler_obj, "handle")
+            collector.wrap(handler_obj, "handle", ["any-message-handler"])
         handler = asyncio.ensure_future(handler_obj.handle(context, responder))
         return handler
 
