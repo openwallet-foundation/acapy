@@ -171,16 +171,19 @@ class Conductor:
                         "get_schema",
                         "send_credential_definition",
                         "send_schema",
-                    ),
+                    )
                 )
             ),
         )
         context.injector.bind_provider(
             BaseIssuer,
-            ClassProvider(
-                "indy_catalyst_agent.issuer.indy.IndyIssuer",
-                ClassProvider.Inject(BaseWallet),
-            ),
+            StatsProvider(
+                ClassProvider(
+                    "indy_catalyst_agent.issuer.indy.IndyIssuer",
+                    ClassProvider.Inject(BaseWallet),
+                ),
+                ("create_credential_offer", "create_credential")
+            )
         )
         context.injector.bind_provider(
             BaseHolder,
