@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import random
 import sys
@@ -6,7 +7,9 @@ from timeit import default_timer
 
 import aiohttp
 
-from agent import DemoAgent
+from agent import DemoAgent, print_color
+
+LOGGER = logging.getLogger(__name__)
 
 # detect runmode and set hostnames accordingly
 run_mode = os.getenv("RUNMODE")
@@ -21,6 +24,16 @@ if run_mode == "docker":
     internal_host = "host.docker.internal"
     external_host = "host.docker.internal"
     scripts_dir = "scripts/"
+
+
+async def log_async(msg: str):
+    print_color(msg, "magenta")
+
+
+def log_msg(msg: str):
+    # try to synchronize messages with agent logs
+    loop = asyncio.get_event_loop()
+    asyncio.run_coroutine_threadsafe(log_async(msg), loop)
 
 
 class BaseAgent(DemoAgent):
@@ -167,13 +180,13 @@ async def test():
 
         init_done_time = default_timer()
 
-        print(f"INIT DONE {init_done_time - start_time:.2f}s")
+        log_msg(f"Init duration: {init_done_time - start_time:.2f}s")
 
         await faber.publish_defs()
 
         publish_done_time = default_timer()
 
-        print(f"PUBLISH DONE {publish_done_time - init_done_time:.2f}s")
+        log_msg(f"Publish duration: {publish_done_time - init_done_time:.2f}s")
 
         invite = await alice.get_invite()
         await faber.receive_invite(invite)
@@ -182,12 +195,28 @@ async def test():
 
         connect_time = default_timer()
 
-        print(f"CONNECTED {connect_time - init_done_time:.2f}s")
+        log_msg(f"Connect duration: {connect_time - publish_done_time:.2f}s")
 
         issue_count = 100
+        batch_size = 100
+        batch_start = connect_time
 
         for idx in range(issue_count):
             await faber.send_credential()
+            if not (idx + 1) % batch_size and idx < issue_count - 1:
+                now = default_timer()
+                faber.log(
+                    f"Started {batch_size} credential exchanges in "
+                    + f"{now - batch_start:.2f}s"
+                )
+                batch_start = now
+
+        issued_time = default_timer()
+
+        faber.log(
+            f"Done starting {issue_count} credential exchanges in "
+            + f"{issued_time - connect_time:.2f}s"
+        )
 
         while True:
             pending, total = alice.check_received_creds()
@@ -195,23 +224,39 @@ async def test():
                 break
             await asyncio.wait_for(alice.update_creds(), 30)
 
-        issued_time = default_timer()
+        received_time = default_timer()
 
         alice.log(
-            f"Received all {total} credentials in {issued_time - connect_time:.2f}s"
+            f"Received {total} credentials in {received_time - connect_time:.2f}s"
         )
         avg = (issued_time - connect_time) / issue_count
         alice.log(f"Average time per credential: {avg:.2f}s")
 
+        done_time = default_timer()
+
     finally:
-        if alice:
-            await alice.terminate()
-        if faber:
-            await faber.terminate()
+        terminated = True
+        try:
+            if alice:
+                await alice.terminate()
+        except Exception:
+            LOGGER.exception("Error terminating agent:")
+            terminated = False
+        try:
+            if faber:
+                await faber.terminate()
+        except Exception:
+            LOGGER.exception("Error terminating agent:")
+            terminated = False
 
-    done_time = default_timer()
-    print(f"Total runtime: {done_time - init_time:.2f}s")
+    log_msg(f"Total runtime: {done_time - init_time:.2f}s")
+    await asyncio.sleep(0.1)
+
+    if not terminated:
+        raise KeyboardInterrupt()
 
 
-asyncio.get_event_loop().run_until_complete(test())
-print("Done")
+try:
+    asyncio.get_event_loop().run_until_complete(test())
+except KeyboardInterrupt:
+    os._exit(1)

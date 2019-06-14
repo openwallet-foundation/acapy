@@ -9,10 +9,19 @@ import colored
 COLORIZE = os.environ.get("TERM") == "xterm"
 
 
+def print_color(msg, color, prefix="", end=None):
+    if color and COLORIZE:
+        msg = colored.stylize(msg, colored.fg(color))
+    if prefix:
+        msg = f"{prefix:10s} | {msg}"
+    print(msg, end=end)
+
+
 def output_reader(handle, callback, loop, *args, **kwargs):
     for line in iter(handle.readline, b""):
-        result = line.decode("utf-8")
-        asyncio.run_coroutine_threadsafe(callback(result, *args), loop)
+        if not line:
+            break
+        asyncio.run_coroutine_threadsafe(callback(line, *args), loop)
 
 
 def flatten(args):
@@ -89,7 +98,8 @@ class DemoAgent:
         async with self.client_session.post(
             ledger_url + "/register", json=data
         ) as resp:
-            assert resp.status == 200
+            if resp.status != 200:
+                raise Exception(f"Error registering DID, response code {resp.status}")
             nym_info = await resp.json()
             self.did = nym_info["did"]
         self.log(f"Got DID: {self.did}")
@@ -97,10 +107,12 @@ class DemoAgent:
     async def handle_output(self, output, source=""):
         end = "" if source else "\n"
         if source == "stderr" and COLORIZE:
-            output = colored.stylize(output, colored.fg("red"))
+            color = "red"
         elif not source and COLORIZE:
-            output = colored.stylize(output, colored.fg("blue"))
-        print(f"{self.ident} |", output, end=end)
+            color = "blue"
+        else:
+            color = None
+        print_color(output, color, self.ident, end=end)
 
     def log(self, msg, *, loop=None):
         asyncio.run_coroutine_threadsafe(
@@ -109,7 +121,11 @@ class DemoAgent:
 
     def _process(self, args, env, loop):
         proc = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            encoding="utf-8",
         )
         loop.run_in_executor(
             None, output_reader, proc.stdout, self.handle_output, loop, "stdout"
@@ -133,7 +149,6 @@ class DemoAgent:
         # refer to REST callback service
         if self.webhook_url:
             my_env["WEBHOOK_URL"] = self.webhook_url
-            print("Webhook url is at", my_env["WEBHOOK_URL"])
 
         agent_args = self.get_process_args(scripts_dir)
 
@@ -146,14 +161,15 @@ class DemoAgent:
             await self.detect_process()
 
     def _terminate(self, loop):
-        if self.proc:
+        if self.proc and self.proc.poll() is None:
             self.proc.terminate()
             try:
                 self.proc.wait(timeout=0.5)
-                msg = f"== subprocess exited with rc ={self.proc.returncode}"
+                self.log(f"Exited with return code {self.proc.returncode}", loop=loop)
             except subprocess.TimeoutExpired:
-                msg = "subprocess did not terminate in time"
-            self.log(msg, loop=loop)
+                msg = "Process did not terminate in time"
+                self.log(msg, loop=loop)
+                raise Exception(msg)
 
     async def terminate(self):
         loop = asyncio.get_event_loop()
@@ -205,4 +221,7 @@ class DemoAgent:
             except ClientError:
                 text = None
                 continue
-        assert text and "Indy Catalyst Agent" in text
+        if not text:
+            raise Exception(f"Timed out waiting for agent process to start")
+        if "Indy Catalyst Agent" not in text:
+            raise Exception(f"Unexpected response from agent process")
