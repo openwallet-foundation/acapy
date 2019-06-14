@@ -105,36 +105,76 @@ class Conductor:
         if context.settings.get("timing.enabled"):
             self.collector = Collector()
             context.injector.bind_instance(Collector, self.collector)
-            self.collector.wrap(self, (
-                "inbound_message_router",
-                "outbound_message_router",
-                "prepare_outbound_message"
-            ))
+            self.collector.wrap(
+                self,
+                (
+                    "inbound_message_router",
+                    "outbound_message_router",
+                    "prepare_outbound_message",
+                ),
+            )
+            self.collector.wrap(
+                self.message_serializer,
+                ("encode_message", "parse_message")
+            )
+            # at the class level (!) should not be done multiple times
+            self.collector.wrap(
+                ConnectionManager,
+                (
+                    "get_connection_target",
+                    "fetch_did_document",
+                    "find_connection",
+                    "updated_record",
+                )
+            )
 
         context.injector.bind_instance(BaseCache, BasicCache())
         context.injector.bind_instance(ProtocolRegistry, self.protocol_registry)
         context.injector.bind_instance(MessageSerializer, self.message_serializer)
 
-        context.injector.bind_provider(BaseStorage, CachedProvider(
-            StatsProvider(StorageProvider(), (
-                "add_record", "get_record", "search_records"
-            ))
-        ))
-        context.injector.bind_provider(BaseWallet, CachedProvider(
-            StatsProvider(WalletProvider(), (
-                "create", "open",
-                "sign_message", "verify_message",
-                "encrypt_message", "decrypt_message",
-                "pack_message", "unpack_message",
-            ))
-        ))
+        context.injector.bind_provider(
+            BaseStorage,
+            CachedProvider(
+                StatsProvider(
+                    StorageProvider(),
+                    ("add_record", "get_record", "search_records")
+                )
+            ),
+        )
+        context.injector.bind_provider(
+            BaseWallet,
+            CachedProvider(
+                StatsProvider(
+                    WalletProvider(),
+                    (
+                        "create",
+                        "open",
+                        "sign_message",
+                        "verify_message",
+                        "encrypt_message",
+                        "decrypt_message",
+                        "pack_message",
+                        "unpack_message",
+                        "get_local_did",
+                    ),
+                )
+            ),
+        )
 
-        context.injector.bind_provider(BaseLedger, CachedProvider(
-            StatsProvider(LedgerProvider(), (
-                "get_credential_definition", "get_schema",
-                "send_credential_definition", "send_schema",
-            ))
-        ))
+        context.injector.bind_provider(
+            BaseLedger,
+            CachedProvider(
+                StatsProvider(
+                    LedgerProvider(),
+                    (
+                        "get_credential_definition",
+                        "get_schema",
+                        "send_credential_definition",
+                        "send_schema",
+                    ),
+                )
+            ),
+        )
         context.injector.bind_provider(
             BaseIssuer,
             ClassProvider(
@@ -144,9 +184,12 @@ class Conductor:
         )
         context.injector.bind_provider(
             BaseHolder,
-            ClassProvider(
-                "indy_catalyst_agent.holder.indy.IndyHolder",
-                ClassProvider.Inject(BaseWallet),
+            StatsProvider(
+                ClassProvider(
+                    "indy_catalyst_agent.holder.indy.IndyHolder",
+                    ClassProvider.Inject(BaseWallet),
+                ),
+                ("get_credential", "store_credential", "create_credential_request"),
             ),
         )
         context.injector.bind_provider(
