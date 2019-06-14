@@ -36,6 +36,7 @@ class TestIndyLedger(AsyncTestCase):
         self, mock_close_pool, mock_open_ledger, mock_create_config, mock_set_proto
     ):
         ledger = IndyLedger("name", "wallet", "genesis_transactions")
+
         async with ledger as l:
             mock_set_proto.assert_called_once_with(2)
             mock_create_config.assert_called_once_with(

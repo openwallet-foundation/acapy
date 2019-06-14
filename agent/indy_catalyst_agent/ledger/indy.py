@@ -25,13 +25,16 @@ GENESIS_TRANSACTION_PATH = path.join(
 class IndyLedger(BaseLedger):
     """Indy ledger class."""
 
-    def __init__(self, name: str, wallet: BaseWallet, genesis_transactions):
+    def __init__(
+        self, name: str, wallet: BaseWallet, genesis_transactions, *, keepalive: int = 0
+    ):
         """
         Initialize an IndyLedger instance.
 
         Args:
             wallet: IndyWallet instance
             genesis_transactions: String of genesis transactions
+            keepalive: How many seconds to keep the ledger open
 
         """
         self.logger = logging.getLogger(__name__)
@@ -40,7 +43,7 @@ class IndyLedger(BaseLedger):
         self.opened = False
         self.ref_count = 0
         self.ref_lock = asyncio.Lock()
-        self.keepalive = 5
+        self.keepalive = keepalive
         self.close_task: asyncio.Future = None
         self.name = name
         self.wallet = wallet
@@ -99,10 +102,9 @@ class IndyLedger(BaseLedger):
     async def _context_close(self):
         """Release the wallet reference and schedule closing of the pool ledger."""
 
-        async def closer(timeout: int = 0):
+        async def closer(timeout: int):
             """Close the pool ledger after a timeout."""
-            if timeout:
-                await asyncio.sleep(timeout)
+            await asyncio.sleep(timeout)
             async with self.ref_lock:
                 if not self.ref_count:
                     self.logger.debug("Closing pool ledger after timeout")
@@ -111,7 +113,10 @@ class IndyLedger(BaseLedger):
         async with self.ref_lock:
             self.ref_count -= 1
             if not self.ref_count:
-                self.close_task = asyncio.ensure_future(closer(self.keepalive))
+                if self.keepalive:
+                    self.close_task = asyncio.ensure_future(closer(self.keepalive))
+                else:
+                    await self.close()
 
     async def __aenter__(self) -> "IndyLedger":
         """
