@@ -104,7 +104,7 @@ def main():
             genesis = genesis_file.read()
 
     # TODO seed from input parameter; optionally register the DID
-    rand_name = str(random.randint(100_000, 999_999))
+    rand_name = str(random.randint(100000, 999999))
     seed = ("my_seed_000000000000000000000000" + rand_name)[-32:]
     alias = "My Test Company"
     register_did = True

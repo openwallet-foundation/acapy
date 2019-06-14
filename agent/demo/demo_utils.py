@@ -134,11 +134,7 @@ def write_agent_startup_script(agent_name, agent_args):
     file2.close()
 
 def start_agent_subprocess(agent_name, genesis, seed, endpoint_url, in_port_1, in_port_2, in_port_3, admin_port,
-<<<<<<< HEAD
-                            wallet_type, wallet_name, wallet_key, python_path, webhook_url, 
-=======
                             wallet_type, wallet_name, wallet_key, python_path, webhook_url,
->>>>>>> upstream/refactoring
                             scripts_dir, run_subprocess=True):
     my_env = os.environ.copy()
     my_env["PYTHONPATH"] = python_path
@@ -155,7 +151,8 @@ def start_agent_subprocess(agent_name, genesis, seed, endpoint_url, in_port_1, i
             '--endpoint', endpoint_url,
             '--outbound-transport', 'ws',
             '--outbound-transport', 'http',
-            '--genesis-transactions', genesis,
+            #'--genesis-transactions', genesis,
+            '--genesis-url', 'http://localhost:9000/genesis',
             '--auto-respond-messages',
             '--accept-invites',
             '--accept-requests',
