@@ -155,6 +155,12 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--debug-connections",
+    action="store_true",
+    help="Enable additional logging around connections",
+)
+
+PARSER.add_argument(
     "--accept-invites", action="store_true", help="Auto-accept connection invitations"
 )
 
@@ -298,6 +304,8 @@ def main():
 
     if args.debug:
         settings["debug.enabled"] = True
+    if args.debug_connections:
+        settings["debug.connections"] = True
     if args.debug_seed:
         settings["debug.seed"] = args.debug_seed
     if args.invite:

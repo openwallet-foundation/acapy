@@ -39,6 +39,7 @@ from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.serializer import MessageSerializer
 from .messaging.socket import SocketInfo, SocketRef
+from .messaging.util import init_webhooks
 from .storage.base import BaseStorage
 from .storage.error import StorageNotFoundError
 from .storage.provider import StorageProvider
@@ -194,6 +195,8 @@ class Conductor:
 
         await self.outbound_transport_manager.start_all()
 
+        await init_webhooks(context)
+
         # Admin API
         if self.admin_server:
             try:
@@ -316,12 +319,12 @@ class Conductor:
                 delivery.transport_type,
             )
 
-        future = await self.dispatcher.dispatch(
+        complete = await self.dispatcher.dispatch(
             parsed_msg, delivery, connection, self.outbound_message_router
         )
         if socket:
-            future.add_done_callback(lambda fut: socket.dispatch_complete())
-        return future
+            complete.add_done_callback(lambda fut: socket.dispatch_complete())
+        return complete
 
     async def prepare_outbound_message(
         self, message: OutboundMessage, context: InjectionContext = None

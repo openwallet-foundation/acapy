@@ -1,6 +1,5 @@
 """Driver-based action menu service classes."""
 
-import asyncio
 import logging
 
 from ..agent_message import AgentMessage
@@ -26,14 +25,13 @@ class DriverMenuService(BaseMenuService):
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
         """
-        asyncio.ensure_future(
-            send_webhook(
-                "get-active-menu",
-                {
-                    "connection_id": connection and connection.connection_id,
-                    "thread_id": thread_id,
-                },
-            )
+        send_webhook(
+            self.context,
+            "get-active-menu",
+            {
+                "connection_id": connection and connection.connection_id,
+                "thread_id": thread_id,
+            },
         )
         return None
 
@@ -53,15 +51,14 @@ class DriverMenuService(BaseMenuService):
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
         """
-        asyncio.ensure_future(
-            send_webhook(
-                "perform-menu-action",
-                {
-                    "connection_id": connection and connection.connection_id,
-                    "thread_id": thread_id,
-                    "action_name": action_name,
-                    "action_params": action_params,
-                },
-            )
+        send_webhook(
+            self.context,
+            "perform-menu-action",
+            {
+                "connection_id": connection and connection.connection_id,
+                "thread_id": thread_id,
+                "action_name": action_name,
+                "action_params": action_params,
+            },
         )
         return None

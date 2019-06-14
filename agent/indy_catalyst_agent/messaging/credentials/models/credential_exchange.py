@@ -40,6 +40,7 @@ class CredentialExchange(BaseModel):
         credential_exchange_id: str = None,
         connection_id: str = None,
         thread_id: str = None,
+        parent_thread_id: str = None,
         initiator: str = None,
         state: str = None,
         credential_definition_id: str = None,
@@ -57,6 +58,7 @@ class CredentialExchange(BaseModel):
         self._id = credential_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
+        self.parent_thread_id = parent_thread_id
         self.initiator = initiator
         self.state = state
         self.credential_definition_id = credential_definition_id
@@ -97,6 +99,7 @@ class CredentialExchange(BaseModel):
             "auto_issue",
             "credential_values",
             "credential",
+            "parent_thread_id",
         ):
             val = getattr(self, prop)
             if val:
@@ -212,6 +215,7 @@ class CredentialExchangeSchema(BaseModelSchema):
     credential_exchange_id = fields.Str(required=False)
     connection_id = fields.Str(required=False)
     thread_id = fields.Str(required=False)
+    parent_thread_id = fields.Str(required=False)
     initiator = fields.Str(required=False)
     state = fields.Str(required=False)
     credential_definition_id = fields.Str(required=False)

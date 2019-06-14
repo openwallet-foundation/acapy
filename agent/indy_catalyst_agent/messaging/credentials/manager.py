@@ -1,9 +1,9 @@
 """Classes to manage credentials."""
 
-import asyncio
 import json
 import logging
 
+from ...config.injection_context import InjectionContext
 from ...error import BaseError
 from ...cache.base import BaseCache
 from ...holder.base import BaseHolder
@@ -12,7 +12,6 @@ from ...ledger.base import BaseLedger
 from ...storage.error import StorageNotFoundError
 
 from ..connections.models.connection_record import ConnectionRecord
-from ..request_context import RequestContext
 from ..util import send_webhook
 
 from .messages.credential_issue import CredentialIssue
@@ -28,7 +27,7 @@ class CredentialManagerError(BaseError):
 class CredentialManager:
     """Class for managing credentials."""
 
-    def __init__(self, context: RequestContext):
+    def __init__(self, context: InjectionContext):
         """
         Initialize a CredentialManager.
 
@@ -39,19 +38,32 @@ class CredentialManager:
         self._logger = logging.getLogger(__name__)
 
     @property
-    def context(self) -> RequestContext:
+    def context(self) -> InjectionContext:
         """
-        Accessor for the current request context.
+        Accessor for the current injection context.
 
         Returns:
-            The request context for this connection
+            The injection context for this credential manager
 
         """
         return self._context
 
-    async def prepare_send(
-        self, credential_definition_id, connection_id, credential_values
+    async def cache_credential_exchange(
+        self, credential_exchange_record: CredentialExchange
     ):
+        """Cache a credential exchange to avoid redundant credential requests."""
+        cache: BaseCache = await self.context.inject(BaseCache)
+        await cache.set(
+            "credential_exchange::"
+            + f"{credential_exchange_record.credential_definition_id}::"
+            + f"{credential_exchange_record.connection_id}",
+            credential_exchange_record.credential_exchange_id,
+            600,
+        )
+
+    async def prepare_send(
+        self, credential_definition_id: str, connection_id: str, credential_values: dict
+    ) -> CredentialExchange:
         """
         Create an offer.
 
@@ -61,10 +73,7 @@ class CredentialManager:
             credential_values: The credential values to use if auto_issue is enabled
 
         Returns:
-            A tuple (
-                credential_exchange,
-                credential_offer_message
-            )
+            A new `CredentialExchange` record
 
         """
 
@@ -96,46 +105,63 @@ class CredentialManager:
                 credential_offer=source_credential_exchange.credential_offer,
                 credential_request=source_credential_exchange.credential_request,
                 credential_values=credential_values,
+                # We use the source credential exchange's thread id as the parent
+                # thread id. This thread is a branch of that parent so that the other
+                # agent can use the parent thread id to look up its corresponding
+                # source credential exchange object as needed
+                parent_thread_id=source_credential_exchange.thread_id,
             )
             await credential_exchange.save(self.context)
-
-            (
-                credential_exchange_record,
-                credential_message,
-            ) = await self.issue_credential(credential_exchange, credential_values)
-
-            # We use the source credential exchange's thread id as the parent thread id.
-            # This thread is a branch of that parent so that the other agent can use the
-            # parent thread id to look up its corresponding source credential exchange
-            # object as needed
-            credential_message._thread = {"pthid": source_credential_exchange.thread_id}
-
-            return credential_exchange_record, credential_message
+            await self.updated_record(credential_exchange)
 
         else:
             # If the cache is empty, we must use the normal credential flow while
             # also instructing the agent to automatically issue the credential
             # once it receives the credential request
-            credential_exchange, credential_offer_message = await self.create_offer(
-                credential_definition_id, connection_id
+
+            credential_exchange = await self.create_offer(
+                credential_definition_id, connection_id, True, credential_values
             )
 
-            credential_exchange.auto_issue = True
-            credential_exchange.credential_values = credential_values
-            await credential_exchange.save(self.context)
+        return credential_exchange
 
-            return credential_exchange, credential_offer_message
+    async def perform_send(
+        self, credential_exchange: CredentialExchange, outbound_handler
+    ):
+        """Send the first message in a credential exchange."""
 
-    async def create_offer(self, credential_definition_id, connection_id):
+        if credential_exchange.credential_request:
+            (credential_exchange, credential_message) = await self.issue_credential(
+                credential_exchange
+            )
+            await outbound_handler(
+                credential_message, connection_id=credential_exchange.connection_id
+            )
+        else:
+            credential_exchange, credential_offer_message = await self.offer_credential(
+                credential_exchange
+            )
+            await outbound_handler(
+                credential_offer_message,
+                connection_id=credential_exchange.connection_id,
+            )
+
+    async def create_offer(
+        self,
+        credential_definition_id: str,
+        connection_id: str,
+        auto_issue: bool = None,
+        credential_values: dict = None,
+    ):
         """
-        Create an offer.
+        Create a new credential exchange representing an offer.
 
         Args:
             credential_definition_id: Credential definition id for offer
             connection_id: Connection to create offer for
 
         Returns:
-            A tuple (credential_exchange, credential_offer_message)
+            A new credential exchange record
 
         """
 
@@ -144,27 +170,43 @@ class CredentialManager:
             credential_definition_id
         )
 
-        credential_offer_message = CredentialOffer(
-            offer_json=json.dumps(credential_offer)
-        )
-
         credential_exchange = CredentialExchange(
+            auto_issue=auto_issue,
             connection_id=connection_id,
-            thread_id=credential_offer_message._thread_id,
             initiator=CredentialExchange.INITIATOR_SELF,
             state=CredentialExchange.STATE_OFFER_SENT,
             credential_definition_id=credential_definition_id,
             schema_id=credential_offer["schema_id"],
             credential_offer=credential_offer,
+            credential_values=credential_values,
         )
         await credential_exchange.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange.serialize())
+        await self.updated_record(credential_exchange)
+        return credential_exchange
+
+    async def offer_credential(self, credential_exchange: CredentialExchange):
+        """
+        Offer a credential.
+
+        Args:
+            credential_exchange_record: The credential exchange we are creating
+                the credential offer for
+
+        Returns:
+            Tuple: (Updated credential exchange record, credential offer message)
+
+        """
+        credential_offer_message = CredentialOffer(
+            offer_json=json.dumps(credential_exchange.credential_offer)
         )
+        credential_exchange.thread_id = credential_offer_message._thread_id
+        credential_exchange.state = CredentialExchange.STATE_OFFER_SENT
+        await credential_exchange.save(self.context)
+        await self.updated_record(credential_exchange)
         return credential_exchange, credential_offer_message
 
     async def receive_offer(
-        self, credential_offer_message: CredentialOffer, connection_id
+        self, credential_offer_message: CredentialOffer, connection_id: str
     ):
         """
         Receive a credential offer.
@@ -190,9 +232,7 @@ class CredentialManager:
             credential_offer=credential_offer,
         )
         await credential_exchange.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange.serialize())
-        )
+        await self.updated_record(credential_exchange)
 
         return credential_exchange
 
@@ -247,9 +287,7 @@ class CredentialManager:
             credential_request_metadata
         )
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
 
         return credential_exchange_record, credential_request_message
 
@@ -272,22 +310,17 @@ class CredentialManager:
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
 
         return credential_exchange_record
 
-    async def issue_credential(
-        self, credential_exchange_record: CredentialExchange, credential_values: dict
-    ):
+    async def issue_credential(self, credential_exchange_record: CredentialExchange):
         """
         Issue a credential.
 
         Args:
             credential_exchange_record: The credential exchange we are issuing a
                 credential for
-            credential_values: dict of credential values
 
         Returns:
             Tuple: (Updated credential exchange record, credential message obj)
@@ -297,6 +330,7 @@ class CredentialManager:
         schema_id = credential_exchange_record.schema_id
         credential_offer = credential_exchange_record.credential_offer
         credential_request = credential_exchange_record.credential_request
+        credential_values = credential_exchange_record.credential_values
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
@@ -309,14 +343,13 @@ class CredentialManager:
 
         credential_exchange_record.state = CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
 
         credential_message = CredentialIssue(issue=json.dumps(credential))
-
-        # TODO: Find a more elegant way to do this
-        credential_message._thread = {"thid": credential_exchange_record.thread_id}
+        credential_message._thread = {
+            "thid": credential_exchange_record.thread_id,
+            "pthid": credential_exchange_record.parent_thread_id,
+        }
 
         return credential_exchange_record, credential_message
 
@@ -376,6 +409,8 @@ class CredentialManager:
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = wallet_credential
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
+
+    async def updated_record(self, credential_exchange: CredentialExchange):
+        """Call webhook when the record is updated."""
+        send_webhook(self._context, "credentials", credential_exchange.serialize())
