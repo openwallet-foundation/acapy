@@ -3,18 +3,21 @@
 import asyncio
 import json
 import logging
+import re
 import tempfile
 from os import path
-import re
+from typing import Sequence
 
 import indy.anoncreds
 import indy.ledger
 import indy.pool
 from indy.error import IndyError, ErrorCode
 
+from ..cache.base import BaseCache
+from ..wallet.base import BaseWallet
+
 from .base import BaseLedger
 from .error import ClosedPoolError, LedgerTransactionError, DuplicateSchemaError
-from ..wallet.base import BaseWallet
 
 GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
 GENESIS_TRANSACTION_PATH = path.join(
@@ -26,7 +29,14 @@ class IndyLedger(BaseLedger):
     """Indy ledger class."""
 
     def __init__(
-        self, name: str, wallet: BaseWallet, genesis_transactions, *, keepalive: int = 0
+        self,
+        name: str,
+        wallet: BaseWallet,
+        genesis_transactions,
+        *,
+        keepalive: int = 0,
+        cache: BaseCache = None,
+        cache_duration: int = 600,
     ):
         """
         Initialize an IndyLedger instance.
@@ -46,6 +56,8 @@ class IndyLedger(BaseLedger):
         self.keepalive = keepalive
         self.close_task: asyncio.Future = None
         self.name = name
+        self.cache = cache
+        self.cache_duration = cache_duration
         self.wallet = wallet
         self.pool_handle = None
 
@@ -184,7 +196,9 @@ class IndyLedger(BaseLedger):
                 f"Unexpected operation code from ledger: {operation}"
             )
 
-    async def send_schema(self, schema_name, schema_version, attribute_names: list):
+    async def send_schema(
+        self, schema_name: str, schema_version: str, attribute_names: Sequence[str]
+    ):
         """
         Send schema to ledger.
 
@@ -215,7 +229,21 @@ class IndyLedger(BaseLedger):
 
         return schema_id
 
-    async def get_schema(self, schema_id):
+    async def get_schema(self, schema_id: str):
+        """
+        Get a schema from the cache if available, otherwise fetch from the ledger.
+
+        Args:
+            schema_id: The schema id to retrieve
+
+        """
+        if self.cache:
+            result = await self.cache.get(f"schema::{schema_id}")
+            if result:
+                return result
+        return await self.fetch_schema(schema_id)
+
+    async def fetch_schema(self, schema_id: str):
         """
         Get schema from ledger.
 
@@ -236,9 +264,14 @@ class IndyLedger(BaseLedger):
         )
         parsed_response = json.loads(parsed_schema_json)
 
+        if parsed_response and self.cache:
+            await self.cache.set(
+                f"schema::{schema_id}", parsed_response, self.cache_duration
+            )
+
         return parsed_response
 
-    async def send_credential_definition(self, schema_id, tag="default"):
+    async def send_credential_definition(self, schema_id: str, tag: str = "default"):
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -290,12 +323,28 @@ class IndyLedger(BaseLedger):
 
         return credential_definition_id
 
-    async def get_credential_definition(self, credential_definition_id):
+    async def get_credential_definition(self, credential_definition_id: str):
+        """
+        Get a credential definition from the cache if available, otherwise the ledger.
+
+        Args:
+            credential_definition_id: The schema id of the schema to fetch cred def for
+
+        """
+        if self.cache:
+            result = await self.cache.get(
+                f"credential_definition::{credential_definition_id}"
+            )
+            if result:
+                return result
+        return await self.fetch_credential_definition(credential_definition_id)
+
+    async def fetch_credential_definition(self, credential_definition_id: str):
         """
         Get a credential definition from the ledger by id.
 
         Args:
-            credential_definition_id: The schema id of the schema to create cred def for
+            credential_definition_id: The schema id of the schema to fetch cred def for
 
         """
 
@@ -312,5 +361,12 @@ class IndyLedger(BaseLedger):
             parsed_credential_definition_json,
         ) = await indy.ledger.parse_get_cred_def_response(response_json)
         parsed_response = json.loads(parsed_credential_definition_json)
+
+        if parsed_response and self.cache:
+            await self.cache.set(
+                f"credential_definition::{credential_definition_id}",
+                parsed_response,
+                self.cache_duration,
+            )
 
         return parsed_response
