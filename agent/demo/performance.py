@@ -214,9 +214,16 @@ async def test():
         issue_count = 300
         batch_size = 100
         batch_start = connect_time
+        semaphore = asyncio.Semaphore(10)
+
+        async def send():
+            await semaphore.acquire()
+            asyncio.ensure_future(faber.send_credential()).add_done_callback(
+                lambda fut: semaphore.release()
+            )
 
         for idx in range(issue_count):
-            await faber.send_credential()
+            await send()
             if not (idx + 1) % batch_size and idx < issue_count - 1:
                 now = default_timer()
                 faber.log(
