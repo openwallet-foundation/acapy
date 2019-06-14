@@ -12,9 +12,10 @@ import aiohttp_cors
 
 from marshmallow import fields, Schema
 
+from ..config.injection_context import InjectionContext
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.responder import BaseResponder
-from ..messaging.request_context import RequestContext
+from ..stats import Collector
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -62,7 +63,7 @@ class AdminServer(BaseAdminServer):
         self,
         host: str,
         port: int,
-        context: RequestContext,
+        context: InjectionContext,
         outbound_message_router: Coroutine,
     ):
         """
@@ -174,7 +175,11 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
-        return web.json_response({})
+        status = {}
+        collector: Collector = await self.context.inject(Collector, required=False)
+        if collector:
+            status["timing"] = collector.results
+        return web.json_response(status)
 
     async def redirect_handler(self, request: web.BaseRequest):
         """Perform redirect to documentation."""

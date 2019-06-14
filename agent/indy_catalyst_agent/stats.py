@@ -117,14 +117,22 @@ class Collector:
         return lambda fn: self(fn, names)
 
     def wrap(
-        self, obj, prop_name: Union[str, Sequence[str]], groups: Sequence[str] = None
+        self,
+        obj,
+        prop_name: Union[str, Sequence[str]],
+        groups: Sequence[str] = None,
+        *,
+        ignore_missing: bool = False,
     ):
         """Wrap a method on a class or class instance."""
         if not prop_name:
             return
         if isinstance(prop_name, str):
-            method = getattr(obj, prop_name)
-            setattr(obj, prop_name, self(method, groups))
+            method = getattr(obj, prop_name, None)
+            if method:
+                setattr(obj, prop_name, self(method, groups))
+            elif not ignore_missing:
+                raise KeyError(prop_name)
         else:
             for prop in prop_name:
                 self.wrap(obj, prop, groups)

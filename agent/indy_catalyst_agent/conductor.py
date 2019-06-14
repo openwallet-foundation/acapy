@@ -18,7 +18,7 @@ from .admin.service import AdminService
 from .cache.base import BaseCache
 from .cache.basic import BasicCache
 from .config.injection_context import InjectionContext
-from .config.provider import CachedProvider, ClassProvider
+from .config.provider import CachedProvider, ClassProvider, StatsProvider
 from .dispatcher import Dispatcher
 from .error import StartupError
 from .logging import LoggingConfigurator
@@ -40,6 +40,7 @@ from .messaging.request_context import RequestContext
 from .messaging.serializer import MessageSerializer
 from .messaging.socket import SocketInfo, SocketRef
 from .messaging.util import init_webhooks
+from .stats import Collector
 from .storage.base import BaseStorage
 from .storage.error import StorageNotFoundError
 from .storage.provider import StorageProvider
@@ -78,6 +79,7 @@ class Conductor:
 
         """
         self.admin_server = None
+        self.collector: Collector = None
         self.context: RequestContext = None
         self.dispatcher: Dispatcher = None
         self.logger = logging.getLogger(__name__)
@@ -100,14 +102,39 @@ class Conductor:
         context = RequestContext(settings=self.settings)
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
+        if context.settings.get("timing.enabled"):
+            self.collector = Collector()
+            context.injector.bind_instance(Collector, self.collector)
+            self.collector.wrap(self, (
+                "inbound_message_router",
+                "outbound_message_router",
+                "prepare_outbound_message"
+            ))
+
         context.injector.bind_instance(BaseCache, BasicCache())
         context.injector.bind_instance(ProtocolRegistry, self.protocol_registry)
         context.injector.bind_instance(MessageSerializer, self.message_serializer)
 
-        context.injector.bind_provider(BaseStorage, CachedProvider(StorageProvider()))
-        context.injector.bind_provider(BaseWallet, CachedProvider(WalletProvider()))
+        context.injector.bind_provider(BaseStorage, CachedProvider(
+            StatsProvider(StorageProvider(), (
+                "add_record", "get_record", "search_records"
+            ))
+        ))
+        context.injector.bind_provider(BaseWallet, CachedProvider(
+            StatsProvider(WalletProvider(), (
+                "create", "open",
+                "sign_message", "verify_message",
+                "encrypt_message", "decrypt_message",
+                "pack_message", "unpack_message",
+            ))
+        ))
 
-        context.injector.bind_provider(BaseLedger, CachedProvider(LedgerProvider()))
+        context.injector.bind_provider(BaseLedger, CachedProvider(
+            StatsProvider(LedgerProvider(), (
+                "get_credential_definition", "get_schema",
+                "send_credential_definition", "send_schema",
+            ))
+        ))
         context.injector.bind_provider(
             BaseIssuer,
             ClassProvider(
@@ -150,6 +177,8 @@ class Conductor:
 
         self.context = context
         self.dispatcher = Dispatcher(self.context)
+        if self.collector:
+            self.collector.wrap(self.dispatcher, "dispatch")
 
     async def start(self) -> None:
         """Start the agent."""

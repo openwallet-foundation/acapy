@@ -21,6 +21,7 @@ from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
 from .messaging.serializer import MessageSerializer
 from .messaging.util import datetime_now
+from .stats import Collector
 
 
 class Dispatcher:
@@ -87,7 +88,11 @@ class Dispatcher:
             return asyncio.ensure_future(responder.send_reply(error_result))
 
         handler_cls = context.message.Handler
-        handler = asyncio.ensure_future(handler_cls().handle(context, responder))
+        handler_obj = handler_cls()
+        collector: Collector = await context.inject(Collector, required=False)
+        if collector:
+            collector.wrap(handler_obj, "handle")
+        handler = asyncio.ensure_future(handler_obj.handle(context, responder))
         return handler
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:

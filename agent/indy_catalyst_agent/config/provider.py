@@ -1,9 +1,10 @@
 """Service provider implementations."""
 
-from typing import Union
+from typing import Sequence, Union
 
 from .base import BaseProvider, BaseSettings, BaseInjector
 from ..classloader import ClassLoader
+from ..stats import Collector
 
 
 class InstanceProvider(BaseProvider):
@@ -80,3 +81,29 @@ class CachedProvider(BaseProvider):
         if not self._instance:
             self._instance = await self._provider.provide(config, injector)
         return self._instance
+
+
+class StatsProvider(BaseProvider):
+    """Add statistics to the results of another provider."""
+
+    def __init__(
+        self,
+        provider: BaseProvider,
+        methods: Sequence[str],
+        *,
+        ignore_missing: bool = True
+    ):
+        """Initialize the statistics provider instance."""
+        if not provider:
+            raise ValueError("Stats provider input must not be empty.")
+        self._provider = provider
+        self._methods = methods
+        self._ignore_missing = ignore_missing
+
+    async def provide(self, config: BaseSettings, injector: BaseInjector):
+        """Provide the object instance given a config and injector."""
+        instance = await self._provider.provide(config, injector)
+        collector: Collector = await injector.inject(Collector, required=False)
+        if collector:
+            collector.wrap(instance, self._methods, ignore_missing=self._ignore_missing)
+        return instance
