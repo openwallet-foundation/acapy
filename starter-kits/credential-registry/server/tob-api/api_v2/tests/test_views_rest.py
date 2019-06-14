@@ -27,12 +27,11 @@ class IssuerViewSetTest(APITestCase):
         )
 
         # create test schema/credential type and bind it to issuer1
-        # creating Schema
         schema = Schema.objects.create(
             name="test-schema", version="0.0.1", origin_did="not:a:did:456"
         )
 
-        # creating CredentialType
+        # create test CredentialType and bind it to issuer1
         self.credType = CredentialType.objects.create(
             schema=schema, issuer=issuer1, credential_def_id="123456"
         )
@@ -62,10 +61,72 @@ class IssuerViewSetTest(APITestCase):
         self.assertEqual(response.data[0]["credential_def_id"], "123456")
         self.assertEqual(response.data[0]["schema"]["name"], "test-schema")
 
-    def test_get_issuer_logo(self):
+    def test_get_issuer_logo_success(self):
         url = reverse("issuer-list")
         response1 = self.client.get(url + "/1/logo")
         self.assertEqual(response1.status_code, status.HTTP_200_OK)
 
         response2 = self.client.get(url + "/2/logo")
         self.assertEqual(response2.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class SchemaViewSetTest(APITestCase):
+    def setUp(self):
+        # create test schemas
+        Schema.objects.create(
+            name="test-schema-1", version="0.5.0", origin_did="not:a:did:123"
+        )
+        Schema.objects.create(
+            name="test-schema-2", version="1.0.0", origin_did="not:a:did:456"
+        )
+        Schema.objects.create(
+            name="test-schema-3", version="0.2.1", origin_did="not:a:did:123"
+        )
+        Schema.objects.create(
+            name="test-schema-4", version="3.0.1", origin_did="not:a:did:123"
+        )
+        Schema.objects.create(
+            name="test-schema-5", version="0.5.0", origin_did="not:a:did:789"
+        )
+
+    def test_get_schema_list_no_filters(self):
+        url = reverse("schema-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total"], 5)
+        self.assertEqual(len(response.data["results"]), 5)
+
+    def test_get_schema_filter_by_id(self):
+        url = reverse("schema-list")
+        response = self.client.get(url + "?id=1")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
+
+    def test_get_schema_filter_by_name(self):
+        url = reverse("schema-list")
+        response = self.client.get(url + "?name=test-schema-2")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
+
+    def test_get_schema_filter_by_version(self):
+        url = reverse("schema-list")
+        response = self.client.get(url + "?version=0.5.0")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total"], 2)
+        self.assertEqual(len(response.data["results"]), 2)
+
+    def test_get_schema_filter_by_origin_did(self):
+        url = reverse("schema-list")
+        response = self.client.get(url + "?origin_did=not:a:did:123")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total"], 3)
+        self.assertEqual(len(response.data["results"]), 3)
+
+    def test_get_schema_by_id(self):
+        url = reverse("schema-list")
+        response = self.client.get(url + "/3")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], 3)
+        self.assertEqual(response.data["origin_did"], "not:a:did:123")
