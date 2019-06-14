@@ -41,14 +41,16 @@ class DemoAgent:
         internal_host: str,
         external_host: str,
         label: str = None,
+        timing: bool = False,
         **params,
     ):
         self.ident = ident
-        self.label = label or ident
         self.http_port = http_port
         self.admin_port = admin_port
         self.internal_host = internal_host
         self.external_host = external_host
+        self.label = label or ident
+        self.timing = timing
 
         self.endpoint = f"http://{internal_host}:{http_port}"
         self.admin_url = f"http://{internal_host}:{admin_port}"
@@ -88,6 +90,8 @@ class DemoAgent:
         ]
         if "genesis" in self.params:
             result.append(("--genesis-transactions", self.params["genesis"]))
+        if self.timing:
+            result.append("--timing")
         return result
 
     async def register_did(self, ledger_url=None):
@@ -225,3 +229,30 @@ class DemoAgent:
             raise Exception(f"Timed out waiting for agent process to start")
         if "Indy Catalyst Agent" not in text:
             raise Exception(f"Unexpected response from agent process")
+
+    async def fetch_timing(self):
+        status = await self.admin_GET("/status")
+        return status.get("timing")
+
+    def format_timing(self, timing: dict) -> dict:
+        result = []
+        for name, count in timing["count"].items():
+            result.append(
+                (
+                    name[:35],
+                    count,
+                    timing["total"][name],
+                    timing["avg"][name],
+                    timing["min"][name],
+                    timing["max"][name],
+                )
+            )
+        result.sort(key=lambda row: row[2], reverse=True)
+        yield "{:35} | {:>12} {:>12} {:>10} {:>10} {:>10}".format(
+            "", "count", "total", "avg", "min", "max"
+        )
+        yield "=" * 96
+        yield from (
+            "{:35} | {:12d} {:12.3f} {:10.3f} {:10.3f} {:10.3f}".format(*row)
+            for row in result
+        )

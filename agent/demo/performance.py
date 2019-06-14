@@ -37,9 +37,15 @@ def log_msg(msg: str):
 
 
 class BaseAgent(DemoAgent):
-    def __init__(self, ident: str, port: int, genesis: str = None):
+    def __init__(self, ident: str, port: int, genesis: str = None, timing: bool = True):
         super().__init__(
-            ident, port, port + 1, internal_host, external_host, genesis=genesis
+            ident,
+            port,
+            port + 1,
+            internal_host,
+            external_host,
+            genesis=genesis,
+            timing=timing,
         )
         self.connection_id = None
         self.connection_active = asyncio.Future()
@@ -197,7 +203,7 @@ async def test():
 
         log_msg(f"Connect duration: {connect_time - publish_done_time:.2f}s")
 
-        issue_count = 100
+        issue_count = 300
         batch_size = 100
         batch_start = connect_time
 
@@ -233,6 +239,16 @@ async def test():
         alice.log(f"Average time per credential: {avg:.2f}s")
 
         done_time = default_timer()
+
+        timing = await alice.fetch_timing()
+        if timing:
+            for line in alice.format_timing(timing):
+                alice.log(line)
+
+        timing = await faber.fetch_timing()
+        if timing:
+            for line in faber.format_timing(timing):
+                faber.log(line)
 
     finally:
         terminated = True
