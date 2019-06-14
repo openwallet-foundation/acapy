@@ -9,6 +9,7 @@ from von_anchor.a2a import DIDDoc
 from von_anchor.a2a.publickey import PublicKey, PublicKeyType
 from von_anchor.a2a.service import Service
 
+from ...cache.base import BaseCache
 from ...error import BaseError
 from ...config.base import InjectorError
 from ...config.injection_context import InjectionContext
@@ -779,6 +780,14 @@ class ConnectionManager:
             connection: The connection record (with associated `DIDDoc`)
                 used to generate the connection target
         """
+
+        cache: BaseCache = await self.context.inject(BaseCache, required=False)
+        cache_key = f"connection_target::{connection.connection_id}"
+        if cache:
+            target_json = await cache.get(cache_key)
+            if target_json:
+                return ConnectionTarget.deserialize(target_json)
+
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
             return None
@@ -791,7 +800,7 @@ class ConnectionManager:
             and connection.initiator == connection.INITIATOR_EXTERNAL
         ):
             invitation = await connection.retrieve_invitation(self.context)
-            return ConnectionTarget(
+            result = ConnectionTarget(
                 did=connection.their_did,
                 endpoint=invitation.endpoint,
                 label=invitation.label,
@@ -799,15 +808,20 @@ class ConnectionManager:
                 routing_keys=invitation.routing_keys,
                 sender_key=my_info.verkey,
             )
+        else:
+            if not connection.their_did:
+                self._logger.debug("No target DID associated with connection")
+                return None
 
-        if not connection.their_did:
-            self._logger.debug("No target DID associated with connection")
-            return None
+            doc = await self.fetch_did_document(connection.their_did)
+            result = self.diddoc_connection_target(
+                doc, my_info.verkey, connection.their_label
+            )
 
-        doc = await self.fetch_did_document(connection.their_did)
-        return self.diddoc_connection_target(
-            doc, my_info.verkey, connection.their_label
-        )
+        if cache:
+            await cache.set(cache_key, result.serialize(), 60)
+
+        return result
 
     def diddoc_connection_target(
         self, doc: DIDDoc, sender_verkey: str, their_label: str = None
@@ -922,3 +936,7 @@ class ConnectionManager:
     async def updated_record(self, connection: ConnectionRecord):
         """Call webhook when the record is updated."""
         send_webhook(self._context, "connections", connection.serialize())
+        cache: BaseCache = await self.context.inject(BaseCache, required=False)
+        cache_key = f"connection_target::{connection.connection_id}"
+        if cache:
+            await cache.clear(cache_key)

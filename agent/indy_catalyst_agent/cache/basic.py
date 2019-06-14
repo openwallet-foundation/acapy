@@ -61,6 +61,17 @@ class BasicCache(BaseCache):
         else:
             self._cache[key] = {"expires": None, "value": value}
 
+    async def clear(self, key: Text):
+        """
+        Remove an item from the cache, if present.
+
+        Args:
+            key: the key to remove
+
+        """
+        if key in self._cache:
+            del self._cache[key]
+
     async def flush(self):
         """Remove all items from the cache."""
 
