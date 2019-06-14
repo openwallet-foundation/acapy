@@ -88,12 +88,14 @@ class CredentialManager:
             )
 
             credential_exchange = CredentialExchange(
+                auto_issue=True,
                 connection_id=connection_id,
                 initiator=CredentialExchange.INITIATOR_SELF,
                 credential_definition_id=credential_definition_id,
                 schema_id=source_credential_exchange.schema_id,
                 credential_offer=source_credential_exchange.credential_offer,
                 credential_request=source_credential_exchange.credential_request,
+                credential_values=credential_values,
             )
             await credential_exchange.save(self.context)
 
