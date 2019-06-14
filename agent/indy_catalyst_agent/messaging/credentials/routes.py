@@ -1,5 +1,6 @@
 """Connection handling admin routes."""
 
+import asyncio
 import json
 
 from aiohttp import web
@@ -268,7 +269,9 @@ async def credential_exchange_send(request: web.BaseRequest):
     credential_exchange_record = await credential_manager.prepare_send(
         credential_definition_id, connection_id, credential_values
     )
-    await credential_manager.perform_send(credential_exchange_record, outbound_handler)
+    asyncio.ensure_future(
+        credential_manager.perform_send(credential_exchange_record, outbound_handler)
+    )
 
     return web.json_response(credential_exchange_record.serialize())
 
