@@ -154,7 +154,7 @@ async def test():
     finally:
         if not genesis:
             print("Error retrieving ledger genesis transactions")
-            return
+            sys.exit(1)
 
     alice = None
     faber = None
@@ -253,7 +253,7 @@ async def test():
     await asyncio.sleep(0.1)
 
     if not terminated:
-        raise KeyboardInterrupt()
+        os._exit(1)
 
 
 try:
