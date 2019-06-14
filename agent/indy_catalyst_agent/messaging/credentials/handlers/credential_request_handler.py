@@ -33,10 +33,6 @@ class CredentialRequestHandler(BaseHandler):
             context.message
         )
 
-        # We cache some stuff in order to re-issue again in the future
-        # without this roundtrip
-        await credential_manager.cache_credential_exchange(credential_exchange_record)
-
         # If auto_issue is enabled, respond immediately
         if credential_exchange_record.auto_issue:
             (

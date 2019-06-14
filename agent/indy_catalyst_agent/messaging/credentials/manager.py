@@ -1,7 +1,9 @@
 """Classes to manage credentials."""
 
+import asyncio
 import json
 import logging
+import time
 
 from ...config.injection_context import InjectionContext
 from ...error import BaseError
@@ -65,7 +67,7 @@ class CredentialManager:
         self, credential_definition_id: str, connection_id: str, credential_values: dict
     ) -> CredentialExchange:
         """
-        Create an offer.
+        Set up a new credential exchange for an automated send.
 
         Args:
             credential_definition_id: Credential definition id for offer
@@ -88,14 +90,30 @@ class CredentialManager:
             + f"{connection_id}"
         )
 
+        source_credential_exchange = None
+
         if source_credential_exchange_id:
+
+            # The cached credential exchange ID may not have an associated credential
+            # request yet. Wait up to 30 seconds for that to be populated, then
+            # move on and replace it as the cached credential exchange
+
+            lookup_start = time.perf_counter()
+            while True:
+                source_credential_exchange = await CredentialExchange.retrieve_by_id(
+                    self._context, source_credential_exchange_id
+                )
+                if source_credential_exchange.credential_request:
+                    break
+                if lookup_start + 30 < time.perf_counter():
+                    source_credential_exchange = None
+                    break
+                await asyncio.sleep(0.3)
+
+        if source_credential_exchange:
 
             # Since we have the source exchange cache, we can re-use the schema_id,
             # credential_offer, and credential_request to save a roundtrip
-            source_credential_exchange = await CredentialExchange.retrieve_by_id(
-                self._context, source_credential_exchange_id
-            )
-
             credential_exchange = CredentialExchange(
                 auto_issue=True,
                 connection_id=connection_id,
@@ -122,6 +140,9 @@ class CredentialManager:
             credential_exchange = await self.create_offer(
                 credential_definition_id, connection_id, True, credential_values
             )
+
+            # Mark this credential exchange as the current cached one for this cred def
+            await self.cache_credential_exchange(credential_exchange)
 
         return credential_exchange
 
