@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import random
 import subprocess
@@ -42,6 +43,7 @@ class DemoAgent:
         external_host: str,
         label: str = None,
         timing: bool = False,
+        postgres: bool = False,
         **params,
     ):
         self.ident = ident
@@ -51,6 +53,7 @@ class DemoAgent:
         self.external_host = external_host
         self.label = label or ident
         self.timing = timing
+        self.postgres = postgres
 
         self.endpoint = f"http://{internal_host}:{http_port}"
         self.admin_url = f"http://{internal_host}:{admin_port}"
@@ -92,6 +95,30 @@ class DemoAgent:
             result.append(("--genesis-transactions", self.params["genesis"]))
         if self.timing:
             result.append("--timing")
+        if self.postgres:
+            result.extend(
+                [
+                    ("--storage-type", "postgres_storage"),
+                    (
+                        "--storage-config",
+                        json.dumps(
+                            {"url": f"{self.internal_host}:5432", "max_connections": 5}
+                        ),
+                    ),
+                    (
+                        "--storage-creds",
+                        json.dumps(
+                            {
+                                "account": "postgres",
+                                "password": "mysecretpassword",
+                                "admin_account": "postgres",
+                                "admin_password": "mysecretpassword",
+                            }
+                        ),
+                    ),
+                ]
+            )
+
         return result
 
     async def register_did(self, ledger_url=None):

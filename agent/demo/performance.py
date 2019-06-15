@@ -13,6 +13,8 @@ LOGGER = logging.getLogger(__name__)
 
 AGENT_PORT = int(sys.argv[1])
 
+POSTGRES = bool(os.getenv("POSTGRES"))
+
 # detect runmode and set hostnames accordingly
 RUN_MODE = os.getenv("RUNMODE")
 
@@ -40,7 +42,12 @@ def log_msg(msg: str):
 
 class BaseAgent(DemoAgent):
     def __init__(
-        self, ident: str, port: int, genesis: str = None, timing: bool = TIMING
+        self,
+        ident: str,
+        port: int,
+        genesis: str = None,
+        timing: bool = TIMING,
+        postgres: bool = POSTGRES,
     ):
         super().__init__(
             ident,
@@ -50,6 +57,7 @@ class BaseAgent(DemoAgent):
             external_host,
             genesis=genesis,
             timing=timing,
+            postgres=postgres,
         )
         self.connection_id = None
         self.connection_active = asyncio.Future()
@@ -60,7 +68,7 @@ class BaseAgent(DemoAgent):
     async def handle_webhook(self, topic, payload):
         if topic == "connections" and payload["connection_id"] == self.connection_id:
             if payload["state"] == "active" and not self.connection_active.done():
-                self.log("Promoted to active")
+                self.log("Connected")
                 self.connection_active.set_result(True)
 
 
