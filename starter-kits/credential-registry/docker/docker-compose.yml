@@ -146,6 +146,7 @@ services:
   tob-agent:
     image: tob-agent
     environment:
+      - LEDGER_URL=${LEDGER_URL}
       - WALLET_TYPE=${WALLET_TYPE}
       - POSTGRESQL_WALLET_HOST=${POSTGRESQL_WALLET_HOST}
       - POSTGRESQL_WALLET_PORT=${POSTGRESQL_WALLET_PORT}
@@ -178,7 +179,7 @@ services:
             --endpoint endpoint_url \
             --outbound-transport ws \
             --outbound-transport http \
-            --genesis-transactions genesis \
+            --genesis-url '${LEDGER_URL}/genesis' \
             --auto-respond-messages \
             --accept-invites \
             --accept-requests \
