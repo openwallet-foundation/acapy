@@ -9,7 +9,7 @@ from ..messages.register import IssuerRegistration
 from ..manager import IssuerRegistrationManager
 
 
-class IssuerRegistrationHandlerHandler(BaseHandler):
+class IssuerRegistrationHandler(BaseHandler):
     """Message handler class for issuer registration."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
@@ -20,9 +20,7 @@ class IssuerRegistrationHandlerHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug(
-            f"IssuerRegistrationHandlerHandler called with context {context}"
-        )
+        self._logger.debug(f"IssuerRegistrationHandler called with context {context}")
         assert isinstance(context.message, IssuerRegistration)
 
         self._logger.info("Received issuer registration: %s", context.message)
