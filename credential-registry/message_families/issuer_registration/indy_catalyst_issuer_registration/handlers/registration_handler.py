@@ -20,9 +20,7 @@ class IssuerRegistrationHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug(
-            f"IssuerRegistrationHandler called with context {context}"
-        )
+        self._logger.debug(f"IssuerRegistrationHandler called with context {context}")
         assert isinstance(context.message, IssuerRegistration)
 
         self._logger.info("Received issuer registration: %s", context.message)
