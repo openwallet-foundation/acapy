@@ -193,7 +193,8 @@ services:
         --storage-creds '{\"account\":\"${POSTGRESQL_USER}\",\"password\":\"${POSTGRESQL_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_ADMIN_PASSWORD}\"}' \
         --seed '${INDY_WALLET_SEED}' \
         --admin '0.0.0.0' ${AGENT_ADMIN_PORT} \
-        --label ${AGENT_NAME}",
+        --label ${AGENT_NAME} \
+        --protocol indy_catalyst_issuer_registration",
       ]
 
   tob-worker:
