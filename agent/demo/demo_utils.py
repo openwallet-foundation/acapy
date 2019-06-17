@@ -137,7 +137,7 @@ def write_agent_startup_script(agent_name, agent_args):
 
 def start_agent_subprocess(
     agent_name,
-    genesis,
+    genesis_url,
     seed,
     endpoint_url,
     in_port_1,
@@ -184,7 +184,7 @@ def start_agent_subprocess(
         #"--genesis-transactions",
         #genesis,
         "--genesis-url",
-        "http://localhost:9000/genesis",
+        genesis_url,
         "--auto-respond-messages",
         "--accept-invites",
         "--accept-requests",
