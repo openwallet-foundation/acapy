@@ -7,14 +7,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0010_auto_20180907_2354'),
-    ]
+    dependencies = [("api_v2", "0010_auto_20180907_2354")]
 
     operations = [
         migrations.AddField(
-            model_name='credentialtype',
-            name='visible_fields',
+            model_name="credentialtype",
+            name="visible_fields",
             field=models.TextField(null=True),
-        ),
+        )
     ]

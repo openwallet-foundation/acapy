@@ -8,42 +8,45 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0012_credential_inactive'),
-    ]
+    dependencies = [("api_v2", "0012_credential_inactive")]
 
     operations = [
         migrations.CreateModel(
-            name='Attribute',
+            name="Attribute",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('create_timestamp', models.DateTimeField(auto_now_add=True, null=True)),
-                ('update_timestamp', models.DateTimeField(auto_now=True, null=True)),
-                ('type', models.TextField()),
-                ('format', models.TextField(null=True)),
-                ('value', models.TextField(null=True)),
-                ('credential', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attributes', to='api_v2.Credential')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "create_timestamp",
+                    models.DateTimeField(auto_now_add=True, null=True),
+                ),
+                ("update_timestamp", models.DateTimeField(auto_now=True, null=True)),
+                ("type", models.TextField()),
+                ("format", models.TextField(null=True)),
+                ("value", models.TextField(null=True)),
+                (
+                    "credential",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attributes",
+                        to="api_v2.Credential",
+                    ),
+                ),
             ],
-            options={
-                'db_table': 'attribute',
-            },
+            options={"db_table": "attribute"},
         ),
-        migrations.RemoveField(
-            model_name='contact',
-            name='credential',
-        ),
-        migrations.RemoveField(
-            model_name='person',
-            name='credential',
-        ),
-        migrations.DeleteModel(
-            name='Contact',
-        ),
-        migrations.DeleteModel(
-            name='Person',
-        ),
+        migrations.RemoveField(model_name="contact", name="credential"),
+        migrations.RemoveField(model_name="person", name="credential"),
+        migrations.DeleteModel(name="Contact"),
+        migrations.DeleteModel(name="Person"),
         migrations.AlterUniqueTogether(
-            name='attribute',
-            unique_together=set([('credential', 'type')]),
+            name="attribute", unique_together=set([("credential", "type")])
         ),
     ]

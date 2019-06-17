@@ -235,6 +235,16 @@ PARSER.add_argument(
     help="Including timing information in response messages",
 )
 
+PARSER.add_argument(
+    "--protocol",
+    dest="external_protocols",
+    type=str,
+    action="append",
+    required=False,
+    metavar="<module>",
+    help="Provide external protocol modules",
+)
+
 
 async def start(
     inbound_transport_configs: list, outbound_transports: list, settings: dict
@@ -351,6 +361,9 @@ def main():
 
     if args.timing:
         settings["timing.enabled"] = True
+
+    if args.external_protocols:
+        settings["external_protocols"] = args.external_protocols
 
     loop = asyncio.get_event_loop()
     try:

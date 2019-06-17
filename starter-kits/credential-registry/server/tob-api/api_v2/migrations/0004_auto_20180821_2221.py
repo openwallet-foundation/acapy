@@ -8,14 +8,12 @@ import django.utils.timezone
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0003_auto_20180821_1840'),
-    ]
+    dependencies = [("api_v2", "0003_auto_20180821_1840")]
 
     operations = [
         migrations.AlterField(
-            model_name='credential',
-            name='effective_date',
+            model_name="credential",
+            name="effective_date",
             field=models.DateTimeField(default=django.utils.timezone.now),
-        ),
+        )
     ]

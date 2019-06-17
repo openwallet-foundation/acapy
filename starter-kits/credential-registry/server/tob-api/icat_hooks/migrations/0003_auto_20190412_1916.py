@@ -7,26 +7,28 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('icat_hooks', '0002_auto_20190409_1050'),
-    ]
+    dependencies = [("icat_hooks", "0002_auto_20190409_1050")]
 
     operations = [
         migrations.AddField(
-            model_name='hookuser',
-            name='email',
-            field=models.TextField(default='na', max_length=240),
+            model_name="hookuser",
+            name="email",
+            field=models.TextField(default="na", max_length=240),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='hookuser',
-            name='org_name',
-            field=models.TextField(default='na', max_length=240),
+            model_name="hookuser",
+            name="org_name",
+            field=models.TextField(default="na", max_length=240),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='hookuser',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='hook_user', to=settings.AUTH_USER_MODEL),
+            model_name="hookuser",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="hook_user",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

@@ -15,5 +15,9 @@ if [ ! -z "${ENABLE_PTVSD}" ] || [[ "$@" == *--debug* ]]; then
 	ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
 
+if [ ! -z "${WEBHOOK_URL}" ]; then
+	ARGS="${ARGS} -e WEBHOOK_URL=\"${WEBHOOK_URL}\""
+fi
+
 RAND_NAME=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
 docker run --rm -ti --name "indy-cat-runner_${RAND_NAME}" $ARGS indy-cat-run "$@"

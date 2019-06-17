@@ -5,14 +5,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0022_auto_20190109_0014'),
-    ]
+    dependencies = [("api_v2", "0022_auto_20190109_0014")]
 
     operations = [
         migrations.AddField(
-            model_name='issuer',
-            name='endpoint',
-            field=models.TextField(null=True),
-        ),
+            model_name="issuer", name="endpoint", field=models.TextField(null=True)
+        )
     ]

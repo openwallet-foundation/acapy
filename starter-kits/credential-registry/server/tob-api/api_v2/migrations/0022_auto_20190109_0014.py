@@ -6,24 +6,22 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0021_auto_20190107_2203'),
-    ]
+    dependencies = [("api_v2", "0021_auto_20190107_2203")]
 
     operations = [
         migrations.AddField(
-            model_name='credentialtype',
-            name='category_labels',
+            model_name="credentialtype",
+            name="category_labels",
             field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='credentialtype',
-            name='claim_descriptions',
+            model_name="credentialtype",
+            name="claim_descriptions",
             field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='credentialtype',
-            name='claim_labels',
+            model_name="credentialtype",
+            name="claim_labels",
             field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, null=True),
         ),
     ]

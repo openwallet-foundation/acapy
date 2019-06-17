@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 def validate(schema):
-
     def decorator(func):
         @wraps(func)
         def wrapper(request, *args, **kwargs):

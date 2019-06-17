@@ -7,53 +7,24 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0019_credentialtype_url'),
-    ]
+    dependencies = [("api_v2", "0019_credentialtype_url")]
 
     operations = [
+        migrations.AlterModelOptions(name="address", options={"ordering": ("id",)}),
+        migrations.AlterModelOptions(name="attribute", options={"ordering": ("id",)}),
+        migrations.AlterModelOptions(name="claim", options={"ordering": ("id",)}),
+        migrations.AlterModelOptions(name="credential", options={"ordering": ("id",)}),
         migrations.AlterModelOptions(
-            name='address',
-            options={'ordering': ('id',)},
+            name="credentialset", options={"ordering": ("id",)}
         ),
         migrations.AlterModelOptions(
-            name='attribute',
-            options={'ordering': ('id',)},
+            name="credentialtype", options={"ordering": ("id",)}
         ),
+        migrations.AlterModelOptions(name="issuer", options={"ordering": ("id",)}),
+        migrations.AlterModelOptions(name="name", options={"ordering": ("id",)}),
+        migrations.AlterModelOptions(name="schema", options={"ordering": ("id",)}),
+        migrations.AlterModelOptions(name="topic", options={"ordering": ("id",)}),
         migrations.AlterModelOptions(
-            name='claim',
-            options={'ordering': ('id',)},
-        ),
-        migrations.AlterModelOptions(
-            name='credential',
-            options={'ordering': ('id',)},
-        ),
-        migrations.AlterModelOptions(
-            name='credentialset',
-            options={'ordering': ('id',)},
-        ),
-        migrations.AlterModelOptions(
-            name='credentialtype',
-            options={'ordering': ('id',)},
-        ),
-        migrations.AlterModelOptions(
-            name='issuer',
-            options={'ordering': ('id',)},
-        ),
-        migrations.AlterModelOptions(
-            name='name',
-            options={'ordering': ('id',)},
-        ),
-        migrations.AlterModelOptions(
-            name='schema',
-            options={'ordering': ('id',)},
-        ),
-        migrations.AlterModelOptions(
-            name='topic',
-            options={'ordering': ('id',)},
-        ),
-        migrations.AlterModelOptions(
-            name='topicrelationship',
-            options={'ordering': ('id',)},
+            name="topicrelationship", options={"ordering": ("id",)}
         ),
     ]

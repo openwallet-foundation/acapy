@@ -7,23 +7,16 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0002_category'),
-    ]
+    dependencies = [("api_v2", "0002_category")]
 
     operations = [
         migrations.RenameField(
-            model_name='credential',
-            old_name='start_date',
-            new_name='effective_date',
+            model_name="credential", old_name="start_date", new_name="effective_date"
         ),
-        migrations.RemoveField(
-            model_name='credential',
-            name='end_date',
-        ),
+        migrations.RemoveField(model_name="credential", name="end_date"),
         migrations.AddField(
-            model_name='credential',
-            name='revoked',
+            model_name="credential",
+            name="revoked",
             field=models.BooleanField(default=False),
         ),
     ]

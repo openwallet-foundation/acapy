@@ -8,24 +8,28 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0005_auto_20180824_2256'),
-    ]
+    dependencies = [("api_v2", "0005_auto_20180824_2256")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='credential',
-            name='topics',
-        ),
+        migrations.RemoveField(model_name="credential", name="topics"),
         migrations.AddField(
-            model_name='credential',
-            name='topic',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, related_name='credentials', to='api_v2.Topic'),
+            model_name="credential",
+            name="topic",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="credentials",
+                to="api_v2.Topic",
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='topicrelationship',
-            name='credential',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='api_v2.Credential'),
+            model_name="topicrelationship",
+            name="credential",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="+",
+                to="api_v2.Credential",
+            ),
         ),
     ]
