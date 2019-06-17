@@ -171,7 +171,8 @@ services:
     depends_on:
       - wallet-db
     entrypoint: /bin/bash
-    command: ["-c", "icatagent --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_1} \
+    command: ["-c", "icatagent \
+            --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_1} \
             --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_2} \
             --inbound-transport ws '0.0.0.0' ${AGENT_IN_PORT_3} \
             --endpoint endpoint_url \
@@ -182,10 +183,13 @@ services:
             --accept-invites \
             --accept-requests \
             --auto-ping-connection \
-            --wallet-type wallet_type \
-            --wallet-name wallet_name \
-            --wallet-key wallet_key \
-            --seed seed \
+            --wallet-type 'indy' \
+            --wallet-name 'icat_agent_wallet' \
+            --wallet-key '${WALLET_ENCRYPTION_KEY}' \
+            --storage-type '${WALLET_TYPE}' \
+            --storage-config '{\"url\":\"${POSTGRESQL_WALLET_HOST}:${POSTGRESQL_WALLET_PORT}\",\"max_connections\":5}' \
+            --storage-creds '{\"account\":\"${POSTGRESQL_USER}\",\"password\":\"${POSTGRESQL_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_ADMIN_PASSWORD}\"}' \
+            --seed '${INDY_WALLET_SEED}' \
             --admin '0.0.0.0' ${AGENT_ADMIN_PORT} \
             --label ${AGENT_NAME}"]
 

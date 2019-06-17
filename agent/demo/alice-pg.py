@@ -213,6 +213,7 @@ def main():
         webhook_url,
         scripts_dir,
         run_subprocess=True,
+        use_postgres=False,
     )
     time.sleep(5.0)
     print("Admin url is at:", admin_url)
