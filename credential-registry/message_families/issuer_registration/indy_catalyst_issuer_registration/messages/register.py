@@ -8,7 +8,7 @@ from ..message_types import REGISTER
 
 HANDLER_CLASS = (
     "indy_catalyst_issuer_registration."
-    + "handlers.registration_handler.IssuerRegistrationHandlerHandler"
+    + "handlers.registration_handler.IssuerRegistrationHandler"
 )
 
 

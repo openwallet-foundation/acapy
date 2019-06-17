@@ -181,8 +181,6 @@ def start_agent_subprocess(
         "ws",
         "--outbound-transport",
         "http",
-        #"--genesis-transactions",
-        #genesis,
         "--genesis-url",
         genesis_url,
         "--auto-respond-messages",
