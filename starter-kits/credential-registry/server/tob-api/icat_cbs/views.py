@@ -42,7 +42,7 @@ def agent_callback(request, topic):
         return handle_register_issuer(message)
 
     else:
-        print("Callback: topic=", topic, ", message=", message)
+        LOGGER.info("Callback: topic=", topic, ", message=", message)
         return Response("Invalid topic: " + topic, status=status.HTTP_400_BAD_REQUEST)
 
 

@@ -48,6 +48,7 @@ services:
         --seed '${INDY_WALLET_SEED}' \
         --admin '0.0.0.0' ${AGENT_ADMIN_PORT} \
         --label ${AGENT_NAME} \
+        --log-level debug \
         --protocol indy_catalyst_issuer_registration",
       ]
 

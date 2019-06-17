@@ -155,7 +155,7 @@ services:
       - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
       - INDY_WALLET_SEED=${INDY_WALLET_SEED}
       # - INDY_WALLET_DID=${INDY_WALLET_DID}
-      - WEBHOOK_URL=http://tob-api:${AGENT_WEBHOOK_PORT}/callback
+      - WEBHOOK_URL=http://tob-api:${API_HTTP_PORT}/callback
       - HTTP_INTERFACE_PORT=${HTTP_INTERFACE_PORT}
       - WS_INTERFACE_PORT=${WS_INTERFACE_PORT}
       - AGENT_ADMIN_PORT=${AGENT_ADMIN_PORT}
@@ -191,6 +191,7 @@ services:
         --seed '${INDY_WALLET_SEED}' \
         --admin '0.0.0.0' ${AGENT_ADMIN_PORT} \
         --label ${AGENT_NAME} \
+        --log-level debug \
         --protocol indy_catalyst_issuer_registration",
       ]
 
