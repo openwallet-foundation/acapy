@@ -151,6 +151,7 @@ def start_agent_subprocess(
     webhook_url,
     scripts_dir,
     run_subprocess=True,
+    use_postgres=False,
 ):
     my_env = os.environ.copy()
     my_env["PYTHONPATH"] = python_path
@@ -203,7 +204,6 @@ def start_agent_subprocess(
         "--label",
         agent_name,
     ]
-    use_postgres = False
     if use_postgres:
         agent_args.extend(
             [
