@@ -1,8 +1,8 @@
-version: '3'
+version: "3"
 services:
-  # 
+  #
   # tob-web
-  # 
+  #
   tob-web:
     image: angular-on-nginx
     environment:
@@ -49,19 +49,19 @@ services:
     depends_on:
       - tob-api
 
-  # 
+  #
   # tob-api
   #-------------------------------------------------
   # The API performs the migrations on the database
   # and updates the indexes in Solr.  Therefore
-  # it needs to come up after the database and 
+  # it needs to come up after the database and
   # and Solr services have had time to fully
   # initialize.
   #
   #
-  # We are using a simple sleep command to do this 
-  # for the moment; refer to the `command` section 
-  # of the configuration for details.  It would be 
+  # We are using a simple sleep command to do this
+  # for the moment; refer to the `command` section
+  # of the configuration for details.  It would be
   # nice to implement a more deterministic solution.
   #
   tob-api:
@@ -132,16 +132,16 @@ services:
       - tob-solr
       - tob-agent
     command: >
-        /bin/bash -c "
-        echo waiting for solr ...;
-        sleep 10;
-        if [ $DEBUG ] && [ "$DEBUG" == "true" ]; then
-          python manage.py migrate && \
-          python manage.py update_index --max-retries=5 --batch-size=500;
-          python manage.py runserver --noreload --nothreading 0.0.0.0:8080;
-        else
-          ${STI_SCRIPTS_PATH}/run;
-        fi"
+      /bin/bash -c "
+      echo waiting for solr ...;
+      sleep 10;
+      if [ $DEBUG ] && [ "$DEBUG" == "true" ]; then
+        python manage.py migrate && \
+        python manage.py update_index --max-retries=5 --batch-size=500;
+        python manage.py runserver --noreload --nothreading 0.0.0.0:8080;
+      else
+        ${STI_SCRIPTS_PATH}/run;
+      fi"
 
   tob-agent:
     image: tob-agent
@@ -172,27 +172,31 @@ services:
     depends_on:
       - wallet-db
     entrypoint: /bin/bash
-    command: ["-c", "icatagent \
-            --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_1} \
-            --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_2} \
-            --inbound-transport ws '0.0.0.0' ${AGENT_IN_PORT_3} \
-            --endpoint endpoint_url \
-            --outbound-transport ws \
-            --outbound-transport http \
-            --genesis-url '${LEDGER_URL}/genesis' \
-            --auto-respond-messages \
-            --accept-invites \
-            --accept-requests \
-            --auto-ping-connection \
-            --wallet-type 'indy' \
-            --wallet-name 'icat_agent_wallet' \
-            --wallet-key '${WALLET_ENCRYPTION_KEY}' \
-            --storage-type '${WALLET_TYPE}' \
-            --storage-config '{\"url\":\"${POSTGRESQL_WALLET_HOST}:${POSTGRESQL_WALLET_PORT}\",\"max_connections\":5}' \
-            --storage-creds '{\"account\":\"${POSTGRESQL_USER}\",\"password\":\"${POSTGRESQL_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_ADMIN_PASSWORD}\"}' \
-            --seed '${INDY_WALLET_SEED}' \
-            --admin '0.0.0.0' ${AGENT_ADMIN_PORT} \
-            --label ${AGENT_NAME}"]
+    command: [
+        "-c",
+        "icatagent \
+        --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_1} \
+        --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_2} \
+        --inbound-transport ws '0.0.0.0' ${AGENT_IN_PORT_3} \
+        --endpoint endpoint_url \
+        --outbound-transport ws \
+        --outbound-transport http \
+        --genesis-url '${LEDGER_URL}/genesis' \
+        --auto-respond-messages \
+        --accept-invites \
+        --accept-requests \
+        --auto-ping-connection \
+        --wallet-type 'indy' \
+        --wallet-name 'icat_agent_wallet' \
+        --wallet-key '${WALLET_ENCRYPTION_KEY}' \
+        --storage-type '${WALLET_TYPE}' \
+        --storage-config '{\"url\":\"${POSTGRESQL_WALLET_HOST}:${POSTGRESQL_WALLET_PORT}\",\"max_connections\":5}' \
+        --storage-creds '{\"account\":\"${POSTGRESQL_USER}\",\"password\":\"${POSTGRESQL_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_ADMIN_PASSWORD}\"}' \
+        --seed '${INDY_WALLET_SEED}' \
+        --admin '0.0.0.0' ${AGENT_ADMIN_PORT} \
+        --label ${AGENT_NAME} \
+        --protocol indy_catalyst_issuer_registration",
+      ]
 
   tob-worker:
     image: django
@@ -240,21 +244,21 @@ services:
       - tob-solr
       - rabbitmq
     command: >
-        /bin/bash -c "
-        echo waiting for solr ...;
-        sleep 10;
-        ${STI_SCRIPTS_PATH}/run;"
+      /bin/bash -c "
+      echo waiting for solr ...;
+      sleep 10;
+      ${STI_SCRIPTS_PATH}/run;"
 
-  # 
+  #
   # schema-spy
   #-------------------------------------------------
   # Needs to wait for the schema to be created/migrated
   # by the API server; it's not enough to wait for the
   # database to be available.
   #
-  # We are using a simple sleep command to do this 
-  # for the moment; refer to the `command` section 
-  # of the configuration for details.  It would be 
+  # We are using a simple sleep command to do this
+  # for the moment; refer to the `command` section
+  # of the configuration for details.  It would be
   # nice to implement a more deterministic solution.
   #
   schema-spy:
@@ -275,10 +279,10 @@ services:
         echo sleeping ...;
         sleep 20;
         ./start.sh;"
-    
-  # 
+
+  #
   # tob-solr
-  # 
+  #
   tob-solr:
     image: solr
     environment:
@@ -288,9 +292,9 @@ services:
     ports:
       - 8983:8983
 
-  # 
+  #
   # tob-db
-  # 
+  #
   tob-db:
     image: postgresql
     environment:
@@ -302,11 +306,11 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - tob-data:/var/lib/pgsql/data     
+      - tob-data:/var/lib/pgsql/data
 
-  # 
+  #
   # wallet-db
-  # 
+  #
   wallet-db:
     image: postgresql
     environment:
@@ -319,7 +323,7 @@ services:
     ports:
       - 5433:5432
     volumes:
-      - tob-wallet-db:/var/lib/pgsql/data     
+      - tob-wallet-db:/var/lib/pgsql/data
     #command:
     #  postgres -c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr'
 
@@ -331,8 +335,8 @@ services:
     networks:
       - tob
     ports:
-      - '5672:5672'
-      - '15672:15672'
+      - "5672:5672"
+      - "15672:15672"
     volumes:
       - tob-rabbit:/var/lib/rabbitmq
 
