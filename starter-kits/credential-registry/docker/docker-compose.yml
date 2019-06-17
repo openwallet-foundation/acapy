@@ -154,19 +154,17 @@ services:
       - POSTGRESQL_WALLET_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
       - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
       - INDY_WALLET_SEED=${INDY_WALLET_SEED}
-      - INDY_WALLET_DID=${INDY_WALLET_DID}
+      # - INDY_WALLET_DID=${INDY_WALLET_DID}
       - WEBHOOK_URL=http://tob-api:${AGENT_WEBHOOK_PORT}/callback
-      - AGENT_IN_PORT_1=${AGENT_IN_PORT_1}
-      - AGENT_IN_PORT_2=${AGENT_IN_PORT_2}
-      - AGENT_IN_PORT_3=${AGENT_IN_PORT_3}
+      - HTTP_INTERFACE_PORT=${HTTP_INTERFACE_PORT}
+      - WS_INTERFACE_PORT=${WS_INTERFACE_PORT}
       - AGENT_ADMIN_PORT=${AGENT_ADMIN_PORT}
       - AGENT_NAME=${AGENT_NAME}
     networks:
       - tob
     ports:
-      - ${AGENT_IN_PORT_1}:${AGENT_IN_PORT_1}
-      - ${AGENT_IN_PORT_2}:${AGENT_IN_PORT_2}
-      - ${AGENT_IN_PORT_3}:${AGENT_IN_PORT_3}
+      - ${HTTP_INTERFACE_PORT}:${HTTP_INTERFACE_PORT}
+      - ${WS_INTERFACE_PORT}:${WS_INTERFACE_PORT}
       - ${AGENT_ADMIN_PORT}:${AGENT_ADMIN_PORT}
     depends_on:
       - wallet-db
@@ -174,10 +172,9 @@ services:
     command: [
         "-c",
         "icatagent \
-        --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_1} \
-        --inbound-transport http '0.0.0.0' ${AGENT_IN_PORT_2} \
-        --inbound-transport ws '0.0.0.0' ${AGENT_IN_PORT_3} \
-        --endpoint endpoint_url \
+        --inbound-transport http '0.0.0.0' ${HTTP_INTERFACE_PORT} \
+        --inbound-transport ws '0.0.0.0' ${WS_INTERFACE_PORT} \
+        --endpoint ${AGENT_ENDPOINT} \
         --outbound-transport ws \
         --outbound-transport http \
         --genesis-transactions genesis \

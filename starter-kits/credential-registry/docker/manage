@@ -120,12 +120,11 @@ build-web() {
 
   if [ -t 0 ]; then
     # color npm output in interactive terminal
-	  NPM_COLOR="always"
+    NPM_COLOR="always"
   else
     NPM_COLOR="true"
   fi
 
-  
   echo -e "\nBuilding angular-on-nginx image ..."
   if [ -z "$TOB_THEME_PATH" ]; then
     # No custom theme was specified
@@ -176,8 +175,7 @@ build-web-dev() {
 
   # NB: We build with DEV_MODE=true but run with DEV_MODE=false
   echo -e "\nBuilding angular-dev image ..."
-  if [ -z "$TOB_THEME_PATH" ]
-  then
+  if [ -z "$TOB_THEME_PATH" ]; then
     # set TOB_THEME_PATH so that an empty dummy volume will be mounted - see docker-compose.yml
     TOB_THEME_PATH="tob-web-empty"
 
@@ -259,7 +257,7 @@ build-api() {
   # tob-api
   #
   BASE_IMAGE="bcgovimages/von-image:py36-1.7-ew-0-s2i"
-  
+
   echo -e "\nBuilding django image from ${BASE_IMAGE}..."
   ${S2I_EXE} build \
     -e "HTTP_PROXY=${HTTP_PROXY}" \
@@ -284,8 +282,8 @@ build-agent() {
   # tob-agent
   #
   docker build -q \
-      -t 'tob-agent' \
-      -f '../../../agent/docker/Dockerfile.run' '../../../agent'
+    -t 'tob-agent' \
+    -f '../../../agent/docker/Dockerfile.run' '../../../agent'
 }
 
 buildImages() {
@@ -302,16 +300,16 @@ configureEnvironment() {
   if [ -f .env ]; then
     while read line; do
       if [[ ! "$line" =~ ^\# ]] && [[ "$line" =~ .*= ]]; then
-        export ${line//[$'\r\n']}
+        export ${line//[$'\r\n']/}
       fi
     done <.env
   fi
 
   for arg in $@; do
     case "$arg" in
-      *=*)
-        export ${arg}
-        ;;
+    *=*)
+      export ${arg}
+      ;;
     esac
   done
 
@@ -400,11 +398,11 @@ configureEnvironment() {
   # tob-agent
   export AGENT_ADMIN_PORT=8024
   export AGENT_WEBHOOK_PORT=8020
-  export INDY_WALLET_DID=...
-  export AGENT_IN_PORT_1=8021
-  export AGENT_IN_PORT_2=8022
-  export AGENT_IN_PORT_3=8023
+  # export INDY_WALLET_DID=...
+  export HTTP_INTERFACE_PORT=8021
+  export WS_INTERFACE_PORT=8023
   export AGENT_NAME="tob-agent"
+  export AGENT_ENDPOINT=${AGENT_ENDPOINT:-http://$DOCKERHOST:$HTTP_INTERFACE_PORT}
 }
 
 getStartupParams() {
@@ -514,10 +512,10 @@ COMMAND=$(toLower ${1})
 shift || COMMAND=usage
 
 case "${COMMAND}" in
-start|up)
+start | up)
   _startupParams=$(getStartupParams $@)
   configureEnvironment $@
-  docker-compose up --scale tob-worker=2 -d ${_startupParams} 
+  docker-compose up --scale tob-worker=2 -d ${_startupParams}
   docker-compose logs -f
   ;;
 logs)
@@ -532,7 +530,7 @@ web-dev)
   ;;
 stop)
   configureEnvironment
-  docker-compose stop 
+  docker-compose stop
   ;;
 startdb)
   configureEnvironment $@
@@ -543,7 +541,7 @@ stopdb)
   configureEnvironment
   docker-compose stop wallet-db
   ;;
-rm|down)
+rm | down)
   configureEnvironment
   deleteVolumes
   ;;

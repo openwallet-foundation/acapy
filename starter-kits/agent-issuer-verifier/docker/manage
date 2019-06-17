@@ -1,0 +1,219 @@
+#!/bin/bash
+export MSYS_NO_PATHCONV=1
+export DOCKERHOST=${APPLICATION_URL-$(docker run --rm --net=host codenvy/che-ip)}
+set -e
+
+S2I_EXE=s2i
+if [ -z $(type -P "$S2I_EXE") ]; then
+  echo -e "The ${S2I_EXE} executable is needed and not on your path."
+  echo -e "It can be downloaded from here: https://github.com/openshift/source-to-image"
+  echo -e "Make sure you place it in a directory on your path."
+  exit 1
+fi
+
+SCRIPT_HOME="$(cd "$(dirname "$0")" && pwd)"
+
+# =================================================================================================================
+# Usage:
+# -----------------------------------------------------------------------------------------------------------------
+usage() {
+  cat <<-EOF
+    
+      Usage: $0 [command] [options]
+    
+      Commands:
+    
+      build - Build the docker images for the project.
+              You need to do this first, since the builds require
+              a combination of Docker and S2I builds.
+    
+              You can build individual components as shown below, components that have dependencies
+              will have these dependencies built too.
+    
+              Examples:
+
+                $0 build issuer-agent
+    
+               - Build the Agent.
+    
+      up -  Creates the application containers from the built images
+            and starts the services based on the docker-compose.yml file.
+
+            You can pass in a list of containers to start.  
+            By default all containers will be started.
+            
+
+            Examples:
+            $0 start
+
+      start - Same as up
+
+      logs - Display the logs from the docker compose run (ctrl-c to exit).
+
+      stop - Stops the services.  This is a non-destructive process.  The volumes and containers
+             are not deleted so they will be reused the next time you run start.
+    
+      down - Brings down the services and removes the volumes (storage) and containers.
+      rm - Same as down
+
+EOF
+  exit 1
+}
+# -----------------------------------------------------------------------------------------------------------------
+# Default Settings:
+# -----------------------------------------------------------------------------------------------------------------
+DEFAULT_CONTAINERS="wallet-db issuer-agent"
+# -----------------------------------------------------------------------------------------------------------------
+# Functions:
+# -----------------------------------------------------------------------------------------------------------------
+build-agent() {
+  #
+  # issuer-agent
+  #
+  docker build -q \
+    -t 'issuer-agent' \
+    -f '../../../agent/docker/Dockerfile.run' '../../../agent'
+}
+
+buildImages() {
+  build-agent
+}
+
+configureEnvironment() {
+
+  if [ -f .env ]; then
+    while read line; do
+      if [[ ! "$line" =~ ^\# ]] && [[ "$line" =~ .*= ]]; then
+        export ${line//[$'\r\n']/}
+      fi
+    done <.env
+  fi
+
+  for arg in $@; do
+    case "$arg" in
+    *=*)
+      export ${arg}
+      ;;
+    esac
+  done
+
+  export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-issuer}"
+
+  export STI_SCRIPTS_PATH=${STI_SCRIPTS_PATH:-/usr/libexec/s2i}
+  export RUST_LOG=${RUST_LOG:-warn}
+  export RUST_BACKTRACE=${RUST_BACKTRACE:-full}
+
+  # wallet-db
+  export POSTGRESQL_USER="DB_USER"
+  export POSTGRESQL_PASSWORD="DB_PASSWORD"
+  export POSTGRESQL_DATABASE="database"
+  export POSTGRESQL_ADMIN_PASSWORD="mysecretpassword"
+
+  # issuer-agent
+  export AGENT_ADMIN_PORT=9024
+  export AGENT_WEBHOOK_PORT=9020
+  # export INDY_WALLET_DID=...
+  export HTTP_INTERFACE_PORT=9021
+  export WS_INTERFACE_PORT=9023
+  export AGENT_NAME="issuer-agent"
+  export AGENT_ENDPOINT=${AGENT_ENDPOINT:-http://$DOCKERHOST:$HTTP_INTERFACE_PORT}
+}
+
+getStartupParams() {
+  CONTAINERS=""
+  ARGS="--force-recreate"
+
+  for arg in $@; do
+    case "$arg" in
+    *=*)
+      # Skip it
+      ;;
+    -*)
+      ARGS+=" $arg"
+      ;;
+    *)
+      CONTAINERS+=" $arg"
+      ;;
+    esac
+  done
+
+  if [ -z "$CONTAINERS" ]; then
+    CONTAINERS="$DEFAULT_CONTAINERS"
+  fi
+
+  echo ${ARGS} ${CONTAINERS}
+}
+
+deleteVolumes() {
+  _projectName=${COMPOSE_PROJECT_NAME:-issuer}
+
+  echo "Stopping and removing any running containers ..."
+  docker-compose down -v
+
+  _pattern="^${_projectName}_\|^docker_"
+  _volumes=$(docker volume ls -q | grep ${_pattern})
+
+  if [ ! -z "${_volumes}" ]; then
+    echo "Removing project volumes ..."
+    echo ${_volumes} | xargs docker volume rm
+  else
+    echo "No project volumes exist."
+  fi
+
+}
+
+toLower() {
+  echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
+}
+# =================================================================================================================
+
+pushd ${SCRIPT_HOME} >/dev/null
+COMMAND=$(toLower ${1})
+shift || COMMAND=usage
+
+case "${COMMAND}" in
+start | up)
+  _startupParams=$(getStartupParams $@)
+  configureEnvironment $@
+  docker-compose up -d ${_startupParams}
+  docker-compose logs -f
+  ;;
+logs)
+  configureEnvironment $@
+  docker-compose logs -f
+  ;;
+stop)
+  configureEnvironment
+  docker-compose stop
+  ;;
+startdb)
+  configureEnvironment $@
+  docker-compose up -d wallet-db
+  docker-compose logs -f
+  ;;
+stopdb)
+  configureEnvironment
+  docker-compose stop wallet-db
+  ;;
+rm | down)
+  configureEnvironment
+  deleteVolumes
+  ;;
+build)
+  _startupParams=$(getStartupParams $@)
+  configureEnvironment $@
+  case "$@" in
+  issuer-agent)
+    build-agent
+    ;;
+  *)
+    buildImages
+    ;;
+  esac
+  ;;
+*)
+  usage
+  ;;
+esac
+
+popd >/dev/null
