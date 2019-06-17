@@ -162,10 +162,12 @@ class alice_webhooks(webhooks):
 
 def main():
     if run_mode == "docker":
-        genesis = requests.get("http://host.docker.internal:9000/genesis").text
+        #genesis = requests.get("http://host.docker.internal:9000/genesis").text
+        genesis_url = "http://host.docker.internal:9000/genesis"
     else:
-        with open("local-genesis.txt", "r") as genesis_file:
-            genesis = genesis_file.read()
+        #with open("local-genesis.txt", "r") as genesis_file:
+        #    genesis = genesis_file.read()
+        genesis_url = "http://localhost:9000/genesis"
 
     # TODO seed from input parameter; optionally register the DID
     rand_name = str(random.randint(100000, 999999))
@@ -197,7 +199,7 @@ def main():
     webhook_url = "http://" + external_host + ":" + str(webhook_port) + "/webhooks"
     (agent_proc, t1, t2) = start_agent_subprocess(
         "alice",
-        genesis,
+        genesis_url,
         seed,
         endpoint_url,
         in_port_1,

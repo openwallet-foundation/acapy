@@ -94,7 +94,7 @@ EOF
 # -----------------------------------------------------------------------------------------------------------------
 # Default Settings:
 # -----------------------------------------------------------------------------------------------------------------
-DEFAULT_CONTAINERS="wallet-db tob-db tob-solr tob-api schema-spy tob-web rabbitmq tob-worker"
+DEFAULT_CONTAINERS="wallet-db tob-db tob-solr tob-api tob-agent schema-spy tob-web rabbitmq tob-worker"
 # -----------------------------------------------------------------------------------------------------------------
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
@@ -279,12 +279,22 @@ build-api() {
   fi
 }
 
+build-agent() {
+  #
+  # tob-agent
+  #
+  docker build -q \
+      -t 'tob-agent' \
+      -f '../../../agent/docker/Dockerfile.run' '../../../agent'
+}
+
 buildImages() {
   build-web
   build-solr
   build-db
   build-schema-spy
   build-api
+  build-agent
 }
 
 configureEnvironment() {
@@ -386,6 +396,15 @@ configureEnvironment() {
   # rabbitmq
   export RABBITMQ_USER="RABBITMQ_USER"
   export RABBITMQ_PASSWORD="RABBITMQ_PASSWORD"
+
+  # tob-agent
+  export AGENT_ADMIN_PORT=8024
+  export AGENT_WEBHOOK_PORT=8020
+  export INDY_WALLET_DID=...
+  export AGENT_IN_PORT_1=8021
+  export AGENT_IN_PORT_2=8022
+  export AGENT_IN_PORT_3=8023
+  export AGENT_NAME="tob-agent"
 }
 
 getStartupParams() {
@@ -500,7 +519,7 @@ start|up)
   configureEnvironment $@
   docker-compose up --scale tob-worker=2 -d ${_startupParams} 
   docker-compose logs -f
- ;;
+  ;;
 logs)
   configureEnvironment $@
   docker-compose logs -f
@@ -519,11 +538,11 @@ startdb)
   configureEnvironment $@
   docker-compose up -d wallet-db
   docker-compose logs -f
- ;;
+  ;;
 stopdb)
   configureEnvironment
   docker-compose stop wallet-db
- ;;
+  ;;
 rm|down)
   configureEnvironment
   deleteVolumes
@@ -536,6 +555,9 @@ build)
   _startupParams=$(getStartupParams $@)
   configureEnvironment $@
   case "$@" in
+  tob-agent)
+    build-agent
+    ;;
   tob-api)
     build-api
     ;;

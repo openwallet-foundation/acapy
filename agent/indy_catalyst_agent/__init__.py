@@ -5,6 +5,8 @@ import os
 import argparse
 import asyncio
 
+from aiohttp import ClientSession
+
 from .conductor import Conductor
 from .defaults import default_protocol_registry
 from .logging import LoggingConfigurator
@@ -137,6 +139,14 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--genesis-url",
+    type=str,
+    dest="genesis_url",
+    metavar="<genesis-url>",
+    help="Specify a url from which to fetch the genesis transactions",
+)
+
+PARSER.add_argument(
     "--admin",
     type=str,
     nargs=2,
@@ -247,6 +257,18 @@ async def start(
     await conductor.start()
 
 
+async def get_genesis_transactions(
+    genesis_url: str
+):
+    """Get genesis transactions."""
+    headers = {}
+    headers["Content-Type"] = "application/json"
+    async with ClientSession() as client_session:
+        response = await client_session.get(genesis_url, headers=headers)
+        genesis_txns = await response.text()
+        return genesis_txns
+
+
 def main():
     """Entrypoint."""
     args = PARSER.parse_args()
@@ -274,7 +296,13 @@ def main():
     if args.label:
         settings["default_label"] = args.label
 
-    if args.genesis_transactions:
+    if args.genesis_url:
+        settings["ledger.genesis_url"] = args.genesis_url
+        loop = asyncio.get_event_loop()
+        settings["ledger.genesis_transactions"] = loop.run_until_complete(
+            get_genesis_transactions(args.genesis_url)
+        )
+    elif args.genesis_transactions:
         settings["ledger.genesis_transactions"] = args.genesis_transactions
 
     if args.seed:
