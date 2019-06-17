@@ -156,12 +156,50 @@ def handle_perform_menu_action(message):
     return Response("")
 
 
-def handle_register_issuer(state, message):
+def handle_register_issuer(message):
+    """Handles the registration of a new issuing agent in the credential registry.
+       
+       The agent registration credential will be in the following format:
+       {
+            "issuer_registration_id": "string",
+            "connection_id": "string",
+            "issuer_registration": {
+                "credential_types": [
+                {
+                    "category_labels": ["string"],
+                    "claim_descriptions": ["string"],
+                    "credential_def_id": "string",
+                    "name": "string",
+                    "credential": "string",
+                    "topic": "string",
+                    "endpoint": "string",
+                    "cardinality_fields": [{}],
+                    "mapping": {},
+                    "version": "string",
+                    "visible_fields": ["string"],
+                    "description": "string",
+                    "logo_b64": "string",
+                    "schema": "string",
+                    "claim_labels": ["string"]
+                }
+                ],
+                "issuer": {
+                "name": "string",
+                "did": "string",
+                "abbreviation": "string",
+                "email": "string",
+                "url": "string",
+                "endpoint": "string",
+                "logo_b64": "string"
+                }
+            },
+            "initiator": "self",
+            "state": "registration_sent"
+        }
+    """
     issuer_manager = IssuerManager()
 
-    # TODO: check message structure is what register_issuer expects
     data = message.json()
-    didauth = message["didauth"]
 
-    updated = issuer_manager.register_issuer(didauth, data)
+    updated = issuer_manager.register_issuer(data)
     return {"success": True, "result": updated}

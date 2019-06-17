@@ -18,7 +18,6 @@ def create_issuer_user(
     display_name="",
     first_name="",
     last_name="",
-    verkey=None,
 ):
     logger = logging.getLogger(__name__)
     try:
@@ -32,7 +31,6 @@ def create_issuer_user(
             email=email,
             password=password,
             DID=issuer_did,
-            verkey=verkey,
             display_name=display_name,
             first_name=first_name,
             last_name=last_name,
@@ -40,12 +38,11 @@ def create_issuer_user(
         user.groups.add(get_issuers_group())
     else:
         user.DID = issuer_did
-        user.verkey = verkey
         user.email = email
         user.display_name = display_name
-        if first_name != None:
+        if first_name is not None:
             user.first_name = first_name
-        if last_name != None:
+        if last_name is not None:
             user.last_name = last_name
         user.save()
     return user

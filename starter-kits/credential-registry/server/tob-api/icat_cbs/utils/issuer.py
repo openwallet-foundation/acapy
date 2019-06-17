@@ -23,8 +23,9 @@ class IssuerManager:
     of the issuer and updating the related tables.
     """
 
-    def register_issuer(self, didauth, spec):
-        user = self.update_user(didauth, spec["issuer"])
+    def register_issuer(self, spec):
+        issuer = spec["issuer_registration"]["issuer"]
+        self.update_user(issuer)
         issuer = self.update_issuer(spec["issuer"])
         schemas, credential_types = self.update_schemas_and_ctypes(
             issuer, spec.get("credential_types", [])
@@ -42,19 +43,14 @@ class IssuerManager:
         }
         return result
 
-    def update_user(self, didauth, issuer_def):
+    def update_user(self, issuer_def):
         """
         Update Django user with incoming issuer data.
         """
         issuer_did = issuer_def["did"]
         display_name = issuer_def["name"]
         user_email = issuer_def["email"]
-        verified_did = didauth["keyId"]
-        verkey = didauth["key"]
-        assert "did:sov:{}".format(issuer_did) == verified_did
-        return create_issuer_user(
-            user_email, verified_did, display_name=display_name, verkey=verkey
-        )
+        return create_issuer_user(user_email, issuer_did, display_name=display_name)
 
     def update_issuer(self, issuer_def):
         """
