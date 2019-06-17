@@ -25,9 +25,7 @@ ISSUER_JSON_SCHEMA = {
                     "description": {"type": "string", "minLength": 1},
                     "endpoint": {"type": "string"},
                     # TODO: validate name OR type/srcid
-                    "topic": {
-                        "oneOf": [{"type": "object"}, {"type": "array"}]
-                    },
+                    "topic": {"oneOf": [{"type": "object"}, {"type": "array"}]},
                     "credential": {"type": "object"},
                     "mapping": {
                         "type": "array",

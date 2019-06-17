@@ -7,14 +7,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0011_credentialtype_visible_fields'),
-    ]
+    dependencies = [("api_v2", "0011_credentialtype_visible_fields")]
 
     operations = [
         migrations.AddField(
-            model_name='credential',
-            name='inactive',
+            model_name="credential",
+            name="inactive",
             field=models.BooleanField(db_index=True, default=False),
-        ),
+        )
     ]

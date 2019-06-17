@@ -7,83 +7,32 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0002_user_display_name'),
-    ]
+    dependencies = [("api_v2", "0002_user_display_name")]
 
     operations = [
+        migrations.RemoveField(model_name="doingbusinessas", name="verifiableOrgId"),
+        migrations.RemoveField(model_name="issuerservice", name="jurisdictionId"),
+        migrations.RemoveField(model_name="location", name="doingBusinessAsId"),
+        migrations.RemoveField(model_name="location", name="locationTypeId"),
+        migrations.RemoveField(model_name="location", name="verifiableOrgId"),
+        migrations.RemoveField(model_name="verifiableclaim", name="claimType"),
         migrations.RemoveField(
-            model_name='doingbusinessas',
-            name='verifiableOrgId',
+            model_name="verifiableclaim", name="inactiveClaimReasonId"
         ),
+        migrations.RemoveField(model_name="verifiableclaim", name="verifiableOrgId"),
         migrations.RemoveField(
-            model_name='issuerservice',
-            name='jurisdictionId',
+            model_name="verifiableclaimtype", name="issuerServiceId"
         ),
-        migrations.RemoveField(
-            model_name='location',
-            name='doingBusinessAsId',
-        ),
-        migrations.RemoveField(
-            model_name='location',
-            name='locationTypeId',
-        ),
-        migrations.RemoveField(
-            model_name='location',
-            name='verifiableOrgId',
-        ),
-        migrations.RemoveField(
-            model_name='verifiableclaim',
-            name='claimType',
-        ),
-        migrations.RemoveField(
-            model_name='verifiableclaim',
-            name='inactiveClaimReasonId',
-        ),
-        migrations.RemoveField(
-            model_name='verifiableclaim',
-            name='verifiableOrgId',
-        ),
-        migrations.RemoveField(
-            model_name='verifiableclaimtype',
-            name='issuerServiceId',
-        ),
-        migrations.RemoveField(
-            model_name='verifiableorg',
-            name='jurisdictionId',
-        ),
-        migrations.RemoveField(
-            model_name='verifiableorg',
-            name='orgTypeId',
-        ),
-        migrations.DeleteModel(
-            name='DoingBusinessAs',
-        ),
-        migrations.DeleteModel(
-            name='InactiveClaimReason',
-        ),
-        migrations.DeleteModel(
-            name='IssuerService',
-        ),
-        migrations.DeleteModel(
-            name='Jurisdiction',
-        ),
-        migrations.DeleteModel(
-            name='Location',
-        ),
-        migrations.DeleteModel(
-            name='LocationType',
-        ),
-        migrations.DeleteModel(
-            name='VerifiableClaim',
-        ),
-        migrations.DeleteModel(
-            name='VerifiableClaimType',
-        ),
-        migrations.DeleteModel(
-            name='VerifiableOrg',
-        ),
-        migrations.DeleteModel(
-            name='VerifiableOrgType',
-        ),
+        migrations.RemoveField(model_name="verifiableorg", name="jurisdictionId"),
+        migrations.RemoveField(model_name="verifiableorg", name="orgTypeId"),
+        migrations.DeleteModel(name="DoingBusinessAs"),
+        migrations.DeleteModel(name="InactiveClaimReason"),
+        migrations.DeleteModel(name="IssuerService"),
+        migrations.DeleteModel(name="Jurisdiction"),
+        migrations.DeleteModel(name="Location"),
+        migrations.DeleteModel(name="LocationType"),
+        migrations.DeleteModel(name="VerifiableClaim"),
+        migrations.DeleteModel(name="VerifiableClaimType"),
+        migrations.DeleteModel(name="VerifiableOrg"),
+        migrations.DeleteModel(name="VerifiableOrgType"),
     ]

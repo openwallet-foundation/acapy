@@ -5,13 +5,13 @@ from ctypes import cdll
 import platform
 
 
-EXTENSION = {"darwin": ".dylib", "linux": ".so", "win32": ".dll", 'windows': '.dll'}
+EXTENSION = {"darwin": ".dylib", "linux": ".so", "win32": ".dll", "windows": ".dll"}
 
 
 def file_ext():
     """Determine file extension based on platform."""
     your_platform = platform.system().lower()
-    return EXTENSION[your_platform] if (your_platform in EXTENSION) else '.so'
+    return EXTENSION[your_platform] if (your_platform in EXTENSION) else ".so"
 
 
 def load_postgres_plugin():

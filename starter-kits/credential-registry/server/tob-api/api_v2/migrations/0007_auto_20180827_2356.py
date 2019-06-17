@@ -8,14 +8,16 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0006_auto_20180824_2333'),
-    ]
+    dependencies = [("api_v2", "0006_auto_20180824_2333")]
 
     operations = [
         migrations.AlterField(
-            model_name='topicrelationship',
-            name='topic',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='api_v2.Topic'),
-        ),
+            model_name="topicrelationship",
+            name="topic",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="+",
+                to="api_v2.Topic",
+            ),
+        )
     ]

@@ -7,14 +7,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0018_credentialtype_last_issue_date'),
-    ]
+    dependencies = [("api_v2", "0018_credentialtype_last_issue_date")]
 
     operations = [
         migrations.AddField(
-            model_name='credentialtype',
-            name='url',
+            model_name="credentialtype",
+            name="url",
             field=models.TextField(blank=True, null=True),
-        ),
+        )
     ]

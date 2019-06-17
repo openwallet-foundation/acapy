@@ -7,18 +7,17 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('api_v2', '0007_auto_20180827_2356'),
-    ]
+    dependencies = [("api_v2", "0007_auto_20180827_2356")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='topic',
-            name='related_topics',
-        ),
+        migrations.RemoveField(model_name="topic", name="related_topics"),
         migrations.AddField(
-            model_name='topic',
-            name='related_to',
-            field=models.ManyToManyField(related_name='related_from', through='api_v2.TopicRelationship', to='api_v2.Topic'),
+            model_name="topic",
+            name="related_to",
+            field=models.ManyToManyField(
+                related_name="related_from",
+                through="api_v2.TopicRelationship",
+                to="api_v2.Topic",
+            ),
         ),
     ]

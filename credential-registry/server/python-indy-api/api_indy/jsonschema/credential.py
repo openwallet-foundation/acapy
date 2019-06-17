@@ -7,8 +7,5 @@ CREDENTIAL_JSON_SCHEMA = {
         "credential_data": {"type": "object"},
         "credential_request_metadata": {"type": "object"},
     },
-    "required": [
-        "credential_data",
-        "credential_request_metadata"
-    ],
+    "required": ["credential_data", "credential_request_metadata"],
 }
