@@ -7,7 +7,7 @@ PYTHONPATH=.. ../scripts/icatagent \
  --wallet-type indy \
  --wallet-name heythere \
  --wallet-key mykey \
- --storage-type postgres_storage \
- --storage-config '{"url":"localhost:5432"}' \
- --storage-creds  '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}' \
+ --wallet-storage-type postgres_storage \
+ --wallet-storage-config '{"url":"localhost:5432"}' \
+ --wallet-storage-creds  '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}' \
  --admin localhost 8014

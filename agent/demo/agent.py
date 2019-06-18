@@ -68,6 +68,7 @@ class DemoAgent:
         self.seed = (
             params.get("seed") or ("my_seed_000000000000000000000000" + rand_name)[-32:]
         )
+        self.storage_type = params.get("storage_type")
         self.wallet_type = params.get("wallet_type", "indy")
         self.wallet_name = params.get("wallet_name") or self.ident.lower() + rand_name
         self.wallet_key = params.get("wallet_key") or self.ident + rand_name
@@ -93,14 +94,16 @@ class DemoAgent:
         ]
         if "genesis" in self.params:
             result.append(("--genesis-transactions", self.params["genesis"]))
+        if self.storage_type:
+            result.append(("--storage-type", self.storage_type))
         if self.timing:
             result.append("--timing")
         if self.postgres:
             result.extend(
                 [
-                    ("--storage-type", "postgres_storage"),
+                    ("--wallet-storage-type", "postgres_storage"),
                     (
-                        "--storage-config",
+                        "--wallet-storage-config",
                         json.dumps(
                             {
                                 "url": f"{self.internal_host}:5432",
@@ -112,7 +115,7 @@ class DemoAgent:
                         ),
                     ),
                     (
-                        "--storage-creds",
+                        "--wallet-storage-creds",
                         json.dumps(
                             {
                                 "account": "postgres",
