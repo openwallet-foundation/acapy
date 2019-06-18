@@ -34,7 +34,7 @@ services:
         --endpoint ${AGENT_ENDPOINT} \
         --outbound-transport ws \
         --outbound-transport http \
-        --genesis-transactions genesis \
+        --genesis-url '${LEDGER_URL}/genesis' \
         --auto-respond-messages \
         --accept-invites \
         --accept-requests \

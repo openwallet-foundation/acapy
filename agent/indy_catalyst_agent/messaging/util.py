@@ -28,7 +28,8 @@ async def send_webhook(topic, payload, retries=5):
             response = await session.post(full_webhook_url, json=payload)
             if response.status < 200 or response.status > 299:
                 raise Exception()
-        except Exception:
+        except Exception as e:
+            LOGGER.info(f"Sending webhook failed {str(e)}")
             if retries > 0:
                 await asyncio.sleep(5)
                 await send_webhook(topic, payload, retries - 1)

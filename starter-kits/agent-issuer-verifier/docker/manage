@@ -103,6 +103,8 @@ configureEnvironment() {
   export RUST_LOG=${RUST_LOG:-warn}
   export RUST_BACKTRACE=${RUST_BACKTRACE:-full}
 
+  export LEDGER_URL=${LEDGER_URL-http://$DOCKERHOST:9000}
+
   # wallet-db
   export POSTGRESQL_USER="DB_USER"
   export POSTGRESQL_PASSWORD="DB_PASSWORD"
