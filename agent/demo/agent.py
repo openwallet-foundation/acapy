@@ -66,11 +66,11 @@ class DemoAgent:
 
         rand_name = str(random.randint(100_000, 999_999))
         self.seed = (
-            self.params.get("seed")
-            or ("my_seed_000000000000000000000000" + rand_name)[-32:]
+            params.get("seed") or ("my_seed_000000000000000000000000" + rand_name)[-32:]
         )
-        self.wallet_name = self.params.get("wallet_name") or self.ident + rand_name
-        self.wallet_key = self.params.get("wallet_key") or self.ident + rand_name
+        self.wallet_type = params.get("wallet_type", "indy")
+        self.wallet_name = params.get("wallet_name") or self.ident.lower() + rand_name
+        self.wallet_key = params.get("wallet_key") or self.ident + rand_name
         self.did = None
 
     def get_agent_args(self):
@@ -86,7 +86,7 @@ class DemoAgent:
             ("--inbound-transport", "http", "0.0.0.0", str(self.http_port)),
             ("--outbound-transport", "http"),
             ("--admin", "0.0.0.0", str(self.admin_port)),
-            ("--wallet-type", self.params.get("wallet_type", "indy")),
+            ("--wallet-type", self.wallet_type),
             ("--wallet-name", self.wallet_name),
             ("--wallet-key", self.wallet_key),
             ("--seed", self.seed),
@@ -102,7 +102,13 @@ class DemoAgent:
                     (
                         "--storage-config",
                         json.dumps(
-                            {"url": f"{self.internal_host}:5432", "max_connections": 5}
+                            {
+                                "url": f"{self.internal_host}:5432",
+                                "tls": "None",
+                                "max_connections": 5,
+                                "min_idle_time": 0,
+                                "connection_timeout": 10,
+                            }
                         ),
                     ),
                     (
