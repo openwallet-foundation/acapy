@@ -49,7 +49,7 @@ def agent_callback(request, topic):
 def handle_connections(state, message):
     # TODO auto-accept?
     print("handle_connections()", state)
-    return Response(some_data)
+    return Response(state)
 
 
 def handle_credentials(state, message):
