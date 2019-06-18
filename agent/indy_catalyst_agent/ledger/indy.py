@@ -109,7 +109,7 @@ class IndyLedger(BaseLedger):
         # HACK: If only there were a better way to identify this kind
         #       of rejected request...
         if (
-            "can have one and only one SCHEMA with name schema and version"
+            "can have one and only one SCHEMA with name"
             in request_result_json
         ):
             raise DuplicateSchemaError()
