@@ -399,6 +399,7 @@ configureEnvironment() {
   export AGENT_ADMIN_PORT=8024
   export AGENT_WEBHOOK_PORT=8020
   # export INDY_WALLET_DID=...
+  export WEBHOOK_URL=${WEBHOOK_URL:-http://$DOCKERHOST:$API_HTTP_PORT}
   export HTTP_INTERFACE_PORT=8021
   export WS_INTERFACE_PORT=8023
   export AGENT_NAME="tob-agent"
