@@ -259,7 +259,7 @@ async def test():
             f"Received {total} credentials in {received_time - connect_time:.2f}s"
         )
         avg = (issued_time - connect_time) / issue_count
-        alice.log(f"Average time per credential: {avg:.2f}s")
+        alice.log(f"Average time per credential: {avg:.2f}s ({1/avg:.2f}/s)")
 
         done_time = default_timer()
 
