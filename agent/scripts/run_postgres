@@ -12,6 +12,6 @@ $DOCKER stop indy-demo-postgres &> /dev/null \
 
 $DOCKER run --rm -ti --name indy-demo-postgres \
 	-e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 \
-	-d postgres-11 \
+	-d postgres:11 \
 	-c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr' \
 	-c 'log_connections=on'
