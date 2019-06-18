@@ -14,7 +14,7 @@ TOPIC_CREDENTIALS = "credentials"
 TOPIC_PRESENTATIONS = "presentations"
 TOPIC_GET_ACTIVE_MENU = "get-active-menu"
 TOPIC_PERFORM_MENU_ACTION = "perform-menu-action"
-TOPIC_REGISTER_ISSUER = "register-issuer"
+TOPIC_ISSUER_REGISTRATION = "issuer_registration"
 
 
 @api_view(["POST"])
@@ -38,7 +38,7 @@ def agent_callback(request, topic):
     elif topic == TOPIC_PERFORM_MENU_ACTION:
         return handle_perform_menu_action(message)
 
-    elif topic == TOPIC_REGISTER_ISSUER:
+    elif topic == TOPIC_ISSUER_REGISTRATION:
         return handle_register_issuer(message)
 
     else:
@@ -66,8 +66,8 @@ def handle_credentials(state, message):
             "credential_request": {},
             "credential_request_metadata": {},
             "credential": {
-                "referent": "67892", 
-                "values": 
+                "referent": "67892",
+                "values":
                     {
                         "address_line_1": "2230 Holdom Avenue",
                         "address_line_2": "",
