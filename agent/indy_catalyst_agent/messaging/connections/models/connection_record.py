@@ -49,16 +49,15 @@ class ConnectionRecord(BaseModel):
     STATE_INACTIVE = "inactive"
 
     ROUTING_STATE_NONE = "none"
-    ROUTING_STATE_REQUIRED = "required"
-    ROUTING_STATE_PENDING = "pending"
+    ROUTING_STATE_REQUEST = "request"
     ROUTING_STATE_ACTIVE = "active"
+    ROUTING_STATE_ERROR = "error"
 
     def __init__(
         self,
         *,
         connection_id: str = None,
         my_did: str = None,
-        my_router_did: str = None,
         their_did: str = None,
         their_label: str = None,
         their_role: str = None,
@@ -66,15 +65,15 @@ class ConnectionRecord(BaseModel):
         invitation_key: str = None,
         request_id: str = None,
         state: str = None,
-        routing_state: str = None,
+        inbound_connection_id: str = None,
         error_msg: str = None,
+        routing_state: str = None,
         created_at: str = None,
         updated_at: str = None,
     ):
         """Initialize a new ConnectionRecord."""
         self._id = connection_id
         self.my_did = my_did
-        self.my_router_did = my_router_did
         self.their_did = their_did
         self.their_label = their_label
         self.their_role = their_role
@@ -82,8 +81,9 @@ class ConnectionRecord(BaseModel):
         self.invitation_key = invitation_key
         self.request_id = request_id
         self.state = state or self.STATE_INIT
-        self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.error_msg = error_msg
+        self.inbound_connection_id = inbound_connection_id
+        self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.created_at = created_at
         self.updated_at = updated_at
         self._admin_timer = None
@@ -120,9 +120,9 @@ class ConnectionRecord(BaseModel):
         result = {}
         for prop in (
             "my_did",
-            "my_router_did",
             "their_did",
             "their_role",
+            "inbound_connection_id",
             "initiator",
             "invitation_key",
             "request_id",
@@ -453,14 +453,6 @@ class ConnectionRecord(BaseModel):
         """Accessor to check if the connection is active."""
         return self.state == self.STATE_ACTIVE
 
-    @property
-    def requires_routing(self) -> bool:
-        """Accessor to check if routing actions are needed."""
-        return self.routing_state in (
-            self.ROUTING_STATE_REQUIRED,
-            self.ROUTING_STATE_PENDING,
-        )
-
     def __eq__(self, other) -> bool:
         """Comparison between records."""
         if type(other) is type(self):
@@ -478,10 +470,10 @@ class ConnectionRecordSchema(BaseModelSchema):
 
     connection_id = fields.Str(required=False)
     my_did = fields.Str(required=False)
-    my_router_did = fields.Str(required=False)
     their_did = fields.Str(required=False)
     their_label = fields.Str(required=False)
     their_role = fields.Str(required=False)
+    inbound_connection_id = fields.Str(required=False)
     initiator = fields.Str(required=False)
     invitation_key = fields.Str(required=False)
     request_id = fields.Str(required=False)

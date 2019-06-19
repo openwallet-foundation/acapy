@@ -10,6 +10,7 @@ from indy_catalyst_agent.ledger.indy import (
     GENESIS_TRANSACTION_PATH,
     ClosedPoolError,
     LedgerTransactionError,
+    DuplicateSchemaError
 )
 
 
@@ -211,8 +212,10 @@ class TestIndyLedger(AsyncTestCase):
 
             assert schema_id == mock_create_schema.return_value[0]
 
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
+    @async_mock.patch("indy.pool.set_protocol_version")
+    @async_mock.patch("indy.pool.create_pool_ledger_config")
+    @async_mock.patch("indy.pool.open_pool_ledger")
+    @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
@@ -221,15 +224,20 @@ class TestIndyLedger(AsyncTestCase):
         mock_build_schema_req,
         mock_create_schema,
         mock_submit,
-        mock_aexit,
-        mock_aenter,
+        mock_close_pool,
+        mock_open_ledger,
+        mock_create_config,
+        mock_set_proto,
     ):
-        mock_did = async_mock.MagicMock()
+        # mock_did = async_mock.CoroutineMock()
 
-        mock_wallet = async_mock.MagicMock()
-        mock_wallet.get_public_did.return_value = mock_did
+        mock_wallet = async_mock.CoroutineMock()
+        mock_wallet.get_public_did = async_mock.CoroutineMock()
+        mock_wallet.get_public_did.return_value.did = "abc"
 
-        mock_submit.side_effect = LedgerTransactionError()
+        mock_create_schema.return_value = (1, 2)
+
+        mock_submit.side_effect = DuplicateSchemaError
 
         ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
 
@@ -237,7 +245,10 @@ class TestIndyLedger(AsyncTestCase):
             schema_id = await ledger.send_schema(
                 "schema_name", "schema_version", [1, 2, 3]
             )
-            assert schema_id == f"{mock_did.did}:{2}:schema_name:schema_version"
+            assert (
+                schema_id
+                == f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
+            )
 
     @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
     @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
