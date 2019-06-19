@@ -198,8 +198,5 @@ def handle_register_issuer(message):
         }
     """
     issuer_manager = IssuerManager()
-
-    data = message.json()
-
-    updated = issuer_manager.register_issuer(data)
-    return {"success": True, "result": updated}
+    updated = issuer_manager.register_issuer(message)
+    return Response(content_type="application/json", data={"result": updated})

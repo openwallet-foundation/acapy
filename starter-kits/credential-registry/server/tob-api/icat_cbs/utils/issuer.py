@@ -26,7 +26,7 @@ class IssuerManager:
     def register_issuer(self, spec):
         issuer = spec["issuer_registration"]["issuer"]
         self.update_user(issuer)
-        issuer = self.update_issuer(spec["issuer"])
+        issuer = self.update_issuer(spec["issuer_registration"]["issuer"])
         schemas, credential_types = self.update_schemas_and_ctypes(
             issuer, spec.get("credential_types", [])
         )
