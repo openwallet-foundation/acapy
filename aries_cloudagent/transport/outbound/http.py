@@ -1,5 +1,6 @@
 """Http outbound transport."""
 
+import asyncio
 import logging
 
 from aiohttp import ClientSession
@@ -25,11 +26,12 @@ class HttpTransport(BaseOutboundTransport):
         self.client_session = ClientSession()
         return self
 
-    async def __aexit__(self, *err):
+    async def __aexit__(self, err_type, err_value, err_tb):
         """Async context manager exit."""
         await self.client_session.close()
         self.client_session = None
-        self.logger.error(err)
+        if err_type and err_type != asyncio.CancelledError:
+            self.logger.exception("Exception in outbound HTTP transport")
 
     @property
     def queue(self):

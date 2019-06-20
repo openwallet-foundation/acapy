@@ -29,6 +29,7 @@ class OutboundTransportManager:
         """
         self.logger = logging.getLogger(__name__)
         self.registered_transports = {}
+        self.running_tasks = None
         self.running_transports = {}
         self.class_loader = ClassLoader(MODULE_BASE_PATH, BaseOutboundTransport)
         self.queue = queue
@@ -85,10 +86,19 @@ class OutboundTransportManager:
 
     async def start_all(self):
         """Start all transports."""
+        startup = []
         for schemes, transport_class in self.registered_transports.items():
             # Don't block the loop
-            # asyncio.create_task(self.start(schemes, transport_class))
-            asyncio.ensure_future(self.start(schemes, transport_class))
+            startup.append(asyncio.ensure_future(self.start(schemes, transport_class)))
+        self.running_tasks = startup
+
+    async def stop_all(self):
+        """Stop all transports."""
+        if self.running_tasks:
+            for task in self.running_tasks:
+                task.cancel()
+            self.running_tasks = None
+        self.running_transports = {}
 
     async def send_message(self, message: OutboundMessage):
         """

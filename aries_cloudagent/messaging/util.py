@@ -79,6 +79,13 @@ async def init_webhooks(context: InjectionContext):
         LOGGER.warning("WEBHOOK_URL is not set")
 
 
+async def stop_webhooks(context: InjectionContext):
+    """Register a standard WebhookTransport in the context."""
+    instance = await context.inject(WebhookTransport, required=False)
+    if instance:
+        instance.stop()
+
+
 def send_webhook(
     context: InjectionContext, topic: str, payload, *, retries: int = None
 ):

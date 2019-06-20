@@ -45,3 +45,8 @@ class InboundTransportManager:
         """Start all registered transports."""
         for transport in self.transports:
             await transport.start()
+
+    async def stop_all(self):
+        """Stop all registered transports."""
+        for transport in self.transports:
+            await transport.stop()

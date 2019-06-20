@@ -34,6 +34,7 @@ class Transport(BaseInboundTransport):
         self.port = port
         self.message_router = message_router
         self.register_socket = register_socket
+        self.site = None
 
         self._scheme = "http"
         self.logger = logging.getLogger(__name__)
@@ -43,6 +44,13 @@ class Transport(BaseInboundTransport):
         """Accessor for this transport's scheme."""
         return self._scheme
 
+    def get_application(self) -> web.Application:
+        """Construct the aiohttp application."""
+        app = web.Application()
+        app.add_routes([web.get("/", self.invite_message_handler)])
+        app.add_routes([web.post("/", self.inbound_message_handler)])
+        return app
+
     async def start(self) -> None:
         """
         Start this transport.
@@ -51,19 +59,23 @@ class Transport(BaseInboundTransport):
             InboundTransportSetupError: If there was an error starting the webserver
 
         """
-        app = web.Application()
-        app.add_routes([web.get("/", self.invite_message_handler)])
-        app.add_routes([web.post("/", self.inbound_message_handler)])
+        app = self.get_application()
         runner = web.AppRunner(app)
         await runner.setup()
-        site = web.TCPSite(runner, host=self.host, port=self.port)
+        self.site = web.TCPSite(runner, host=self.host, port=self.port)
         try:
-            await site.start()
+            await self.site.start()
         except OSError:
             raise InboundTransportSetupError(
                 "Unable to start webserver with host "
                 + f"'{self.host}' and port '{self.port}'\n"
             )
+
+    async def stop(self) -> None:
+        """Stop this transport."""
+        if self.site:
+            await self.site.stop()
+            self.site = None
 
     async def inbound_message_handler(self, request: web.BaseRequest):
         """

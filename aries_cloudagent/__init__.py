@@ -4,6 +4,8 @@ import os
 
 import argparse
 import asyncio
+import functools
+import signal
 
 from aiohttp import ClientSession
 
@@ -258,14 +260,8 @@ PARSER.add_argument(
 )
 
 
-async def start(
-    inbound_transport_configs: list, outbound_transports: list, settings: dict
-):
-    """Start."""
-    registry = default_protocol_registry()
-    conductor = Conductor(
-        inbound_transport_configs, outbound_transports, registry, settings
-    )
+async def start(conductor: Conductor):
+    """Start up."""
     await conductor.start()
 
 
@@ -281,6 +277,18 @@ async def get_genesis_transactions(
         return genesis_txns
 
 
+async def shutdown(conductor: Conductor):
+    """Shut down."""
+    print("\nShutting down")
+    await conductor.stop()
+    tasks = [task for task in asyncio.Task.all_tasks() if task is not
+             asyncio.tasks.Task.current_task()]
+    for task in tasks:
+        task.cancel()
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    asyncio.get_event_loop().stop()
+
+
 def main():
     """Entrypoint."""
     args = PARSER.parse_args()
@@ -290,9 +298,7 @@ def main():
 
     inbound_transports = args.inbound_transports
     for transport in inbound_transports:
-        module = transport[0]
-        host = transport[1]
-        port = transport[2]
+        module, host, port = transport
         inbound_transport_configs.append(
             InboundTransportConfiguration(module=module, host=host, port=port)
         )
@@ -381,17 +387,21 @@ def main():
     if args.external_protocols:
         settings["external_protocols"] = args.external_protocols
 
+    registry = default_protocol_registry()
+    conductor = Conductor(
+        inbound_transport_configs, outbound_transports, registry, settings
+    )
     loop = asyncio.get_event_loop()
+    loop.add_signal_handler(
+        signal.SIGTERM,
+        functools.partial(asyncio.ensure_future, shutdown(conductor), loop=loop),
+    )
+    asyncio.ensure_future(start(conductor), loop=loop)
+
     try:
-        # asyncio.ensure_future(
-        #     start(inbound_transport_configs, outbound_transports, settings), loop=loop
-        # )
-        loop.run_until_complete(
-            start(inbound_transport_configs, outbound_transports, settings)
-        )
         loop.run_forever()
     except KeyboardInterrupt:
-        print("\nShutting down")
+        loop.run_until_complete(shutdown(conductor))
 
 
 if __name__ == "__main__":

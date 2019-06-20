@@ -40,7 +40,7 @@ from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.serializer import MessageSerializer
 from .messaging.socket import SocketInfo, SocketRef
-from .messaging.util import init_webhooks
+from .messaging.util import init_webhooks, stop_webhooks
 from .stats import Collector
 from .storage.base import BaseStorage
 from .storage.error import StorageNotFoundError
@@ -115,8 +115,7 @@ class Conductor:
                 ),
             )
             self.collector.wrap(
-                self.message_serializer,
-                ("encode_message", "parse_message")
+                self.message_serializer, ("encode_message", "parse_message")
             )
             # at the class level (!) should not be done multiple times
             self.collector.wrap(
@@ -126,7 +125,7 @@ class Conductor:
                     "fetch_did_document",
                     "find_connection",
                     "updated_record",
-                )
+                ),
             )
 
         context.injector.bind_instance(BaseCache, BasicCache())
@@ -137,8 +136,7 @@ class Conductor:
             BaseStorage,
             CachedProvider(
                 StatsProvider(
-                    StorageProvider(),
-                    ("add_record", "get_record", "search_records")
+                    StorageProvider(), ("add_record", "get_record", "search_records")
                 )
             ),
         )
@@ -172,7 +170,7 @@ class Conductor:
                         "get_schema",
                         "send_credential_definition",
                         "send_schema",
-                    )
+                    ),
                 )
             ),
         )
@@ -183,8 +181,8 @@ class Conductor:
                     "aries_cloudagent.issuer.indy.IndyIssuer",
                     ClassProvider.Inject(BaseWallet),
                 ),
-                ("create_credential_offer", "create_credential")
-            )
+                ("create_credential_offer", "create_credential"),
+            ),
         )
         context.injector.bind_provider(
             BaseHolder,
@@ -335,6 +333,16 @@ class Conductor:
                 await mgr.send_invitation(invitation, send_invite_to)
             except Exception:
                 self.logger.exception("Error sending invitation")
+
+    async def stop(self, timeout=0.1):
+        """Stop the agent."""
+        tasks = []
+        if self.admin_server:
+            tasks.append(self.admin_server.stop())
+        tasks.append(stop_webhooks(self.context))
+        tasks.append(self.inbound_transport_manager.stop_all())
+        tasks.append(self.outbound_transport_manager.stop_all())
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout)
 
     async def register_socket(
         self, *, handler: Coroutine = None, single_response: asyncio.Future = None
