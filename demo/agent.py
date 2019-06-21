@@ -127,6 +127,8 @@ class DemoAgent:
                     ),
                 ]
             )
+        if self.webhook_url:
+            result.append(("--webhook-url", self.webhook_url))
 
         return result
 
@@ -185,10 +187,6 @@ class DemoAgent:
     ):
         my_env = os.environ.copy()
         my_env["PYTHONPATH"] = python_path
-
-        # refer to REST callback service
-        if self.webhook_url:
-            my_env["WEBHOOK_URL"] = self.webhook_url
 
         agent_args = self.get_process_args(scripts_dir)
 

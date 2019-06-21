@@ -209,7 +209,7 @@ async def test():
         invite = await alice.get_invite()
         await faber.receive_invite(invite)
 
-        await asyncio.wait_for(faber.detect_connection(), 5)
+        await asyncio.wait_for(faber.detect_connection(), 30)
 
         connect_time = default_timer()
 
