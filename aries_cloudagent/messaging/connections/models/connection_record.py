@@ -1,6 +1,5 @@
 """Handle connection information interface with non-secrets storage."""
 
-import asyncio
 import json
 import uuid
 
@@ -8,7 +7,6 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....admin.service import AdminService
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....storage.base import BaseStorage
@@ -156,8 +154,6 @@ class ConnectionRecord(BaseModel):
         cache: BaseCache = await context.inject(BaseCache, required=False)
         if cache:
             await cache.clear(cache_key)
-
-        await self.admin_send_update(context)
         return self._id
 
     @classmethod
@@ -355,7 +351,6 @@ class ConnectionRecord(BaseModel):
         if self.connection_id:
             storage: BaseStorage = await context.inject(BaseStorage)
             await storage.delete_record(self.storage_record)
-            await self.admin_send_update(context)
 
     async def log_activity(
         self,
@@ -384,7 +379,6 @@ class ConnectionRecord(BaseModel):
         )
         storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
-        await self.admin_send_update(context)
 
     async def fetch_activity(
         self,
@@ -444,30 +438,6 @@ class ConnectionRecord(BaseModel):
         value = json.loads(record.value)
         value["meta"] = meta
         await storage.update_record_value(record, json.dumps(value))
-        await self.admin_send_update(context)
-
-    async def admin_delayed_update(self, context: InjectionContext, delay: float):
-        """Wait a specified time before sending a connection update event."""
-        if delay:
-            await asyncio.sleep(delay)
-        record = self.serialize()
-        record["activity"] = await self.fetch_activity(context)
-        if context:
-            service: AdminService = await context.inject(AdminService)
-            if service:
-                await service.add_event("connection_update", {"connection": record})
-
-    async def admin_send_update(self, context: InjectionContext):
-        """Send updated connection status to websocket listener.
-
-        Args:
-            context: The injection context to use
-        """
-        if self._admin_timer:
-            self._admin_timer.cancel()
-        self._admin_timer = asyncio.ensure_future(
-            self.admin_delayed_update(context, 0.1)
-        )
 
     @property
     def is_active(self) -> bool:

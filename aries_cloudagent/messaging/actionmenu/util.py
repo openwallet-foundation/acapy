@@ -1,9 +1,9 @@
 """Action menu utility methods."""
 
-from ...admin.service import AdminService
 from ...config.injection_context import InjectionContext
-from .messages.menu import Menu
 from ...storage.base import BaseStorage, StorageRecord, StorageNotFoundError
+from ..responder import BaseResponder
+from .messages.menu import Menu
 
 MENU_RECORD_TYPE = "connection-action-menu"
 
@@ -46,10 +46,10 @@ async def save_connection_menu(
         else:
             await storage.delete_record(record)
 
-    service: AdminService = await context.inject(AdminService, required=False)
-    if service:
-        await service.add_event(
-            "connection_menu",
+    responder: BaseResponder = await context.inject(BaseResponder, required=False)
+    if responder:
+        await responder.send_webhook(
+            "actionmenu",
             {
                 "connection_id": connection_id,
                 "menu": menu.serialize() if menu else None,

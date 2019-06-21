@@ -14,7 +14,7 @@ from ...ledger.base import BaseLedger
 from ...storage.error import StorageNotFoundError
 
 from ..connections.models.connection_record import ConnectionRecord
-from ..util import send_webhook
+from ..responder import BaseResponder
 
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_request import CredentialRequest
@@ -434,4 +434,6 @@ class CredentialManager:
 
     async def updated_record(self, credential_exchange: CredentialExchange):
         """Call webhook when the record is updated."""
-        send_webhook(self._context, "credentials", credential_exchange.serialize())
+        responder = await self._context.inject(BaseResponder, required=False)
+        if responder:
+            await responder.send_webhook("credentials", credential_exchange.serialize())

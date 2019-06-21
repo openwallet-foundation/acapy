@@ -44,7 +44,7 @@ class Transport(BaseInboundTransport):
         """Accessor for this transport's scheme."""
         return self._scheme
 
-    def get_application(self) -> web.Application:
+    async def make_application(self) -> web.Application:
         """Construct the aiohttp application."""
         app = web.Application()
         app.add_routes([web.get("/", self.invite_message_handler)])
@@ -59,7 +59,7 @@ class Transport(BaseInboundTransport):
             InboundTransportSetupError: If there was an error starting the webserver
 
         """
-        app = self.get_application()
+        app = await self.make_application()
         runner = web.AppRunner(app)
         await runner.setup()
         self.site = web.TCPSite(runner, host=self.host, port=self.port)

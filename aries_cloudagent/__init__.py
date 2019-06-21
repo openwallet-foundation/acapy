@@ -259,6 +259,13 @@ PARSER.add_argument(
     help="Provide external protocol modules",
 )
 
+PARSER.add_argument(
+    "--webhook-url",
+    action="append",
+    metavar="<url>",
+    help="Send webhooks to a given URL"
+)
+
 
 async def start(conductor: Conductor):
     """Start up."""
@@ -353,6 +360,11 @@ def main():
             settings["admin.help_link"] = args.help_link
         if args.no_receive_invites:
             settings["admin.no_receive_invites"] = True
+        hook_urls = list(args.webhook_url) if args.webhook_url else []
+        hook_url = os.environ.get("WEBHOOK_URL")
+        if hook_url:
+            hook_urls.append(hook_url)
+        settings["admin.webhook_urls"] = hook_urls
 
     if args.debug:
         settings["debug.enabled"] = True

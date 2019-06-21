@@ -13,8 +13,8 @@ from collections import OrderedDict
 import logging
 from typing import Coroutine, Sequence, Union
 
+from .admin.base_server import BaseAdminServer
 from .admin.server import AdminServer
-from .admin.service import AdminService
 from .cache.base import BaseCache
 from .cache.basic import BasicCache
 from .config.injection_context import InjectionContext
@@ -38,9 +38,9 @@ from .messaging.introduction.demo_service import DemoIntroductionService
 from .messaging.outbound_message import OutboundMessage
 from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
+from .messaging.responder import BaseResponder
 from .messaging.serializer import MessageSerializer
 from .messaging.socket import SocketInfo, SocketRef
-from .messaging.util import init_webhooks, stop_webhooks
 from .stats import Collector
 from .storage.base import BaseStorage
 from .storage.error import StorageNotFoundError
@@ -214,9 +214,13 @@ class Conductor:
                 admin_host = context.settings.get("admin.host", "0.0.0.0")
                 admin_port = context.settings.get("admin.port", "80")
                 self.admin_server = AdminServer(
-                    admin_host, admin_port, context, self.outbound_message_router
+                    admin_host,
+                    admin_port,
+                    context,
+                    self.outbound_message_router,
+                    BasicOutboundMessageQueue,
                 )
-                context.injector.bind_instance(AdminServer, self.admin_server)
+                context.injector.bind_instance(BaseAdminServer, self.admin_server)
             except Exception:
                 self.logger.exception("Unable to initialize administration API")
 
@@ -285,17 +289,20 @@ class Conductor:
 
         await self.outbound_transport_manager.start_all()
 
-        await init_webhooks(context)
-
         # Admin API
         if self.admin_server:
             try:
+                webhook_urls = context.settings.get("admin.webhook_urls")
+                if webhook_urls:
+                    for url in webhook_urls:
+                        self.admin_server.add_webhook_target(url)
                 await self.admin_server.start()
-                context.injector.bind_instance(
-                    AdminService, AdminService(self.admin_server)
-                )
             except Exception:
                 self.logger.exception("Unable to start administration API")
+            # Make admin responder available during message parsing
+            # This allows webhooks to be called when a connection is marked active,
+            # for example
+            context.injector.bind_instance(BaseResponder, self.admin_server.responder)
 
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
@@ -339,7 +346,6 @@ class Conductor:
         tasks = []
         if self.admin_server:
             tasks.append(self.admin_server.stop())
-        tasks.append(stop_webhooks(self.context))
         tasks.append(self.inbound_transport_manager.stop_all())
         tasks.append(self.outbound_transport_manager.stop_all())
         await asyncio.wait_for(asyncio.gather(*tasks), timeout)

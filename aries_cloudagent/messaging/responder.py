@@ -99,6 +99,16 @@ class BaseResponder(ABC):
             message: The `OutboundMessage` to be sent
         """
 
+    @abstractmethod
+    async def send_webhook(self, topic: str, payload: dict):
+        """
+        Dispatch a webhook.
+
+        Args:
+            topic: the webhook topic identifier
+            payload: the webhook payload value
+        """
+
 
 class MockResponder(BaseResponder):
     """Mock responder implementation for use by tests."""
@@ -106,6 +116,7 @@ class MockResponder(BaseResponder):
     def __init__(self):
         """Initialize the mock responder."""
         self.messages = []
+        self.webhooks = []
 
     async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
         """Convert a message to an OutboundMessage and send it."""
@@ -118,3 +129,7 @@ class MockResponder(BaseResponder):
     async def send_outbound(self, message: OutboundMessage):
         """Send an outbound message."""
         self.messages.append((message, None))
+
+    async def send_webhook(self, topic: str, payload: dict):
+        """Send an outbound message."""
+        self.webhooks.append((topic, payload))

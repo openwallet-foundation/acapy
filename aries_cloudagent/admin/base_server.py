@@ -2,6 +2,7 @@
 
 
 from abc import ABC, abstractmethod
+from typing import Sequence
 
 
 class BaseAdminServer(ABC):
@@ -22,5 +23,15 @@ class BaseAdminServer(ABC):
         """Stop the webserver."""
 
     @abstractmethod
-    async def add_event(self, message: dict):
-        """Add an event to existing queues."""
+    def add_webhook_target(
+        self, target_url: str, topic_filter: Sequence[str] = None, retries: int = None
+    ):
+        """Add a webhook target."""
+
+    @abstractmethod
+    def remove_webhook_target(self, target_url: str):
+        """Remove a webhook target."""
+
+    @abstractmethod
+    async def send_webhook(self, topic: str, payload: dict):
+        """Add a webhook to the queue, to send to all registered targets."""
