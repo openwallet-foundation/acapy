@@ -17,6 +17,8 @@ from ..config.injection_context import InjectionContext
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.responder import BaseResponder
 from ..stats import Collector
+from ..task_processor import TaskProcessor
+from ..transport.outbound.queue.base import BaseOutboundMessageQueue
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -106,7 +108,7 @@ class AdminServer(BaseAdminServer):
         port: int,
         context: InjectionContext,
         outbound_message_router: Coroutine,
-        queue_class: Type,
+        queue_class: Type[BaseOutboundMessageQueue],
     ):
         """
         Initialize an AdminServer instance.
@@ -359,9 +361,15 @@ class AdminServer(BaseAdminServer):
     async def _process_webhooks(self):
         """Continuously poll webhook queue and dispatch to targets."""
         self.webhook_session = ClientSession()
+        processor = TaskProcessor(
+            self._perform_send_webhook,
+            default_retries=self.webhook_retries,
+            default_retry_wait=10.0,
+            max_pending=5,
+        )
         async for topic, payload in self.webhook_queue:
-            dispatch = {}
-            retries = {}
+            for queue in self.websocket_queues.values():
+                await queue.put({"topic": topic, "payload": payload})
             if self.webhook_targets:
                 targets = self.webhook_targets.copy()
                 for idx, target in targets.items():
@@ -369,47 +377,18 @@ class AdminServer(BaseAdminServer):
                         # filter connections activity by default (only sent to sockets)
                         continue
                     if not target.topic_filter or topic in target.topic_filter:
-                        dispatch[idx] = asyncio.ensure_future(
-                            self._perform_send_webhook(target.endpoint, topic, payload)
+                        await processor.run(
+                            target.endpoint,
+                            topic,
+                            payload,
+                            ident=(target.endpoint, topic),
+                            retries=target.retries,
                         )
-                        retries[idx] = (
-                            self.webhook_retries
-                            if target.retries is None
-                            else target.retries
-                        )
-            for queue in self.websocket_queues.values():
-                await queue.put({"topic": topic, "payload": payload})
-            pending = set(dispatch.values())
-            while pending:
-                done, pending = await asyncio.wait(
-                    pending, return_when=asyncio.FIRST_EXCEPTION
-                )
-                for idx, task in dispatch.items():
-                    if task in done:
-                        if task.exception():
-                            if retries[idx]:
-                                retries[idx] -= 1
-                                dispatch[idx] = asyncio.ensure_future(
-                                    self._perform_send_webhook(
-                                        targets[idx].endpoint,
-                                        topic,
-                                        payload,
-                                        delay=10.0,
-                                    )
-                                )
-                                pending.add(dispatch[idx])
-                            else:
-                                LOGGER.warning(
-                                    "Hit maximum number of retries: %s",
-                                    targets[idx].endpoint
-                                )
 
     async def _perform_send_webhook(
-        self, target_url: str, topic: str, payload: dict, delay: int = 0
+        self, target_url: str, topic: str, payload: dict,
     ):
         """Dispatch a webhook to a specific endpoint."""
-        if delay:
-            await asyncio.sleep(delay)
         full_webhook_url = f"{target_url}/topic/{topic}/"
         LOGGER.debug("Sending webhook to: %s", full_webhook_url)
         async with self.webhook_session.post(

@@ -18,8 +18,8 @@ class WsTransport(BaseOutboundTransport):
 
     def __init__(self, queue: BaseOutboundMessageQueue) -> None:
         """Initialize an `WsTransport` instance."""
+        super(WsTransport, self).__init__(queue)
         self.logger = logging.getLogger(__name__)
-        self._queue = queue
 
     async def __aenter__(self):
         """Async context manager enter."""
@@ -33,11 +33,6 @@ class WsTransport(BaseOutboundTransport):
         if err_type and err_type != asyncio.CancelledError:
             self.logger.exception("Exception in outbound WebSocket transport")
 
-    @property
-    def queue(self):
-        """Accessor for queue."""
-        return self._queue
-
     async def handle_message(self, message: OutboundMessage):
         """
         Handle message from queue.
@@ -45,14 +40,10 @@ class WsTransport(BaseOutboundTransport):
         Args:
             message: `OutboundMessage` to send over transport implementation
         """
-        try:
-            # As an example, we can open a websocket channel, send a message, then
-            # close the channel immediately. This is not optimal but it works.
-            async with self.client_session.ws_connect(message.endpoint) as ws:
-                if isinstance(message.payload, bytes):
-                    await ws.send_bytes(message.payload)
-                else:
-                    await ws.send_str(message.payload)
-        except Exception:
-            # TODO: add retry logic
-            self.logger.exception("Error handling outbound message")
+        # As an example, we can open a websocket channel, send a message, then
+        # close the channel immediately. This is not optimal but it works.
+        async with self.client_session.ws_connect(message.endpoint) as ws:
+            if isinstance(message.payload, bytes):
+                await ws.send_bytes(message.payload)
+            else:
+                await ws.send_str(message.payload)

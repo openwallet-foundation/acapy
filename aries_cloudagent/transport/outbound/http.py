@@ -18,8 +18,8 @@ class HttpTransport(BaseOutboundTransport):
 
     def __init__(self, queue: BaseOutboundMessageQueue) -> None:
         """Initialize an `HttpTransport` instance."""
+        super(HttpTransport, self).__init__(queue)
         self.logger = logging.getLogger(__name__)
-        self._queue = queue
 
     async def __aenter__(self):
         """Async context manager enter."""
@@ -33,11 +33,6 @@ class HttpTransport(BaseOutboundTransport):
         if err_type and err_type != asyncio.CancelledError:
             self.logger.exception("Exception in outbound HTTP transport")
 
-    @property
-    def queue(self):
-        """Accessor for queue."""
-        return self._queue
-
     async def handle_message(self, message: OutboundMessage):
         """
         Handle message from queue.
@@ -45,16 +40,12 @@ class HttpTransport(BaseOutboundTransport):
         Args:
             message: `OutboundMessage` to send over transport implementation
         """
-        try:
-            headers = {}
-            if isinstance(message.payload, bytes):
-                headers["Content-Type"] = "application/ssi-agent-wire"
-            else:
-                headers["Content-Type"] = "application/json"
-            async with self.client_session.post(
-                message.endpoint, data=message.payload, headers=headers
-            ) as response:
-                self.logger.info(response.status)
-        except Exception:
-            # TODO: add retry logic
-            self.logger.exception("Error handling outbound message")
+        headers = {}
+        if isinstance(message.payload, bytes):
+            headers["Content-Type"] = "application/ssi-agent-wire"
+        else:
+            headers["Content-Type"] = "application/json"
+        async with self.client_session.post(
+            message.endpoint, data=message.payload, headers=headers
+        ) as response:
+            self.logger.info(response.status)

@@ -1,9 +1,10 @@
 """Base outbound transport."""
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 from ...error import BaseError
 from ...messaging.outbound_message import OutboundMessage
+from ...task_processor import TaskProcessor
 
 from .queue.base import BaseOutboundMessageQueue
 
@@ -20,22 +21,20 @@ class BaseOutboundTransport(ABC):
             queue: `BaseOutboundMessageQueue` to use
 
         """
-        pass
+        self._queue = queue
 
     @abstractmethod
     async def __aenter__(self):
         """Async context manager enter."""
-        pass
 
     @abstractmethod
     async def __aexit__(self, *err):
         """Async context manager exit."""
-        pass
 
-    @abstractproperty
+    @property
     def queue(self):
         """Accessor for queue."""
-        pass
+        return self._queue
 
     @abstractmethod
     async def handle_message(self, message: OutboundMessage):
@@ -45,12 +44,14 @@ class BaseOutboundTransport(ABC):
         Args:
             message: `OutboundMessage` to send over transport implementation
         """
-        pass
 
     async def start(self) -> None:
         """Start this transport."""
+        processor = TaskProcessor(
+            self.handle_message, default_retries=5, default_retry_wait=10, max_pending=5
+        )
         async for message in self.queue:
-            await self.handle_message(message)
+            await processor.run(message)
 
 
 class OutboundTransportRegistrationError(BaseError):
