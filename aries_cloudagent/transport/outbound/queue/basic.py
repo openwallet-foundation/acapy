@@ -54,8 +54,13 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
             if dequeued in done:
                 message = dequeued.result()
                 self.logger.debug(f"Dequeuing message: {message}")
+                self.queue.task_done()
                 return message
         return None
+
+    async def join(self):
+        """Wait for the queue to empty."""
+        await self.queue.join()
 
     def stop(self):
         """Cancel active iteration of the queue."""

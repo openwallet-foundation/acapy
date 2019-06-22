@@ -20,6 +20,10 @@ class BaseOutboundMessageQueue(ABC):
         """Get a message off the queue."""
 
     @abstractmethod
+    async def join(self):
+        """Wait for the queue to empty."""
+
+    @abstractmethod
     def stop(self):
         """Cancel active iteration of the queue."""
 

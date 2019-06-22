@@ -128,6 +128,7 @@ class AdminServer(BaseAdminServer):
         self.webhook_session: ClientSession = None
         self.webhook_targets = {}
         self.webhook_task = None
+        self.webhook_processor: TaskProcessor = None
         self.websocket_queues = {}
         self.site = None
 
@@ -150,7 +151,7 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(collect_stats)
 
-        app = web.Application(debug=True, middlewares=middlewares)
+        app = web.Application(middlewares=middlewares)
         app["request_context"] = self.context
         app["outbound_message_router"] = self.responder.send
 
@@ -231,9 +232,6 @@ class AdminServer(BaseAdminServer):
         self.site = None
         if self.webhook_queue:
             self.webhook_queue.reset()
-        if self.webhook_task:
-            self.webhook_task.cancel()
-            self.webhook_task = None
         if self.webhook_session:
             await self.webhook_session.close()
             self.webhook_session = None
@@ -291,11 +289,11 @@ class AdminServer(BaseAdminServer):
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             collector.reset()
-        return web.HTTPOk()
+        raise web.HTTPOk()
 
     async def redirect_handler(self, request: web.BaseRequest):
         """Perform redirect to documentation."""
-        return web.HTTPFound("/api/doc")
+        raise web.HTTPFound("/api/doc")
 
     async def websocket_handler(self, request):
         """Send notifications to admin client over websocket."""
@@ -361,7 +359,7 @@ class AdminServer(BaseAdminServer):
     async def _process_webhooks(self):
         """Continuously poll webhook queue and dispatch to targets."""
         self.webhook_session = ClientSession()
-        processor = TaskProcessor(max_pending=5)
+        self.webhook_processor = TaskProcessor(max_pending=5)
         async for topic, payload in self.webhook_queue:
             for queue in self.websocket_queues.values():
                 await queue.put({"topic": topic, "payload": payload})
@@ -377,7 +375,7 @@ class AdminServer(BaseAdminServer):
                             if target.retries is None
                             else target.retries
                         )
-                        await processor.run_retry(
+                        await self.webhook_processor.run_retry(
                             lambda pending: self._perform_send_webhook(
                                 target.endpoint, topic, payload, pending.attempts + 1
                             ),
@@ -390,9 +388,18 @@ class AdminServer(BaseAdminServer):
     ):
         """Dispatch a webhook to a specific endpoint."""
         full_webhook_url = f"{target_url}/topic/{topic}/"
-        LOGGER.debug("Sending webhook to (attempt {attempt}): %s", full_webhook_url)
+        attempt_str = f" (attempt {attempt})" if attempt else ""
+        LOGGER.debug("Sending webhook to : %s%s", full_webhook_url, attempt_str)
         async with self.webhook_session.post(
             full_webhook_url, json=payload
         ) as response:
             if response.status < 200 or response.status > 299:
                 raise Exception()
+
+    async def complete_webhooks(self):
+        """Wait for all pending webhooks to be dispatched, used in testing."""
+        if self.webhook_queue:
+            await self.webhook_queue.join()
+        self.webhook_queue.stop()
+        if self.webhook_processor:
+            await self.webhook_processor.wait_done()

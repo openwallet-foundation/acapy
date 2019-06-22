@@ -40,8 +40,7 @@ class WsTransport(BaseOutboundTransport):
         Args:
             message: `OutboundMessage` to send over transport implementation
         """
-        # As an example, we can open a websocket channel, send a message, then
-        # close the channel immediately. This is not optimal but it works.
+        # aiohttp should automatically handle websocket sessions
         async with self.client_session.ws_connect(message.endpoint) as ws:
             if isinstance(message.payload, bytes):
                 await ws.send_bytes(message.payload)
