@@ -24,6 +24,10 @@ class BaseOutboundMessageQueue(ABC):
         """Wait for the queue to empty."""
 
     @abstractmethod
+    def task_done(self):
+        """Indicate that the current task is complete."""
+
+    @abstractmethod
     def stop(self):
         """Cancel active iteration of the queue."""
 

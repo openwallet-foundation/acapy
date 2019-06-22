@@ -22,6 +22,7 @@ class BaseOutboundTransport(ABC):
 
         """
         self._queue = queue
+        self._processor: TaskProcessor = None
 
     @abstractmethod
     async def __aenter__(self):
@@ -47,13 +48,32 @@ class BaseOutboundTransport(ABC):
 
     async def start(self) -> None:
         """Start this transport."""
-        processor = TaskProcessor(max_pending=5)
+        self._processor = TaskProcessor(max_pending=5)
         async for message in self.queue:
-            await processor.run_retry(
+            await self._processor.run_retry(
                 lambda pending: self.handle_message(message),
                 retries=5,
                 retry_delay=10.0,
             )
+            self.queue.task_done()
+
+    async def stop(self, wait: bool = True) -> None:
+        """Stop the transport and clear the processor."""
+        if wait:
+            await self.queue.join()
+            if self._processor:
+                await self._processor.wait_done()
+        self.queue.stop()
+
+    async def enqueue(self, message: OutboundMessage):
+        """
+        Add a message to the queue.
+
+        Args:
+            message: `OutboundMessage` to send over transport implementation
+
+        """
+        return await self.queue.enqueue(message)
 
 
 class OutboundTransportRegistrationError(BaseError):

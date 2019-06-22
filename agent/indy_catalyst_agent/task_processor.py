@@ -110,10 +110,13 @@ class TaskProcessor:
             task.running = None
             exception = future.exception()
             if exception:
+                LOGGER.debug(
+                    "Task raised exception: (%s) %s", task.ident or task, exception
+                )
                 if task.retries and task.attempts < task.retries:
                     asyncio.get_event_loop().call_soon(self._enqueue_task, task)
                 else:
-                    LOGGER.warning("Task processing failed: %s", task.ident or task)
+                    LOGGER.warning("Task failed: %s", task.ident or task)
                     task.future.set_exception(exception)
             else:
                 task.future.set_result(future.result())

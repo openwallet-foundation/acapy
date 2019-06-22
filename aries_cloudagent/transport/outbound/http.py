@@ -48,4 +48,5 @@ class HttpTransport(BaseOutboundTransport):
         async with self.client_session.post(
             message.endpoint, data=message.payload, headers=headers
         ) as response:
-            self.logger.info(response.status)
+            if response.status < 200 or response.status > 299:
+                raise Exception("Unexpected response status")

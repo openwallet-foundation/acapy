@@ -231,7 +231,8 @@ class AdminServer(BaseAdminServer):
         await self.site.stop()
         self.site = None
         if self.webhook_queue:
-            self.webhook_queue.reset()
+            self.webhook_queue.stop()
+            self.webhook_queue = None
         if self.webhook_session:
             await self.webhook_session.close()
             self.webhook_session = None
@@ -382,6 +383,7 @@ class AdminServer(BaseAdminServer):
                             ident=(target.endpoint, topic),
                             retries=retries,
                         )
+            self.webhook_queue.task_done()
 
     async def _perform_send_webhook(
         self, target_url: str, topic: str, payload: dict, attempt: int = None
@@ -394,7 +396,7 @@ class AdminServer(BaseAdminServer):
             full_webhook_url, json=payload
         ) as response:
             if response.status < 200 or response.status > 299:
-                raise Exception()
+                raise Exception("Unexpected response status")
 
     async def complete_webhooks(self):
         """Wait for all pending webhooks to be dispatched, used in testing."""

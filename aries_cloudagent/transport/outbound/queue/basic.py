@@ -50,17 +50,21 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
                 return_when=asyncio.FIRST_COMPLETED,
             )
             for task in pending:
-                task.cancel()
-            if dequeued in done:
+                if not task.done():
+                    task.cancel()
+            if dequeued.done() and not dequeued.exception():
                 message = dequeued.result()
                 self.logger.debug(f"Dequeuing message: {message}")
-                self.queue.task_done()
                 return message
         return None
 
     async def join(self):
         """Wait for the queue to empty."""
         await self.queue.join()
+
+    def task_done(self):
+        """Indicate that the current task is complete."""
+        self.queue.task_done()
 
     def stop(self):
         """Cancel active iteration of the queue."""

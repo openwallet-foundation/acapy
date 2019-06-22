@@ -19,7 +19,7 @@ MODULE_BASE_PATH = "aries_cloudagent.transport.outbound"
 class OutboundTransportManager:
     """Outbound transport manager class."""
 
-    def __init__(self, queue: Type[BaseOutboundMessageQueue]):
+    def __init__(self, queue_class: Type[BaseOutboundMessageQueue]):
         """
         Initialize a `OutboundTransportManager` instance.
 
@@ -32,11 +32,11 @@ class OutboundTransportManager:
         self.running_tasks = None
         self.running_transports = {}
         self.class_loader = ClassLoader(MODULE_BASE_PATH, BaseOutboundTransport)
-        self.queue = queue
+        self.queue_class = queue_class
 
     def register(self, module_path):
         """
-        Register a new outbound transport.
+        Register a new outbound transport by module path.
 
         Args:
             module_path: Module path to register
@@ -57,11 +57,27 @@ class OutboundTransportManager:
                 f"Outbound transport module {module_path} could not be resolved."
             )
 
+        self.register_class(imported_class)
+
+    def register_class(self, transport_class: Type[BaseOutboundTransport]):
+        """
+        Register a new outbound transport class.
+
+        Args:
+            transport_class: Transport class to register
+
+        Raises:
+            OutboundTransportRegistrationError: If the imported class does not
+                specify a schemes attribute
+            OutboundTransportRegistrationError: If the scheme has already been
+                registered
+
+        """
         try:
-            schemes = imported_class.schemes
+            schemes = transport_class.schemes
         except AttributeError:
             raise OutboundTransportRegistrationError(
-                f"Imported class {imported_class} does not "
+                f"Imported class {transport_class} does not "
                 + "specify a required 'schemes' attribute"
             )
 
@@ -70,17 +86,17 @@ class OutboundTransportManager:
             for scheme_tuple in self.registered_transports.keys():
                 if scheme in scheme_tuple:
                     raise OutboundTransportRegistrationError(
-                        f"Cannot register transport '{module_path}'"
+                        f"Cannot register transport '{transport_class.__qualname__}'"
                         + f"for '{scheme}' scheme because the scheme"
                         + "has already been registered"
                     )
 
-        self.registered_transports[schemes] = imported_class
+        self.registered_transports[tuple(schemes)] = transport_class
 
-    async def start(self, schemes, transport):
+    async def start_transport(self, schemes, transport):
         """Start the transport."""
-        # All transports share the same queue
-        async with transport(self.queue()) as t:
+        # All transports share the same queue class
+        async with transport(self.queue_class()) as t:
             self.running_transports[schemes] = t
             await t.start()
 
@@ -89,7 +105,9 @@ class OutboundTransportManager:
         startup = []
         for schemes, transport_class in self.registered_transports.items():
             # Don't block the loop
-            startup.append(asyncio.ensure_future(self.start(schemes, transport_class)))
+            startup.append(
+                asyncio.ensure_future(self.start_transport(schemes, transport_class))
+            )
         self.running_tasks = startup
 
     async def stop_all(self):
@@ -99,6 +117,28 @@ class OutboundTransportManager:
                 task.cancel()
             self.running_tasks = None
         self.running_transports = {}
+
+    def get_registered_transport_for_scheme(self, scheme: str):
+        """Find the registered transport for a given scheme."""
+        try:
+            return next(
+                transport
+                for schemes, transport in self.registered_transports.items()
+                if scheme in schemes
+            )
+        except StopIteration:
+            pass
+
+    def get_running_transport_for_scheme(self, scheme: str):
+        """Find the running transport for a given scheme."""
+        try:
+            return next(
+                transport
+                for schemes, transport in self.running_transports.items()
+                if scheme in schemes
+            )
+        except StopIteration:
+            pass
 
     async def send_message(self, message: OutboundMessage):
         """
@@ -118,14 +158,9 @@ class OutboundTransportManager:
             return
 
         # Look up transport that is registered to handle this scheme
-        try:
-            transport = next(
-                transport
-                for schemes, transport in self.running_transports.items()
-                if scheme in schemes
-            )
-        except StopIteration:
+        transport = self.get_running_transport_for_scheme(scheme)
+        if not transport:
             self.logger.warn(f"No transport driver exists to handle scheme '{scheme}'")
             return
 
-        await transport.queue.enqueue(message)
+        await transport.enqueue(message)
