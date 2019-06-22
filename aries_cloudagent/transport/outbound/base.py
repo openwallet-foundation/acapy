@@ -47,11 +47,13 @@ class BaseOutboundTransport(ABC):
 
     async def start(self) -> None:
         """Start this transport."""
-        processor = TaskProcessor(
-            self.handle_message, default_retries=5, default_retry_wait=10, max_pending=5
-        )
+        processor = TaskProcessor(max_pending=5)
         async for message in self.queue:
-            await processor.run(message)
+            await processor.run_retry(
+                lambda pending: self.handle_message(message),
+                retries=5,
+                retry_delay=10.0,
+            )
 
 
 class OutboundTransportRegistrationError(BaseError):

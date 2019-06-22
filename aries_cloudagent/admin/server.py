@@ -361,12 +361,7 @@ class AdminServer(BaseAdminServer):
     async def _process_webhooks(self):
         """Continuously poll webhook queue and dispatch to targets."""
         self.webhook_session = ClientSession()
-        processor = TaskProcessor(
-            self._perform_send_webhook,
-            default_retries=self.webhook_retries,
-            default_retry_wait=10.0,
-            max_pending=5,
-        )
+        processor = TaskProcessor(max_pending=5)
         async for topic, payload in self.webhook_queue:
             for queue in self.websocket_queues.values():
                 await queue.put({"topic": topic, "payload": payload})
@@ -377,20 +372,25 @@ class AdminServer(BaseAdminServer):
                         # filter connections activity by default (only sent to sockets)
                         continue
                     if not target.topic_filter or topic in target.topic_filter:
-                        await processor.run(
-                            target.endpoint,
-                            topic,
-                            payload,
+                        retries = (
+                            self.webhook_retries
+                            if target.retries is None
+                            else target.retries
+                        )
+                        await processor.run_retry(
+                            lambda pending: self._perform_send_webhook(
+                                target.endpoint, topic, payload, pending.attempts + 1
+                            ),
                             ident=(target.endpoint, topic),
-                            retries=target.retries,
+                            retries=retries,
                         )
 
     async def _perform_send_webhook(
-        self, target_url: str, topic: str, payload: dict,
+        self, target_url: str, topic: str, payload: dict, attempt: int = None
     ):
         """Dispatch a webhook to a specific endpoint."""
         full_webhook_url = f"{target_url}/topic/{topic}/"
-        LOGGER.debug("Sending webhook to: %s", full_webhook_url)
+        LOGGER.debug("Sending webhook to (attempt {attempt}): %s", full_webhook_url)
         async with self.webhook_session.post(
             full_webhook_url, json=payload
         ) as response:
