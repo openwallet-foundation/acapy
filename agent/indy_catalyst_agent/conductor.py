@@ -18,8 +18,8 @@ from .admin.service import AdminService
 from .cache.base import BaseCache
 from .cache.basic import BasicCache
 from .config.injection_context import InjectionContext
-from .config.provider import CachedProvider, ClassProvider
 from .classloader import ClassLoader
+from .config.provider import CachedProvider, ClassProvider, StatsProvider
 from .dispatcher import Dispatcher
 from .error import StartupError
 from .logging import LoggingConfigurator
@@ -40,6 +40,8 @@ from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.serializer import MessageSerializer
 from .messaging.socket import SocketInfo, SocketRef
+from .messaging.util import init_webhooks
+from .stats import Collector
 from .storage.base import BaseStorage
 from .storage.error import StorageNotFoundError
 from .storage.provider import StorageProvider
@@ -78,6 +80,7 @@ class Conductor:
 
         """
         self.admin_server = None
+        self.collector: Collector = None
         self.context: RequestContext = None
         self.dispatcher: Dispatcher = None
         self.logger = logging.getLogger(__name__)
@@ -100,26 +103,97 @@ class Conductor:
         context = RequestContext(settings=self.settings)
         context.settings.set_default("default_label", "Indy Catalyst Agent")
 
+        if context.settings.get("timing.enabled"):
+            self.collector = Collector()
+            context.injector.bind_instance(Collector, self.collector)
+            self.collector.wrap(
+                self,
+                (
+                    "inbound_message_router",
+                    "outbound_message_router",
+                    "prepare_outbound_message",
+                ),
+            )
+            self.collector.wrap(
+                self.message_serializer,
+                ("encode_message", "parse_message")
+            )
+            # at the class level (!) should not be done multiple times
+            self.collector.wrap(
+                ConnectionManager,
+                (
+                    "get_connection_target",
+                    "fetch_did_document",
+                    "find_connection",
+                    "updated_record",
+                )
+            )
+
         context.injector.bind_instance(BaseCache, BasicCache())
         context.injector.bind_instance(ProtocolRegistry, self.protocol_registry)
         context.injector.bind_instance(MessageSerializer, self.message_serializer)
 
-        context.injector.bind_provider(BaseStorage, CachedProvider(StorageProvider()))
-        context.injector.bind_provider(BaseWallet, CachedProvider(WalletProvider()))
-
-        context.injector.bind_provider(BaseLedger, CachedProvider(LedgerProvider()))
         context.injector.bind_provider(
-            BaseIssuer,
-            ClassProvider(
-                "indy_catalyst_agent.issuer.indy.IndyIssuer",
-                ClassProvider.Inject(BaseWallet),
+            BaseStorage,
+            CachedProvider(
+                StatsProvider(
+                    StorageProvider(),
+                    ("add_record", "get_record", "search_records")
+                )
             ),
         )
         context.injector.bind_provider(
+            BaseWallet,
+            CachedProvider(
+                StatsProvider(
+                    WalletProvider(),
+                    (
+                        "create",
+                        "open",
+                        "sign_message",
+                        "verify_message",
+                        "encrypt_message",
+                        "decrypt_message",
+                        "pack_message",
+                        "unpack_message",
+                        "get_local_did",
+                    ),
+                )
+            ),
+        )
+
+        context.injector.bind_provider(
+            BaseLedger,
+            CachedProvider(
+                StatsProvider(
+                    LedgerProvider(),
+                    (
+                        "get_credential_definition",
+                        "get_schema",
+                        "send_credential_definition",
+                        "send_schema",
+                    )
+                )
+            ),
+        )
+        context.injector.bind_provider(
+            BaseIssuer,
+            StatsProvider(
+                ClassProvider(
+                    "indy_catalyst_agent.issuer.indy.IndyIssuer",
+                    ClassProvider.Inject(BaseWallet),
+                ),
+                ("create_credential_offer", "create_credential")
+            )
+        )
+        context.injector.bind_provider(
             BaseHolder,
-            ClassProvider(
-                "indy_catalyst_agent.holder.indy.IndyHolder",
-                ClassProvider.Inject(BaseWallet),
+            StatsProvider(
+                ClassProvider(
+                    "indy_catalyst_agent.holder.indy.IndyHolder",
+                    ClassProvider.Inject(BaseWallet),
+                ),
+                ("get_credential", "store_credential", "create_credential_request"),
             ),
         )
         context.injector.bind_provider(
@@ -166,6 +240,8 @@ class Conductor:
 
         self.context = context
         self.dispatcher = Dispatcher(self.context)
+        if self.collector:
+            self.collector.wrap(self.dispatcher, "dispatch")
 
     async def start(self) -> None:
         """Start the agent."""
@@ -210,6 +286,8 @@ class Conductor:
                 self.logger.exception("Unable to register outbound transport")
 
         await self.outbound_transport_manager.start_all()
+
+        await init_webhooks(context)
 
         # Admin API
         if self.admin_server:
@@ -333,12 +411,12 @@ class Conductor:
                 delivery.transport_type,
             )
 
-        future = await self.dispatcher.dispatch(
+        complete = await self.dispatcher.dispatch(
             parsed_msg, delivery, connection, self.outbound_message_router
         )
         if socket:
-            future.add_done_callback(lambda fut: socket.dispatch_complete())
-        return future
+            complete.add_done_callback(lambda fut: socket.dispatch_complete())
+        return complete
 
     async def prepare_outbound_message(
         self, message: OutboundMessage, context: InjectionContext = None

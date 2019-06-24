@@ -7,6 +7,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
+from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
@@ -40,6 +41,7 @@ class CredentialExchange(BaseModel):
         credential_exchange_id: str = None,
         connection_id: str = None,
         thread_id: str = None,
+        parent_thread_id: str = None,
         initiator: str = None,
         state: str = None,
         credential_definition_id: str = None,
@@ -57,6 +59,7 @@ class CredentialExchange(BaseModel):
         self._id = credential_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
+        self.parent_thread_id = parent_thread_id
         self.initiator = initiator
         self.state = state
         self.credential_definition_id = credential_definition_id
@@ -97,6 +100,7 @@ class CredentialExchange(BaseModel):
             "auto_issue",
             "credential_values",
             "credential",
+            "parent_thread_id",
         ):
             val = getattr(self, prop)
             if val:
@@ -136,21 +140,40 @@ class CredentialExchange(BaseModel):
             await storage.update_record_value(record, record.value)
             await storage.update_record_tags(record, record.tags)
 
+        cache_key = f"{self.RECORD_TYPE}::{self._id}"
+        cache: BaseCache = await context.inject(BaseCache, required=False)
+        if cache:
+            await cache.clear(cache_key)
+
     @classmethod
     async def retrieve_by_id(
-        cls, context: InjectionContext, credential_exchange_id: str
-    ) -> "CredentialExchange":
+        cls, context: InjectionContext, credential_exchange_id: str, cached: bool = True
+    ):
         """Retrieve a credential exchange record by ID.
 
         Args:
             context: The `InjectionContext` instance to use
             credential_exchange_id: The ID of the credential exchange record to find
+            cached: Whether to check the cache for this record
         """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.get_record(cls.RECORD_TYPE, credential_exchange_id)
-        vals = json.loads(result.value)
-        if result.tags:
-            vals.update(result.tags)
+        cache = None
+        cache_key = f"{cls.RECORD_TYPE}::{credential_exchange_id}"
+        vals = None
+
+        if cached and credential_exchange_id:
+            cache: BaseCache = await context.inject(BaseCache, required=False)
+            if cache:
+                vals = await cache.get(cache_key)
+
+        if not vals:
+            storage: BaseStorage = await context.inject(BaseStorage)
+            result = await storage.get_record(cls.RECORD_TYPE, credential_exchange_id)
+            vals = json.loads(result.value)
+            if result.tags:
+                vals.update(result.tags)
+            if cache:
+                await cache.set(cache_key, vals, 60)
+
         return CredentialExchange(credential_exchange_id=credential_exchange_id, **vals)
 
     @classmethod
@@ -212,6 +235,7 @@ class CredentialExchangeSchema(BaseModelSchema):
     credential_exchange_id = fields.Str(required=False)
     connection_id = fields.Str(required=False)
     thread_id = fields.Str(required=False)
+    parent_thread_id = fields.Str(required=False)
     initiator = fields.Str(required=False)
     state = fields.Str(required=False)
     credential_definition_id = fields.Str(required=False)

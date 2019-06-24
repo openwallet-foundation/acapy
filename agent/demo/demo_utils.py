@@ -205,11 +205,11 @@ def start_agent_subprocess(
     if use_postgres:
         agent_args.extend(
             [
-                "--storage-type",
+                "--wallet-storage-type",
                 "postgres_storage",
-                "--storage-config",
+                "--wallet-storage-config",
                 '{"url":"localhost:5432","max_connections":5}',
-                "--storage-creds",
+                "--wallet-storage-creds",
                 '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
             ]
         )

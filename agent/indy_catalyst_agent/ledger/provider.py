@@ -2,6 +2,7 @@
 
 import logging
 
+from ..cache.base import BaseCache
 from ..classloader import ClassLoader
 from ..config.base import BaseProvider, BaseInjector, BaseSettings
 from ..wallet.base import BaseWallet
@@ -18,7 +19,15 @@ class LedgerProvider(BaseProvider):
         """Create and open the ledger instance."""
 
         genesis_transactions = settings.get("ledger.genesis_transactions")
+        keepalive = int(settings.get("ledger.keepalive", 5))
         if genesis_transactions:
             wallet = await injector.inject(BaseWallet)
             IndyLedger = ClassLoader.load_class(self.LEDGER_CLASSES["indy"])
-            return IndyLedger("default", wallet, genesis_transactions)
+            cache = await injector.inject(BaseCache, required=False)
+            return IndyLedger(
+                "default",
+                wallet,
+                genesis_transactions,
+                keepalive=keepalive,
+                cache=cache,
+            )
