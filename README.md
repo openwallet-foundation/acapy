@@ -1,4 +1,4 @@
-# Hyperledger Indy Catalyst Agent <!-- omit in toc -->
+s# Hyperledger Indy Catalyst Agent <!-- omit in toc -->
 
 [![CircleCI](https://circleci.com/gh/bcgov/indy-catalyst.svg?style=shield)](https://circleci.com/gh/bcgov/indy-catalyst)
 [![codecov](https://codecov.io/gh/bcgov/indy-catalyst/branch/master/graph/badge.svg)](https://codecov.io/gh/bcgov/indy-catalyst)

@@ -20,6 +20,6 @@ if ENABLE_PTVSD or "--debug" in sys.argv:
         print("ptvsd library was not found")
 
 
-from indy_catalyst_agent import main
+from aries_cloudagent import main
 
 main()

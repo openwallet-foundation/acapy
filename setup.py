@@ -3,7 +3,7 @@
 import runpy
 from setuptools import setup, find_packages
 
-PACKAGE_NAME = "indy_catalyst_agent"
+PACKAGE_NAME = "aries_cloudagent"
 version_meta = runpy.run_path("./{}/version.py".format(PACKAGE_NAME))
 VERSION = version_meta["__version__"]
 
@@ -22,5 +22,5 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=parse_requirements("requirements.txt"),
         python_requires=">=3.6.3",
-        scripts=["scripts/icatagent"],
+        scripts=["scripts/acagent"],
     )
