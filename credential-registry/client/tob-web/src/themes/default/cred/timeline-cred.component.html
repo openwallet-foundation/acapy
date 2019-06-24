@@ -1,8 +1,0 @@
-{{credential.credential_type.description}}
-<strong *ngIf="related_topic_name">
-  <span class="fa fa-link"></span> {{related_topic_name}}
-</strong>
-<strong *ngIf="topic_name && ! related_topic_name">
-  <span class="fa fa-tag"></span> {{topic_name}}
-</strong>
-<br><span *ngIf="credential.effective_date > '0100-01-01'">{{credential.effective_date | dateFormat: 'effectiveDateTime'}}</span>

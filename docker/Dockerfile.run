@@ -1,0 +1,18 @@
+FROM bcgovimages/von-image:py36-1.9-0
+
+ENV ENABLE_PTVSD 0
+
+ADD requirements.txt .
+ADD requirements.dev.txt .
+
+RUN pip3 install --no-cache-dir -r requirements.txt -r requirements.dev.txt
+
+ADD indy_catalyst_agent ./indy_catalyst_agent
+ADD scripts ./scripts
+ADD setup.py ./
+
+RUN pip3 install --no-cache-dir -e .
+
+RUN pip3 install --no-cache-dir -e "git+https://github.com/nrempel/indy-catalyst.git@refactoring#egg=subdir&subdirectory=credential-registry/message_families/issuer_registration"
+
+ENTRYPOINT ["/bin/bash", "-c", "icatagent \"$@\"", "--"]
