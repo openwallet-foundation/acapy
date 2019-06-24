@@ -9,7 +9,7 @@ from ..message_types import ROUTE_UPDATE_REQUEST
 from ..models.route_update import RouteUpdate, RouteUpdateSchema
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.routing.handlers"
+    "aries_cloudagent.messaging.routing.handlers"
     + ".route_update_request_handler.RouteUpdateRequestHandler"
 )
 

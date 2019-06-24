@@ -11,7 +11,7 @@ from ...util import datetime_now, datetime_to_str
 from ..message_types import BASIC_MESSAGE
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.basicmessage."
+    "aries_cloudagent.messaging.basicmessage."
     + "handlers.basicmessage_handler.BasicMessageHandler"
 )
 

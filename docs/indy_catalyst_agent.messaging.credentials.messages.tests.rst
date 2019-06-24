@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential module
 ----------------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.credentials.messages.tests.test_credential
+.. automodule:: aries_cloudagent.messaging.credentials.messages.tests.test_credential
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential modu
 indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential\_offer module
 -----------------------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.credentials.messages.tests.test_credential_offer
+.. automodule:: aries_cloudagent.messaging.credentials.messages.tests.test_credential_offer
     :members:
     :undoc-members:
     :show-inheritance:
@@ -23,7 +23,7 @@ indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential\_off
 indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential\_request module
 -------------------------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.credentials.messages.tests.test_credential_request
+.. automodule:: aries_cloudagent.messaging.credentials.messages.tests.test_credential_request
     :members:
     :undoc-members:
     :show-inheritance:
@@ -32,7 +32,7 @@ indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential\_req
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.credentials.messages.tests
+.. automodule:: aries_cloudagent.messaging.credentials.messages.tests
     :members:
     :undoc-members:
     :show-inheritance:

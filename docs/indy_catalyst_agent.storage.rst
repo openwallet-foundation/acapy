@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.storage.tests
+    aries_cloudagent.storage.tests
 
 Submodules
 ----------
@@ -14,7 +14,7 @@ Submodules
 indy\_catalyst\_agent.storage.base module
 -----------------------------------------
 
-.. automodule:: indy_catalyst_agent.storage.base
+.. automodule:: aries_cloudagent.storage.base
     :members:
     :undoc-members:
     :show-inheritance:
@@ -22,7 +22,7 @@ indy\_catalyst\_agent.storage.base module
 indy\_catalyst\_agent.storage.basic module
 ------------------------------------------
 
-.. automodule:: indy_catalyst_agent.storage.basic
+.. automodule:: aries_cloudagent.storage.basic
     :members:
     :undoc-members:
     :show-inheritance:
@@ -30,7 +30,7 @@ indy\_catalyst\_agent.storage.basic module
 indy\_catalyst\_agent.storage.error module
 ------------------------------------------
 
-.. automodule:: indy_catalyst_agent.storage.error
+.. automodule:: aries_cloudagent.storage.error
     :members:
     :undoc-members:
     :show-inheritance:
@@ -38,7 +38,7 @@ indy\_catalyst\_agent.storage.error module
 indy\_catalyst\_agent.storage.indy module
 -----------------------------------------
 
-.. automodule:: indy_catalyst_agent.storage.indy
+.. automodule:: aries_cloudagent.storage.indy
     :members:
     :undoc-members:
     :show-inheritance:
@@ -46,7 +46,7 @@ indy\_catalyst\_agent.storage.indy module
 indy\_catalyst\_agent.storage.record module
 -------------------------------------------
 
-.. automodule:: indy_catalyst_agent.storage.record
+.. automodule:: aries_cloudagent.storage.record
     :members:
     :undoc-members:
     :show-inheritance:
@@ -55,7 +55,7 @@ indy\_catalyst\_agent.storage.record module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.storage
+.. automodule:: aries_cloudagent.storage
     :members:
     :undoc-members:
     :show-inheritance:

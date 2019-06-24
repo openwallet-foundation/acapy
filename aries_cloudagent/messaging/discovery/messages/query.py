@@ -6,7 +6,7 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import QUERY
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.discovery.handlers.query_handler.QueryHandler"
+    "aries_cloudagent.messaging.discovery.handlers.query_handler.QueryHandler"
 )
 
 

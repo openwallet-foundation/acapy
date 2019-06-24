@@ -12,8 +12,8 @@ class WalletProvider(BaseProvider):
     """Provider for the default configurable wallet classes."""
 
     WALLET_TYPES = {
-        "basic": "indy_catalyst_agent.wallet.basic.BasicWallet",
-        "indy": "indy_catalyst_agent.wallet.indy.IndyWallet",
+        "basic": "aries_cloudagent.wallet.basic.BasicWallet",
+        "indy": "aries_cloudagent.wallet.indy.IndyWallet",
     }
 
     async def provide(self, settings: BaseSettings, injector: BaseInjector):

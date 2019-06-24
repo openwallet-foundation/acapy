@@ -6,12 +6,12 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.messaging.routing.messages
+    aries_cloudagent.messaging.routing.messages
 
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.routing
+.. automodule:: aries_cloudagent.messaging.routing
     :members:
     :undoc-members:
     :show-inheritance:

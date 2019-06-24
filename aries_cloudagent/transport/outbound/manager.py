@@ -13,7 +13,7 @@ from .base import BaseOutboundTransport, OutboundTransportRegistrationError
 from .queue.base import BaseOutboundMessageQueue
 
 
-MODULE_BASE_PATH = "indy_catalyst_agent.transport.outbound"
+MODULE_BASE_PATH = "aries_cloudagent.transport.outbound"
 
 
 class OutboundTransportManager:

@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.messaging.connections.messages.tests
+    aries_cloudagent.messaging.connections.messages.tests
 
 Submodules
 ----------
@@ -14,7 +14,7 @@ Submodules
 indy\_catalyst\_agent.messaging.connections.messages.connection\_invitation module
 ----------------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.connections.messages.connection_invitation
+.. automodule:: aries_cloudagent.messaging.connections.messages.connection_invitation
     :members:
     :undoc-members:
     :show-inheritance:
@@ -22,7 +22,7 @@ indy\_catalyst\_agent.messaging.connections.messages.connection\_invitation modu
 indy\_catalyst\_agent.messaging.connections.messages.connection\_request module
 -------------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.connections.messages.connection_request
+.. automodule:: aries_cloudagent.messaging.connections.messages.connection_request
     :members:
     :undoc-members:
     :show-inheritance:
@@ -30,7 +30,7 @@ indy\_catalyst\_agent.messaging.connections.messages.connection\_request module
 indy\_catalyst\_agent.messaging.connections.messages.connection\_response module
 --------------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.connections.messages.connection_response
+.. automodule:: aries_cloudagent.messaging.connections.messages.connection_response
     :members:
     :undoc-members:
     :show-inheritance:
@@ -39,7 +39,7 @@ indy\_catalyst\_agent.messaging.connections.messages.connection\_response module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.connections.messages
+.. automodule:: aries_cloudagent.messaging.connections.messages
     :members:
     :undoc-members:
     :show-inheritance:

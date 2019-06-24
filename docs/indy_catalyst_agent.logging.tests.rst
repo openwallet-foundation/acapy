@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.logging.tests.test\_init module
 -----------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.logging.tests.test_init
+.. automodule:: aries_cloudagent.logging.tests.test_init
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ indy\_catalyst\_agent.logging.tests.test\_init module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.logging.tests
+.. automodule:: aries_cloudagent.logging.tests
     :members:
     :undoc-members:
     :show-inheritance:

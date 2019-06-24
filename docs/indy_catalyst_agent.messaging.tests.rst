@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.messaging.tests.test\_agent\_message module
 -----------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.tests.test_agent_message
+.. automodule:: aries_cloudagent.messaging.tests.test_agent_message
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ indy\_catalyst\_agent.messaging.tests.test\_agent\_message module
 indy\_catalyst\_agent.messaging.tests.test\_message\_factory module
 -------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.tests.test_message_factory
+.. automodule:: aries_cloudagent.messaging.tests.test_message_factory
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ indy\_catalyst\_agent.messaging.tests.test\_message\_factory module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.tests
+.. automodule:: aries_cloudagent.messaging.tests
     :members:
     :undoc-members:
     :show-inheritance:

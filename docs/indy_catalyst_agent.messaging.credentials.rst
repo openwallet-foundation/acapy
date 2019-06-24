@@ -6,12 +6,12 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.messaging.credentials.messages
+    aries_cloudagent.messaging.credentials.messages
 
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.credentials
+.. automodule:: aries_cloudagent.messaging.credentials
     :members:
     :undoc-members:
     :show-inheritance:

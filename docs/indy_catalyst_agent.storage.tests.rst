@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.storage.tests.test\_basic\_storage module
 ---------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.storage.tests.test_basic_storage
+.. automodule:: aries_cloudagent.storage.tests.test_basic_storage
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ indy\_catalyst\_agent.storage.tests.test\_basic\_storage module
 indy\_catalyst\_agent.storage.tests.test\_indy\_storage module
 --------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.storage.tests.test_indy_storage
+.. automodule:: aries_cloudagent.storage.tests.test_indy_storage
     :members:
     :undoc-members:
     :show-inheritance:
@@ -23,7 +23,7 @@ indy\_catalyst\_agent.storage.tests.test\_indy\_storage module
 indy\_catalyst\_agent.storage.tests.test\_storage\_record module
 ----------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.storage.tests.test_storage_record
+.. automodule:: aries_cloudagent.storage.tests.test_storage_record
     :members:
     :undoc-members:
     :show-inheritance:
@@ -32,7 +32,7 @@ indy\_catalyst\_agent.storage.tests.test\_storage\_record module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.storage.tests
+.. automodule:: aries_cloudagent.storage.tests
     :members:
     :undoc-members:
     :show-inheritance:

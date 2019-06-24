@@ -21,7 +21,7 @@
 #         assert credential_offer._type == MessageTypes.CREDENTIAL_OFFER.value
 #
 #     @mock.patch(
-#         "indy_catalyst_agent.messaging.credentials.messages."
+#         "aries_cloudagent.messaging.credentials.messages."
 #         + "credential_offer.CredentialOfferSchema.load"
 #     )
 #     def test_deserialize(self, mock_credential_offer_schema_load):
@@ -36,7 +36,7 @@
 #         assert credential_offer is mock_credential_offer_schema_load.return_value
 #
 #     @mock.patch(
-#         "indy_catalyst_agent.messaging.credentials.messages."
+#         "aries_cloudagent.messaging.credentials.messages."
 #         + "credential_offer.CredentialOfferSchema.dump"
 #     )
 #     def test_serialize(self, mock_credential_offer_schema_dump):

@@ -6,13 +6,13 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.logging
-    indy_catalyst_agent.messaging
-    indy_catalyst_agent.models
-    indy_catalyst_agent.storage
-    indy_catalyst_agent.tests
-    indy_catalyst_agent.transport
-    indy_catalyst_agent.wallet
+    aries_cloudagent.logging
+    aries_cloudagent.messaging
+    aries_cloudagent.models
+    aries_cloudagent.storage
+    aries_cloudagent.tests
+    aries_cloudagent.transport
+    aries_cloudagent.wallet
 
 Submodules
 ----------
@@ -20,7 +20,7 @@ Submodules
 indy\_catalyst\_agent.classloader module
 ----------------------------------------
 
-.. automodule:: indy_catalyst_agent.classloader
+.. automodule:: aries_cloudagent.classloader
     :members:
     :undoc-members:
     :show-inheritance:
@@ -28,7 +28,7 @@ indy\_catalyst\_agent.classloader module
 indy\_catalyst\_agent.conductor module
 --------------------------------------
 
-.. automodule:: indy_catalyst_agent.conductor
+.. automodule:: aries_cloudagent.conductor
     :members:
     :undoc-members:
     :show-inheritance:
@@ -36,7 +36,7 @@ indy\_catalyst\_agent.conductor module
 indy\_catalyst\_agent.connection module
 ---------------------------------------
 
-.. automodule:: indy_catalyst_agent.connection
+.. automodule:: aries_cloudagent.connection
     :members:
     :undoc-members:
     :show-inheritance:
@@ -44,7 +44,7 @@ indy\_catalyst\_agent.connection module
 indy\_catalyst\_agent.defaults module
 -------------------------------------
 
-.. automodule:: indy_catalyst_agent.defaults
+.. automodule:: aries_cloudagent.defaults
     :members:
     :undoc-members:
     :show-inheritance:
@@ -52,7 +52,7 @@ indy\_catalyst\_agent.defaults module
 indy\_catalyst\_agent.dispatcher module
 ---------------------------------------
 
-.. automodule:: indy_catalyst_agent.dispatcher
+.. automodule:: aries_cloudagent.dispatcher
     :members:
     :undoc-members:
     :show-inheritance:
@@ -60,7 +60,7 @@ indy\_catalyst\_agent.dispatcher module
 indy\_catalyst\_agent.error module
 ----------------------------------
 
-.. automodule:: indy_catalyst_agent.error
+.. automodule:: aries_cloudagent.error
     :members:
     :undoc-members:
     :show-inheritance:
@@ -68,7 +68,7 @@ indy\_catalyst\_agent.error module
 indy\_catalyst\_agent.version module
 ------------------------------------
 
-.. automodule:: indy_catalyst_agent.version
+.. automodule:: aries_cloudagent.version
     :members:
     :undoc-members:
     :show-inheritance:
@@ -77,7 +77,7 @@ indy\_catalyst\_agent.version module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent
+.. automodule:: aries_cloudagent
     :members:
     :undoc-members:
     :show-inheritance:

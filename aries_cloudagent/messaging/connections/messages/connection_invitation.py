@@ -10,7 +10,7 @@ from ..message_types import CONNECTION_INVITATION
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.connections.handlers."
+    "aries_cloudagent.messaging.connections.handlers."
     + "connection_invitation_handler.ConnectionInvitationHandler"
 )
 

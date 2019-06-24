@@ -21,7 +21,7 @@ class TestPingResponse(TestCase):
         assert self.test_ping._type == PING_RESPONSE
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.trustping.messages.ping_response.PingResponseSchema.load"
+        "aries_cloudagent.messaging.trustping.messages.ping_response.PingResponseSchema.load"
     )
     def test_deserialize(self, mock_ping_schema_load):
         """
@@ -35,7 +35,7 @@ class TestPingResponse(TestCase):
         assert msg is mock_ping_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.trustping.messages.ping_response.PingResponseSchema.dump"
+        "aries_cloudagent.messaging.trustping.messages.ping_response.PingResponseSchema.dump"
     )
     def test_serialize(self, mock_ping_schema_load):
         """

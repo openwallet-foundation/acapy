@@ -7,7 +7,7 @@ from ..message_types import CONNECTION_REQUEST
 from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.connections.handlers"
+    "aries_cloudagent.messaging.connections.handlers"
     + ".connection_request_handler.ConnectionRequestHandler"
 )
 

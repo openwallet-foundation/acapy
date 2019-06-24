@@ -86,7 +86,7 @@ class TestInjector(AsyncTestCase):
 
     async def test_inject_class_name(self):
         """Test a provider class injection with a named class."""
-        provider = ClassProvider("indy_catalyst_agent.config.settings.Settings")
+        provider = ClassProvider("aries_cloudagent.config.settings.Settings")
         self.test_instance.bind_provider(BaseSettings, provider)
         instance = await self.test_instance.inject(BaseSettings)
         assert (

@@ -1,7 +1,7 @@
 Welcome to Indy Catalyst Agent's documentation!
 ===============================================
 
-.. automodule:: indy_catalyst_agent
+.. automodule:: aries_cloudagent
     :members:
 
 .. toctree::

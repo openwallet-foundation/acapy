@@ -96,7 +96,7 @@ jobs:
 
 workflows:
  version: 2
- indy_catalyst:
+ aries_cloudagent:
    jobs:
      - agent-build
      - django-build

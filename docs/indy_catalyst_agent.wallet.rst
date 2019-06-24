@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.wallet.tests
+    aries_cloudagent.wallet.tests
 
 Submodules
 ----------
@@ -14,7 +14,7 @@ Submodules
 indy\_catalyst\_agent.wallet.base module
 ----------------------------------------
 
-.. automodule:: indy_catalyst_agent.wallet.base
+.. automodule:: aries_cloudagent.wallet.base
     :members:
     :undoc-members:
     :show-inheritance:
@@ -22,7 +22,7 @@ indy\_catalyst\_agent.wallet.base module
 indy\_catalyst\_agent.wallet.basic module
 -----------------------------------------
 
-.. automodule:: indy_catalyst_agent.wallet.basic
+.. automodule:: aries_cloudagent.wallet.basic
     :members:
     :undoc-members:
     :show-inheritance:
@@ -30,7 +30,7 @@ indy\_catalyst\_agent.wallet.basic module
 indy\_catalyst\_agent.wallet.crypto module
 ------------------------------------------
 
-.. automodule:: indy_catalyst_agent.wallet.crypto
+.. automodule:: aries_cloudagent.wallet.crypto
     :members:
     :undoc-members:
     :show-inheritance:
@@ -38,7 +38,7 @@ indy\_catalyst\_agent.wallet.crypto module
 indy\_catalyst\_agent.wallet.error module
 -----------------------------------------
 
-.. automodule:: indy_catalyst_agent.wallet.error
+.. automodule:: aries_cloudagent.wallet.error
     :members:
     :undoc-members:
     :show-inheritance:
@@ -46,7 +46,7 @@ indy\_catalyst\_agent.wallet.error module
 indy\_catalyst\_agent.wallet.indy module
 ----------------------------------------
 
-.. automodule:: indy_catalyst_agent.wallet.indy
+.. automodule:: aries_cloudagent.wallet.indy
     :members:
     :undoc-members:
     :show-inheritance:
@@ -54,7 +54,7 @@ indy\_catalyst\_agent.wallet.indy module
 indy\_catalyst\_agent.wallet.util module
 ----------------------------------------
 
-.. automodule:: indy_catalyst_agent.wallet.util
+.. automodule:: aries_cloudagent.wallet.util
     :members:
     :undoc-members:
     :show-inheritance:
@@ -63,7 +63,7 @@ indy\_catalyst\_agent.wallet.util module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.wallet
+.. automodule:: aries_cloudagent.wallet
     :members:
     :undoc-members:
     :show-inheritance:

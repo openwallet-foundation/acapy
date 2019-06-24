@@ -7,11 +7,11 @@ CREDENTIAL_PRESENTATION = f"{MESSAGE_FAMILY}/credential-presentation"
 
 MESSAGE_TYPES = {
     PRESENTATION_REQUEST: (
-        "indy_catalyst_agent.messaging.presentations.messages."
+        "aries_cloudagent.messaging.presentations.messages."
         + "presentation_request.PresentationRequest"
     ),
     CREDENTIAL_PRESENTATION: (
-        "indy_catalyst_agent.messaging.presentations.messages."
+        "aries_cloudagent.messaging.presentations.messages."
         + "credential_presentation.CredentialPresentation"
     ),
 }

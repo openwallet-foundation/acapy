@@ -5,7 +5,7 @@ import logging
 from .base import BaseInboundTransport, InboundTransportRegistrationError
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 
-MODULE_BASE_PATH = "indy_catalyst_agent.transport.inbound"
+MODULE_BASE_PATH = "aries_cloudagent.transport.inbound"
 
 
 class InboundTransportManager:

@@ -9,7 +9,7 @@ ROUTE_QUERY_RESPONSE = f"{MESSAGE_FAMILY}/route-query-response"
 ROUTE_UPDATE_REQUEST = f"{MESSAGE_FAMILY}/route-update-request"
 ROUTE_UPDATE_RESPONSE = f"{MESSAGE_FAMILY}/route-update-response"
 
-MESSAGE_PACKAGE = "indy_catalyst_agent.messaging.routing.messages"
+MESSAGE_PACKAGE = "aries_cloudagent.messaging.routing.messages"
 
 MESSAGE_TYPES = {
     FORWARD: f"{MESSAGE_PACKAGE}.forward.Forward",

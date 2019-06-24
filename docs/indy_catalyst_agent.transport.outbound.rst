@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.transport.outbound.queue
+    aries_cloudagent.transport.outbound.queue
 
 Submodules
 ----------
@@ -14,7 +14,7 @@ Submodules
 indy\_catalyst\_agent.transport.outbound.base module
 ----------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound.base
+.. automodule:: aries_cloudagent.transport.outbound.base
     :members:
     :undoc-members:
     :show-inheritance:
@@ -22,7 +22,7 @@ indy\_catalyst\_agent.transport.outbound.base module
 indy\_catalyst\_agent.transport.outbound.http module
 ----------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound.http
+.. automodule:: aries_cloudagent.transport.outbound.http
     :members:
     :undoc-members:
     :show-inheritance:
@@ -30,7 +30,7 @@ indy\_catalyst\_agent.transport.outbound.http module
 indy\_catalyst\_agent.transport.outbound.manager module
 -------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound.manager
+.. automodule:: aries_cloudagent.transport.outbound.manager
     :members:
     :undoc-members:
     :show-inheritance:
@@ -38,7 +38,7 @@ indy\_catalyst\_agent.transport.outbound.manager module
 indy\_catalyst\_agent.transport.outbound.message module
 -------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound.message
+.. automodule:: aries_cloudagent.transport.outbound.message
     :members:
     :undoc-members:
     :show-inheritance:
@@ -46,7 +46,7 @@ indy\_catalyst\_agent.transport.outbound.message module
 indy\_catalyst\_agent.transport.outbound.ws module
 --------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound.ws
+.. automodule:: aries_cloudagent.transport.outbound.ws
     :members:
     :undoc-members:
     :show-inheritance:
@@ -55,7 +55,7 @@ indy\_catalyst\_agent.transport.outbound.ws module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound
+.. automodule:: aries_cloudagent.transport.outbound
     :members:
     :undoc-members:
     :show-inheritance:

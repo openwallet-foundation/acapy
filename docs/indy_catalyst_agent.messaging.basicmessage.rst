@@ -6,8 +6,8 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.messaging.basicmessage.handlers
-    indy_catalyst_agent.messaging.basicmessage.messages
+    aries_cloudagent.messaging.basicmessage.handlers
+    aries_cloudagent.messaging.basicmessage.messages
 
 Submodules
 ----------
@@ -15,7 +15,7 @@ Submodules
 indy\_catalyst\_agent.messaging.basicmessage.message\_types module
 ------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.basicmessage.message_types
+.. automodule:: aries_cloudagent.messaging.basicmessage.message_types
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ indy\_catalyst\_agent.messaging.basicmessage.message\_types module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.basicmessage
+.. automodule:: aries_cloudagent.messaging.basicmessage
     :members:
     :undoc-members:
     :show-inheritance:

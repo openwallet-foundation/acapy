@@ -28,7 +28,7 @@ class TestRouteUpdateResponse(TestCase):
         assert self.message._type == ROUTE_UPDATE_RESPONSE
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.routing.messages.route_update_response.RouteUpdateResponseSchema.load"
+        "aries_cloudagent.messaging.routing.messages.route_update_response.RouteUpdateResponseSchema.load"
     )
     def test_deserialize(self, message_schema_load):
         obj = {"obj": "obj"}
@@ -39,7 +39,7 @@ class TestRouteUpdateResponse(TestCase):
         assert message is message_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.routing.messages.route_update_response.RouteUpdateResponseSchema.dump"
+        "aries_cloudagent.messaging.routing.messages.route_update_response.RouteUpdateResponseSchema.dump"
     )
     def test_serialize(self, message_schema_dump):
         message_dict = self.message.serialize()

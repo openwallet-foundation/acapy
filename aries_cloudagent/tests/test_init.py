@@ -1,4 +1,4 @@
-# import indy_catalyst_agent
+# import aries_cloudagent
 
 # from unittest import mock
 # from asynctest import TestCase as AsyncTestCase
@@ -12,11 +12,11 @@
 #     host_arg_value = "host"
 #     port_arg_value = "port"
 
-#     @mock.patch("indy_catalyst_agent.asyncio", autospec=True)
-#     @mock.patch("indy_catalyst_agent.LoggingConfigurator", autospec=True)
-#     @mock.patch("indy_catalyst_agent.parser.parse_args", autospec=True)
-#     @mock.patch("indy_catalyst_agent.Conductor", autospec=True)
-#     @mock.patch("indy_catalyst_agent.start", autospec=True)
+#     @mock.patch("aries_cloudagent.asyncio", autospec=True)
+#     @mock.patch("aries_cloudagent.LoggingConfigurator", autospec=True)
+#     @mock.patch("aries_cloudagent.parser.parse_args", autospec=True)
+#     @mock.patch("aries_cloudagent.Conductor", autospec=True)
+#     @mock.patch("aries_cloudagent.start", autospec=True)
 #     def test_main_parse(
 #         self,
 #         mock_start,
@@ -26,7 +26,7 @@
 #         mock_asyncio,
 #     ):
 #         type(mock_parse_args.return_value).transports = self.parsed_transports
-#         indy_catalyst_agent.main()
+#         aries_cloudagent.main()
 
 #         mock_parse_args.assert_called_once()
 #         mock_start.assert_called_once_with(
@@ -39,9 +39,9 @@
 #             ]
 #         )
 
-#     @async_mock.patch("indy_catalyst_agent.Conductor", autospec=True)
+#     @async_mock.patch("aries_cloudagent.Conductor", autospec=True)
 #     async def test_main(self, mock_conductor):
-#         await indy_catalyst_agent.start(self.parsed_transports)
+#         await aries_cloudagent.start(self.parsed_transports)
 
 #         mock_conductor.assert_called_once_with(self.parsed_transports)
 #         mock_conductor.return_value.start.assert_called_once_with()

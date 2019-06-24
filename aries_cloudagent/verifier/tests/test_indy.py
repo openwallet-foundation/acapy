@@ -4,7 +4,7 @@ from unittest import mock
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from indy_catalyst_agent.verifier.indy import IndyVerifier
+from aries_cloudagent.verifier.indy import IndyVerifier
 
 
 class TestIndyVerifier(AsyncTestCase):

@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.messaging.routing.messages.tests
+    aries_cloudagent.messaging.routing.messages.tests
 
 Submodules
 ----------
@@ -14,7 +14,7 @@ Submodules
 indy\_catalyst\_agent.messaging.routing.messages.forward module
 ---------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.routing.messages.forward
+.. automodule:: aries_cloudagent.messaging.routing.messages.forward
     :members:
     :undoc-members:
     :show-inheritance:
@@ -23,7 +23,7 @@ indy\_catalyst\_agent.messaging.routing.messages.forward module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.routing.messages
+.. automodule:: aries_cloudagent.messaging.routing.messages
     :members:
     :undoc-members:
     :show-inheritance:

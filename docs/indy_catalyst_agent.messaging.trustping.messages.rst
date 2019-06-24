@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.messaging.trustping.messages.ping module
 --------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.trustping.messages.ping
+.. automodule:: aries_cloudagent.messaging.trustping.messages.ping
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ indy\_catalyst\_agent.messaging.trustping.messages.ping module
 indy\_catalyst\_agent.messaging.trustping.messages.ping\_response module
 ------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.trustping.messages.ping_response
+.. automodule:: aries_cloudagent.messaging.trustping.messages.ping_response
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ indy\_catalyst\_agent.messaging.trustping.messages.ping\_response module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.trustping.messages
+.. automodule:: aries_cloudagent.messaging.trustping.messages
     :members:
     :undoc-members:
     :show-inheritance:

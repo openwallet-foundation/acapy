@@ -7,7 +7,7 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import PROBLEM_REPORT
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.problem_report.handler.ProblemReportHandler"
+    "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
 )
 
 

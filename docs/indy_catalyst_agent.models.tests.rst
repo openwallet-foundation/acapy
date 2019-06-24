@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.models.tests.test\_thread\_decorator module
 -----------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.models.tests.test_thread_decorator
+.. automodule:: aries_cloudagent.models.tests.test_thread_decorator
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ indy\_catalyst\_agent.models.tests.test\_thread\_decorator module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.models.tests
+.. automodule:: aries_cloudagent.models.tests
     :members:
     :undoc-members:
     :show-inheritance:

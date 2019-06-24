@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.messaging.proofs.messages.tests
+    aries_cloudagent.messaging.proofs.messages.tests
 
 Submodules
 ----------
@@ -14,7 +14,7 @@ Submodules
 indy\_catalyst\_agent.messaging.proofs.messages.proof module
 ------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.proofs.messages.proof
+.. automodule:: aries_cloudagent.messaging.proofs.messages.proof
     :members:
     :undoc-members:
     :show-inheritance:
@@ -22,7 +22,7 @@ indy\_catalyst\_agent.messaging.proofs.messages.proof module
 indy\_catalyst\_agent.messaging.proofs.messages.proof\_request module
 ---------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.proofs.messages.proof_request
+.. automodule:: aries_cloudagent.messaging.proofs.messages.proof_request
     :members:
     :undoc-members:
     :show-inheritance:
@@ -31,7 +31,7 @@ indy\_catalyst\_agent.messaging.proofs.messages.proof\_request module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.proofs.messages
+.. automodule:: aries_cloudagent.messaging.proofs.messages
     :members:
     :undoc-members:
     :show-inheritance:

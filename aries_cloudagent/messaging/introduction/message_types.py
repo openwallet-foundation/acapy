@@ -8,14 +8,14 @@ FORWARD_INVITATION = f"{MESSAGE_FAMILY}/forward-invitation"
 
 MESSAGE_TYPES = {
     INVITATION_REQUEST: (
-        "indy_catalyst_agent.messaging.introduction.messages."
+        "aries_cloudagent.messaging.introduction.messages."
         + "invitation_request.InvitationRequest"
     ),
     INVITATION: (
-        "indy_catalyst_agent.messaging.introduction.messages.invitation.Invitation"
+        "aries_cloudagent.messaging.introduction.messages.invitation.Invitation"
     ),
     FORWARD_INVITATION: (
-        "indy_catalyst_agent.messaging.introduction.messages."
+        "aries_cloudagent.messaging.introduction.messages."
         + "forward_invitation.ForwardInvitation"
     ),
 }

@@ -1,6 +1,6 @@
 from unittest import mock
 
-from indy_catalyst_agent import LoggingConfigurator
+from aries_cloudagent import LoggingConfigurator
 
 
 class TestLoggingConfigurator:
@@ -8,8 +8,8 @@ class TestLoggingConfigurator:
     host_arg_value = "host"
     port_arg_value = "port"
 
-    @mock.patch("indy_catalyst_agent.logging.path.join", autospec=True)
-    @mock.patch("indy_catalyst_agent.logging.fileConfig", autospec=True)
+    @mock.patch("aries_cloudagent.logging.path.join", autospec=True)
+    @mock.patch("aries_cloudagent.logging.fileConfig", autospec=True)
     def test_configure_default(self, mock_file_config, mock_os_path_join):
         LoggingConfigurator.configure()
 
@@ -17,8 +17,8 @@ class TestLoggingConfigurator:
             mock_os_path_join.return_value, disable_existing_loggers=False
         )
 
-    @mock.patch("indy_catalyst_agent.logging.path.join", autospec=True)
-    @mock.patch("indy_catalyst_agent.logging.fileConfig", autospec=True)
+    @mock.patch("aries_cloudagent.logging.path.join", autospec=True)
+    @mock.patch("aries_cloudagent.logging.fileConfig", autospec=True)
     def test_configure_path(self, mock_file_config, mock_os_path_join):
         path = "a path"
         LoggingConfigurator.configure(path)

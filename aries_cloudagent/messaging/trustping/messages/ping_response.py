@@ -6,7 +6,7 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import PING_RESPONSE
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.trustping."
+    "aries_cloudagent.messaging.trustping."
     + "handlers.ping_response_handler.PingResponseHandler"
 )
 

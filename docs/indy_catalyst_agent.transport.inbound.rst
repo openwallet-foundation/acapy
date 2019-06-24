@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.transport.inbound.base module
 ---------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.inbound.base
+.. automodule:: aries_cloudagent.transport.inbound.base
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ indy\_catalyst\_agent.transport.inbound.base module
 indy\_catalyst\_agent.transport.inbound.http module
 ---------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.inbound.http
+.. automodule:: aries_cloudagent.transport.inbound.http
     :members:
     :undoc-members:
     :show-inheritance:
@@ -23,7 +23,7 @@ indy\_catalyst\_agent.transport.inbound.http module
 indy\_catalyst\_agent.transport.inbound.manager module
 ------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.inbound.manager
+.. automodule:: aries_cloudagent.transport.inbound.manager
     :members:
     :undoc-members:
     :show-inheritance:
@@ -31,7 +31,7 @@ indy\_catalyst\_agent.transport.inbound.manager module
 indy\_catalyst\_agent.transport.inbound.ws module
 -------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.inbound.ws
+.. automodule:: aries_cloudagent.transport.inbound.ws
     :members:
     :undoc-members:
     :show-inheritance:
@@ -40,7 +40,7 @@ indy\_catalyst\_agent.transport.inbound.ws module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.transport.inbound
+.. automodule:: aries_cloudagent.transport.inbound
     :members:
     :undoc-members:
     :show-inheritance:

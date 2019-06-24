@@ -18,7 +18,7 @@
 #         assert proof_request._type == MessageTypes.PROOF_REQUEST.value
 #
 #     @mock.patch(
-#         "indy_catalyst_agent.messaging.proofs.messages."
+#         "aries_cloudagent.messaging.proofs.messages."
 #         + "proof_request.ProofRequestSchema.load"
 #     )
 #     def test_deserialize(self, proof_request_schema_load):
@@ -30,7 +30,7 @@
 #         assert proof_request is proof_request_schema_load.return_value
 #
 #     @mock.patch(
-#         "indy_catalyst_agent.messaging.proofs.messages."
+#         "aries_cloudagent.messaging.proofs.messages."
 #         + "proof_request.ProofRequestSchema.dump"
 #     )
 #     def test_serialize(self, proof_request_schema_dump):

@@ -180,7 +180,7 @@ class Conductor:
             BaseIssuer,
             StatsProvider(
                 ClassProvider(
-                    "indy_catalyst_agent.issuer.indy.IndyIssuer",
+                    "aries_cloudagent.issuer.indy.IndyIssuer",
                     ClassProvider.Inject(BaseWallet),
                 ),
                 ("create_credential_offer", "create_credential")
@@ -190,7 +190,7 @@ class Conductor:
             BaseHolder,
             StatsProvider(
                 ClassProvider(
-                    "indy_catalyst_agent.holder.indy.IndyHolder",
+                    "aries_cloudagent.holder.indy.IndyHolder",
                     ClassProvider.Inject(BaseWallet),
                 ),
                 ("get_credential", "store_credential", "create_credential_request"),
@@ -199,7 +199,7 @@ class Conductor:
         context.injector.bind_provider(
             BaseVerifier,
             ClassProvider(
-                "indy_catalyst_agent.verifier.indy.IndyVerifier",
+                "aries_cloudagent.verifier.indy.IndyVerifier",
                 ClassProvider.Inject(BaseWallet),
             ),
         )

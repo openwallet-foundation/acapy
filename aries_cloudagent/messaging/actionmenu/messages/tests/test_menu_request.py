@@ -17,7 +17,7 @@ class TestMenuRequest(TestCase):
         assert self.menu_request._type == MENU_REQUEST
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.actionmenu.messages.menu_request.MenuRequestSchema.load"
+        "aries_cloudagent.messaging.actionmenu.messages.menu_request.MenuRequestSchema.load"
     )
     def test_deserialize(self, mock_menu_request_schema_load):
         """
@@ -31,7 +31,7 @@ class TestMenuRequest(TestCase):
         assert request is mock_menu_request_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.actionmenu.messages.menu_request.MenuRequestSchema.dump"
+        "aries_cloudagent.messaging.actionmenu.messages.menu_request.MenuRequestSchema.dump"
     )
     def test_serialize(self, mock_menu_request_schema_dump):
         """

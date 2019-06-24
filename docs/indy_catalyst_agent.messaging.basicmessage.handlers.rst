@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.messaging.basicmessage.handlers.basicmessage\_handler module
 ----------------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.basicmessage.handlers.basicmessage_handler
+.. automodule:: aries_cloudagent.messaging.basicmessage.handlers.basicmessage_handler
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ indy\_catalyst\_agent.messaging.basicmessage.handlers.basicmessage\_handler modu
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.basicmessage.handlers
+.. automodule:: aries_cloudagent.messaging.basicmessage.handlers
     :members:
     :undoc-members:
     :show-inheritance:

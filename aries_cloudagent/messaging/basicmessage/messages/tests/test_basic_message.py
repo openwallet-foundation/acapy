@@ -21,7 +21,7 @@ class TestBasicMessage(TestCase):
         assert self.test_message._type == BASIC_MESSAGE
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.basicmessage.messages."
+        "aries_cloudagent.messaging.basicmessage.messages."
         + "basicmessage.BasicMessageSchema.load"
     )
     def test_deserialize(self, mock_basic_message_schema_load):
@@ -36,7 +36,7 @@ class TestBasicMessage(TestCase):
         assert msg is mock_basic_message_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.basicmessage.messages."
+        "aries_cloudagent.messaging.basicmessage.messages."
         + "basicmessage.BasicMessageSchema.dump"
     )
     def test_serialize(self, mock_basic_message_schema_load):

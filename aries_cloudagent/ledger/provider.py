@@ -13,7 +13,7 @@ LOGGER = logging.getLogger(__name__)
 class LedgerProvider(BaseProvider):
     """Provider for the default ledger implementation."""
 
-    LEDGER_CLASSES = {"indy": "indy_catalyst_agent.ledger.indy.IndyLedger"}
+    LEDGER_CLASSES = {"indy": "aries_cloudagent.ledger.indy.IndyLedger"}
 
     async def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create and open the ledger instance."""

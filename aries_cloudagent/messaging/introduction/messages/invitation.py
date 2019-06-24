@@ -10,7 +10,7 @@ from ...connections.messages.connection_invitation import (
 from ..message_types import INVITATION
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.introduction.handlers."
+    "aries_cloudagent.messaging.introduction.handlers."
     + "invitation_handler.InvitationHandler"
 )
 

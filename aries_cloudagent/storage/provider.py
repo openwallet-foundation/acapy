@@ -13,9 +13,9 @@ class StorageProvider(BaseProvider):
     """Provider for the default configurable storage classes."""
 
     STORAGE_TYPES = {
-        "basic": "indy_catalyst_agent.storage.basic.BasicStorage",
-        "indy": "indy_catalyst_agent.storage.indy.IndyStorage",
-        "postgres_storage": "indy_catalyst_agent.storage.indy.IndyStorage",
+        "basic": "aries_cloudagent.storage.basic.BasicStorage",
+        "indy": "aries_cloudagent.storage.indy.IndyStorage",
+        "postgres_storage": "aries_cloudagent.storage.indy.IndyStorage",
     }
 
     async def provide(self, settings: BaseSettings, injector: BaseInjector):

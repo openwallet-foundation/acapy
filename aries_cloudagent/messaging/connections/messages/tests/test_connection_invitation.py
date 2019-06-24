@@ -31,7 +31,7 @@ class TestConnectionInvitation(TestCase):
         assert connection_invitation._type == CONNECTION_INVITATION
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.messages."
+        "aries_cloudagent.messaging.connections.messages."
         + "connection_invitation.ConnectionInvitationSchema.load"
     )
     def test_deserialize(self, mock_connection_invitation_schema_load):
@@ -45,7 +45,7 @@ class TestConnectionInvitation(TestCase):
         )
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.messages."
+        "aries_cloudagent.messaging.connections.messages."
         + "connection_invitation.ConnectionInvitationSchema.dump"
     )
     def test_serialize(self, mock_connection_invitation_schema_dump):

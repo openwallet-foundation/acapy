@@ -24,7 +24,7 @@ Indy Catalyst Agent is a configurable instance of a "Cloud Agent".
 
 # Installing
 
-Instructions forthcoming. `indy_catalyst_agent` will be made available in the future as a python package at [pypi.org](https://pypi.org).
+Instructions forthcoming. `aries_cloudagent` will be made available in the future as a python package at [pypi.org](https://pypi.org).
 
 # Running
 
@@ -114,4 +114,4 @@ The Agent employs a dynamic injection system whereby providers of base classes a
 
 Providers are registered with either `context.injector.bind_instance(BaseClass, instance)` for previously-constructed (singleton) object instances, or `context.injector.bind_provider(BaseClass, provider)` for dynamic providers. In some cases it may be desirable to write a custom provider which switches implementations based on configuration settings, such as the wallet provider.
 
-The `BaseProvider` classes in the `config.provider` module include `ClassProvider`, which can perform dynamic module inclusion when given the combined module and class name as a string (for instance `indy_catalyst_agent.wallet.indy.IndyWallet`). `ClassProvider` accepts additional positional and keyword arguments to be passed into the class constructor. Any of these arguments may be an instance of `ClassProvider.Inject(BaseClass)`, allowing dynamic injection of dependencies when the class instance is instantiated.
+The `BaseProvider` classes in the `config.provider` module include `ClassProvider`, which can perform dynamic module inclusion when given the combined module and class name as a string (for instance `aries_cloudagent.wallet.indy.IndyWallet`). `ClassProvider` accepts additional positional and keyword arguments to be passed into the class constructor. Any of these arguments may be an instance of `ClassProvider.Inject(BaseClass)`, allowing dynamic injection of dependencies when the class instance is instantiated.

@@ -6,12 +6,12 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.messaging.proofs.messages
+    aries_cloudagent.messaging.proofs.messages
 
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.proofs
+.. automodule:: aries_cloudagent.messaging.proofs
     :members:
     :undoc-members:
     :show-inheritance:

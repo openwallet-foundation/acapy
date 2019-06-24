@@ -8,7 +8,7 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import PERFORM
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.actionmenu.handlers.perform_handler.PerformHandler"
+    "aries_cloudagent.messaging.actionmenu.handlers.perform_handler.PerformHandler"
 )
 
 

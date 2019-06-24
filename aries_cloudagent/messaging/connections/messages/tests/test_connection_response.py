@@ -59,7 +59,7 @@ class TestConnectionResponse(TestCase, TestConfig):
         assert self.connection_response._type == CONNECTION_RESPONSE
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.messages."
+        "aries_cloudagent.messaging.connections.messages."
         + "connection_response.ConnectionResponseSchema.load"
     )
     def test_deserialize(self, mock_connection_response_schema_load):
@@ -74,7 +74,7 @@ class TestConnectionResponse(TestCase, TestConfig):
         assert connection_response is mock_connection_response_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.connections.messages."
+        "aries_cloudagent.messaging.connections.messages."
         + "connection_response.ConnectionResponseSchema.dump"
     )
     def test_serialize(self, mock_connection_response_schema_dump):

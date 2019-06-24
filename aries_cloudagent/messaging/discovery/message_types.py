@@ -5,7 +5,7 @@ MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/protocol-discovery/1.0"
 DISCLOSE = f"{MESSAGE_FAMILY}/disclose"
 QUERY = f"{MESSAGE_FAMILY}/query"
 
-MESSAGE_PACKAGE = "indy_catalyst_agent.messaging.discovery.messages"
+MESSAGE_PACKAGE = "aries_cloudagent.messaging.discovery.messages"
 
 MESSAGE_TYPES = {
     DISCLOSE: f"{MESSAGE_PACKAGE}.disclose.Disclose",

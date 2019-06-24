@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.transport.outbound.queue.base module
 ----------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound.queue.base
+.. automodule:: aries_cloudagent.transport.outbound.queue.base
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ indy\_catalyst\_agent.transport.outbound.queue.base module
 indy\_catalyst\_agent.transport.outbound.queue.basic module
 -----------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound.queue.basic
+.. automodule:: aries_cloudagent.transport.outbound.queue.basic
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ indy\_catalyst\_agent.transport.outbound.queue.basic module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.transport.outbound.queue
+.. automodule:: aries_cloudagent.transport.outbound.queue
     :members:
     :undoc-members:
     :show-inheritance:

@@ -6,7 +6,7 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import CREDENTIAL_REQUEST
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.credentials.handlers."
+    "aries_cloudagent.messaging.credentials.handlers."
     + "credential_request_handler.CredentialRequestHandler"
 )
 

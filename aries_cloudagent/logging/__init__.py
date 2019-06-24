@@ -3,7 +3,7 @@
 from os import path
 
 from logging.config import fileConfig
-from indy_catalyst_agent.version import __version__
+from aries_cloudagent.version import __version__
 from logging import getLogger
 
 

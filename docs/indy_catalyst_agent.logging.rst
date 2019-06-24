@@ -6,12 +6,12 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.logging.tests
+    aries_cloudagent.logging.tests
 
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.logging
+.. automodule:: aries_cloudagent.logging
     :members:
     :undoc-members:
     :show-inheritance:

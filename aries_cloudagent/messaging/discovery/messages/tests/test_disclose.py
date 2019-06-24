@@ -21,7 +21,7 @@ class TestDisclose(TestCase):
         assert disclose._type == DISCLOSE
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.discovery.messages.disclose.DiscloseSchema.load"
+        "aries_cloudagent.messaging.discovery.messages.disclose.DiscloseSchema.load"
     )
     def test_deserialize(self, mock_disclose_schema_load):
         obj = {"obj": "obj"}
@@ -32,7 +32,7 @@ class TestDisclose(TestCase):
         assert disclose is mock_disclose_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.discovery.messages.disclose.DiscloseSchema.dump"
+        "aries_cloudagent.messaging.discovery.messages.disclose.DiscloseSchema.dump"
     )
     def test_serialize(self, mock_disclose_schema_dump):
         disclose = Disclose(protocols=self.test_protocols)

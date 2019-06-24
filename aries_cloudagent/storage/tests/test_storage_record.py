@@ -1,4 +1,4 @@
-from indy_catalyst_agent.storage.record import StorageRecord
+from aries_cloudagent.storage.record import StorageRecord
 
 
 class TestStorageRecord:

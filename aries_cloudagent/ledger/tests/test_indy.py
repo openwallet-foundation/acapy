@@ -5,7 +5,7 @@ from unittest import mock
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from indy_catalyst_agent.ledger.indy import (
+from aries_cloudagent.ledger.indy import (
     IndyLedger,
     GENESIS_TRANSACTION_PATH,
     ClosedPoolError,
@@ -175,9 +175,9 @@ class TestIndyLedger(AsyncTestCase):
                 await ledger._submit("{}", False)
             assert "Ledger rejected transaction request" in str(context.exception)
 
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.__aenter__")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.__aexit__")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
     async def test_send_schema(
@@ -217,7 +217,7 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("indy.pool.create_pool_ledger_config")
     @async_mock.patch("indy.pool.open_pool_ledger")
     @async_mock.patch("indy.pool.close_pool_ledger")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
     async def test_send_schema_already_exists(
@@ -251,9 +251,9 @@ class TestIndyLedger(AsyncTestCase):
                 == f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
             )
 
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.__aenter__")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.__aexit__")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_get_schema_request")
     @async_mock.patch("indy.ledger.parse_get_schema_response")
@@ -285,10 +285,10 @@ class TestIndyLedger(AsyncTestCase):
 
             assert response == json.loads(mock_parse_get_schema_req.return_value[1])
 
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.get_schema")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aenter__")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger.__aexit__")
-    @async_mock.patch("indy_catalyst_agent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.__aenter__")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.__aexit__")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
     async def test_send_credential_definition(

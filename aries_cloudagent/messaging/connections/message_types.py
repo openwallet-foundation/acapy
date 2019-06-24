@@ -9,19 +9,19 @@ PROBLEM_REPORT = f"{MESSAGE_FAMILY}/problem_report"
 
 MESSAGE_TYPES = {
     CONNECTION_INVITATION: (
-        "indy_catalyst_agent.messaging.connections.messages."
+        "aries_cloudagent.messaging.connections.messages."
         + "connection_invitation.ConnectionInvitation"
     ),
     CONNECTION_REQUEST: (
-        "indy_catalyst_agent.messaging.connections.messages."
+        "aries_cloudagent.messaging.connections.messages."
         + "connection_request.ConnectionRequest"
     ),
     CONNECTION_RESPONSE: (
-        "indy_catalyst_agent.messaging.connections.messages."
+        "aries_cloudagent.messaging.connections.messages."
         + "connection_response.ConnectionResponse"
     ),
     PROBLEM_REPORT: (
-        "indy_catalyst_agent.messaging.connections.messages."
+        "aries_cloudagent.messaging.connections.messages."
         + "problem_report.ProblemReport"
     ),
 }

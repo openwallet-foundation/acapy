@@ -21,7 +21,7 @@ class TestPerform(TestCase):
         assert self.perform._type == PERFORM
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.actionmenu.messages.perform.PerformSchema.load"
+        "aries_cloudagent.messaging.actionmenu.messages.perform.PerformSchema.load"
     )
     def test_deserialize(self, mock_perform_schema_load):
         """
@@ -35,7 +35,7 @@ class TestPerform(TestCase):
         assert request is mock_perform_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.actionmenu.messages.perform.PerformSchema.dump"
+        "aries_cloudagent.messaging.actionmenu.messages.perform.PerformSchema.dump"
     )
     def test_serialize(self, mock_perform_schema_dump):
         """

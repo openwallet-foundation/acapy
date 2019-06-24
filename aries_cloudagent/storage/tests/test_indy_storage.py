@@ -15,10 +15,10 @@ except OSError:
         allow_module_level=True,
     )
 
-from indy_catalyst_agent.wallet.indy import IndyWallet
-from indy_catalyst_agent.storage.indy import IndyStorage
-from indy_catalyst_agent.storage.record import StorageRecord
-from indy_catalyst_agent.postgres import load_postgres_plugin
+from aries_cloudagent.wallet.indy import IndyWallet
+from aries_cloudagent.storage.indy import IndyStorage
+from aries_cloudagent.storage.record import StorageRecord
+from aries_cloudagent.postgres import load_postgres_plugin
 
 from . import test_basic_storage
 

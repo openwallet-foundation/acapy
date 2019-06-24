@@ -4,7 +4,7 @@ from unittest import mock
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from indy_catalyst_agent.holder.indy import IndyHolder
+from aries_cloudagent.holder.indy import IndyHolder
 
 
 class TestIndyHolder(AsyncTestCase):

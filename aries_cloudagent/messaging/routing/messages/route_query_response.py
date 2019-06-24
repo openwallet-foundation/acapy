@@ -10,7 +10,7 @@ from ..models.paginated import Paginated, PaginatedSchema
 from ..models.route_query_result import RouteQueryResult, RouteQueryResultSchema
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.routing.handlers"
+    "aries_cloudagent.messaging.routing.handlers"
     + ".route_query_response_handler.RouteQueryResponseHandler"
 )
 

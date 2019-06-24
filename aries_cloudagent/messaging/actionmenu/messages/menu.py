@@ -9,7 +9,7 @@ from ..message_types import MENU
 from ..models.menu_option import MenuOption, MenuOptionSchema
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.actionmenu.handlers.menu_handler.MenuHandler"
+    "aries_cloudagent.messaging.actionmenu.handlers.menu_handler.MenuHandler"
 )
 
 

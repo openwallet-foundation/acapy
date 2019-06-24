@@ -19,7 +19,7 @@ class TestForward(TestCase):
         assert self.message._type == FORWARD
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.routing.messages.forward.ForwardSchema.load"
+        "aries_cloudagent.messaging.routing.messages.forward.ForwardSchema.load"
     )
     def test_deserialize(self, message_schema_load):
         obj = {"obj": "obj"}
@@ -30,7 +30,7 @@ class TestForward(TestCase):
         assert message is message_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.routing.messages.forward.ForwardSchema.dump"
+        "aries_cloudagent.messaging.routing.messages.forward.ForwardSchema.dump"
     )
     def test_serialize(self, message_schema_dump):
         message_dict = self.message.serialize()

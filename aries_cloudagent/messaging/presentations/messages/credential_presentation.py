@@ -7,7 +7,7 @@ from ..message_types import CREDENTIAL_PRESENTATION
 
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.presentations.handlers."
+    "aries_cloudagent.messaging.presentations.handlers."
     + "credential_presentation_handler.CredentialPresentationHandler"
 )
 

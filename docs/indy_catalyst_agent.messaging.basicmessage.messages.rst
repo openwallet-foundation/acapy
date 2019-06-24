@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.messaging.basicmessage.messages.basicmessage module
 -------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.basicmessage.messages.basicmessage
+.. automodule:: aries_cloudagent.messaging.basicmessage.messages.basicmessage
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ indy\_catalyst\_agent.messaging.basicmessage.messages.basicmessage module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.basicmessage.messages
+.. automodule:: aries_cloudagent.messaging.basicmessage.messages
     :members:
     :undoc-members:
     :show-inheritance:

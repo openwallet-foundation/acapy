@@ -4,7 +4,7 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MENU_REQUEST
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.actionmenu.handlers.menu_request_handler"
+    "aries_cloudagent.messaging.actionmenu.handlers.menu_request_handler"
     + ".MenuRequestHandler"
 )
 

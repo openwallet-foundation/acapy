@@ -6,13 +6,13 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.messaging.basicmessage
-    indy_catalyst_agent.messaging.connections
-    indy_catalyst_agent.messaging.credentials
-    indy_catalyst_agent.messaging.proofs
-    indy_catalyst_agent.messaging.routing
-    indy_catalyst_agent.messaging.tests
-    indy_catalyst_agent.messaging.trustping
+    aries_cloudagent.messaging.basicmessage
+    aries_cloudagent.messaging.connections
+    aries_cloudagent.messaging.credentials
+    aries_cloudagent.messaging.proofs
+    aries_cloudagent.messaging.routing
+    aries_cloudagent.messaging.tests
+    aries_cloudagent.messaging.trustping
 
 Submodules
 ----------
@@ -20,7 +20,7 @@ Submodules
 indy\_catalyst\_agent.messaging.agent\_message module
 -----------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.agent_message
+.. automodule:: aries_cloudagent.messaging.agent_message
     :members:
     :undoc-members:
     :show-inheritance:
@@ -28,7 +28,7 @@ indy\_catalyst\_agent.messaging.agent\_message module
 indy\_catalyst\_agent.messaging.base\_handler module
 ----------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.base_handler
+.. automodule:: aries_cloudagent.messaging.base_handler
     :members:
     :undoc-members:
     :show-inheritance:
@@ -36,7 +36,7 @@ indy\_catalyst\_agent.messaging.base\_handler module
 indy\_catalyst\_agent.messaging.message\_factory module
 -------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.message_factory
+.. automodule:: aries_cloudagent.messaging.message_factory
     :members:
     :undoc-members:
     :show-inheritance:
@@ -44,7 +44,7 @@ indy\_catalyst\_agent.messaging.message\_factory module
 indy\_catalyst\_agent.messaging.message\_types module
 -----------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.message_types
+.. automodule:: aries_cloudagent.messaging.message_types
     :members:
     :undoc-members:
     :show-inheritance:
@@ -52,7 +52,7 @@ indy\_catalyst\_agent.messaging.message\_types module
 indy\_catalyst\_agent.messaging.request\_context module
 -------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.request_context
+.. automodule:: aries_cloudagent.messaging.request_context
     :members:
     :undoc-members:
     :show-inheritance:
@@ -60,7 +60,7 @@ indy\_catalyst\_agent.messaging.request\_context module
 indy\_catalyst\_agent.messaging.responder module
 ------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.responder
+.. automodule:: aries_cloudagent.messaging.responder
     :members:
     :undoc-members:
     :show-inheritance:
@@ -69,7 +69,7 @@ indy\_catalyst\_agent.messaging.responder module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging
+.. automodule:: aries_cloudagent.messaging
     :members:
     :undoc-members:
     :show-inheritance:

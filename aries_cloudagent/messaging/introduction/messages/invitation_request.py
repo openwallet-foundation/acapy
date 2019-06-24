@@ -6,7 +6,7 @@ from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import INVITATION_REQUEST
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.introduction.handlers."
+    "aries_cloudagent.messaging.introduction.handlers."
     + "invitation_request_handler.InvitationRequestHandler"
 )
 

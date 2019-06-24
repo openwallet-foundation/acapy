@@ -7,7 +7,7 @@ from marshmallow import fields
 from ..agent_message import AgentMessage, AgentMessageSchema
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.problem_report.handler.ProblemReportHandler"
+    "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
 )
 
 MESSAGE_TYPE = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/notification/1.0/problem-report"

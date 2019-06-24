@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.tests.test\_conductor module
 --------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.tests.test_conductor
+.. automodule:: aries_cloudagent.tests.test_conductor
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ indy\_catalyst\_agent.tests.test\_conductor module
 indy\_catalyst\_agent.tests.test\_init module
 ---------------------------------------------
 
-.. automodule:: indy_catalyst_agent.tests.test_init
+.. automodule:: aries_cloudagent.tests.test_init
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ indy\_catalyst\_agent.tests.test\_init module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.tests
+.. automodule:: aries_cloudagent.tests
     :members:
     :undoc-members:
     :show-inheritance:

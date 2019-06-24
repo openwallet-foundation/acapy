@@ -7,7 +7,7 @@ from ..message_types import ROUTE_QUERY_REQUEST
 from ..models.paginate import Paginate, PaginateSchema
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.routing.handlers"
+    "aries_cloudagent.messaging.routing.handlers"
     + ".route_query_request_handler.RouteQueryRequestHandler"
 )
 

@@ -18,7 +18,7 @@ class TestQuery(TestCase):
         assert query._type == QUERY
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.discovery.messages.query.QuerySchema.load"
+        "aries_cloudagent.messaging.discovery.messages.query.QuerySchema.load"
     )
     def test_deserialize(self, mock_query_schema_load):
         obj = {"obj": "obj"}
@@ -29,7 +29,7 @@ class TestQuery(TestCase):
         assert query is mock_query_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.discovery.messages.query.QuerySchema.dump"
+        "aries_cloudagent.messaging.discovery.messages.query.QuerySchema.dump"
     )
     def test_serialize(self, mock_query_schema_dump):
         query = Query(query=self.test_query, comment=self.test_comment)

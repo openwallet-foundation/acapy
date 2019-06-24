@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.transport.tests.test\_http module
 -------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.transport.tests.test_http
+.. automodule:: aries_cloudagent.transport.tests.test_http
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ indy\_catalyst\_agent.transport.tests.test\_http module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.transport.tests
+.. automodule:: aries_cloudagent.transport.tests
     :members:
     :undoc-members:
     :show-inheritance:

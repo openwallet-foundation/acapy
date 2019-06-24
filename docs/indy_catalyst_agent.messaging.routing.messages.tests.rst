@@ -7,7 +7,7 @@ Submodules
 indy\_catalyst\_agent.messaging.routing.messages.tests.test\_forward module
 ---------------------------------------------------------------------------
 
-.. automodule:: indy_catalyst_agent.messaging.routing.messages.tests.test_forward
+.. automodule:: aries_cloudagent.messaging.routing.messages.tests.test_forward
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ indy\_catalyst\_agent.messaging.routing.messages.tests.test\_forward module
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.messaging.routing.messages.tests
+.. automodule:: aries_cloudagent.messaging.routing.messages.tests
     :members:
     :undoc-members:
     :show-inheritance:

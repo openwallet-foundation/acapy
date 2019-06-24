@@ -1,15 +1,15 @@
 import pytest
 
-from indy_catalyst_agent.storage.error import (
+from aries_cloudagent.storage.error import (
     StorageDuplicateError,
     StorageError,
     StorageNotFoundError,
     StorageSearchError,
 )
 
-from indy_catalyst_agent.storage.record import StorageRecord
+from aries_cloudagent.storage.record import StorageRecord
 
-from indy_catalyst_agent.storage.basic import BasicStorage
+from aries_cloudagent.storage.basic import BasicStorage
 
 
 @pytest.fixture()

@@ -26,7 +26,7 @@ class TestInvitationRequest(TestCase, TestConfig):
         assert self.request._type == INVITATION_REQUEST
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.introduction.messages."
+        "aries_cloudagent.messaging.introduction.messages."
         + "invitation_request.InvitationRequestSchema.load"
     )
     def test_deserialize(self, mock_invitation_schema_load):
@@ -41,7 +41,7 @@ class TestInvitationRequest(TestCase, TestConfig):
         assert request is mock_invitation_schema_load.return_value
 
     @mock.patch(
-        "indy_catalyst_agent.messaging.introduction.messages."
+        "aries_cloudagent.messaging.introduction.messages."
         + "invitation_request.InvitationRequestSchema.dump"
     )
     def test_serialize(self, mock_invitation_schema_dump):

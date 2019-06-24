@@ -58,7 +58,7 @@
 
 #         assert "Unable to start webserver" in str(context.exception)
 
-#     @async_mock.patch("indy_catalyst_agent.transport.http.web")
+#     @async_mock.patch("aries_cloudagent.transport.http.web")
 #     async def test_run_setup(self, mock_aiohttp_web):
 #         mock_aiohttp_web.Application = mock.MagicMock(auto_spec=True)
 #         mock_aiohttp_web.post.return_value = self.web_post_return_value
@@ -86,7 +86,7 @@
 #         )
 #         mock_aiohttp_web.TCPSite.return_value.start.assert_called_once_with()
 
-#     @async_mock.patch("indy_catalyst_agent.transport.http.web.Response")
+#     @async_mock.patch("aries_cloudagent.transport.http.web.Response")
 #     async def test_run_message_handler(self, mock_web_response):
 #         request = async_mock.CoroutineMock()
 #         http = Http(*["0.0.0.0", 80, func])
@@ -100,7 +100,7 @@
 
 #         http.parse_message.assert_called_once_with(request)
 
-#     @async_mock.patch("indy_catalyst_agent.transport.http.web.Response")
+#     @async_mock.patch("aries_cloudagent.transport.http.web.Response")
 #     async def test_run_message_handler_fail(self, mock_web_response):
 #         request = async_mock.CoroutineMock()
 #         http = Http(*["0.0.0.0", 80, func])

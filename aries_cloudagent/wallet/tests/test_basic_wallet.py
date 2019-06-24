@@ -2,14 +2,14 @@ import time
 
 import pytest
 
-from indy_catalyst_agent.wallet.basic import BasicWallet
-from indy_catalyst_agent.wallet.error import (
+from aries_cloudagent.wallet.basic import BasicWallet
+from aries_cloudagent.wallet.error import (
     WalletError,
     WalletDuplicateError,
     WalletNotFoundError,
 )
 
-from indy_catalyst_agent.messaging.decorators.signature_decorator import (
+from aries_cloudagent.messaging.decorators.signature_decorator import (
     SignatureDecorator,
 )
 

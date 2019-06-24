@@ -6,14 +6,14 @@ Subpackages
 
 .. toctree::
 
-    indy_catalyst_agent.transport.inbound
-    indy_catalyst_agent.transport.outbound
-    indy_catalyst_agent.transport.tests
+    aries_cloudagent.transport.inbound
+    aries_cloudagent.transport.outbound
+    aries_cloudagent.transport.tests
 
 Module contents
 ---------------
 
-.. automodule:: indy_catalyst_agent.transport
+.. automodule:: aries_cloudagent.transport
     :members:
     :undoc-members:
     :show-inheritance:

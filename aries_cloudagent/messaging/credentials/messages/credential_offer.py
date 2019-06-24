@@ -7,7 +7,7 @@ from ..message_types import CREDENTIAL_OFFER
 
 
 HANDLER_CLASS = (
-    "indy_catalyst_agent.messaging.credentials.handlers."
+    "aries_cloudagent.messaging.credentials.handlers."
     + "credential_offer_handler.CredentialOfferHandler"
 )
 
