@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.credentials.messages package
+aries\_cloudagent.messaging.credentials.messages package
 ============================================================
 
 Subpackages
@@ -11,7 +11,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.credentials.messages.credential module
+aries\_cloudagent.messaging.credentials.messages.credential module
 ----------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.credentials.messages.credential
@@ -19,7 +19,7 @@ indy\_catalyst\_agent.messaging.credentials.messages.credential module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.credentials.messages.credential\_offer module
+aries\_cloudagent.messaging.credentials.messages.credential\_offer module
 -----------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.credentials.messages.credential_offer
@@ -27,7 +27,7 @@ indy\_catalyst\_agent.messaging.credentials.messages.credential\_offer module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.credentials.messages.credential\_request module
+aries\_cloudagent.messaging.credentials.messages.credential\_request module
 -------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.credentials.messages.credential_request

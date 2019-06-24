@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.trustping package
+aries\_cloudagent.messaging.trustping package
 =================================================
 
 Subpackages
@@ -12,7 +12,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.trustping.message\_types module
+aries\_cloudagent.messaging.trustping.message\_types module
 ---------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.trustping.message_types

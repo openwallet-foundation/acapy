@@ -1,4 +1,4 @@
-indy\_catalyst\_agent package
+aries\_cloudagent package
 =============================
 
 Subpackages
@@ -17,7 +17,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.classloader module
+aries\_cloudagent.classloader module
 ----------------------------------------
 
 .. automodule:: aries_cloudagent.classloader
@@ -25,7 +25,7 @@ indy\_catalyst\_agent.classloader module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.conductor module
+aries\_cloudagent.conductor module
 --------------------------------------
 
 .. automodule:: aries_cloudagent.conductor
@@ -33,7 +33,7 @@ indy\_catalyst\_agent.conductor module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.connection module
+aries\_cloudagent.connection module
 ---------------------------------------
 
 .. automodule:: aries_cloudagent.connection
@@ -41,7 +41,7 @@ indy\_catalyst\_agent.connection module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.defaults module
+aries\_cloudagent.defaults module
 -------------------------------------
 
 .. automodule:: aries_cloudagent.defaults
@@ -49,7 +49,7 @@ indy\_catalyst\_agent.defaults module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.dispatcher module
+aries\_cloudagent.dispatcher module
 ---------------------------------------
 
 .. automodule:: aries_cloudagent.dispatcher
@@ -57,7 +57,7 @@ indy\_catalyst\_agent.dispatcher module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.error module
+aries\_cloudagent.error module
 ----------------------------------
 
 .. automodule:: aries_cloudagent.error
@@ -65,7 +65,7 @@ indy\_catalyst\_agent.error module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.version module
+aries\_cloudagent.version module
 ------------------------------------
 
 .. automodule:: aries_cloudagent.version

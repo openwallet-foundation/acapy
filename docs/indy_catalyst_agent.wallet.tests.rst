@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.wallet.tests package
+aries\_cloudagent.wallet.tests package
 ==========================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.wallet.tests.test\_basic\_wallet module
+aries\_cloudagent.wallet.tests.test\_basic\_wallet module
 -------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.tests.test_basic_wallet
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.wallet.tests.test\_basic\_wallet module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.wallet.tests.test\_indy\_wallet module
+aries\_cloudagent.wallet.tests.test\_indy\_wallet module
 ------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.tests.test_indy_wallet

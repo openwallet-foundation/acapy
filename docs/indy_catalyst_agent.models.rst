@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.models package
+aries\_cloudagent.models package
 ====================================
 
 Subpackages
@@ -11,7 +11,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.models.base module
+aries\_cloudagent.models.base module
 ----------------------------------------
 
 .. automodule:: aries_cloudagent.models.base
@@ -19,7 +19,7 @@ indy\_catalyst\_agent.models.base module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.models.connection\_detail module
+aries\_cloudagent.models.connection\_detail module
 ------------------------------------------------------
 
 .. automodule:: aries_cloudagent.models.connection_detail
@@ -27,7 +27,7 @@ indy\_catalyst\_agent.models.connection\_detail module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.models.connection\_target module
+aries\_cloudagent.models.connection\_target module
 ------------------------------------------------------
 
 .. automodule:: aries_cloudagent.models.connection_target
@@ -35,7 +35,7 @@ indy\_catalyst\_agent.models.connection\_target module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.models.field\_signature module
+aries\_cloudagent.models.field\_signature module
 ----------------------------------------------------
 
 .. automodule:: aries_cloudagent.models.field_signature
@@ -43,7 +43,7 @@ indy\_catalyst\_agent.models.field\_signature module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.models.thread\_decorator module
+aries\_cloudagent.models.thread\_decorator module
 -----------------------------------------------------
 
 .. automodule:: aries_cloudagent.models.thread_decorator

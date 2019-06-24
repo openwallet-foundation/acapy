@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.messaging.connections.messages.tests package
+aries\_cloudagent.messaging.connections.messages.tests package
 ==================================================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.connections.messages.tests.test\_connection\_invitation module
+aries\_cloudagent.messaging.connections.messages.tests.test\_connection\_invitation module
 ----------------------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.messages.tests.test_connection_invitation
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.messaging.connections.messages.tests.test\_connection\_inv
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.connections.messages.tests.test\_connection\_request module
+aries\_cloudagent.messaging.connections.messages.tests.test\_connection\_request module
 -------------------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.messages.tests.test_connection_request
@@ -20,7 +20,7 @@ indy\_catalyst\_agent.messaging.connections.messages.tests.test\_connection\_req
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.connections.messages.tests.test\_connection\_response module
+aries\_cloudagent.messaging.connections.messages.tests.test\_connection\_response module
 --------------------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.messages.tests.test_connection_response

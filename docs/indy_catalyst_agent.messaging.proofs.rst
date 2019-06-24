@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.proofs package
+aries\_cloudagent.messaging.proofs package
 ==============================================
 
 Subpackages

@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.tests package
+aries\_cloudagent.tests package
 ===================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.tests.test\_conductor module
+aries\_cloudagent.tests.test\_conductor module
 --------------------------------------------------
 
 .. automodule:: aries_cloudagent.tests.test_conductor
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.tests.test\_conductor module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.tests.test\_init module
+aries\_cloudagent.tests.test\_init module
 ---------------------------------------------
 
 .. automodule:: aries_cloudagent.tests.test_init

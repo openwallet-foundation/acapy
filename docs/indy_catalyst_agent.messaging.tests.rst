@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.messaging.tests package
+aries\_cloudagent.messaging.tests package
 =============================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.tests.test\_agent\_message module
+aries\_cloudagent.messaging.tests.test\_agent\_message module
 -----------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.tests.test_agent_message
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.messaging.tests.test\_agent\_message module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.tests.test\_message\_factory module
+aries\_cloudagent.messaging.tests.test\_message\_factory module
 -------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.tests.test_message_factory

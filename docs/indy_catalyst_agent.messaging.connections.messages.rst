@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.connections.messages package
+aries\_cloudagent.messaging.connections.messages package
 ============================================================
 
 Subpackages
@@ -11,7 +11,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.connections.messages.connection\_invitation module
+aries\_cloudagent.messaging.connections.messages.connection\_invitation module
 ----------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.messages.connection_invitation
@@ -19,7 +19,7 @@ indy\_catalyst\_agent.messaging.connections.messages.connection\_invitation modu
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.connections.messages.connection\_request module
+aries\_cloudagent.messaging.connections.messages.connection\_request module
 -------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.messages.connection_request
@@ -27,7 +27,7 @@ indy\_catalyst\_agent.messaging.connections.messages.connection\_request module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.connections.messages.connection\_response module
+aries\_cloudagent.messaging.connections.messages.connection\_response module
 --------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.messages.connection_response

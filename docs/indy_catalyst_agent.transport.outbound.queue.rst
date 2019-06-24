@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.transport.outbound.queue package
+aries\_cloudagent.transport.outbound.queue package
 ======================================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.transport.outbound.queue.base module
+aries\_cloudagent.transport.outbound.queue.base module
 ----------------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.outbound.queue.base
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.transport.outbound.queue.base module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.transport.outbound.queue.basic module
+aries\_cloudagent.transport.outbound.queue.basic module
 -----------------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.outbound.queue.basic

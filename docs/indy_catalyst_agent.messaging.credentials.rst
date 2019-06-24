@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.credentials package
+aries\_cloudagent.messaging.credentials package
 ===================================================
 
 Subpackages

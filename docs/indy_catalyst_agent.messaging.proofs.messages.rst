@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.proofs.messages package
+aries\_cloudagent.messaging.proofs.messages package
 =======================================================
 
 Subpackages
@@ -11,7 +11,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.proofs.messages.proof module
+aries\_cloudagent.messaging.proofs.messages.proof module
 ------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.proofs.messages.proof
@@ -19,7 +19,7 @@ indy\_catalyst\_agent.messaging.proofs.messages.proof module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.proofs.messages.proof\_request module
+aries\_cloudagent.messaging.proofs.messages.proof\_request module
 ---------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.proofs.messages.proof_request

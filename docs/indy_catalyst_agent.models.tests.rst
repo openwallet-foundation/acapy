@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.models.tests package
+aries\_cloudagent.models.tests package
 ==========================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.models.tests.test\_thread\_decorator module
+aries\_cloudagent.models.tests.test\_thread\_decorator module
 -----------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.models.tests.test_thread_decorator

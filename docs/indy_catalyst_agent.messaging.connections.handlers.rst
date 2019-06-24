@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.messaging.connections.handlers package
+aries\_cloudagent.messaging.connections.handlers package
 ============================================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.connections.handlers.connection\_invitation\_handler module
+aries\_cloudagent.messaging.connections.handlers.connection\_invitation\_handler module
 -------------------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.handlers.connection_invitation_handler
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.messaging.connections.handlers.connection\_invitation\_han
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.connections.handlers.connection\_request\_handler module
+aries\_cloudagent.messaging.connections.handlers.connection\_request\_handler module
 ----------------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.handlers.connection_request_handler
@@ -20,7 +20,7 @@ indy\_catalyst\_agent.messaging.connections.handlers.connection\_request\_handle
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.connections.handlers.connection\_response\_handler module
+aries\_cloudagent.messaging.connections.handlers.connection\_response\_handler module
 -----------------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.handlers.connection_response_handler

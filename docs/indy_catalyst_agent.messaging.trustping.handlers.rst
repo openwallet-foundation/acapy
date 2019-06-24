@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.messaging.trustping.handlers package
+aries\_cloudagent.messaging.trustping.handlers package
 ==========================================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.trustping.handlers.ping\_handler module
+aries\_cloudagent.messaging.trustping.handlers.ping\_handler module
 -----------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.trustping.handlers.ping_handler
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.messaging.trustping.handlers.ping\_handler module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.trustping.handlers.ping\_response\_handler module
+aries\_cloudagent.messaging.trustping.handlers.ping\_response\_handler module
 ---------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.trustping.handlers.ping_response_handler

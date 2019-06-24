@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.wallet package
+aries\_cloudagent.wallet package
 ====================================
 
 Subpackages
@@ -11,7 +11,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.wallet.base module
+aries\_cloudagent.wallet.base module
 ----------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.base
@@ -19,7 +19,7 @@ indy\_catalyst\_agent.wallet.base module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.wallet.basic module
+aries\_cloudagent.wallet.basic module
 -----------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.basic
@@ -27,7 +27,7 @@ indy\_catalyst\_agent.wallet.basic module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.wallet.crypto module
+aries\_cloudagent.wallet.crypto module
 ------------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.crypto
@@ -35,7 +35,7 @@ indy\_catalyst\_agent.wallet.crypto module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.wallet.error module
+aries\_cloudagent.wallet.error module
 -----------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.error
@@ -43,7 +43,7 @@ indy\_catalyst\_agent.wallet.error module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.wallet.indy module
+aries\_cloudagent.wallet.indy module
 ----------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.indy
@@ -51,7 +51,7 @@ indy\_catalyst\_agent.wallet.indy module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.wallet.util module
+aries\_cloudagent.wallet.util module
 ----------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.util

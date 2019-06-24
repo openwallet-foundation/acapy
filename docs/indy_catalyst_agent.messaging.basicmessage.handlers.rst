@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.messaging.basicmessage.handlers package
+aries\_cloudagent.messaging.basicmessage.handlers package
 =============================================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.basicmessage.handlers.basicmessage\_handler module
+aries\_cloudagent.messaging.basicmessage.handlers.basicmessage\_handler module
 ----------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.basicmessage.handlers.basicmessage_handler

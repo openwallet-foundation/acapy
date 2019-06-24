@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.connections package
+aries\_cloudagent.messaging.connections package
 ===================================================
 
 Subpackages
@@ -12,7 +12,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.connections.message\_types module
+aries\_cloudagent.messaging.connections.message\_types module
 -----------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.connections.message_types

@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging package
+aries\_cloudagent.messaging package
 =======================================
 
 Subpackages
@@ -17,7 +17,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.agent\_message module
+aries\_cloudagent.messaging.agent\_message module
 -----------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.agent_message
@@ -25,7 +25,7 @@ indy\_catalyst\_agent.messaging.agent\_message module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.base\_handler module
+aries\_cloudagent.messaging.base\_handler module
 ----------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.base_handler
@@ -33,7 +33,7 @@ indy\_catalyst\_agent.messaging.base\_handler module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.message\_factory module
+aries\_cloudagent.messaging.message\_factory module
 -------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.message_factory
@@ -41,7 +41,7 @@ indy\_catalyst\_agent.messaging.message\_factory module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.message\_types module
+aries\_cloudagent.messaging.message\_types module
 -----------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.message_types
@@ -49,7 +49,7 @@ indy\_catalyst\_agent.messaging.message\_types module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.request\_context module
+aries\_cloudagent.messaging.request\_context module
 -------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.request_context
@@ -57,7 +57,7 @@ indy\_catalyst\_agent.messaging.request\_context module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.responder module
+aries\_cloudagent.messaging.responder module
 ------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.responder

@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.storage.tests package
+aries\_cloudagent.storage.tests package
 ===========================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.storage.tests.test\_basic\_storage module
+aries\_cloudagent.storage.tests.test\_basic\_storage module
 ---------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.storage.tests.test_basic_storage
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.storage.tests.test\_basic\_storage module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.storage.tests.test\_indy\_storage module
+aries\_cloudagent.storage.tests.test\_indy\_storage module
 --------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.storage.tests.test_indy_storage
@@ -20,7 +20,7 @@ indy\_catalyst\_agent.storage.tests.test\_indy\_storage module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.storage.tests.test\_storage\_record module
+aries\_cloudagent.storage.tests.test\_storage\_record module
 ----------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.storage.tests.test_storage_record

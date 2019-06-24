@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.transport.outbound package
+aries\_cloudagent.transport.outbound package
 ================================================
 
 Subpackages
@@ -11,7 +11,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.transport.outbound.base module
+aries\_cloudagent.transport.outbound.base module
 ----------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.outbound.base
@@ -19,7 +19,7 @@ indy\_catalyst\_agent.transport.outbound.base module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.transport.outbound.http module
+aries\_cloudagent.transport.outbound.http module
 ----------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.outbound.http
@@ -27,7 +27,7 @@ indy\_catalyst\_agent.transport.outbound.http module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.transport.outbound.manager module
+aries\_cloudagent.transport.outbound.manager module
 -------------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.outbound.manager
@@ -35,7 +35,7 @@ indy\_catalyst\_agent.transport.outbound.manager module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.transport.outbound.message module
+aries\_cloudagent.transport.outbound.message module
 -------------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.outbound.message
@@ -43,7 +43,7 @@ indy\_catalyst\_agent.transport.outbound.message module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.transport.outbound.ws module
+aries\_cloudagent.transport.outbound.ws module
 --------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.outbound.ws

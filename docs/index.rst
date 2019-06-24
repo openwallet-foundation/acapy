@@ -1,4 +1,4 @@
-Welcome to Indy Catalyst Agent's documentation!
+Welcome to Aries Cloud Agent's documentation!
 ===============================================
 
 .. automodule:: aries_cloudagent

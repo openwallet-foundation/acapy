@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.routing package
+aries\_cloudagent.messaging.routing package
 ===============================================
 
 Subpackages

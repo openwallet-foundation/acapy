@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.transport.inbound package
+aries\_cloudagent.transport.inbound package
 ===============================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.transport.inbound.base module
+aries\_cloudagent.transport.inbound.base module
 ---------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.inbound.base
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.transport.inbound.base module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.transport.inbound.http module
+aries\_cloudagent.transport.inbound.http module
 ---------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.inbound.http
@@ -20,7 +20,7 @@ indy\_catalyst\_agent.transport.inbound.http module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.transport.inbound.manager module
+aries\_cloudagent.transport.inbound.manager module
 ------------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.inbound.manager
@@ -28,7 +28,7 @@ indy\_catalyst\_agent.transport.inbound.manager module
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.transport.inbound.ws module
+aries\_cloudagent.transport.inbound.ws module
 -------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.inbound.ws

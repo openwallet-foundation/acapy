@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.messaging.routing.messages.tests package
+aries\_cloudagent.messaging.routing.messages.tests package
 ==============================================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.routing.messages.tests.test\_forward module
+aries\_cloudagent.messaging.routing.messages.tests.test\_forward module
 ---------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.routing.messages.tests.test_forward

@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.logging package
+aries\_cloudagent.logging package
 =====================================
 
 Subpackages

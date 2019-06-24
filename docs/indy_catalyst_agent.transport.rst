@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.transport package
+aries\_cloudagent.transport package
 =======================================
 
 Subpackages

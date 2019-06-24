@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.messaging.credentials.messages.tests package
+aries\_cloudagent.messaging.credentials.messages.tests package
 ==================================================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential module
+aries\_cloudagent.messaging.credentials.messages.tests.test\_credential module
 ----------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.credentials.messages.tests.test_credential
@@ -12,7 +12,7 @@ indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential modu
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential\_offer module
+aries\_cloudagent.messaging.credentials.messages.tests.test\_credential\_offer module
 -----------------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.credentials.messages.tests.test_credential_offer
@@ -20,7 +20,7 @@ indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential\_off
     :undoc-members:
     :show-inheritance:
 
-indy\_catalyst\_agent.messaging.credentials.messages.tests.test\_credential\_request module
+aries\_cloudagent.messaging.credentials.messages.tests.test\_credential\_request module
 -------------------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.credentials.messages.tests.test_credential_request

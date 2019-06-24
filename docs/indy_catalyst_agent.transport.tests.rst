@@ -1,10 +1,10 @@
-indy\_catalyst\_agent.transport.tests package
+aries\_cloudagent.transport.tests package
 =============================================
 
 Submodules
 ----------
 
-indy\_catalyst\_agent.transport.tests.test\_http module
+aries\_cloudagent.transport.tests.test\_http module
 -------------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.tests.test_http

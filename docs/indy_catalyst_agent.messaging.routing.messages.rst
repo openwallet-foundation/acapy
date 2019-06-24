@@ -1,4 +1,4 @@
-indy\_catalyst\_agent.messaging.routing.messages package
+aries\_cloudagent.messaging.routing.messages package
 ========================================================
 
 Subpackages
@@ -11,7 +11,7 @@ Subpackages
 Submodules
 ----------
 
-indy\_catalyst\_agent.messaging.routing.messages.forward module
+aries\_cloudagent.messaging.routing.messages.forward module
 ---------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.routing.messages.forward
