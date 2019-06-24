@@ -272,8 +272,9 @@ build-api() {
   if [[ "$OSTYPE" == "msys" ]]; then
     echo -e "\nFixing file permissions in final tob-api (django) image"
     docker build -q \
+      --build-arg BASE_IMAGE='django:latest' \
       -t 'django' \
-      -f '../../../credential-registry/server/Dockerfile' '../../../credential-registry/server'
+      -f '../../../docker/utils/Dockerfile.fixpermissions' '../../../docker/utils/'
   fi
 }
 
@@ -284,6 +285,15 @@ build-agent() {
   docker build -q \
     -t 'tob-agent' \
     -f '../../../agent/docker/Dockerfile.run' '../../../agent'
+
+  # this is only required in Windows
+  if [[ "$OSTYPE" == "msys" ]]; then
+    echo -e "\nFixing file permissions in final tob-agent image"
+    docker build -q \
+      --build-arg BASE_IMAGE='tob-agent:latest' \
+      -t 'tob-agent' \
+      -f '../../../docker/utils/Dockerfile.fixpermissions' '../../../docker/utils/'
+  fi
 }
 
 buildImages() {

@@ -23,7 +23,6 @@ from api_v2.serializers.rest import (
     AddressSerializer,
     AttributeSerializer,
     CredentialSerializer,
-    CredentialTopicExtSerializer,
     CredentialTypeSerializer,
     ExpandedCredentialSerializer,
     ExpandedCredentialSetSerializer,

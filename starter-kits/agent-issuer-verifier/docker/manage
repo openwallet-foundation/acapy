@@ -73,6 +73,15 @@ build-agent() {
   docker build -q \
     -t 'issuer-agent' \
     -f '../../../agent/docker/Dockerfile.run' '../../../agent'
+
+  # this is only required in Windows
+  if [[ "$OSTYPE" == "msys" ]]; then
+    echo -e "\nFixing file permissions in final issuer-agent image"
+    docker build -q \
+      --build-arg BASE_IMAGE='issuer-agent:latest' \
+      -t 'issuer-agent' \
+      -f '../../../docker/utils/Dockerfile.fixpermissions' '../../../docker/utils/'
+  fi
 }
 
 buildImages() {
