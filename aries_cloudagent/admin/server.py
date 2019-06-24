@@ -152,7 +152,7 @@ class AdminServer(BaseAdminServer):
 
         setup_aiohttp_apispec(
             app=self.app,
-            title="Indy Catalyst Agent",
+            title="Aries Cloud Agent",
             version="v1",
             swagger_path="/api/doc",
         )

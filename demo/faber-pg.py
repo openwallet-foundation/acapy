@@ -160,7 +160,7 @@ def main():
         resp = requests.get(admin_url + "/api/docs/swagger.json")
         assert resp.status_code == 200
         p = resp.text
-        assert "Indy Catalyst Agent" in p
+        assert "Aries Cloud Agent" in p
 
         # create a schema
         print("#3 Create a new schema on the ledger")

@@ -2,7 +2,7 @@
 
 cd $(dirname $0)
 
-docker build -t indy-cat-run -f ../docker/Dockerfile.run .. || exit 1
+docker build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
 
 ARGS=""
 for PORT in $PORTS; do
@@ -20,4 +20,4 @@ if [ ! -z "${WEBHOOK_URL}" ]; then
 fi
 
 RAND_NAME=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
-docker run --rm -ti --name "indy-cat-runner_${RAND_NAME}" $ARGS indy-cat-run "$@"
+docker run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" $ARGS aries-cloudagent-run "$@"

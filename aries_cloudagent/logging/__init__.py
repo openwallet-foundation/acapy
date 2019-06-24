@@ -68,7 +68,7 @@ class LoggingConfigurator:
                 + f" {content} {border_character}{border_character}"
             )
 
-        banner_title_string = "Indy Catalyst Agent"
+        banner_title_string = "Aries Cloud Agent"
         banner_title_spacer = " " * (banner_length - len(banner_title_string))
 
         banner_border = border_character * (banner_length + 6)

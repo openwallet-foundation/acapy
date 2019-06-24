@@ -1,10 +1,10 @@
-s# Hyperledger Indy Catalyst Agent <!-- omit in toc -->
+# Hyperledger Aries Python Cloud Agent  <!-- omit in toc -->
 
-[![CircleCI](https://circleci.com/gh/bcgov/indy-catalyst.svg?style=shield)](https://circleci.com/gh/bcgov/indy-catalyst)
-[![codecov](https://codecov.io/gh/bcgov/indy-catalyst/branch/master/graph/badge.svg)](https://codecov.io/gh/bcgov/indy-catalyst)
-[![Known Vulnerabilities](https://snyk.io/test/github/bcgov/indy-catalyst/badge.svg?targetFile=agent%2Frequirements.txt)](https://snyk.io/test/github/bcgov/indy-catalyst?targetFile=agent%2Frequirements.txt)
+[![CircleCI](https://circleci.com/gh/bcgov/aries-cloudagent-python.svg?style=shield)](https://circleci.com/gh/bcgov/aries-cloudagent-python)
+[![codecov](https://codecov.io/gh/bcgov/aries-cloudagent-python/branch/master/graph/badge.svg)](https://codecov.io/gh/bcgov/aries-cloudagent-python)
+[![Known Vulnerabilities](https://snyk.io/test/github/bcgov/aries-cloudagent-python/badge.svg?targetFile=agent%2Frequirements.txt)](https://snyk.io/test/github/bcgov/aries-cloudagent-python?targetFile=agent%2Frequirements.txt)
 
-![logo](/docs/assets/indy-catalyst-logo-bw.png)
+![logo](/docs/assets/aries-cloudagent-python-logo-bw.png)
 
 # Table of Contents <!-- omit in toc -->
 
@@ -20,7 +20,7 @@ s# Hyperledger Indy Catalyst Agent <!-- omit in toc -->
 
 # Introduction
 
-Indy Catalyst Agent is a configurable instance of a "Cloud Agent".
+Aries Python Cloud Agent is a configurable instance of a "Cloud Agent".
 
 # Installing
 
@@ -48,7 +48,7 @@ icatagent   --inbound-transport http 0.0.0.0 8000 \
             --outbound-transport http
 ```
 
-Currently, Indy Catalyst Agent ships with both inbound and outbound transport drivers for `http` and `websockets`. More information on how to develop your own drivers will be coming soon.
+Currently, Aries Python Cloud Agent ships with both inbound and outbound transport drivers for `http` and `websockets`. More information on how to develop your own drivers will be coming soon.
 
 # Developing
 

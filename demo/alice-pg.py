@@ -224,7 +224,7 @@ def main():
         resp = requests.get(admin_url + "/api/docs/swagger.json")
         assert resp.status_code == 200
         p = resp.text
-        assert "Indy Catalyst Agent" in p
+        assert "Aries Cloud Agent" in p
 
         # respond to an invitation
         print("#9 Input faber.py invitation details")

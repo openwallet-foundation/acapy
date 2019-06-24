@@ -1,0 +1,12 @@
+#!/bin/sh
+
+cd $(dirname $0)
+
+docker build -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
+
+# on Windows, docker run needs to be prefixed by winpty
+if [[ "$OSTYPE" == "msys" ]]; then
+  winpty docker run --rm -ti --name aries-cloudagent-runner aries-cloudagent-test "$@"
+else
+  docker run --rm -ti --name aries-cloudagent-runner aries-cloudagent-test "$@"
+fi

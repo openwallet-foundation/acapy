@@ -22,5 +22,5 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=parse_requirements("requirements.txt"),
         python_requires=">=3.6.3",
-        scripts=["scripts/acagent"],
+        scripts=["bin/acagent"],
     )

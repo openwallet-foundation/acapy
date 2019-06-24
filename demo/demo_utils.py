@@ -13,7 +13,7 @@ import logging
 # agent webhook callbacks
 class webhooks:
     def GET(self, topic):
-        # just for testing; all indy-cat agent hooks are POST requests
+        # just for testing; all aries-cloudagent agent hooks are POST requests
         s_print("GET: topic=", topic)
         return ""
 
@@ -100,7 +100,7 @@ def background_hook_thread(urls, g_vars):
 ####################################################
 
 ####################################################
-# run indy-cat agent as a sub-process
+# run aries-cloudagent agent as a sub-process
 ####################################################
 s_print_lock = threading.Lock()
 

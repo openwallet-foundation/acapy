@@ -8,11 +8,9 @@ ADD requirements.dev.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt -r requirements.dev.txt
 
 ADD aries_cloudagent ./aries_cloudagent
-ADD scripts ./scripts
+ADD bin ./bin
 ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-RUN pip3 install --no-cache-dir -e "git+https://github.com/nrempel/indy-catalyst.git@refactoring#egg=subdir&subdirectory=credential-registry/message_families/issuer_registration"
-
-ENTRYPOINT ["/bin/bash", "-c", "icatagent \"$@\"", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "acagent \"$@\"", "--"]

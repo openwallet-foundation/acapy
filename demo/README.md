@@ -6,7 +6,7 @@
 The dockerized demo requires to have von-network instance running in Docker locally. See the [von-network](von-https://github.com/bcgov/von-network) readme file for more info.
 
 ### Running the dockerized demo
-Open two shells (Git Bash is recommended for Windows) in the `indy-catalyst/agent/scripts` directory.
+Open two shells (Git Bash is recommended for Windows) in the `scripts` directory.
 
 Start the `faber` agent by issuing the following command in the first shell: 
 ``` 

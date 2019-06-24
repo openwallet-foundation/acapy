@@ -101,7 +101,7 @@ class Conductor:
         """Initialize the global request context."""
 
         context = RequestContext(settings=self.settings)
-        context.settings.set_default("default_label", "Indy Catalyst Agent")
+        context.settings.set_default("default_label", "Aries Cloud Agent")
 
         if context.settings.get("timing.enabled"):
             self.collector = Collector()

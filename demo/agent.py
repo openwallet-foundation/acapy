@@ -263,7 +263,7 @@ class DemoAgent:
                 continue
         if not text:
             raise Exception(f"Timed out waiting for agent process to start")
-        if "Indy Catalyst Agent" not in text:
+        if "Aries Cloud Agent" not in text:
             raise Exception(f"Unexpected response from agent process")
 
     async def fetch_timing(self):

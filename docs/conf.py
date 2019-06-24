@@ -23,7 +23,7 @@ autodoc_mock_imports = ["von_anchor", "setup", "pysodium", "indy"]
 
 # -- Project information -----------------------------------------------------
 
-project = "Indy Catalyst Agent"
+project = "Aries Cloud Agent"
 copyright = "2019, Province of British Columbia"
 author = "Province of British Columbia"
 
@@ -131,8 +131,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "IndyCatalystAgent.tex",
-        "Indy Catalyst Agent Documentation",
+        "AriesCloudAgent.tex",
+        "Aries Cloud Agent Documentation",
         "Nicholas Rempel, Andrew Whitehead",
         "manual",
     )
@@ -144,7 +144,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, "indycatalystagent", "Indy Catalyst Agent Documentation", [author], 1)
+    (master_doc, "ariescloudagent", "Aries Cloud Agent Documentation", [author], 1)
 ]
 
 
@@ -156,10 +156,10 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        "IndyCatalystAgent",
-        "Indy Catalyst Agent Documentation",
+        "AriesCloudAgent",
+        "Aries Cloud Agent Documentation",
         author,
-        "IndyCatalystAgent",
+        "AriesCloudAgent",
         "One line description of project.",
         "Miscellaneous",
     )
