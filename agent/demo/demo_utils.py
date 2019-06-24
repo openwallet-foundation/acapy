@@ -164,9 +164,9 @@ def start_agent_subprocess(agent_name, genesis, seed, endpoint_url, in_port_1, i
             '--label', agent_name]
     use_postgres = False
     if use_postgres:
-        agent_args.extend(['--storage-type', 'postgres_storage',
-            '--storage-config', '{"url":"localhost:5432","max_connections":5}',
-            '--storage-creds',  '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
+        agent_args.extend(['--wallet-storage-type', 'postgres_storage',
+            '--wallet-storage-config', '{"url":"localhost:5432","max_connections":5}',
+            '--wallet-storage-creds',  '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
             ])
 
     # what are we doing?  write out to a command file

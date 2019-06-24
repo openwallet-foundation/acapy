@@ -82,6 +82,12 @@ PARSER.add_argument(
     help="Seed to use when creating the public DID",
 )
 
+PARSER.add_argument(
+    "--storage-type",
+    type=str,
+    metavar="<storage-type>",
+    help="Specify the storage implementation to use",
+)
 
 PARSER.add_argument(
     "--wallet-key",
@@ -102,14 +108,14 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
-    "--storage-type",
+    "--wallet-storage-type",
     type=str,
     metavar="<storage-type>",
-    help="Specify the storage implementation to use",
+    help="Specify the wallet storage implementation to use",
 )
 
 PARSER.add_argument(
-    "--storage-config",
+    "--wallet-storage-config",
     type=str,
     metavar="<storage-config>",
     help="Specify the storage configuration to use (required for postgres) "
@@ -117,7 +123,7 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
-    "--storage-creds",
+    "--wallet-storage-creds",
     type=str,
     metavar="<storage-creds>",
     help="Specify the storage credentials to use (required for postgres) "
@@ -152,6 +158,12 @@ PARSER.add_argument(
     type=str,
     metavar="<debug-did-seed>",
     help="Specify the debug seed to use",
+)
+
+PARSER.add_argument(
+    "--debug-connections",
+    action="store_true",
+    help="Enable additional logging around connections",
 )
 
 PARSER.add_argument(
@@ -267,25 +279,27 @@ def main():
     if args.genesis_transactions:
         settings["ledger.genesis_transactions"] = args.genesis_transactions
 
+    if args.storage_type:
+        settings["storage.type"] = args.storage_type
+
     if args.seed:
         settings["wallet.seed"] = args.seed
     if args.wallet_key:
         settings["wallet.key"] = args.wallet_key
     if args.wallet_name:
         settings["wallet.name"] = args.wallet_name
+    if args.wallet_storage_type:
+        settings["wallet.storage_type"] = args.wallet_storage_type
     if args.wallet_type:
         settings["wallet.type"] = args.wallet_type
-    if args.storage_type:
-        settings["storage.type"] = args.storage_type
         # load postgres plug-in here
         # TODO where should this live?
-        if args.storage_type == "postgres_storage":
+        if args.wallet_storage_type == "postgres_storage":
             load_postgres_plugin()
-
-    if args.storage_config:
-        settings["storage.config"] = args.storage_config
-    if args.storage_creds:
-        settings["storage.creds"] = args.storage_creds
+    if args.wallet_storage_config:
+        settings["wallet.storage_config"] = args.wallet_storage_config
+    if args.wallet_storage_creds:
+        settings["wallet.storage_creds"] = args.wallet_storage_creds
 
     if args.admin:
         settings["admin.enabled"] = True
@@ -298,6 +312,8 @@ def main():
 
     if args.debug:
         settings["debug.enabled"] = True
+    if args.debug_connections:
+        settings["debug.connections"] = True
     if args.debug_seed:
         settings["debug.seed"] = args.debug_seed
     if args.invite:

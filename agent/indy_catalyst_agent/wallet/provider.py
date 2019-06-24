@@ -29,13 +29,13 @@ class WalletProvider(BaseProvider):
             wallet_cfg["key"] = settings["wallet.key"]
         if "wallet.name" in settings:
             wallet_cfg["name"] = settings["wallet.name"]
-        if "storage.type" in settings:
-            wallet_cfg["storage_type"] = settings["storage.type"]
+        if "wallet.storage_type" in settings:
+            wallet_cfg["storage_type"] = settings["wallet.storage_type"]
         # storage.config and storage.creds are required if using postgres plugin
-        if "storage.config" in settings:
-            wallet_cfg["storage_config"] = settings["storage.config"]
-        if "storage.creds" in settings:
-            wallet_cfg["storage_creds"] = settings["storage.creds"]
+        if "wallet.storage_config" in settings:
+            wallet_cfg["storage_config"] = settings["wallet.storage_config"]
+        if "wallet.storage_creds" in settings:
+            wallet_cfg["storage_creds"] = settings["wallet.storage_creds"]
         wallet = ClassLoader.load_class(wallet_class)(wallet_cfg)
         await wallet.open()
         return wallet

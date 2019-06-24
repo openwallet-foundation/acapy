@@ -1,15 +1,20 @@
 """Indy ledger implementation."""
 
+import asyncio
 import json
 import logging
+import re
 import tempfile
 from os import path
-import re
+from typing import Sequence
 
 import indy.anoncreds
 import indy.ledger
 import indy.pool
 from indy.error import IndyError, ErrorCode
+
+from ..cache.base import BaseCache
+from ..wallet.base import BaseWallet
 
 from .base import BaseLedger
 from .error import ClosedPoolError, LedgerTransactionError, DuplicateSchemaError
@@ -23,18 +28,36 @@ GENESIS_TRANSACTION_PATH = path.join(
 class IndyLedger(BaseLedger):
     """Indy ledger class."""
 
-    def __init__(self, name, wallet, genesis_transactions):
+    def __init__(
+        self,
+        name: str,
+        wallet: BaseWallet,
+        genesis_transactions,
+        *,
+        keepalive: int = 0,
+        cache: BaseCache = None,
+        cache_duration: int = 600,
+    ):
         """
         Initialize an IndyLedger instance.
 
         Args:
             wallet: IndyWallet instance
             genesis_transactions: String of genesis transactions
+            keepalive: How many seconds to keep the ledger open
 
         """
         self.logger = logging.getLogger(__name__)
 
+        self.created = False
+        self.opened = False
+        self.ref_count = 0
+        self.ref_lock = asyncio.Lock()
+        self.keepalive = keepalive
+        self.close_task: asyncio.Future = None
         self.name = name
+        self.cache = cache
+        self.cache_duration = cache_duration
         self.wallet = wallet
         self.pool_handle = None
 
@@ -45,14 +68,8 @@ class IndyLedger(BaseLedger):
         with open(GENESIS_TRANSACTION_PATH, "w") as genesis_file:
             genesis_file.write(genesis_transactions)
 
-    async def __aenter__(self) -> "IndyLedger":
-        """
-        Context manager entry.
-
-        Returns:
-            The current instance
-
-        """
+    async def create(self):
+        """Create the pool ledger, if necessary."""
         pool_config = json.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
 
         # We only support proto ver 2
@@ -66,15 +83,67 @@ class IndyLedger(BaseLedger):
                 self.logger.debug("Pool ledger already created.")
             else:
                 raise
+        self.created = True
+
+    async def open(self):
+        """Open the pool ledger, creating it if necessary."""
+        if not self.created:
+            await self.create()
 
         # TODO: allow ledger config in init?
         self.pool_handle = await indy.pool.open_pool_ledger(self.name, "{}")
+        self.opened = True
+
+    async def close(self):
+        """Close the pool ledger."""
+        if self.opened:
+            await indy.pool.close_pool_ledger(self.pool_handle)
+            self.pool_handle = None
+            self.opened = False
+
+    async def _context_open(self):
+        """Open the wallet if necessary and increase the number of active references."""
+        async with self.ref_lock:
+            if self.close_task:
+                self.close_task.cancel()
+            if not self.opened:
+                self.logger.debug("Opening the pool ledger")
+                await self.open()
+            self.ref_count += 1
+
+    async def _context_close(self):
+        """Release the wallet reference and schedule closing of the pool ledger."""
+
+        async def closer(timeout: int):
+            """Close the pool ledger after a timeout."""
+            await asyncio.sleep(timeout)
+            async with self.ref_lock:
+                if not self.ref_count:
+                    self.logger.debug("Closing pool ledger after timeout")
+                    await self.close()
+
+        async with self.ref_lock:
+            self.ref_count -= 1
+            if not self.ref_count:
+                if self.keepalive:
+                    self.close_task = asyncio.ensure_future(closer(self.keepalive))
+                else:
+                    await self.close()
+
+    async def __aenter__(self) -> "IndyLedger":
+        """
+        Context manager entry.
+
+        Returns:
+            The current instance
+
+        """
+        await self._context_open()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         """Context manager exit."""
-        await indy.pool.close_pool_ledger(self.pool_handle)
-        self.pool_handle = None
+        await self._context_close()
 
     async def _submit(self, request_json: str, sign=True) -> str:
         """
@@ -127,7 +196,9 @@ class IndyLedger(BaseLedger):
                 f"Unexpected operation code from ledger: {operation}"
             )
 
-    async def send_schema(self, schema_name, schema_version, attribute_names: list):
+    async def send_schema(
+        self, schema_name: str, schema_version: str, attribute_names: Sequence[str]
+    ):
         """
         Send schema to ledger.
 
@@ -158,7 +229,21 @@ class IndyLedger(BaseLedger):
 
         return schema_id
 
-    async def get_schema(self, schema_id):
+    async def get_schema(self, schema_id: str):
+        """
+        Get a schema from the cache if available, otherwise fetch from the ledger.
+
+        Args:
+            schema_id: The schema id to retrieve
+
+        """
+        if self.cache:
+            result = await self.cache.get(f"schema::{schema_id}")
+            if result:
+                return result
+        return await self.fetch_schema(schema_id)
+
+    async def fetch_schema(self, schema_id: str):
         """
         Get schema from ledger.
 
@@ -179,9 +264,14 @@ class IndyLedger(BaseLedger):
         )
         parsed_response = json.loads(parsed_schema_json)
 
+        if parsed_response and self.cache:
+            await self.cache.set(
+                f"schema::{schema_id}", parsed_response, self.cache_duration
+            )
+
         return parsed_response
 
-    async def send_credential_definition(self, schema_id, tag="default"):
+    async def send_credential_definition(self, schema_id: str, tag: str = "default"):
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -233,12 +323,28 @@ class IndyLedger(BaseLedger):
 
         return credential_definition_id
 
-    async def get_credential_definition(self, credential_definition_id):
+    async def get_credential_definition(self, credential_definition_id: str):
+        """
+        Get a credential definition from the cache if available, otherwise the ledger.
+
+        Args:
+            credential_definition_id: The schema id of the schema to fetch cred def for
+
+        """
+        if self.cache:
+            result = await self.cache.get(
+                f"credential_definition::{credential_definition_id}"
+            )
+            if result:
+                return result
+        return await self.fetch_credential_definition(credential_definition_id)
+
+    async def fetch_credential_definition(self, credential_definition_id: str):
         """
         Get a credential definition from the ledger by id.
 
         Args:
-            credential_definition_id: The schema id of the schema to create cred def for
+            credential_definition_id: The schema id of the schema to fetch cred def for
 
         """
 
@@ -255,5 +361,12 @@ class IndyLedger(BaseLedger):
             parsed_credential_definition_json,
         ) = await indy.ledger.parse_get_cred_def_response(response_json)
         parsed_response = json.loads(parsed_credential_definition_json)
+
+        if parsed_response and self.cache:
+            await self.cache.set(
+                f"credential_definition::{credential_definition_id}",
+                parsed_response,
+                self.cache_duration,
+            )
 
         return parsed_response

@@ -12,9 +12,10 @@ import aiohttp_cors
 
 from marshmallow import fields, Schema
 
+from ..config.injection_context import InjectionContext
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.responder import BaseResponder
-from ..messaging.request_context import RequestContext
+from ..stats import Collector
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -62,7 +63,7 @@ class AdminServer(BaseAdminServer):
         self,
         host: str,
         port: int,
-        context: RequestContext,
+        context: InjectionContext,
         outbound_message_router: Coroutine,
     ):
         """
@@ -91,7 +92,21 @@ class AdminServer(BaseAdminServer):
             AdminSetupError: If there was an error starting the webserver
 
         """
-        self.app = web.Application(debug=True)
+
+        middlewares = []
+        stats: Collector = await self.context.inject(Collector, required=False)
+        if stats:
+
+            @web.middleware
+            async def collect_stats(request, handler):
+                handler = stats.wrap_coro(
+                    handler, [handler.__qualname__, "any-admin-request"]
+                )
+                return await handler(request)
+
+            middlewares.append(collect_stats)
+
+        self.app = web.Application(debug=True, middlewares=middlewares)
         self.app["request_context"] = self.context
         self.app["outbound_message_router"] = self.responder.send
 
@@ -100,6 +115,7 @@ class AdminServer(BaseAdminServer):
                 web.get("/", self.redirect_handler),
                 web.get("/modules", self.modules_handler),
                 web.get("/status", self.status_handler),
+                web.post("/status/reset", self.status_reset_handler),
                 web.get("/ws", self.websocket_handler),
             ]
         )
@@ -174,7 +190,29 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
-        return web.json_response({})
+        status = {}
+        collector: Collector = await self.context.inject(Collector, required=False)
+        if collector:
+            status["timing"] = collector.results
+        return web.json_response(status)
+
+    @docs(tags=["server"], summary="Reset statistics")
+    @response_schema(AdminStatusSchema(), 200)
+    async def status_reset_handler(self, request: web.BaseRequest):
+        """
+        Request handler for resetting the timing statistics.
+
+        Args:
+            request: aiohttp request object
+
+        Returns:
+            The web response
+
+        """
+        collector: Collector = await self.context.inject(Collector, required=False)
+        if collector:
+            collector.reset()
+        return web.HTTPOk()
 
     async def redirect_handler(self, request: web.BaseRequest):
         """Perform redirect to documentation."""

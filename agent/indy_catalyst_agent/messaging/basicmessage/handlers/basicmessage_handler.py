@@ -1,6 +1,8 @@
 """Basic message handler."""
 
 from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ...util import send_webhook
+
 from ..messages.basicmessage import BasicMessage
 
 
@@ -20,7 +22,8 @@ class BasicMessageHandler(BaseHandler):
 
         self._logger.info("Received basic message: %s", context.message.content)
 
-        meta = {"content": context.message.content}
+        body = context.message.content
+        meta = {"content": body}
 
         # For Workshop: mark invitations as copyable
         if context.message.content and context.message.content.startswith("http"):
@@ -30,7 +33,12 @@ class BasicMessageHandler(BaseHandler):
             context, "message", context.connection_record.DIRECTION_RECEIVED, meta
         )
 
-        body = context.message.content
+        send_webhook(
+            context,
+            "basicmessages",
+            {"message_id": context.message._id, "content": body, "state": "received"},
+        )
+
         reply = None
         if context.settings.get("debug.auto_respond_messages"):
             if (

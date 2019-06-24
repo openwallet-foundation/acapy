@@ -1,17 +1,16 @@
 """Classes to manage presentations."""
 
-import asyncio
 import json
 import logging
 from uuid import uuid4
 
 
+from ...config.injection_context import InjectionContext
 from ...error import BaseError
 from ...holder.base import BaseHolder
 from ...ledger.base import BaseLedger
 from ...verifier.base import BaseVerifier
 
-from ..request_context import RequestContext
 from ..util import send_webhook
 
 from .models.presentation_exchange import PresentationExchange
@@ -26,7 +25,7 @@ class PresentationManagerError(BaseError):
 class PresentationManager:
     """Class for managing presentations."""
 
-    def __init__(self, context: RequestContext):
+    def __init__(self, context: InjectionContext):
         """
         Initialize a PresentationManager.
 
@@ -37,12 +36,12 @@ class PresentationManager:
         self._logger = logging.getLogger(__name__)
 
     @property
-    def context(self) -> RequestContext:
+    def context(self) -> InjectionContext:
         """
         Accessor for the current request context.
 
         Returns:
-            The request context for this connection
+            The injection context for this presentation manager
 
         """
         return self._context
@@ -87,9 +86,7 @@ class PresentationManager:
             thread_id=presentation_request_message._thread_id,
         )
         await presentation_exchange.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("presentations", presentation_exchange.serialize())
-        )
+        await self.updated_record(presentation_exchange)
 
         return presentation_exchange, presentation_request_message
 
@@ -111,9 +108,7 @@ class PresentationManager:
             presentation_request=json.loads(presentation_request_message.request),
         )
         await presentation_exchange.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("presentations", presentation_exchange.serialize())
-        )
+        await self.updated_record(presentation_exchange)
 
         return presentation_exchange
 
@@ -214,9 +209,7 @@ class PresentationManager:
         )
         presentation_exchange_record.presentation = presentation
         await presentation_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("presentations", presentation_exchange_record.serialize())
-        )
+        await self.updated_record(presentation_exchange_record)
 
         return presentation_exchange_record, presentation_message
 
@@ -233,9 +226,7 @@ class PresentationManager:
             PresentationExchange.STATE_PRESENTATION_RECEIVED
         )
         await presentation_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("presentations", presentation_exchange_record.serialize())
-        )
+        await self.updated_record(presentation_exchange_record)
 
         return presentation_exchange_record
 
@@ -282,8 +273,10 @@ class PresentationManager:
         presentation_exchange_record.state = PresentationExchange.STATE_VERIFIED
 
         await presentation_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("presentations", presentation_exchange_record.serialize())
-        )
+        await self.updated_record(presentation_exchange_record)
 
         return presentation_exchange_record
+
+    async def updated_record(self, presentation_exchange: PresentationExchange):
+        """Call webhook when the record is updated."""
+        send_webhook(self._context, "presentations", presentation_exchange.serialize())
