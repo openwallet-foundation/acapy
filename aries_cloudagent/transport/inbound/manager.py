@@ -41,12 +41,12 @@ class InboundTransportManager:
             imported_class(host, port, message_handler, register_socket)
         )
 
-    async def start_all(self):
+    async def start(self):
         """Start all registered transports."""
         for transport in self.transports:
             await transport.start()
 
-    async def stop_all(self):
+    async def stop(self):
         """Stop all registered transports."""
         for transport in self.transports:
             await transport.stop()

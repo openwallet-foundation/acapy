@@ -279,7 +279,7 @@ class Conductor:
                 module, host, port, self.inbound_message_router, self.register_socket
             )
 
-        await self.inbound_transport_manager.start_all()
+        await self.inbound_transport_manager.start()
 
         for outbound_transport in self.outbound_transports:
             try:
@@ -287,7 +287,7 @@ class Conductor:
             except Exception:
                 self.logger.exception("Unable to register outbound transport")
 
-        await self.outbound_transport_manager.start_all()
+        await self.outbound_transport_manager.start()
 
         # Admin API
         if self.admin_server:
@@ -346,8 +346,8 @@ class Conductor:
         tasks = []
         if self.admin_server:
             tasks.append(self.admin_server.stop())
-        tasks.append(self.inbound_transport_manager.stop_all())
-        tasks.append(self.outbound_transport_manager.stop_all())
+        tasks.append(self.inbound_transport_manager.stop())
+        tasks.append(self.outbound_transport_manager.stop())
         await asyncio.wait_for(asyncio.gather(*tasks), timeout)
 
     async def register_socket(

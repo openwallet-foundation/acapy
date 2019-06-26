@@ -1,6 +1,5 @@
 """Websockets outbound transport."""
 
-import asyncio
 import logging
 
 from aiohttp import ClientSession
@@ -8,7 +7,6 @@ from aiohttp import ClientSession
 from ...messaging.outbound_message import OutboundMessage
 
 from .base import BaseOutboundTransport
-from .queue.base import BaseOutboundMessageQueue
 
 
 class WsTransport(BaseOutboundTransport):
@@ -16,22 +14,20 @@ class WsTransport(BaseOutboundTransport):
 
     schemes = ("ws", "wss")
 
-    def __init__(self, queue: BaseOutboundMessageQueue) -> None:
+    def __init__(self) -> None:
         """Initialize an `WsTransport` instance."""
-        super(WsTransport, self).__init__(queue)
+        super(WsTransport, self).__init__()
         self.logger = logging.getLogger(__name__)
 
-    async def __aenter__(self):
-        """Async context manager enter."""
+    async def start(self):
+        """Start the outbound transport."""
         self.client_session = ClientSession()
         return self
 
-    async def __aexit__(self, err_type, err_value, err_tb):
-        """Async context manager exit."""
+    async def stop(self):
+        """Stop the outbound transport."""
         await self.client_session.close()
         self.client_session = None
-        if err_type and err_type != asyncio.CancelledError:
-            self.logger.exception("Exception in outbound WebSocket transport")
 
     async def handle_message(self, message: OutboundMessage):
         """

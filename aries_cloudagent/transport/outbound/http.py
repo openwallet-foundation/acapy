@@ -1,6 +1,5 @@
 """Http outbound transport."""
 
-import asyncio
 import logging
 
 from aiohttp import ClientSession
@@ -8,7 +7,6 @@ from aiohttp import ClientSession
 from ...messaging.outbound_message import OutboundMessage
 
 from .base import BaseOutboundTransport
-from .queue.base import BaseOutboundMessageQueue
 
 
 class HttpTransport(BaseOutboundTransport):
@@ -16,22 +14,20 @@ class HttpTransport(BaseOutboundTransport):
 
     schemes = ("http", "https")
 
-    def __init__(self, queue: BaseOutboundMessageQueue) -> None:
+    def __init__(self) -> None:
         """Initialize an `HttpTransport` instance."""
-        super(HttpTransport, self).__init__(queue)
+        super(HttpTransport, self).__init__()
         self.logger = logging.getLogger(__name__)
 
-    async def __aenter__(self):
-        """Async context manager enter."""
+    async def start(self):
+        """Start the transport."""
         self.client_session = ClientSession()
         return self
 
-    async def __aexit__(self, err_type, err_value, err_tb):
-        """Async context manager exit."""
+    async def stop(self):
+        """Stop the transport."""
         await self.client_session.close()
         self.client_session = None
-        if err_type and err_type != asyncio.CancelledError:
-            self.logger.exception("Exception in outbound HTTP transport")
 
     async def handle_message(self, message: OutboundMessage):
         """

@@ -7,7 +7,6 @@ from aiohttp import web, WSMsgType
 from ....messaging.outbound_message import OutboundMessage
 
 from ..ws import WsTransport
-from ..queue.basic import BasicOutboundMessageQueue
 
 
 class TestWsTransport(AioHTTPTestCase):
@@ -39,20 +38,11 @@ class TestWsTransport(AioHTTPTestCase):
     async def test_handle_message(self):
         server_addr = f"ws://localhost:{self.server.port}"
 
-        async def start_transport(transport):
+        async def send_message(transport, message):
             async with transport:
-                await transport.start()
+                await transport.handle_message(message)
 
-        async def do_send_message(transport, message):
-            await transport.enqueue(message)
-            await transport.stop()
-
-        transport = WsTransport(BasicOutboundMessageQueue())
+        transport = WsTransport()
         message = OutboundMessage("{}", endpoint=server_addr)
-        await asyncio.wait_for(
-            asyncio.gather(
-                start_transport(transport), do_send_message(transport, message)
-            ),
-            5.0,
-        )
+        await asyncio.wait_for(send_message(transport, message), 5.0)
         assert self.message_results == [{}]
