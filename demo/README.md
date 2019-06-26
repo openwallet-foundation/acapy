@@ -36,7 +36,7 @@ ports 8020 through 8024.
 
 To create the alice/faber wallets using postgres storage, just add the "--postgres" option when running the script.
 
-These scripts run the agent as a sub-process (see the documentation for icatagent) and also publish a rest service to 
+These scripts run the agent as a sub-process (see the documentation for acagent) and also publish a rest service to 
 receive web hook callbacks from their agent
 
 Refer to the section [follow the script](#follow-the-script)for further instructions.

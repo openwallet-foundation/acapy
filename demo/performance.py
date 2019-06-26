@@ -22,12 +22,12 @@ TIMING = True
 
 internal_host = "127.0.0.1"
 external_host = "localhost"
-scripts_dir = "../scripts/"
+bin_dir = "../bin/"
 
 if RUN_MODE == "docker":
     internal_host = "host.docker.internal"
     external_host = "host.docker.internal"
-    scripts_dir = "scripts/"
+    bin_dir = "bin/"
 
 
 async def log_async(msg: str):
@@ -190,10 +190,10 @@ async def test():
         await faber.register_did()
 
         start_time = default_timer()
-        await alice.start_process(scripts_dir=scripts_dir)
+        await alice.start_process(bin_dir=bin_dir)
         alice.log("Started up")
 
-        await faber.start_process(scripts_dir=scripts_dir)
+        await faber.start_process(bin_dir=bin_dir)
         faber.log("Started up")
 
         init_done_time = default_timer()
