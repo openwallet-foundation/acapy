@@ -1,7 +1,6 @@
 """Admin server classes."""
 
 import asyncio
-from concurrent.futures import CancelledError
 import logging
 from typing import Coroutine, Sequence, Set, Type
 import uuid
@@ -303,37 +302,40 @@ class AdminServer(BaseAdminServer):
         await ws.prepare(request)
         socket_id = str(uuid.uuid4())
         queue = self.queue_class()
-        self.websocket_queues[socket_id] = queue
-        await queue.enqueue(
-            {
-                "topic": "settings",
-                "payload": {
-                    "label": self.context.settings.get("default_label"),
-                    "endpoint": self.context.settings.get("default_endpoint"),
-                    "no_receive_invites": self.context.settings.get(
-                        "admin.no_receive_invites", False
-                    ),
-                    "help_link": self.context.settings.get("admin.help_link"),
-                },
-            }
-        )
 
-        closed = False
-        while not closed:
-            try:
-                msg = await queue.dequeue(5.0)
-            except asyncio.TimeoutError:
-                # we send fake pings because the JS client
-                # can't detect real ones
-                msg = {"topic": "ping"}
-            except CancelledError:
-                closed = True
-            if ws.closed:
-                closed = True
-            if msg and not closed:
-                await ws.send_json(msg)
+        try:
+            self.websocket_queues[socket_id] = queue
+            await queue.enqueue(
+                {
+                    "topic": "settings",
+                    "payload": {
+                        "label": self.context.settings.get("default_label"),
+                        "endpoint": self.context.settings.get("default_endpoint"),
+                        "no_receive_invites": self.context.settings.get(
+                            "admin.no_receive_invites", False
+                        ),
+                        "help_link": self.context.settings.get("admin.help_link"),
+                    },
+                }
+            )
 
-        del self.websocket_queues[socket_id]
+            closed = False
+            while not closed:
+                try:
+                    msg = await queue.dequeue(timeout=5.0)
+                    if msg is None:
+                        # we send fake pings because the JS client
+                        # can't detect real ones
+                        msg = {"topic": "ping"}
+                    if ws.closed:
+                        closed = True
+                    if msg and not closed:
+                        await ws.send_json(msg)
+                except asyncio.CancelledError:
+                    closed = True
+
+        finally:
+            del self.websocket_queues[socket_id]
 
         return ws
 
@@ -363,7 +365,7 @@ class AdminServer(BaseAdminServer):
         self.webhook_processor = TaskProcessor(max_pending=5)
         async for topic, payload in self.webhook_queue:
             for queue in self.websocket_queues.values():
-                await queue.put({"topic": topic, "payload": payload})
+                await queue.enqueue({"topic": topic, "payload": payload})
             if self.webhook_targets:
                 targets = self.webhook_targets.copy()
                 for idx, target in targets.items():

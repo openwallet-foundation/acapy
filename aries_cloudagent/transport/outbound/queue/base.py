@@ -1,6 +1,7 @@
 """Abstract outbound queue."""
 
 from abc import ABC, abstractmethod
+import asyncio
 
 
 class BaseOutboundMessageQueue(ABC):
@@ -12,12 +13,26 @@ class BaseOutboundMessageQueue(ABC):
         Enqueue a message.
 
         Args:
-            message: The message to send
+            message: The message to add to the end of the queue
+
+        Raises:
+            asyncio.CancelledError if the queue has been stopped
+
         """
 
     @abstractmethod
-    async def dequeue(self, timeout: int = None):
-        """Get a message off the queue."""
+    async def dequeue(self, *, timeout: int = None):
+        """
+        Dequeue a message.
+
+        Returns:
+            The dequeued message, or None if a timeout occurs
+
+        Raises:
+            asyncio.CancelledError if the queue has been stopped
+            asyncio.TimeoutError if the timeout is reached
+
+        """
 
     @abstractmethod
     async def join(self):
@@ -35,10 +50,14 @@ class BaseOutboundMessageQueue(ABC):
     def reset(self):
         """Empty the queue and reset the stop event."""
 
-    @abstractmethod
     def __aiter__(self):
         """Async iterator magic method."""
+        return self
 
-    @abstractmethod
     async def __anext__(self):
         """Async iterator magic method."""
+        try:
+            message = await self.dequeue()
+        except asyncio.CancelledError:
+            raise StopAsyncIteration
+        return message

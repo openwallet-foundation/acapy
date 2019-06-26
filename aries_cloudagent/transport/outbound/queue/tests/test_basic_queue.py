@@ -18,12 +18,14 @@ class TestBasicQueue(AsyncTestCase):
     async def test_enqueue_dequeue(self):
         queue = BasicOutboundMessageQueue()
 
-        assert await queue.dequeue(timeout=0) is None
+        with self.assertRaises(asyncio.TimeoutError):
+            await queue.dequeue(timeout=0)
 
         test_value = "test value"
         await queue.enqueue(test_value)
         assert await queue.dequeue(timeout=0) == test_value
-        assert await queue.dequeue(timeout=0) is None
+        with self.assertRaises(asyncio.TimeoutError):
+            await queue.dequeue(timeout=0)
 
     async def test_async_iter(self):
         queue = BasicOutboundMessageQueue()
@@ -38,15 +40,16 @@ class TestBasicQueue(AsyncTestCase):
         queue = BasicOutboundMessageQueue()
         queue.stop()
 
-        results = asyncio.wait_for(collect(queue), timeout=1.0)
-        if await results:
-            self.fail("queue should be empty")
+        with self.assertRaises(asyncio.CancelledError):
+            await queue.dequeue(timeout=0)
 
         test_value = "test value"
-        await queue.enqueue(test_value)
+        with self.assertRaises(asyncio.CancelledError):
+            await queue.enqueue(test_value)
         results = asyncio.wait_for(collect(queue), timeout=1.0)
-        if await results:
-            self.fail("queue should be empty")
+        assert await results == []
+        with self.assertRaises(asyncio.CancelledError):
+            await queue.dequeue(timeout=0)
 
         queue.reset()
         results = asyncio.wait_for(collect(queue), timeout=1.0)

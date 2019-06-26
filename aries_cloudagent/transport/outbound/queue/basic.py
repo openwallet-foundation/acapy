@@ -24,21 +24,27 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
         Enqueue a message.
 
         Args:
-            message: The message to send
+            message: The message to add to the end of the queue
+
+        Raises:
+            asyncio.CancelledError if the queue has been stopped
 
         """
         if self.stop_event.is_set():
-            self.logger.debug(f"Queue is stopped, message ignored: {message}")
-            return
+            raise asyncio.CancelledError
         self.logger.debug(f"Enqueuing message: {message}")
         await self.queue.put(message)
 
-    async def dequeue(self, timeout: int = None):
+    async def dequeue(self, *, timeout: int = None):
         """
         Dequeue a message.
 
         Returns:
-            The dequeued message
+            The dequeued message, or None if a timeout occurs
+
+        Raises:
+            asyncio.CancelledError if the queue has been stopped
+            asyncio.TimeoutError if the timeout is reached
 
         """
         if not self.stop_event.is_set():
@@ -52,10 +58,18 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
             for task in pending:
                 if not task.done():
                     task.cancel()
-            if dequeued.done() and not dequeued.exception():
+            if dequeued.done():
+                if dequeued.exception():
+                    raise dequeued.exception()
                 message = dequeued.result()
                 self.logger.debug(f"Dequeuing message: {message}")
                 return message
+            elif not stopped.done():
+                raise asyncio.TimeoutError
+
+        if self.stop_event.is_set():
+            raise asyncio.CancelledError
+
         return None
 
     async def join(self):
@@ -75,14 +89,3 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
         self.stop()
         self.queue = self.make_queue()
         self.stop_event.clear()
-
-    def __aiter__(self):
-        """Async iterator magic method."""
-        return self
-
-    async def __anext__(self):
-        """Async iterator magic method."""
-        message = await self.dequeue()
-        if message is None:
-            raise StopAsyncIteration
-        return message
