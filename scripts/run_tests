@@ -4,9 +4,16 @@ cd $(dirname $0)
 
 docker build -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
 
+if [ -f ../.coverage ]; then rm ../.coverage; fi
+if [ ! -d ../.coverage ]; then mkdir ../.coverage; fi
+
 # on Windows, docker run needs to be prefixed by winpty
 if [[ "$OSTYPE" == "msys" ]]; then
-  winpty docker run --rm -ti --name aries-cloudagent-runner aries-cloudagent-test "$@"
+  DOCKER="winpty docker"
 else
-  docker run --rm -ti --name aries-cloudagent-runner aries-cloudagent-test "$@"
+  DOCKER="docker"
 fi
+
+$DOCKER run --rm -ti --name aries-cloudagent-runner \
+	-v "$(pwd)/../.coverage:/usr/src/app/.coverage" \
+	aries-cloudagent-test "$@"
