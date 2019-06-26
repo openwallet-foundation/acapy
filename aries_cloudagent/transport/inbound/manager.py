@@ -2,7 +2,11 @@
 
 import logging
 
-from .base import BaseInboundTransport, InboundTransportRegistrationError
+from .base import (
+    BaseInboundTransport,
+    InboundTransportConfiguration,
+    InboundTransportRegistrationError,
+)
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 
 MODULE_BASE_PATH = "aries_cloudagent.transport.inbound"
@@ -15,10 +19,11 @@ class InboundTransportManager:
         """Initialize an `InboundTransportManager` instance."""
         self.logger = logging.getLogger(__name__)
         self.class_loader = ClassLoader(MODULE_BASE_PATH, BaseInboundTransport)
-
         self.transports = []
 
-    def register(self, module_path, host, port, message_handler, register_socket):
+    def register(
+        self, config: InboundTransportConfiguration, message_handler, register_socket
+    ):
         """
         Register transport module.
 
@@ -31,15 +36,26 @@ class InboundTransportManager:
 
         """
         try:
-            imported_class = self.class_loader.load(module_path, True)
+            imported_class = self.class_loader.load(config.module, True)
         except (ModuleLoadError, ClassNotFoundError):
             raise InboundTransportRegistrationError(
-                f"Failed to load module {module_path}"
+                f"Failed to load module {config.module}"
             )
 
-        self.transports.append(
-            imported_class(host, port, message_handler, register_socket)
+        instance = imported_class(
+            config.host, config.port, message_handler, register_socket
         )
+        self.register_instance(instance)
+
+    def register_instance(self, transport: BaseInboundTransport):
+        """
+        Register a new inbound transport instance.
+
+        Args:
+            transport: Inbound transport instance to register
+
+        """
+        self.transports.append(transport)
 
     async def start(self):
         """Start all registered transports."""

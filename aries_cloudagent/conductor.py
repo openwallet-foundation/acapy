@@ -271,12 +271,10 @@ class Conductor:
 
         # Register all inbound transports
         for inbound_transport_config in self.inbound_transport_configs:
-            module = inbound_transport_config.module
-            host = inbound_transport_config.host
-            port = inbound_transport_config.port
-
             self.inbound_transport_manager.register(
-                module, host, port, self.inbound_message_router, self.register_socket
+                inbound_transport_config,
+                self.inbound_message_router,
+                self.register_socket,
             )
 
         await self.inbound_transport_manager.start()

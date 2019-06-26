@@ -42,9 +42,7 @@ class TestConductor(AsyncTestCase, TestConfig):
         await conductor.start()
 
         mock_inbound_mgr.register.assert_called_once_with(
-            self.good_inbound_transports[0].module,
-            self.good_inbound_transports[0].host,
-            self.good_inbound_transports[0].port,
+            self.good_inbound_transports[0],
             conductor.inbound_message_router,
             conductor.register_socket,
         )

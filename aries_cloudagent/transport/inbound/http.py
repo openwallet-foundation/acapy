@@ -10,7 +10,7 @@ from .base import BaseInboundTransport, InboundTransportSetupError
 from ...wallet.util import b64_to_bytes
 
 
-class Transport(BaseInboundTransport):
+class HttpTransport(BaseInboundTransport):
     """Http Transport class."""
 
     def __init__(

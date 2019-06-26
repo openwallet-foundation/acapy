@@ -10,7 +10,7 @@ from ...messaging.socket import SocketRef
 from .base import BaseInboundTransport, InboundTransportSetupError
 
 
-class Transport(BaseInboundTransport):
+class WsTransport(BaseInboundTransport):
     """Websockets Transport class."""
 
     def __init__(
@@ -113,6 +113,9 @@ class Transport(BaseInboundTransport):
                 self.logger.error(
                     f"Websocket connection closed with exception {ws.exception()}"
                 )
+
+            else:
+                self.logger.warning(f"Unexpected websocket message type {msg.type}")
 
         self.logger.info("Websocket connection closed")
 
