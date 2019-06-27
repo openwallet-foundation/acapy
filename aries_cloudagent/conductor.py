@@ -18,11 +18,11 @@ from .admin.server import AdminServer
 from .cache.base import BaseCache
 from .cache.basic import BasicCache
 from .config.injection_context import InjectionContext
+from .config.logging import LoggingConfigurator
 from .classloader import ClassLoader
 from .config.provider import CachedProvider, ClassProvider, StatsProvider
 from .dispatcher import Dispatcher
 from .error import StartupError
-from .logging import LoggingConfigurator
 from .ledger.base import BaseLedger
 from .ledger.provider import LedgerProvider
 from .issuer.base import BaseIssuer
@@ -277,17 +277,18 @@ class Conductor:
                 self.register_socket,
             )
 
-        await self.inbound_transport_manager.start()
-
+        # Register all outbound transports
         for outbound_transport in self.outbound_transports:
             try:
                 self.outbound_transport_manager.register(outbound_transport)
             except Exception:
                 self.logger.exception("Unable to register outbound transport")
 
+        # Start up transports
+        await self.inbound_transport_manager.start()
         await self.outbound_transport_manager.start()
 
-        # Admin API
+        # Start up Admin server
         if self.admin_server:
             try:
                 webhook_urls = context.settings.get("admin.webhook_urls")

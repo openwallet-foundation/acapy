@@ -227,8 +227,9 @@ class AdminServer(BaseAdminServer):
         """Stop the webserver."""
         for queue in self.websocket_queues.values():
             queue.stop()
-        await self.site.stop()
-        self.site = None
+        if self.site:
+            await self.site.stop()
+            self.site = None
         if self.webhook_queue:
             self.webhook_queue.stop()
             self.webhook_queue = None
