@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/bcgov/aries-cloudagent-python.svg?style=shield)](https://circleci.com/gh/bcgov/aries-cloudagent-python)
 [![codecov](https://codecov.io/gh/bcgov/aries-cloudagent-python/branch/master/graph/badge.svg)](https://codecov.io/gh/bcgov/aries-cloudagent-python)
-[![Known Vulnerabilities](https://snyk.io/test/github/bcgov/aries-cloudagent-python/badge.svg?targetFile=agent%2Frequirements.txt)](https://snyk.io/test/github/bcgov/aries-cloudagent-python?targetFile=agent%2Frequirements.txt)
+[![Known Vulnerabilities](https://snyk.io/test/github/bcgov/aries-cloudagent-python/badge.svg?targetFile=agent%2Frequirements.txt)](https://snyk.io/test/github/bcgov/aries-cloudagent-python?targetFile=requirements.txt)
 
 ![logo](/docs/assets/aries-cloudagent-python-logo-bw.png)
 
