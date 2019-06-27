@@ -104,7 +104,9 @@ class OutboundTransportManager:
         # Grab the scheme from the uri
         scheme = urlparse(message.endpoint).scheme
         if scheme == "":
-            self.logger.warn(f"The uri '{message.endpoint}' does not specify a scheme")
+            self.logger.warning(
+                f"The uri '{message.endpoint}' does not specify a scheme"
+            )
             return
 
         # Look up transport that is registered to handle this scheme
@@ -115,7 +117,9 @@ class OutboundTransportManager:
                 if scheme in schemes
             )
         except StopIteration:
-            self.logger.warn(f"No transport driver exists to handle scheme '{scheme}'")
+            self.logger.warning(
+                f"No transport driver exists to handle scheme '{scheme}'"
+            )
             return
 
         await transport.queue.enqueue(message)

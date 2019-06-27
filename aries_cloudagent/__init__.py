@@ -197,6 +197,12 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--auto-respond-credential-proposal",
+    action="store_true",
+    help="Auto-respond to credential proposals with credential offer",
+)
+
+PARSER.add_argument(
     "--auto-respond-credential-offer",
     action="store_true",
     help="Auto-respond to credential offers with credential request",
@@ -359,6 +365,8 @@ def main():
     if args.send_invite:
         settings["debug.send_invitation_to"] = args.send_invite
 
+    if args.auto_respond_credential_proposal:
+        settings["auto_respond_credential_proposal"] = True
     if args.auto_respond_credential_offer:
         settings["auto_respond_credential_offer"] = True
     if args.auto_respond_presentation_request:

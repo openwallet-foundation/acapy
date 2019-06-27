@@ -2,6 +2,7 @@
 
 from .base import BaseDecoratorSet
 
+from .attach_decorator import AttachDecorator
 from .localization_decorator import LocalizationDecorator
 from .signature_decorator import SignatureDecorator
 from .thread_decorator import ThreadDecorator
@@ -14,6 +15,7 @@ DEFAULT_MODELS = {
     "thread": ThreadDecorator,
     "timing": TimingDecorator,
     "transport": TransportDecorator,
+    "attach": AttachDecorator,
 }
 
 
