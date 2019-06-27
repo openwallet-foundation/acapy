@@ -1,5 +1,5 @@
-agent
-=====
+aries-cloudagent-python
+=======================
 
 .. toctree::
    :maxdepth: 4
