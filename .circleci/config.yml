@@ -29,6 +29,7 @@ jobs:
           command: |
             mkdir test-reports
             mkdir test-reports/pytest
+            mkdir .coverage
             . venv/bin/activate
             pytest
 
