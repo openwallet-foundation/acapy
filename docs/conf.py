@@ -21,14 +21,17 @@ autodoc_mock_imports = ["von_anchor", "setup", "pysodium", "indy", "aiohttp_cors
 
 # -- Project information -----------------------------------------------------
 
-project = 'Aries Cloudagent Python'
-copyright = '2019, Nicholas Rempel, Andrew Whitehead'
-author = 'Nicholas Rempel, Andrew Whitehead'
+project = "Aries Cloud Agent - Python"
+copyright = "2019, Province of British Columbia"
+author = "Province of British Columbia"
 
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
 release = ''
+# with open(join(dirname(dirname(dirname(__file__))), 'VERSION.txt')) as fh_version:
+#    release = fh_version.read().strip()
+#    version = re.sub(r'([^\.]*\.[^\.]*).*', r'\1', release)
 
 
 # -- General configuration ---------------------------------------------------
@@ -42,6 +45,9 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.ifconfig',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
@@ -53,8 +59,8 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
+# source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -80,7 +86,7 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -101,13 +107,18 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = {
+    '**': [
+        'relations.html',  # needs 'show_related': True theme option to display
+        'searchbox.html',
+    ]
+}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'AriesCloudagentPythondoc'
+htmlhelp_basename = 'AriesCloudAgentPythondoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -134,7 +145,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'AriesCloudagentPython.tex', 'Aries Cloudagent Python Documentation',
+    (master_doc, 'AriesCloudAgentPython.tex', 'Aries Cloud Agent Python Documentation',
      'Nicholas Rempel, Andrew Whitehead', 'manual'),
 ]
 
@@ -144,7 +155,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'ariescloudagentpython', 'Aries Cloudagent Python Documentation',
+    (master_doc, 'ariescloudagentpython', 'Aries Cloud Agent Python Documentation',
      [author], 1)
 ]
 
@@ -155,8 +166,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'AriesCloudagentPython', 'Aries Cloudagent Python Documentation',
-     author, 'AriesCloudagentPython', 'One line description of project.',
+    (master_doc, 'AriesCloudAgentPython', 'Aries CloudAgent Python Documentation',
+     author, 'AriesCloudAgentPython', 
+     'A Hyperledger Aries cloud agent implemented in Python and suitable for use in (almost) any non-mobile environment.',
      'Miscellaneous'),
 ]
 
@@ -180,3 +192,6 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'https://docs.python.org/': None}
