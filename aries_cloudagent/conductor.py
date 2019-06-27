@@ -11,46 +11,29 @@ wallet.
 import asyncio
 from collections import OrderedDict
 import logging
-from typing import Coroutine, Sequence, Union
+from typing import Coroutine, Union
 
 from .admin.base_server import BaseAdminServer
 from .admin.server import AdminServer
-from .cache.base import BaseCache
-from .cache.basic import BasicCache
+from .config.default_context import ContextBuilder
 from .config.injection_context import InjectionContext
 from .config.logging import LoggingConfigurator
-from .classloader import ClassLoader
-from .config.provider import CachedProvider, ClassProvider, StatsProvider
 from .dispatcher import Dispatcher
 from .error import StartupError
-from .ledger.base import BaseLedger
-from .ledger.provider import LedgerProvider
-from .issuer.base import BaseIssuer
-from .holder.base import BaseHolder
-from .verifier.base import BaseVerifier
-from .messaging.actionmenu.base_service import BaseMenuService
-from .messaging.actionmenu.driver_service import DriverMenuService
 from .messaging.connections.manager import ConnectionManager, ConnectionManagerError
 from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError, MessagePrepareError
-from .messaging.introduction.base_service import BaseIntroductionService
-from .messaging.introduction.demo_service import DemoIntroductionService
 from .messaging.outbound_message import OutboundMessage
-from .messaging.protocol_registry import ProtocolRegistry
-from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
 from .messaging.serializer import MessageSerializer
 from .messaging.socket import SocketInfo, SocketRef
 from .stats import Collector
-from .storage.base import BaseStorage
 from .storage.error import StorageNotFoundError
-from .storage.provider import StorageProvider
 from .transport.inbound.base import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
-from .transport.outbound.queue.basic import BasicOutboundMessageQueue
+from .transport.outbound.queue.base import BaseOutboundMessageQueue
 from .wallet.base import BaseWallet
-from .wallet.provider import WalletProvider
 from .wallet.crypto import seed_to_did
 
 
@@ -62,51 +45,84 @@ class Conductor:
     of our require interfaces and routing inbound and outbound message data.
     """
 
-    def __init__(
-        self,
-        inbound_transports: Sequence[InboundTransportConfiguration],
-        outbound_transports: Sequence[str],
-        protocol_registry: ProtocolRegistry,
-        settings: dict,
-    ) -> None:
+    def __init__(self, context_builder: ContextBuilder) -> None:
         """
         Initialize an instance of Conductor.
 
         Args:
             inbound_transports: Configuration for inbound transports
             outbound_transports: Configuration for outbound transports
-            protocol_registry: Protocol registry for indexing message types
             settings: Dictionary of various settings
 
         """
         self.admin_server = None
-        self.collector: Collector = None
-        self.context: RequestContext = None
+        self.context: InjectionContext = None
+        self.context_builder = context_builder
         self.dispatcher: Dispatcher = None
         self.logger = logging.getLogger(__name__)
-        self.protocol_registry = protocol_registry
-        self.message_serializer: MessageSerializer = MessageSerializer()
-        self.inbound_transport_configs = inbound_transports
-        self.inbound_transport_manager = InboundTransportManager()
-        # TODO: Set queue driver dynamically via cli args
-        self.outbound_transport_manager = OutboundTransportManager(
-            BasicOutboundMessageQueue
-        )
-        self.outbound_transports = outbound_transports
-        self.settings = settings.copy() if settings else {}
+        self.message_serializer: MessageSerializer = None
+        self.inbound_transport_manager: InboundTransportManager = None
+        self.outbound_transport_manager: OutboundTransportManager = None
         self.sockets = OrderedDict()
-        self.init_context()
 
-    def init_context(self):
+    async def setup(self):
         """Initialize the global request context."""
 
-        context = RequestContext(settings=self.settings)
-        context.settings.set_default("default_label", "Aries Cloud Agent")
+        context = await self.context_builder.build()
 
-        if context.settings.get("timing.enabled"):
-            self.collector = Collector()
-            context.injector.bind_instance(Collector, self.collector)
-            self.collector.wrap(
+        # Populate message serializer
+        self.message_serializer = await context.inject(MessageSerializer)
+
+        # Register all inbound transports
+        self.inbound_transport_manager = InboundTransportManager()
+        inbound_transports = context.settings.get("transport.inbound_configs") or []
+        for transport in inbound_transports:
+            try:
+                module, host, port = transport
+                self.inbound_transport_manager.register(
+                    InboundTransportConfiguration(module=module, host=host, port=port),
+                    self.inbound_message_router,
+                    self.register_socket,
+                )
+            except Exception:
+                self.logger.exception("Unable to register inbound transport")
+                raise
+
+        # Register all outbound transports
+        outbound_queue = await context.inject(BaseOutboundMessageQueue)
+        self.outbound_transport_manager = OutboundTransportManager(outbound_queue)
+        outbound_transports = context.settings.get("transport.outbound_configs") or []
+        for outbound_transport in outbound_transports:
+            try:
+                self.outbound_transport_manager.register(outbound_transport)
+            except Exception:
+                self.logger.exception("Unable to register outbound transport")
+                raise
+
+        # Admin API
+        if context.settings.get("admin.enabled"):
+            try:
+                admin_host = context.settings.get("admin.host", "0.0.0.0")
+                admin_port = context.settings.get("admin.port", "80")
+                self.admin_server = AdminServer(
+                    admin_host, admin_port, context, self.outbound_message_router
+                )
+                webhook_urls = context.settings.get("admin.webhook_urls")
+                if webhook_urls:
+                    for url in webhook_urls:
+                        self.admin_server.add_webhook_target(url)
+                context.injector.bind_instance(BaseAdminServer, self.admin_server)
+            except Exception:
+                self.logger.exception("Unable to register admin server")
+                raise
+
+        self.context = context
+        self.dispatcher = Dispatcher(self.context)
+
+        collector = await context.inject(Collector, required=False)
+        if collector:
+            # add stats to our own methods
+            collector.wrap(
                 self,
                 (
                     "inbound_message_router",
@@ -114,11 +130,9 @@ class Conductor:
                     "prepare_outbound_message",
                 ),
             )
-            self.collector.wrap(
-                self.message_serializer, ("encode_message", "parse_message")
-            )
-            # at the class level (!) should not be done multiple times
-            self.collector.wrap(
+            collector.wrap(self.dispatcher, "dispatch")
+            # at the class level (!) should not be performed multiple times
+            collector.wrap(
                 ConnectionManager,
                 (
                     "get_connection_target",
@@ -128,130 +142,13 @@ class Conductor:
                 ),
             )
 
-        context.injector.bind_instance(BaseCache, BasicCache())
-        context.injector.bind_instance(ProtocolRegistry, self.protocol_registry)
-        context.injector.bind_instance(MessageSerializer, self.message_serializer)
-
-        context.injector.bind_provider(
-            BaseStorage,
-            CachedProvider(
-                StatsProvider(
-                    StorageProvider(), ("add_record", "get_record", "search_records")
-                )
-            ),
-        )
-        context.injector.bind_provider(
-            BaseWallet,
-            CachedProvider(
-                StatsProvider(
-                    WalletProvider(),
-                    (
-                        "create",
-                        "open",
-                        "sign_message",
-                        "verify_message",
-                        "encrypt_message",
-                        "decrypt_message",
-                        "pack_message",
-                        "unpack_message",
-                        "get_local_did",
-                    ),
-                )
-            ),
-        )
-
-        context.injector.bind_provider(
-            BaseLedger,
-            CachedProvider(
-                StatsProvider(
-                    LedgerProvider(),
-                    (
-                        "get_credential_definition",
-                        "get_schema",
-                        "send_credential_definition",
-                        "send_schema",
-                    ),
-                )
-            ),
-        )
-        context.injector.bind_provider(
-            BaseIssuer,
-            StatsProvider(
-                ClassProvider(
-                    "aries_cloudagent.issuer.indy.IndyIssuer",
-                    ClassProvider.Inject(BaseWallet),
-                ),
-                ("create_credential_offer", "create_credential"),
-            ),
-        )
-        context.injector.bind_provider(
-            BaseHolder,
-            StatsProvider(
-                ClassProvider(
-                    "aries_cloudagent.holder.indy.IndyHolder",
-                    ClassProvider.Inject(BaseWallet),
-                ),
-                ("get_credential", "store_credential", "create_credential_request"),
-            ),
-        )
-        context.injector.bind_provider(
-            BaseVerifier,
-            ClassProvider(
-                "aries_cloudagent.verifier.indy.IndyVerifier",
-                ClassProvider.Inject(BaseWallet),
-            ),
-        )
-
-        # Allow action menu to be provided by driver
-        context.injector.bind_instance(BaseMenuService, DriverMenuService(context))
-        context.injector.bind_instance(
-            BaseIntroductionService, DemoIntroductionService(context)
-        )
-
-        # Admin API
-        if context.settings.get("admin.enabled"):
-            try:
-                admin_host = context.settings.get("admin.host", "0.0.0.0")
-                admin_port = context.settings.get("admin.port", "80")
-                self.admin_server = AdminServer(
-                    admin_host,
-                    admin_port,
-                    context,
-                    self.outbound_message_router,
-                    BasicOutboundMessageQueue,
-                )
-                context.injector.bind_instance(BaseAdminServer, self.admin_server)
-            except Exception:
-                self.logger.exception("Unable to initialize administration API")
-
-        # Dynamically register externally loaded protocol message types
-        for protocol_module_path in self.settings.get("external_protocols", []):
-            try:
-                external_module = ClassLoader.load_module(
-                    f"{protocol_module_path}.message_types"
-                )
-                self.protocol_registry.register_message_types(
-                    external_module.MESSAGE_TYPES
-                )
-            except Exception as e:
-                self.logger.error(
-                    f"Failed to load external protocol module '{protocol_module_path}'."
-                    + "\n"
-                    + str(e)
-                )
-
-        self.context = context
-        self.dispatcher = Dispatcher(self.context)
-        if self.collector:
-            self.collector.wrap(self.dispatcher, "dispatch")
-
     async def start(self) -> None:
         """Start the agent."""
 
         context = self.context
 
+        # Initialize wallet
         wallet: BaseWallet = await context.inject(BaseWallet)
-
         wallet_seed = context.settings.get("wallet.seed")
         public_did_info = await wallet.get_public_did()
         public_did = None
@@ -260,7 +157,7 @@ class Conductor:
             # If we already have a registered public did and it doesn't match
             # the one derived from `wallet_seed` then we error out.
             # TODO: Add a command to change public did explicitly
-            if seed_to_did(wallet_seed) != public_did_info.did:
+            if wallet_seed and seed_to_did(wallet_seed) != public_did_info.did:
                 raise StartupError(
                     "New seed provided which doesn't match the registered"
                     + f" public did {public_did_info.did}"
@@ -269,32 +166,21 @@ class Conductor:
             public_did_info = await wallet.create_public_did(seed=wallet_seed)
             public_did = public_did_info.did
 
-        # Register all inbound transports
-        for inbound_transport_config in self.inbound_transport_configs:
-            self.inbound_transport_manager.register(
-                inbound_transport_config,
-                self.inbound_message_router,
-                self.register_socket,
-            )
-
-        # Register all outbound transports
-        for outbound_transport in self.outbound_transports:
-            try:
-                self.outbound_transport_manager.register(outbound_transport)
-            except Exception:
-                self.logger.exception("Unable to register outbound transport")
-
         # Start up transports
-        await self.inbound_transport_manager.start()
-        await self.outbound_transport_manager.start()
+        try:
+            await self.inbound_transport_manager.start()
+        except Exception:
+            self.logger.exception("Unable to start inbound transports")
+            raise
+        try:
+            await self.outbound_transport_manager.start()
+        except Exception:
+            self.logger.exception("Unable to start outbound transports")
+            raise
 
         # Start up Admin server
         if self.admin_server:
             try:
-                webhook_urls = context.settings.get("admin.webhook_urls")
-                if webhook_urls:
-                    for url in webhook_urls:
-                        self.admin_server.add_webhook_target(url)
                 await self.admin_server.start()
             except Exception:
                 self.logger.exception("Unable to start administration API")
@@ -305,7 +191,7 @@ class Conductor:
 
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
-            self.inbound_transport_manager.transports,
+            self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
             public_did,
             self.admin_server,

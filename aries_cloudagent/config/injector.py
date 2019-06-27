@@ -12,6 +12,7 @@ class Injector(BaseInjector):
 
     def __init__(self, settings: Mapping[str, object] = None):
         """Initialize an `Injector`."""
+        self.enforce_typing = True
         self._providers = {}
         self._settings = Settings(settings)
 
@@ -79,7 +80,7 @@ class Injector(BaseInjector):
                 raise InjectorError(
                     "No instance provided for class: {}".format(base_cls.__name__)
                 )
-        elif not isinstance(result, base_cls):
+        elif not isinstance(result, base_cls) and self.enforce_typing:
             raise InjectorError(
                 "Provided instance does not implement the base class: {}".format(
                     base_cls.__name__

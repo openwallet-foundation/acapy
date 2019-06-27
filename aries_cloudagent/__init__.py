@@ -9,10 +9,9 @@ from aiohttp import ClientSession
 
 from .conductor import Conductor
 from .config.argparse import get_settings, parse_args
+from .config.default_context import DefaultContextBuilder
 from .config.logging import LoggingConfigurator
-from .defaults import default_protocol_registry
 from .postgres import load_postgres_plugin
-from .transport.inbound.base import InboundTransportConfiguration
 
 
 async def get_genesis_transactions(genesis_url: str):
@@ -27,6 +26,7 @@ async def get_genesis_transactions(genesis_url: str):
 
 async def start_app(conductor: Conductor):
     """Start up."""
+    await conductor.setup()
     await conductor.start()
 
 
@@ -55,16 +55,6 @@ def main():
     log_level = settings.get("log_level") or os.getenv("LOG_LEVEL")
     LoggingConfigurator.configure(log_config, log_level)
 
-    # Set up transport configurations
-    inbound_transport_configs = []
-    inbound_transports = settings.get("transport.inbound_configs") or []
-    for transport in inbound_transports:
-        module, host, port = transport
-        inbound_transport_configs.append(
-            InboundTransportConfiguration(module=module, host=host, port=port)
-        )
-    outbound_transports = settings.get("transport.outbound_configs") or []
-
     # Fetch genesis transactions if necessary
     if not settings.get("ledger.genesis_transactions") and settings.get(
         "ledger.genesis_url"
@@ -90,10 +80,8 @@ def main():
         settings["admin.webhook_urls"] = webhook_urls
 
     # Create the Conductor instance
-    registry = default_protocol_registry()
-    conductor = Conductor(
-        inbound_transport_configs, outbound_transports, registry, settings
-    )
+    context_builder = DefaultContextBuilder(settings)
+    conductor = Conductor(context_builder)
 
     # Run the application
     loop = asyncio.get_event_loop()

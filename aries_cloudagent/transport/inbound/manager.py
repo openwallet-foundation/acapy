@@ -19,7 +19,7 @@ class InboundTransportManager:
         """Initialize an `InboundTransportManager` instance."""
         self.logger = logging.getLogger(__name__)
         self.class_loader = ClassLoader(MODULE_BASE_PATH, BaseInboundTransport)
-        self.transports = []
+        self.registered_transports = []
 
     def register(
         self, config: InboundTransportConfiguration, message_handler, register_socket
@@ -55,14 +55,14 @@ class InboundTransportManager:
             transport: Inbound transport instance to register
 
         """
-        self.transports.append(transport)
+        self.registered_transports.append(transport)
 
     async def start(self):
         """Start all registered transports."""
-        for transport in self.transports:
+        for transport in self.registered_transports:
             await transport.start()
 
     async def stop(self):
         """Stop all registered transports."""
-        for transport in self.transports:
+        for transport in self.registered_transports:
             await transport.stop()
