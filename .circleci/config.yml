@@ -12,7 +12,7 @@ jobs:
       - run:
           name: Install Python Dependencies
           command: |
-            mkdir test-packages
+            [ ! -d test-packages ] && mkdir test-packages
             pip install \
               --target test-packages \
               -r requirements.txt \
