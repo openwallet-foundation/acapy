@@ -33,7 +33,7 @@ jobs:
       - run:
           name: Push to Codecov.io
           command: |
-              bash <(curl -s https://codecov.io/bash)
+              bash <(curl -s https://codecov.io/bash) -s .coverage
 
       - store_test_results:
           path: test-reports
