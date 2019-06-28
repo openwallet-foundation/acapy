@@ -2,6 +2,7 @@
 
 import aiohttp
 import logging
+import sys
 
 from typing import Tuple
 
@@ -21,8 +22,8 @@ from ...wallet.error import WalletNotFoundError
 from ...wallet.util import bytes_to_b64
 
 from ..message_delivery import MessageDelivery
+from ..responder import BaseResponder
 from ..routing.manager import RoutingManager
-from ..util import send_webhook
 
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
@@ -56,11 +57,11 @@ class ConnectionManager:
     def _log_state(self, msg: str, params: dict = None):
         """Print a message with increased visibility (for testing)."""
         if self._context.settings.get("debug.connections"):
-            print(f"{msg}")
+            print(msg, file=sys.stderr)
             if params:
                 for k, v in params.items():
-                    print(f"    {k}: {v}")
-            print()
+                    print(f"    {k}: {v}", file=sys.stderr)
+            print(file=sys.stderr)
 
     @property
     def context(self) -> InjectionContext:
@@ -933,10 +934,39 @@ class ConnectionManager:
                 await connection.save(self.context)
                 await self.updated_record(connection)
 
+    async def log_activity(
+        self,
+        connection: ConnectionRecord,
+        activity_type: str,
+        direction: str,
+        meta: dict = None,
+    ):
+        """Log activity against a connection record and send webhook."""
+        await connection.log_activity(self._context, activity_type, direction, meta)
+        await self.updated_activity(connection)
+
     async def updated_record(self, connection: ConnectionRecord):
         """Call webhook when the record is updated."""
-        send_webhook(self._context, "connections", connection.serialize())
-        cache: BaseCache = await self.context.inject(BaseCache, required=False)
+        responder = await self._context.inject(BaseResponder, required=False)
+        if responder:
+            await responder.send_webhook(
+                "connections",
+                connection.serialize()
+            )
+        cache: BaseCache = await self._context.inject(BaseCache, required=False)
         cache_key = f"connection_target::{connection.connection_id}"
         if cache:
             await cache.clear(cache_key)
+
+    async def updated_activity(self, connection: ConnectionRecord):
+        """Call webhook when the record activity is updated."""
+        responder = await self._context.inject(BaseResponder, required=False)
+        if responder:
+            activity = await connection.fetch_activity(self._context)
+            await responder.send_webhook(
+                "connections_activity",
+                {
+                    "connection_id": connection.connection_id,
+                    "activity": activity,
+                }
+            )

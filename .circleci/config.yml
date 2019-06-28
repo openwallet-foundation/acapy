@@ -28,7 +28,7 @@ jobs:
           name: Run Agent Tests
           command: |
             mkdir test-reports
-            mkdir test-reports/pytest
+            mkdir .coverage
             . venv/bin/activate
             pytest
 
@@ -40,8 +40,14 @@ jobs:
       - store_test_results:
           path: test-reports
 
+      - store_test_results:
+          path: .coverage
+
       - store_artifacts:
           path: test-reports
+
+      - store_artifacts:
+          path: .coverage
 
 workflows:
  version: 2

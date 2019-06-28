@@ -127,6 +127,8 @@ class DemoAgent:
                     ),
                 ]
             )
+        if self.webhook_url:
+            result.append(("--webhook-url", self.webhook_url))
 
         return result
 
@@ -175,22 +177,18 @@ class DemoAgent:
         )
         return proc
 
-    def get_process_args(self, scripts_dir: str):
+    def get_process_args(self, bin_dir: str):
         return list(
-            flatten((["python3", scripts_dir + "icatagent"], self.get_agent_args()))
+            flatten((["python3", bin_dir + "acagent"], self.get_agent_args()))
         )
 
     async def start_process(
-        self, python_path="..", scripts_dir="../scripts/", wait=True
+        self, python_path="..", bin_dir="../bin/", wait=True
     ):
         my_env = os.environ.copy()
         my_env["PYTHONPATH"] = python_path
 
-        # refer to REST callback service
-        if self.webhook_url:
-            my_env["WEBHOOK_URL"] = self.webhook_url
-
-        agent_args = self.get_process_args(scripts_dir)
+        agent_args = self.get_process_args(bin_dir)
 
         # start agent sub-process
         loop = asyncio.get_event_loop()

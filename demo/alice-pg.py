@@ -19,12 +19,12 @@ run_mode = os.getenv("RUNMODE")
 
 internal_host = "127.0.0.1"
 external_host = "localhost"
-scripts_dir = "../scripts/"
+bin_dir = "../bin/"
 
 if run_mode == "docker":
     internal_host = "host.docker.internal"
     external_host = "host.docker.internal"
-    scripts_dir = "scripts/"
+    bin_dir = "bin/"
 
 # some globals that are required by the hook code
 webhook_port = int(sys.argv[1])
@@ -211,7 +211,7 @@ def main():
         wallet_key,
         python_path,
         webhook_url,
-        scripts_dir,
+        bin_dir,
         run_subprocess=True,
         use_postgres=False,
     )

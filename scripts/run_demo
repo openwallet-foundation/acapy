@@ -9,7 +9,7 @@ if [[ $AGENT == "faber" ]] || [[ $AGENT == "alice" ]] || [[ $AGENT == "performan
 	echo "Preparing agent image..."
 	docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
 else
-  echo "Please specify which agent you want to run. Choose from 'faber' or 'alice'.";
+  echo "Please specify which agent you want to run. Choose from 'faber', 'alice', or 'performance'.";
 	exit 1;
 fi
 

@@ -4,14 +4,13 @@ import json
 import logging
 from uuid import uuid4
 
-
 from ...config.injection_context import InjectionContext
 from ...error import BaseError
 from ...holder.base import BaseHolder
 from ...ledger.base import BaseLedger
 from ...verifier.base import BaseVerifier
 
-from ..util import send_webhook
+from ..responder import BaseResponder
 
 from .models.presentation_exchange import PresentationExchange
 from .messages.presentation_request import PresentationRequest
@@ -279,4 +278,9 @@ class PresentationManager:
 
     async def updated_record(self, presentation_exchange: PresentationExchange):
         """Call webhook when the record is updated."""
-        send_webhook(self._context, "presentations", presentation_exchange.serialize())
+        responder = await self._context.inject(BaseResponder, required=False)
+        if responder:
+            await responder.send_webhook(
+                "presentations",
+                presentation_exchange.serialize()
+            )

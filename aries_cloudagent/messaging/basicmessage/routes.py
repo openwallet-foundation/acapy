@@ -5,9 +5,12 @@ from aiohttp_apispec import docs, request_schema
 
 from marshmallow import fields, Schema
 
-from ..connections.models.connection_record import ConnectionRecord
-from .messages.basicmessage import BasicMessage
 from ...storage.error import StorageNotFoundError
+
+from ..connections.manager import ConnectionManager
+from ..connections.models.connection_record import ConnectionRecord
+
+from .messages.basicmessage import BasicMessage
 
 
 class SendMessageSchema(Schema):
@@ -40,8 +43,9 @@ async def connections_send_message(request: web.BaseRequest):
         msg = BasicMessage(content=params["content"])
         await outbound_handler(msg, connection_id=connection_id)
 
-        await connection.log_activity(
-            context,
+        conn_mgr = ConnectionManager(context)
+        await conn_mgr.log_activity(
+            connection,
             "message",
             connection.DIRECTION_SENT,
             {"content": params["content"]},

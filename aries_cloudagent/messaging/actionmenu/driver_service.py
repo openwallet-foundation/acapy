@@ -4,7 +4,7 @@ import logging
 
 from ..agent_message import AgentMessage
 from ..connections.models.connection_record import ConnectionRecord
-from ..util import send_webhook
+from ..responder import BaseResponder
 
 from .base_service import BaseMenuService
 from .messages.menu import Menu
@@ -25,8 +25,7 @@ class DriverMenuService(BaseMenuService):
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
         """
-        send_webhook(
-            self.context,
+        await self.send_webhook(
             "get-active-menu",
             {
                 "connection_id": connection and connection.connection_id,
@@ -51,8 +50,7 @@ class DriverMenuService(BaseMenuService):
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
         """
-        send_webhook(
-            self.context,
+        await self.send_webhook(
             "perform-menu-action",
             {
                 "connection_id": connection and connection.connection_id,
@@ -62,3 +60,9 @@ class DriverMenuService(BaseMenuService):
             },
         )
         return None
+
+    async def send_webhook(self, topic: str, payload: dict):
+        """Dispatch a webhook through the registered responder."""
+        responder = await self._context.inject(BaseResponder, required=False)
+        if responder:
+            await responder.send_webhook(topic, payload)

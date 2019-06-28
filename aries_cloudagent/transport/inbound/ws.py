@@ -10,7 +10,7 @@ from ...messaging.socket import SocketRef
 from .base import BaseInboundTransport, InboundTransportSetupError
 
 
-class Transport(BaseInboundTransport):
+class WsTransport(BaseInboundTransport):
     """Websockets Transport class."""
 
     def __init__(
@@ -34,6 +34,7 @@ class Transport(BaseInboundTransport):
         self.port = port
         self.message_router = message_router
         self.register_socket = register_socket
+        self.site = None
 
         # TODO: set scheme dynamically based on SSL settings (ws/wss)
         self._scheme = "ws"
@@ -44,6 +45,12 @@ class Transport(BaseInboundTransport):
         """Accessor for this transport's scheme."""
         return self._scheme
 
+    async def make_application(self) -> web.Application:
+        """Construct the aiohttp application."""
+        app = web.Application()
+        app.add_routes([web.get("/", self.inbound_message_handler)])
+        return app
+
     async def start(self) -> None:
         """
         Start this transport.
@@ -52,18 +59,23 @@ class Transport(BaseInboundTransport):
             InboundTransportSetupError: If there was an error starting the webserver
 
         """
-        app = web.Application()
-        app.add_routes([web.get("/", self.inbound_message_handler)])
+        app = await self.make_application()
         runner = web.AppRunner(app)
         await runner.setup()
-        site = web.TCPSite(runner, host=self.host, port=self.port)
+        self.site = web.TCPSite(runner, host=self.host, port=self.port)
         try:
-            await site.start()
+            await self.site.start()
         except OSError:
             raise InboundTransportSetupError(
                 "Unable to start websocket server with host "
                 + f"'{self.host}' and port '{self.port}'\n"
             )
+
+    async def stop(self) -> None:
+        """Stop this transport."""
+        if self.site:
+            await self.site.stop()
+            self.site = None
 
     async def inbound_message_handler(self, request):
         """
@@ -101,6 +113,9 @@ class Transport(BaseInboundTransport):
                 self.logger.error(
                     f"Websocket connection closed with exception {ws.exception()}"
                 )
+
+            else:
+                self.logger.warning(f"Unexpected websocket message type {msg.type}")
 
         self.logger.info("Websocket connection closed")
 

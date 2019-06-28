@@ -55,3 +55,5 @@ class ConnectionRequestHandler(BaseHandler):
             target = await mgr.get_connection_target(connection)
             self._logger.debug("Sending connection response to target: %s", target)
             await responder.send(response, target=target)
+        else:
+            self._logger.error("Ignoring connection request")

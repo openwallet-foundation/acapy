@@ -222,7 +222,7 @@ class IndyLedger(BaseLedger):
         try:
             await self._submit(request_json)
         except DuplicateSchemaError as e:
-            self.logger.warn(
+            self.logger.warning(
                 "Schema already exists on ledger. Returning ID. " + f"Error: {str(e)}"
             )
             schema_id = f"{public_did.did}:{2}:{schema_name}:{schema_version}"

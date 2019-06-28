@@ -19,12 +19,12 @@ run_mode = os.getenv("RUNMODE")
 
 internal_host = "127.0.0.1"
 external_host = "localhost"
-scripts_dir = "../scripts/"
+bin_dir = "../bin/"
 
 if run_mode == "docker":
     internal_host = "host.docker.internal"
     external_host = "host.docker.internal"
-    scripts_dir = "scripts/"
+    bin_dir = "bin/"
 
 # some globals that are required by the hook code
 webhook_port = int(sys.argv[1])
@@ -98,15 +98,15 @@ class faber_webhooks(webhooks):
 
 def main():
     if run_mode == "docker":
-        #genesis = requests.get("http://host.docker.internal:9000/genesis").text
+        # genesis = requests.get("http://host.docker.internal:9000/genesis").text
         genesis_url = "http://host.docker.internal:9000/genesis"
     else:
-        #with open("local-genesis.txt", "r") as genesis_file:
+        # with open("local-genesis.txt", "r") as genesis_file:
         #    genesis = genesis_file.read()
         genesis_url = "http://localhost:9000/genesis"
 
     # TODO seed from input parameter; optionally register the DID
-    rand_name = str(random.randint(100000, 999999))
+    rand_name = str(random.randint(100_000, 999_999))
     seed = ("my_seed_000000000000000000000000" + rand_name)[-32:]
     alias = "My Test Company"
     register_did = True
@@ -147,7 +147,7 @@ def main():
         wallet_key,
         python_path,
         webhook_url,
-        scripts_dir,
+        bin_dir,
         run_subprocess=True,
         use_postgres=False,
     )
