@@ -6,10 +6,6 @@ import sys
 
 from typing import Tuple
 
-from von_anchor.a2a import DIDDoc
-from von_anchor.a2a.publickey import PublicKey, PublicKeyType
-from von_anchor.a2a.service import Service
-
 from ...cache.base import BaseCache
 from ...error import BaseError
 from ...config.base import InjectorError
@@ -32,6 +28,7 @@ from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 from .models.connection_record import ConnectionRecord
 from .models.connection_target import ConnectionTarget
+from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 
 
 class ConnectionManagerError(BaseError):

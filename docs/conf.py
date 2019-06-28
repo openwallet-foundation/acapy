@@ -16,7 +16,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-autodoc_mock_imports = ["von_anchor", "setup", "pysodium", "indy", "aiohttp_cors"]
+autodoc_mock_imports = ["setup", "pysodium", "indy", "aiohttp_cors"]
 
 
 # -- Project information -----------------------------------------------------
