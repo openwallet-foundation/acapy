@@ -7,7 +7,7 @@ from ....base_handler import HandlerException
 from ....connections.models.connection_record import ConnectionRecord
 from ....message_delivery import MessageDelivery
 from ....request_context import RequestContext
-from ....responder import BaseResponder
+from ....responder import MockResponder
 
 from ...handlers.route_query_request_handler import RouteQueryRequestHandler
 from ...handlers.route_update_request_handler import RouteUpdateRequestHandler
@@ -31,17 +31,6 @@ def request_context() -> RequestContext:
     ctx.message_delivery = MessageDelivery(sender_verkey=TEST_VERKEY)
     ctx.injector.bind_instance(BaseStorage, BasicStorage())
     yield ctx
-
-
-class MockResponder(BaseResponder):
-    def __init__(self):
-        self.messages = []
-
-    async def send_reply(self, message):
-        self.messages.append((message, None))
-
-    async def send_outbound(self, message, target):
-        self.messages.append((message, target))
 
 
 class TestQueryUpdateHandlers:

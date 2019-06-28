@@ -10,8 +10,12 @@ class BaseInboundTransport(ABC):
     """Base inbound transport class."""
 
     @abstractmethod
-    def start(self) -> None:
+    async def start(self) -> None:
         """Start listening for on this transport."""
+
+    @abstractmethod
+    async def stop(self) -> None:
+        """Stop listening for on this transport."""
 
 
 class InboundTransportRegistrationError(BaseError):

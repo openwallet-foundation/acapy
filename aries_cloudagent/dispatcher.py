@@ -9,6 +9,7 @@ import asyncio
 import logging
 from typing import Coroutine, Union
 
+from .admin.base_server import BaseAdminServer
 from .messaging.agent_message import AgentMessage
 from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError
@@ -86,6 +87,8 @@ class Dispatcher:
 
         if error_result:
             return asyncio.ensure_future(responder.send_reply(error_result))
+
+        context.injector.bind_instance(BaseResponder, responder)
 
         handler_cls = context.message.Handler
         handler_obj = handler_cls()
@@ -177,3 +180,19 @@ class DispatcherResponder(BaseResponder):
             message: The `OutboundMessage` to be sent
         """
         await self._send(message)
+
+    async def send_webhook(self, topic: str, payload: dict):
+        """
+        Dispatch a webhook.
+
+        Args:
+            topic: the webhook topic identifier
+            payload: the webhook payload value
+        """
+        asyncio.ensure_future(self._dispatch_webhook(topic, payload))
+
+    async def _dispatch_webhook(self, topic: str, payload: dict):
+        """Perform dispatch of a webhook."""
+        server = await self._context.inject(BaseAdminServer, required=False)
+        if server:
+            await server.send_webhook(topic, payload)

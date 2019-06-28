@@ -1,7 +1,16 @@
 [run]
-omit = */tests/* demo/* docker/* docs/* scripts/*
+omit =
+    */tests/*
+    demo/*
+    docker/*
+    docs/*
+    scripts/*
+data_file = .coverage/data
 
 [report]
 exclude_lines =
     pragma: no cover
     @abstract
+
+[xml]
+output = .coverage/coverage.xml

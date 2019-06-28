@@ -1,41 +1,35 @@
 """Base outbound transport."""
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
+import asyncio
 
 from ...error import BaseError
 from ...messaging.outbound_message import OutboundMessage
-
-from .queue.base import BaseOutboundMessageQueue
 
 
 class BaseOutboundTransport(ABC):
     """Base outbound transport class."""
 
-    @abstractmethod
-    def __init__(self, queue: BaseOutboundMessageQueue) -> None:
-        """
-        Initialize a `BaseOutboundTransport` instance.
+    def __init__(self) -> None:
+        """Initialize a `BaseOutboundTransport` instance."""
 
-        Args:
-            queue: `BaseOutboundMessageQueue` to use
-
-        """
-        pass
-
-    @abstractmethod
     async def __aenter__(self):
         """Async context manager enter."""
-        pass
+        await self.start()
+
+    async def __aexit__(self, err_type, err_value, err_t):
+        """Async context manager exit."""
+        if err_type and err_type != asyncio.CancelledError:
+            self.logger.exception("Exception in outbound transport")
+        await self.stop()
 
     @abstractmethod
-    async def __aexit__(self, *err):
-        """Async context manager exit."""
-        pass
+    async def start(self):
+        """Start the transport."""
 
-    @abstractproperty
-    def queue(self):
-        """Accessor for queue."""
-        pass
+    @abstractmethod
+    async def stop(self):
+        """Shut down the transport."""
 
     @abstractmethod
     async def handle_message(self, message: OutboundMessage):
@@ -45,12 +39,6 @@ class BaseOutboundTransport(ABC):
         Args:
             message: `OutboundMessage` to send over transport implementation
         """
-        pass
-
-    async def start(self) -> None:
-        """Start this transport."""
-        async for message in self.queue:
-            await self.handle_message(message)
 
 
 class OutboundTransportRegistrationError(BaseError):

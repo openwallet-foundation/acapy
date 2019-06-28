@@ -28,12 +28,12 @@ Instructions forthcoming. `aries_cloudagent` will be made available in the futur
 
 # Running
 
-After installing the package, `icatagent` should be available in your PATH.
+After installing the package, `acagent` should be available in your PATH.
 
 Find out more about the available command line parameters by running:
 
 ```bash
-icatagent --help
+acagent --help
 ```
 
 Currently you must specify at least one _inbound_ and one _outbound_ transport.
@@ -41,7 +41,7 @@ Currently you must specify at least one _inbound_ and one _outbound_ transport.
 For example:
 
 ```bash
-icatagent   --inbound-transport http 0.0.0.0 8000 \
+acagent     --inbound-transport http 0.0.0.0 8000 \
             --inbound-transport http 0.0.0.0 8001 \
             --inbound-transport ws 0.0.0.0 8002 \
             --outbound-transport ws \

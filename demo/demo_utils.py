@@ -4,7 +4,6 @@ import threading
 import os
 import json
 import web
-import logging
 
 
 ####################################################
@@ -149,7 +148,7 @@ def start_agent_subprocess(
     wallet_key,
     python_path,
     webhook_url,
-    scripts_dir,
+    bin_dir,
     run_subprocess=True,
     use_postgres=False,
 ):
@@ -163,7 +162,7 @@ def start_agent_subprocess(
     # start agent sub-process
     agent_args = [
         "python3",
-        scripts_dir + "icatagent",
+        bin_dir + "acagent",
         "--inbound-transport",
         "http",
         "0.0.0.0",

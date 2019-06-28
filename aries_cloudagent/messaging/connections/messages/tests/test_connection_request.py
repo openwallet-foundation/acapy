@@ -2,12 +2,10 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from von_anchor.a2a import DIDDoc
-from von_anchor.a2a.publickey import PublicKey, PublicKeyType
-from von_anchor.a2a.service import Service
+from ...models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ...message_types import CONNECTION_REQUEST
 
 from ..connection_request import ConnectionRequest, ConnectionDetail
-from ...message_types import CONNECTION_REQUEST
 
 
 class TestConfig:

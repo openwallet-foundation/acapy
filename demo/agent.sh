@@ -1,4 +1,4 @@
-PYTHONPATH=.. ../scripts/icatagent \
+PYTHONPATH=.. ../bin/acagent \
  --inbound-transport http 0.0.0.0 8010 \
  --inbound-transport http 0.0.0.0 8011 \
  --inbound-transport ws 0.0.0.0 8012 \

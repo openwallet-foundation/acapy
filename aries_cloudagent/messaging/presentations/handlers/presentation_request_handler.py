@@ -54,7 +54,7 @@ class PresentationRequestHandler(BaseHandler):
                     presentation_request, referent, 0, 2, {}
                 )
                 if len(credentials) != 1:
-                    self._logger.warn(
+                    self._logger.warning(
                         f"Could not automatically construct presentation for"
                         + f" presentation request {presentation_request['name']}"
                         + f":{presentation_request['version']} because referent "
@@ -76,7 +76,7 @@ class PresentationRequestHandler(BaseHandler):
                     presentation_request, referent, 0, 2, {}
                 )
                 if len(credentials) != 1:
-                    self._logger.warn(
+                    self._logger.warning(
                         f"Could not automatically construct presentation for"
                         + f" presentation request {presentation_request['name']}"
                         + f":{presentation_request['version']} because referent "
