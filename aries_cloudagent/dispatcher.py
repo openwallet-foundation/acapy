@@ -114,7 +114,7 @@ class Dispatcher:
         Raises:
             MessageParseError: If the message doesn't specify @type
             MessageParseError: If there is no message class registered to handle
-                the given type
+            the given type
 
         """
 

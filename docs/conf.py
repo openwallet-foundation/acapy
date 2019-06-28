@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 # Configuration file for the Sphinx documentation builder.
 #
-# This file does only contain a selection of the most common options. For a
-# full list see the documentation:
+# This file only contains a selection of the most common options. For a full
+# list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
 # -- Path setup --------------------------------------------------------------
@@ -16,8 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-autodoc_mock_imports = ["setup", "pysodium", "indy", "aiohttp_cors"]
-
+autodoc_mock_imports = ["setup", "pysodium", "indy", "aiohttp_cors", "aiohttp", "aiohttp_apispec", "marshmallow", "base58", "msgpack", "pytest", "asynctest", "aries_cloudagent.base_handler"]
 
 # -- Project information -----------------------------------------------------
 
@@ -33,12 +30,7 @@ release = ''
 #    release = fh_version.read().strip()
 #    version = re.sub(r'([^\.]*\.[^\.]*).*', r'\1', release)
 
-
 # -- General configuration ---------------------------------------------------
-
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -80,19 +72,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
+# pip install -U sphinx-rtd-theme
 html_theme = 'sphinx_rtd_theme'
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-# html_theme_options = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

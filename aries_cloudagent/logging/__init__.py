@@ -53,7 +53,7 @@ class LoggingConfigurator:
             public_did: Public DID
             banner_length: (Default value = 40) Length of the banner
             border_character: (Default value = ":") Character to use in banner
-                border
+            border
         """
 
         def lr_pad(content: str):

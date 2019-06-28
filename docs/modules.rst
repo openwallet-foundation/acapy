@@ -5,4 +5,3 @@ aries-cloudagent-python
    :maxdepth: 4
 
    aries_cloudagent
-   setup

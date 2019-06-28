@@ -7,13 +7,15 @@ Aries Cloud Agent Python Documentation
 ===================================================
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Aries Cloud Agent Python - Modules
+   :maxdepth: 2
+   :caption: Aries Cloud Agent Python - Modules
 
+   aries_cloudagent
 
 
 Indices and tables
 ==================
 
+* :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
