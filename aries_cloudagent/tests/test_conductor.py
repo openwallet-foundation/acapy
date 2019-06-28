@@ -3,6 +3,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .. import conductor as test_module
+from ..admin.base_server import BaseAdminServer
 from ..config.base_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..messaging.connections.models.connection_target import ConnectionTarget
@@ -135,3 +136,23 @@ class TestConductor(AsyncTestCase, Config):
             mock_outbound_mgr.return_value.send_message.assert_awaited_once_with(
                 message
             )
+
+    async def test_admin(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"admin.enabled": "1"})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+        admin = await conductor.context.inject(BaseAdminServer)
+        assert admin is conductor.admin_server
+
+        with async_mock.patch.object(
+            admin, "start", autospec=True
+        ) as admin_start, async_mock.patch.object(
+            admin, "stop", autospec=True
+        ) as admin_stop:
+            await conductor.start()
+            admin_start.assert_awaited_once_with()
+
+            await conductor.stop()
+            admin_stop.assert_awaited_once_with()
