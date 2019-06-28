@@ -12,16 +12,16 @@ jobs:
       - run:
           name: Install Python Dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
+            mkdir test-packages
             pip install \
+              --target test-packages \
               -r requirements.txt \
               -r requirements.dev.txt \
               pytest
 
       - save_cache:
           paths:
-            - venv
+            - test-packages
           key: v2-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
 
       - run:
@@ -29,8 +29,7 @@ jobs:
           command: |
             mkdir test-reports
             mkdir .coverage
-            . venv/bin/activate
-            pytest
+            PYTHONPATH="`pwd`/test-packages:$PYTHONPATH" pytest
 
       - run:
           name: Push to Codecov.io
