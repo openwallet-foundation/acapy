@@ -2,6 +2,8 @@
 
 import os
 import argparse
+from typing import Sequence
+
 
 PARSER = argparse.ArgumentParser(description="Runs an Aries Cloud Agent.")
 
@@ -256,9 +258,9 @@ PARSER.add_argument(
 )
 
 
-def parse_args():
+def parse_args(args: Sequence[str] = None):
     """Parse command line arguments and return the collection."""
-    return PARSER.parse_args()
+    return PARSER.parse_args(args)
 
 
 def get_settings(args):
