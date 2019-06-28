@@ -26,26 +26,19 @@ jobs:
       - run:
           name: Run Agent Tests
           command: |
-            mkdir test-reports
-            mkdir .coverage
+            [ ! -d test-reports ] && mkdir test-reports
             pytest
 
       - run:
           name: Push to Codecov.io
           command: |
-              bash <(curl -s https://codecov.io/bash) -s .coverage
+              bash <(curl -s https://codecov.io/bash) -s test-reports
 
       - store_test_results:
           path: test-reports
 
-      - store_test_results:
-          path: .coverage
-
       - store_artifacts:
           path: test-reports
-
-      - store_artifacts:
-          path: .coverage
 
 workflows:
  version: 2
