@@ -2,13 +2,12 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from von_anchor.a2a import DIDDoc
-from von_anchor.a2a.publickey import PublicKey, PublicKeyType
-from von_anchor.a2a.service import Service
+from .....wallet.basic import BasicWallet
+
+from ...models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ...message_types import CONNECTION_RESPONSE
 
 from ..connection_response import ConnectionResponse, ConnectionDetail
-from ...message_types import CONNECTION_RESPONSE
-from .....wallet.basic import BasicWallet
 
 
 class TestConfig:

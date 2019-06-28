@@ -2,9 +2,9 @@
 
 from marshmallow import fields
 
-from von_anchor.a2a import DIDDoc
-
 from ...models.base import BaseModel, BaseModelSchema
+
+from ..models.diddoc import DIDDoc
 
 
 class DIDDocWrapper(fields.Field):
