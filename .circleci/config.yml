@@ -12,16 +12,15 @@ jobs:
       - run:
           name: Install Python Dependencies
           command: |
-            [ ! -d test-packages ] && mkdir test-packages
             pip install \
-              --target test-packages \
+              --user \
               -r requirements.txt \
               -r requirements.dev.txt \
               pytest
 
       - save_cache:
           paths:
-            - test-packages
+            - .local/lib/python3.6/site-packages
           key: v2-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
 
       - run:
@@ -29,7 +28,7 @@ jobs:
           command: |
             mkdir test-reports
             mkdir .coverage
-            PYTHONPATH="`pwd`/test-packages:$PYTHONPATH" pytest
+            pytest
 
       - run:
           name: Push to Codecov.io
