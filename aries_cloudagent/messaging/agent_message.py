@@ -205,7 +205,7 @@ class AgentMessage(BaseModel):
             ValueError: If field_name does not exist on this message
             ValueError: If the verification fails
             ValueError: If the verkey of the signature does not match the
-                provided verkey
+            provided verkey
 
         """
         sig = self.get_signature(field_name)
@@ -334,9 +334,9 @@ class AgentMessageSchema(BaseModelSchema):
 
         Raises:
             ValidationError: If a field signature does not correlate
-                to a field in the message
+            to a field in the message
             ValidationError: If the message defines both a field signature
-                and a value for the same field
+            and a value for the same field
             ValidationError: If there is a missing field signature
 
         """

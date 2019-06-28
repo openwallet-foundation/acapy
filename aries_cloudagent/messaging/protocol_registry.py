@@ -55,7 +55,7 @@ class ProtocolRegistry:
         Add new supported message types.
 
         Args:
-            *typesets: Mappings of message types to register
+            typesets: Mappings of message types to register
 
         """
         for typeset in typesets:
@@ -66,7 +66,7 @@ class ProtocolRegistry:
         Add new controllers.
 
         Args:
-            *controller_sets: Mappings of message families to coroutines
+            controller_sets: Mappings of message families to coroutines
 
         """
         for controlset in controller_sets:
