@@ -1,3 +1,5 @@
+import contextlib
+from io import StringIO
 from unittest import mock
 
 from .. import logging as test_module
@@ -24,3 +26,11 @@ class TestLoggingConfigurator:
         test_module.LoggingConfigurator.configure(path)
 
         mock_file_config.assert_called_once_with(path, disable_existing_loggers=False)
+
+    def test_banner(self):
+        stdout = StringIO()
+        with contextlib.redirect_stdout(stdout):
+            test_did = "55GkHamhTU1ZbTbV2ab9DE"
+            test_module.LoggingConfigurator.print_banner([], [], test_did)
+        output = stdout.getvalue()
+        assert test_did in output
