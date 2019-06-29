@@ -56,10 +56,10 @@ async def actionmenu_close(request: web.BaseRequest):
 
     menu = await retrieve_connection_menu(connection_id, context)
     if not menu:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     await save_connection_menu(None, connection_id, context)
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 @docs(tags=["action-menu"], summary="Fetch the active menu")
@@ -97,14 +97,14 @@ async def actionmenu_perform(request: web.BaseRequest):
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     if connection.is_active:
         msg = Perform(name=params["name"], params=params.get("params"))
         await outbound_handler(msg, connection_id=connection_id)
-        return web.HTTPOk()
+        return web.json_response({})
 
-    return web.HTTPForbidden()
+    raise web.HTTPForbidden()
 
 
 @docs(tags=["action-menu"], summary="Request the active menu")
@@ -124,14 +124,14 @@ async def actionmenu_request(request: web.BaseRequest):
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
         LOGGER.debug("Connection not found for action menu request: %s", connection_id)
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     if connection.is_active:
         msg = MenuRequest()
         await outbound_handler(msg, connection_id=connection_id)
-        return web.HTTPOk()
+        return web.json_response({})
 
-    return web.HTTPForbidden()
+    raise web.HTTPForbidden()
 
 
 @docs(tags=["action-menu"], summary="Send an action menu to a connection")
@@ -161,13 +161,13 @@ async def actionmenu_send(request: web.BaseRequest):
         LOGGER.debug(
             "Connection not found for action menu send request: %s", connection_id
         )
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     if connection.is_active:
         await outbound_handler(msg, connection_id=connection_id)
-        return web.HTTPOk()
+        return web.json_response({})
 
-    return web.HTTPForbidden()
+    raise web.HTTPForbidden()
 
 
 async def register(app: web.Application):

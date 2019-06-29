@@ -37,7 +37,7 @@ async def connections_send_message(request: web.BaseRequest):
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     if connection.is_active:
         msg = BasicMessage(content=params["content"])
@@ -51,7 +51,7 @@ async def connections_send_message(request: web.BaseRequest):
             {"content": params["content"]},
         )
 
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 @docs(tags=["basicmessage"], summary="Expire a copyable basicmessage")
@@ -69,7 +69,7 @@ async def connections_expire_message(request: web.BaseRequest):
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     activity_id = request.match_info["activity_id"]
     activity = await connection.retrieve_activity(context, activity_id)
@@ -78,7 +78,7 @@ async def connections_expire_message(request: web.BaseRequest):
         meta["copied"] = 1
         await connection.update_activity_meta(context, activity_id, meta)
 
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 async def register(app: web.Application):

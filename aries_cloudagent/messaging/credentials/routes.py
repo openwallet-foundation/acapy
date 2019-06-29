@@ -101,7 +101,7 @@ async def credentials_get(request: web.BaseRequest):
     try:
         credential = await holder.get_credential(credential_id)
     except WalletNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     return web.json_response(credential)
 
@@ -126,9 +126,9 @@ async def credentials_remove(request: web.BaseRequest):
     try:
         await holder.delete_credential(credential_id)
     except WalletNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 @docs(
@@ -229,7 +229,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
             context, credential_exchange_id
         )
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     return web.json_response(record.serialize())
 
 
@@ -264,7 +264,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
     if not connection_record.is_active:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     credential_exchange_record = await credential_manager.prepare_send(
         credential_definition_id, connection_id, credential_values
@@ -303,14 +303,15 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
     if not connection_record.is_active:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     credential_exchange_record = await credential_manager.create_offer(
-        credential_definition_id, connection_id)
+        credential_definition_id, connection_id
+    )
 
     (
         credential_exchange_record,
-        credential_offer_message
+        credential_offer_message,
     ) = await credential_manager.offer_credential(credential_exchange_record)
     await outbound_handler(credential_offer_message, connection_id=connection_id)
 
@@ -347,7 +348,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
     if not connection_record.is_active:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     (
         credential_exchange_record,
@@ -392,7 +393,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
     if not connection_record.is_active:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     credential_exchange_record.credential_values = credential_values
     (
@@ -423,9 +424,9 @@ async def credential_exchange_remove(request: web.BaseRequest):
             context, credential_exchange_id
         )
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     await credential_exchange_record.delete_record(context)
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 async def register(app: web.Application):

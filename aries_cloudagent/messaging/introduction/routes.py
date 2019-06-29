@@ -46,13 +46,13 @@ async def introduction_start(request: web.BaseRequest):
     service: BaseIntroductionService = await context.inject(
         BaseIntroductionService, required=False
     )
-    if service:
-        await service.start_introduction(
-            init_connection_id, target_connection_id, message, outbound_handler
-        )
-        return web.HTTPOk()
+    if not service:
+        raise web.HTTPForbidden()
 
-    return web.HTTPForbidden()
+    await service.start_introduction(
+        init_connection_id, target_connection_id, message, outbound_handler
+    )
+    return web.json_response({})
 
 
 async def register(app: web.Application):
