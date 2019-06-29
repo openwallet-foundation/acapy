@@ -6,7 +6,7 @@ import random
 import sys
 
 from .agent import DemoAgent, default_genesis_txns
-from .utils import log_msg, log_timer, prompt, prompt_loop
+from .utils import log_json, log_msg, log_status, log_timer, prompt, prompt_loop
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ TIMING = False
 
 class FaberAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
-        super().__init__("Faber Agent", http_port, admin_port, **kwargs)
+        super().__init__("Faber Agent", http_port, admin_port, prefix="Faber", **kwargs)
         self.connection_id = None
         self._connection_active = asyncio.Future()
         self.cred_state = {}
@@ -44,14 +44,14 @@ class FaberAgent(DemoAgent):
         self.cred_state[credential_exchange_id] = state
 
         self.log(
-            "Credential: state=",
+            "Credential: state =",
             state,
-            ", credential_exchange_id=",
+            ", credential_exchange_id =",
             credential_exchange_id,
         )
 
         if state == "request_received":
-            log_msg("#17 Issue credential to X")
+            log_status("#17 Issue credential to X")
             cred_attrs = {
                 "name": "Alice Smith",
                 "date": "2018-05-28",
@@ -68,15 +68,15 @@ class FaberAgent(DemoAgent):
 
         presentation_exchange_id = message["presentation_exchange_id"]
         self.log(
-            "Presentation: state=",
+            "Presentation: state =",
             state,
-            ", presentation_exchange_id=",
+            ", presentation_exchange_id =",
             presentation_exchange_id,
         )
 
         if state == "presentation_received":
-            log_msg("#27 Process the proof provided by X")
-            log_msg("#28 Check if proof is valid")
+            log_status("#27 Process the proof provided by X")
+            log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
                 f"/presentation_exchange/{presentation_exchange_id}/verify_presentation"
             )
@@ -97,20 +97,18 @@ async def main():
     start_port = AGENT_PORT
 
     try:
-        log_msg("#1 Provision an agent and wallet, get back configuration details")
+        log_status("#1 Provision an agent and wallet, get back configuration details")
         agent = FaberAgent(start_port, start_port + 1, genesis_data=genesis)
         await agent.listen_webhooks(start_port + 2)
         await agent.register_did()
 
         with log_timer("Startup duration:"):
             await agent.start_process()
-
-        log_msg("Started up")
         log_msg("Admin url is at:", agent.admin_url)
         log_msg("Endpoint url is at:", agent.endpoint)
 
         # Create a schema
-        log_msg("#3 Create a new schema on the ledger")
+        log_status("#3 Create a new schema on the ledger")
         with log_timer("Publish schema duration:"):
             version = format(
                 "%d.%d.%d"
@@ -126,12 +124,12 @@ async def main():
                 "attributes": ["name", "date", "degree", "age"],
             }
             schema_response = await agent.admin_POST("/schemas", schema_body)
-        # log_msg("Schema:", json.dumps(schema_response))
+        # log_json(json.dumps(schema_response), label="Schema:")
         schema_id = schema_response["schema_id"]
         log_msg("Schema ID:", schema_id)
 
         # Create a cred def for the schema
-        log_msg("#4 Create a new credential definition on the ledger")
+        log_status("#4 Create a new credential definition on the ledger")
         with log_timer("Publish credential definition duration:"):
             credential_definition_body = {"schema_id": schema_id}
             credential_definition_response = await agent.admin_POST(
@@ -144,14 +142,15 @@ async def main():
 
         with log_timer("Generate invitation duration:"):
             # Generate an invitation
-            log_msg("#5 Create a connection to alice and print out the invite details")
+            log_status(
+                "#5 Create a connection to alice and print out the invite details"
+            )
             connection = await agent.admin_POST("/connections/create-invitation")
 
         agent.connection_id = connection["connection_id"]
-        log_msg("Invitation response:", connection)
+        log_json(connection, label="Invitation response:")
         log_msg("*****************")
-        log_msg("Invitation:")
-        log_msg(json.dumps(connection["invitation"]), color=None)
+        log_msg(json.dumps(connection["invitation"]), label="Invitation:", color=None)
         log_msg("*****************")
 
         log_msg("Waiting for connection...")
@@ -165,7 +164,7 @@ async def main():
                 break
 
             elif option == "1":
-                log_msg("#13 Issue credential offer to X")
+                log_status("#13 Issue credential offer to X")
                 offer = {
                     "credential_definition_id": credential_definition_id,
                     "connection_id": agent.connection_id,
@@ -173,7 +172,7 @@ async def main():
                 await agent.admin_POST("/credential_exchange/send-offer", offer)
 
             elif option == "2":
-                log_msg("#20 Request proof of degree from alice")
+                log_status("#20 Request proof of degree from alice")
                 proof_attrs = [
                     {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "date", "restrictions": [{"issuer_did": agent.did}]},

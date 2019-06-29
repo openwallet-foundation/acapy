@@ -1,10 +1,11 @@
 import asyncio
+import json
 import logging
 import os
 import sys
 
 from .agent import DemoAgent, default_genesis_txns
-from .utils import log_msg, log_timer, prompt, prompt_loop
+from .utils import log_json, log_msg, log_status, log_timer, prompt, prompt_loop
 
 LOGGER = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ TIMING = False
 
 class AliceAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
-        super().__init__("Alice Agent", http_port, admin_port, **kwargs)
+        super().__init__("Alice Agent", http_port, admin_port, prefix="Alice", **kwargs)
         self.connection_id = None
         self._connection_active = asyncio.Future()
         self.cred_state = {}
@@ -42,14 +43,14 @@ class AliceAgent(DemoAgent):
         self.cred_state[credential_exchange_id] = state
 
         self.log(
-            "Credential: state=",
+            "Credential: state =",
             state,
-            ", credential_exchange_id=",
+            ", credential_exchange_id =",
             credential_exchange_id,
         )
 
         if state == "offer_received":
-            log_msg("#15 After receiving credential offer, send credential request")
+            log_status("#15 After receiving credential offer, send credential request")
             resp = await self.admin_POST(
                 f"/credential_exchange/{credential_exchange_id}/send-request"
             )
@@ -58,13 +59,13 @@ class AliceAgent(DemoAgent):
             self.log("Stored credential in wallet")
             cred_id = message["credential_id"]
             resp = await self.admin_GET(f"/credential/{cred_id}")
-            self.log("Credential details:")
-            self.log(resp)
+            log_json(resp, label="Credential details:")
             self.log("credential_id", message["credential_id"])
             self.log("credential_definition_id", message["credential_definition_id"])
             self.log("schema_id", message["schema_id"])
-            self.log(
-                "credential_request_metadata", message["credential_request_metadata"]
+            log_json(
+                message["credential_request_metadata"],
+                label="credential_request_metadata",
             )
 
     async def handle_presentations(self, message):
@@ -73,14 +74,14 @@ class AliceAgent(DemoAgent):
         presentation_request = message["presentation_request"]
 
         log_msg(
-            "Presentation: state=",
+            "Presentation: state =",
             state,
-            ", presentation_exchange_id=",
+            ", presentation_exchange_id =",
             presentation_exchange_id,
         )
 
         if state == "request_received":
-            log_msg(
+            log_status(
                 "#24 Query for credentials in the wallet that satisfy the proof request"
             )
 
@@ -117,7 +118,7 @@ class AliceAgent(DemoAgent):
                         "revealed": True,
                     }
 
-            log_msg("#25 Generate the proof")
+            log_status("#25 Generate the proof")
             proof = {
                 "name": presentation_request["name"],
                 "version": presentation_request["version"],
@@ -126,7 +127,7 @@ class AliceAgent(DemoAgent):
                 "self_attested_attributes": self_attested,
             }
 
-            log_msg("#26 Send the proof to X")
+            log_status("#26 Send the proof to X")
             await self.admin_POST(
                 f"/presentation_exchange/{presentation_exchange_id}/send_presentation",
                 proof,
@@ -147,26 +148,32 @@ async def main():
     start_port = AGENT_PORT
 
     try:
-        log_msg("#7 Provision an agent and wallet, get back configuration details")
+        log_status("#7 Provision an agent and wallet, get back configuration details")
         agent = AliceAgent(start_port, start_port + 1, genesis_data=genesis)
         await agent.listen_webhooks(start_port + 2)
         await agent.register_did()
 
         with log_timer("Startup duration:"):
             await agent.start_process()
-        log_msg("Started up")
         log_msg("Admin url is at:", agent.admin_url)
         log_msg("Endpoint url is at:", agent.endpoint)
 
-        log_msg("#9 Input faber.py invitation details")
-        details = await prompt("Invite details: ")
+        log_status("#9 Input faber.py invitation details")
+        async for details in prompt_loop("Invite details: "):
+            if details:
+                try:
+                    json.loads(details)
+                    break
+                except json.JSONDecodeError as e:
+                    log_msg("Invalid JSON:", str(e))
+                    pass
 
         with log_timer("Connect duration:"):
             connection = await agent.admin_POST(
                 "/connections/receive-invitation", details
             )
             agent.connection_id = connection["connection_id"]
-            log_msg("Invitation response:", connection)
+            log_json(connection, label="Invitation response:")
 
             await agent.detect_connection()
 

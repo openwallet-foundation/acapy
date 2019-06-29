@@ -8,9 +8,7 @@ import subprocess
 
 from aiohttp import web, ClientSession, ClientRequest, ClientError
 
-from .utils import print_ext, output_reader, flatten, log_timer
-
-COLORIZE = bool(os.getenv("COLORIZE")) or os.getenv("TERM") == "xterm"
+from .utils import flatten, log_json, log_msg, log_timer, output_reader
 
 LOGGER = logging.getLogger(__name__)
 
@@ -151,6 +149,11 @@ class DemoAgent:
 
         return result
 
+    @property
+    def prefix_str(self):
+        if self.prefix:
+            return f"{self.prefix:10s} |"
+
     async def register_did(self, ledger_url: str = None, alias: str = None):
         self.log(f"Registering {self.ident} with seed {self.seed}")
         if not ledger_url:
@@ -165,20 +168,21 @@ class DemoAgent:
             self.did = nym_info["did"]
         self.log(f"Got DID: {self.did}")
 
-    async def handle_output(self, *output, source: str = None, **kwargs):
+    def handle_output(self, *output, source: str = None, **kwargs):
         end = "" if source else "\n"
-        if source == "stderr" and COLORIZE:
-            color = "red"
-        elif not source and COLORIZE:
-            color = self.color or "blue"
+        if source == "stderr":
+            color = "fg:ansired"
+        elif not source:
+            color = self.color or "fg:ansiblue"
         else:
             color = None
-        print_ext(*output, color=color, prefix=self.prefix, end=end, **kwargs)
+        log_msg(*output, color=color, prefix=self.prefix_str, end=end, **kwargs)
 
-    def log(self, *msg, loop=None, **kwargs):
-        asyncio.run_coroutine_threadsafe(
-            self.handle_output(*msg, **kwargs), loop or asyncio.get_event_loop()
-        )
+    def log(self, *msg, **kwargs):
+        self.handle_output(*msg, **kwargs)
+
+    def log_json(self, data, label: str = None, **kwargs):
+        log_json(data, label=label, prefix=self.prefix_str, **kwargs)
 
     def log_timer(self, label: str, show: bool = True, **kwargs):
         return log_timer(label, show, logger=self.log, **kwargs)
@@ -196,14 +200,12 @@ class DemoAgent:
             output_reader,
             proc.stdout,
             functools.partial(self.handle_output, source="stdout"),
-            loop,
         )
         loop.run_in_executor(
             None,
             output_reader,
             proc.stderr,
             functools.partial(self.handle_output, source="stderr"),
-            loop,
         )
         return proc
 
@@ -233,21 +235,21 @@ class DemoAgent:
         if wait:
             await self.detect_process()
 
-    def _terminate(self, loop):
+    def _terminate(self):
         if self.proc and self.proc.poll() is None:
             self.proc.terminate()
             try:
                 self.proc.wait(timeout=0.5)
-                self.log(f"Exited with return code {self.proc.returncode}", loop=loop)
+                self.log(f"Exited with return code {self.proc.returncode}")
             except subprocess.TimeoutExpired:
                 msg = "Process did not terminate in time"
-                self.log(msg, loop=loop)
+                self.log(msg)
                 raise Exception(msg)
 
     async def terminate(self):
         loop = asyncio.get_event_loop()
         if self.proc:
-            await loop.run_in_executor(None, self._terminate, loop)
+            await loop.run_in_executor(None, self._terminate)
         await self.client_session.close()
         if self.webhook_site:
             await self.webhook_site.stop()
@@ -266,7 +268,7 @@ class DemoAgent:
         topic = request.match_info["topic"]
         payload = await request.json()
         await self.handle_webhook(topic, payload)
-        return web.Response(text='')
+        return web.Response(text="")
 
     async def handle_webhook(self, topic: str, payload):
         if topic != "webhook":  # would recurse
@@ -276,9 +278,7 @@ class DemoAgent:
 
     async def admin_request(self, method, path, data=None, text=False):
         async with self.client_session.request(
-            method,
-            self.admin_url + path,
-            json=data
+            method, self.admin_url + path, json=data
         ) as resp:
             if resp.status < 200 or resp.status > 299:
                 raise Exception(f"Unexpected HTTP response: {resp.status}")
@@ -344,6 +344,7 @@ class DemoAgent:
             "{:35} | {:12d} {:12.3f} {:10.3f} {:10.3f} {:10.3f}".format(*row)
             for row in result
         )
+        yield ""
 
     async def reset_timing(self):
         await self.admin_POST("/status/reset", text=True)
