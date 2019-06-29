@@ -7,7 +7,7 @@
 
 This document is a "concept of operations" for an instance of an Aries cloud agent deployed from the primary artifact (a PyPi package) produced by this repo. In such a deployment there are **always** two components - a configured agent itself, and a controller that injects into that agent the business rules for the particular agent instance (see diagram).
 
-![ACA-Py Deployment Overview](./assets/DeploymentModel-full.png "ACA-Py Deployment Overview")
+![ACA-Py Deployment Overview](assets/deploymentModel-full.png "ACA-Py Deployment Overview")
 
 The deployed agent messages with other agents via DIDcomm protocols, and as events associated with those messages occur, sends webhook HTTP notifications to the controller. The agent also exposes for the controller's exclusive use an HTTP API covering all of the administrative handlers for those events. The controller receives the notifications from the agent, decides (with business rules - possible by asking a person using a UI) how to respond to the event and calls back to the agent via the HTTP API. Of course, the controller may also initiate events (e.g. messaging another agent) by calling that same API.
 
@@ -23,7 +23,7 @@ The sections below detail the internals of the ACA-Py and it's configurable elem
 
 **Aries cloud agent** implement services to manage the execution of DIDcomm messaging protocols for interacting with other DIDcomm agents, and exposes an administrative HTTP API that supports a controller to direct how the agent should respond to messaging events. The agent relies on the controller to provide the business rules for handling the messaging events, and to initiate the execution of new DIDcomm protocol instances. The internals of an ACA-Py instance is diagramed below.
 
-![ACA-Py Agent Internals](assets/DeploymentModel-agent.png "ACA-Py Agent Internals")
+![ACA-Py Agent Internals](assets/deploymentModel-agent.png "ACA-Py Agent Internals")
 
 Instances of the Aries cloud agents are configured with the following sub-components:
 
@@ -41,7 +41,7 @@ Instances of the Aries cloud agents are configured with the following sub-compon
 
 A controller provides the personality of Aries cloud agent instance - the business logic (human, machine or rules driven) that drive the behaviour of the agent. The controller’s “Business Logic” in a cloud agent could be built into the controller app, could be an integration back to an enterprise system, or even a user interface for an individual. In all cases, the business logic provide responses to agent events or initiates agent actions. A deployed controller talks to a single Aries cloud agent deployment and manages the configuration of that agent. Both can be configured and deployed to support horizontal scaling.
 
-![Controller Internals](assets/DeploymentModel-controller.png "Controller Internals")
+![Controller Internals](assets/deploymentModel-controller.png "Controller Internals")
 
 Generically, a controller is a web app invoked by HTTP webhook calls from its corresponding Aries cloud agent and invoking the DIDcomm administration capabilities of the Aries cloud agent by calling the REST API exposed by that cloud agent. As well as responding to Aries cloud agent events, the controller initiates DIDcomm protocol instances using the same REST API.
 
