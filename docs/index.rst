@@ -10,7 +10,7 @@ Aries Cloud Agent Python Documentation
    :maxdepth: 2
    :caption: Aries Cloud Agent Python - Modules
 
-   aries_cloudagent
+   generated/aries_cloudagent
 
 
 Indices and tables

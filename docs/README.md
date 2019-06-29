@@ -8,13 +8,13 @@ pip install -U sphinx-rtd-theme
 
 Ensure the sphinx tool is installed and run:
 
-To rebuild the project and settings from scratch:
+To rebuild the project and settings from scratch (you'll need to move the generated index file up a level):
 ```
-sphinx-apidoc -f -M -F -o  . .. '../setup.py'
+sphinx-apidoc -f -M -F -o  ./generated .. '../setup.py'
 ```
 
 ```
-sphinx-apidoc -f -M -o  . .. '../setup.py'
+sphinx-apidoc -f -M -o  ./generated .. '../setup.py'
 ```
 
 To auto-generate the module documentation then run:
