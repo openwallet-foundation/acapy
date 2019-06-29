@@ -1,36 +1,49 @@
 import asyncio
+import functools
 import json
+import logging
 import os
 import random
 import subprocess
 
 from aiohttp import web, ClientSession, ClientRequest, ClientError
-import colored
 
-COLORIZE = os.environ.get("TERM") == "xterm"
+from .utils import print_ext, output_reader, flatten, log_timer
+
+COLORIZE = bool(os.getenv("COLORIZE")) or os.getenv("TERM") == "xterm"
+
+LOGGER = logging.getLogger(__name__)
+
+DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
+DEFAULT_INTERNAL_HOST = "127.0.0.1"
+DEFAULT_EXTERNAL_HOST = "localhost"
+DEFAULT_BIN_PATH = "../bin"
+DEFAULT_PYTHON_PATH = ".."
+
+RUN_MODE = os.getenv("RUNMODE")
+
+if RUN_MODE == "docker":
+    DEFAULT_INTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
+    DEFAULT_EXTERNAL_HOST = DEFAULT_INTERNAL_HOST
+    DEFAULT_BIN_PATH = "./bin"
+    DEFAULT_PYTHON_PATH = "."
 
 
-def print_color(msg, color, prefix="", end=None):
-    if color and COLORIZE:
-        msg = colored.stylize(msg, colored.fg(color))
-    if prefix:
-        msg = f"{prefix:10s} | {msg}"
-    print(msg, end=end)
-
-
-def output_reader(handle, callback, loop, *args, **kwargs):
-    for line in iter(handle.readline, b""):
-        if not line:
-            break
-        asyncio.run_coroutine_threadsafe(callback(line, *args), loop)
-
-
-def flatten(args):
-    for arg in args:
-        if isinstance(arg, (list, tuple)):
-            yield from flatten(arg)
+async def default_genesis_txns():
+    genesis = None
+    try:
+        if RUN_MODE == "docker":
+            async with ClientSession() as session:
+                async with session.get(
+                    f"http://{DEFAULT_EXTERNAL_HOST}:9000/genesis"
+                ) as resp:
+                    genesis = await resp.text()
         else:
-            yield arg
+            with open("local-genesis.txt", "r") as genesis_file:
+                genesis = genesis_file.read()
+    except Exception:
+        LOGGER.exception("Error loading genesis transactions:")
+    return genesis
 
 
 class DemoAgent:
@@ -39,29 +52,35 @@ class DemoAgent:
         ident: str,
         http_port: int,
         admin_port: int,
-        internal_host: str,
-        external_host: str,
+        internal_host: str = None,
+        external_host: str = None,
+        genesis_data: str = None,
         label: str = None,
+        color: str = None,
+        prefix: str = None,
         timing: bool = False,
-        postgres: bool = False,
+        postgres: bool = None,
         **params,
     ):
         self.ident = ident
         self.http_port = http_port
         self.admin_port = admin_port
-        self.internal_host = internal_host
-        self.external_host = external_host
+        self.internal_host = internal_host or DEFAULT_INTERNAL_HOST
+        self.external_host = external_host or DEFAULT_EXTERNAL_HOST
+        self.genesis_data = genesis_data
         self.label = label or ident
+        self.color = color
+        self.prefix = prefix
         self.timing = timing
-        self.postgres = postgres
+        self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
 
-        self.endpoint = f"http://{internal_host}:{http_port}"
-        self.admin_url = f"http://{internal_host}:{admin_port}"
+        self.endpoint = f"http://{self.external_host}:{http_port}"
+        self.admin_url = f"http://{self.external_host}:{admin_port}"
         self.webhook_port = None
         self.webhook_url = None
+        self.webhook_site = None
         self.params = params
         self.proc = None
-        self.wh_site = None
         self.client_session: ClientSession = ClientSession()
 
         rand_name = str(random.randint(100_000, 999_999))
@@ -92,8 +111,8 @@ class DemoAgent:
             ("--wallet-key", self.wallet_key),
             ("--seed", self.seed),
         ]
-        if "genesis" in self.params:
-            result.append(("--genesis-transactions", self.params["genesis"]))
+        if self.genesis_data:
+            result.append(("--genesis-transactions", self.genesis_data))
         if self.storage_type:
             result.append(("--storage-type", self.storage_type))
         if self.timing:
@@ -132,11 +151,11 @@ class DemoAgent:
 
         return result
 
-    async def register_did(self, ledger_url=None):
+    async def register_did(self, ledger_url: str = None, alias: str = None):
         self.log(f"Registering {self.ident} with seed {self.seed}")
         if not ledger_url:
             ledger_url = f"http://{self.external_host}:9000"
-        data = {"alias": self.ident, "seed": self.seed, "role": "TRUST_ANCHOR"}
+        data = {"alias": alias or self.ident, "seed": self.seed, "role": "TRUST_ANCHOR"}
         async with self.client_session.post(
             ledger_url + "/register", json=data
         ) as resp:
@@ -146,20 +165,23 @@ class DemoAgent:
             self.did = nym_info["did"]
         self.log(f"Got DID: {self.did}")
 
-    async def handle_output(self, output, source=""):
+    async def handle_output(self, *output, source: str = None, **kwargs):
         end = "" if source else "\n"
         if source == "stderr" and COLORIZE:
             color = "red"
         elif not source and COLORIZE:
-            color = "blue"
+            color = self.color or "blue"
         else:
             color = None
-        print_color(output, color, self.ident, end=end)
+        print_ext(*output, color=color, prefix=self.prefix, end=end, **kwargs)
 
-    def log(self, msg, *, loop=None):
+    def log(self, *msg, loop=None, **kwargs):
         asyncio.run_coroutine_threadsafe(
-            self.handle_output(msg), loop or asyncio.get_event_loop()
+            self.handle_output(*msg, **kwargs), loop or asyncio.get_event_loop()
         )
+
+    def log_timer(self, label: str, show: bool = True, **kwargs):
+        return log_timer(label, show, logger=self.log, **kwargs)
 
     def _process(self, args, env, loop):
         proc = subprocess.Popen(
@@ -170,25 +192,38 @@ class DemoAgent:
             encoding="utf-8",
         )
         loop.run_in_executor(
-            None, output_reader, proc.stdout, self.handle_output, loop, "stdout"
+            None,
+            output_reader,
+            proc.stdout,
+            functools.partial(self.handle_output, source="stdout"),
+            loop,
         )
         loop.run_in_executor(
-            None, output_reader, proc.stderr, self.handle_output, loop, "stderr"
+            None,
+            output_reader,
+            proc.stderr,
+            functools.partial(self.handle_output, source="stderr"),
+            loop,
         )
         return proc
 
-    def get_process_args(self, bin_dir: str):
-        return list(
-            flatten((["python3", bin_dir + "acagent"], self.get_agent_args()))
-        )
+    def get_process_args(self, bin_path: str = None):
+        cmd_path = "acagent"
+        if bin_path is None:
+            bin_path = DEFAULT_BIN_PATH
+        if bin_path:
+            cmd_path = os.path.join(bin_path, cmd_path)
+        return list(flatten((["python3", cmd_path], self.get_agent_args())))
 
     async def start_process(
-        self, python_path="..", bin_dir="../bin/", wait=True
+        self, python_path: str = None, bin_path: str = None, wait: bool = True
     ):
         my_env = os.environ.copy()
-        my_env["PYTHONPATH"] = python_path
+        python_path = DEFAULT_PYTHON_PATH if python_path is None else python_path
+        if python_path:
+            my_env["PYTHONPATH"] = python_path
 
-        agent_args = self.get_process_args(bin_dir)
+        agent_args = self.get_process_args(bin_path)
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
@@ -214,8 +249,8 @@ class DemoAgent:
         if self.proc:
             await loop.run_in_executor(None, self._terminate, loop)
         await self.client_session.close()
-        if self.wh_site:
-            await self.wh_site.stop()
+        if self.webhook_site:
+            await self.webhook_site.stop()
 
     async def listen_webhooks(self, webhook_port):
         self.webhook_port = webhook_port
@@ -224,25 +259,44 @@ class DemoAgent:
         app.add_routes([web.post("/webhooks/topic/{topic}/", self._receive_webhook)])
         runner = web.AppRunner(app)
         await runner.setup()
-        self.wh_site = web.TCPSite(runner, "0.0.0.0", webhook_port)
-        await self.wh_site.start()
+        self.webhook_site = web.TCPSite(runner, "0.0.0.0", webhook_port)
+        await self.webhook_site.start()
 
     async def _receive_webhook(self, request: ClientRequest):
         topic = request.match_info["topic"]
         payload = await request.json()
         await self.handle_webhook(topic, payload)
-        return web.HTTPOk()
+        return web.Response(text='')
 
     async def handle_webhook(self, topic: str, payload):
-        pass
+        if topic != "webhook":  # would recurse
+            method = getattr(self, f"handle_{topic}", None)
+            if method:
+                await method(payload)
+
+    async def admin_request(self, method, path, data=None, text=False):
+        async with self.client_session.request(
+            method,
+            self.admin_url + path,
+            json=data
+        ) as resp:
+            if resp.status < 200 or resp.status > 299:
+                raise Exception(f"Unexpected HTTP response: {resp.status}")
+            resp_text = await resp.text()
+            if not resp_text and not text:
+                return None
+            if not text:
+                try:
+                    return json.loads(resp_text)
+                except json.JSONDecodeError as e:
+                    raise Exception(f"Error decoding JSON: {resp_text}") from e
+            return resp_text
 
     async def admin_GET(self, path, text=False):
-        async with self.client_session.get(self.admin_url + path) as resp:
-            return await (resp.text() if text else resp.json())
+        return await self.admin_request("GET", path, None, text)
 
     async def admin_POST(self, path, data=None, text=False):
-        async with self.client_session.post(self.admin_url + path, json=data) as resp:
-            return await (resp.text() if text else resp.json())
+        return await self.admin_request("POST", path, data, text)
 
     async def detect_process(self):
         text = None

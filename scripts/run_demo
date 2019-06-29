@@ -15,15 +15,15 @@ fi
 
 echo "Starting $AGENT..."
 if [[ $AGENT == "faber" ]]; then
-	AGENT_FILE="demo/faber-pg.py"
+	AGENT_MODULE="faber"
 	AGENT_PORT=8020
 	AGENT_PORT_RANGE=8020-8027
 elif [[ $AGENT == "alice" ]]; then
-	AGENT_FILE="demo/alice-pg.py"
+	AGENT_MODULE="alice"
 	AGENT_PORT=8030
 	AGENT_PORT_RANGE=8030-8037
 else
-	AGENT_FILE="demo/performance.py"
+	AGENT_MODULE="performance"
 	AGENT_PORT=8030
 	AGENT_PORT_RANGE=8030-8037
 fi
@@ -40,4 +40,7 @@ else
 	DOCKER=${DOCKER:-docker}
 fi
 
-$DOCKER run --name $AGENT --rm  -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE $DOCKER_ENV -it faber-alice-demo $AGENT_FILE $AGENT_PORT
+$DOCKER run --name $AGENT --rm -it \
+	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
+	$DOCKER_ENV \
+	faber-alice-demo $AGENT_MODULE $AGENT_PORT
