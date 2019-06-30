@@ -4,31 +4,30 @@ Source doc: https://docs.google.com/a/cloudcompass.ca/open?id=12N1KDm1l4Az6bSOJ3
 
 ----->
 
-# Aries OpenAPI Demo
+# Aries OpenAPI Demo <!-- omit in toc -->
 
-This demo is for developers that are comfortable with playing around with APIs using the OpenAPI (Swagger) user interface and JSON. The controller for each of the two agent instances in the demo is you. You drive the API exposed by the agent instances to respond to events received by each agent. The demo covers two agents, Alice and one representing the Government Driver’s Licence program. The two agents connect, and then the Government’s Department of Motor Vehicles (DMV) agent issues a Driver Licence credential to Alice, and then asks Alice to prove she possesses the credential. Who knows why the DMV Agent needs to get the proof, but it lets us show off more protocols.
+This demo is for developers comfortable with playing around with APIs using the OpenAPI (Swagger) user interface and JSON. The controller for each of the two agent instances in the demo is you. You drive the API exposed by the agent instances to respond to events received by each agent. The demo covers two agents, Alice and one representing the Government Driver’s Licence program. The two agents connect, and then the Government’s Department of Motor Vehicles (DMV) agent issues a Driver Licence credential to Alice, and then asks Alice to prove she possesses the credential. Who knows why the DMV Agent needs to get the proof, but it lets us show off more protocols.
 
-- [Aries OpenAPI Demo](#Aries-OpenAPI-Demo)
-  - [Prerequisites](#Prerequisites)
-  - [Starting Up](#Starting-Up)
-    - [Start the VON Network](#Start-the-VON-Network)
-    - [Running the DMV Agent](#Running-the-DMV-Agent)
-    - [Running Alice’s Agent](#Running-Alices-Agent)
-    - [Restarting the Demo](#Restarting-the-Demo)
-    - [Running the Demo Steps](#Running-the-Demo-Steps)
-  - [Establishing a Connection](#Establishing-a-Connection)
-    - [Notes](#Notes)
-  - [Preparing to Issue a Credential](#Preparing-to-Issue-a-Credential)
-    - [Register the DMV DID](#Register-the-DMV-DID)
-    - [Publish the Schema](#Publish-the-Schema)
-    - [Publishing a Credential Definition](#Publishing-a-Credential-Definition)
-    - [Notes](#Notes-1)
-  - [Issuing a Credential](#Issuing-a-Credential)
-    - [Notes](#Notes-2)
-    - [Bonus Points](#Bonus-Points)
-  - [Requesting/Presenting a Proof](#RequestingPresenting-a-Proof)
-    - [Notes](#Notes-3)
-  - [Conclusion](#Conclusion)
+- [Prerequisites](#Prerequisites)
+- [Starting Up](#Starting-Up)
+  - [Start the VON Network](#Start-the-VON-Network)
+  - [Running the DMV Agent](#Running-the-DMV-Agent)
+  - [Running Alice’s Agent](#Running-Alices-Agent)
+  - [Restarting the Demo](#Restarting-the-Demo)
+  - [Running the Demo Steps](#Running-the-Demo-Steps)
+- [Establishing a Connection](#Establishing-a-Connection)
+  - [Notes](#Notes)
+- [Preparing to Issue a Credential](#Preparing-to-Issue-a-Credential)
+  - [Register the DMV DID](#Register-the-DMV-DID)
+  - [Publish the Schema](#Publish-the-Schema)
+  - [Publishing a Credential Definition](#Publishing-a-Credential-Definition)
+  - [Notes](#Notes-1)
+- [Issuing a Credential](#Issuing-a-Credential)
+  - [Notes](#Notes-2)
+  - [Bonus Points](#Bonus-Points)
+- [Requesting/Presenting a Proof](#RequestingPresenting-a-Proof)
+  - [Notes](#Notes-3)
+- [Conclusion](#Conclusion)
 
 ## Prerequisites
 
@@ -106,7 +105,7 @@ Switch to the Alice browser tab and get ready to execute the **`POST /connection
 
 Scroll to and execute **`GET /connections`** to see a list of the connections, and the information tracked about each connection. You should see the one connection Alice’s agent has, that it is with the DMV agent, and that its status is `active`.
 
-You are connected! Switch to the DMV agent browser tab and run the same **`GET /connections`** endpoint to see the DMV view.  Hint - note the `connection_id`. You’ll need ot later in the tutorial.
+You are connected! Switch to the DMV agent browser tab and run the same **`GET /connections`** endpoint to see the DMV view.  Hint - note the `connection_id`. You’ll need it later in the tutorial.
 
 ### Notes
 
@@ -116,7 +115,7 @@ For those familiar with the `Establish Connection` DIDcomm protocol, you might w
 
 The next thing we want to do in the demo is have the DMV agent issue a credential to Alice’s agent. To this point, we have not used the Indy ledger at all. The connection and all the messaging is done with pairwise DIDs based on the `did:peer` method. Verifiable credentials must be rooted in a public DID ledger to enable the presentation of proofs.
 
-Before the DMV agent can issue a credential, it must register a DID on the Indy public ledger, publish a schema, and create a credential definition. In the “real world”, the DMV agent would do this before connecting with any other agents, but we’ll do those steps now, Of course in the “real world”, we don’t have controller’s that are people running agents using an OpenAPI user interface.
+Before the DMV agent can issue a credential, it must register a DID on the Indy public ledger, publish a schema, and create a credential definition. In the “real world”, the DMV agent would do this before connecting with any other agents, but we’ll do those steps now, Of course in the “real world”, we don’t have controllers that are people running agents using an OpenAPI user interface.
 
 ### Register the DMV DID
 
@@ -127,7 +126,7 @@ In the startup parameters for the DMV agent, we specified a seed for the DMV age
 1. On the ledger browser tab, go to the section “Authenticate a New DID”.
 2. Choose the “Register from seed” option. Paste a seed of 32 zeros (00000000000000000000000000000000) into the “Wallet seed” text area. That matches the seed parameter we used in starting the DMV agent.
     1. Note: If you chose the Register from DID option, would need both DID and Verkey which is annoying, so just use the seed option.
-3. Click **Register DID. **If successful, should see the following:
+3. Click `Register DID`. If successful, should see the following:
 
 **Identity successfully registered:**
 ```
@@ -153,7 +152,7 @@ To publish that schema, go to the DMV browser and get ready to execute the **`PO
 
 Click `Execute`. If successful, you should see a `schema_id` in the response, most likely: `4QxzWk3ajdnEA37NdNU5Kt:2:drivers-licence:1.0`. This ID will be used for later steps in the tutorial.
 
-To confirm the schema was published, let’s check the Indy network transactions. Go to the Indy ledger browser tab and click the **Domain **button, bottom left. Scroll to the bottom of the page. The last entry (#7) should be the published schema.
+To confirm the schema was published, let’s check the Indy network transactions. Go to the Indy ledger browser tab and click the **`Domain`** button, bottom left. Scroll to the bottom of the page. The last entry (#7) should be the published schema.
 
 Schema published!
 
@@ -177,11 +176,11 @@ OK, we have the one time setup work for issuing a credential complete. We can no
 
 ## Issuing a Credential
 
-Issuing a credential from the DMV agent to Alice’s agent is easy. In the DMV browser tab, scroll down to the `**POST /credential_exchange/send`** and get ready to (but don’t yet) execute the request. Before execution, you need to find some other data to complete the JSON. 
+Issuing a credential from the DMV agent to Alice’s agent is easy. In the DMV browser tab, scroll down to the **`POST /credential_exchange/send`** and get ready to (but don’t yet) execute the request. Before execution, you need to find some other data to complete the JSON. 
 
-First, scroll back up to the `GET /connections` API endpoint and execute it. From the result, find the the `connection_id` and copy the value. Go back to the `/credential_exchange/send` section and paste it as the value for the `connection_id`
+First, scroll back up to the **`GET /connections`** API endpoint and execute it. From the result, find the the `connection_id` and copy the value. Go back to the `/credential_exchange/send` section and paste it as the value for the `connection_id`
 
-Next, scroll down to the `POST /credential-definitions` section that was executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the `POST /credential_exchange/send` section and paste it as the value for the `credential_defintion_id`.
+Next, scroll down to the **`POST /credential-definitions`** section that was executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the **`POST /credential_exchange/send`** section and paste it as the value for the `credential_defintion_id`.
 
 Finally, for the credential values, put the following between the curly brackets:
 
@@ -230,7 +229,7 @@ From the DMV browser tab, get ready to execute the **`POST /presentation_exchang
     {
       "name": "hair_colour",
       "restrictions": [
-        {"cred_def_id" : “string"}
+        {"cred_def_id" : "string"}
       ]
     }
   ],

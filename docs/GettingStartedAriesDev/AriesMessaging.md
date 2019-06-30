@@ -1,6 +1,6 @@
 # An overview of Aries messaging
 
-Aries Agents communicate with other agents via a message mechanism called DIDcomm (DID Communication). DIDcomm enables secure, asynchronous, end-to-end encrypted messaging between agents, with messages (usually) routed through some configuration of intermediary agents. Aries agents use (an early instance of) the [did:peer DID method](https://dhh1128.github.io/peer-did-method-spec/index.html), which uses DIDs that are not published to a public ledger, but shared privately between the communicating parties - usually just two agents.
+Aries Agents communicate with each other via a message mechanism called DIDcomm (DID Communication). DIDcomm enables secure, asynchronous, end-to-end encrypted messaging between agents, with messages (usually) routed through some configuration of intermediary agents. Aries agents use (an early instance of) the [did:peer DID method](https://dhh1128.github.io/peer-did-method-spec/index.html), which uses DIDs that are not published to a public ledger, but only shared privately between the communicating parties - usually just two agents.
 
 Given the underlying secure messaging layer (routing and encryption covered later in the "Deeper Dive" sections), DIDcomm protocols define standard sets of messages to accomplish a task. For example:
 
