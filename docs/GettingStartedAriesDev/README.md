@@ -1,0 +1,21 @@
+# Becoming an Indy/Aries Developer
+
+This guide is to get you from (pretty much) zero to developing code for issuing (and verifying) credentials with your own Aries agent. On the way, you'll look at Hyperledger Indy and how it works, find out about the architecture and components of an Aries agent and it's underlying messaging protocols. Scan the list of topics below and jump in as soon as you hit a topic you don't know.
+
+Note that in the guidance we have here, we include not only the links to look at, but we recommend that you **not** look at certain material to which you might naturally gravitate. That's because the material is out of date and will take you down some unnecessary rabbit holes. Keep your eyes on the goal - developing with Indy and Aries.
+
+* [I've heard of Indy, but I don't know the basics](IndyBasics.md)
+* [I know about Indy, but what is Aries?](AriesBasics.md)
+* [Demos - Business Level](DecentralizedIdentityDemos.md)
+* [Aries Agents in Context: The Big Picture](AriesBigPicture.md)
+* [Aries Internals - Deployment Components](AriesAgentArchitecture.md)
+* [An overview of Aries messaging](AriesMessaging.md)
+* [Aries Developer Demos](AriesDeveloperDemos.md)
+* [Establishing a connection between Aries Agents](Connections.md)
+* [Issuing an Indy credential: From Issuer to Holder/Prover](IssuingIndyCredential.md)
+* [Presenting an Indy credential: From Holder/Prover to Verifier](PresentingIndyCredential.md)
+* [Next steps: Creating your own Aries Agent](YourOwnAriesAgent.md)
+* [What should I be developing?](DevOptions.md)
+* [Deeper Dive: DIDcomm Message Routing and Encryption](RoutingEncryption.md)
+* [Deeper Dive: DIDcomm Messages](DIDcommMsgs.md)
+* [Deeper Dive: Running and Connecting to an Indy Network](IndyNetwork.md)
