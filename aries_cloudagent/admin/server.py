@@ -12,6 +12,7 @@ import aiohttp_cors
 from marshmallow import fields, Schema
 
 from ..classloader import ClassLoader
+from ..config.base import ConfigError
 from ..config.injection_context import InjectionContext
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.responder import BaseResponder
@@ -170,12 +171,9 @@ class AdminServer(BaseAdminServer):
                 )
                 await routes_module.register(self.app)
             except Exception as e:
-                self.logger.error(
+                raise ConfigError(
                     f"Failed to load external protocol module '{protocol_module_path}'."
-                    + "\n"
-                    + str(e)
-                )
-                raise
+                ) from e
 
         cors = aiohttp_cors.setup(
             app,
@@ -288,7 +286,7 @@ class AdminServer(BaseAdminServer):
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             collector.reset()
-        raise web.HTTPOk()
+        return web.json_response({})
 
     async def redirect_handler(self, request: web.BaseRequest):
         """Perform redirect to documentation."""

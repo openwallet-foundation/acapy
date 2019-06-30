@@ -131,8 +131,8 @@ class DefaultContextBuilder(ContextBuilder):
             except Exception as e:
                 raise ConfigError(
                     "Failed to load external protocol module "
-                    + f"'{protocol_module_path}': {str(e)}."
-                )
+                    + f"'{protocol_module_path}'"
+                ) from e
         context.injector.bind_instance(ProtocolRegistry, protocol_registry)
 
         # Register message serializer
