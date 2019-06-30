@@ -279,34 +279,34 @@ class CredentialManager:
 
         did = connection_record.my_did
 
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
-        async with ledger:
-            credential_definition = await ledger.get_credential_definition(
-                credential_definition_id
+        if credential_exchange_record.credential_request:
+            self._logger.warning(
+                "create_request called multiple times for credential exchange: %s",
+                credential_exchange_record.credential_exchange_id
+            )
+        else:
+            ledger: BaseLedger = await self.context.inject(BaseLedger)
+            async with ledger:
+                credential_definition = await ledger.get_credential_definition(
+                    credential_definition_id
+                )
+
+            holder: BaseHolder = await self.context.inject(BaseHolder)
+            (
+                credential_exchange_record.credential_request,
+                credential_exchange_record.credential_request_metadata,
+            ) = await holder.create_credential_request(
+                credential_offer, credential_definition, did
             )
 
-        holder: BaseHolder = await self.context.inject(BaseHolder)
-        (
-            credential_request,
-            credential_request_metadata,
-        ) = await holder.create_credential_request(
-            credential_offer, credential_definition, did
-        )
-
         credential_request_message = CredentialRequest(
-            request=json.dumps(credential_request)
+            request=json.dumps(credential_exchange_record.credential_request)
         )
-
-        # TODO: Find a more elegant way to do this
         credential_request_message._thread = {
             "thid": credential_exchange_record.thread_id
         }
 
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_SENT
-        credential_exchange_record.credential_request = credential_request
-        credential_exchange_record.credential_request_metadata = (
-            credential_request_metadata
-        )
         await credential_exchange_record.save(self.context)
         await self.updated_record(credential_exchange_record)
 
@@ -327,7 +327,6 @@ class CredentialManager:
             self.context,
             tag_filter={"thread_id": credential_request_message._thread_id},
         )
-
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
         await credential_exchange_record.save(self.context)
@@ -349,24 +348,36 @@ class CredentialManager:
         """
 
         schema_id = credential_exchange_record.schema_id
-        credential_offer = credential_exchange_record.credential_offer
-        credential_request = credential_exchange_record.credential_request
-        credential_values = credential_exchange_record.credential_values
 
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
-        async with ledger:
-            schema = await ledger.get_schema(schema_id)
+        if credential_exchange_record.credential:
+            self._logger.warning(
+                "issue_credential called multiple times for credential exchange: %s",
+                credential_exchange_record.credential_exchange_id
+            )
+        else:
+            credential_offer = credential_exchange_record.credential_offer
+            credential_request = credential_exchange_record.credential_request
+            credential_values = credential_exchange_record.credential_values
 
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-        (credential, credential_revocation_id) = await issuer.create_credential(
-            schema, credential_offer, credential_request, credential_values
-        )
+            ledger: BaseLedger = await self.context.inject(BaseLedger)
+            async with ledger:
+                schema = await ledger.get_schema(schema_id)
+
+            issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+            (
+                credential_exchange_record.credential,
+                credential_revocation_id,
+            ) = await issuer.create_credential(
+                schema, credential_offer, credential_request, credential_values
+            )
 
         credential_exchange_record.state = CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(self.context)
         await self.updated_record(credential_exchange_record)
 
-        credential_message = CredentialIssue(issue=json.dumps(credential))
+        credential_message = CredentialIssue(
+            issue=json.dumps(credential_exchange_record.credential)
+        )
         credential_message._thread = {
             "thid": credential_exchange_record.thread_id,
             "pthid": credential_exchange_record.parent_thread_id,

@@ -39,6 +39,7 @@ class AliceAgent(BaseAgent):
         super().__init__("Alice", port, **kwargs)
         self.credential_state = {}
         self.credential_event = asyncio.Event()
+        self.extra_args = ["--auto-respond-credential-offer"]
 
     async def get_invite(self):
         result = await self.admin_POST("/connections/create-invitation")
@@ -142,10 +143,7 @@ async def main():
 
         with log_timer("Startup duration:"):
             await alice.start_process()
-            alice.log("Started up")
-
             await faber.start_process()
-            faber.log("Started up")
 
         with log_timer("Publish duration:"):
             await faber.publish_defs()

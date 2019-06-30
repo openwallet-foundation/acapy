@@ -51,7 +51,7 @@ class AliceAgent(DemoAgent):
 
         if state == "offer_received":
             log_status("#15 After receiving credential offer, send credential request")
-            resp = await self.admin_POST(
+            await self.admin_POST(
                 f"/credential_exchange/{credential_exchange_id}/send-request"
             )
 
@@ -60,13 +60,13 @@ class AliceAgent(DemoAgent):
             cred_id = message["credential_id"]
             resp = await self.admin_GET(f"/credential/{cred_id}")
             log_json(resp, label="Credential details:")
+            log_json(
+                message["credential_request_metadata"],
+                label="Credential request metadata:",
+            )
             self.log("credential_id", message["credential_id"])
             self.log("credential_definition_id", message["credential_definition_id"])
             self.log("schema_id", message["schema_id"])
-            log_json(
-                message["credential_request_metadata"],
-                label="credential_request_metadata",
-            )
 
     async def handle_presentations(self, message):
         state = message["state"]

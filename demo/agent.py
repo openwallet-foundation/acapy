@@ -58,6 +58,7 @@ class DemoAgent:
         prefix: str = None,
         timing: bool = False,
         postgres: bool = None,
+        extra_args=None,
         **params,
     ):
         self.ident = ident
@@ -71,6 +72,7 @@ class DemoAgent:
         self.prefix = prefix
         self.timing = timing
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
+        self.extra_args = extra_args
 
         self.endpoint = f"http://{self.external_host}:{http_port}"
         self.admin_url = f"http://{self.external_host}:{admin_port}"
@@ -87,7 +89,8 @@ class DemoAgent:
         )
         self.storage_type = params.get("storage_type")
         self.wallet_type = params.get("wallet_type", "indy")
-        self.wallet_name = params.get("wallet_name") or self.ident.lower() + rand_name
+        self.wallet_name = params.get("wallet_name") or \
+            self.ident.lower().replace(' ', '') + rand_name
         self.wallet_key = params.get("wallet_key") or self.ident + rand_name
         self.did = None
 
@@ -99,8 +102,6 @@ class DemoAgent:
             "--accept-invites",
             "--accept-requests",
             "--auto-ping-connection",
-            "--auto-respond-credential-offer",
-            "--auto-respond-presentation-request",
             ("--inbound-transport", "http", "0.0.0.0", str(self.http_port)),
             ("--outbound-transport", "http"),
             ("--admin", "0.0.0.0", str(self.admin_port)),
@@ -146,6 +147,8 @@ class DemoAgent:
             )
         if self.webhook_url:
             result.append(("--webhook-url", self.webhook_url))
+        if self.extra_args:
+            result.extend(self.extra_args)
 
         return result
 
