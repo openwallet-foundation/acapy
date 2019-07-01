@@ -169,7 +169,7 @@ class AdminServer(BaseAdminServer):
                 routes_module = ClassLoader.load_module(
                     f"{protocol_module_path}.routes"
                 )
-                await routes_module.register(self.app)
+                await routes_module.register(app)
             except Exception as e:
                 raise ConfigError(
                     f"Failed to load external protocol module '{protocol_module_path}'."
