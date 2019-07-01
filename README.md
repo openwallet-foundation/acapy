@@ -1,117 +1,34 @@
-# Hyperledger Aries Python Cloud Agent  <!-- omit in toc -->
+# Hyperledger Aries Cloud Agent - Python  <!-- omit in toc -->
 
 [![CircleCI](https://circleci.com/gh/bcgov/aries-cloudagent-python.svg?style=shield)](https://circleci.com/gh/bcgov/aries-cloudagent-python)
 [![codecov](https://codecov.io/gh/bcgov/aries-cloudagent-python/branch/master/graph/badge.svg)](https://codecov.io/gh/bcgov/aries-cloudagent-python)
 [![Known Vulnerabilities](https://snyk.io/test/github/bcgov/aries-cloudagent-python/badge.svg)](https://snyk.io/test/github/bcgov/aries-cloudagent-python?targetFile=requirements.txt)
 
-![logo](/docs/assets/aries-cloudagent-python-logo-bw.png)
+<!-- ![logo](/docs/assets/aries-cloudagent-python-logo-bw.png) -->
 
-# Table of Contents <!-- omit in toc -->
+## Table of Contents <!-- omit in toc -->
 
 - [Introduction](#Introduction)
-- [Installing](#Installing)
-- [Running](#Running)
-- [Developing](#Developing)
-  - [Prerequisites](#Prerequisites)
-  - [Running Locally](#Running_Locally)
-    - [Caveats](#Caveats)
-  - [Running Tests](#Running_Tests)
-  - [Development Workflow](#Development_Workflow)
+- [Resources](#Resources)
 
-# Introduction
+## Introduction
 
-Aries Python Cloud Agent is a configurable instance of a "Cloud Agent".
+Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building decentralized identity applications and services running in non-mobile environments using DIDcomm messaging, the did:peer method, and verifiable credentials. With ACA-Py, Hyperledger Indy and Aries developers can focus on building applications using familiar web development technologies instead of trying to learn the nuts and bolts of low-level SDKs.
 
-# Installing
+The ACA-Py development model is pretty straight forward for those familiar with web development. An ACA-Py instance is always deployed with a paired "controller" application that provides the business logic for that Aries agent. The controller receives webhook event notifications from its instance of ACA-Py and uses an HTTP API exposed by the ACA-Py instance to provide direction on how to respond to those events. The source of the business logic is left to your imagination. An interface to a legacy system? A user interface for a person? Custom code to implement a new service? You can build your controller in any language that supports making and receiving HTTP requests. Wait...that's every language!
 
-Instructions forthcoming. `aries_cloudagent` will be made available in the future as a python package at [pypi.org](https://pypi.org).
+ACA-Py currently supports "only" Hyperledger Indy's verifiable credentials scheme (which is pretty powerful). We are experimenting with adding support to ACA-Py for other DID Ledgers and verifiable credential schemes.
 
-# Running
+As we create ACA-Py, we're building resources so that developers with a wide-range of backgrounds can get productive with ACA-Py in a hurry. Scan the resources below and jump in.
 
-After installing the package, `acagent` should be available in your PATH.
+## Resources
 
-Find out more about the available command line parameters by running:
+If you are experienced decentralized identity developer that knows Indy, is already familiar with the concepts behind Aries, and want to play with the code and perhaps start contributing, a traditional "install and go" page for developers can be found [here](DevReadMe.md).
 
-```bash
-acagent --help
-```
+For everyone else, we've created a [Getting Started Guide](docs/gettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services in a hurry. Along the way, you'll run some early Indy apps, apps built on ACA-Py and developer-oriented demos for interacting with ACA-Py. The guide has a good table of contents so that you can skip the parts you already know.
 
-Currently you must specify at least one _inbound_ and one _outbound_ transport.
+We'll soon have a ReadTheDocs site published with docstrings extracted from the ACA-Py code.
 
-For example:
+Not sure where your focus should be? Building apps? Aries? Indy? Indy's Blockchain? Ursa? Here is a [document](docs/GettingStartedAriesDev/IndyAriesDevOptions.md) that goes through the technical stack to show how it the projects fit together, so you can decide where you want to focus your efforts.
 
-```bash
-acagent     --inbound-transport http 0.0.0.0 8000 \
-            --inbound-transport http 0.0.0.0 8001 \
-            --inbound-transport ws 0.0.0.0 8002 \
-            --outbound-transport ws \
-            --outbound-transport http
-```
-
-Currently, Aries Python Cloud Agent ships with both inbound and outbound transport drivers for `http` and `websockets`. More information on how to develop your own drivers will be coming soon.
-
-# Developing
-
-## Prerequisites
-
-[Docker](https://www.docker.com) must be installed to run software locally and to run the test suite.
-
-## Running Locally
-
-To run the locally, we recommend using the provided Docker images to run the software.
-
-```
-./scripts/run_docker <args>
-```
-
-```
-./scripts/run_docker --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
-```
-
-To enable the [ptvsd](https://github.com/Microsoft/ptvsd) Python debugger for Visual Studio/VSCode use the `debug` flag
-
-For any ports you will be using, you can publish these ports from the docker container using the PORTS environment variable. For example:
-
-```
-PORTS="5000:5000 8000:8000 1000:1000" ./scripts/run_docker --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
-```
-
-Refer to [the previous section](#Running) for instructions on how to run the software.
-
-## Running Tests
-
-To run the test suite, use the following script:
-
-```sh
-./scripts/run_tests
-```
-
-To run the test including [Indy SDK](https://github.com/hyperledger/indy-sdk) and related dependencies, run the script:
-
-```sh
-./scripts/run_tests_indy
-```
-
-## Development Workflow
-
-We use [Flake8](http://flake8.pycqa.org/en/latest/) to enforce a coding style guide.
-
-We use [Black](https://black.readthedocs.io/en/stable/) to automatically format code.
-
-Please write tests for the work that you submit.
-
-Tests should reside in a directory named `tests` alongside the code under test. Generally, there is one test file for each file module under test. Test files _must_ have a name starting with `test_` to be automatically picked up the test runner.
-
-There are some good examples of various test scenarios for you to work from including mocking external imports and working with async code so take a look around!
-
-The test suite also displays the current code coverage after each run so you can see how much of your work is covered by tests. Use your best judgement for how much coverage is sufficient.
-
-Please also refer to the [contributing guidelines](/CONTRIBUTING.md) and [code of conduct](/CODE_OF_CONDUCT.md).
-
-## Dynamic Injection of Services
-
-The Agent employs a dynamic injection system whereby providers of base classes are registered with the `RequestContext` instance, currently within `conductor.py`. Message handlers and services request an instance of the selected implementation using `await context.inject(BaseClass)`; for instance the wallet instance may be injected using `wallet = await context.inject(BaseWallet)`. The `inject` method normally throws an exception if no implementation of the base class is provided, but can be called with `required=False` for optional dependencies (in which case a value of `None` may be returned).
-
-Providers are registered with either `context.injector.bind_instance(BaseClass, instance)` for previously-constructed (singleton) object instances, or `context.injector.bind_provider(BaseClass, provider)` for dynamic providers. In some cases it may be desirable to write a custom provider which switches implementations based on configuration settings, such as the wallet provider.
-
-The `BaseProvider` classes in the `config.provider` module include `ClassProvider`, which can perform dynamic module inclusion when given the combined module and class name as a string (for instance `aries_cloudagent.wallet.indy.IndyWallet`). `ClassProvider` accepts additional positional and keyword arguments to be passed into the class constructor. Any of these arguments may be an instance of `ClassProvider.Inject(BaseClass)`, allowing dynamic injection of dependencies when the class instance is instantiated.
+The initial implementation of ACA-Py was developed by the Verifiable Organizations Network (VON) team based at the Province of British Columbia. To learn more about VON and what's happening with decentralized identity in British Columbia, please go to [https://vonx.io](https://vonx.io).

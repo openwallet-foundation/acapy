@@ -8,6 +8,8 @@ Source doc: https://docs.google.com/a/cloudcompass.ca/open?id=12N1KDm1l4Az6bSOJ3
 
 This demo is for developers comfortable with playing around with APIs using the OpenAPI (Swagger) user interface and JSON. The controller for each of the two agent instances in the demo is you. You drive the API exposed by the agent instances to respond to events received by each agent. The demo covers two agents, Alice and one representing the Government Driver’s Licence program. The two agents connect, and then the Government’s Department of Motor Vehicles (DMV) agent issues a Driver Licence credential to Alice, and then asks Alice to prove she possesses the credential. Who knows why the DMV Agent needs to get the proof, but it lets us show off more protocols.
 
+# Table of Contents <!-- omit in toc -->
+
 - [Prerequisites](#Prerequisites)
 - [Starting Up](#Starting-Up)
   - [Start the VON Network](#Start-the-VON-Network)
