@@ -25,7 +25,7 @@ As we create ACA-Py, we're building resources so that developers with a wide-ran
 
 If you are experienced decentralized identity developer that knows Indy, is already familiar with the concepts behind Aries, and want to play with the code and perhaps start contributing, a traditional "install and go" page for developers can be found [here](DevReadMe.md).
 
-For everyone else, we've created a [Getting Started Guide](docs/gettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services in a hurry. Along the way, you'll run some early Indy apps, apps built on ACA-Py and developer-oriented demos for interacting with ACA-Py. The guide has a good table of contents so that you can skip the parts you already know.
+For everyone else, we've created a [Getting Started Guide](docs/GettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services in a hurry. Along the way, you'll run some early Indy apps, apps built on ACA-Py and developer-oriented demos for interacting with ACA-Py. The guide has a good table of contents so that you can skip the parts you already know.
 
 We'll soon have a ReadTheDocs site published with docstrings extracted from the ACA-Py code.
 

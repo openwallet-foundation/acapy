@@ -2,19 +2,19 @@
 
 Now that you know the basics of the Indy/Aries eco-system, what do you want to work on? There are many projects at different levels of the eco-system you could choose to work on, and many ways to contribute to the community.
 
-This is an important summary for newcomers, as often the temptation is to start at a level far below where you plan to focus your attention. Too often people coming into the community start at "the blockchain" - at `indy-node` (the Indy public ledger) or the `indy-sdk`. That is far below where the majority of developers will work and is not really that helpful if you want to build applications.
+This is an important summary for newcomers, as often the temptation is to start at a level far below where you plan to focus your attention. Too often devs coming into the community start at "the blockchain"; at `indy-node` (the Indy public ledger) or the `indy-sdk`. That is far below where the majority of developers will work and is not really that helpful if what you really want to do is build decentralized identity applications.
 
-We'll go through the layers from top of the stack to the bottom. Our expectation is that the majority of developers will work at the application level, and there will be fewer contributing developers each layer down the stack you go. This is not to dissuade anyone from contributing at the lower levels, but rather to say if you are not going to contribute at the lower levels, you don't need to everything about it. It's much like web development - you don't need to know TCP/IP to build web apps.
+In the following, we go through the layers from the top of the stack to the bottom. Our expectation is that the majority of developers will work at the application level, and there will be fewer contributing developers each layer down the stack you go. This is not to dissuade anyone from contributing at the lower levels, but rather to say if you are not going to contribute at the lower levels, you don't need to everything about it. It's much like web development - you don't need to know TCP/IP to build web apps.
 
 ## Building Decentralized Identity Applications
 
 If you just want to build enterprise applications on top of the decentralized identity-related Hyperledger projects, you can start with building cloud-based controller apps using any language you want, and deploying your code with an instance of the code in this repository ([aries-cloudagent-python](https://github.com/hyperledger/aries-cloudagent-python)). 
 
-If you want to build a mobile agent, there are open source options available, or you can use something like [Streetcred's] [Agent Framework](http://github.com/streetcred-id/agent-framework).
+If you want to build a mobile agent, there are open source options available, such as [Mattr Global](https://mattr.global/)'s [OSMA](https://github.com/mattrglobal/osma), or you can use something like [Streetcred's](https://app.streetcred.id/) [Agent Framework](http://github.com/streetcred-id/agent-framework) as the basis for your own mobile agent.
 
-As a developer building applications that use/embed Aries agents, you should be monitoring the [Aries Working Group](https://wiki.hyperledger.org/display/ARIES/Aries+Working+Group) activities and the [aries-rfcs](https://github.com/hyperledger/aries-rfcs) repo to see what protocols are being added and extended. In some cases, you may need to create your own protocols to be added to this repository, and you should do that in an open way, involving the community.
+As a developer building applications that use/embed Aries agents, you should join the [Aries Working Group](https://wiki.hyperledger.org/display/ARIES/Aries+Working+Group)'s weekly calls and watch the [aries-rfcs](https://github.com/hyperledger/aries-rfcs) repo to see what protocols are being added and extended. In some cases, you may need to create your own protocols to be added to this repository, and if you are looking for interoperability, you should specify those protocols in an open way, involving the community.
 
-Note that if this is what you want to do, you don't need to do a deep dive into the Aries SDK, the Indy SDK or the Indy Node public ledger.
+Note that if building apps is what you want to do, you don't need to do a deep dive into the Aries SDK, the Indy SDK or the Indy Node public ledger. You need to know the concepts, but it's not a requirement that know the code base intimately.
 
 ## Contributing to `aries-cloudagent-python`
 
