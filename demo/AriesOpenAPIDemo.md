@@ -80,7 +80,7 @@ When you are done, or to stop the demo so you can restart it, carry out the foll
 
 The demo is run entirely in the Browser tabs - DMV ([http://localhost:5000](http://localhost:5000)), Alice ([http://localhost:5001](http://localhost:5001)) and the Indy public ledger ([http://localhost:9000](http://localhost:9000)). The agent terminal windows will only show messages if an error occurs in using the REST API. The Indy public ledger window will display a log of messages from the four nodes of the Indy network. In the instructions that follow, we’ll let you know if you need to be in the DMV, Alice or Indy browser tab. We’ll leave it to you to track which is which.
 
-Using the OpenAPI user interface is pretty simple. In the steps below, we’ll indicate what API endpoint you need use, such as `POST /connections/create-invitation`. That means you must:
+Using the OpenAPI user interface is pretty simple. In the steps below, we’ll indicate what API endpoint you need use, such as **`POST /connections/create-invitation`**. That means you must:
 
 1. Scroll to and find that endpoint.
 2. Click on the endpoint name to expand its section of the UI.
@@ -99,7 +99,7 @@ We’ll start the demo by establishing a connection between Alice’s and the DM
 
 In the DMV browser tab, execute the **`POST /connections/create-invitation`**. No data is needed to be added for this call. If successful, you should see a connection ID, an invitation, and the invitation URL. The IDs will be different on each run.
 
-Copy the entire block of the `invitation` object, from the curly brackets {}, excluding the trailing comma.
+Copy the entire block of the `invitation` object, from the curly brackets `{}`, excluding the trailing comma.
 
 Switch to the Alice browser tab and get ready to execute the **`POST /connections/receive-invitation`** section. Erase the pre-populated text and paste the invitation object from the DMV tab. When you click `Execute` a you should get back a connection ID, an invitation key, and the state of the connection, which should be `requested`.
 

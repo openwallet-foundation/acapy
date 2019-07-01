@@ -15,7 +15,7 @@ Note that in the guidance we have here, we include not only the links to look at
 * To Do: [Issuing an Indy credential: From Issuer to Holder/Prover](IssuingIndyCredentials.md)
 * To Do: [Presenting an Indy credential: From Holder/Prover to Verifier](PresentingIndyProofs.md)
 * To Do: [Next steps: Creating your own Aries Agent](YourOwnAriesAgent.md)
-* To Do: [What should I be developing?](IndyAriesDevOptions.md)
+* [What should I work on? Options for Aries/Indy Developers](IndyAriesDevOptions.md)
 * [Deeper Dive: DIDcomm Messages](DIDcommMsgs.md)
 * [Deeper Dive: DIDcomm Message Routing and Encryption](RoutingEncryption.md)
 * To Do: [Deeper Dive: Running and Connecting to an Indy Network](ConnectIndyNetwork.md)
