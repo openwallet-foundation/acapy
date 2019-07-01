@@ -19,7 +19,7 @@ See the [README](README.md) for details about this repository and information ab
 
 Aries Cloud Agent Python (ACA-Py) is a configurable, extensible, non-mobile Aries agent that implements an easy way for developers to build decentralized identity applications that use verifiable credentials.
 
-The information on this page assumes you are developer with a background in decentralized identity, Indy, Aries and verifiable credentials. If you aren't familiar with those concepts and projects, please use our [Getting Started Guide](docs/gettingStartedAriesDev/README.md) to learn more.
+The information on this page assumes you are developer with a background in decentralized identity, Indy, Aries and verifiable credentials. If you aren't familiar with those concepts and projects, please use our [Getting Started Guide](docs/GettingStartedAriesDev/README.md) to learn more.
 
 ## Installing
 
@@ -27,7 +27,7 @@ Instructions forthcoming. `aries_cloudagent` will be made available in the futur
 
 ## Developer Demos
 
-To put ACA-Py through its paces at the command line, checkout our [demos](docs/gettingStartedAriesDev/AriesDeveloperDemos.md) page.
+To put ACA-Py through its paces at the command line, checkout our [demos](docs/GettingStartedAriesDev/AriesDeveloperDemos.md) page.
 
 ## Running
 

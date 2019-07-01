@@ -24,7 +24,7 @@ Link: [OrgBook BC - Production Instance](https://orgbook.gov.bc.ca/)
 
 ### The IIWBook Mobile Agent Demo
 
-The IIWBook demo was presented during the [Internet Identity Workshop](https://internetidentityworkshop.com/) (IIW) 28. The demo uses instances of the Aries Cloud Agent - Python-based services interacting with a mobile agent to issue and verify credentials. Follow along with the demo to get a beta Indy mobile agent from Streetcred, use it to get a verifiable credential that you control your email address, and proof the claims from that credential to get a verifiable credential that you attended IIW (or at least added attended a demo presented at IIW).
+The IIWBook demo was presented during the [Internet Identity Workshop](https://internetidentityworkshop.com/) (IIW) 28. The demo uses instances of the Aries Cloud Agent - Python-based services interacting with a mobile agent to issue and verify credentials. Follow along with the demo to get a beta Indy mobile agent from [Streetcred](https://app.streetcred.id/), use it to get a verifiable credential that you control your email address, and proof the claims from that credential to get a verifiable credential that you attended IIW (or at least added attended a demo presented at IIW).
 
 Link: [IIWBook Demo](https://vonx.io/how_to/iiwbook)
 
