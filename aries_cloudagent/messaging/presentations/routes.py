@@ -105,7 +105,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
             context, presentation_exchange_id
         )
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     return web.json_response(record.serialize())
 
 
@@ -155,7 +155,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             context, presentation_exchange_id
         )
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     start = request.query.get("start")
     count = request.query.get("count")
@@ -322,9 +322,9 @@ async def presentation_exchange_remove(request: web.BaseRequest):
             context, presentation_exchange_id
         )
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     await presentation_exchange_record.delete_record(context)
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 async def register(app: web.Application):

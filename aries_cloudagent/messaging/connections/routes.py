@@ -133,7 +133,7 @@ async def connections_retrieve(request: web.BaseRequest):
     try:
         record = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     return web.json_response(record.serialize())
 
 
@@ -177,7 +177,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     if context.settings.get("admin.no_receive_invites"):
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
     connection_mgr = ConnectionManager(context)
     outbound_handler = request.app["outbound_message_router"]
     invitation_json = await request.json()
@@ -225,7 +225,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     connection_mgr = ConnectionManager(context)
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
@@ -264,7 +264,7 @@ async def connections_accept_request(request: web.BaseRequest):
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     connection_mgr = ConnectionManager(context)
     my_endpoint = request.query.get("my_endpoint") or None
     request = await connection_mgr.create_response(connection, my_endpoint)
@@ -289,12 +289,12 @@ async def connections_establish_inbound(request: web.BaseRequest):
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     connection_mgr = ConnectionManager(context)
     await connection_mgr.establish_inbound(
         connection, inbound_connection_id, outbound_handler
     )
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 @docs(tags=["connection"], summary="Remove an existing connection record")
@@ -310,9 +310,9 @@ async def connections_remove(request: web.BaseRequest):
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     await connection.delete_record(context)
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 async def register(app: web.Application):

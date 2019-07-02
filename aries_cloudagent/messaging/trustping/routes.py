@@ -24,7 +24,7 @@ async def connections_send_ping(request: web.BaseRequest):
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
 
     if connection.is_active or connection.state == connection.STATE_RESPONSE:
         msg = Ping()
@@ -32,7 +32,7 @@ async def connections_send_ping(request: web.BaseRequest):
 
         await connection.log_activity(context, "ping", connection.DIRECTION_SENT)
 
-    return web.HTTPOk()
+    return web.json_response({})
 
 
 async def register(app: web.Application):
