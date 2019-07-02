@@ -28,7 +28,7 @@ else
 	AGENT_PORT_RANGE=8030-8037
 fi
 
-DOCKER_ENV="-e LOG_LEVEL=${LOG_LEVEL} -e RUNMODE=docker"
+DOCKER_ENV="-e LOG_LEVEL=${LOG_LEVEL} -e RUNMODE=docker -e DOCKERHOST=`docker run --net=host codenvy/che-ip`"
 if ! [ -z "$POSTGRES" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e POSTGRES=1 -e RUST_BACKTRACE=1"
 fi
@@ -36,9 +36,8 @@ fi
 # on Windows, docker run needs to be prefixed by winpty
 if [[ "$OSTYPE" == "msys" ]]; then
 	DOCKER="winpty docker"
-else
-	DOCKER=${DOCKER:-docker}
 fi
+DOCKER=${DOCKER:-docker}
 
 $DOCKER run --name $AGENT --rm -it \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
