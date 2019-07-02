@@ -25,19 +25,18 @@ class OutboundDeliveryError(BaseError):
 class OutboundTransportManager:
     """Outbound transport manager class."""
 
-    def __init__(self, queue_class: Type[BaseOutboundMessageQueue]):
+    def __init__(self, queue: BaseOutboundMessageQueue = None):
         """
         Initialize a `OutboundTransportManager` instance.
 
         Args:
-            queue: `BaseOutboundMessageQueue` implementation to use
+            queue: `BaseOutboundMessageQueue` instance to use
 
         """
         self.logger = logging.getLogger(__name__)
         self.polling_task = None
         self.processor: TaskProcessor = None
-        self.queue_class = queue_class
-        self.queue: BaseOutboundMessageQueue = queue_class()
+        self.queue: BaseOutboundMessageQueue = queue
         self.registered_transports = {}
         self.running_transports = {}
         self.startup_tasks = []
@@ -184,7 +183,10 @@ class OutboundTransportManager:
             message: The outbound message to send
 
         """
-        await self.queue.enqueue(message)
+        if self.queue:
+            await self.queue.enqueue(message)
+        else:
+            await self.dispatch_message(message)
 
     async def dispatch_message(self, message: OutboundMessage, attempt: int = None):
         """Dispatch a message to the relevant transport.

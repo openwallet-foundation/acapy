@@ -10,6 +10,7 @@ import logging
 from typing import Coroutine, Union
 
 from .admin.base_server import BaseAdminServer
+from .config.injection_context import InjectionContext
 from .messaging.agent_message import AgentMessage
 from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError
@@ -33,7 +34,7 @@ class Dispatcher:
     to other agents.
     """
 
-    def __init__(self, context: RequestContext):
+    def __init__(self, context: InjectionContext):
         """Initialize an instance of Dispatcher."""
         self.context = context
         self.logger = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ class Dispatcher:
                 error_result.assign_thread_id(delivery.thread_id)
             message = None
 
-        context = self.context.start_scope("message")
+        context = RequestContext(base_context=self.context)
         context.message = message
         context.message_delivery = delivery
         context.connection_active = connection and connection.is_active

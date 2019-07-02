@@ -37,6 +37,7 @@ class MessageDelivery:
         self._sender_did = sender_did
         self._sender_verkey = sender_verkey
         self._socket_id = socket_id
+        self._thread_id = thread_id
         self._transport_type = transport_type
 
     @property
