@@ -7,6 +7,9 @@ PACKAGE_NAME = "aries_cloudagent"
 version_meta = runpy.run_path("./{}/version.py".format(PACKAGE_NAME))
 VERSION = version_meta["__version__"]
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 
 def parse_requirements(filename):
     """Load requirements from a pip requirements file."""
@@ -18,6 +21,8 @@ if __name__ == "__main__":
     setup(
         name=PACKAGE_NAME,
         version=VERSION,
+        long_description=long_description,
+        long_description_content_type="text/markdown",
         packages=find_packages(),
         include_package_data=True,
         install_requires=parse_requirements("requirements.txt"),
