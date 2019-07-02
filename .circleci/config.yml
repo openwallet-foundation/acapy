@@ -7,47 +7,38 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v2-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
-            - v2-pip-dependencies-{{ .Branch }}-
+            - v4-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
+            - v4-pip-dependencies-{{ .Branch }}-
       - run:
           name: Install Python Dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
             pip install \
+              --user \
               -r requirements.txt \
               -r requirements.dev.txt \
               pytest
 
       - save_cache:
           paths:
-            - venv
-          key: v2-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
+            - /home/indy/.local/lib/python3.6/site-packages
+          key: v4-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
 
       - run:
           name: Run Agent Tests
           command: |
-            mkdir test-reports
-            mkdir .coverage
-            . venv/bin/activate
+            [ ! -d test-reports ] && mkdir test-reports
             pytest
 
       - run:
           name: Push to Codecov.io
           command: |
-              bash <(curl -s https://codecov.io/bash)
+              bash <(curl -s https://codecov.io/bash) -f test-reports/coverage.xml
 
       - store_test_results:
           path: test-reports
 
-      - store_test_results:
-          path: .coverage
-
       - store_artifacts:
           path: test-reports
-
-      - store_artifacts:
-          path: .coverage
 
 workflows:
  version: 2

@@ -17,7 +17,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 from .diddoc import DIDDoc
 from .publickey import LinkedDataKeySpec, PublicKey, PublicKeyType
 from .service import Service
+
+__all__ = ["DIDDoc", "LinkedDataKeySpec", "PublicKey", "PublicKeyType", "Service"]

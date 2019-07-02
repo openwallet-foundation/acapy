@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Coroutine, Sequence, Set, Type
+from typing import Coroutine, Sequence, Set
 import uuid
 
 from aiohttp import web, ClientSession
@@ -12,6 +12,7 @@ import aiohttp_cors
 from marshmallow import fields, Schema
 
 from ..classloader import ClassLoader
+from ..config.base import ConfigError
 from ..config.injection_context import InjectionContext
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.responder import BaseResponder
@@ -107,7 +108,6 @@ class AdminServer(BaseAdminServer):
         port: int,
         context: InjectionContext,
         outbound_message_router: Coroutine,
-        queue_class: Type[BaseOutboundMessageQueue],
     ):
         """
         Initialize an AdminServer instance.
@@ -121,7 +121,6 @@ class AdminServer(BaseAdminServer):
         self.host = host
         self.port = port
         self.loaded_modules = []
-        self.queue_class = queue_class
         self.webhook_queue = None
         self.webhook_retries = 5
         self.webhook_session: ClientSession = None
@@ -170,14 +169,11 @@ class AdminServer(BaseAdminServer):
                 routes_module = ClassLoader.load_module(
                     f"{protocol_module_path}.routes"
                 )
-                await routes_module.register(self.app)
+                await routes_module.register(app)
             except Exception as e:
-                self.logger.error(
+                raise ConfigError(
                     f"Failed to load external protocol module '{protocol_module_path}'."
-                    + "\n"
-                    + str(e)
-                )
-                raise
+                ) from e
 
         cors = aiohttp_cors.setup(
             app,
@@ -227,8 +223,9 @@ class AdminServer(BaseAdminServer):
         """Stop the webserver."""
         for queue in self.websocket_queues.values():
             queue.stop()
-        await self.site.stop()
-        self.site = None
+        if self.site:
+            await self.site.stop()
+            self.site = None
         if self.webhook_queue:
             self.webhook_queue.stop()
             self.webhook_queue = None
@@ -289,7 +286,7 @@ class AdminServer(BaseAdminServer):
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             collector.reset()
-        raise web.HTTPOk()
+        return web.json_response({})
 
     async def redirect_handler(self, request: web.BaseRequest):
         """Perform redirect to documentation."""
@@ -301,7 +298,7 @@ class AdminServer(BaseAdminServer):
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         socket_id = str(uuid.uuid4())
-        queue = self.queue_class()
+        queue = await self.context.inject(BaseOutboundMessageQueue)
 
         try:
             self.websocket_queues[socket_id] = queue
@@ -355,7 +352,7 @@ class AdminServer(BaseAdminServer):
     async def send_webhook(self, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
         if not self.webhook_queue:
-            self.webhook_queue = self.queue_class()
+            self.webhook_queue = await self.context.inject(BaseOutboundMessageQueue)
             self.webhook_task = asyncio.ensure_future(self._process_webhooks())
         await self.webhook_queue.enqueue((topic, payload))
 

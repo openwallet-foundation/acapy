@@ -6,7 +6,11 @@ from typing import Mapping
 from ..error import BaseError
 
 
-class SettingsError(BaseError):
+class ConfigError(BaseError):
+    """A base exception for all configuration errors."""
+
+
+class SettingsError(ConfigError):
     """The base exception raised by `BaseSettings` implementations."""
 
 
@@ -94,7 +98,7 @@ class BaseSettings(Mapping[str, object]):
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
 
 
-class InjectorError(BaseError):
+class InjectorError(ConfigError):
     """The base exception raised by `BaseInjector` implementations."""
 
 
@@ -126,7 +130,7 @@ class BaseInjector(ABC):
         """Produce a copy of the injector instance."""
 
 
-class ProviderError(BaseError):
+class ProviderError(ConfigError):
     """The base exception raised by `BaseProvider` implementations."""
 
 

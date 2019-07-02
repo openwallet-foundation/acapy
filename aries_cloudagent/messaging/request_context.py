@@ -17,9 +17,19 @@ from .message_delivery import MessageDelivery
 class RequestContext(InjectionContext):
     """Context established by the Conductor and passed into message handlers."""
 
-    def __init__(self, *, settings: Mapping[str, object] = None):
+    def __init__(
+        self,
+        *,
+        base_context: InjectionContext = None,
+        settings: Mapping[str, object] = None
+    ):
         """Initialize an instance of RequestContext."""
         super().__init__(settings=settings)
+        if base_context:
+            self._injector = base_context._injector
+            self._scope_name = base_context.scope_name
+            self._scopes = base_context._scopes
+            self.start_scope("request")
         self._connection_active = False
         self._connection_record = None
         self._message = None

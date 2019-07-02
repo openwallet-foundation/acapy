@@ -10,7 +10,7 @@ from ..queue.basic import BasicOutboundMessageQueue
 
 class TestOutboundTransportManager(AsyncTestCase):
     def test_register_path(self):
-        mgr = OutboundTransportManager(BasicOutboundMessageQueue)
+        mgr = OutboundTransportManager()
         mgr.register("http")
         assert mgr.get_registered_transport_for_scheme("http")
 
@@ -18,7 +18,7 @@ class TestOutboundTransportManager(AsyncTestCase):
             mgr.register("http")
 
     async def test_send_message(self):
-        mgr = OutboundTransportManager(BasicOutboundMessageQueue)
+        mgr = OutboundTransportManager(BasicOutboundMessageQueue())
 
         transport_cls = async_mock.Mock(spec=[])
         with self.assertRaises(OutboundTransportRegistrationError):

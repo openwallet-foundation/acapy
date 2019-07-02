@@ -4,7 +4,8 @@ from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
 from aiohttp import web
 
 from ...config.injection_context import InjectionContext
-from ...stats import Collector
+from ...config.provider import ClassProvider
+from ...transport.outbound.queue.base import BaseOutboundMessageQueue
 from ...transport.outbound.queue.basic import BasicOutboundMessageQueue
 from ..server import AdminServer
 
@@ -15,13 +16,11 @@ class TestAdminServerApp(AioHTTPTestCase):
 
     def get_admin_server(self) -> AdminServer:
         context = InjectionContext()
-        context.injector.bind_instance(Collector, Collector())
+        context.injector.bind_provider(
+            BaseOutboundMessageQueue, ClassProvider(BasicOutboundMessageQueue)
+        )
         server = AdminServer(
-            "0.0.0.0",
-            unused_port(),
-            context,
-            self.outbound_message_router,
-            BasicOutboundMessageQueue,
+            "0.0.0.0", unused_port(), context, self.outbound_message_router
         )
         return server
 
@@ -89,12 +88,11 @@ class TestAdminServerWebhook(AioHTTPTestCase):
 
     def get_admin_server(self) -> AdminServer:
         context = InjectionContext()
+        context.injector.bind_provider(
+            BaseOutboundMessageQueue, ClassProvider(BasicOutboundMessageQueue)
+        )
         server = AdminServer(
-            "localhost",
-            unused_port(),
-            context,
-            self.outbound_message_router,
-            BasicOutboundMessageQueue,
+            "localhost", unused_port(), context, self.outbound_message_router
         )
         return server
 

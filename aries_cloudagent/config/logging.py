@@ -1,10 +1,10 @@
 """Utilities related to logging."""
 
+from logging import getLogger
+from logging.config import fileConfig
 from os import path
 
-from logging.config import fileConfig
-from aries_cloudagent.version import __version__
-from logging import getLogger
+from ..version import __version__
 
 
 class LoggingConfigurator:
