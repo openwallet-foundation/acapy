@@ -1,4 +1,5 @@
 import pytest
+import os
 
 try:
     from indy.libindy import _cdll
@@ -37,52 +38,54 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
     """ """
 
     # TODO get these to run in docker ci/cd
-    # @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_postgres_wallet_storage_works(self):
         """
         Ensure that postgres wallet operations work (create and open wallet, store and search, drop wallet)
         """
-        load_postgres_plugin()
-        postgres_wallet = IndyWallet(
-            {
-                "auto_create": False,
-                "auto_remove": False,
-                "name": "test_pg_wallet",
-                "key": "my_postgres",
-                "storage_type": "postgres_storage",
-                "storage_config": '{"url":"host.docker.internal:5432", "max_connections":5}',
-                "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
-            }
-        )
-        await postgres_wallet.create()
-        await postgres_wallet.open()
+        postgres_url = os.environ.get('POSTGRES_URL')
+        if postgres_url:
+            load_postgres_plugin()
+            postgres_wallet = IndyWallet(
+                {
+                    "auto_create": False,
+                    "auto_remove": False,
+                    "name": "test_pg_wallet",
+                    "key": "my_postgres",
+                    "storage_type": "postgres_storage",
+                    "storage_config": '{"url":"' + postgres_url + '", "max_connections":5}',
+                    "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
+                }
+            )
+            await postgres_wallet.create()
+            await postgres_wallet.open()
 
-        storage = IndyStorage(postgres_wallet)
+            storage = IndyStorage(postgres_wallet)
 
-        # add and then fetch a record
-        record = StorageRecord(
-            value='{"initiator": "self", "invitation_key": "9XgL7Y4TBTJyVJdomT6axZGUFg9npxcrXnRT4CG8fWYg", "state": "invitation", "routing_state": "none", "error_msg": null, "their_label": null, "created_at": "2019-05-14 21:58:24.143260+00:00", "updated_at": "2019-05-14 21:58:24.143260+00:00"}',
-            tags={
-                "initiator": "self",
-                "invitation_key": "9XgL7Y4TBTJyVJdomT6axZGUFg9npxcrXnRT4CG8fWYg",
-                "state": "invitation",
-                "routing_state": "none",
-            },
-            type="connection",
-            id="f96f76ec-0e9b-4f32-8237-f4219e6cf0c7",
-        )
-        await storage.add_record(record)
-        g_rec = await storage.get_record(record.type, record.id)
+            # add and then fetch a record
+            record = StorageRecord(
+                value='{"initiator": "self", "invitation_key": "9XgL7Y4TBTJyVJdomT6axZGUFg9npxcrXnRT4CG8fWYg", "state": "invitation", "routing_state": "none", "error_msg": null, "their_label": null, "created_at": "2019-05-14 21:58:24.143260+00:00", "updated_at": "2019-05-14 21:58:24.143260+00:00"}',
+                tags={
+                    "initiator": "self",
+                    "invitation_key": "9XgL7Y4TBTJyVJdomT6axZGUFg9npxcrXnRT4CG8fWYg",
+                    "state": "invitation",
+                    "routing_state": "none",
+                },
+                type="connection",
+                id="f96f76ec-0e9b-4f32-8237-f4219e6cf0c7",
+            )
+            await storage.add_record(record)
+            g_rec = await storage.get_record(record.type, record.id)
 
-        # now try search
-        search = None
-        try:
-            search = storage.search_records("connection")
-            await search.open()
-            records = await search.fetch(10)
-        finally:
-            if search:
-                await search.close()
+            # now try search
+            search = None
+            try:
+                search = storage.search_records("connection")
+                await search.open()
+                records = await search.fetch(10)
+            finally:
+                if search:
+                    await search.close()
 
-        await postgres_wallet.close()
-        await postgres_wallet.remove()
+            await postgres_wallet.close()
+            await postgres_wallet.remove()

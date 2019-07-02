@@ -1,4 +1,5 @@
 import pytest
+import os
 
 try:
     from indy.libindy import _cdll
@@ -130,30 +131,32 @@ class TestWalletCompat:
         assert self.test_message == unpacked
 
     # TODO get these to run in docker ci/cd
-    # @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_postgres_wallet_works(self):
         """
         Ensure that postgres wallet operations work (create and open wallet, create did, drop wallet)
         """
-        load_postgres_plugin()
-        postgres_wallet = IndyWallet(
-            {
-                "auto_create": False,
-                "auto_remove": False,
-                "name": "test_pg_wallet",
-                "key": "my_postgres",
-                "storage_type": "postgres_storage",
-                "storage_config": '{"url":"host.docker.internal:5432"}',
-                "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
-            }
-        )
-        await postgres_wallet.create()
-        await postgres_wallet.open()
+        postgres_url = os.environ.get('POSTGRES_URL')
+        if postgres_url:
+            load_postgres_plugin()
+            postgres_wallet = IndyWallet(
+                {
+                    "auto_create": False,
+                    "auto_remove": False,
+                    "name": "test_pg_wallet",
+                    "key": "my_postgres",
+                    "storage_type": "postgres_storage",
+                    "storage_config": '{"url":"' + postgres_url + '"}',
+                    "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
+                }
+            )
+            await postgres_wallet.create()
+            await postgres_wallet.open()
 
-        await postgres_wallet.create_local_did(self.test_seed)
-        py_packed = await postgres_wallet.pack_message(
-            self.test_message, [self.test_verkey], self.test_verkey
-        )
+            await postgres_wallet.create_local_did(self.test_seed)
+            py_packed = await postgres_wallet.pack_message(
+                self.test_message, [self.test_verkey], self.test_verkey
+            )
 
-        await postgres_wallet.close()
-        await postgres_wallet.remove()
+            await postgres_wallet.close()
+            await postgres_wallet.remove()
