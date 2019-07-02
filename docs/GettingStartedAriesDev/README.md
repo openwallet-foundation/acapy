@@ -10,7 +10,7 @@ Note that in the guidance we have here, we include not only the links to look at
 * [Aries Agents in Context: The Big Picture](AriesBigPicture.md)
 * [Aries Internals - Deployment Components](AriesAgentArchitecture.md)
 * [An overview of Aries messaging](AriesMessaging.md)
-* [Aries Developer Demos](AriesDeveloperDemos.md)
+* [Demos - Aries Developer](AriesDeveloperDemos.md)
 * To Do: [Establishing a connection between Aries Agents](AgentConnections.md)
 * To Do: [Issuing an Indy credential: From Issuer to Holder/Prover](IssuingIndyCredentials.md)
 * To Do: [Presenting an Indy credential: From Holder/Prover to Verifier](PresentingIndyProofs.md)
@@ -18,4 +18,7 @@ Note that in the guidance we have here, we include not only the links to look at
 * [What should I work on? Options for Aries/Indy Developers](IndyAriesDevOptions.md)
 * [Deeper Dive: DIDcomm Messages](DIDcommMsgs.md)
 * [Deeper Dive: DIDcomm Message Routing and Encryption](RoutingEncryption.md)
+* [Deeper Dive: Routing Example](AriesRoutingExample.md)
 * To Do: [Deeper Dive: Running and Connecting to an Indy Network](ConnectIndyNetwork.md)
+
+Want to help with this guide? Please add issues or submit a pull request to improve the document. Point out things that are missing, things to improve and especially things that are wrong.
