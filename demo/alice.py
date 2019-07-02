@@ -61,7 +61,7 @@ class AliceAgent(DemoAgent):
             resp = await self.admin_GET(f"/credential/{cred_id}")
             log_json(resp, label="Credential details:")
             log_json(
-                message["Credential request metadata:"],
+                message["credential_request_metadata"],
                 label="Credential request metadata:",
             )
             self.log("credential_id", message["credential_id"])
