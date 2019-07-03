@@ -84,6 +84,8 @@ class MessageSerializer:
                     message_dict = json.loads(message_json)
                 except ValueError:
                     raise MessageParseError("Message JSON parsing failed")
+                if not isinstance(message_dict, dict):
+                    raise MessageParseError("Message JSON result is not an object")
 
         # parse thread ID
         thread_dec = message_dict.get("~thread")
