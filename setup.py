@@ -1,5 +1,6 @@
 """Module setup."""
 
+import os
 import runpy
 from setuptools import setup, find_packages
 
@@ -7,7 +8,7 @@ PACKAGE_NAME = "aries_cloudagent"
 version_meta = runpy.run_path("./{}/version.py".format(PACKAGE_NAME))
 VERSION = version_meta["__version__"]
 
-with open("README.md", "r") as fh:
+with open(os.path.abspath("./README.md"), "r") as fh:
     long_description = fh.read()
 
 
