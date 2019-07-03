@@ -20,6 +20,9 @@ LOGGER = logging.getLogger(__name__)
 class MessageSerializer:
     """Standard DIDComm message parser and serializer."""
 
+    def __init__(self):
+        """Initialize the message serializer instance."""
+
     async def parse_message(
         self,
         context: InjectionContext,
@@ -51,6 +54,9 @@ class MessageSerializer:
         message_dict = None
         message_json = message_body
 
+        if not message_json:
+            raise MessageParseError("Message body is empty")
+
         try:
             message_dict = json.loads(message_json)
         except ValueError:
@@ -58,17 +64,7 @@ class MessageSerializer:
         if not isinstance(message_dict, dict):
             raise MessageParseError("Message JSON result is not an object")
 
-        # parse thread ID
-        thread_dec = message_dict.get("~thread")
-        delivery.thread_id = (
-            thread_dec and thread_dec.get("thid") or message_dict.get("@id")
-        )
-
-        # handle transport decorator
-        transport_dec = message_dict.get("~transport")
-        if transport_dec:
-            delivery.direct_response_requested = transport_dec.get("return_route")
-
+        # packed messages are detected by the absence of @type
         if "@type" not in message_dict:
             try:
                 wallet: BaseWallet = await context.inject(BaseWallet)
@@ -88,6 +84,17 @@ class MessageSerializer:
                     message_dict = json.loads(message_json)
                 except ValueError:
                     raise MessageParseError("Message JSON parsing failed")
+
+        # parse thread ID
+        thread_dec = message_dict.get("~thread")
+        delivery.thread_id = (
+            thread_dec and thread_dec.get("thid") or message_dict.get("@id")
+        )
+
+        # handle transport decorator
+        transport_dec = message_dict.get("~transport")
+        if transport_dec:
+            delivery.direct_response_requested = transport_dec.get("return_route")
 
         LOGGER.debug(f"Expanded message: {message_dict}")
 
