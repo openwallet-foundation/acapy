@@ -15,4 +15,4 @@ ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-ENTRYPOINT ["/bin/bash", "-c", "acagent \"$@\"", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "aca-py \"$@\"", "--"]
