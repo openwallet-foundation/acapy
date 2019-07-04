@@ -89,8 +89,9 @@ class DemoAgent:
         )
         self.storage_type = params.get("storage_type")
         self.wallet_type = params.get("wallet_type", "indy")
-        self.wallet_name = params.get("wallet_name") or \
-            self.ident.lower().replace(' ', '') + rand_name
+        self.wallet_name = (
+            params.get("wallet_name") or self.ident.lower().replace(" ", "") + rand_name
+        )
         self.wallet_key = params.get("wallet_key") or self.ident + rand_name
         self.did = None
 

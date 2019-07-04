@@ -72,10 +72,7 @@ class ConnectionManager:
         return self._context
 
     async def create_invitation(
-        self,
-        my_label: str = None,
-        my_endpoint: str = None,
-        their_role: str = None,
+        self, my_label: str = None, my_endpoint: str = None, their_role: str = None
     ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -169,9 +166,7 @@ class ConnectionManager:
             await session.get(endpoint, params={"invite": invite_b64})
 
     async def receive_invitation(
-        self,
-        invitation: ConnectionInvitation,
-        their_role: str = None,
+        self, invitation: ConnectionInvitation, their_role: str = None
     ) -> ConnectionRecord:
         """
         Create a new connection record to track a received invitation.
@@ -204,10 +199,7 @@ class ConnectionManager:
 
         self._log_state(
             "Created new connection record",
-            {
-                "id": connection.connection_id,
-                "state": connection.state,
-            },
+            {"id": connection.connection_id, "state": connection.state},
         )
 
         # Save the invitation for later processing
@@ -344,10 +336,7 @@ class ConnectionManager:
 
             self._log_state(
                 "Created new connection record",
-                {
-                    "id": connection.connection_id,
-                    "state": connection.state,
-                },
+                {"id": connection.connection_id, "state": connection.state},
             )
 
         # Attach the connection request so it can be found and responded to
@@ -360,9 +349,7 @@ class ConnectionManager:
         return connection
 
     async def create_response(
-        self,
-        connection: ConnectionRecord,
-        my_endpoint: str = None,
+        self, connection: ConnectionRecord, my_endpoint: str = None
     ) -> ConnectionResponse:
         """
         Create a connection response for a received connection request.
@@ -626,7 +613,7 @@ class ConnectionManager:
         self,
         my_info: DIDInfo,
         inbound_connection_id: str = None,
-        my_endpoint: str = None
+        my_endpoint: str = None,
     ) -> DIDDoc:
         """Create our DID document for a given DID.
 
@@ -855,10 +842,7 @@ class ConnectionManager:
             )
 
     async def establish_inbound(
-        self,
-        connection: ConnectionRecord,
-        inbound_connection_id: str,
-        outbound_handler
+        self, connection: ConnectionRecord, inbound_connection_id: str, outbound_handler
     ) -> str:
         """Assign the inbound routing connection for a connection record.
 
@@ -878,8 +862,7 @@ class ConnectionManager:
 
         try:
             router = await ConnectionRecord.retrieve_by_id(
-                self.context,
-                inbound_connection_id
+                self.context, inbound_connection_id
             )
         except StorageNotFoundError:
             raise ConnectionManagerError(
@@ -894,9 +877,7 @@ class ConnectionManager:
         route_mgr = RoutingManager(self.context)
 
         await route_mgr.send_create_route(
-            inbound_connection_id,
-            my_info.verkey,
-            outbound_handler
+            inbound_connection_id, my_info.verkey, outbound_handler
         )
         connection.routing_state = ConnectionRecord.ROUTING_STATE_REQUEST
         await connection.save(self.context)
@@ -904,10 +885,7 @@ class ConnectionManager:
         return connection.routing_state
 
     async def update_inbound(
-        self,
-        inbound_connection_id: str,
-        recip_verkey: str,
-        routing_state: str
+        self, inbound_connection_id: str, recip_verkey: str, routing_state: str
     ):
         """Activate connections once a route has been established.
 
@@ -915,9 +893,7 @@ class ConnectionManager:
         connection and marks the routing as complete.
         """
         conns = await ConnectionRecord.query(
-            self.context, {
-                "inbound_connection_id": inbound_connection_id,
-            }
+            self.context, {"inbound_connection_id": inbound_connection_id}
         )
         wallet: BaseWallet = await self.context.inject(BaseWallet)
 
@@ -946,10 +922,7 @@ class ConnectionManager:
         """Call webhook when the record is updated."""
         responder = await self._context.inject(BaseResponder, required=False)
         if responder:
-            await responder.send_webhook(
-                "connections",
-                connection.serialize()
-            )
+            await responder.send_webhook("connections", connection.serialize())
         cache: BaseCache = await self._context.inject(BaseCache, required=False)
         cache_key = f"connection_target::{connection.connection_id}"
         if cache:
@@ -962,8 +935,5 @@ class ConnectionManager:
             activity = await connection.fetch_activity(self._context)
             await responder.send_webhook(
                 "connections_activity",
-                {
-                    "connection_id": connection.connection_id,
-                    "activity": activity,
-                }
+                {"connection_id": connection.connection_id, "activity": activity},
             )

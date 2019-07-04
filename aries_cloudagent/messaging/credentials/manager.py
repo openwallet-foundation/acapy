@@ -282,7 +282,7 @@ class CredentialManager:
         if credential_exchange_record.credential_request:
             self._logger.warning(
                 "create_request called multiple times for credential exchange: %s",
-                credential_exchange_record.credential_exchange_id
+                credential_exchange_record.credential_exchange_id,
             )
         else:
             ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -352,7 +352,7 @@ class CredentialManager:
         if credential_exchange_record.credential:
             self._logger.warning(
                 "issue_credential called multiple times for credential exchange: %s",
-                credential_exchange_record.credential_exchange_id
+                credential_exchange_record.credential_exchange_id,
             )
         else:
             credential_offer = credential_exchange_record.credential_offer

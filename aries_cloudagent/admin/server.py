@@ -136,6 +136,32 @@ class AdminServer(BaseAdminServer):
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
+
+        api_key = self.context.settings.get("api_key")
+        admin_unsecured = self.context.settings.get("admin_unsecured")
+
+        # admin-token and admin-token are mutually exclusive. Should be enforced
+        # during parameter parsing but to be sure, we check here.
+        assert admin_unsecured or api_key
+        assert not (admin_unsecured and api_key)
+
+        # If api_key is None, then admin_unsecured must be set so
+        # we can safely enable the admin server with no security
+        if api_key:
+
+            @web.middleware
+            async def check_token(request, handler):
+                header_api_key = request.headers.get("x-api-key")
+                if not header_api_key:
+                    raise web.HTTPUnauthorized(
+                        "An API key must be provided in the X-API-Key header"
+                    )
+
+                if api_key == header_api_key:
+                    return await handler(request)
+                else:
+                    raise web.HTTPUnauthorized("Invalid api key provided")
+
         middlewares = []
         stats: Collector = await self.context.inject(Collector, required=False)
         if stats:
@@ -190,10 +216,7 @@ class AdminServer(BaseAdminServer):
             cors.add(route)
 
         setup_aiohttp_apispec(
-            app=app,
-            title="Aries Cloud Agent",
-            version="v1",
-            swagger_path="/api/doc",
+            app=app, title="Aries Cloud Agent", version="v1", swagger_path="/api/doc"
         )
         app.on_startup.append(self.on_startup)
         return app

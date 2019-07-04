@@ -5,9 +5,7 @@ from marshmallow import fields
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import PING
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.trustping.handlers.ping_handler.PingHandler"
-)
+HANDLER_CLASS = "aries_cloudagent.messaging.trustping.handlers.ping_handler.PingHandler"
 
 
 class Ping(AgentMessage):
