@@ -1,5 +1,7 @@
 # How to Publish a New Version
 
+0. The code to be published should be in the `master` branch.
+
 1. Update the version number listed in [aries_cloudagent/version.py](aries_cloudagent/version.py). The incremented version number should adhere to the [Semantic Versioning Specification](https://semver.org/#semantic-versioning-specification-semver) based on the changes since the last published release.
 
 2. Create a new GitHub release. The tag name and title of the release should be the same as the version in [aries_cloudagent/version.py](aries_cloudagent/version.py).
