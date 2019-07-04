@@ -67,11 +67,11 @@ Most configuration parameters are provided to the the agent at startup. Refer to
 
 ## Command Line Arguments
 
-| **argument**                  | **format**                                    | **effect**                                                                                                                                                                                                                 | **required** |
-| ----------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `--inbound-transport`, `-it`  | `--inbound-transport \<type> \<host> \<port>` | Defines the inbound transport(s) to listen on. This parameter can be passed multiple times to create multiple interfaces. Supported internal transport types are `http` and `ws`.                                          | `true`       |
-| `--outbound-transport`, `-ot` | `--outbound-transport \<type>`                | Defines the outbound transport(s) to support for outgoing messages. This parameter can be passed multiple times to supoort multiple transport types. Supported internal transport types are `http` and `ws`.               | `true`       |
-| `--log-config`                | `--log-config \<config file path>`            | Provides a custom [python logging config file](https://docs.python.org/3/library/logging.config.html#logging-config-fileformat) to use. By default, a [default logging config](config/default_logging_config.ini) is used. | `false`      |
+| **argument**                  | **format**                                 | **effect**                                                                                                                                                                                                                 | **required** |
+| ----------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `--inbound-transport`, `-it`  | `--inbound-transport <type> <host> <port>` | Defines the inbound transport(s) to listen on. This parameter can be passed multiple times to create multiple interfaces. Supported internal transport types are `http` and `ws`.                                          | `true`       |
+| `--outbound-transport`, `-ot` | `--outbound-transport <type>`              | Defines the outbound transport(s) to support for outgoing messages. This parameter can be passed multiple times to supoort multiple transport types. Supported internal transport types are `http` and `ws`.               | `true`       |
+| `--log-config`                | `--log-config <config file path>`          | Provides a custom [python logging config file](https://docs.python.org/3/library/logging.config.html#logging-config-fileformat) to use. By default, a [default logging config](config/default_logging_config.ini) is used. | `false`      |
 
 ## Developing
 
