@@ -31,12 +31,12 @@ To put ACA-Py through its paces at the command line, checkout our [demos](docs/G
 
 ## Running
 
-After installing the PyPi package, the executable `acagent` should be available in your PATH.
+After installing the PyPi package, the executable `aca-py` should be available in your PATH.
 
 Find out more about the available command line parameters by running:
 
 ```bash
-acagent --help
+aca-py --help
 ```
 
 Currently you must specify at least one _inbound_ and one _outbound_ transport.
@@ -44,7 +44,7 @@ Currently you must specify at least one _inbound_ and one _outbound_ transport.
 For example:
 
 ```bash
-acagent     --inbound-transport http 0.0.0.0 8000 \
+aca-py     --inbound-transport http 0.0.0.0 8000 \
             --inbound-transport http 0.0.0.0 8001 \
             --inbound-transport ws 0.0.0.0 8002 \
             --outbound-transport ws \
