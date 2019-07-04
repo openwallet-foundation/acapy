@@ -23,7 +23,11 @@ The information on this page assumes you are developer with a background in dece
 
 ## Installing
 
-Instructions forthcoming. `aries_cloudagent` will be made available in the future as a python package at [pypi.org](https://pypi.org).
+This package is [available on PyPI](https://pypi.org/project/aries-cloudagent/) and can be installed with the following command:
+
+```
+pip install aries-cloudagent
+```
 
 ## Developer Demos
 

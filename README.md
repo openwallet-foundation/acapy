@@ -32,11 +32,3 @@ We'll soon have a ReadTheDocs site published with docstrings extracted from the 
 Not sure where your focus should be? Building apps? Aries? Indy? Indy's Blockchain? Ursa? Here is a [document](docs/GettingStartedAriesDev/IndyAriesDevOptions.md) that goes through the technical stack to show how it the projects fit together, so you can decide where you want to focus your efforts.
 
 The initial implementation of ACA-Py was developed by the Verifiable Organizations Network (VON) team based at the Province of British Columbia. To learn more about VON and what's happening with decentralized identity in British Columbia, please go to [https://vonx.io](https://vonx.io).
-
-## Installing
-
-This package is [available on PyPI](https://pypi.org/project/aries-cloudagent/) and can be installed with the following command:
-
-```
-pip install aries-cloudagent
-```
