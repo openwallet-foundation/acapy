@@ -28,6 +28,11 @@ if RUN_MODE == "docker":
     DEFAULT_EXTERNAL_HOST = DEFAULT_INTERNAL_HOST
     DEFAULT_BIN_PATH = "./bin"
     DEFAULT_PYTHON_PATH = "."
+elif RUN_MODE == "pwd":
+    #DEFAULT_INTERNAL_HOST = 
+    DEFAULT_EXTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
+    DEFAULT_BIN_PATH = "./bin"
+    DEFAULT_PYTHON_PATH = "."
 
 
 async def default_genesis_txns():

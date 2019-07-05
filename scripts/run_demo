@@ -34,6 +34,7 @@ fi
 
 if [[ -z "${PWD_HOST_FQDN}" ]]; then
 	DOCKERHOST=`docker run --rm --net=host codenvy/che-ip`
+    export RUNMODE="docker"
 else
 	PWD_HOST="${PWD_HOST_FQDN}"
     if [ $PWD_HOST_FQDN == "labs.play-with-docker.com" ]
@@ -47,11 +48,12 @@ else
       fi
     MY_HOST=`ifconfig ${ETH_CONFIG} | grep inet | cut -d':' -f2 | cut -d' ' -f1 | sed 's/\./\-/g'`
     export DOCKERHOST="ip${MY_HOST}-${SESSION_ID}-${AGENT_PORT}.direct.${PWD_HOST_FQDN}"
+    export RUNMODE="pwd"
 fi
 
 echo $DOCKERHOST
 
-DOCKER_ENV="-e LOG_LEVEL=${LOG_LEVEL} -e RUNMODE=docker -e DOCKERHOST=${DOCKERHOST}"
+DOCKER_ENV="-e LOG_LEVEL=${LOG_LEVEL} -e RUNMODE=${RUNMODE} -e DOCKERHOST=${DOCKERHOST}"
 if ! [ -z "$POSTGRES" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e POSTGRES=1 -e RUST_BACKTRACE=1"
 fi
