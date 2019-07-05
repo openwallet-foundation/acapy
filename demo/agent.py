@@ -324,7 +324,8 @@ class DemoAgent:
                     if resp.status == 200:
                         text = await resp.text()
                         break
-            except ClientError:
+            except ClientError as ce:
+                print(ce)
                 text = None
                 continue
         if not text:
