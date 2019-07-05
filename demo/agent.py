@@ -20,6 +20,9 @@ DEFAULT_PYTHON_PATH = ".."
 
 RUN_MODE = os.getenv("RUNMODE")
 
+GENESIS_URL = os.getenv("GENESIS_URL")
+LEDGER_URL = os.getenv("LEDGER_URL")
+
 if RUN_MODE == "docker":
     DEFAULT_INTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
     DEFAULT_EXTERNAL_HOST = DEFAULT_INTERNAL_HOST
@@ -30,7 +33,13 @@ if RUN_MODE == "docker":
 async def default_genesis_txns():
     genesis = None
     try:
-        if RUN_MODE == "docker":
+        if GENESIS_URL:
+            async with ClientSession() as session:
+                async with session.get(
+                    GENESIS_URL
+                ) as resp:
+                    genesis = await resp.text()
+        elif RUN_MODE == "docker":
             async with ClientSession() as session:
                 async with session.get(
                     f"http://{DEFAULT_EXTERNAL_HOST}:9000/genesis"
@@ -159,6 +168,8 @@ class DemoAgent:
 
     async def register_did(self, ledger_url: str = None, alias: str = None):
         self.log(f"Registering {self.ident} with seed {self.seed}")
+        if not ledger_url:
+            ledger_url = LEDGER_URL
         if not ledger_url:
             ledger_url = f"http://{self.external_host}:9000"
         data = {"alias": alias or self.ident, "seed": self.seed, "role": "TRUST_ANCHOR"}
