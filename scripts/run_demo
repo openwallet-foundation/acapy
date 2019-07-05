@@ -5,11 +5,11 @@ shopt -s nocasematch
 cd $(dirname $0)
 
 AGENT=$1
-if [[ $AGENT == "faber" ]] || [[ $AGENT == "alice" ]] || [[ $AGENT == "performance" ]]; then
+if [[ $AGENT == "faber" ]] || [[ $AGENT == "alice" ]] || [[ $AGENT == "acme" ]] || [[ $AGENT == "performance" ]]; then
 	echo "Preparing agent image..."
 	docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
 else
-  echo "Please specify which agent you want to run. Choose from 'faber', 'alice', or 'performance'.";
+	echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'.";
 	exit 1;
 fi
 
@@ -22,6 +22,10 @@ elif [[ $AGENT == "alice" ]]; then
 	AGENT_MODULE="alice"
 	AGENT_PORT=8030
 	AGENT_PORT_RANGE=8030-8037
+elif [[ $AGENT == "acme" ]]; then
+	AGENT_MODULE="acme"
+	AGENT_PORT=8040
+	AGENT_PORT_RANGE=8040-8047
 else
 	AGENT_MODULE="performance"
 	AGENT_PORT=8030
