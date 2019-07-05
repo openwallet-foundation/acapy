@@ -326,12 +326,10 @@ class DemoAgent:
                 async with self.client_session.get(
                     self.admin_url + "/api/docs/swagger.json"
                 ) as resp:
-                    print(resp.status, resp)
                     if resp.status == 200:
                         text = await resp.text()
                         break
             except ClientError as ce:
-                print(ce)
                 text = None
                 continue
         if not text:
