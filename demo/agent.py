@@ -89,7 +89,7 @@ class DemoAgent:
         self.extra_args = extra_args
 
         self.endpoint = f"http://{self.external_host}:{http_port}"
-        self.admin_url = f"http://{self.external_host}:{admin_port}"
+        self.admin_url = f"http://{self.internal_host}:{admin_port}"
         self.webhook_port = None
         self.webhook_url = None
         self.webhook_site = None
