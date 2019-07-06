@@ -108,6 +108,30 @@ class DemoAgent:
         self.wallet_key = params.get("wallet_key") or self.ident + rand_name
         self.did = None
 
+    async def register_schema_and_creddef(self, schema_name, version, schema_attrs):
+        # Create a schema
+        schema_body = {
+            "schema_name": schema_name,
+            "schema_version": version,
+            "attributes": schema_attrs,
+        }
+        schema_response = await self.admin_POST("/schemas", schema_body)
+        # log_json(json.dumps(schema_response), label="Schema:")
+        schema_id = schema_response["schema_id"]
+        log_msg("Schema ID:", schema_id)
+
+        # Create a cred def for the schema
+        credential_definition_body = {"schema_id": schema_id}
+        credential_definition_response = await self.admin_POST(
+            "/credential-definitions", credential_definition_body
+        )
+        credential_definition_id = credential_definition_response[
+            "credential_definition_id"
+        ]
+        log_msg("Cred def ID:", credential_definition_id)
+
+        return (schema_id, credential_definition_id)
+
     def get_agent_args(self):
         result = [
             ("--endpoint", self.endpoint),

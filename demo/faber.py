@@ -108,8 +108,8 @@ async def main():
         log_msg("Endpoint url is at:", agent.endpoint)
 
         # Create a schema
-        log_status("#3 Create a new schema on the ledger")
-        with log_timer("Publish schema duration:"):
+        with log_timer("Publish schema/cred def duration:"):
+            log_status("#3/4 Create a new schema/cred def on the ledger")
             version = format(
                 "%d.%d.%d"
                 % (
@@ -118,27 +118,9 @@ async def main():
                     random.randint(1, 101),
                 )
             )
-            schema_body = {
-                "schema_name": "degree schema",
-                "schema_version": version,
-                "attributes": ["name", "date", "degree", "age"],
-            }
-            schema_response = await agent.admin_POST("/schemas", schema_body)
-        # log_json(json.dumps(schema_response), label="Schema:")
-        schema_id = schema_response["schema_id"]
-        log_msg("Schema ID:", schema_id)
-
-        # Create a cred def for the schema
-        log_status("#4 Create a new credential definition on the ledger")
-        with log_timer("Publish credential definition duration:"):
-            credential_definition_body = {"schema_id": schema_id}
-            credential_definition_response = await agent.admin_POST(
-                "/credential-definitions", credential_definition_body
-            )
-        credential_definition_id = credential_definition_response[
-            "credential_definition_id"
-        ]
-        log_msg("Cred def ID:", credential_definition_id)
+            (schema_id, credential_definition_id) = await agent.register_schema_and_creddef(
+                "degree schema", version, ["name", "date", "degree", "age"]
+                )
 
         # TODO add an additional credential for Student ID
 
