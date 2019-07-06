@@ -140,6 +140,8 @@ async def main():
         ]
         log_msg("Cred def ID:", credential_definition_id)
 
+        # TODO add an additional credential for Student ID
+
         with log_timer("Generate invitation duration:"):
             # Generate an invitation
             log_status(
@@ -170,6 +172,8 @@ async def main():
                     "connection_id": agent.connection_id,
                 }
                 await agent.admin_POST("/credential_exchange/send-offer", offer)
+
+                # TODO issue an additional credential for Student ID
 
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
