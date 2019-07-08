@@ -303,7 +303,10 @@ class DemoAgent:
 
     async def listen_webhooks(self, webhook_port):
         self.webhook_port = webhook_port
-        self.webhook_url = f"http://{self.external_host}:{str(webhook_port)}/webhooks"
+        if RUN_MODE == "pwd":
+            self.webhook_url = f"http://localhost:{str(webhook_port)}/webhooks"
+        else:
+            self.webhook_url = f"http://{self.external_host}:{str(webhook_port)}/webhooks"
         app = web.Application()
         app.add_routes([web.post("/webhooks/topic/{topic}/", self._receive_webhook)])
         runner = web.AppRunner(app)
