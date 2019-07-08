@@ -16,18 +16,18 @@ jobs:
               --user \
               -r requirements.txt \
               -r requirements.dev.txt \
-              pytest
+              pytest flake8
 
       - save_cache:
           paths:
             - /home/indy/.local/lib/python3.6/site-packages
           key: v4-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
 
-      - run:
-          name: Run Agent Tests
-          command: |
-            [ ! -d test-reports ] && mkdir test-reports
-            pytest
+      # - run:
+      #     name: Run Agent Tests
+      #     command: |
+      #       [ ! -d test-reports ] && mkdir test-reports
+      #       pytest
 
       - run:
           name: Run Linter
