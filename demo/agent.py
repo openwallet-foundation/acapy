@@ -233,6 +233,7 @@ class DemoAgent:
         return log_timer(label, show, logger=self.log, **kwargs)
 
     def _process(self, args, env, loop):
+        print("Running:", args)
         proc = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
