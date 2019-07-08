@@ -28,6 +28,7 @@ jobs:
           command: |
             [ ! -d test-reports ] && mkdir test-reports
             pytest
+          no_output_timeout: 30m
 
       - run:
           name: Push to Codecov.io
