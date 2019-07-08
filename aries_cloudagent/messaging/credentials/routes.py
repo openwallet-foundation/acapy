@@ -263,7 +263,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     credential_manager = CredentialManager(context)
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
-    if not connection_record.is_active:
+    if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
     credential_exchange_record = await credential_manager.prepare_send(
@@ -302,7 +302,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     credential_manager = CredentialManager(context)
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
-    if not connection_record.is_active:
+    if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
     credential_exchange_record = await credential_manager.create_offer(
@@ -347,7 +347,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
-    if not connection_record.is_active:
+    if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
     (
@@ -392,7 +392,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     credential_manager = CredentialManager(context)
 
     connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    if not connection_record.is_active:
+    if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
     credential_exchange_record.credential_values = credential_values
