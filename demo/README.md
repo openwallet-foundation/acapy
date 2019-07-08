@@ -40,7 +40,7 @@ Note that Alice and Faber will each use 5 ports, e.g. if you run ```python faber
 
 To create the Alice/Faber wallets using postgres storage, just add the "--postgres" option when running the script.
 
-These scripts implement the controller and run the agent as a sub-process (see the documentation for `acagent`). The controller publishes a rest service to receive web hook callbacks from their agent.
+These scripts implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a rest service to receive web hook callbacks from their agent.
 
 Refer to the [Follow The Script](#follow-the-script) section below for further instructions.
 
