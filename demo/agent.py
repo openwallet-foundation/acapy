@@ -154,6 +154,8 @@ class DemoAgent:
             result.append(("--storage-type", self.storage_type))
         if self.timing:
             result.append("--timing")
+        if RUN_MODE == 'pwd':
+            result.append("-e", DEFAULT_EXTERNAL_HOST)
         if self.postgres:
             result.extend(
                 [
