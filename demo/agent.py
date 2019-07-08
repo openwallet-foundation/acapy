@@ -155,7 +155,7 @@ class DemoAgent:
         if self.timing:
             result.append("--timing")
         if RUN_MODE == 'pwd':
-            result.append(("-e", DEFAULT_EXTERNAL_HOST))
+            result.append(("-e", "http://" + DEFAULT_EXTERNAL_HOST))
         if self.postgres:
             result.extend(
                 [
