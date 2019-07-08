@@ -88,7 +88,10 @@ class DemoAgent:
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.extra_args = extra_args
 
-        self.endpoint = f"http://{self.external_host}:{http_port}"
+        if RUN_MODE == 'pwd':
+            self.endpoint = f"http://{self.external_host}"
+        else:
+            self.endpoint = f"http://{self.external_host}:{http_port}"
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         self.webhook_port = None
         self.webhook_url = None
@@ -154,8 +157,6 @@ class DemoAgent:
             result.append(("--storage-type", self.storage_type))
         if self.timing:
             result.append("--timing")
-        if RUN_MODE == 'pwd':
-            result.append(("-e", "http://" + DEFAULT_EXTERNAL_HOST))
         if self.postgres:
             result.extend(
                 [
