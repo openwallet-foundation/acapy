@@ -12,11 +12,12 @@ jobs:
       - run:
           name: Install Python Dependencies
           command: |
+            pip pip install flake8
             pip install \
               --user \
               -r requirements.txt \
               -r requirements.dev.txt \
-              pytest flake8
+              pytest
 
       - save_cache:
           paths:
