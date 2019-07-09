@@ -15,9 +15,9 @@ AGENT_PORT = int(sys.argv[1])
 TIMING = False
 
 
-class FaberAgent(DemoAgent):
+class AcmeAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
-        super().__init__("Faber Agent", http_port, admin_port, prefix="Faber", **kwargs)
+        super().__init__("Acme Agent", http_port, admin_port, prefix="Acme", **kwargs)
         self.connection_id = None
         self._connection_active = asyncio.Future()
         self.cred_state = {}
@@ -51,17 +51,8 @@ class FaberAgent(DemoAgent):
         )
 
         if state == "request_received":
-            log_status("#17 Issue credential to X")
-            cred_attrs = {
-                "name": "Alice Smith",
-                "date": "2018-05-28",
-                "degree": "Maths",
-                "age": "24",
-            }
-            await self.admin_POST(
-                f"/credential_exchange/{credential_exchange_id}/issue",
-                {"credential_values": cred_attrs},
-            )
+            # TODO handle received credential requests
+            pass
 
     async def handle_presentations(self, message):
         state = message["state"]
@@ -75,12 +66,8 @@ class FaberAgent(DemoAgent):
         )
 
         if state == "presentation_received":
-            log_status("#27 Process the proof provided by X")
-            log_status("#28 Check if proof is valid")
-            proof = await self.admin_POST(
-                f"/presentation_exchange/{presentation_exchange_id}/verify_presentation"
-            )
-            self.log("Proof =", proof["verified"])
+            # TODO handle received presentations
+            pass
 
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
@@ -98,7 +85,7 @@ async def main():
 
     try:
         log_status("#1 Provision an agent and wallet, get back configuration details")
-        agent = FaberAgent(start_port, start_port + 1, genesis_data=genesis)
+        agent = AcmeAgent(start_port, start_port + 1, genesis_data=genesis)
         await agent.listen_webhooks(start_port + 2)
         await agent.register_did()
 
@@ -108,8 +95,8 @@ async def main():
         log_msg("Endpoint url is at:", agent.endpoint)
 
         # Create a schema
-        with log_timer("Publish schema/cred def duration:"):
-            log_status("#3/4 Create a new schema/cred def on the ledger")
+        log_status("#3 Create a new schema on the ledger")
+        with log_timer("Publish schema duration:"):
             version = format(
                 "%d.%d.%d"
                 % (
@@ -118,11 +105,26 @@ async def main():
                     random.randint(1, 101),
                 )
             )
-            (schema_id, credential_definition_id) = await agent.register_schema_and_creddef(
-                "degree schema", version, ["name", "date", "degree", "age"]
-                )
+            # TODO define schema
+            #schema_body = {
+            #}
+            #schema_response = await agent.admin_POST("/schemas", schema_body)
+        # log_json(json.dumps(schema_response), label="Schema:")
+        #schema_id = schema_response["schema_id"]
+        #log_msg("Schema ID:", schema_id)
 
-        # TODO add an additional credential for Student ID
+        # Create a cred def for the schema
+        # TODO define cred def
+        #log_status("#4 Create a new credential definition on the ledger")
+        #with log_timer("Publish credential definition duration:"):
+        #    credential_definition_body = {"schema_id": schema_id}
+        #    credential_definition_response = await agent.admin_POST(
+        #        "/credential-definitions", credential_definition_body
+        #    )
+        #credential_definition_id = credential_definition_response[
+        #    "credential_definition_id"
+        #]
+        #log_msg("Cred def ID:", credential_definition_id)
 
         with log_timer("Generate invitation duration:"):
             # Generate an invitation
@@ -149,33 +151,24 @@ async def main():
 
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
-                offer = {
-                    "credential_definition_id": credential_definition_id,
-                    "connection_id": agent.connection_id,
-                }
-                await agent.admin_POST("/credential_exchange/send-offer", offer)
-
-                # TODO issue an additional credential for Student ID
+                # TODO credential offers
+                #offer = {
+                #    "credential_definition_id": credential_definition_id,
+                #    "connection_id": agent.connection_id,
+                #}
+                #await agent.admin_POST("/credential_exchange/send-offer", offer)
 
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
-                proof_attrs = [
-                    {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
-                    {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
-                    {"name": "degree", "restrictions": [{"issuer_did": agent.did}]},
-                    {"name": "self_attested_thing"},
-                ]
-                proof_predicates = [{"name": "age", "p_type": ">=", "p_value": 18}]
-                proof_request = {
-                    "name": "Proof of Education",
-                    "version": "1.0",
-                    "connection_id": agent.connection_id,
-                    "requested_attributes": proof_attrs,
-                    "requested_predicates": proof_predicates,
-                }
-                await agent.admin_POST(
-                    "/presentation_exchange/send_request", proof_request
-                )
+                # TODO presentation requests
+                #proof_attrs = [
+                #]
+                #proof_predicates = []
+                #proof_request = {
+                #}
+                #await agent.admin_POST(
+                #    "/presentation_exchange/send_request", proof_request
+                #)
 
             elif option == "3":
                 msg = await prompt("Enter message: ")
