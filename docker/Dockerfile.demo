@@ -13,7 +13,6 @@ ADD bin ./bin
 ADD README.md ./
 ADD scripts ./scripts
 ADD setup.py ./
-ADD README.md ./
 
 RUN pip3 install --no-cache-dir -e .
 
