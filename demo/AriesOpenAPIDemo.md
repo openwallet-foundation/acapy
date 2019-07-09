@@ -10,13 +10,14 @@ This demo is for developers comfortable with playing around with APIs using the 
 
 # Table of Contents <!-- omit in toc -->
 
-- [Prerequisites](#Prerequisites)
-- [Starting Up](#Starting-Up)
+- [Running in a Browser](#Running-in-a-Browser)
+- [Running in Docker](#Running-in-Docker)
+  - [Starting Up](#Starting-Up)
   - [Start the VON Network](#Start-the-VON-Network)
   - [Running the DMV Agent](#Running-the-DMV-Agent)
   - [Running Alice’s Agent](#Running-Alices-Agent)
-  - [Restarting the Demo](#Restarting-the-Demo)
-  - [Running the Demo Steps](#Running-the-Demo-Steps)
+  - [Restarting the Docker Containers](#Restarting-the-Docker-Containers)
+- [Using the Swagger User Interface](#Using-the-Swagger-User-Interface)
 - [Establishing a Connection](#Establishing-a-Connection)
   - [Notes](#Notes)
 - [Preparing to Issue a Credential](#Preparing-to-Issue-a-Credential)
@@ -31,56 +32,91 @@ This demo is for developers comfortable with playing around with APIs using the 
   - [Notes](#Notes-3)
 - [Conclusion](#Conclusion)
 
-## Prerequisites
+
+## Running in a Browser
+
+We will get started by getting three browser tabs ready that will be used throughout the lab. Two will be Swagger UIs for the DMV and Alice Agent and one for the Public Ledger (showing the Hyperledger Indy ledger).
+
+In your browser, go to the docker playground service [Play with VON](http://play-with-von.vonx.io) (from the BC Gov). On the title screen, click "Start". On the next screen, click (in the left menu) "+Add a new instance".  That will start up a terminal in your browser. Run the following commands to start the DMV agent. It is not a typo that the last line has "faber" in it.  We're just borrowing that script to get started.
+
+```bash
+git clone https://github.com/hyperledger/aries-cloudagent-python
+cd aries-cloudagent-python/demo
+LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo faber
+```
+
+Once the DMV agent has started up (with the invite displayed), click the link near the top of the screen `8021`. That will start an instance of the OpenAPI User Interface connected to the DMV instance. Note that the URL on the Swagger instance is `http://ip....8021.direct...`.
+
+**Remember that the Swagger browser tab with an address containing 8021 is the DMV's agent.**
+
+Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:
+
+```bash
+git clone https://github.com/hyperledger/aries-cloudagent-python
+cd aries-cloudagent-python/demo
+LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo alice
+```
+
+Once the Alice agent has started up (with the `invite:` prompt displayed), click the link near the top of the screen `8031`. That will start an instance of the OpenAPI User Interface connected to the Alice instance. Note that the URL on the Swagger instance is `http://ip....8031.direct...`.
+
+**Remember that the Swagger browser tab with an address containing 8031 is Alice's agent.**
+
+Finally, open up a third browser tab and navigate to [http://dev.greenlight.bcovrin.vonx.io](http://dev.greenlight.bcovrin.vonx.io). This will be called the "Ledger tab" in the instructions below.
+
+You are ready to go. Skip down to the [Using the Swagger User Interface](using-the-swagger-user-interface) section.
+
+## Running in Docker
+
+We will get started by getting three browser tabs ready that will be used throughout the lab. Two will be Swagger UIs for the DMV and Alice Agent and one for the Public Ledger (showing the Hyperledger Indy ledger).
 
 To run the demo, you must have a system capable of running docker to run containers, and terminal windows running bash. On Windows systems, we highly recommend using git-bash, the Windows Subsystem for Linux (WSL) or a comparable facility. The demo will not work using PowerShell.
 
-You can also run the agents using Python on your native system, but docker development is sooo much nicer.
-
 Before beginning, clone, or fork and clone this repo and the von-network repo.
 
-## Starting Up
+### Starting Up
 
-To begin the demo, open up three terminal windows, one for each agent - one to run a local Indy network (using the VON network) and one each for the DMV’s Agent and Alice’s Agent. You’ll also open up three browser tabs, one to allow browsing the Indy network ledger, and one for the OpenAPI user interface for each of the agents.
+To begin the running the demo in Docker, open up three terminal windows, one to run a local Indy network (using the VON network) and one each for the DMV’s and Alice’s agent. You’ll also open up three browser tabs, one to allow browsing the Public Ledger (von-network), and one for the Swagger user interface for each of the agents.
 
 ### Start the VON Network
 
-In one of the terminal windows, follow the instructions [here](https://github.com/bcgov/von-network#running-the-network-locally) to start (but don’t stop) a local four-node Indy network. In one of the browser tabs, navigate to [http://localhost:9000](http://localhost:9000) to see the ledger browser user interface and to verify the Indy network is running.
+In one of the terminal windows, follow the instructions [here](https://github.com/bcgov/von-network#running-the-network-locally) to start (but don’t stop) a local four-node Indy network. In one of the browser tabs, navigate to [http://localhost:9000](http://localhost:9000) to see the Public Ledger  user interface and to verify the Indy network is running.
 
 > NOTE: The use of localhost for the Web interfaces is assumed in this tutorial. If your docker setup is atypical, you may use a different address for your docker host.
 
 ### Running the DMV Agent
 
-To start the DMV agent, open up a second terminal window and in it change directory to the root of your clone of this repo and execute the following command:
+To start the DMV agent, open up a second terminal window and in it change directory to the `demo` folder of your clone of this repo and execute the following command. It is not a typo that the command has "faber" in it.  We're just borrowing that script to get started.
 
 ```bash
-PORTS="5000:5000 10000:10000" ./scripts/run_docker -it http 0.0.0.0 10000 -ot http --admin 0.0.0.0 5000 -e http://`docker run --net=host codenvy/che-ip`:10000 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000000 --auto-ping-connection --accept-invites --accept-requests --auto-verify-presentation --wallet-type indy --label "DMV Agent"
+./run_demo faber
 ```
 
 If all goes well, the agent will show a message indicating it is running. Use the second of the browser tabs to navigate to [http://localhost:5000](http://localhost:5000). You should see an OpenAPI user interface with a (long-ish) list of API endpoints. These are the endpoints exposed by the DMV Agent.
 
-The `run_docker` script provides a lot of options for configuring your agent. We’ll cover the meaning of some of those options as we go. One thing you may find odd right off is this - `docker run --net=host codenvy/che-ip`. It is an inline command that invokes docker to run a container that returns the IP of the Docker Host. It’s the most portable way we know to get that information for docker running on MacOS, Windows or Linux.
+**Remember that the browser tab with an address containing 5000 Swagger is the DMV agent.**
 
 ### Running Alice’s Agent
 
-To start Alice’s agent, open up a third terminal window and in it change directory to the root of your clone of this repo and execute the following command:
+To start the Alice's agent, open up a third terminal window and in it change directory to the `demo` folder of your clone of this repo and execute the following command.
 
 ``` bash
-PORTS="5001:5001 10001:10001" ./scripts/run_docker -it http 0.0.0.0 10001 -ot http --admin 0.0.0.0 5001 -e http://`docker run --net=host codenvy/che-ip`:10001 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000001 --auto-ping-connection --accept-invites --accept-requests --auto-verify-presentation --auto-respond-credential-offer --auto-respond-presentation-request --wallet-type indy --label "Alice Agent"
+./run_demo alice
 ```
 
-If all goes well, the agent will show a message indicating it is running. Use the third tab to navigate to [http://localhost:5001](http://localhost:5001). Again, you should see an OpenAPI user interface with a list of API endpoints, this time the endpoints for Alice’s agent.
+If all goes well, the agent will show a message indicating it is running. Open a third browser tab to navigate to [http://localhost:5001](http://localhost:5001). Again, you should see the Swagger user interface with a list of API endpoints, this time the endpoints for Alice’s agent.
 
-### Restarting the Demo
+**Remember that the browser tab with an address containing 5001 Swagger is the Alice agent.**
+
+### Restarting the Docker Containers
 
 When you are done, or to stop the demo so you can restart it, carry out the following steps:
 
 1. In the DMV and Alice agent terminal windows, hit Ctrl-C to terminate the agents.
 2. In the von-network terminal window, hit Ctrl-C to stop the logging, and then run the command `./manage down` to both stop the network and remove the data on the ledger. 
 
-### Running the Demo Steps
+## Using the Swagger User Interface
 
-The demo is run entirely in the Browser tabs - DMV ([http://localhost:5000](http://localhost:5000)), Alice ([http://localhost:5001](http://localhost:5001)) and the Indy public ledger ([http://localhost:9000](http://localhost:9000)). The agent terminal windows will only show messages if an error occurs in using the REST API. The Indy public ledger window will display a log of messages from the four nodes of the Indy network. In the instructions that follow, we’ll let you know if you need to be in the DMV, Alice or Indy browser tab. We’ll leave it to you to track which is which.
+The demo is run entirely in the browser tabs you've already opened - DMV, Alice and the Indy Public Ledger. The agent terminal windows will only show messages if an error occurs in using the REST API. The Indy public ledger terminal window will display a log of messages from the four nodes of the Indy network. In the instructions that follow, we’ll let you know if you need to be in the DMV, Alice or Indy browser tab. We’ll leave it to you to track which is which.
 
 Using the OpenAPI user interface is pretty simple. In the steps below, we’ll indicate what API endpoint you need use, such as **`POST /connections/create-invitation`**. That means you must:
 
