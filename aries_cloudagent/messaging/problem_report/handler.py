@@ -1,6 +1,6 @@
 """Generic problem report handler."""
 
-from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ..base_handler import BaseHandler, BaseResponder, RequestContext
 
 from .message import ProblemReport
 
