@@ -444,6 +444,11 @@ class ConnectionRecord(BaseModel):
         """Accessor to check if the connection is active."""
         return self.state == self.STATE_ACTIVE
 
+    @property
+    def is_ready(self) -> str:
+        """Accessor for connection readiness."""
+        return self.state == self.STATE_ACTIVE or self.state == self.STATE_RESPONSE
+
     def __eq__(self, other) -> bool:
         """Comparison between records."""
         if type(other) is type(self):
