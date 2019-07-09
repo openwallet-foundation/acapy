@@ -13,6 +13,17 @@ else
   DOCKER="docker"
 fi
 
+if [ -z "$POSTGRES_URL" ]; then
+  if [ ! -z $(docker ps --filter name=indy-demo-postgres --quiet) ]; then
+    DOCKER_ARGS="$DOCKER_ARGS --link indy-demo-postgres"
+    POSTGRES_URL="indy-demo-postgres"
+  fi
+fi
+if [ ! -z "$POSTGRES_URL" ]; then
+  DOCKER_ARGS="$DOCKER_ARGS -e POSTGRES_URL=$POSTGRES_URL"
+fi
+
 $DOCKER run --rm -ti --name aries-cloudagent-runner \
   -v "$(pwd)/../test-reports:/usr/src/app/test-reports" \
+  $DOCKER_ARGS \
   aries-cloudagent-test "$@"
