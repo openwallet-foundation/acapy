@@ -137,6 +137,26 @@ class AliceAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
+async def input_invitation(agent):
+    async for details in prompt_loop("Invite details: "):
+        if details:
+            try:
+                json.loads(details)
+                break
+            except json.JSONDecodeError as e:
+                log_msg("Invalid JSON:", str(e))
+                pass
+
+    with log_timer("Connect duration:"):
+        connection = await agent.admin_POST(
+            "/connections/receive-invitation", details
+        )
+        agent.connection_id = connection["connection_id"]
+        log_json(connection, label="Invitation response:")
+
+        await agent.detect_connection()
+
+
 async def main():
 
     genesis = await default_genesis_txns()
@@ -151,7 +171,6 @@ async def main():
         log_status("#7 Provision an agent and wallet, get back configuration details")
         agent = AliceAgent(start_port, start_port + 1, genesis_data=genesis)
         await agent.listen_webhooks(start_port + 2)
-        await agent.register_did()
 
         with log_timer("Startup duration:"):
             await agent.start_process()
@@ -159,25 +178,9 @@ async def main():
         log_msg("Endpoint url is at:", agent.endpoint)
 
         log_status("#9 Input faber.py invitation details")
-        async for details in prompt_loop("Invite details: "):
-            if details:
-                try:
-                    json.loads(details)
-                    break
-                except json.JSONDecodeError as e:
-                    log_msg("Invalid JSON:", str(e))
-                    pass
+        await input_invitation(agent)
 
-        with log_timer("Connect duration:"):
-            connection = await agent.admin_POST(
-                "/connections/receive-invitation", details
-            )
-            agent.connection_id = connection["connection_id"]
-            log_json(connection, label="Invitation response:")
-
-            await agent.detect_connection()
-
-        async for option in prompt_loop("(3) Send Message (X) Exit? [3/X]: "):
+        async for option in prompt_loop("(3) Send Message (4) Input New Invitation (X) Exit? [3/4/X]: "):
             if option in "xX":
                 break
             elif option == "3":
@@ -187,6 +190,10 @@ async def main():
                         f"/connections/{agent.connection_id}/send-message",
                         {"content": msg},
                     )
+            elif option == "4":
+                # handle new invitation
+                log_status("Input new invitation details")
+                await input_invitation(agent)
 
         if TIMING:
             timing = await agent.fetch_timing()
