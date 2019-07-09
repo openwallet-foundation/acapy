@@ -256,7 +256,7 @@ class DemoAgent:
         return proc
 
     def get_process_args(self, bin_path: str = None):
-        cmd_path = "acagent"
+        cmd_path = "aca-py"
         if bin_path is None:
             bin_path = DEFAULT_BIN_PATH
         if bin_path:
