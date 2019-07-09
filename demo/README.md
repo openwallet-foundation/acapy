@@ -1,12 +1,12 @@
 # Aries Cloud Agent Python (ACA-Py) Demos <!-- omit in toc -->
 
-There are several demos available for ACA-Py mostly (but not only) aimed at developers learning how to deploy an instance of the Agent and an ACA-Py controller to implement an application.
+There are several demos available for ACA-Py mostly (but not only) aimed at developers learning how to deploy an instance of the agent and an ACA-Py controller to implement an application.
 
 ## Table of Contents <!-- omit in toc -->
 
 - [The IIWBook Demo](#The-IIWBook-Demo)
 - [The Alice/Faber Python demo](#The-AliceFaber-Python-demo)
-  - [Running in your browser](#Running-in-your-browser)
+  - [Running in a Browser](#Running-in-a-Browser)
   - [Running in Docker](#Running-in-Docker)
   - [Running Locally](#Running-Locally)
   - [Follow The Script](#Follow-The-Script)
@@ -23,9 +23,9 @@ The IIWBook demo is a real (play) self-sovereign identity demonstration. During 
 
 The Alice/Faber demo is the (in)famous first verifiable credentials demo. Alice, a former student of Faber College ("Knowledge is Good"), connects with the College, is issued a credential about her degree and then is asked by the College for a proof. There are a variety of ways of running the demo. The easiest is in your browser using a site ("Play with VON") that let's you run docker containers without installing anything. Alternatively, you can run locally on docker (our recommendation), or using python on your local machine. Each approach is covered below.
 
-### Running in your browser
+### Running in a Browser
 
-In your browser, go to the web service [Play with VON](http://play-with-von.vonx.io) (from the BC Gov). On the title screen, click "Start".  On the next screen, click (in the left menu) "+Add a new instance".  That will start up a terminal in your browser. Run the following commands:
+In your browser, go to the docker playground service [Play with VON](http://play-with-von.vonx.io) (from the BC Gov). On the title screen, click "Start". On the next screen, click (in the left menu) "+Add a new instance".  That will start up a terminal in your browser. Run the following commands to start the Faber agent:
 
 ```bash
 git clone https://github.com/hyperledger/aries-cloudagent-python
@@ -33,7 +33,7 @@ cd aries-cloudagent-python/demo
 LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo faber
 ```
 
-That starts up Faber's agent. Now to start Alice's agent. Click the "+Add a new instance" button again, to open another terminal session. Run the following commands to start Alice's agent:
+Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:
 
 ```bash
 git clone https://github.com/hyperledger/aries-cloudagent-python
@@ -43,13 +43,13 @@ LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo alice
 
 Alice's agent is now running.
 
-Jump to the [Follow The Script](#follow-the-script) section below for further instructions.
+Jump to the [Follow the Script](#follow-the-script) section below for further instructions.
 
 ### Running in Docker
 
-The dockerized demo requires to have von-network instance running in Docker locally. See the [von-network](von-https://github.com/bcgov/von-network) readme file for more info.
+Running the demo in docker requires having a `von-network` (a Hyperledger Indy public ledger sandbox) instance running in docker locally. See the [von-network](von-https://github.com/bcgov/von-network) readme file for more info.
 
-Open three `bash` shells. Git Bash is highly recommended for Windows, Linux and Mac terminal apps default to `bash`.
+Open three `bash` shells. For Windows users, `git-bash` is highly recommended. bash is the default shell in Linux and Mac terminal sessions.
 
 In the first terminal window, start `von-network` using the instructions provided [here](https://github.com/bcgov/von-network#running-the-network-locally).
 
@@ -65,11 +65,11 @@ In the third terminal, change directory into `demo` directory of your clone of t
   ./run_demo alice
 ```
 
-Jump to the [Follow The Script](#follow-the-script) section below for further instructions. 
+Jump to the [Follow the Script](#follow-the-script) section below for further instructions. 
 
 ### Running Locally
 
-To run locally, follow the same steps above for running docker locally, except use the following commands in place of the `run_demo` commands for starting the two agents.
+To run locally, complete the same steps above for running in docker, except use the following in place of the `run_demo` commands for starting the two agents.
 
 ``` bash
 python faber-pg.py 8020
@@ -83,7 +83,7 @@ Note that Alice and Faber will each use 5 ports, e.g. running ```python faber-pg
 
 To create the Alice/Faber wallets using postgres storage, just add the "--postgres" option when running the script.
 
-Refer to the [Follow The Script](#follow-the-script) section below for further instructions.
+Refer to the [Follow the Script](#follow-the-script) section below for further instructions.
 
 ### Follow The Script
 
@@ -115,15 +115,15 @@ You don't need to do anything with Alice's agent - her agent is implemented to a
 
 These Alice and Faber scripts implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent.
 
-The controllers for this demo can be found in the [alice.py](alice.py) and [faber.py](faber.py) files. You can use watch [this video](https://zoom.us/recording/share/hfGCVMRsYWQcObOUjTQBd1vRxSH3sldO4QbEjWYjiS6wIumekTziMw) to get started in understanding what is going on (and where) in these controllers.
+The controllers for this demo can be found in the [alice.py](alice.py) and [faber.py](faber.py) files. You can watch [this video](https://zoom.us/recording/share/hfGCVMRsYWQcObOUjTQBd1vRxSH3sldO4QbEjWYjiS6wIumekTziMw) to get a start in understanding what is going on (and where) in the controllers.
 
 ## OpenAPI (Swagger) Demo
 
-Developing an ACA-Py controller is much like developing a web app that uses a REST API. As you develop, you will want an easy way to test out the behaviour of the API. That's where the industry-standard OpenAPI (aka Swagger) UI come in. ACA-Py (optionally) exposes an OpenAPI UI in ACA-Py that you can use to learn the ins and outs of the API. This [Aries OpenAPI demo](AriesOpenAPI.md) shows how you can use the OpenAPI UI with an ACA-Py agent by walking through the connectiing, issuing a credential, and presenting a proof sequence.
+Developing an ACA-Py controller is much like developing a web app that uses a REST API. As you develop, you will want an easy way to test out the behaviour of the API. That's where the industry-standard OpenAPI (aka Swagger) UI comes in. ACA-Py (optionally) exposes an OpenAPI UI in ACA-Py that you can use to learn the ins and outs of the API. This [Aries OpenAPI demo](AriesOpenAPI.md) shows how you can use the OpenAPI UI with an ACA-Py agent by walking through the connectiing, issuing a credential, and presenting a proof sequence.
 
 ## Performance Demo
 
-Another demo in this folder is [performance.py](performance.py), that is used to test out the performance of a couple of agents interacting by running through an interaction many times. In this case, the test is issuing a credential and it is repeated 100 times.
+Another demo in this folder is [performance.py](performance.py), that is used to test out the performance of a couple of interacting agents. The script starts up two agents, initializes them and then runs through an interaction some number of times. In this demo, the test is issuing a credential and it is repeated 100 times.
 
 To run the demo, make sure that you shut down both the Alice and Faber agents. Follow the steps to start the Alice/Faber demo running either in your browser or in docker, but:
 
