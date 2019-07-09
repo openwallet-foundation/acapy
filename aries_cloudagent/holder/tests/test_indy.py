@@ -5,24 +5,10 @@ from asynctest import mock as async_mock
 
 import pytest
 
-try:
-    from indy.libindy import _cdll
-
-    _cdll()
-except ImportError:
-    pytest.skip(
-        "skipping Indy-specific tests: python module not installed",
-        allow_module_level=True,
-    )
-except OSError:
-    pytest.skip(
-        "skipping Indy-specific tests: shared library not loaded",
-        allow_module_level=True,
-    )
-
 from aries_cloudagent.holder.indy import IndyHolder
 
 
+@pytest.mark.indy
 class TestIndyHolder(AsyncTestCase):
     def test_init(self):
         holder = IndyHolder("wallet")
