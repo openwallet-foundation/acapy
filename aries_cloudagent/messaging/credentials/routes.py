@@ -261,9 +261,15 @@ async def credential_exchange_send(request: web.BaseRequest):
     credential_values = body.get("credential_values")
 
     credential_manager = CredentialManager(context)
-    connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
-    if not connection_record.is_active:
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context, connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
+
+    if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
     credential_exchange_record = await credential_manager.prepare_send(
@@ -300,9 +306,15 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     credential_definition_id = body.get("credential_definition_id")
 
     credential_manager = CredentialManager(context)
-    connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
 
-    if not connection_record.is_active:
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context, connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
+
+    if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
     credential_exchange_record = await credential_manager.create_offer(
@@ -345,9 +357,14 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
     credential_manager = CredentialManager(context)
 
-    connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context, connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
 
-    if not connection_record.is_active:
+    if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
     (
@@ -390,9 +407,14 @@ async def credential_exchange_issue(request: web.BaseRequest):
     assert credential_exchange_record.state == CredentialExchange.STATE_REQUEST_RECEIVED
 
     credential_manager = CredentialManager(context)
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context, connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
 
-    connection_record = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    if not connection_record.is_active:
+    if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
     credential_exchange_record.credential_values = credential_values
