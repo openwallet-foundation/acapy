@@ -39,7 +39,7 @@ class BasicMessageHandler(BaseHandler):
 
         await responder.send_webhook(
             "basicmessages",
-            {"message_id": context.message._id, "content": body, "state": "received"},
+            {"connection_id": context.connection_record.connection_id, "message_id": context.message._id, "content": body, "state": "received"},
         )
 
         reply = None
