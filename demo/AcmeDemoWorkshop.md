@@ -105,6 +105,7 @@ Add the following code under the ```# TODO``` comment (replace ```pass```):
                 for identifier in message['presentation']['identifiers']:
                     # just print out the schema/cred def id's of presented claims
                     self.log(identifier['schema_id'], identifier['cred_def_id'])
+                # TODO placeholder for the next step
             else:
                 # in case there are any other kinds of proofs received
                 self.log("#28.1 Received ", message['presentation_request']['name'])
@@ -117,6 +118,75 @@ Now you can run the Faber/Alice/Acme script from the "preview" section above, an
 
 ## Issuing Alice a Work Credential
 
-TODO
+Now we can issue a work credential to Alice!
+
+There are two options for this.  We can (a) add code under option ```1``` to issue the credential, or (b) we can automatically issue this credential on receipt of the education proof.
+
+We're going to do option (a), but you can try to implement option (b) as homework.  You have most of the information you need from the proof response!
+
+First though we need to register a schema and credential definition.  Find this code:
+
+```
+            # TODO define schema
+            #(schema_id, credential_definition_id) = await agent.register_schema_and_creddef(
+            #    "employee id schema", version, ["employee_id", "name", "date", "position"]
+            #    )
+```
+
+... and just uncommment it.  Easy, no?
+
+```
+            # TODO define schema
+            (schema_id, credential_definition_id) = await agent.register_schema_and_creddef(
+                "employee id schema", version, ["employee_id", "name", "date", "position"]
+                )
+```
+
+For option (a) we want to replace the ```# TODO``` comment here:
+
+```
+            elif option == "1":
+                log_status("#13 Issue credential offer to X")
+                # TODO credential offers
+```
+
+Add the following code:
+
+```
+                # TODO credential offers
+                log_status("#13 Issue credential offer to X")
+                offer = {
+                    "credential_definition_id": credential_definition_id,
+                    "connection_id": agent.connection_id,
+                }
+                agent.cred_attrs[credential_definition_id] = {
+                    "employee_id": "ACME0009",
+                    "name": "Alice Smith",
+                    "date": "2019-06-30",
+                    "position": "CEO",
+                }
+                await agent.admin_POST("/credential_exchange/send-offer", offer)
+```
+
+... and then locate the code that handles the credential request callback:
+
+```
+        if state == "request_received":
+            # TODO issue credentials based on the credential_definition_id
+            pass
+```
+
+... and add the following code:
+
+```
+            # TODO issue credentials based on the credential_definition_id
+            cred_attrs = self.cred_attrs[message["credential_definition_id"]]
+            await self.admin_POST(
+                f"/credential_exchange/{credential_exchange_id}/issue",
+                {"credential_values": cred_attrs},
+            )
+```
+
+Now you can run the Faber/Alice/Acme script again.  You should be able to receive a proof and then issue a credential to Alice.
 
 
