@@ -147,7 +147,7 @@ async def prompt(*args, **kwargs):
         try:
             while True:
                 tmp = await prompt_toolkit.prompt(*args, async_=True, **kwargs)
-                if 0 < len(tmp):
+                if tmp:
                     break
             return tmp
         except EOFError:
