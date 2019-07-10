@@ -110,6 +110,8 @@ Add the following code under the ```# TODO``` comment (replace ```pass```):
                 self.log("#28.1 Received ", message['presentation_request']['name'])
 ```
 
+Right now this just prints out information received in the proof, but in "real life" your application could do somethign useful with this information.
+
 Now you can run the Faber/Alice/Acme script from the "preview" section above, and you should see Acme receive a proof from Alice!
 
 
