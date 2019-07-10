@@ -21,6 +21,8 @@ class FaberAgent(DemoAgent):
         self.connection_id = None
         self._connection_active = asyncio.Future()
         self.cred_state = {}
+        # TODO define a dict to hold credential attributes based on credential_definition_id
+        self.cred_attrs = {}
 
     async def detect_connection(self):
         await self._connection_active
@@ -52,12 +54,8 @@ class FaberAgent(DemoAgent):
 
         if state == "request_received":
             log_status("#17 Issue credential to X")
-            cred_attrs = {
-                "name": "Alice Smith",
-                "date": "2018-05-28",
-                "degree": "Maths",
-                "age": "24",
-            }
+            # issue credentials based on the credential_definition_id
+            cred_attrs = self.cred_attrs[message["credential_definition_id"]]
             await self.admin_POST(
                 f"/credential_exchange/{credential_exchange_id}/issue",
                 {"credential_values": cred_attrs},
@@ -152,6 +150,13 @@ async def main():
                 offer = {
                     "credential_definition_id": credential_definition_id,
                     "connection_id": agent.connection_id,
+                }
+                # TODO define attributes to send for credential
+                agent.cred_attrs[credential_definition_id] = {
+                    "name": "Alice Smith",
+                    "date": "2018-05-28",
+                    "degree": "Maths",
+                    "age": "24",
                 }
                 await agent.admin_POST("/credential_exchange/send-offer", offer)
 
