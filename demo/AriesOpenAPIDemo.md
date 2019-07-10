@@ -175,7 +175,7 @@ Issuing a credential from the Faber agent to Alice’s agent is easy. In the Fab
 
 First, scroll back up to the **`GET /connections`** API endpoint and execute it. From the result, find the the `connection_id` and copy the value. Go back to the `/credential_exchange/send` section and paste it as the value for the `connection_id`
 
-Next, scroll down to the **`POST /credential-definitions`** section that was executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the **`POST /credential_exchange/send`** section and paste it as the value for the `credential_defintion_id`.
+Next, you need to find the `credential_defintion_id` - you can look this up in the ledger browser (it is called the `Transaction ID`).In the Domains screen, scroll down and find the transaction corresponding to your credential definition.  Copy the contents of the `Transaction ID` and paste this into the value for the `credential_defintion_id`.
 
 Finally, for the credential values, put the following between the curly brackets:
 
