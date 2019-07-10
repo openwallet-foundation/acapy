@@ -8,7 +8,7 @@ from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.credentials.v1_0.handlers."
+    "aries_cloudagent.messaging.issue_credential.v1_0.handlers."
     + "credential_proposal_handler.CredentialProposalHandler"
 )
 
@@ -25,6 +25,7 @@ class CredentialProposal(AgentMessage):
 
     def __init__(
         self,
+        _id: str = None,
         *,
         comment: str = None,
         credential_proposal: CredentialPreview = None,
@@ -41,7 +42,7 @@ class CredentialProposal(AgentMessage):
             schema_id: schema identifier
             cred_def_id: credential definition identifier
         """
-        super(CredentialProposal, self).__init__(**kwargs)
+        super(CredentialProposal, self).__init__(_id, **kwargs)
         self.comment = comment
         self.credential_proposal = (
             credential_proposal if credential_proposal else CredentialPreview()

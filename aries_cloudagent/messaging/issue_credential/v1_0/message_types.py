@@ -14,7 +14,7 @@ MESSAGE_TYPES = {
     CREDENTIAL_PROPOSAL: f"{TOP}.messages.credential_proposal.CredentialProposal",
     CREDENTIAL_OFFER: f"{TOP}.messages.credential_offer.CredentialOffer",
     CREDENTIAL_REQUEST: f"{TOP}.messages.credential_request.CredentialRequest",
-    CREDENTIAL_ISSUE: "{TOP}.messages.credential_issue.CredentialIssue"
+    CREDENTIAL_ISSUE: f"{TOP}.messages.credential_issue.CredentialIssue"
 }
 
 # Inner object types

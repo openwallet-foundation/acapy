@@ -7,15 +7,10 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ..messages.inner.credential_preview import (
-    CredentialPreview,
-    CredentialPreviewSchema
-)
-
 from .....config.injection_context import InjectionContext
-from .....models.base import BaseModel, BaseModelSchema
 from .....storage.base import BaseStorage
 from .....storage.record import StorageRecord
+from ....models.base import BaseModel, BaseModelSchema
 
 
 class V10CredentialExchange(BaseModel):
@@ -24,7 +19,7 @@ class V10CredentialExchange(BaseModel):
     class Meta:
         """CredentialExchange metadata."""
 
-        schema_class = "CredentialExchangeSchema"
+        schema_class = "V10CredentialExchangeSchema"
 
     RECORD_TYPE = "credential_exchange"
 
@@ -50,18 +45,17 @@ class V10CredentialExchange(BaseModel):
         state: str = None,
         credential_definition_id: str = None,
         schema_id: str = None,
-        credential_proposal: dict = None,
+        credential_proposal_dict: dict = None,  # serialized credential proposal message
         credential_offer: dict = None,  # indy credential offer
         credential_request: dict = None,  # indy credential request
         credential_request_metadata: dict = None,
         credential_id: str = None,
         credential: dict = None,  # indy credential
-        credential_preview: CredentialPreview = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
         error_msg: str = None,
     ):
-        """Initialize a new CredentialExchange."""
+        """Initialize a new V10CredentialExchange."""
         self._id = credential_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
@@ -69,13 +63,12 @@ class V10CredentialExchange(BaseModel):
         self.state = state
         self.credential_definition_id = credential_definition_id
         self.schema_id = schema_id
-        self.credential_proposal = credential_proposal
+        self.credential_proposal_dict = credential_proposal_dict
         self.credential_offer = credential_offer
         self.credential_request = credential_request
         self.credential_request_metadata = credential_request_metadata
         self.credential_id = credential_id
         self.credential = credential
-        self.credential_preview = credential_preview
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.error_msg = error_msg
@@ -100,15 +93,14 @@ class V10CredentialExchange(BaseModel):
         """Accessor for the JSON record value generated for this credential exchange."""
         result = self.tags
         for prop in (
-            "credential_proposal",
+            "credential_proposal_dict",
             "credential_offer",
             "credential_request",
             "credential_request_metadata",
             "error_msg",
             "auto_offer",
             "auto_issue",
-            "credential_preview",
-            "credential",
+            "credential"
         ):
             val = getattr(self, prop)
             if val:
@@ -233,7 +225,7 @@ class V10CredentialExchangeSchema(BaseModelSchema):
     state = fields.Str(required=False)
     credential_definition_id = fields.Str(required=False)
     schema_id = fields.Str(required=False)
-    credential_proposal = fields.Dict(required=False)
+    credential_proposal_dict = fields.Dict(required=False)
     credential_offer = fields.Dict(required=False)
     credential_request = fields.Dict(required=False)
     credential_request_metadata = fields.Dict(required=False)
@@ -241,5 +233,4 @@ class V10CredentialExchangeSchema(BaseModelSchema):
     credential = fields.Dict(required=False)
     auto_offer = fields.Bool(required=False)
     auto_issue = fields.Bool(required=False)
-    credential_preview = fields.Nested(CredentialPreviewSchema, required=False)
     error_msg = fields.Str(required=False)

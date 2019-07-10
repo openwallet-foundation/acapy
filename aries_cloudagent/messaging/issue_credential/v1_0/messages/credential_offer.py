@@ -5,14 +5,15 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....decorators.attach_decorator import AttachDecorator, AttachDecoratorSchema
 from ....agent_message import AgentMessage, AgentMessageSchema
+from ..decorators.attach_decorator import AttachDecorator, AttachDecoratorSchema
+from ..decorators.decorator_set import V10IssueCredentialDecoratorSet
 from ..message_types import CREDENTIAL_OFFER
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.credentials.v1_0.handlers."
+    "aries_cloudagent.messaging.issue_credential.v1_0.handlers."
     + "credential_offer_handler.CredentialOfferHandler"
 )
 
@@ -29,6 +30,7 @@ class CredentialOffer(AgentMessage):
 
     def __init__(
         self,
+        _id: str = None,
         *,
         comment: str = None,
         credential_preview: CredentialPreview = None,
@@ -44,7 +46,11 @@ class CredentialOffer(AgentMessage):
             offers_attach: list of offer attachments
 
         """
-        super(CredentialOffer, self).__init__(**kwargs)
+        super().__init__(
+            _id=_id,
+            _decorators=V10IssueCredentialDecoratorSet(),
+            **kwargs
+        )
         self.comment = comment
         self.credential_preview = (
             credential_preview if credential_preview else CredentialPreview()
@@ -79,3 +85,6 @@ class CredentialOfferSchema(AgentMessageSchema):
         many=True,
         data_key='offers~attach'
     )
+
+    def __init__(self, _id: str = None):
+        super().__init__(decorators=V10IssueCredentialDecoratorSet())

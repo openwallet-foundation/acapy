@@ -1,20 +1,18 @@
 """Classes to manage credentials."""
 
-import asyncio
-import json
 import logging
 
 from ....error import BaseError
 from ....holder.base import BaseHolder
 from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger
-from ....models.attach_decorator import AttachDecorator
-from ....models.thread_decorator import ThreadDecorator
 
+from ...decorators.thread_decorator import ThreadDecorator
 from ...connections.models.connection_record import ConnectionRecord
 from ...request_context import RequestContext
 from ...util import send_webhook
 
+from .decorators.attach_decorator import AttachDecorator
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_offer import CredentialOffer
 from .messages.credential_proposal import CredentialProposal
@@ -73,7 +71,7 @@ class CredentialManager:
                 credential proposal
 
         Return:
-            A tuple (credential_exchange, credential_proposal_message)
+            Resulting credential_exchange_record including credential proposal
 
         """
         # Credential definition id must be present
@@ -90,32 +88,29 @@ class CredentialManager:
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
-            credential_definition = await ledger.get_credential_definition(
+            schema_id = await ledger.credential_definition_id2schema_id(
                 credential_definition_id
             )
 
-        schema_id = credential_definition["schemaId"]
         credential_proposal_message = CredentialProposal(
             comment=comment,
             credential_proposal=credential_preview,
             schema_id=schema_id,
             cred_def_id=credential_definition_id)
 
-        credential_exchange = V10CredentialExchange(
+        credential_exchange_record = V10CredentialExchange(
             connection_id=connection_id,
             thread_id=credential_proposal_message._thread_id,
             initiator=V10CredentialExchange.INITIATOR_SELF,
             state=V10CredentialExchange.STATE_PROPOSAL_SENT,
             credential_definition_id=credential_definition_id,
             schema_id=schema_id,
-            credential_preview=credential_preview,
+            credential_proposal_dict=credential_proposal_message.serialize(),
             auto_offer=auto_offer
         )
-        await credential_exchange.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange.serialize())
-        )
-        return credential_exchange, credential_proposal_message
+        await credential_exchange_record.save(self.context)
+        await self.updated_record(credential_exchange_record)
+        return credential_exchange_record
 
     async def receive_proposal(
         self,
@@ -133,10 +128,8 @@ class CredentialManager:
             The credential_exchange_record
 
         """
-        credential_proposal = json.loads(credential_proposal_message.offer_json)
-
         # go to cred def via ledger to get authoritative schema id
-        cred_def_id = credential_proposal.get("cred_def_id", None)
+        cred_def_id = credential_proposal_message.cred_def_id
         if cred_def_id:
             ledger: BaseLedger = await self.context.inject(BaseLedger)
             async with ledger:
@@ -146,27 +139,27 @@ class CredentialManager:
                 "credential definition identifier is not set in proposal"
             )
 
-        credential_exchange = V10CredentialExchange(
+        credential_exchange_record = V10CredentialExchange(
             connection_id=connection_id,
             thread_id=credential_proposal_message._thread_id,
             initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
             state=V10CredentialExchange.STATE_PROPOSAL_RECEIVED,
             credential_definition_id=cred_def_id,
             schema_id=schema_id,
-            credential_preview=credential_proposal,
+            credential_proposal_dict=credential_proposal_message.serialize(),
+            auto_offer=self.context.settings.get("auto_respond_credential_proposal"),
+            auto_issue=self.context.settings.get("auto_respond_credential_request")
         )
-        await credential_exchange.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange.serialize())
-        )
+        await credential_exchange_record.save(self.context)
+        await self.updated_record(credential_exchange_record)
 
-        return credential_exchange
+        return credential_exchange_record
 
     async def create_offer(
         self,
         credential_exchange_record: V10CredentialExchange,
         *,
-        comment=None
+        comment: str = None
     ):
         """
         Create a credential offer.
@@ -186,9 +179,12 @@ class CredentialManager:
             credential_definition_id
         )
 
+        cred_preview = CredentialProposal.deserialize(
+            credential_exchange_record.credential_proposal_dict
+        ).credential_proposal
         credential_offer_message = CredentialOffer(
             comment=comment,
-            credential_preview=credential_exchange_record.credential_preview,
+            credential_preview=cred_preview,
             offers_attach=[AttachDecorator.from_indy_dict(credential_offer)]
         )
 
@@ -205,9 +201,7 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_SENT
         credential_exchange_record.credential_offer = credential_offer
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
 
         return credential_exchange_record, credential_offer_message
 
@@ -232,17 +226,18 @@ class CredentialManager:
                 credential_exchange_record.credential_definition_id
             )
         holder: BaseHolder = await self.context.inject(BaseHolder)
-        await holder.store_mime_types(
+        await holder.store_metadata(
             credential_definition,
-            credential_exchange_record.credential_preview.mime_type_dict()
+            CredentialPreview.deserialize(
+                credential_exchange_record.credential_proposal_dict[
+                    "credential_proposal"
+                ]
+            ).metadata()
         )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
         await credential_exchange_record.save(self.context)
-
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
 
         return credential_exchange_record
 
@@ -278,7 +273,9 @@ class CredentialManager:
             credential_request,
             credential_request_metadata,
         ) = await holder.create_credential_request(
-            credential_offer, credential_definition, did
+            credential_offer,
+            credential_definition,
+            did
         )
 
         credential_request_message = CredentialRequest(
@@ -296,9 +293,7 @@ class CredentialManager:
             credential_request_metadata
         )
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
 
         return credential_exchange_record, credential_request_message
 
@@ -314,7 +309,7 @@ class CredentialManager:
 
         """
 
-        assert len(credential_request_message.offers_attach or []) == 1
+        assert len(credential_request_message.requests_attach or []) == 1
         credential_request = credential_request_message.indy_cred_req(0)
 
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
@@ -325,9 +320,7 @@ class CredentialManager:
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
 
         return credential_exchange_record
 
@@ -365,9 +358,7 @@ class CredentialManager:
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
-        )
+        await self.updated_record(credential_exchange_record)
 
         credential_message = CredentialIssue(
             comment=comment,
@@ -418,6 +409,12 @@ class CredentialManager:
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = wallet_credential
         await credential_exchange_record.save(self.context)
-        asyncio.ensure_future(
-            send_webhook("credentials", credential_exchange_record.serialize())
+        await self.updated_record(credential_exchange_record)
+
+    async def updated_record(self, credential_exchange: V10CredentialExchange):
+        """Call webhook when the record is updated."""
+        send_webhook(
+            self._context,
+            "v1.0-issue-credential",
+            credential_exchange.serialize()
         )

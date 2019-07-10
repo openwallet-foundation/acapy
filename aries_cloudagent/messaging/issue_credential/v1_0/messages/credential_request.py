@@ -5,13 +5,14 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....decorators.attach_decorator import AttachDecorator, AttachDecoratorSchema
 from ....agent_message import AgentMessage, AgentMessageSchema
+from ..decorators.attach_decorator import AttachDecorator, AttachDecoratorSchema
+from ..decorators.decorator_set import V10IssueCredentialDecoratorSet
 from ..message_types import CREDENTIAL_REQUEST
 
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.credentials.v1_0.handlers."
+    "aries_cloudagent.messaging.issue_credential.v1_0.handlers."
     + "credential_request_handler.CredentialRequestHandler"
 )
 
@@ -28,6 +29,7 @@ class CredentialRequest(AgentMessage):
 
     def __init__(
         self,
+        _id: str = None,
         *,
         comment: str = None,
         requests_attach: Sequence[AttachDecorator] = None,
@@ -41,7 +43,11 @@ class CredentialRequest(AgentMessage):
             comment: optional comment
 
         """
-        super(CredentialRequest, self).__init__(**kwargs)
+        super().__init__(
+            _id=_id,
+            _decorators=V10IssueCredentialDecoratorSet(),
+            **kwargs
+        )
         self.comment = comment
         self.requests_attach = list(requests_attach) if requests_attach else []
 
@@ -72,3 +78,6 @@ class CredentialRequestSchema(AgentMessageSchema):
         many=True,
         data_key='requests~attach'
     )
+
+    def __init__(self, _id: str = None):
+        super().__init__(decorators=V10IssueCredentialDecoratorSet())

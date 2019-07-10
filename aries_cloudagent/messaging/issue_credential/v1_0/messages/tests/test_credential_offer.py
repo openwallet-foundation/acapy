@@ -1,4 +1,4 @@
-from .....decorators.attach_decorator import AttachDecorator
+from ...decorators.attach_decorator import AttachDecorator
 from ...message_types import CREDENTIAL_OFFER
 from ..credential_offer import CredentialOffer
 from ..inner.credential_preview import AttributePreview, CredentialPreview

@@ -13,10 +13,10 @@ class TestCredentialProposal(TestCase):
             AttributePreview.list_plain({'test': '123', 'hello': 'world'}) +
             [
                 AttributePreview(
-                    name='rich',
-                    value='Abcd123=',
+                    name='icon',
+                    value='cG90YXRv',
                     encoding='base64',
-                    mime_type='image/jpeg'
+                    mime_type='image/png'
                 )
             ]
         )
@@ -43,6 +43,31 @@ class TestCredentialProposal(TestCase):
 
         assert credential_proposal._type == CREDENTIAL_PROPOSAL
 
+    def test_preview(self):
+        """Test preview for attr-dict and metadata-dict utilities."""
+        assert self.preview.attr_dict(decode=False) == {
+            'test': '123',
+            'hello': 'world',
+            'icon': 'cG90YXRv'
+        }
+        assert self.preview.attr_dict(decode=True) == {
+            'test': '123',
+            'hello': 'world',
+            'icon': 'potato'
+        }
+        assert self.preview.metadata() == {
+            'test': {
+                'mime-type': 'text/plain'
+            },
+            'hello': {
+                'mime-type': 'text/plain'
+            },
+            'icon': {
+                'mime-type': 'image/png',
+                'encoding': 'base64'
+            }
+        }
+
     @mock.patch(
         "aries_cloudagent.messaging.issue_credential.v1_0.messages."
         + "credential_proposal.CredentialProposalSchema.load"
@@ -61,7 +86,7 @@ class TestCredentialProposal(TestCase):
                 },
                 {
                     'name': 'pic',
-                    'mime-type': 'image/jpeg',
+                    'mime-type': 'image/png',
                     'encoding': 'base64',
                     'value': 'Abcd0123...'
                 }

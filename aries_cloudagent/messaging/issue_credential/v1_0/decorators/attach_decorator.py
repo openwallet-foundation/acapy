@@ -13,7 +13,7 @@ from typing import Mapping
 
 from marshmallow import fields
 
-from ..models.base import BaseModel, BaseModelSchema
+from ....models.base import BaseModel, BaseModelSchema
 
 
 class AttachDecorator(BaseModel):

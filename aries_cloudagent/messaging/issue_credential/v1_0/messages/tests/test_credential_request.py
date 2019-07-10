@@ -1,4 +1,4 @@
-from .....decorators.attach_decorator import AttachDecorator
+from ...decorators.attach_decorator import AttachDecorator
 from ...message_types import CREDENTIAL_REQUEST
 from ..credential_request import CredentialRequest
 

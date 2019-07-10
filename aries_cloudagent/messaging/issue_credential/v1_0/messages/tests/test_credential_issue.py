@@ -1,4 +1,4 @@
-from .....decorators.attach_decorator import AttachDecorator
+from ...decorators.attach_decorator import AttachDecorator
 from ...message_types import CREDENTIAL_ISSUE
 from ..credential_issue import CredentialIssue
 
@@ -144,7 +144,5 @@ class TestCredentialIssueSchema(TestCase):
     def test_make_model(self):
         """Test making model."""
         data = self.credential_issue.serialize()
-        print('\n== CRED ISSUE SER == {}'.format(data))
         model_instance = CredentialIssue.deserialize(data)
-        print('\n== MODEL INSTANCE TYPE == {}'.format(type(model_instance)))
         assert isinstance(model_instance, CredentialIssue)

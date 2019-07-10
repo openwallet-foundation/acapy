@@ -10,6 +10,7 @@ from ....base_handler import (
 
 from ..manager import CredentialManager
 from ..messages.credential_request import CredentialRequest
+from ..messages.credential_proposal import CredentialProposal
 
 
 class CredentialRequestHandler(BaseHandler):
@@ -47,7 +48,9 @@ class CredentialRequestHandler(BaseHandler):
             ) = await credential_manager.issue_credential(
                 credential_exchange_record=cred_exchange_rec,
                 comment=context.message.comment,
-                credential_values=cred_exchange_rec.credential_preview.attr_dict()
+                credential_values=CredentialProposal.deserialize(
+                    cred_exchange_rec.credential_proposal_dict
+                ).credential_proposal.attr_dict()
             )
 
             await responder.send_reply(credential_issue_message)

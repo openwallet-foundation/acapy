@@ -3,6 +3,8 @@
 
 from typing import Sequence
 
+import base64
+
 from marshmallow import fields
 
 from .....models.base import BaseModel, BaseModelSchema
@@ -96,6 +98,12 @@ class CredentialPreview(BaseModel):
                     'name': 'attribute_name',
                     'mime-type': 'text/plain',
                     'value': 'value'
+                },
+                {
+                    'name': 'icon',
+                    'mime-type': 'image/png',
+                    'encoding': 'base64',
+                    'value': 'cG90YXRv'
                 }
             ]
 
@@ -108,13 +116,28 @@ class CredentialPreview(BaseModel):
         """Accessor for message type."""
         return CredentialPreview.message_type
 
-    def attr_dict(self):
-        """Return name:value pair per attribute."""
-        return {attr.name: attr.value for attr in self.attributes}
+    def attr_dict(self, decode: bool = False):
+        """
+        Return name:value pair per attribute.
 
-    def mime_type_dict(self):
-        """Return name:MIME-type pair per attribute."""
-        return {attr.name: attr.mime_type for attr in self.attributes}
+        Args:
+            decode: whether first to decode attributes marked as having encoding
+
+        """
+        return {
+            attr.name: base64.b64decode(attr.value.encode()).decode()
+            if attr.encoding == 'base64' and decode else attr.value
+            for attr in self.attributes
+        }
+
+    def metadata(self):
+        """Return per-attribute mapping from name to MIME type and encoding."""
+        return {
+            attr.name: {
+                'mime-type': attr.mime_type,
+                **{'encoding': attr.encoding for attr in [attr] if attr.encoding}
+            } for attr in self.attributes
+        }
 
 
 class CredentialPreviewSchema(BaseModelSchema):

@@ -209,6 +209,12 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--auto-respond-credential-request",
+    action="store_true",
+    help="Auto-respond to credential requests with credential issue",
+)
+
+PARSER.add_argument(
     "--auto-respond-presentation-request",
     action="store_true",
     help="Auto-respond to presentation requests with a presentation "
@@ -369,6 +375,8 @@ def main():
         settings["auto_respond_credential_proposal"] = True
     if args.auto_respond_credential_offer:
         settings["auto_respond_credential_offer"] = True
+    if args.auto_respond_credential_request:
+        settings["auto_respond_credential_request"] = True
     if args.auto_respond_presentation_request:
         settings["auto_respond_presentation_request"] = True
     if args.auto_verify_presentation:

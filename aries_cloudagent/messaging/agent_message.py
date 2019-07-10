@@ -18,6 +18,7 @@ from ..wallet.base import BaseWallet
 from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
 from .decorators.signature_decorator import SignatureDecorator
+
 from .decorators.thread_decorator import ThreadDecorator
 from .models.base import (
     BaseModel,
@@ -61,7 +62,9 @@ class AgentMessage(BaseModel):
         else:
             self._message_id = str(uuid.uuid4())
             self._message_new_id = True
-        self._message_decorators = _decorators or DecoratorSet()
+        self._message_decorators = (
+            DecoratorSet() if _decorators is None else _decorators
+        )
         if not self.Meta.message_type:
             raise TypeError(
                 "Can't instantiate abstract class {} with no message_type".format(
@@ -302,10 +305,12 @@ class AgentMessageSchema(BaseModelSchema):
     _type = fields.Str(data_key="@type", dump_only=True, required=False)
     _id = fields.Str(data_key="@id", required=False)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, decorators=None, *args, **kwargs):
         """
         Initialize an instance of AgentMessageSchema.
 
+        Args:
+            decorators: pass a decorator set to override default
         Raises:
             TypeError: If Meta.model_class has not been set
 
@@ -317,7 +322,7 @@ class AgentMessageSchema(BaseModelSchema):
                     self.__class__.__name__
                 )
             )
-        self._decorators = DecoratorSet()
+        self._decorators = DecoratorSet() if decorators is None else decorators
         self._decorators_dict = None
         self._signatures = {}
 

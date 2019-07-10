@@ -6,13 +6,18 @@ import logging
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
-from ..wallet.error import WalletNotFoundError
+from ..storage.indy import IndyStorage
+from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.record import StorageRecord
 
+from ..wallet.error import WalletNotFoundError
 from .base import BaseHolder
 
 
 class IndyHolder(BaseHolder):
     """Indy holder class."""
+
+    RECORD_TYPE_METADATA = 'attribute-metadata'
 
     def __init__(self, wallet):
         """
@@ -84,6 +89,74 @@ class IndyHolder(BaseHolder):
         )
 
         return credential_id
+
+    async def store_metadata(
+        self,
+        credential_definition: dict,
+        metadata: dict
+    ):
+        """
+        Store MIME type and encoding by attribute for input credential definition.
+
+        Args:
+            credential_definition: Credential definition
+            metadata: dict mapping attribute name to MIME type (default 'text/plain')
+                and encoding
+
+        """
+        cred_def_id = credential_definition['id']
+        indy_stor = IndyStorage(self.wallet)
+        record = StorageRecord(
+            type=IndyHolder.RECORD_TYPE_METADATA,
+            value=cred_def_id,
+            tags={
+                attr: json.dumps(
+                    {
+                        **{'mime-type': 'text/plain'},
+                        **(metadata.get(attr))
+                    }
+                )
+                for attr in credential_definition['value']['primary']['r']
+                if attr != 'master_secret'
+            },
+            id=f"{IndyHolder.RECORD_TYPE_METADATA}.{cred_def_id}"
+        )
+
+        try:
+            existing_record = await indy_stor.get_record(
+                IndyHolder.RECORD_TYPE_METADATA,
+                f"{IndyHolder.RECORD_TYPE_METADATA}.{cred_def_id}"
+            )
+            if existing_record.tags == record.tags:
+                return  # don't overwrite same data
+            await indy_stor.update_record_tags(existing_record, record.tags)
+        except StorageNotFoundError:
+            await indy_stor.add_record(record)
+
+    async def get_metadata(self, cred_def_id: str, attr: str = None):
+        """
+        Get MIME type and encoding by for attribute within input cred def id.
+
+        Args:
+            cred_def_id: credential definition id
+            attr: attribute of interest or omit for all
+
+        """
+        try:
+            all_meta = await IndyStorage(self.wallet).get_record(
+                IndyHolder.RECORD_TYPE_METADATA,
+                f"{IndyHolder.RECORD_TYPE_METADATA}.{cred_def_id}"
+            )
+        except StorageError:
+            return None  # no metadata is default position: not an error
+        if attr:
+            meta_json = all_meta.tags.get(attr)
+            if meta_json:
+                return json.loads(meta_json)
+            raise StorageError(
+                f"Attribute {attr} has no tag in metadata record for {cred_def_id}"
+            )
+        return {attr: json.loads(all_meta.tags[attr]) for attr in all_meta.tags}
 
     async def get_credentials(self, start: int, count: int, wql: dict):
         """

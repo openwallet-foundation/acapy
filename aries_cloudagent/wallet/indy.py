@@ -29,7 +29,7 @@ class IndyWallet(BaseWallet):
         Initialize a `IndyWallet` instance.
 
         Args:
-            config: {name, key, seed, did, auto-create, auto-remove,
+            config: {name, key, seed, did, auto_create, auto_remove,
                      storage_type, storage_config, storage_creds}
 
         """

@@ -1,7 +1,7 @@
 """Classes for managing a collection of decorators."""
 
 from collections import OrderedDict
-from typing import Mapping, Type
+from typing import List, Mapping, Type, Union
 
 from ...error import BaseError
 
@@ -70,7 +70,7 @@ class BaseDecoratorSet(OrderedDict):
         """Accessor for the decorator prefix."""
         return self._prefix
 
-    def add_model(self, key: str, model: Type[BaseModel]):
+    def add_model(self, key: str, model: Union[Type[List[BaseModel]], Type[BaseModel]]):
         """Add a registered decorator model."""
         self._models[key] = model
 
@@ -80,21 +80,49 @@ class BaseDecoratorSet(OrderedDict):
 
     def __setitem__(self, key, value):
         """Add a decorator."""
-        if not isinstance(value, (bool, int, str, float, dict, OrderedDict, BaseModel)):
-            raise ValueError(f"Unsupported decorator value: {value}")
+        if not isinstance(
+            value,
+            (bool, int, str, float, list, dict, OrderedDict, BaseModel)
+        ):
+            raise ValueError(
+                f"{key} decorator unsupported type {type(value).__name__}, "
+                + f"value: {value}"
+            )
         self.load_decorator(key, value)
 
     def load_decorator(self, key: str, value, serialized=False):
         """Convert a decorator value to its loaded representation."""
-        if key in self._models and isinstance(value, (dict, OrderedDict)):
-            if serialized:
-                value = self._models[key].deserialize(value)
-            else:
-                value = self._models[key](**value)
+        # print(f'\n\n.. 1 ..base-deco load({key}, {value}, {serialized})')
+        # print(f'\n\n.. 2 ..base-deco load({key}, {value}, {serialized})')
+        # print(f'.. 3 ..models: {self._models}')
+        if key in self._models:
+            """
+            if isinstance(value, list):  # TODO: revisit with deeper understanding
+                '''
+                if not isinstance(self._models[key], list):
+                    raise DecoratorError(
+                        f"{key} decorator value {value} is a scalar but model is a list"
+                    )
+                '''
+                if serialized:
+                    value = [self._models[key].deserialize(cell) for cell in value]
+            """
+            if isinstance(value, (dict, OrderedDict)):
+                '''
+                if isinstance(self._models[key], list):
+                    raise DecoratorError(
+                        f"{key} decorator value {value} is a list but model is scalar"
+                    )
+                '''
+                if serialized:
+                    value = self._models[key].deserialize(value)
+                else:
+                    value = self._models[key](**value)
         if value is not None:
             super().__setitem__(key, value)
         elif key in self:
             del self[key]
+        # print(f'.. 4 .. base-deco load() set {key} deco to {value}')
 
     def extract_decorators(self, message: Mapping, serialized=True) -> OrderedDict:
         """Extract decorators and return the remaining properties."""
@@ -102,6 +130,26 @@ class BaseDecoratorSet(OrderedDict):
         if message:
             pfx_len = len(self._prefix)
             for key, value in message.items():
+                """
+                key_split = key.split(self._prefix, 1)
+                if len(key_split) == 2 and key_split[1] in self._models:
+                    if key.startswith(self._prefix):
+                        key = key[pfx_len:]
+                        self.load_decorator(key, value, serialized)
+                    elif self._prefix in key:
+                        field, key = key.split(self._prefix, 1)
+                        self.field(field).load_decorator(key, value, serialized)
+                        # THIS IS A WORKAROUND FOR ARIES#0036 (v1.0 issue-credential)
+                        '''
+                        if key == "attach":
+                            remain[f'{field}{self._prefix}{key}'] = value
+                        '''
+                        # IT IS BAD AND NEEDS IMPROVEMENT - SOMEWHERE ELSE IN THE CODE?
+                    else:
+                        remain[key] = value
+                else:
+                    remain[key] = value
+                """
                 if key.startswith(self._prefix):
                     key = key[pfx_len:]
                     self.load_decorator(key, value, serialized)
