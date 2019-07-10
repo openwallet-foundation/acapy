@@ -70,7 +70,7 @@ start|up)
   ;;
 demo)
   exportEnvironment "$@"
-  ../scripts/run_demo $(getStartupParams "$@")
+  ../demo/run_demo $(getStartupParams "$@")
   ;;
 test)
   exportEnvironment "$@"
