@@ -269,7 +269,10 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     credential_definition_id = body.get("credential_definition_id")
-    auto_issue = body.get("auto_issue")
+    auto_issue = body.get(
+        "auto_issue",
+        context.settings.get("auto_respond_credential_request")
+    )
     comment = body.get("comment", None)
     credential_preview = CredentialPreview(
         attributes=[
