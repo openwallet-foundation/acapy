@@ -145,7 +145,11 @@ async def prompt(*args, **kwargs):
     prompt_init()
     with patch_stdout():
         try:
-            return await prompt_toolkit.prompt(*args, async_=True, **kwargs)
+            while True:
+                tmp = await prompt_toolkit.prompt(*args, async_=True, **kwargs)
+                if tmp:
+                    break
+            return tmp
         except EOFError:
             return None
 
