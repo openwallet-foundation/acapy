@@ -89,7 +89,7 @@ class DemoAgent:
         self.extra_args = extra_args
 
         if RUN_MODE == 'pwd':
-            self.endpoint = f"http://{self.external_host}"
+            self.endpoint = f"http://{self.external_host}".replace('{PORT}', str(http_port))
         else:
             self.endpoint = f"http://{self.external_host}:{http_port}"
         self.admin_url = f"http://{self.internal_host}:{admin_port}"

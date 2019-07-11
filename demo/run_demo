@@ -47,7 +47,7 @@ else
         export ETH_CONFIG="eth0"
       fi
     MY_HOST=`ifconfig ${ETH_CONFIG} | grep inet | cut -d':' -f2 | cut -d' ' -f1 | sed 's/\./\-/g'`
-    export DOCKERHOST="ip${MY_HOST}-${SESSION_ID}-${AGENT_PORT}.direct.${PWD_HOST_FQDN}"
+    export DOCKERHOST="ip${MY_HOST}-${SESSION_ID}-{PORT}.direct.${PWD_HOST_FQDN}"
     export RUNMODE="pwd"
 fi
 
