@@ -120,11 +120,12 @@ class BaseModel(ABC):
             A model instance for this data
 
         """
-        schema = cls._get_schema_class()()
+        schema_class = cls._get_schema_class()
+        schema = schema_class()
         try:
             return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
         except ValidationError as e:
-            raise BaseModelError("Schema validation failed") from e
+            raise BaseModelError(f"Schema {schema_class} validation failed") from e
 
     def serialize(self, as_string=False) -> dict:
         """

@@ -55,7 +55,7 @@ class BaseDecoratorSet(OrderedDict):
 
     @property
     def fields(self) -> OrderedDict:
-        """Acessor for the set of currently defined fields."""
+        """Accessor for the set of currently defined fields."""
         return OrderedDict(
             (name, field) for (name, field) in self._fields.items() if field
         )
@@ -81,7 +81,10 @@ class BaseDecoratorSet(OrderedDict):
     def __setitem__(self, key, value):
         """Add a decorator."""
         if not isinstance(value, (bool, int, str, float, dict, OrderedDict, BaseModel)):
-            raise ValueError(f"Unsupported decorator value: {value}")
+            raise ValueError(
+                f"{key} decorator unsupported type: {type(value).__name__}, " +
+                f"value: {value}"
+            )
         self.load_decorator(key, value)
 
     def load_decorator(self, key: str, value, serialized=False):
