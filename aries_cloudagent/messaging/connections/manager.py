@@ -885,9 +885,9 @@ class ConnectionManager:
             raise ConnectionManagerError(
                 f"Routing connection not found: {inbound_connection_id}"
             )
-        if not router.is_active:
+        if not router.is_ready:
             raise ConnectionManagerError(
-                f"Routing connection is not active: {inbound_connection_id}"
+                f"Routing connection is not ready: {inbound_connection_id}"
             )
         connection.inbound_connection_id = inbound_connection_id
 
