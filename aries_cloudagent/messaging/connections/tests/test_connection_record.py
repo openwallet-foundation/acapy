@@ -37,3 +37,30 @@ class TestConnectionRecord(AsyncTestCase, TestConfig):
 
         bad_record = ConnectionRecord(my_did=None)
         assert bad_record != record
+
+    async def test_active_is_ready(self):
+        record = ConnectionRecord(
+            my_did=self.test_did, state=ConnectionRecord.STATE_ACTIVE
+        )
+        record_id = await record.save(self.context)
+        fetched = await ConnectionRecord.retrieve_by_id(self.context, record_id)
+
+        assert fetched.is_ready == True
+
+    async def test_response_is_ready(self):
+        record = ConnectionRecord(
+            my_did=self.test_did, state=ConnectionRecord.STATE_RESPONSE
+        )
+        record_id = await record.save(self.context)
+        fetched = await ConnectionRecord.retrieve_by_id(self.context, record_id)
+
+        assert fetched.is_ready is True
+
+    async def test_request_is_not_ready(self):
+        record = ConnectionRecord(
+            my_did=self.test_did, state=ConnectionRecord.STATE_REQUEST
+        )
+        record_id = await record.save(self.context)
+        fetched = await ConnectionRecord.retrieve_by_id(self.context, record_id)
+
+        assert fetched.is_ready is False

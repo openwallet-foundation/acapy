@@ -118,6 +118,7 @@ class CredentialManager:
                 auto_issue=True,
                 connection_id=connection_id,
                 initiator=CredentialExchange.INITIATOR_SELF,
+                state=CredentialExchange.STATE_REQUEST_RECEIVED,
                 credential_definition_id=credential_definition_id,
                 schema_id=source_credential_exchange.schema_id,
                 credential_offer=source_credential_exchange.credential_offer,

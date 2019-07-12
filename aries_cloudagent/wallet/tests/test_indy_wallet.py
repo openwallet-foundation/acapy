@@ -1,19 +1,5 @@
 import pytest
-
-try:
-    from indy.libindy import _cdll
-
-    _cdll()
-except ImportError:
-    pytest.skip(
-        "skipping Indy-specific tests: python module not installed",
-        allow_module_level=True,
-    )
-except OSError:
-    pytest.skip(
-        "skipping Indy-specific tests: shared library not loaded",
-        allow_module_level=True,
-    )
+import os
 
 from aries_cloudagent.wallet.basic import BasicWallet
 from aries_cloudagent.wallet.indy import IndyWallet
@@ -40,10 +26,12 @@ async def wallet():
     await wallet.close()
 
 
+@pytest.mark.indy
 class TestIndyWallet(test_basic_wallet.TestBasicWallet):
     """Apply all BasicWallet tests against IndyWallet"""
 
 
+@pytest.mark.indy
 class TestWalletCompat:
     """ """
 
@@ -130,11 +118,16 @@ class TestWalletCompat:
         assert self.test_message == unpacked
 
     # TODO get these to run in docker ci/cd
-    # @pytest.mark.asyncio
+    @pytest.mark.asyncio
+    @pytest.mark.postgres
     async def test_postgres_wallet_works(self):
         """
         Ensure that postgres wallet operations work (create and open wallet, create did, drop wallet)
         """
+        postgres_url = os.environ.get("POSTGRES_URL")
+        if not postgres_url:
+            pytest.fail("POSTGRES_URL not configured")
+
         load_postgres_plugin()
         postgres_wallet = IndyWallet(
             {
@@ -143,7 +136,7 @@ class TestWalletCompat:
                 "name": "test_pg_wallet",
                 "key": "my_postgres",
                 "storage_type": "postgres_storage",
-                "storage_config": '{"url":"host.docker.internal:5432"}',
+                "storage_config": '{"url":"' + postgres_url + '"}',
                 "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
             }
         )
