@@ -19,23 +19,23 @@ class AcmeAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
         super().__init__("Acme Agent", http_port, admin_port, prefix="Acme", **kwargs)
         self.connection_id = None
-        self._connection_active = asyncio.Future()
+        self._connection_ready = asyncio.Future()
         self.cred_state = {}
         # TODO define a dict to hold credential attributes based on credential_definition_id
         self.cred_attrs = {}
 
     async def detect_connection(self):
-        await self._connection_active
+        await self._connection_ready
 
     @property
-    def connection_active(self):
-        return self._connection_active.done() and self._connection_active.result()
+    def connection_ready(self):
+        return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_connections(self, message):
         if message["connection_id"] == self.connection_id:
-            if message["state"] == "active" and not self._connection_active.done():
+            if message["state"] == "active" and not self._connection_ready.done():
                 self.log("Connected")
-                self._connection_active.set_result(True)
+                self._connection_ready.set_result(True)
 
     async def handle_credentials(self, message):
         state = message["state"]

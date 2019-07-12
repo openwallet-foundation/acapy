@@ -19,7 +19,7 @@ class RouteUpdateResponseHandler(BaseHandler):
         )
         assert isinstance(context.message, RouteUpdateResponse)
 
-        if not context.connection_active:
+        if not context.connection_ready:
             raise HandlerException("Cannot handle updated routes: no active connection")
 
         conn_mgr = ConnectionManager(context)

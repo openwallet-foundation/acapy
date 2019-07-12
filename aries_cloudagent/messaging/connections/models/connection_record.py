@@ -440,11 +440,6 @@ class ConnectionRecord(BaseModel):
         await storage.update_record_value(record, json.dumps(value))
 
     @property
-    def is_active(self) -> bool:
-        """Accessor to check if the connection is active."""
-        return self.state == self.STATE_ACTIVE
-
-    @property
     def is_ready(self) -> str:
         """Accessor for connection readiness."""
         return self.state == self.STATE_ACTIVE or self.state == self.STATE_RESPONSE
