@@ -137,32 +137,34 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        api_key = self.context.settings.get("api_key")
-        admin_unsecured = self.context.settings.get("admin_unsecured")
+        middlewares = []
 
-        # admin-token and admin-token are mutually exclusive. Should be enforced
-        # during parameter parsing but to be sure, we check here.
-        assert admin_unsecured or api_key
-        assert not (admin_unsecured and api_key)
+        admin_api_key = self.context.settings.get("admin.admin_api_key")
+        admin_insecure_mode = self.context.settings.get("admin.admin_insecure_mode")
 
-        # If api_key is None, then admin_unsecured must be set so
+        # admin-token and admin-token are mutually exclusive and required.
+        # This should be enforced during parameter parsing but to be sure,
+        # we check here.
+        assert admin_insecure_mode or admin_api_key
+        assert not (admin_insecure_mode and admin_api_key)
+
+        # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
-        if api_key:
+        if admin_api_key:
 
             @web.middleware
             async def check_token(request, handler):
-                header_api_key = request.headers.get("x-api-key")
-                if not header_api_key:
-                    raise web.HTTPUnauthorized(
-                        "An API key must be provided in the X-API-Key header"
-                    )
+                header_admin_api_key = request.headers.get("x-api-key")
+                if not header_admin_api_key:
+                    raise web.HTTPUnauthorized()
 
-                if api_key == header_api_key:
+                if admin_api_key == header_admin_api_key:
                     return await handler(request)
                 else:
-                    raise web.HTTPUnauthorized("Invalid api key provided")
+                    raise web.HTTPUnauthorized()
 
-        middlewares = []
+            middlewares.append(check_token)
+
         stats: Collector = await self.context.inject(Collector, required=False)
         if stats:
 
