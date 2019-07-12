@@ -29,7 +29,7 @@ elif [[ $AGENT == "acme" ]]; then
 else
 	AGENT_MODULE="performance"
 	AGENT_PORT=8030
-	AGENT_PORT_RANGE=8030-8037
+	AGENT_PORT_RANGE=8030-8038
 fi
 
 if [[ -z "${PWD_HOST_FQDN}" ]]; then
