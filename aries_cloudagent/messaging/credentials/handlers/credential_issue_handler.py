@@ -21,7 +21,7 @@ class CredentialIssueHandler(BaseHandler):
         assert isinstance(context.message, CredentialIssue)
         self._logger.info(f"Received credential: {context.message.issue}")
 
-        if not context.connection_active:
+        if not context.connection_ready:
             raise HandlerException("No connection established for credential request")
 
         credential_manager = CredentialManager(context)

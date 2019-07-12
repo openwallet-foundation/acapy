@@ -75,7 +75,7 @@ class Dispatcher:
         context = RequestContext(base_context=self.context)
         context.message = message
         context.message_delivery = delivery
-        context.connection_active = connection and connection.is_active
+        context.connection_ready = connection and connection.is_ready
         context.connection_record = connection
 
         responder = DispatcherResponder(

@@ -23,7 +23,7 @@ class CredentialOfferHandler(BaseHandler):
 
         self._logger.info("Received credential offer: %s", context.message.offer_json)
 
-        if not context.connection_active:
+        if not context.connection_ready:
             raise HandlerException("No connection established for credential offer")
 
         credential_manager = CredentialManager(context)

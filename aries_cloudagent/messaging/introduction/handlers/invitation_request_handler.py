@@ -14,7 +14,7 @@ class InvitationRequestHandler(BaseHandler):
         self._logger.debug("InvitationRequestHandler called with context %s", context)
         assert isinstance(context.message, InvitationRequest)
 
-        if not context.connection_active:
+        if not context.connection_ready:
             raise HandlerException(
                 "No connection established for invitation request message"
             )

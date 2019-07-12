@@ -22,16 +22,16 @@ class BaseAgent(DemoAgent):
             prefix = ident
         super().__init__(ident, port, port + 1, timing=timing, prefix=prefix, **kwargs)
         self.connection_id = None
-        self.connection_active = asyncio.Future()
+        self.connection_ready = asyncio.Future()
 
     async def detect_connection(self):
-        await self.connection_active
+        await self.connection_ready
 
     async def handle_connections(self, payload):
         if payload["connection_id"] == self.connection_id:
-            if payload["state"] == "active" and not self.connection_active.done():
+            if payload["state"] == "active" and not self.connection_ready.done():
                 self.log("Connected")
-                self.connection_active.set_result(True)
+                self.connection_ready.set_result(True)
 
 
 class AliceAgent(BaseAgent):
