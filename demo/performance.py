@@ -5,7 +5,7 @@ import random
 import sys
 
 from .agent import DemoAgent, default_genesis_txns
-from .utils import log_timer
+from .utils import log_timer, progress
 
 LOGGER = logging.getLogger(__name__)
 
@@ -230,23 +230,46 @@ async def main():
 
         recv_timer = alice.log_timer(f"Received {issue_count} credentials in ")
         recv_timer.start()
+        batch_timer = faber.log_timer(f"Started {batch_size} credential exchanges in ")
+        batch_timer.start()
 
-        with faber.log_timer(f"Done starting {issue_count} credential exchanges in "):
-            batch_timer = faber.log_timer(
-                f"Started {batch_size} credential exchanges in "
-            )
-            batch_timer.start()
+        async def check_received(agent, issue_count, pb):
+            reported = 0
+            iter_pb = iter(pb) if pb else None
+            while True:
+                pending, total = agent.check_received_creds()
+                if iter_pb and total > reported:
+                    try:
+                        while next(iter_pb) < total:
+                            pass
+                    except StopIteration:
+                        iter_pb = None
+                reported = total
+                if total == issue_count and not pending:
+                    break
+                await asyncio.wait_for(agent.update_creds(), 30)
 
-            for idx in range(issue_count):
-                await send()
-                if not (idx + 1) % batch_size and idx < issue_count - 1:
-                    batch_timer.reset()
+        with progress() as pb:
+            receive_task = None
+            try:
+                issue_pg = pb(range(issue_count), label="Issuing credentials")
+                receive_pg = pb(range(issue_count), label="Receiving credentials")
+                receive_task = asyncio.ensure_future(
+                    check_received(alice, issue_count, receive_pg)
+                )
+                with faber.log_timer(
+                    f"Done starting {issue_count} credential exchanges in "
+                ):
+                    for idx in issue_pg:
+                        await send()
+                        if not (idx + 1) % batch_size and idx < issue_count - 1:
+                            batch_timer.reset()
 
-        while True:
-            pending, total = alice.check_received_creds()
-            if total == issue_count and not pending:
-                break
-            await asyncio.wait_for(alice.update_creds(), 30)
+                await receive_task
+            except KeyboardInterrupt:
+                if receive_task:
+                    receive_task.cancel()
+                print("Canceled")
 
         recv_timer.stop()
         avg = recv_timer.duration / issue_count
