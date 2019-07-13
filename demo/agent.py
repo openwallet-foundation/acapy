@@ -65,6 +65,7 @@ class DemoAgent:
         internal_host: str = None,
         external_host: str = None,
         genesis_data: str = None,
+        seed: str = "random",
         label: str = None,
         color: str = None,
         prefix: str = None,
@@ -102,7 +103,9 @@ class DemoAgent:
 
         rand_name = str(random.randint(100_000, 999_999))
         self.seed = (
-            params.get("seed") or ("my_seed_000000000000000000000000" + rand_name)[-32:]
+            ("my_seed_000000000000000000000000" + rand_name)[-32:]
+            if seed == "random"
+            else seed
         )
         self.storage_type = params.get("storage_type")
         self.wallet_type = params.get("wallet_type", "indy")
@@ -148,10 +151,11 @@ class DemoAgent:
             ("--wallet-type", self.wallet_type),
             ("--wallet-name", self.wallet_name),
             ("--wallet-key", self.wallet_key),
-            ("--seed", self.seed),
         ]
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
+        if self.seed:
+            result.append(("--seed", self.seed))
         if self.storage_type:
             result.append(("--storage-type", self.storage_type))
         if self.timing:

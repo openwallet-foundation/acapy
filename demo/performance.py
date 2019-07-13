@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 START_PORT = int(sys.argv[1])
 
-ROUTING = False
+ROUTING = True
 
 TIMING = True
 
@@ -77,7 +77,7 @@ class BaseAgent(DemoAgent):
 
 class AliceAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
-        super().__init__("Alice", port, **kwargs)
+        super().__init__("Alice", port, seed=None, **kwargs)
         self.credential_state = {}
         self.credential_event = asyncio.Event()
         self.extra_args = ["--auto-respond-credential-offer"]
@@ -173,7 +173,6 @@ async def main():
 
         alice = AliceAgent(start_port, genesis_data=genesis)
         await alice.listen_webhooks(start_port + 2)
-        await alice.register_did()
 
         faber = FaberAgent(start_port + 3, genesis_data=genesis)
         await faber.listen_webhooks(start_port + 5)
