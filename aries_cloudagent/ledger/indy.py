@@ -17,7 +17,12 @@ from ..cache.base import BaseCache
 from ..wallet.base import BaseWallet
 
 from .base import BaseLedger
-from .error import ClosedPoolError, LedgerTransactionError, DuplicateSchemaError
+from .error import (
+    BadLedgerRequestError,
+    ClosedPoolError,
+    LedgerTransactionError,
+    DuplicateSchemaError,
+)
 
 GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
 GENESIS_TRANSACTION_PATH = path.join(
@@ -160,9 +165,10 @@ class IndyLedger(BaseLedger):
                 "Cannot sign and submit request to closed pool {}".format(self.name)
             )
 
-        public_did = await self.wallet.get_public_did()
-
         if sign:
+            public_did = await self.wallet.get_public_did()
+            if not public_did:
+                raise BadLedgerRequestError("Cannot sign request without a public DID")
             request_result_json = await indy.ledger.sign_and_submit_request(
                 self.pool_handle, self.wallet.handle, public_did.did, request_json
             )
@@ -177,10 +183,7 @@ class IndyLedger(BaseLedger):
 
         # HACK: If only there were a better way to identify this kind
         #       of rejected request...
-        if (
-            "can have one and only one SCHEMA with name"
-            in request_result_json
-        ):
+        if "can have one and only one SCHEMA with name" in request_result_json:
             raise DuplicateSchemaError()
 
         if operation in ("REQNACK", "REJECT"):
@@ -210,6 +213,8 @@ class IndyLedger(BaseLedger):
         """
 
         public_did = await self.wallet.get_public_did()
+        if not public_did:
+            raise BadLedgerRequestError("Cannot publish schema without a public DID")
 
         schema_id, schema_json = await indy.anoncreds.issuer_create_schema(
             public_did.did, schema_name, schema_version, json.dumps(attribute_names)
@@ -255,10 +260,10 @@ class IndyLedger(BaseLedger):
         public_did = await self.wallet.get_public_did()
 
         request_json = await indy.ledger.build_get_schema_request(
-            public_did.did, schema_id
+            public_did.did if public_did else None, schema_id
         )
 
-        response_json = await self._submit(request_json)
+        response_json = await self._submit(request_json, sign=bool(public_did))
         _, parsed_schema_json = await indy.ledger.parse_get_schema_response(
             response_json
         )
@@ -282,6 +287,11 @@ class IndyLedger(BaseLedger):
         """
 
         public_did = await self.wallet.get_public_did()
+        if not public_did:
+            raise BadLedgerRequestError(
+                "Cannot publish credential definition without a public DID"
+            )
+
         schema = await self.get_schema(schema_id)
 
         # TODO: add support for tag, sig type, and config
@@ -351,10 +361,10 @@ class IndyLedger(BaseLedger):
         public_did = await self.wallet.get_public_did()
 
         request_json = await indy.ledger.build_get_cred_def_request(
-            public_did.did, credential_definition_id
+            public_did.did if public_did else None, credential_definition_id
         )
 
-        response_json = await self._submit(request_json)
+        response_json = await self._submit(request_json, sign=bool(public_did))
 
         (
             _,

@@ -29,7 +29,7 @@ elif [[ $AGENT == "acme" ]]; then
 else
 	AGENT_MODULE="performance"
 	AGENT_PORT=8030
-	AGENT_PORT_RANGE=8030-8037
+	AGENT_PORT_RANGE=8030-8038
 fi
 
 if [[ -z "${PWD_HOST_FQDN}" ]]; then
@@ -47,7 +47,7 @@ else
         export ETH_CONFIG="eth0"
       fi
     MY_HOST=`ifconfig ${ETH_CONFIG} | grep inet | cut -d':' -f2 | cut -d' ' -f1 | sed 's/\./\-/g'`
-    export DOCKERHOST="ip${MY_HOST}-${SESSION_ID}-${AGENT_PORT}.direct.${PWD_HOST_FQDN}"
+    export DOCKERHOST="ip${MY_HOST}-${SESSION_ID}-{PORT}.direct.${PWD_HOST_FQDN}"
     export RUNMODE="pwd"
 fi
 
