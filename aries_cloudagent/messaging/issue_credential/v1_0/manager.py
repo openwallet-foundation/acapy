@@ -341,22 +341,6 @@ class CredentialManager:
             The credential_exchange_record
 
         """
-        # Holder adds or updates MIME types per attribute from cred preview if need be
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
-        async with ledger:
-            credential_definition = await ledger.get_credential_definition(
-                credential_exchange_record.credential_definition_id
-            )
-        holder: BaseHolder = await self.context.inject(BaseHolder)
-        await holder.store_metadata(
-            credential_definition,
-            CredentialPreview.deserialize(
-                credential_exchange_record.credential_proposal_dict[
-                    "credential_proposal"
-                ]
-            ).metadata()
-        )
-
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
         await credential_exchange_record.save(self.context)
         await self.updated_record(credential_exchange_record)
@@ -566,6 +550,11 @@ class CredentialManager:
             credential_definition,
             credential,
             credential_exchange_record.credential_request_metadata,
+            CredentialPreview.deserialize(
+                credential_exchange_record.credential_proposal_dict[
+                    "credential_proposal"
+                ]
+            ).metadata()
         )
 
         wallet_credential = await holder.get_credential(credential_id)

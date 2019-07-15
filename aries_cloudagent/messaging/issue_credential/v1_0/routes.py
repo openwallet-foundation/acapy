@@ -110,10 +110,10 @@ async def attribute_metadata_get(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    credential_definition_id = request.match_info["cred_def_id"]
+    credential_id = request.match_info["credential_id"]
 
     holder: BaseHolder = await context.inject(BaseHolder)
-    metadata = await holder.get_metadata(credential_definition_id)
+    metadata = await holder.get_metadata(credential_id)
 
     return web.json_response(metadata)
 
@@ -504,7 +504,10 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get("/v1.0/credential_metadata/{cred_def_id}", attribute_metadata_get),
+            web.get(
+                "/v1.0/credential_metadata/{credential_id}",
+                attribute_metadata_get
+            ),
             web.get("/v1.0/issue_credential_exchange", credential_exchange_list),
             web.get(
                 "/v1.0/issue_credential_exchange/{cred_ex_id}",
