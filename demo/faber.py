@@ -21,7 +21,8 @@ class FaberAgent(DemoAgent):
         self.connection_id = None
         self._connection_ready = asyncio.Future()
         self.cred_state = {}
-        # TODO define a dict to hold credential attributes based on credential_definition_id
+        # TODO define a dict to hold credential attributes
+        # based on credential_definition_id
         self.cred_attrs = {}
 
     async def detect_connection(self):
@@ -116,9 +117,12 @@ async def main():
                     random.randint(1, 101),
                 )
             )
-            (schema_id, credential_definition_id) = await agent.register_schema_and_creddef(
+            (
+                schema_id,
+                credential_definition_id,
+            ) = await agent.register_schema_and_creddef(
                 "degree schema", version, ["name", "date", "degree", "age"]
-                )
+            )
 
         # TODO add an additional credential for Student ID
 
@@ -127,7 +131,9 @@ async def main():
             log_status(
                 "#5 Create a connection to alice and print out the invite details"
             )
-            connection = await agent.admin_POST("/connections/create-invitation")
+            connection = await agent.admin_POST(
+                "/connections/create-invitation", params={"accept": "auto"}
+            )
 
         agent.connection_id = connection["connection_id"]
         log_json(connection, label="Invitation response:")
@@ -142,7 +148,7 @@ async def main():
             "(1) Issue Credential, (2) Send Proof Request, "
             + "(3) Send Message (X) Exit? [1/2/3/X] "
         ):
-            if option in "xX":
+            if option is None or option in "xX":
                 break
 
             elif option == "1":

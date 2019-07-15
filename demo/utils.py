@@ -7,6 +7,7 @@ import prompt_toolkit
 from prompt_toolkit.application import run_in_terminal
 from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.shortcuts import ProgressBar
 
 import pygments
 from pygments.filter import Filter
@@ -226,3 +227,7 @@ def log_timer(label: str, show: bool = True, logger=None, **kwargs):
         else None
     )
     return DurationTimer(label, cb)
+
+
+def progress(*args, **kwargs):
+    return ProgressBar(*args, **kwargs)
