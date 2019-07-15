@@ -242,13 +242,6 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
-    "--send-invite",
-    type=str,
-    metavar="<agent-endpoint>",
-    help="Specify an endpoint to send an invitation to",
-)
-
-PARSER.add_argument(
     "--timing",
     action="store_true",
     help="Including timing information in response messages",
@@ -354,8 +347,6 @@ def get_settings(args):
         settings["debug.seed"] = args.debug_seed
     if args.invite:
         settings["debug.print_invitation"] = True
-    if args.send_invite:
-        settings["debug.send_invitation_to"] = args.send_invite
 
     if args.auto_respond_credential_offer:
         settings["auto_respond_credential_offer"] = True

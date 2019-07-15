@@ -5,46 +5,82 @@ import random
 import sys
 
 from .agent import DemoAgent, default_genesis_txns
-from .utils import log_timer
+from .utils import log_timer, progress
 
 LOGGER = logging.getLogger(__name__)
 
-AGENT_PORT = int(sys.argv[1])
+START_PORT = int(sys.argv[1])
+
+ROUTING = True
 
 TIMING = True
 
 
 class BaseAgent(DemoAgent):
     def __init__(
-        self, ident: str, port: int, timing: bool = TIMING, prefix: str = None, **kwargs
+        self,
+        ident: str,
+        port: int,
+        timing: bool = TIMING,
+        prefix: str = None,
+        use_routing: bool = False,
+        **kwargs,
     ):
         if prefix is None:
             prefix = ident
         super().__init__(ident, port, port + 1, timing=timing, prefix=prefix, **kwargs)
-        self.connection_id = None
-        self.connection_ready = asyncio.Future()
+        self._connection_id = None
+        self._connection_ready = None
+
+    @property
+    def connection_id(self) -> str:
+        return self._connection_id
+
+    @connection_id.setter
+    def connection_id(self, conn_id: str):
+        self._connection_id = conn_id
+        self._connection_ready = asyncio.Future()
+
+    async def get_invite(self, accept: str = "auto"):
+        result = await self.admin_POST(
+            "/connections/create-invitation", params={"accept": accept}
+        )
+        self.connection_id = result["connection_id"]
+        return result["invitation"]
+
+    async def receive_invite(self, invite, accept: str = "auto"):
+        result = await self.admin_POST(
+            "/connections/receive-invitation", invite, params={"accept": accept}
+        )
+        self.connection_id = result["connection_id"]
+        return self.connection_id
+
+    async def accept_invite(self, conn_id: str):
+        await self.admin_POST(f"/connections/{conn_id}/accept-invitation")
+
+    async def establish_inbound(self, conn_id: str, router_conn_id: str):
+        await self.admin_POST(
+            f"/connections/{conn_id}/establish-inbound/{router_conn_id}"
+        )
 
     async def detect_connection(self):
-        await self.connection_ready
+        if not self._connection_ready:
+            raise Exception("No connection to await")
+        await self._connection_ready
 
     async def handle_connections(self, payload):
         if payload["connection_id"] == self.connection_id:
-            if payload["state"] == "active" and not self.connection_ready.done():
+            if payload["state"] == "active" and not self._connection_ready.done():
                 self.log("Connected")
-                self.connection_ready.set_result(True)
+                self._connection_ready.set_result(True)
 
 
 class AliceAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
-        super().__init__("Alice", port, **kwargs)
+        super().__init__("Alice", port, seed=None, **kwargs)
         self.credential_state = {}
         self.credential_event = asyncio.Event()
         self.extra_args = ["--auto-respond-credential-offer"]
-
-    async def get_invite(self):
-        result = await self.admin_POST("/connections/create-invitation")
-        self.connection_id = result["connection_id"]
-        return result["invitation"]
 
     async def handle_credentials(self, payload):
         cred_id = payload["credential_exchange_id"]
@@ -69,10 +105,6 @@ class FaberAgent(BaseAgent):
         super().__init__("Faber", port, **kwargs)
         self.schema_id = None
         self.credential_definition_id = None
-
-    async def receive_invite(self, invite):
-        result = await self.admin_POST("/connections/receive-invitation", invite)
-        self.connection_id = result["connection_id"]
 
     async def publish_defs(self):
         # create a schema
@@ -118,6 +150,11 @@ class FaberAgent(BaseAgent):
         )
 
 
+class RoutingAgent(BaseAgent):
+    def __init__(self, port: int, **kwargs):
+        super().__init__("Router", port, **kwargs)
+
+
 async def main():
 
     genesis = await default_genesis_txns()
@@ -127,21 +164,28 @@ async def main():
 
     alice = None
     faber = None
+    alice_router = None
     run_timer = log_timer("Total runtime:")
     run_timer.start()
 
     try:
-        start_port = AGENT_PORT
+        start_port = START_PORT
 
         alice = AliceAgent(start_port, genesis_data=genesis)
         await alice.listen_webhooks(start_port + 2)
-        await alice.register_did()
 
-        faber = FaberAgent(start_port + 4, genesis_data=genesis)
-        await faber.listen_webhooks(start_port + 6)
+        faber = FaberAgent(start_port + 3, genesis_data=genesis)
+        await faber.listen_webhooks(start_port + 5)
         await faber.register_did()
 
+        if ROUTING:
+            alice_router = RoutingAgent(start_port + 6, genesis_data=genesis)
+            await alice_router.listen_webhooks(start_port + 8)
+            await alice_router.register_did()
+
         with log_timer("Startup duration:"):
+            if alice_router:
+                await alice_router.start_process()
             await alice.start_process()
             await faber.start_process()
 
@@ -149,13 +193,28 @@ async def main():
             await faber.publish_defs()
 
         with log_timer("Connect duration:"):
-            invite = await alice.get_invite()
-            await faber.receive_invite(invite)
+            if ROUTING:
+                router_invite = await alice_router.get_invite()
+                alice_router_conn_id = await alice.receive_invite(router_invite)
+                await asyncio.wait_for(alice.detect_connection(), 30)
+
+            invite = await faber.get_invite()
+
+            if ROUTING:
+                conn_id = await alice.receive_invite(invite, accept="manual")
+                await alice.establish_inbound(conn_id, alice_router_conn_id)
+                await alice.accept_invite(conn_id)
+                await asyncio.wait_for(alice.detect_connection(), 30)
+            else:
+                await alice.receive_invite(invite)
+
             await asyncio.wait_for(faber.detect_connection(), 30)
 
         if TIMING:
             await alice.reset_timing()
             await faber.reset_timing()
+            if ROUTING:
+                await alice_router.reset_timing()
 
         issue_count = 300
         batch_size = 100
@@ -170,23 +229,46 @@ async def main():
 
         recv_timer = alice.log_timer(f"Received {issue_count} credentials in ")
         recv_timer.start()
+        batch_timer = faber.log_timer(f"Started {batch_size} credential exchanges in ")
+        batch_timer.start()
 
-        with faber.log_timer(f"Done starting {issue_count} credential exchanges in "):
-            batch_timer = faber.log_timer(
-                f"Started {batch_size} credential exchanges in "
-            )
-            batch_timer.start()
+        async def check_received(agent, issue_count, pb):
+            reported = 0
+            iter_pb = iter(pb) if pb else None
+            while True:
+                pending, total = agent.check_received_creds()
+                if iter_pb and total > reported:
+                    try:
+                        while next(iter_pb) < total:
+                            pass
+                    except StopIteration:
+                        iter_pb = None
+                reported = total
+                if total == issue_count and not pending:
+                    break
+                await asyncio.wait_for(agent.update_creds(), 30)
 
-            for idx in range(issue_count):
-                await send()
-                if not (idx + 1) % batch_size and idx < issue_count - 1:
-                    batch_timer.reset()
+        with progress() as pb:
+            receive_task = None
+            try:
+                issue_pg = pb(range(issue_count), label="Issuing credentials")
+                receive_pg = pb(range(issue_count), label="Receiving credentials")
+                receive_task = asyncio.ensure_future(
+                    check_received(alice, issue_count, receive_pg)
+                )
+                with faber.log_timer(
+                    f"Done starting {issue_count} credential exchanges in "
+                ):
+                    for idx in issue_pg:
+                        await send()
+                        if not (idx + 1) % batch_size and idx < issue_count - 1:
+                            batch_timer.reset()
 
-        while True:
-            pending, total = alice.check_received_creds()
-            if total == issue_count and not pending:
-                break
-            await asyncio.wait_for(alice.update_creds(), 30)
+                await receive_task
+            except KeyboardInterrupt:
+                if receive_task:
+                    receive_task.cancel()
+                print("Canceled")
 
         recv_timer.stop()
         avg = recv_timer.duration / issue_count
@@ -202,6 +284,11 @@ async def main():
             if timing:
                 for line in faber.format_timing(timing):
                     faber.log(line)
+            if ROUTING:
+                timing = await alice_router.fetch_timing()
+                if timing:
+                    for line in alice_router.format_timing(timing):
+                        alice_router.log(line)
 
     finally:
         terminated = True
@@ -214,6 +301,12 @@ async def main():
         try:
             if faber:
                 await faber.terminate()
+        except Exception:
+            LOGGER.exception("Error terminating agent:")
+            terminated = False
+        try:
+            if alice_router:
+                await alice_router.terminate()
         except Exception:
             LOGGER.exception("Error terminating agent:")
             terminated = False

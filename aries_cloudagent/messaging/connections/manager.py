@@ -1,6 +1,5 @@
 """Classes to manage connections."""
 
-import aiohttp
 import logging
 import sys
 
@@ -15,7 +14,6 @@ from ...storage.error import StorageError, StorageNotFoundError
 from ...storage.record import StorageRecord
 from ...wallet.base import BaseWallet, DIDInfo
 from ...wallet.error import WalletNotFoundError
-from ...wallet.util import bytes_to_b64
 
 from ..message_delivery import MessageDelivery
 from ..responder import BaseResponder
@@ -72,7 +70,11 @@ class ConnectionManager:
         return self._context
 
     async def create_invitation(
-        self, my_label: str = None, my_endpoint: str = None, their_role: str = None
+        self,
+        my_label: str = None,
+        my_endpoint: str = None,
+        their_role: str = None,
+        accept: str = None,
     ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -105,6 +107,7 @@ class ConnectionManager:
             my_label: label for this connection
             my_endpoint: endpoint where other party can reach me
             their_role: a role to assign the connection
+            accept: set to 'auto' to auto-accept a corresponding connection request
 
         Returns:
             A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
@@ -116,6 +119,8 @@ class ConnectionManager:
             my_endpoint = self.context.settings.get("default_endpoint")
         if not my_label:
             my_label = self.context.settings.get("default_label")
+        if not accept and self.context.settings.get("accept_requests"):
+            accept = ConnectionRecord.ACCEPT_AUTO
 
         # Create and store new invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -127,6 +132,7 @@ class ConnectionManager:
             invitation_key=connection_key.verkey,
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
+            accept=accept,
         )
 
         await connection.save(self.context)
@@ -151,22 +157,11 @@ class ConnectionManager:
 
         return connection, invitation
 
-    async def send_invitation(self, invitation: ConnectionInvitation, endpoint: str):
-        """
-        Deliver an invitation to an HTTP endpoint.
-
-        Args:
-            invitation: The `ConnectionInvitation` to send
-            endpoint: Endpoint to send this invitation to
-        """
-        self._log_state("Sending invitation", {"endpoint": endpoint})
-        invite_json = invitation.to_json()
-        invite_b64 = bytes_to_b64(invite_json.encode("ascii"), urlsafe=True)
-        async with aiohttp.ClientSession() as session:
-            await session.get(endpoint, params={"invite": invite_b64})
-
     async def receive_invitation(
-        self, invitation: ConnectionInvitation, their_role: str = None
+        self,
+        invitation: ConnectionInvitation,
+        their_role: str = None,
+        accept: str = None,
     ) -> ConnectionRecord:
         """
         Create a new connection record to track a received invitation.
@@ -174,6 +169,7 @@ class ConnectionManager:
         Args:
             invitation: The `ConnectionInvitation` to store
             their_role: The role assigned to this connection
+            accept: set to 'auto' to auto-accept the invitation
 
         Returns:
             The new `ConnectionRecord` instance
@@ -185,6 +181,9 @@ class ConnectionManager:
 
         # TODO: validate invitation (must have recipient keys, endpoint)
 
+        if accept is None and self.context.settings.get("accept_invites"):
+            accept = ConnectionRecord.ACCEPT_AUTO
+
         # Create connection record
         connection = ConnectionRecord(
             initiator=ConnectionRecord.INITIATOR_EXTERNAL,
@@ -192,6 +191,7 @@ class ConnectionManager:
             their_label=invitation.label,
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
+            accept=accept,
         )
 
         await connection.save(self.context)
@@ -208,6 +208,20 @@ class ConnectionManager:
         await connection.log_activity(
             self.context, "invitation", connection.DIRECTION_RECEIVED
         )
+
+        if connection.accept == connection.ACCEPT_AUTO:
+            request = await self.create_request(connection)
+            responder: BaseResponder = await self._context.inject(
+                BaseResponder, required=False
+            )
+            if responder:
+                await responder.send(request, connection_id=connection.connection_id)
+                # refetch connection for accurate state
+                connection = await ConnectionRecord.retrieve_by_id(
+                    self._context, connection.connection_id
+                )
+        else:
+            self._logger.debug("Connection invitation will await acceptance")
 
         return connection
 
@@ -345,6 +359,20 @@ class ConnectionManager:
         await connection.log_activity(
             self.context, "request", connection.DIRECTION_RECEIVED
         )
+
+        if connection.accept == ConnectionRecord.ACCEPT_AUTO:
+            response = await self.create_response(connection)
+            responder: BaseResponder = await self._context.inject(
+                BaseResponder, required=False
+            )
+            if responder:
+                await responder.send(response, connection_id=connection.connection_id)
+                # refetch connection for accurate state
+                connection = await ConnectionRecord.retrieve_by_id(
+                    self._context, connection.connection_id
+                )
+        else:
+            self._logger.debug("Connection request will await acceptance")
 
         return connection
 
@@ -920,7 +948,9 @@ class ConnectionManager:
 
     async def updated_record(self, connection: ConnectionRecord):
         """Call webhook when the record is updated."""
-        responder = await self._context.inject(BaseResponder, required=False)
+        responder: BaseResponder = await self._context.inject(
+            BaseResponder, required=False
+        )
         if responder:
             await responder.send_webhook("connections", connection.serialize())
         cache: BaseCache = await self._context.inject(BaseCache, required=False)
@@ -930,7 +960,9 @@ class ConnectionManager:
 
     async def updated_activity(self, connection: ConnectionRecord):
         """Call webhook when the record activity is updated."""
-        responder = await self._context.inject(BaseResponder, required=False)
+        responder: BaseResponder = await self._context.inject(
+            BaseResponder, required=False
+        )
         if responder:
             activity = await connection.fetch_activity(self._context)
             await responder.send_webhook(

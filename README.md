@@ -1,8 +1,8 @@
 # Hyperledger Aries Cloud Agent - Python  <!-- omit in toc -->
 
-[![CircleCI](https://circleci.com/gh/bcgov/aries-cloudagent-python.svg?style=shield)](https://circleci.com/gh/bcgov/aries-cloudagent-python)
-[![codecov](https://codecov.io/gh/bcgov/aries-cloudagent-python/branch/master/graph/badge.svg)](https://codecov.io/gh/bcgov/aries-cloudagent-python)
-[![Known Vulnerabilities](https://snyk.io/test/github/bcgov/aries-cloudagent-python/badge.svg)](https://snyk.io/test/github/bcgov/aries-cloudagent-python?targetFile=requirements.txt)
+[![CircleCI](https://circleci.com/gh/hyperledger/aries-cloudagent-python.svg?style=shield)](https://circleci.com/gh/hyperledger/aries-cloudagent-python)
+[![codecov](https://codecov.io/gh/hyperledger/aries-cloudagent-python/branch/master/graph/badge.svg)](https://codecov.io/gh/hyperledger/aries-cloudagent-python)
+[![Known Vulnerabilities](https://snyk.io/test/github/hyperledger/aries-cloudagent-python/badge.svg)](https://snyk.io/test/github/hyperledger/aries-cloudagent-python?targetFile=requirements.txt)
 
 <!-- ![logo](/docs/assets/aries-cloudagent-python-logo-bw.png) -->
 
