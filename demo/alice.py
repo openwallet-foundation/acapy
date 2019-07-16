@@ -22,6 +22,7 @@ class AliceAgent(DemoAgent):
             admin_port,
             prefix="Alice",
             extra_args=["--auto-accept-invites", "--auto-accept-requests"],
+            seed=None,
             **kwargs,
         )
         self.connection_id = None
