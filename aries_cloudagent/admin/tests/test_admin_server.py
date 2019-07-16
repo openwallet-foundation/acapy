@@ -19,10 +19,23 @@ class TestAdminServerApp(AioHTTPTestCase):
         context.injector.bind_provider(
             BaseOutboundMessageQueue, ClassProvider(BasicOutboundMessageQueue)
         )
+        context.settings["admin.admin_insecure_mode"] = True
         server = AdminServer(
             "0.0.0.0", unused_port(), context, self.outbound_message_router
         )
         return server
+
+    @unittest_run_loop
+    async def test_start_bad_settings(self):
+        server = self.get_admin_server()
+        server.context.settings["admin.admin_insecure_mode"] = None
+        
+        try:
+            await server.start()
+        except AssertionError:
+            return True
+
+        raise Exception
 
     @unittest_run_loop
     async def test_start_stop(self):
