@@ -1,5 +1,5 @@
 """Base classes for Models and Schemas."""
-
+import logging
 from abc import ABC
 import json
 from typing import Union
@@ -124,6 +124,8 @@ class BaseModel(ABC):
         try:
             return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
         except ValidationError as e:
+            logger = logging.getLogger(__name__)
+            logger.debug('message validation error: %s', e)
             raise BaseModelError("Schema validation failed") from e
 
     def serialize(self, as_string=False) -> dict:
