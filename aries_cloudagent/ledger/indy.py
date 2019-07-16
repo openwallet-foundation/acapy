@@ -380,3 +380,61 @@ class IndyLedger(BaseLedger):
             )
 
         return parsed_response
+
+    async def get_key_for_did(self, did: str) -> str:
+        """Fetch the verkey for a ledger DID.
+
+        Args:
+            did: The DID to look up on the ledger or in the cache
+        """
+        if did.startswith("did:sov:"):
+            # FIXME - add normalization methods
+            did = did[8:]
+        public_did = await self.wallet.get_public_did()
+        request_json = await indy.ledger.build_get_nym_request(
+            public_did and public_did.did, did
+        )
+        response_json = await self._submit(request_json, bool(public_did))
+        data_json = (json.loads(response_json))["result"]["data"]
+        print(data_json)
+        return json.loads(data_json)["verkey"]
+
+    async def get_endpoint_for_did(self, did: str) -> str:
+        """Fetch the endpoint for a ledger DID.
+
+        Args:
+            did: The DID to look up on the ledger or in the cache
+        """
+        if did.startswith("did:sov:"):
+            # FIXME - add normalization methods
+            did = did[8:]
+        public_did = await self.wallet.get_public_did()
+        request_json = await indy.ledger.build_get_attrib_request(
+            public_did and public_did.did, did, "endpoint", None, None
+        )
+        response_json = await self._submit(request_json, sign=bool(public_did))
+        endpoint_json = json.loads(response_json)["result"]["data"]
+        if endpoint_json:
+            address = json.loads(endpoint_json)["endpoint"].get("endpoint", None)
+        else:
+            address = None
+
+        return address
+
+    async def update_endpoint_for_did(self, did: str, endpoint: str) -> bool:
+        """Check and update the endpoint on the ledger.
+
+        Args:
+            did: The ledger DID
+            endpoint: The endpoint address
+            transport_vk: The endpoint transport verkey
+        """
+        exist_endpoint = await self.get_endpoint_for_did(did)
+        if exist_endpoint != endpoint:
+            attr_json = json.dumps({"endpoint": {"endpoint": endpoint}})
+            request_json = await indy.ledger.build_attrib_request(
+                did, did, None, attr_json, None
+            )
+            await self._submit(request_json)
+            return True
+        return False

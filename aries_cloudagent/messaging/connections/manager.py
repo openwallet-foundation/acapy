@@ -9,6 +9,7 @@ from ...cache.base import BaseCache
 from ...error import BaseError
 from ...config.base import InjectorError
 from ...config.injection_context import InjectionContext
+from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageNotFoundError
 from ...storage.record import StorageRecord
@@ -75,6 +76,7 @@ class ConnectionManager:
         my_endpoint: str = None,
         their_role: str = None,
         accept: str = None,
+        public: bool = False,
     ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -108,6 +110,7 @@ class ConnectionManager:
             my_endpoint: endpoint where other party can reach me
             their_role: a role to assign the connection
             accept: set to 'auto' to auto-accept a corresponding connection request
+            public: set to True to create an invitation from the public DID
 
         Returns:
             A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
@@ -115,15 +118,31 @@ class ConnectionManager:
         """
         self._log_state("Creating invitation")
 
-        if not my_endpoint:
-            my_endpoint = self.context.settings.get("default_endpoint")
         if not my_label:
             my_label = self.context.settings.get("default_label")
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+
+        if public:
+            if not self.context.settings.get("public_invites"):
+                raise ConnectionManagerError("Public invitations are not enabled")
+
+            public_did = await wallet.get_public_did()
+            if not public_did:
+                raise ConnectionManagerError(
+                    "Cannot create public invitation with no public DID"
+                )
+            # FIXME - allow ledger instance to format public DID with prefix?
+            invitation = ConnectionInvitation(
+                label=my_label, did=f"did:sov:{public_did.did}"
+            )
+            return None, invitation
+
+        if not my_endpoint:
+            my_endpoint = self.context.settings.get("default_endpoint")
         if not accept and self.context.settings.get("debug.auto_accept_requests"):
             accept = ConnectionRecord.ACCEPT_AUTO
 
         # Create and store new invitation key
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
         connection_key = await wallet.create_signing_key()
 
         # Create connection record
@@ -179,7 +198,11 @@ class ConnectionManager:
             "Receiving invitation", {"invitation": invitation, "role": their_role}
         )
 
-        # TODO: validate invitation (must have recipient keys, endpoint)
+        if not invitation.did:
+            if not invitation.recipient_keys:
+                raise ConnectionManagerError("Invitation must contain recipient key(s)")
+            if not invitation.endpoint:
+                raise ConnectionManagerError("Invitation must contain an endpoint")
 
         if accept is None and self.context.settings.get("debug.auto_accept_invites"):
             accept = ConnectionRecord.ACCEPT_AUTO
@@ -187,7 +210,7 @@ class ConnectionManager:
         # Create connection record
         connection = ConnectionRecord(
             initiator=ConnectionRecord.INITIATOR_EXTERNAL,
-            invitation_key=invitation.recipient_keys[0],
+            invitation_key=invitation.recipient_keys and invitation.recipient_keys[0],
             their_label=invitation.label,
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
@@ -298,7 +321,7 @@ class ConnectionManager:
         # Determine what key will need to sign the response
         if delivery.recipient_did_public:
             wallet: BaseWallet = await self.context.inject(BaseWallet)
-            my_info = await wallet.get_local_did(self.context.recipient_did)
+            my_info = await wallet.get_local_did(delivery.recipient_did)
             connection_key = my_info.verkey
         else:
             connection_key = delivery.recipient_verkey
@@ -337,13 +360,20 @@ class ConnectionManager:
             await connection.save(self.context)
             await self.updated_record(connection)
             self._log_state("Updated connection state", {"connection": connection})
+        elif not self.context.settings.get("public_invites"):
+            raise ConnectionManagerError("Public invitations are not enabled")
         else:
+            my_info = await wallet.create_local_did()
             connection = ConnectionRecord(
                 initiator=ConnectionRecord.INITIATOR_EXTERNAL,
                 invitation_key=connection_key,
+                my_did=my_info.did,
+                their_did=request.connection.did,
                 their_label=request.label,
                 state=ConnectionRecord.STATE_REQUEST,
             )
+            if self.context.settings.get("debug.auto_accept_requests"):
+                connection.accept = ConnectionRecord.ACCEPT_AUTO
 
             await connection.save(self.context)
             await self.updated_record(connection)
@@ -813,12 +843,30 @@ class ConnectionManager:
             and connection.initiator == connection.INITIATOR_EXTERNAL
         ):
             invitation = await connection.retrieve_invitation(self.context)
+            if invitation.did:
+                # populate recipient keys and endpoint from the ledger
+                ledger: BaseLedger = await self.context.inject(
+                    BaseLedger, required=False
+                )
+                if not ledger:
+                    raise ConnectionManagerError(
+                        "Cannot resolve DID without ledger instance"
+                    )
+                async with ledger:
+                    endpoint = await ledger.get_endpoint_for_did(invitation.did)
+                    recipient_keys = [await ledger.get_key_for_did(invitation.did)]
+                    routing_keys = []
+            else:
+                endpoint = invitation.endpoint
+                recipient_keys = invitation.recipient_keys
+                routing_keys = invitation.routing_keys
+
             result = ConnectionTarget(
                 did=connection.their_did,
-                endpoint=invitation.endpoint,
+                endpoint=endpoint,
                 label=invitation.label,
-                recipient_keys=invitation.recipient_keys,
-                routing_keys=invitation.routing_keys,
+                recipient_keys=recipient_keys,
+                routing_keys=routing_keys,
                 sender_key=my_info.verkey,
             )
         else:

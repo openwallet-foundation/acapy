@@ -184,6 +184,12 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--public-invites",
+    action="store_true",
+    help="Send invitations and receive requests via the public DID",
+)
+
+PARSER.add_argument(
     "--auto-accept-invites",
     action="store_true",
     help="Auto-accept connection invitations",
@@ -359,6 +365,8 @@ def get_settings(args):
     if args.auto_verify_presentation:
         settings["debug.auto_verify_presentation"] = True
 
+    if args.public_invites:
+        settings["public_invites"] = True
     if args.auto_accept_invites:
         settings["debug.auto_accept_invites"] = True
     if args.auto_accept_requests:
