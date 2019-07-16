@@ -1,6 +1,12 @@
+# 0.2.1
+
+## July 16, 2019
+
+- Add missing MANIFEST file [#78](https://github.com/hyperledger/aries-cloudagent-python/pull/78)
+
 # 0.2.0
 
-## July 16,2019
+## July 16, 2019
 
 This is the first PyPI release. The history begins with the transfer of aca-py from [bcgov](https://github.com/bcgov) to [hyperledger](https://github.com/hyperledger).
 
