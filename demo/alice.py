@@ -149,7 +149,7 @@ async def input_invitation(agent):
 
     with log_timer("Connect duration:"):
         connection = await agent.admin_POST(
-            "/connections/receive-invitation", details
+            "/connections/receive-invitation", details, params={"accept": "auto"}
         )
         agent.connection_id = connection["connection_id"]
         log_json(connection, label="Invitation response:")
@@ -180,8 +180,10 @@ async def main():
         log_status("#9 Input faber.py invitation details")
         await input_invitation(agent)
 
-        async for option in prompt_loop("(3) Send Message (4) Input New Invitation (X) Exit? [3/4/X]: "):
-            if option in "xX":
+        async for option in prompt_loop(
+            "(3) Send Message (4) Input New Invitation (X) Exit? [3/4/X]: "
+        ):
+            if option is None or option in "xX":
                 break
             elif option == "3":
                 msg = await prompt("Enter message: ")

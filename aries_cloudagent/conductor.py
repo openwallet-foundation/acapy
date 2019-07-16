@@ -214,17 +214,7 @@ class Conductor:
                 print("Invitation URL:")
                 print(invite_url)
             except Exception:
-                self.logger.exception("Error sending invitation")
-
-        # Auto-send an invitation to another agent
-        send_invite_to = context.settings.get("debug.send_invitation_to")
-        if send_invite_to:
-            try:
-                mgr = ConnectionManager(self.context)
-                _connection, invitation = await mgr.create_invitation()
-                await mgr.send_invitation(invitation, send_invite_to)
-            except Exception:
-                self.logger.exception("Error sending invitation")
+                self.logger.exception("Error creating invitation")
 
     async def stop(self, timeout=0.1):
         """Stop the agent."""
