@@ -9,12 +9,91 @@ import base64
 import json
 
 from datetime import datetime
-from typing import Mapping
+from enum import Enum
+from typing import Mapping, Union
 
 from marshmallow import fields
 
 from ....models.base import BaseModel, BaseModelSchema
 
+
+class AttachDecoratorData(BaseModel):
+    """Attach decorator data."""
+
+    class Meta:
+        """AttachDecoratorData metadata."""
+
+        schema_class = "AttachDecoratorDataSchema"
+
+    def __init__(
+        self,
+        base64_: str = None,
+        json_: str = None,
+        links_: Union[list, str] = None,
+        sha256_: str = None
+    ):
+        """
+        Initialize decorator data.
+
+        """
+        if base64_:
+            self.base64_ = base64_
+        elif json_:
+            self.json_ = json_
+        else:
+            assert isinstance(links_, (str, list))
+            self.links_ = [links_] if isinstance(links_, str) else list(links_)
+            if sha256_:
+                self.sha256_ = sha256_
+
+    @property
+    def base64(self):
+        """Accessor for base64 decorator data, or None."""
+        return getattr(self, 'base64_', None)
+
+    @property
+    def json(self):
+        """Accessor for json decorator data, or None."""
+        return getattr(self, 'json_', None)
+
+    @property
+    def links(self):
+        """Accessor for links decorator data, or None."""
+        return getattr(self, 'links_', None)
+
+    @property
+    def sha256(self):
+        """Accessor for sha256 decorator data, or None."""
+        return getattr(self, 'sha256_', None)
+
+    def __eq__(self, other):
+        """Equality comparator."""
+        for attr in ['base64_', 'json_', 'sha256_']:
+            if getattr(self, attr, None) != getattr(other, attr, None):
+                return False
+        if set(getattr(self, 'links_', [])) != set(getattr(other, 'links_', [])):
+            return False
+        return True
+
+
+class AttachDecoratorDataSchema(BaseModelSchema):
+    """Attach decorator data schema."""
+
+    class Meta:
+        """Attach decorator data schema metadata."""
+
+        model_class = AttachDecoratorData
+
+    base64_ = fields.Str(required=False, attribute='base64_', data_key='base64')
+    json_ = fields.Str(required=False, attribute='json_', data_key='json')
+    links_ = fields.List(
+        fields.Str(),
+        required=False,
+        attribute='links_',
+        data_key='links'
+    )
+    sha256_ = fields.Str(required=False, attribute='sha256_', data_key='sha256')
+    
 
 class AttachDecorator(BaseModel):
     """Class representing attach decorator."""
@@ -28,12 +107,13 @@ class AttachDecorator(BaseModel):
         self,
         *,
         append_id: str = None,
-        mime_type: str = None,
-        filename: str = None,
-        byte_count: int = None,
-        lastmod_time: datetime = None,
         description: str = None,
-        data: Mapping
+        filename: str = None,
+        mime_type: str = None,
+        lastmod_time: datetime = None,
+        byte_count: int = None,
+        data: AttachDecoratorData,
+        **kwargs
     ):
         """
         Initialize an AttachDecorator instance.
@@ -48,28 +128,17 @@ class AttachDecorator(BaseModel):
             filename: file name
             lastmod_time: last modification time, '%Y-%m-%d %H:%M:%SZ'
             description: content description
-            data: mapping from content format (base64, json, or links)
-                to encoded content, with optional sha-256 binhex digest for
-                linked content; e.g.,
-                {
-                    "sha256": "e91c254ad58860a02c788dfb5c1a65d6a88...",
-                    "links": ["...", "..."]
-                };
-                e.g.,
-                {
-                    "base64": "..."
-                }
-                NOTE: At present, the implementation supports only base64 on indy.
+            data: payload, as per `AttachDecoratorData`
 
         """
-        super(AttachDecorator, self).__init__()
+        super().__init__(**kwargs)
         self.append_id = append_id
-        self.mime_type = mime_type
-        self.filename = filename
-        self.byte_count = byte_count
-        self.lastmod_time = lastmod_time
         self.description = description
-        self.data = dict(data) if data else {}
+        self.filename = filename
+        self.mime_type = mime_type
+        self.lastmod_time = lastmod_time
+        self.byte_count = byte_count
+        self.data = data
 
     @property
     def indy_dict(self):
@@ -79,7 +148,8 @@ class AttachDecorator(BaseModel):
         Returns: dict with indy object in data attachment
 
         """
-        return json.loads(base64.b64decode(self.data["base64"].encode()).decode())
+        assert hasattr(self.data, 'base64_')
+        return json.loads(base64.b64decode(self.data.base64_.encode()).decode())
 
     @classmethod
     def from_indy_dict(cls, indy_dict: dict):
@@ -94,9 +164,9 @@ class AttachDecorator(BaseModel):
         """
         return AttachDecorator(
             mime_type="application/json",
-            data={
-                "base64": base64.b64encode(json.dumps(indy_dict).encode()).decode()
-            }
+            data=AttachDecoratorData(
+                base64_=base64.b64encode(json.dumps(indy_dict).encode()).decode()
+            )
         )
 
 
@@ -114,13 +184,9 @@ class AttachDecoratorSchema(BaseModelSchema):
         attribute="append_id",
         data_key="@id"
     )
-    mime_type = fields.Str(required=False, allow_none=False, data_key="mime-type")
-    filename = fields.Str(required=False, allow_none=False)
-    byte_count = fields.Integer(required=False, allow_none=False)
-    lastmod_time = fields.DateTime(
-        format="%Y-%m-%d %H:%M:%SZ",
-        required=False,
-        allow_none=False
-    )
-    description = fields.Str(required=False, allow_none=False)
-    data = fields.Dict(required=True, allow_none=False)
+    mime_type = fields.Str(required=False, data_key="mime-type")
+    filename = fields.Str(required=False)
+    byte_count = fields.Integer(required=False)
+    lastmod_time = fields.DateTime(format="%Y-%m-%d %H:%M:%SZ", required=False)
+    description = fields.Str(required=False)
+    data = fields.Nested(AttachDecoratorDataSchema, required=True)
