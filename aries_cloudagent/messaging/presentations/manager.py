@@ -281,6 +281,5 @@ class PresentationManager:
         responder = await self._context.inject(BaseResponder, required=False)
         if responder:
             await responder.send_webhook(
-                "presentations",
-                presentation_exchange.serialize()
+                "presentations", presentation_exchange.serialize()
             )
