@@ -28,13 +28,11 @@ class BaseResponder(ABC):
         connection_id: str = None,
         reply_socket_id: str = None,
         reply_to_verkey: str = None,
-        target: ConnectionTarget = None,
     ):
         """Initialize a base responder."""
         self.connection_id = connection_id
         self.reply_socket_id = reply_socket_id
         self.reply_to_verkey = reply_to_verkey
-        self.target = target
 
     async def create_outbound(
         self,
@@ -70,12 +68,15 @@ class BaseResponder(ABC):
         outbound = await self.create_outbound(message, **kwargs)
         await self.send_outbound(outbound)
 
-    async def send_reply(self, message: Union[AgentMessage, str, bytes]):
+    async def send_reply(
+        self, message: Union[AgentMessage, str, bytes], connection_id: str = None
+    ):
         """
         Send a reply to an incoming message.
 
         Args:
             message: the `AgentMessage`, or pre-packed str or bytes to reply with
+            connection_id: optionally override the target connection ID
 
         Raises:
             ResponderError: If there is no active connection
@@ -83,10 +84,9 @@ class BaseResponder(ABC):
         """
         outbound = await self.create_outbound(
             message,
-            connection_id=self.connection_id,
+            connection_id=connection_id or self.connection_id,
             reply_socket_id=self.reply_socket_id,
             reply_to_verkey=self.reply_to_verkey,
-            target=self.target,
         )
         await self.send_outbound(outbound)
 
@@ -122,9 +122,9 @@ class MockResponder(BaseResponder):
         """Convert a message to an OutboundMessage and send it."""
         self.messages.append((message, kwargs))
 
-    async def send_reply(self, message: Union[AgentMessage, str, bytes]):
+    async def send_reply(self, message: Union[AgentMessage, str, bytes], **kwargs):
         """Send a reply to an incoming message."""
-        self.messages.append((message, None))
+        self.messages.append((message, kwargs))
 
     async def send_outbound(self, message: OutboundMessage):
         """Send an outbound message."""

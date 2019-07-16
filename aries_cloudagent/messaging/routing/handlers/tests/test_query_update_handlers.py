@@ -44,7 +44,7 @@ class TestQueryUpdateHandlers:
         assert len(messages) == 1
         result, target = messages[0]
         assert isinstance(result, RouteQueryResponse) and result.routes == []
-        assert target is None
+        assert not target
 
     @pytest.mark.asyncio
     async def test_no_connection(self, request_context):
@@ -79,7 +79,7 @@ class TestQueryUpdateHandlers:
         assert result.updated[0].recipient_key == TEST_VERKEY
         assert result.updated[0].action == RouteUpdate.ACTION_CREATE
         assert result.updated[0].result == RouteUpdated.RESULT_SUCCESS
-        assert target is None
+        assert not target
 
         request_context.message = RouteQueryRequest()
         query_handler = RouteQueryRequestHandler()
@@ -90,4 +90,4 @@ class TestQueryUpdateHandlers:
         result, target = messages[0]
         assert isinstance(result, RouteQueryResponse)
         assert result.routes[0].recipient_key == TEST_VERKEY
-        assert target is None
+        assert not target
