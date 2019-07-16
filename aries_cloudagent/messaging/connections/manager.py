@@ -119,7 +119,7 @@ class ConnectionManager:
             my_endpoint = self.context.settings.get("default_endpoint")
         if not my_label:
             my_label = self.context.settings.get("default_label")
-        if not accept and self.context.settings.get("accept_requests"):
+        if not accept and self.context.settings.get("debug.auto_accept_requests"):
             accept = ConnectionRecord.ACCEPT_AUTO
 
         # Create and store new invitation key
@@ -181,7 +181,7 @@ class ConnectionManager:
 
         # TODO: validate invitation (must have recipient keys, endpoint)
 
-        if accept is None and self.context.settings.get("accept_invites"):
+        if accept is None and self.context.settings.get("debug.auto_accept_invites"):
             accept = ConnectionRecord.ACCEPT_AUTO
 
         # Create connection record

@@ -16,7 +16,14 @@ TIMING = False
 
 class AliceAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
-        super().__init__("Alice Agent", http_port, admin_port, prefix="Alice", **kwargs)
+        super().__init__(
+            "Alice Agent",
+            http_port,
+            admin_port,
+            prefix="Alice",
+            extra_args=["--auto-accept-invites", "--auto-accept-requests"],
+            **kwargs,
+        )
         self.connection_id = None
         self._connection_ready = asyncio.Future()
         self.cred_state = {}
@@ -148,9 +155,7 @@ async def input_invitation(agent):
                 pass
 
     with log_timer("Connect duration:"):
-        connection = await agent.admin_POST(
-            "/connections/receive-invitation", details, params={"accept": "auto"}
-        )
+        connection = await agent.admin_POST("/connections/receive-invitation", details)
         agent.connection_id = connection["connection_id"]
         log_json(connection, label="Invitation response:")
 

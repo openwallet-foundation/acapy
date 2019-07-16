@@ -17,7 +17,14 @@ TIMING = False
 
 class FaberAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
-        super().__init__("Faber Agent", http_port, admin_port, prefix="Faber", **kwargs)
+        super().__init__(
+            "Faber Agent",
+            http_port,
+            admin_port,
+            prefix="Faber",
+            extra_args=["--auto-accept-invites", "--auto-accept-requests"],
+            **kwargs,
+        )
         self.connection_id = None
         self._connection_ready = asyncio.Future()
         self.cred_state = {}
@@ -131,9 +138,7 @@ async def main():
             log_status(
                 "#5 Create a connection to alice and print out the invite details"
             )
-            connection = await agent.admin_POST(
-                "/connections/create-invitation", params={"accept": "auto"}
-            )
+            connection = await agent.admin_POST("/connections/create-invitation")
 
         agent.connection_id = connection["connection_id"]
         log_json(connection, label="Invitation response:")
