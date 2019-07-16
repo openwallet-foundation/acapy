@@ -37,7 +37,7 @@ To run the demo, you must have a system capable of running docker to run contain
 
 You can also run the agents using Python on your native system, but docker development is sooo much nicer.
 
-Before beginning, clone, or fork and clone this repo and the von-network repo.
+Before beginning, clone, or fork and clone this repo and the [von-network](https://github.com/bcgov/von-network) repo.
 
 ## Starting Up
 
@@ -45,7 +45,7 @@ To begin the demo, open up three terminal windows, one for each agent - one to r
 
 ### Start the VON Network
 
-In one of the terminal windows, follow the instructions [here](https://github.com/bcgov/von-network#running-the-network-locally) to start (but don’t stop) a local four-node Indy network. In one of the browser tabs, navigate to [http://localhost:9000](http://localhost:9000) to see the ledger browser user interface and to verify the Indy network is running.
+In one of the terminal windows, follow the [Running the Network Locally](https://github.com/bcgov/von-network#running-the-network-locally) instructions to start (but don’t stop) a local four-node Indy network. In one of the browser tabs, navigate to [http://localhost:9000](http://localhost:9000) to see the ledger browser user interface and to verify the Indy network is running.
 
 > NOTE: The use of localhost for the Web interfaces is assumed in this tutorial. If your docker setup is atypical, you may use a different address for your docker host.
 
@@ -76,7 +76,7 @@ If all goes well, the agent will show a message indicating it is running. Use th
 When you are done, or to stop the demo so you can restart it, carry out the following steps:
 
 1. In the DMV and Alice agent terminal windows, hit Ctrl-C to terminate the agents.
-2. In the von-network terminal window, hit Ctrl-C to stop the logging, and then run the command `./manage down` to both stop the network and remove the data on the ledger. 
+2. In the `von-network` terminal window, hit Ctrl-C to stop the logging, and then run the command `./manage down` to both stop the network and remove the data on the ledger. 
 
 ### Running the Demo Steps
 

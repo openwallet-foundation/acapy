@@ -47,11 +47,11 @@ Jump to the [Follow the Script](#follow-the-script) section below for further in
 
 ### Running in Docker
 
-Running the demo in docker requires having a `von-network` (a Hyperledger Indy public ledger sandbox) instance running in docker locally. See the [von-network](von-https://github.com/bcgov/von-network) readme file for more info.
+Running the demo in docker requires having a `von-network` (a Hyperledger Indy public ledger sandbox) instance running in docker locally. See the [Running the Network Locally](https://github.com/bcgov/von-network#running-the-network-locally) section of the `von-network` readme file for more info.
 
 Open three `bash` shells. For Windows users, `git-bash` is highly recommended. bash is the default shell in Linux and Mac terminal sessions.
 
-In the first terminal window, start `von-network` using the instructions provided [here](https://github.com/bcgov/von-network#running-the-network-locally).
+In the first terminal window, start `von-network` by following the [Running the Network Locally](https://github.com/bcgov/von-network#running-the-network-locally) instructions.
 
 In the second terminal, change directory into `demo` directory of your clone of this repository. Start the `faber` agent by issuing the following command:
 
