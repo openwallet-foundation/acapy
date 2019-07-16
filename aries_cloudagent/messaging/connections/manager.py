@@ -325,7 +325,7 @@ class ConnectionManager:
         if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
-                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
             )
         await self.store_did_document(conn_did_doc)
 
@@ -490,7 +490,7 @@ class ConnectionManager:
         if not connection:
             raise ConnectionManagerError(
                 "No corresponding connection request found",
-                error_code=ProblemReportReason.RESPONSE_FOR_UNKNOWN_REQUEST.value,
+                error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
             )
 
         if connection.state not in (

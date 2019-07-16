@@ -9,11 +9,14 @@ from ..message_types import PROBLEM_REPORT
 HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
 
 
-class ProblemReportReason(Enum):
+class ProblemReportReason(str, Enum):
     """Supported reason codes."""
 
+    INVITATION_NOT_ACCEPTED = "invitation_not_accepted"
     REQUEST_NOT_ACCEPTED = "request_not_accepted"
-    RESPONSE_FOR_UNKNOWN_REQUEST = "response_for_unknown_request"
+    REQUEST_PROCESSING_ERROR = "request_processing_error"
+    RESPONSE_NOT_ACCEPTED = "response_not_accepted"
+    RESPONSE_PROCESSING_ERROR = "response_processing_error"
 
 
 class ProblemReport(AgentMessage):
