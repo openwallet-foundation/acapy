@@ -57,9 +57,7 @@ class TestMenu(TestCase, TestConfig):
         """Test type."""
         assert self.menu._type == MENU
 
-    @mock.patch(
-        "aries_cloudagent.messaging.actionmenu.messages.menu.MenuSchema.load"
-    )
+    @mock.patch("aries_cloudagent.messaging.actionmenu.messages.menu.MenuSchema.load")
     def test_deserialize(self, mock_menu_schema_load):
         """
         Test deserialization.
@@ -71,9 +69,7 @@ class TestMenu(TestCase, TestConfig):
 
         assert menu is mock_menu_schema_load.return_value
 
-    @mock.patch(
-        "aries_cloudagent.messaging.actionmenu.messages.menu.MenuSchema.dump"
-    )
+    @mock.patch("aries_cloudagent.messaging.actionmenu.messages.menu.MenuSchema.dump")
     def test_serialize(self, mock_menu_schema_dump):
         """
         Test serialization.

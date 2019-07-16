@@ -6,9 +6,7 @@ from marshmallow import fields
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import PROBLEM_REPORT
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
-)
+HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
 
 
 class ProblemReportReason(Enum):

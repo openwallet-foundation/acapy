@@ -4,6 +4,7 @@ import os
 import argparse
 from typing import Sequence
 
+from .error import ArgsParseError
 
 PARSER = argparse.ArgumentParser(description="Runs an Aries Cloud Agent.")
 
@@ -153,6 +154,19 @@ PARSER.add_argument(
     help="Enable the administration API on a given host and port",
 )
 
+PARSER.add_argument(
+    "--admin-api-key",
+    type=str,
+    metavar="<api-key>",
+    help="Set the api key for the admin API.",
+)
+
+PARSER.add_argument(
+    "--admin-insecure-mode",
+    action="store_true",
+    help="Do not protect the admin API with token authentication.z",
+)
+
 PARSER.add_argument("--debug", action="store_true", help="Enable debugging features")
 
 PARSER.add_argument(
@@ -297,6 +311,21 @@ def get_settings(args):
         settings["wallet.storage_creds"] = args.wallet_storage_creds
 
     if args.admin:
+
+        admin_api_key = args.admin_api_key
+        admin_insecure_mode = args.admin_insecure_mode
+
+        if (admin_api_key and admin_insecure_mode) or not (
+            admin_api_key or admin_insecure_mode
+        ):
+            raise ArgsParseError(
+                "Either --admin-api-key or --admin-insecure-mode "
+                + "must be set but not both."
+            )
+
+        settings["admin.admin_api_key"] = admin_api_key
+        settings["admin.admin_insecure_mode"] = admin_insecure_mode
+
         settings["admin.enabled"] = True
         settings["admin.host"] = args.admin[0]
         settings["admin.port"] = args.admin[1]
