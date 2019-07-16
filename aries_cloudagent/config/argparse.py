@@ -277,7 +277,7 @@ def get_settings(args):
     if args.log_config:
         settings["log.config"] = args.log_config
     if args.log_level:
-        settings["log_level"] = args.log_level
+        settings["log.level"] = args.log_level
 
     settings["transport.inbound_configs"] = args.inbound_transports
     settings["transport.outbound_configs"] = args.outbound_transports

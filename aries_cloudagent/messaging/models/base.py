@@ -9,6 +9,8 @@ from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError
 from ...classloader import ClassLoader
 from ...error import BaseError
 
+LOGGER = logging.getLogger(__name__)
+
 
 def resolve_class(the_cls, relative_cls: type = None):
     """
@@ -124,8 +126,7 @@ class BaseModel(ABC):
         try:
             return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
         except ValidationError as e:
-            logger = logging.getLogger(__name__)
-            logger.debug('message validation error: %s', e)
+            LOGGER.exception("Message validation error:")
             raise BaseModelError("Schema validation failed") from e
 
     def serialize(self, as_string=False) -> dict:
@@ -143,6 +144,7 @@ class BaseModel(ABC):
         try:
             return schema.dumps(self) if as_string else schema.dump(self)
         except ValidationError as e:
+            LOGGER.exception("Message serialization error:")
             raise BaseModelError("Schema validation failed") from e
 
     @classmethod
@@ -160,6 +162,7 @@ class BaseModel(ABC):
         try:
             parsed = json.loads(json_repr)
         except ValueError as e:
+            LOGGER.exception("Message parse error:")
             raise BaseModelError("JSON parsing failed") from e
         return cls.deserialize(parsed)
 
