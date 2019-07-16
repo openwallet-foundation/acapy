@@ -2,7 +2,7 @@
 
 ## July 16,2019
 
-
+- Add missing MANIFEST file [#78](https://github.com/hyperledger/aries-cloudagent-python/pull/78)
 
 # 0.2.0
 
