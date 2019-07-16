@@ -52,7 +52,7 @@ def main():
 
     # Set up logging
     log_config = settings.get("log.config")
-    log_level = settings.get("log_level") or os.getenv("LOG_LEVEL")
+    log_level = settings.get("log.level") or os.getenv("LOG_LEVEL")
     LoggingConfigurator.configure(log_config, log_level)
 
     # Fetch genesis transactions if necessary
