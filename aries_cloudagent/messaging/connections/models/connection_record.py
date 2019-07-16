@@ -1,32 +1,34 @@
 """Handle connection information interface with non-secrets storage."""
 
 import json
-import uuid
 
 from typing import Sequence
 
 from marshmallow import fields
 
-from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
 
-from ...models.base import BaseModel, BaseModelSchema
+from ...models.base_record import BaseRecord, BaseRecordSchema
 from ...util import time_now
 
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
 
 
-class ConnectionRecord(BaseModel):
+class ConnectionRecord(BaseRecord):
     """Represents a single pairwise connection."""
 
     class Meta:
         """ConnectionRecord metadata."""
 
         schema_class = "ConnectionRecordSchema"
-        repr_exclude = ("_admin_timer",)
+
+    RECORD_ID_NAME = "connection_id"
+    WEBHOOK_TOPIC = "connections"
+    WEBHOOK_TOPIC_ACTIVITY = "connections_activity"
+    LOG_STATE_FLAG = "debug.connections"
 
     RECORD_TYPE = "connection"
     RECORD_TYPE_ACTIVITY = "connection_activity"
@@ -71,11 +73,10 @@ class ConnectionRecord(BaseModel):
         error_msg: str = None,
         routing_state: str = None,
         accept: str = None,
-        created_at: str = None,
-        updated_at: str = None,
+        **kwargs,
     ):
         """Initialize a new ConnectionRecord."""
-        self._id = connection_id
+        super().__init__(connection_id, state or self.STATE_INIT, **kwargs)
         self.my_did = my_did
         self.their_did = their_did
         self.their_label = their_label
@@ -83,14 +84,10 @@ class ConnectionRecord(BaseModel):
         self.initiator = initiator
         self.invitation_key = invitation_key
         self.request_id = request_id
-        self.state = state or self.STATE_INIT
         self.error_msg = error_msg
         self.inbound_connection_id = inbound_connection_id
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.accept = accept or self.ACCEPT_MANUAL
-        self.created_at = created_at
-        self.updated_at = updated_at
-        self._admin_timer = None
 
     @property
     def connection_id(self) -> str:
@@ -98,30 +95,16 @@ class ConnectionRecord(BaseModel):
         return self._id
 
     @property
-    def storage_record(self) -> StorageRecord:
-        """Accessor for a `StorageRecord` representing this connection."""
-        return StorageRecord(
-            self.RECORD_TYPE, json.dumps(self.value), self.tags, self.connection_id
-        )
-
-    @property
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this connection."""
-        ret = self.tags
-        ret.update(
-            {
-                "error_msg": self.error_msg,
-                "their_label": self.their_label,
-                "created_at": self.created_at,
-                "updated_at": self.updated_at,
-            }
-        )
-        return ret
+        value = super().value
+        value.update({"error_msg": self.error_msg, "their_label": self.their_label})
+        return value
 
     @property
     def tags(self) -> dict:
         """Accessor for the record tags generated for this connection."""
-        result = {}
+        result = super().tags
         for prop in (
             "my_did",
             "their_did",
@@ -138,78 +121,6 @@ class ConnectionRecord(BaseModel):
             if val:
                 result[prop] = val
         return result
-
-    async def save(self, context: InjectionContext) -> str:
-        """Persist the connection record to storage.
-
-        Args:
-            context: The injection context to use
-        """
-        self.updated_at = time_now()
-        storage: BaseStorage = await context.inject(BaseStorage)
-        if not self._id:
-            self._id = str(uuid.uuid4())
-            self.created_at = self.updated_at
-            await storage.add_record(self.storage_record)
-        else:
-            record = self.storage_record
-            await storage.update_record_value(record, record.value)
-            await storage.update_record_tags(record, record.tags)
-
-        cache_key = f"{self.RECORD_TYPE}::{self._id}"
-        cache: BaseCache = await context.inject(BaseCache, required=False)
-        if cache:
-            await cache.clear(cache_key)
-        return self._id
-
-    @classmethod
-    async def retrieve_by_id(
-        cls, context: InjectionContext, connection_id: str, cached: bool = True
-    ) -> "ConnectionRecord":
-        """Retrieve a connection record by ID.
-
-        Args:
-            context: The injection context to use
-            connection_id: The ID of the connection record to find
-            cached: Whether to check the cache for this record
-        """
-        cache = None
-        cache_key = f"{cls.RECORD_TYPE}::{connection_id}"
-        vals = None
-
-        if cached and connection_id:
-            cache: BaseCache = await context.inject(BaseCache, required=False)
-            if cache:
-                vals = await cache.get(cache_key)
-
-        if not vals:
-            storage: BaseStorage = await context.inject(BaseStorage)
-            result = await storage.get_record(cls.RECORD_TYPE, connection_id)
-            vals = json.loads(result.value)
-            if result.tags:
-                vals.update(result.tags)
-            if cache:
-                await cache.set(cache_key, vals, 60)
-
-        return ConnectionRecord(connection_id=connection_id, **vals)
-
-    @classmethod
-    async def retrieve_by_tag_filter(
-        cls, context: InjectionContext, tag_filter: dict
-    ) -> "ConnectionRecord":
-        """Retrieve a connection record by tag filter.
-
-        Args:
-            context: The injection context to use
-            tag_filter: The filter dictionary to apply
-        """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
-            cls.RECORD_TYPE, tag_filter
-        ).fetch_single()
-        vals = json.loads(result.value)
-        vals.update(result.tags)
-        return ConnectionRecord(connection_id=result.id, **vals)
 
     @classmethod
     async def retrieve_by_did(
@@ -264,25 +175,6 @@ class ConnectionRecord(BaseModel):
         """
         tag_filter = {"request_id": request_id}
         return await cls.retrieve_by_tag_filter(context, tag_filter)
-
-    @classmethod
-    async def query(
-        cls, context: InjectionContext, tag_filter: dict = None
-    ) -> Sequence["ConnectionRecord"]:
-        """Query existing connection records.
-
-        Args:
-            context: The injection context to use
-            tag_filter: An optional dictionary of tag filter clauses
-        """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        found = await storage.search_records(cls.RECORD_TYPE, tag_filter).fetch_all()
-        result = []
-        for record in found:
-            vals = json.loads(record.value)
-            vals.update(record.tags)
-            result.append(ConnectionRecord(connection_id=record.id, **vals))
-        return result
 
     async def attach_invitation(
         self, context: InjectionContext, invitation: ConnectionInvitation
@@ -348,16 +240,6 @@ class ConnectionRecord(BaseModel):
         ).fetch_single()
         return ConnectionRequest.from_json(result.value)
 
-    async def delete_record(self, context: InjectionContext):
-        """Remove the connection record.
-
-        Args:
-            context: The injection context to use
-        """
-        if self.connection_id:
-            storage: BaseStorage = await context.inject(BaseStorage)
-            await storage.delete_record(self.storage_record)
-
     async def log_activity(
         self,
         context: InjectionContext,
@@ -385,6 +267,16 @@ class ConnectionRecord(BaseModel):
         )
         storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
+        await self.updated_activity(context)
+
+    async def updated_activity(self, context: InjectionContext):
+        """Call webhook when the record activity is updated."""
+        activity = await self.fetch_activity(context)
+        await self.send_webhook(
+            context,
+            {"connection_id": self.connection_id, "activity": activity},
+            topic=self.WEBHOOK_TOPIC_ACTIVITY,
+        )
 
     async def fetch_activity(
         self,
@@ -450,14 +342,20 @@ class ConnectionRecord(BaseModel):
         """Accessor for connection readiness."""
         return self.state == self.STATE_ACTIVE or self.state == self.STATE_RESPONSE
 
-    def __eq__(self, other) -> bool:
-        """Comparison between records."""
-        if type(other) is type(self):
-            return self.value == other.value and self.tags == other.tags
-        return False
+    async def post_save(self, context: InjectionContext, *args, **kwargs):
+        """Perform post-save actions.
+
+        Args:
+            context: The injection context to use
+        """
+        await super().post_save(context, *args, **kwargs)
+
+        # clear cache key set by connection manager
+        cache_key = self.cache_key(self.connection_id, "connection_target")
+        await self.clear_cached_key(context, cache_key)
 
 
-class ConnectionRecordSchema(BaseModelSchema):
+class ConnectionRecordSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of connection records."""
 
     class Meta:
@@ -474,9 +372,6 @@ class ConnectionRecordSchema(BaseModelSchema):
     initiator = fields.Str(required=False)
     invitation_key = fields.Str(required=False)
     request_id = fields.Str(required=False)
-    state = fields.Str(required=False)
     routing_state = fields.Str(required=False)
     accept = fields.Str(required=False)
     error_msg = fields.Str(required=False)
-    created_at = fields.Str(required=False)
-    updated_at = fields.Str(required=False)

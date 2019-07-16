@@ -139,7 +139,6 @@ class Conductor:
                     "get_connection_target",
                     "fetch_did_document",
                     "find_connection",
-                    "updated_record",
                 ),
             )
 
