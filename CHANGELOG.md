@@ -1,8 +1,10 @@
 # 0.2.0
+
 ## July 16,2019
 
 This is the first PyPI release. The history begins with the transfer of aca-py from [bcgov](https://github.com/bcgov) to [hyperledger](https://github.com/hyperledger).
 
+- Prepare for version 0.2.0 release [#77](https://github.com/hyperledger/aries-cloudagent-python/pull/77)
 - Update von-network related references. [#74](https://github.com/hyperledger/aries-cloudagent-python/pull/74)
 - Fixed log_level arg, added validation error logging [#73](https://github.com/hyperledger/aries-cloudagent-python/pull/73)
 - fix shell inconsistency [#72](https://github.com/hyperledger/aries-cloudagent-python/pull/72)
