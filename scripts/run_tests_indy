@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 cd $(dirname $0)
 
@@ -7,7 +7,7 @@ docker build -t aries-cloudagent-test -f ../docker/Dockerfile.test-indy .. || ex
 if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
 
 # on Windows, docker run needs to be prefixed by winpty
-if [[ "$OSTYPE" == "msys" ]]; then
+if [ "$OSTYPE" == "msys" ]; then
   DOCKER="winpty docker"
 else
   DOCKER="docker"
