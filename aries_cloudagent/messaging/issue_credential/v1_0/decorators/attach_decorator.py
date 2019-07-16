@@ -9,8 +9,7 @@ import base64
 import json
 
 from datetime import datetime
-from enum import Enum
-from typing import Mapping, Union
+from typing import Union
 
 from marshmallow import fields
 
@@ -34,6 +33,18 @@ class AttachDecoratorData(BaseModel):
     ):
         """
         Initialize decorator data.
+
+        Specify content for one of:
+
+            - `base64_`
+            - `json_`
+            - `links_` and optionally `sha256_`.
+
+        Args:
+            base64_: base64 encoded content for inclusion.
+            json_: json-dumped content for inclusion.
+            links_: list or single URL of hyperlinks.
+            sha256_: sha-256 hash for URL content, if `links_` specified.
 
         """
         if base64_:
@@ -93,7 +104,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         data_key='links'
     )
     sha256_ = fields.Str(required=False, attribute='sha256_', data_key='sha256')
-    
+
 
 class AttachDecorator(BaseModel):
     """Class representing attach decorator."""
