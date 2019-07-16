@@ -7,7 +7,6 @@ from typing import Coroutine
 from aiohttp import web
 
 from .base import BaseInboundTransport, InboundTransportSetupError
-from ...wallet.util import b64_to_bytes
 
 
 class HttpTransport(BaseInboundTransport):
@@ -137,19 +136,10 @@ class HttpTransport(BaseInboundTransport):
             The web response
 
         """
-        invite = request.query.get("invite")
-        if "invite" in request.query:
-            invite = b64_to_bytes(request.query["invite"], urlsafe=True)
-            await self.message_router(invite, "invitation")
-            return web.Response(text="Invitation received")
-        elif "router" in request.query:
-            invite = b64_to_bytes(request.query["router"], urlsafe=True)
-            await self.message_router(invite, "router_invitation")
-            return web.Response(text="Router invitation received")
-        elif request.query.get("c_i"):
+        if request.query.get("c_i"):
             return web.Response(
                 text="You have received a connection invitation. To accept the "
                 "invitation, paste it into your agent application."
             )
         else:
-            return web.Response(text="To send an invitation add ?invite=<base64invite>")
+            return web.Response(status=200)
