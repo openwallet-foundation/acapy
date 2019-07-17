@@ -340,7 +340,7 @@ class AgentMessageSchema(BaseModelSchema):
             ValidationError: If there is a missing field signature
 
         """
-        processed = self._decorators.extract_decorators(data)
+        processed = self._decorators.extract_decorators(data, self.__class__)
 
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         found_signatures = {}

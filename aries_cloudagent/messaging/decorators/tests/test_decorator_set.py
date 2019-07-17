@@ -10,8 +10,9 @@ class SimpleModel(BaseModel):
     class Meta:
         schema_class = "SimpleModelSchema"
 
-    def __init__(self, *, value: str = None, **kwargs):
+    def __init__(self, *, value: str = None, handled_decorator: str = None, **kwargs):
         super().__init__(**kwargs)
+        self.handled_decorator = handled_decorator
         self.value = value
 
 
@@ -20,6 +21,7 @@ class SimpleModelSchema(BaseModelSchema):
         model_class = SimpleModel
 
     value = fields.Str(required=True)
+    handled_decorator = fields.Str(required=False, data_key="handled~decorator")
 
 
 class TestDecoratorSet(TestCase):
@@ -52,7 +54,7 @@ class TestDecoratorSet(TestCase):
 
         decors = BaseDecoratorSet()
         decors.add_model("test", SimpleModel)
-        remain = decors.extract_decorators(message)
+        remain = decors.extract_decorators(message, SimpleModelSchema)
 
         tested = decors["test"]
         assert isinstance(tested, SimpleModel) and tested.value == "TEST"
@@ -66,7 +68,7 @@ class TestDecoratorSet(TestCase):
         message = {"test~decorator": decor_value, "one": "TWO"}
 
         decors = BaseDecoratorSet()
-        remain = decors.extract_decorators(message)
+        remain = decors.extract_decorators(message, SimpleModelSchema)
 
         # check original is unmodified
         assert "test~decorator" in message
@@ -74,3 +76,20 @@ class TestDecoratorSet(TestCase):
         assert decors.field("test")
         assert decors.field("test")["decorator"] is decor_value
         assert remain == {"one": "TWO"}
+
+    def test_skip_decorator(self):
+
+        decor_value = {}
+        message = {"handled~decorator": decor_value, "one": "TWO"}
+
+        decors = BaseDecoratorSet()
+        remain = decors.extract_decorators(message, SimpleModelSchema)
+        print(SimpleModelSchema.__dict__)
+
+        # check original is unmodified
+        assert "handled~decorator" in message
+
+        print(remain)
+        assert not decors.field("handled")
+        assert remain == message
+
