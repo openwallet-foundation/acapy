@@ -20,9 +20,11 @@ def pytest_sessionstart(session):
 
         INDY_FOUND = True
     except ImportError:
-        "skipping Indy-specific tests: python module not installed",
+        print("Skipping Indy-specific tests: python3-indy module not installed.")
     except OSError:
-        "skipping Indy-specific tests: shared library not loaded",
+        print(
+            "Skipping Indy-specific tests: libindy shared library could not be loaded."
+        )
 
     if not INDY_FOUND:
         modules = {}
