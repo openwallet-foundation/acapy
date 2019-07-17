@@ -84,12 +84,10 @@ class TestDecoratorSet(TestCase):
 
         decors = BaseDecoratorSet()
         remain = decors.extract_decorators(message, SimpleModelSchema)
-        print(SimpleModelSchema.__dict__)
 
         # check original is unmodified
         assert "handled~decorator" in message
 
-        print(remain)
         assert not decors.field("handled")
         assert remain == message
 
