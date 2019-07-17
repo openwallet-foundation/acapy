@@ -69,7 +69,11 @@ class BaseResponder(ABC):
         await self.send_outbound(outbound)
 
     async def send_reply(
-        self, message: Union[AgentMessage, str, bytes], connection_id: str = None
+        self,
+        message: Union[AgentMessage, str, bytes],
+        *,
+        connection_id: str = None,
+        target: ConnectionTarget = None,
     ):
         """
         Send a reply to an incoming message.
@@ -77,6 +81,7 @@ class BaseResponder(ABC):
         Args:
             message: the `AgentMessage`, or pre-packed str or bytes to reply with
             connection_id: optionally override the target connection ID
+            target: optionally specify a `ConnectionTarget` to send to
 
         Raises:
             ResponderError: If there is no active connection
@@ -87,6 +92,7 @@ class BaseResponder(ABC):
             connection_id=connection_id or self.connection_id,
             reply_socket_id=self.reply_socket_id,
             reply_to_verkey=self.reply_to_verkey,
+            target=target,
         )
         await self.send_outbound(outbound)
 
