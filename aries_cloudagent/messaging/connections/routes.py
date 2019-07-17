@@ -157,7 +157,8 @@ async def connections_retrieve(request: web.BaseRequest):
             "in": "query",
             "schema": {"type": "string", "enum": ["none", "auto"]},
             "required": False,
-        }
+        },
+        {"name": "public", "in": "query", "schema": {"type": "int"}, "required": False},
     ],
 )
 @response_schema(InvitationResultSchema(), 200)
@@ -174,10 +175,17 @@ async def connections_create_invitation(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     accept = request.query.get("accept")
+    public = request.query.get("public")
+
+    if public and not context.settings.get("public_invites"):
+        raise web.HTTPForbidden()
+
     connection_mgr = ConnectionManager(context)
-    connection, invitation = await connection_mgr.create_invitation(accept=accept)
+    connection, invitation = await connection_mgr.create_invitation(
+        accept=accept, public=bool(public)
+    )
     result = {
-        "connection_id": connection.connection_id,
+        "connection_id": connection and connection.connection_id,
         "invitation": invitation.serialize(),
         "invitation_url": invitation.to_url(),
     }

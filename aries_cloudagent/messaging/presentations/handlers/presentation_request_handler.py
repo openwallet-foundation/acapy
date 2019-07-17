@@ -37,7 +37,7 @@ class PresentationRequestHandler(BaseHandler):
         # This will fail and bail out if there isn't exactly one credential returned
         # for each requested attribute and predicate. All credential data will be
         # revealed.
-        if context.settings.get("auto_respond_presentation_request"):
+        if context.settings.get("debug.auto_respond_presentation_request"):
             holder: BaseHolder = await context.inject(BaseHolder)
             credentials_for_presentation = {
                 "self_attested_attributes": {},

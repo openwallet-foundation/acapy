@@ -4,6 +4,7 @@ import os
 import argparse
 from typing import Sequence
 
+from .error import ArgsParseError
 
 PARSER = argparse.ArgumentParser(description="Runs an Aries Cloud Agent.")
 
@@ -153,6 +154,19 @@ PARSER.add_argument(
     help="Enable the administration API on a given host and port",
 )
 
+PARSER.add_argument(
+    "--admin-api-key",
+    type=str,
+    metavar="<api-key>",
+    help="Set the api key for the admin API.",
+)
+
+PARSER.add_argument(
+    "--admin-insecure-mode",
+    action="store_true",
+    help="Do not protect the admin API with token authentication.z",
+)
+
 PARSER.add_argument("--debug", action="store_true", help="Enable debugging features")
 
 PARSER.add_argument(
@@ -170,11 +184,21 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
-    "--accept-invites", action="store_true", help="Auto-accept connection invitations"
+    "--public-invites",
+    action="store_true",
+    help="Send invitations and receive requests via the public DID",
 )
 
 PARSER.add_argument(
-    "--accept-requests", action="store_true", help="Auto-accept connection requests"
+    "--auto-accept-invites",
+    action="store_true",
+    help="Auto-accept connection invitations",
+)
+
+PARSER.add_argument(
+    "--auto-accept-requests",
+    action="store_true",
+    help="Auto-accept connection requests",
 )
 
 PARSER.add_argument(
@@ -297,6 +321,21 @@ def get_settings(args):
         settings["wallet.storage_creds"] = args.wallet_storage_creds
 
     if args.admin:
+
+        admin_api_key = args.admin_api_key
+        admin_insecure_mode = args.admin_insecure_mode
+
+        if (admin_api_key and admin_insecure_mode) or not (
+            admin_api_key or admin_insecure_mode
+        ):
+            raise ArgsParseError(
+                "Either --admin-api-key or --admin-insecure-mode "
+                + "must be set but not both."
+            )
+
+        settings["admin.admin_api_key"] = admin_api_key
+        settings["admin.admin_insecure_mode"] = admin_insecure_mode
+
         settings["admin.enabled"] = True
         settings["admin.host"] = args.admin[0]
         settings["admin.port"] = args.admin[1]
@@ -320,16 +359,18 @@ def get_settings(args):
         settings["debug.print_invitation"] = True
 
     if args.auto_respond_credential_offer:
-        settings["auto_respond_credential_offer"] = True
+        settings["debug.auto_respond_credential_offer"] = True
     if args.auto_respond_presentation_request:
-        settings["auto_respond_presentation_request"] = True
+        settings["debug.auto_respond_presentation_request"] = True
     if args.auto_verify_presentation:
-        settings["auto_verify_presentation"] = True
+        settings["debug.auto_verify_presentation"] = True
 
-    if args.accept_invites:
-        settings["accept_invites"] = True
-    if args.accept_requests:
-        settings["accept_requests"] = True
+    if args.public_invites:
+        settings["public_invites"] = True
+    if args.auto_accept_invites:
+        settings["debug.auto_accept_invites"] = True
+    if args.auto_accept_requests:
+        settings["debug.auto_accept_requests"] = True
     if args.auto_ping_connection:
         settings["auto_ping_connection"] = True
     if args.auto_respond_messages:

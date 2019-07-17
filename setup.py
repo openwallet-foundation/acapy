@@ -26,6 +26,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         packages=find_packages(),
         include_package_data=True,
+        package_data={"aries_cloudagent": ["requirements.txt"]},
         install_requires=parse_requirements("requirements.txt"),
         python_requires=">=3.6.3",
         scripts=["bin/aca-py"],
