@@ -162,15 +162,17 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
     run_timer.start()
 
     try:
-        alice = AliceAgent(start_port, genesis_data=genesis)
+        alice = AliceAgent(start_port, genesis_data=genesis, timing=show_timing)
         await alice.listen_webhooks(start_port + 2)
 
-        faber = FaberAgent(start_port + 3, genesis_data=genesis)
+        faber = FaberAgent(start_port + 3, genesis_data=genesis, timing=show_timing)
         await faber.listen_webhooks(start_port + 5)
         await faber.register_did()
 
         if routing:
-            alice_router = RoutingAgent(start_port + 6, genesis_data=genesis)
+            alice_router = RoutingAgent(
+                start_port + 6, genesis_data=genesis, timing=show_timing
+            )
             await alice_router.listen_webhooks(start_port + 8)
             await alice_router.register_did()
 
