@@ -184,11 +184,21 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
-    "--accept-invites", action="store_true", help="Auto-accept connection invitations"
+    "--public-invites",
+    action="store_true",
+    help="Send invitations and receive requests via the public DID",
 )
 
 PARSER.add_argument(
-    "--accept-requests", action="store_true", help="Auto-accept connection requests"
+    "--auto-accept-invites",
+    action="store_true",
+    help="Auto-accept connection invitations",
+)
+
+PARSER.add_argument(
+    "--auto-accept-requests",
+    action="store_true",
+    help="Auto-accept connection requests",
 )
 
 PARSER.add_argument(
@@ -349,16 +359,18 @@ def get_settings(args):
         settings["debug.print_invitation"] = True
 
     if args.auto_respond_credential_offer:
-        settings["auto_respond_credential_offer"] = True
+        settings["debug.auto_respond_credential_offer"] = True
     if args.auto_respond_presentation_request:
-        settings["auto_respond_presentation_request"] = True
+        settings["debug.auto_respond_presentation_request"] = True
     if args.auto_verify_presentation:
-        settings["auto_verify_presentation"] = True
+        settings["debug.auto_verify_presentation"] = True
 
-    if args.accept_invites:
-        settings["accept_invites"] = True
-    if args.accept_requests:
-        settings["accept_requests"] = True
+    if args.public_invites:
+        settings["public_invites"] = True
+    if args.auto_accept_invites:
+        settings["debug.auto_accept_invites"] = True
+    if args.auto_accept_requests:
+        settings["debug.auto_accept_requests"] = True
     if args.auto_ping_connection:
         settings["auto_ping_connection"] = True
     if args.auto_respond_messages:

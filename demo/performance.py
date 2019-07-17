@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 START_PORT = int(sys.argv[1])
 
-ROUTING = True
+ROUTING = False
 
 TIMING = True
 

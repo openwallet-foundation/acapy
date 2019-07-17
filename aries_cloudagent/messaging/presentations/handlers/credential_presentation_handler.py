@@ -33,5 +33,5 @@ class CredentialPresentationHandler(BaseHandler):
             json.loads(context.message.presentation), context.message._thread_id
         )
 
-        if context.settings.get("auto_verify_presentation"):
+        if context.settings.get("debug.auto_verify_presentation"):
             await presentation_manager.verify_presentation(presentation_exchange_record)

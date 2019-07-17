@@ -7,6 +7,8 @@ from asynctest import mock as async_mock
 import pytest
 
 from aries_cloudagent.ledger.indy import (
+    IndyErrorHandler,
+    IndyError,
     IndyLedger,
     GENESIS_TRANSACTION_PATH,
     BadLedgerRequestError,
@@ -382,3 +384,8 @@ class TestIndyLedger(AsyncTestCase):
             mock_parse_get_cred_def_req.assert_called_once_with(mock_submit.return_value)
 
             assert response == json.loads(mock_parse_get_cred_def_req.return_value[1])
+
+    def test_error_handler(self):
+        with self.assertRaises(LedgerTransactionError):
+            with IndyErrorHandler("message", LedgerTransactionError):
+                raise IndyError(error_code=1)

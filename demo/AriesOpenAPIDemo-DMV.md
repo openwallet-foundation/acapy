@@ -54,7 +54,7 @@ In one of the terminal windows, follow the [Running the Network Locally](https:/
 To start the DMV agent, open up a second terminal window and in it change directory to the root of your clone of this repo and execute the following command:
 
 ```bash
-PORTS="5000:5000 10000:10000" ./scripts/run_docker -it http 0.0.0.0 10000 -ot http --admin 0.0.0.0 5000 -e http://`docker run --net=host codenvy/che-ip`:10000 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000000 --auto-ping-connection --accept-invites --accept-requests --auto-verify-presentation --wallet-type indy --label "DMV Agent"
+PORTS="5000:5000 10000:10000" ./scripts/run_docker -it http 0.0.0.0 10000 -ot http --admin 0.0.0.0 5000 -e http://`docker run --net=host codenvy/che-ip`:10000 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000000 --auto-ping-connection --auto-accept-invites --auto-accept-requests --auto-verify-presentation --wallet-type indy --label "DMV Agent"
 ```
 
 If all goes well, the agent will show a message indicating it is running. Use the second of the browser tabs to navigate to [http://localhost:5000](http://localhost:5000). You should see an OpenAPI user interface with a (long-ish) list of API endpoints. These are the endpoints exposed by the DMV Agent.

@@ -15,8 +15,7 @@ jobs:
             pip install \
               --user \
               -r requirements.txt \
-              -r requirements.dev.txt \
-              pytest
+              -r requirements.dev.txt
 
       - save_cache:
           paths:
