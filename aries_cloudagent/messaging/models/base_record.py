@@ -25,14 +25,16 @@ class BaseRecord(BaseModel):
     class Meta:
         """BaseRecord metadata."""
 
-    RECORD_ID_NAME = "record_id"
+    RECORD_ID_NAME = "id"
     RECORD_TYPE = None
     WEBHOOK_TOPIC = None
     LOG_STATE_FLAG = None
+    CACHE_TTL = 60
+    CACHE_DISABLED = False
 
     def __init__(
         self,
-        record_id: str = None,
+        id: str = None,
         state: str = None,
         *,
         created_at: Union[str, datetime] = None,
@@ -45,7 +47,7 @@ class BaseRecord(BaseModel):
                     self.__class__.__name__
                 )
             )
-        self._id = record_id
+        self._id = id
         self._last_state = state
         self.state = state
         self.created_at = datetime_to_str(created_at)
@@ -62,8 +64,9 @@ class BaseRecord(BaseModel):
         record_id_name = cls.RECORD_ID_NAME
         if record_id_name in record:
             raise ValueError(f"Duplicate {record_id_name} inputs")
-        record[record_id_name] = record_id
-        return cls(**record)
+        params = dict(**record)
+        params[record_id_name] = record_id
+        return cls(**params)
 
     @property
     def storage_record(self) -> StorageRecord:
@@ -73,21 +76,30 @@ class BaseRecord(BaseModel):
         )
 
     @property
+    def record_value(self) -> dict:
+        """Accessor to define custom properties for the JSON record value."""
+        return {}
+
+    @property
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
         ret = self.tags
         ret.update({"created_at": self.created_at, "updated_at": self.updated_at})
+        ret.update(self.record_value)
         return ret
+
+    @property
+    def record_tags(self) -> dict:
+        """Accessor to define implementation-specific tags."""
+        return {}
 
     @property
     def tags(self) -> dict:
         """Accessor for the record tags generated for this record."""
-        result = {}
-        for prop in ("state",):
-            val = getattr(self, prop)
-            if val:
-                result[prop] = val
-        return result
+        tags = {"state": self.state}
+        tags.update(self.record_tags)
+        # tag values must be non-empty
+        return {k: v for (k, v) in tags.items() if v}
 
     @classmethod
     def cache_key(cls, record_id: str, record_type: str = None):
@@ -118,7 +130,7 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def set_cached_key(
-        cls, context: InjectionContext, cache_key: str, value: Any, ttl=60
+        cls, context: InjectionContext, cache_key: str, value: Any, ttl=None
     ):
         """Shortcut method to set a cached key value.
 
@@ -132,7 +144,7 @@ class BaseRecord(BaseModel):
             return
         cache: BaseCache = await context.inject(BaseCache, required=False)
         if cache:
-            await cache.set(cache_key, value, 60)
+            await cache.set(cache_key, value, ttl or cls.CACHE_TTL)
 
     @classmethod
     async def clear_cached_key(cls, context: InjectionContext, cache_key: str):
@@ -163,7 +175,6 @@ class BaseRecord(BaseModel):
             record_id: The ID of the record to find
             cached: Whether to check the cache for this record
         """
-        cache = None
         cache_key = cls.cache_key(record_id)
         vals = None
 
@@ -176,7 +187,7 @@ class BaseRecord(BaseModel):
             vals = json.loads(result.value)
             if result.tags:
                 vals.update(result.tags)
-            if cache:
+            if not cls.CACHE_DISABLED:
                 await cls.set_cached_key(context, cache_key, vals)
 
         return cls.from_storage(record_id, vals)
@@ -282,9 +293,7 @@ class BaseRecord(BaseModel):
 
         webhook_topic = self.webhook_topic
         if webhook is None:
-            webhook = bool(webhook_topic) and (
-                new_record or (last_state != self.state)
-            )
+            webhook = bool(webhook_topic) and (new_record or (last_state != self.state))
         if webhook:
             await self.send_webhook(
                 context, self.webhook_payload, topic=self.webhook_topic

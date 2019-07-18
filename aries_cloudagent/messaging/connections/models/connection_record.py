@@ -95,32 +95,28 @@ class ConnectionRecord(BaseRecord):
         return self._id
 
     @property
-    def value(self) -> dict:
-        """Accessor for the JSON record value generated for this connection."""
-        value = super().value
-        value.update({"error_msg": self.error_msg, "their_label": self.their_label})
-        return value
+    def record_value(self) -> dict:
+        """Accessor to for the JSON record value properties for this connection."""
+        return {"error_msg": self.error_msg, "their_label": self.their_label}
 
     @property
-    def tags(self) -> dict:
+    def record_tags(self) -> dict:
         """Accessor for the record tags generated for this connection."""
-        result = super().tags
-        for prop in (
-            "my_did",
-            "their_did",
-            "their_role",
-            "inbound_connection_id",
-            "initiator",
-            "invitation_key",
-            "request_id",
-            "state",
-            "routing_state",
-            "accept",
-        ):
-            val = getattr(self, prop)
-            if val:
-                result[prop] = val
-        return result
+        return {
+            prop: getattr(self, prop)
+            for prop in (
+                "my_did",
+                "their_did",
+                "their_role",
+                "inbound_connection_id",
+                "initiator",
+                "invitation_key",
+                "request_id",
+                "state",
+                "routing_state",
+                "accept",
+            )
+        }
 
     @classmethod
     async def retrieve_by_did(
