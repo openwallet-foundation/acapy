@@ -4,16 +4,10 @@ import os
 import random
 import sys
 
-from .agent import DemoAgent, default_genesis_txns
-from .utils import log_timer, progress
+from .support.agent import DemoAgent, default_genesis_txns
+from .support.utils import log_timer, progress, require_indy
 
 LOGGER = logging.getLogger(__name__)
-
-START_PORT = int(sys.argv[1])
-
-ROUTING = False
-
-TIMING = True
 
 
 class BaseAgent(DemoAgent):
@@ -21,14 +15,13 @@ class BaseAgent(DemoAgent):
         self,
         ident: str,
         port: int,
-        timing: bool = TIMING,
         prefix: str = None,
         use_routing: bool = False,
         **kwargs,
     ):
         if prefix is None:
             prefix = ident
-        super().__init__(ident, port, port + 1, timing=timing, prefix=prefix, **kwargs)
+        super().__init__(ident, port, port + 1, prefix=prefix, **kwargs)
         self._connection_id = None
         self._connection_ready = None
 
@@ -155,7 +148,7 @@ class RoutingAgent(BaseAgent):
         super().__init__("Router", port, **kwargs)
 
 
-async def main():
+async def main(start_port: int, show_timing: bool = False, routing: bool = False):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -169,17 +162,17 @@ async def main():
     run_timer.start()
 
     try:
-        start_port = START_PORT
-
-        alice = AliceAgent(start_port, genesis_data=genesis)
+        alice = AliceAgent(start_port, genesis_data=genesis, timing=show_timing)
         await alice.listen_webhooks(start_port + 2)
 
-        faber = FaberAgent(start_port + 3, genesis_data=genesis)
+        faber = FaberAgent(start_port + 3, genesis_data=genesis, timing=show_timing)
         await faber.listen_webhooks(start_port + 5)
         await faber.register_did()
 
-        if ROUTING:
-            alice_router = RoutingAgent(start_port + 6, genesis_data=genesis)
+        if routing:
+            alice_router = RoutingAgent(
+                start_port + 6, genesis_data=genesis, timing=show_timing
+            )
             await alice_router.listen_webhooks(start_port + 8)
             await alice_router.register_did()
 
@@ -193,14 +186,14 @@ async def main():
             await faber.publish_defs()
 
         with log_timer("Connect duration:"):
-            if ROUTING:
+            if routing:
                 router_invite = await alice_router.get_invite()
                 alice_router_conn_id = await alice.receive_invite(router_invite)
                 await asyncio.wait_for(alice.detect_connection(), 30)
 
             invite = await faber.get_invite()
 
-            if ROUTING:
+            if routing:
                 conn_id = await alice.receive_invite(invite, accept="manual")
                 await alice.establish_inbound(conn_id, alice_router_conn_id)
                 await alice.accept_invite(conn_id)
@@ -210,10 +203,10 @@ async def main():
 
             await asyncio.wait_for(faber.detect_connection(), 30)
 
-        if TIMING:
+        if show_timing:
             await alice.reset_timing()
             await faber.reset_timing()
-            if ROUTING:
+            if routing:
                 await alice_router.reset_timing()
 
         issue_count = 300
@@ -274,7 +267,7 @@ async def main():
         avg = recv_timer.duration / issue_count
         alice.log(f"Average time per credential: {avg:.2f}s ({1/avg:.2f}/s)")
 
-        if TIMING:
+        if show_timing:
             timing = await alice.fetch_timing()
             if timing:
                 for line in alice.format_timing(timing):
@@ -284,7 +277,7 @@ async def main():
             if timing:
                 for line in faber.format_timing(timing):
                     faber.log(line)
-            if ROUTING:
+            if routing:
                 timing = await alice_router.fetch_timing()
                 if timing:
                     for line in alice_router.format_timing(timing):
@@ -319,7 +312,27 @@ async def main():
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Runs an automated credential issuance performance demo."
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=8030,
+        metavar=("<port>"),
+        help="Choose the starting port number to listen on",
+    )
+    parser.add_argument(
+        "--routing", action="store_true", help="Enable inbound routing demonstration"
+    )
+    args = parser.parse_args()
+
+    require_indy()
+
     try:
-        asyncio.get_event_loop().run_until_complete(main())
+        asyncio.get_event_loop().run_until_complete(main(args.port, True, args.routing))
     except KeyboardInterrupt:
         os._exit(1)
