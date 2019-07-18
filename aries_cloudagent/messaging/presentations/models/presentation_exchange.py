@@ -1,20 +1,11 @@
 """Handle presentation exchange information interface with non-secrets storage."""
 
-import json
-import uuid
-
-from typing import Sequence
-
 from marshmallow import fields
 
-from ....config.injection_context import InjectionContext
-from ....storage.base import BaseStorage
-from ....storage.record import StorageRecord
-
-from ...models.base import BaseModel, BaseModelSchema
+from ...models.base_record import BaseRecord, BaseRecordSchema
 
 
-class PresentationExchange(BaseModel):
+class PresentationExchange(BaseRecord):
     """Represents a presentation exchange."""
 
     class Meta:
@@ -23,6 +14,8 @@ class PresentationExchange(BaseModel):
         schema_class = "PresentationExchangeSchema"
 
     RECORD_TYPE = "presentation_exchange"
+    RECORD_ID_NAME = "presentation_exchange_id"
+    WEBHOOK_TOPIC = "presentations"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -45,9 +38,10 @@ class PresentationExchange(BaseModel):
         presentation: dict = None,
         verified: str = None,
         error_msg: str = None,
+        **kwargs
     ):
         """Initialize a new PresentationExchange."""
-        self._id = presentation_exchange_id
+        super().__init__(presentation_exchange_id, state, **kwargs)
         self.connection_id = connection_id
         self.thread_id = thread_id
         self.initiator = initiator
@@ -63,17 +57,7 @@ class PresentationExchange(BaseModel):
         return self._id
 
     @property
-    def storage_record(self) -> StorageRecord:
-        """Accessor for a `StorageRecord` representing this presentation exchange."""
-        return StorageRecord(
-            self.RECORD_TYPE,
-            json.dumps(self.value),
-            self.tags,
-            self.presentation_exchange_id,
-        )
-
-    @property
-    def value(self) -> dict:
+    def record_value(self) -> dict:
         """Accessor for JSON record value generated for this presentation exchange."""
         result = self.tags
         for prop in ("presentation_request", "presentation", "error_msg"):
@@ -83,7 +67,7 @@ class PresentationExchange(BaseModel):
         return result
 
     @property
-    def tags(self) -> dict:
+    def record_tags(self) -> dict:
         """Accessor for the record tags generated for this presentation exchange."""
         result = {}
         for prop in ("connection_id", "thread_id", "initiator", "state", "verified"):
@@ -92,91 +76,8 @@ class PresentationExchange(BaseModel):
                 result[prop] = val
         return result
 
-    async def save(self, context: InjectionContext):
-        """Persist the presentation exchange record to storage.
 
-        Args:
-            context: The `InjectionContext` instance to use
-        """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        if not self._id:
-            self._id = str(uuid.uuid4())
-            await storage.add_record(self.storage_record)
-        else:
-            record = self.storage_record
-            await storage.update_record_value(record, record.value)
-            await storage.update_record_tags(record, record.tags)
-
-    @classmethod
-    async def retrieve_by_id(
-        cls, context: InjectionContext, presentation_exchange_id: str
-    ) -> "PresentationExchange":
-        """Retrieve a presentation exchange record by ID.
-
-        Args:
-            context: The `InjectionContext` instance to use
-            presentation_exchange_id: The ID of the presentation exchange record to find
-        """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.get_record(cls.RECORD_TYPE, presentation_exchange_id)
-        vals = json.loads(result.value)
-        if result.tags:
-            vals.update(result.tags)
-        return PresentationExchange(
-            presentation_exchange_id=presentation_exchange_id, **vals
-        )
-
-    @classmethod
-    async def retrieve_by_tag_filter(
-        cls, context: InjectionContext, tag_filter: dict
-    ) -> "PresentationExchange":
-        """Retrieve a presentation exchange record by tag filter.
-
-        Args:
-            context: The `InjectionContext` instance to use
-            tag_filter: The filter dictionary to apply
-        """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
-            cls.RECORD_TYPE, tag_filter
-        ).fetch_single()
-        vals = json.loads(result.value)
-        vals.update(result.tags)
-        return PresentationExchange(presentation_exchange_id=result.id, **vals)
-
-    @classmethod
-    async def query(
-        cls, context: InjectionContext, tag_filter: dict = None
-    ) -> Sequence["PresentationExchange"]:
-        """Query existing presentation exchange records.
-
-        Args:
-            context: The `InjectionContext` instance to use
-            tag_filter: An optional dictionary of tag filter clauses
-        """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        found = await storage.search_records(cls.RECORD_TYPE, tag_filter).fetch_all()
-        result = []
-        for record in found:
-            vals = json.loads(record.value)
-            vals.update(record.tags)
-            result.append(
-                PresentationExchange(presentation_exchange_id=record.id, **vals)
-            )
-        return result
-
-    async def delete_record(self, context: InjectionContext):
-        """Remove the presentation exchange record.
-
-        Args:
-            context: The `InjectionContext` instance to use
-        """
-        if self.presentation_exchange_id:
-            storage: BaseStorage = await context.inject(BaseStorage)
-            await storage.delete_record(self.storage_record)
-
-
-class PresentationExchangeSchema(BaseModelSchema):
+class PresentationExchangeSchema(BaseRecordSchema):
     """Schema for serialization/deserialization of presentation exchange records."""
 
     class Meta:

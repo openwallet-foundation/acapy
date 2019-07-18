@@ -106,8 +106,6 @@ class ConnectionManager:
             A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
 
         """
-        self._log_state("Creating invitation")
-
         if not my_label:
             my_label = self.context.settings.get("default_label")
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -178,10 +176,6 @@ class ConnectionManager:
             The new `ConnectionRecord` instance
 
         """
-        self._log_state(
-            "Receiving invitation", {"invitation": invitation, "role": their_role}
-        )
-
         if not invitation.did:
             if not invitation.recipient_keys:
                 raise ConnectionManagerError("Invitation must contain recipient key(s)")
