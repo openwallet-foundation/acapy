@@ -20,9 +20,11 @@ class InjectionContext(BaseInjector):
 
     ROOT_SCOPE = "application"
 
-    def __init__(self, *, settings: Mapping[str, object] = None):
+    def __init__(
+        self, *, settings: Mapping[str, object] = None, enforce_typing: bool = True
+    ):
         """Initialize a `ServiceConfig`."""
-        self._injector = Injector(settings)
+        self._injector = Injector(settings, enforce_typing=enforce_typing)
         self._scope_name = self.ROOT_SCOPE
         self._scopes = []
 
