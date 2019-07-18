@@ -4,14 +4,18 @@ import logging
 import os
 import sys
 
-from .agent import DemoAgent, default_genesis_txns
-from .utils import log_json, log_msg, log_status, log_timer, prompt, prompt_loop
+from .support.agent import DemoAgent, default_genesis_txns
+from .support.utils import (
+    log_json,
+    log_msg,
+    log_status,
+    log_timer,
+    prompt,
+    prompt_loop,
+    require_indy,
+)
 
 LOGGER = logging.getLogger(__name__)
-
-AGENT_PORT = int(sys.argv[1])
-
-TIMING = False
 
 
 class AliceAgent(DemoAgent):
@@ -163,7 +167,7 @@ async def input_invitation(agent):
         await agent.detect_connection()
 
 
-async def main():
+async def main(start_port: int, show_timing: bool = False):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -171,11 +175,12 @@ async def main():
         sys.exit(1)
 
     agent = None
-    start_port = AGENT_PORT
 
     try:
         log_status("#7 Provision an agent and wallet, get back configuration details")
-        agent = AliceAgent(start_port, start_port + 1, genesis_data=genesis)
+        agent = AliceAgent(
+            start_port, start_port + 1, genesis_data=genesis, timing=show_timing
+        )
         await agent.listen_webhooks(start_port + 2)
 
         with log_timer("Startup duration:"):
@@ -203,7 +208,7 @@ async def main():
                 log_status("Input new invitation details")
                 await input_invitation(agent)
 
-        if TIMING:
+        if show_timing:
             timing = await agent.fetch_timing()
             if timing:
                 for line in agent.format_timing(timing):
@@ -225,7 +230,25 @@ async def main():
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Runs an Alice demo agent.")
+    parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=8030,
+        metavar=("<port>"),
+        help="Choose the starting port number to listen on",
+    )
+    parser.add_argument(
+        "--timing", action="store_true", help="Enable timing information"
+    )
+    args = parser.parse_args()
+
+    require_indy()
+
     try:
-        asyncio.get_event_loop().run_until_complete(main())
+        asyncio.get_event_loop().run_until_complete(main(args.port, args.timing))
     except KeyboardInterrupt:
         os._exit(1)

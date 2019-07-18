@@ -1,6 +1,7 @@
 import functools
 import json
 import os
+import sys
 from timeit import default_timer
 
 import prompt_toolkit
@@ -231,3 +232,16 @@ def log_timer(label: str, show: bool = True, logger=None, **kwargs):
 
 def progress(*args, **kwargs):
     return ProgressBar(*args, **kwargs)
+
+
+def require_indy():
+    try:
+        from indy.libindy import _cdll
+
+        _cdll()
+    except ImportError:
+        print("python3-indy module not installed")
+        sys.exit(1)
+    except OSError:
+        print("libindy shared library could not be loaded")
+        sys.exit(1)
