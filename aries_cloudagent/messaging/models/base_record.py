@@ -30,7 +30,7 @@ class BaseRecord(BaseModel):
     WEBHOOK_TOPIC = None
     LOG_STATE_FLAG = None
     CACHE_TTL = 60
-    CACHE_DISABLED = False
+    CACHE_ENABLED = False
 
     def __init__(
         self,
@@ -178,7 +178,7 @@ class BaseRecord(BaseModel):
         cache_key = cls.cache_key(record_id)
         vals = None
 
-        if cached:
+        if cls.CACHE_ENABLED and cached:
             vals = await cls.get_cached_key(context, cache_key)
 
         if not vals:
@@ -187,7 +187,7 @@ class BaseRecord(BaseModel):
             vals = json.loads(result.value)
             if result.tags:
                 vals.update(result.tags)
-            if not cls.CACHE_DISABLED:
+            if cls.CACHE_ENABLED:
                 await cls.set_cached_key(context, cache_key, vals)
 
         return cls.from_storage(record_id, vals)

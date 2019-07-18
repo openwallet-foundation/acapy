@@ -17,6 +17,7 @@ class BaseRecordImpl(BaseRecord):
         schema_class = "BaseRecordImplSchema"
 
     RECORD_TYPE = "record"
+    CACHE_ENABLED = True
 
 
 class BaseRecordImplSchema(BaseRecordSchema):
