@@ -29,6 +29,7 @@ class ConnectionRecord(BaseRecord):
     WEBHOOK_TOPIC = "connections"
     WEBHOOK_TOPIC_ACTIVITY = "connections_activity"
     LOG_STATE_FLAG = "debug.connections"
+    CACHE_ENABLED = True
 
     RECORD_TYPE = "connection"
     RECORD_TYPE_ACTIVITY = "connection_activity"
