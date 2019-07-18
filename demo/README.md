@@ -9,7 +9,8 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Running in a Browser](#Running-in-a-Browser)
   - [Running in Docker](#Running-in-Docker)
   - [Running Locally](#Running-Locally)
-    - [Start a local indy-sdk ledger](#Start-a-local-indy-sdk-ledger)
+    - [Installing Prerequisites](#Installing-Prerequisites)
+    - [Start a local indy ledger](#Start-a-local-indy-ledger)
     - [Run a local Postgres instance](#Run-a-local-Postgres-instance)
     - [Optional: Run a von-network ledger browser](#Optional-Run-a-von-network-ledger-browser)
     - [Run the Alice and Faber Controllers/Agents](#Run-the-Alice-and-Faber-ControllersAgents)
@@ -73,15 +74,25 @@ Jump to the [Follow the Script](#follow-the-script) section below for further in
 
 ### Running Locally
 
-The following is an approach to to running the Alice and Faber demo using Python running on a bare machine. There are other ways to run the components, but this approach has been tested to work.
+The following is an approach to to running the Alice and Faber demo using Python3 running on a bare machine. There are other ways to run the components, but this covers the general approach.
 
-#### Start a local indy-sdk ledger
+#### Installing Prerequisites
 
-Use instructions in the [indy-sdk repo](https://github.com/hyperledger/indy-sdk#how-to-start-local-nodes-pool-with-docker) for running a local ledger.
+We assume you have a running Python 3 environment.  To install the prerequisites specific to running the agent/controller examples in your Python environment, run the following command from this repo's `demo` folder. The precise command to run may vary based on your Python environment setup.
+
+``` bash
+pip3 install -r demo/requirements.txt
+```
+
+While that process will include the installation of the Indy python prerequisite, you still have to build and install the `libindy` code for your platform. Follow the [installation instructions](https://github.com/hyperledger/indy-sdk#installing-the-sdk) in the indy-sdk repo for your platform.
+
+#### Start a local indy ledger
+
+Use instructions in the [indy-sdk repo](https://github.com/hyperledger/indy-sdk#how-to-start-local-nodes-pool-with-docker) to run a local ledger. Alternately, you can run the ledger using [von-network](https://github.com/bcgov/von-network) mechanism, or some other instance of the ledger. In those cases, you must provide the agents access to the ledger genesis file, and you must ensure that the agents have write access on that ledger.
 
 #### Run a local Postgres instance
 
-Use the Docker Hub published postgres image to start up a postgres instance to be used for the wallet storage:
+The demo uses the postgres database the wallet persistence. Use the Docker Hub certified postgres image to start up a postgres instance to be used for the wallet storage:
 
 ``` bash
 docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres -c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr'
@@ -89,15 +100,17 @@ docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432
 
 #### Optional: Run a von-network ledger browser
 
-If you want to be able to browse your local ledger as you run the demo, clone the [von-network] repo, go into the root of the cloned instance and run the following command, replacing the `/path/to/local-genesis.txt` with a path to the same genesis file as was used in starting the ledger.
+If you want to be able to browse your local ledger as you run the demo, clone the [von-network](https://github.com/bcgov/von-network) repo, go into the root of the cloned instance and run the following command, replacing the `/path/to/local-genesis.txt` with a path to the same genesis file as was used in starting the ledger. For example, that might be the `local-genesis.txt` file in the `demo` folder of your locally cloned `aries-cloudagent-python` repository.
 
 ``` bash
 GENESIS_FILE=/path/to/local-genesis.txt PORT=9000 REGISTER_NEW_DIDS=true python -m server.server
 ```
 
+If you are using another ledger mechanism (e.g. von-network), you can also use the `GENESIS_URL` environment variable if the genesis data is available via a web service.
+
 #### Run the Alice and Faber Controllers/Agents
 
-With the rest of the pieces running, you can finally run the Alice and Faber controllers and agents. To do so, `cd` into the `demo` folder your clone of this repo in two terminal windows and run:
+With the rest of the pieces running, you can run the Alice and Faber controllers and agents. To do so, `cd` into the `demo` folder your clone of this repo in two terminal windows and run:
 
 ``` bash
 python3 -m runners.faber --port 8020
@@ -107,9 +120,9 @@ python3 -m runners.faber --port 8020
 python3 -m runners.alice --port 8030
 ```
 
-Note that Alice and Faber will each use 5 ports, e.g. running ```... --port 8020``` actually uses ports 8020 through 8024. Feel free to use different ports if you want.
+Note that Alice and Faber will each use 5 ports, e.g. using the parameter `... --port 8020` actually uses ports 8020 through 8024. Feel free to use different ports if you want.
 
-Refer to the [Follow the Script](#follow-the-script) section below for further instructions.
+Everything running?  See the [Follow the Script](#follow-the-script) section below for further instructions.
 
 ### Follow The Script
 
