@@ -9,6 +9,10 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Running in a Browser](#Running-in-a-Browser)
   - [Running in Docker](#Running-in-Docker)
   - [Running Locally](#Running-Locally)
+    - [Start a local indy-sdk ledger](#Start-a-local-indy-sdk-ledger)
+    - [Run a local Postgres instance](#Run-a-local-Postgres-instance)
+    - [Optional: Run a von-network ledger browser](#Optional-Run-a-von-network-ledger-browser)
+    - [Run the Alice and Faber Controllers/Agents](#Run-the-Alice-and-Faber-ControllersAgents)
   - [Follow The Script](#Follow-The-Script)
 - [Learning about the Alice/Faber code](#Learning-about-the-AliceFaber-code)
 - [OpenAPI (Swagger) Demo](#OpenAPI-Swagger-Demo)
@@ -69,19 +73,41 @@ Jump to the [Follow the Script](#follow-the-script) section below for further in
 
 ### Running Locally
 
-To run locally, complete the same steps above for running in docker, except use the following in place of the `run_demo` commands for starting the two agents.
+The following is an approach to to running the Alice and Faber demo using Python running on a bare machine. There are other ways to run the components, but this approach has been tested to work.
+
+#### Start a local indy-sdk ledger
+
+Use instructions in the [indy-sdk repo](https://github.com/hyperledger/indy-sdk#how-to-start-local-nodes-pool-with-docker) for running a local ledger.
+
+#### Run a local Postgres instance
+
+Use the Docker Hub published postgres image to start up a postgres instance to be used for the wallet storage:
 
 ``` bash
-python faber-pg.py 8020
+docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres -c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr'
+```
+
+#### Optional: Run a von-network ledger browser
+
+If you want to be able to browse your local ledger as you run the demo, clone the [von-network] repo, go into the root of the cloned instance and run the following command, replacing the `/path/to/local-genesis.txt` with a path to the same genesis file as was used in starting the ledger.
+
+``` bash
+GENESIS_FILE=/path/to/local-genesis.txt PORT=9000 REGISTER_NEW_DIDS=true python -m server.server
+```
+
+#### Run the Alice and Faber Controllers/Agents
+
+With the rest of the pieces running, you can finally run the Alice and Faber controllers and agents. To do so, `cd` into the `demo` folder your clone of this repo in two terminal windows and run:
+
+``` bash
+python3 -m runners.faber --port 8020
 ```
 
 ``` bash
-python alice-pg.py 8030
+python3 -m runners.alice --port 8030
 ```
 
-Note that Alice and Faber will each use 5 ports, e.g. running ```python faber-pg.py 8020``` actually uses ports 8020 through 8024. Feel free to use different ports if you want.
-
-To create the Alice/Faber wallets using postgres storage, just add the "--postgres" option when running the script.
+Note that Alice and Faber will each use 5 ports, e.g. running ```... --port 8020``` actually uses ports 8020 through 8024. Feel free to use different ports if you want.
 
 Refer to the [Follow the Script](#follow-the-script) section below for further instructions.
 
@@ -92,17 +118,18 @@ With both the Alice and Faber agents started, go to the Faber terminal window. T
 Faber:
 
 ```
-                 1 = send credential to Alice
-                 2 = send proof request to Alice
-                 3 = send a message to Alice
-                 x = stop and exit
+    1 = Issue Credential - send a credential to Alice
+    2 = Send Proof Request - send a proof request to Alice
+    3 = Send Message - send a message to Alice
+    x = Exit - Stop and exit
 ```
 
 Alice:
 
 ```
-                 3 = send a message to Faber
-                 x = stop and exit
+    3 = Send Message - send a message to Faber
+    4 = Input New Invitation
+    x = Exit - stop and exit
 ```
 
 Feel free to use the "3" option to send messages back and forth between the agents. Fun, eh? Those are secure, end-to-end encrypted messages.
