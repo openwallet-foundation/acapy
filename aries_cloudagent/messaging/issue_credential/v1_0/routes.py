@@ -93,7 +93,7 @@ class V10AttributeMetadataResultSchema(Schema):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 credentials"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 credentials"],
     summary="Get attribute metadata from wallet"
 )
 @response_schema(V10AttributeMetadataResultSchema(), 200)
@@ -119,7 +119,7 @@ async def attribute_metadata_get(request: web.BaseRequest):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
     summary="Fetch all credential exchange records"
 )
 @response_schema(V10CredentialExchangeListSchema(), 200)
@@ -150,7 +150,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
     summary="Fetch a single credential exchange record"
 )
 @response_schema(V10CredentialExchangeSchema(), 200)
@@ -178,7 +178,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
     summary="Send issuer a credential proposal"
 )
 @request_schema(V10CredentialProposalRequestSchema())
@@ -244,7 +244,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
     summary="Send holder a credential offer, free from reference to any proposal"
 )
 @request_schema(V10CredentialOfferRequestSchema())
@@ -326,7 +326,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
     summary="Send holder a credential offer in reference to a proposal"
 )
 @response_schema(V10CredentialOfferResultSchema(), 200)
@@ -375,7 +375,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
     summary="Send a credential request"
 )
 @response_schema(V10CredentialRequestResultSchema(), 200)
@@ -424,7 +424,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
     summary="Send a credential"
 )
 @request_schema(V10CredentialIssueRequestSchema())
@@ -475,7 +475,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
 
 @docs(
-    tags=["Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
     summary="Remove an existing credential exchange record",
 )
 async def credential_exchange_remove(request: web.BaseRequest):

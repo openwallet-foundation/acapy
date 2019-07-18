@@ -7,6 +7,7 @@ import base64
 
 from marshmallow import fields
 
+from ......holder.indy import IndyHolder
 from .....models.base import BaseModel, BaseModelSchema
 from ...message_types import CREDENTIAL_PREVIEW
 
@@ -39,8 +40,8 @@ class AttributePreview(BaseModel):
         super(AttributePreview, self).__init__(**kwargs)
         self.name = name
         self.value = value
-        self.encoding = encoding
-        self.mime_type = mime_type or 'text/plain'
+        self.encoding = encoding or IndyHolder.DEFAULT_META_TAG.get("encoding")
+        self.mime_type = mime_type or IndyHolder.DEFAULT_META_TAG.get("mime-type")
 
     @staticmethod
     def list_plain(plain: dict):
@@ -67,8 +68,8 @@ class AttributePreviewSchema(BaseModelSchema):
 
     name = fields.Str(required=True)
     mime_type = fields.Str(
-        default='text/plain',
-        missing='text/plain',
+        default=IndyHolder.DEFAULT_META_TAG.get("mime-type"),
+        missing=IndyHolder.DEFAULT_META_TAG.get("mime-type"),
         data_key='mime-type'
     )
     encoding = fields.Str(required=False)

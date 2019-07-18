@@ -304,7 +304,7 @@ class AgentMessageSchema(BaseModelSchema):
     _type = fields.Str(data_key="@type", dump_only=True, required=False)
     _id = fields.Str(data_key="@id", required=False)
 
-    def __init__(self, decorators=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Initialize an instance of AgentMessageSchema.
 
@@ -322,7 +322,7 @@ class AgentMessageSchema(BaseModelSchema):
                     self.__class__.__name__
                 )
             )
-        self._decorators = DecoratorSet() if decorators is None else decorators
+        self._decorators = DecoratorSet()
         self._decorators_dict = None
         self._signatures = {}
 
@@ -345,7 +345,7 @@ class AgentMessageSchema(BaseModelSchema):
             ValidationError: If there is a missing field signature
 
         """
-        processed = self._decorators.extract_decorators(data)
+        processed = self._decorators.extract_decorators(data, self.__class__)
 
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         found_signatures = {}

@@ -67,14 +67,14 @@ class TestIndyHolder(AsyncTestCase):
         assert cred_id == "cred_id"
 
     @async_mock.patch("indy.non_secrets.get_wallet_record")
-    async def test_get_credential_attr_metadata(self, mock_nonsec_get_wallet_record):
+    async def test_get_credential_attrs_metadata(self, mock_nonsec_get_wallet_record):
         cred_id = "credential_id"
-        dummy_tags = {'a': "1", 'b': "2"}
+        dummy_tags = {"a": "1", "b": "2"}
         dummy_rec = {
-            'type': IndyHolder.RECORD_TYPE_METADATA,
-            'id': cred_id,
-            'value': 'value',
-            'tags': {
+            "type": IndyHolder.RECORD_TYPE_METADATA,
+            "id": cred_id,
+            "value": "value",
+            "tags": {
                 attr: json.dumps(dummy_tags[attr]) for attr in dummy_tags
             }
         }
@@ -88,7 +88,7 @@ class TestIndyHolder(AsyncTestCase):
 
         mock_nonsec_get_wallet_record.assert_called_once_with(
             mock_wallet.handle,
-            dummy_rec['type'],
+            dummy_rec["type"],
             f"{IndyHolder.RECORD_TYPE_METADATA}::{dummy_rec['id']}",
             json.dumps(
                 {
@@ -100,6 +100,41 @@ class TestIndyHolder(AsyncTestCase):
         )
 
         assert metadata == dummy_tags
+
+    @async_mock.patch("indy.non_secrets.get_wallet_record")
+    async def test_get_credential_attr_metadata(self, mock_nonsec_get_wallet_record):
+        cred_id = "credential_id"
+        dummy_tags = {"a": "1", "b": "2"}
+        dummy_rec = {
+            "type": IndyHolder.RECORD_TYPE_METADATA,
+            "id": cred_id,
+            "value": "value",
+            "tags": {
+                attr: json.dumps(dummy_tags[attr]) for attr in dummy_tags
+            }
+        }
+        mock_nonsec_get_wallet_record.return_value = json.dumps(dummy_rec)
+
+        mock_wallet = async_mock.MagicMock()
+
+        holder = IndyHolder(mock_wallet)
+
+        a_metadata = await holder.get_metadata(cred_id, "a")
+
+        mock_nonsec_get_wallet_record.assert_called_once_with(
+            mock_wallet.handle,
+            dummy_rec["type"],
+            f"{IndyHolder.RECORD_TYPE_METADATA}::{dummy_rec['id']}",
+            json.dumps(
+                {
+                    "retrieveType": True,
+                    "retrieveValue": True,
+                    "retrieveTags": True
+                }
+            )
+        )
+
+        assert a_metadata == dummy_tags["a"]
 
     @async_mock.patch("indy.anoncreds.prover_search_credentials")
     @async_mock.patch("indy.anoncreds.prover_fetch_credentials")
@@ -205,12 +240,12 @@ class TestIndyHolder(AsyncTestCase):
         holder = IndyHolder(mock_wallet)
         mock_nonsec_get_wallet_record.return_value = json.dumps(
             {
-                'type': 'typ',
-                'id': 'ident',
-                'value': 'value',
-                'tags': {
-                    'a': json.dumps("1"),
-                    'b': json.dumps("2")
+                "type": "typ",
+                "id": "ident",
+                "value": "value",
+                "tags": {
+                    "a": json.dumps("1"),
+                    "b": json.dumps("2")
                 }
             }
         )
