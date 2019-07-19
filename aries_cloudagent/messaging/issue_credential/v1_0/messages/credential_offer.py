@@ -81,5 +81,5 @@ class CredentialOfferSchema(AgentMessageSchema):
         AttachDecoratorSchema,
         required=True,
         many=True,
-        data_key='offers~attach'
+        data_key="offers~attach"
     )

@@ -34,6 +34,7 @@ class AttributePreview(BaseModel):
         Args:
             name: attribute name
             value: attribute value
+            encoding: encoding (omit or "base64")
             mime_type: MIME type
 
         """
@@ -70,7 +71,7 @@ class AttributePreviewSchema(BaseModelSchema):
     mime_type = fields.Str(
         default=IndyHolder.DEFAULT_META_TAG.get("mime-type"),
         missing=IndyHolder.DEFAULT_META_TAG.get("mime-type"),
-        data_key='mime-type'
+        data_key="mime-type"
     )
     encoding = fields.Str(required=False)
     value = fields.Str(required=True)
@@ -96,15 +97,15 @@ class CredentialPreview(BaseModel):
         Args:
             attributes (list): list of attribute preview dicts; e.g., [
                 {
-                    'name': 'attribute_name',
-                    'mime-type': 'text/plain',
-                    'value': 'value'
+                    "name": "attribute_name",
+                    "mime-type": "text/plain",
+                    "value": "value"
                 },
                 {
-                    'name': 'icon',
-                    'mime-type': 'image/png',
-                    'encoding': 'base64',
-                    'value': 'cG90YXRv'
+                    "name": "icon",
+                    "mime-type": "image/png",
+                    "encoding": "base64",
+                    "value": "cG90YXRv"
                 }
             ]
 
@@ -127,7 +128,7 @@ class CredentialPreview(BaseModel):
         """
         return {
             attr.name: base64.b64decode(attr.value.encode()).decode()
-            if attr.encoding == 'base64' and decode else attr.value
+            if attr.encoding == "base64" and decode else attr.value
             for attr in self.attributes
         }
 
@@ -135,8 +136,8 @@ class CredentialPreview(BaseModel):
         """Return per-attribute mapping from name to MIME type and encoding."""
         return {
             attr.name: {
-                'mime-type': attr.mime_type,
-                **{'encoding': attr.encoding for attr in [attr] if attr.encoding}
+                "mime-type": attr.mime_type,
+                **{"encoding": attr.encoding for attr in [attr] if attr.encoding}
             } for attr in self.attributes
         }
 
@@ -154,5 +155,5 @@ class CredentialPreviewSchema(BaseModelSchema):
         AttributePreviewSchema,
         many=True,
         required=True,
-        data_key='attributes'
+        data_key="attributes"
     )

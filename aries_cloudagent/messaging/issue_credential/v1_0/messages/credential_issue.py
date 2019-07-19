@@ -74,5 +74,5 @@ class CredentialIssueSchema(AgentMessageSchema):
         AttachDecoratorSchema,
         required=True,
         many=True,
-        data_key='credentials~attach'
+        data_key="credentials~attach"
     )

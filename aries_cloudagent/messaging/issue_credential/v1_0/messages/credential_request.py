@@ -74,5 +74,5 @@ class CredentialRequestSchema(AgentMessageSchema):
         AttachDecoratorSchema,
         required=True,
         many=True,
-        data_key='requests~attach'
+        data_key="requests~attach"
     )
