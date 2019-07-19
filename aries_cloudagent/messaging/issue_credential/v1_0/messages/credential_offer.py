@@ -3,10 +3,9 @@
 
 from typing import Sequence
 
-from marshmallow import fields, pre_load, ValidationError
+from marshmallow import fields
 
 from ....agent_message import AgentMessage, AgentMessageSchema
-from ....models.base import resolve_meta_property
 from ..decorators.attach_decorator import AttachDecorator, AttachDecoratorSchema
 from ..message_types import CREDENTIAL_OFFER
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
@@ -84,47 +83,3 @@ class CredentialOfferSchema(AgentMessageSchema):
         many=True,
         data_key='offers~attach'
     )
-
-    @pre_load
-    def extract_decorators(self, data):
-        """
-        Pre-load hook to extract the decorators and check the signed fields.
-
-        Args:
-            data: Incoming data to parse
-
-        Returns:
-            Parsed and modified data
-
-        Raises:
-            ValidationError: If a field signature does not correlate
-            to a field in the message
-            ValidationError: If the message defines both a field signature
-            and a value for the same field
-            ValidationError: If there is a missing field signature
-
-        """
-        processed = self._decorators.extract_decorators(
-            data,
-            self.__class__,
-            skip_attrs=["offers_attach"]
-        )
-
-        expect_fields = resolve_meta_property(self, "signed_fields") or ()
-        found_signatures = {}
-        for field_name, field in self._decorators.fields.items():
-            if "sig" in field:
-                if field_name not in expect_fields:
-                    raise ValidationError(
-                        f"Encountered unexpected field signature: {field_name}"
-                    )
-                if field_name in processed:
-                    raise ValidationError(
-                        f"Message defines both field signature and value: {field_name}"
-                    )
-                found_signatures[field_name] = field["sig"]
-                processed[field_name], _ts = field["sig"].decode()
-        for field_name in expect_fields:
-            if field_name not in found_signatures:
-                raise ValidationError(f"Expected field signature: {field_name}")
-        return processed

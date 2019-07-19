@@ -76,6 +76,7 @@ class TestDecoratorSet(TestCase):
         assert decors.field("test")
         assert decors.field("test")["decorator"] is decor_value
         assert remain == {"one": "TWO"}
+        assert "test~decorator" in decors.to_dict()
 
     def test_skip_decorator(self):
 
@@ -90,3 +91,4 @@ class TestDecoratorSet(TestCase):
 
         assert not decors.field("handled")
         assert remain == message
+        assert not decors.to_dict()
