@@ -39,8 +39,7 @@
 - [0067-didcomm-diddoc-conventions](https://github.com/hyperledger/aries-rfcs/tree/master/features/0067-didcomm-diddoc-conventions)
 - [0092-transport-return-route](https://github.com/hyperledger/aries-rfcs/tree/master/features/0092-transport-return-route)
   - Support for this RFC makes ACA-Py a great candidate to be the persistent endpoint cloud agent for a mobile agent.
-- [indy-0033-basic-message](https://github.com/hyperledger/indy-hipe/tree/master/text/0033-basic-message)
-  - This HIPE has not yet been ported to the Aries RFC repo. It will be done shortly and will be essentially unchanged.
+- [0095-basic-message](https://github.com/hyperledger/aries-rfcs/tree/master/features/0095-basic-message)
 
 ## Other Capabilities
 
