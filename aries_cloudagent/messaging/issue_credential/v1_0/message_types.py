@@ -19,7 +19,3 @@ MESSAGE_TYPES = {
 
 # Inner object types
 CREDENTIAL_PREVIEW = f"{MESSAGE_FAMILY}credential-preview"
-
-INNER_OBJECT_TYPES = {
-    CREDENTIAL_PREVIEW: f"{TOP}.credential_preview.CredentialPreview"
-}
