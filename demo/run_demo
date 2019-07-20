@@ -4,50 +4,49 @@ shopt -s nocasematch
 
 cd $(dirname $0)
 
-AGENT=$1
-if [[ $AGENT == "faber" ]] || [[ $AGENT == "alice" ]] || [[ $AGENT == "acme" ]] || [[ $AGENT == "performance" ]]; then
-	echo "Preparing agent image..."
-	docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
-else
-	echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'.";
-	exit 1;
-fi
+AGENT="$1"
+shift
 
-echo "Starting $AGENT..."
-if [[ $AGENT == "faber" ]]; then
+if [ "$AGENT" = "faber" ]; then
 	AGENT_MODULE="faber"
 	AGENT_PORT=8020
 	AGENT_PORT_RANGE=8020-8027
-elif [[ $AGENT == "alice" ]]; then
+elif [ "$AGENT" = "alice" ]; then
 	AGENT_MODULE="alice"
 	AGENT_PORT=8030
 	AGENT_PORT_RANGE=8030-8037
-elif [[ $AGENT == "acme" ]]; then
+elif [ "$AGENT" = "acme" ]; then
 	AGENT_MODULE="acme"
 	AGENT_PORT=8040
 	AGENT_PORT_RANGE=8040-8047
-else
+elif [ "$AGENT" = "performance" ]; then
 	AGENT_MODULE="performance"
 	AGENT_PORT=8030
-	AGENT_PORT_RANGE=8030-8037
+	AGENT_PORT_RANGE=8030-8038
+else
+	echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'."
+	exit 1
 fi
 
-if [[ -z "${PWD_HOST_FQDN}" ]]; then
+echo "Preparing agent image..."
+docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
+
+if [ -z "${PWD_HOST_FQDN}" ]; then
 	DOCKERHOST=`docker run --rm --net=host codenvy/che-ip`
     export RUNMODE="docker"
 else
 	PWD_HOST="${PWD_HOST_FQDN}"
-    if [ $PWD_HOST_FQDN == "labs.play-with-docker.com" ]
+    if [ "$PWD_HOST_FQDN" = "labs.play-with-docker.com" ]
       then
         export ETH_CONFIG="eth1"
-      elif [ $PWD_HOST_FQDN == "play-with-docker.vonx.io" ]
+      elif [ "$PWD_HOST_FQDN" = "play-with-docker.vonx.io" ]
       then
         export ETH_CONFIG="eth0"
       else
         export ETH_CONFIG="eth0"
       fi
     MY_HOST=`ifconfig ${ETH_CONFIG} | grep inet | cut -d':' -f2 | cut -d' ' -f1 | sed 's/\./\-/g'`
-    export DOCKERHOST="ip${MY_HOST}-${SESSION_ID}-${AGENT_PORT}.direct.${PWD_HOST_FQDN}"
+    export DOCKERHOST="ip${MY_HOST}-${SESSION_ID}-{PORT}.direct.${PWD_HOST_FQDN}"
     export RUNMODE="pwd"
 fi
 
@@ -63,12 +62,13 @@ if ! [ -z "$LEDGER_URL" ]; then
 fi
 
 # on Windows, docker run needs to be prefixed by winpty
-if [[ "$OSTYPE" == "msys" ]]; then
+if [ "$OSTYPE" = "msys" ]; then
 	DOCKER="winpty docker"
 fi
 DOCKER=${DOCKER:-docker}
 
+echo "Starting $AGENT..."
 $DOCKER run --name $AGENT --rm -it \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	$DOCKER_ENV \
-	faber-alice-demo $AGENT_MODULE $AGENT_PORT
+	faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $@

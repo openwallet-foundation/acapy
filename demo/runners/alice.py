@@ -4,35 +4,47 @@ import logging
 import os
 import sys
 
-from .agent import DemoAgent, default_genesis_txns
-from .utils import log_json, log_msg, log_status, log_timer, prompt, prompt_loop
+from .support.agent import DemoAgent, default_genesis_txns
+from .support.utils import (
+    log_json,
+    log_msg,
+    log_status,
+    log_timer,
+    prompt,
+    prompt_loop,
+    require_indy,
+)
 
 LOGGER = logging.getLogger(__name__)
-
-AGENT_PORT = int(sys.argv[1])
-
-TIMING = False
 
 
 class AliceAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
-        super().__init__("Alice Agent", http_port, admin_port, prefix="Alice", **kwargs)
+        super().__init__(
+            "Alice Agent",
+            http_port,
+            admin_port,
+            prefix="Alice",
+            extra_args=["--auto-accept-invites", "--auto-accept-requests"],
+            seed=None,
+            **kwargs,
+        )
         self.connection_id = None
-        self._connection_active = asyncio.Future()
+        self._connection_ready = asyncio.Future()
         self.cred_state = {}
 
     async def detect_connection(self):
-        await self._connection_active
+        await self._connection_ready
 
     @property
-    def connection_active(self):
-        return self._connection_active.done() and self._connection_active.result()
+    def connection_ready(self):
+        return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_connections(self, message):
         if message["connection_id"] == self.connection_id:
-            if message["state"] == "active" and not self._connection_active.done():
+            if message["state"] == "active" and not self._connection_ready.done():
                 self.log("Connected")
-                self._connection_active.set_result(True)
+                self._connection_ready.set_result(True)
 
     async def handle_credentials(self, message):
         state = message["state"]
@@ -148,16 +160,14 @@ async def input_invitation(agent):
                 pass
 
     with log_timer("Connect duration:"):
-        connection = await agent.admin_POST(
-            "/connections/receive-invitation", details
-        )
+        connection = await agent.admin_POST("/connections/receive-invitation", details)
         agent.connection_id = connection["connection_id"]
         log_json(connection, label="Invitation response:")
 
         await agent.detect_connection()
 
 
-async def main():
+async def main(start_port: int, show_timing: bool = False):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -165,11 +175,12 @@ async def main():
         sys.exit(1)
 
     agent = None
-    start_port = AGENT_PORT
 
     try:
         log_status("#7 Provision an agent and wallet, get back configuration details")
-        agent = AliceAgent(start_port, start_port + 1, genesis_data=genesis)
+        agent = AliceAgent(
+            start_port, start_port + 1, genesis_data=genesis, timing=show_timing
+        )
         await agent.listen_webhooks(start_port + 2)
 
         with log_timer("Startup duration:"):
@@ -180,8 +191,10 @@ async def main():
         log_status("#9 Input faber.py invitation details")
         await input_invitation(agent)
 
-        async for option in prompt_loop("(3) Send Message (4) Input New Invitation (X) Exit? [3/4/X]: "):
-            if option in "xX":
+        async for option in prompt_loop(
+            "(3) Send Message (4) Input New Invitation (X) Exit? [3/4/X]: "
+        ):
+            if option is None or option in "xX":
                 break
             elif option == "3":
                 msg = await prompt("Enter message: ")
@@ -195,7 +208,7 @@ async def main():
                 log_status("Input new invitation details")
                 await input_invitation(agent)
 
-        if TIMING:
+        if show_timing:
             timing = await agent.fetch_timing()
             if timing:
                 for line in agent.format_timing(timing):
@@ -217,7 +230,25 @@ async def main():
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Runs an Alice demo agent.")
+    parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=8030,
+        metavar=("<port>"),
+        help="Choose the starting port number to listen on",
+    )
+    parser.add_argument(
+        "--timing", action="store_true", help="Enable timing information"
+    )
+    args = parser.parse_args()
+
+    require_indy()
+
     try:
-        asyncio.get_event_loop().run_until_complete(main())
+        asyncio.get_event_loop().run_until_complete(main(args.port, args.timing))
     except KeyboardInterrupt:
         os._exit(1)

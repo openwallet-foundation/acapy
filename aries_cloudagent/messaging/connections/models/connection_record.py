@@ -52,6 +52,9 @@ class ConnectionRecord(BaseModel):
     ROUTING_STATE_ACTIVE = "active"
     ROUTING_STATE_ERROR = "error"
 
+    ACCEPT_MANUAL = "manual"
+    ACCEPT_AUTO = "auto"
+
     def __init__(
         self,
         *,
@@ -67,6 +70,7 @@ class ConnectionRecord(BaseModel):
         inbound_connection_id: str = None,
         error_msg: str = None,
         routing_state: str = None,
+        accept: str = None,
         created_at: str = None,
         updated_at: str = None,
     ):
@@ -83,6 +87,7 @@ class ConnectionRecord(BaseModel):
         self.error_msg = error_msg
         self.inbound_connection_id = inbound_connection_id
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
+        self.accept = accept or self.ACCEPT_MANUAL
         self.created_at = created_at
         self.updated_at = updated_at
         self._admin_timer = None
@@ -127,6 +132,7 @@ class ConnectionRecord(BaseModel):
             "request_id",
             "state",
             "routing_state",
+            "accept",
         ):
             val = getattr(self, prop)
             if val:
@@ -440,11 +446,6 @@ class ConnectionRecord(BaseModel):
         await storage.update_record_value(record, json.dumps(value))
 
     @property
-    def is_active(self) -> bool:
-        """Accessor to check if the connection is active."""
-        return self.state == self.STATE_ACTIVE
-
-    @property
     def is_ready(self) -> str:
         """Accessor for connection readiness."""
         return self.state == self.STATE_ACTIVE or self.state == self.STATE_RESPONSE
@@ -475,6 +476,7 @@ class ConnectionRecordSchema(BaseModelSchema):
     request_id = fields.Str(required=False)
     state = fields.Str(required=False)
     routing_state = fields.Str(required=False)
+    accept = fields.Str(required=False)
     error_msg = fields.Str(required=False)
     created_at = fields.Str(required=False)
     updated_at = fields.Str(required=False)

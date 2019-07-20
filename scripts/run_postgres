@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 # on Windows, docker run needs to be prefixed by winpty
-if [[ "$OSTYPE" == "msys" ]]; then
+if [ "$OSTYPE" == "msys" ]; then
 	DOCKER="winpty docker"
 else
 	DOCKER=${DOCKER:-docker}

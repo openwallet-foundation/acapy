@@ -23,7 +23,7 @@ class CredentialOfferHandler(BaseHandler):
 
         self._logger.info("Received credential offer: %s", context.message.offer_json)
 
-        if not context.connection_active:
+        if not context.connection_ready:
             raise HandlerException("No connection established for credential offer")
 
         credential_manager = CredentialManager(context)
@@ -33,7 +33,7 @@ class CredentialOfferHandler(BaseHandler):
         )
 
         # If auto respond is turned on, automatically reply with credential request
-        if context.settings.get("auto_respond_credential_offer"):
+        if context.settings.get("debug.auto_respond_credential_offer"):
             (_, credential_request_message) = await credential_manager.create_request(
                 credential_exchange_record, context.connection_record
             )

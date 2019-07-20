@@ -49,9 +49,9 @@ class ConnectionInvitation(AgentMessage):
         super(ConnectionInvitation, self).__init__(**kwargs)
         self.label = label
         self.did = did
-        self.recipient_keys = list(recipient_keys) if recipient_keys else []
+        self.recipient_keys = list(recipient_keys) if recipient_keys else None
         self.endpoint = endpoint
-        self.routing_keys = list(routing_keys) if routing_keys else []
+        self.routing_keys = list(routing_keys) if routing_keys else None
 
     def to_url(self) -> str:
         """

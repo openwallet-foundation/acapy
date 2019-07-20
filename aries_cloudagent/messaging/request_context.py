@@ -30,13 +30,13 @@ class RequestContext(InjectionContext):
             self._scope_name = base_context.scope_name
             self._scopes = base_context._scopes
             self.start_scope("request")
-        self._connection_active = False
+        self._connection_ready = False
         self._connection_record = None
         self._message = None
         self._message_delivery = None
 
     @property
-    def connection_active(self) -> bool:
+    def connection_ready(self) -> bool:
         """
         Accessor for the flag indicating an active connection with the sender.
 
@@ -44,10 +44,10 @@ class RequestContext(InjectionContext):
             True if the connection is active, else False
 
         """
-        return self._connection_active
+        return self._connection_ready
 
-    @connection_active.setter
-    def connection_active(self, active: bool):
+    @connection_ready.setter
+    def connection_ready(self, active: bool):
         """
         Setter for the flag indicating an active connection with the sender.
 
@@ -55,7 +55,7 @@ class RequestContext(InjectionContext):
             active: The new active value
 
         """
-        self._connection_active = active
+        self._connection_ready = active
 
     @property
     def connection_record(self) -> ConnectionRecord:

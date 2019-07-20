@@ -46,7 +46,7 @@ def connection_sort_key(conn):
         {
             "name": "initiator",
             "in": "query",
-            "schema": {"type": "string"},
+            "schema": {"type": "string", "enum": ["self", "external"]},
             "required": False,
         },
         {
@@ -64,7 +64,18 @@ def connection_sort_key(conn):
         {
             "name": "state",
             "in": "query",
-            "schema": {"type": "string"},
+            "schema": {
+                "type": "string",
+                "enum": [
+                    "init",
+                    "invitation",
+                    "request",
+                    "response",
+                    "active",
+                    "error",
+                    "inactive",
+                ],
+            },
             "required": False,
         },
         {
@@ -137,7 +148,19 @@ async def connections_retrieve(request: web.BaseRequest):
     return web.json_response(record.serialize())
 
 
-@docs(tags=["connection"], summary="Create a new connection invitation")
+@docs(
+    tags=["connection"],
+    summary="Create a new connection invitation",
+    parameters=[
+        {
+            "name": "accept",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["none", "auto"]},
+            "required": False,
+        },
+        {"name": "public", "in": "query", "schema": {"type": "int"}, "required": False},
+    ],
+)
 @response_schema(InvitationResultSchema(), 200)
 async def connections_create_invitation(request: web.BaseRequest):
     """
@@ -151,17 +174,36 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    accept = request.query.get("accept")
+    public = request.query.get("public")
+
+    if public and not context.settings.get("public_invites"):
+        raise web.HTTPForbidden()
+
     connection_mgr = ConnectionManager(context)
-    connection, invitation = await connection_mgr.create_invitation()
+    connection, invitation = await connection_mgr.create_invitation(
+        accept=accept, public=bool(public)
+    )
     result = {
-        "connection_id": connection.connection_id,
+        "connection_id": connection and connection.connection_id,
         "invitation": invitation.serialize(),
         "invitation_url": invitation.to_url(),
     }
     return web.json_response(result)
 
 
-@docs(tags=["connection"], summary="Receive a new connection invitation")
+@docs(
+    tags=["connection"],
+    summary="Receive a new connection invitation",
+    parameters=[
+        {
+            "name": "accept",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["none", "auto"]},
+            "required": False,
+        }
+    ],
+)
 @request_schema(ConnectionInvitationSchema())
 @response_schema(ConnectionRecordSchema(), 200)
 async def connections_receive_invitation(request: web.BaseRequest):
@@ -179,13 +221,10 @@ async def connections_receive_invitation(request: web.BaseRequest):
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden()
     connection_mgr = ConnectionManager(context)
-    outbound_handler = request.app["outbound_message_router"]
     invitation_json = await request.json()
     invitation = ConnectionInvitation.deserialize(invitation_json)
-    connection = await connection_mgr.receive_invitation(invitation)
-    if context.settings.get("accept_invites"):
-        request = await connection_mgr.create_request(connection)
-        await outbound_handler(request, connection_id=connection.connection_id)
+    accept = request.query.get("accept")
+    connection = await connection_mgr.receive_invitation(invitation, accept=accept)
     return web.json_response(connection.serialize())
 
 
