@@ -153,9 +153,9 @@ You don't need to do anything with Alice's agent - her agent is implemented to a
 
 ## Learning about the Alice/Faber code
 
-These Alice and Faber scripts implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent.
+These Alice and Faber scripts (in the `demo/runners` folder) implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent.
 
-The controllers for this demo can be found in the [alice.py](alice.py) and [faber.py](faber.py) files. You can watch [this video](https://zoom.us/recording/share/hfGCVMRsYWQcObOUjTQBd1vRxSH3sldO4QbEjWYjiS6wIumekTziMw) to get a start in understanding what is going on (and where) in the controllers.
+The controllers for this demo can be found in the [alice.py](runners/alice.py) and [faber.py](runners/faber.py) files. You can watch [this video](https://zoom.us/recording/share/hfGCVMRsYWQcObOUjTQBd1vRxSH3sldO4QbEjWYjiS6wIumekTziMw) to get a start in understanding what is going on (and where) in the controllers.
 
 ## OpenAPI (Swagger) Demo
 
@@ -163,7 +163,7 @@ Developing an ACA-Py controller is much like developing a web app that uses a RE
 
 ## Performance Demo
 
-Another demo in this folder is [performance.py](performance.py), that is used to test out the performance of a couple of interacting agents. The script starts up two agents, initializes them and then runs through an interaction some number of times. In this demo, the test is issuing a credential and it is repeated 100 times.
+Another demo in the `demo/runners` folder is [performance.py](runners/performance.py), that is used to test out the performance of a couple of interacting agents. The script starts up two agents, initializes them and then runs through an interaction some number of times. In this demo, the test is issuing a credential and it is repeated 100 times.
 
 To run the demo, make sure that you shut down both the Alice and Faber agents. Follow the steps to start the Alice/Faber demo running either in your browser or in docker, but:
 
@@ -171,6 +171,10 @@ To run the demo, make sure that you shut down both the Alice and Faber agents. F
 * When starting the first agent, replace the agent name (e.g. `faber`) with `performance`.
 
 The script will start up both Alice and Faber agents, run the performance test, and spit out the performance results for you to review. Note that this is just an example of performance metrics tracking that can be done with ACA-Py.
+
+A parameter to the performance.py script runs the demo with Alice having a routing agent for herself, and all messages passing through the routing agent between Alice and Faber.
+
+> To Do: Add command line option to run the three agent version of the script.
 
 ## Coding Challenge: Adding ACME
 
@@ -180,9 +184,9 @@ Now that you have a solid foundation in using ACA-Py, time for a coding challeng
 * ACME requesting a proof of her College degree
 * ACME issuing Alice a credential after she is hired.
 
-The framework for the code is in the [acme.py](acme.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
+The framework for the code is in the [acme.py](runners/acme.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
 
 * Use the instructions above to start the Alice/Faber demo (above).
 * Start another terminal session and run the same commands as for "Alice", but replace "alice" with "acme".
 
-We'll post a way to get to a completed challenge here soon, and you can see how you did.
+All done? Checkout how we added the missing code segments [here](AcmeDemoWorkshop.md).
