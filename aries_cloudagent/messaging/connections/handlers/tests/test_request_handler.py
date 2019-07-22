@@ -53,4 +53,4 @@ class TestRequestHandler:
             isinstance(result, ProblemReport)
             and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
-        assert not target
+        assert target == {"target": None}

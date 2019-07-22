@@ -30,6 +30,7 @@ class ConnectionResponseHandler(BaseHandler):
         except ConnectionManagerError as e:
             self._logger.exception("Error receiving connection response")
             if e.error_code:
+                target = None
                 if context.message.connection and context.message.connection.did_doc:
                     try:
                         target = mgr.diddoc_connection_target(
@@ -40,14 +41,9 @@ class ConnectionResponseHandler(BaseHandler):
                         self._logger.exception(
                             "Error parsing DIDDoc for problem report"
                         )
-                    else:
-                        await responder.send(
-                            ProblemReport(problem_code=e.error_code, explain=str(e)),
-                            target=target,
-                        )
-                        return
                 await responder.send_reply(
-                    ProblemReport(problem_code=e.error_code, explain=str(e))
+                    ProblemReport(problem_code=e.error_code, explain=str(e)),
+                    target=target,
                 )
             return
 
