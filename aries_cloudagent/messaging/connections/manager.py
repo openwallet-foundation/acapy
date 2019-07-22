@@ -396,7 +396,9 @@ class ConnectionManager:
                 BaseResponder, required=False
             )
             if responder:
-                await responder.send(response, connection_id=connection.connection_id)
+                await responder.send_reply(
+                    response, connection_id=connection.connection_id
+                )
                 # refetch connection for accurate state
                 connection = await ConnectionRecord.retrieve_by_id(
                     self._context, connection.connection_id
