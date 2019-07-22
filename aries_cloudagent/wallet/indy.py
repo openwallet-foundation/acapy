@@ -23,6 +23,7 @@ class IndyWallet(BaseWallet):
     DEFAULT_KEY = ""
     DEFAULT_NAME = "default"
     DEFAULT_STORAGE_TYPE = None
+    WALLET_TYPE = "indy"
 
     def __init__(self, config: dict = None):
         """

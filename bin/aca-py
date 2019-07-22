@@ -16,10 +16,17 @@ if ENABLE_PTVSD or "--debug" in sys.argv:
         print("=== Waiting for debugger to attach ===")
         # To pause execution until the debugger is attached:
         ptvsd.wait_for_attach()
-    except ImportError as e:
+    except ImportError:
         print("ptvsd library was not found")
 
 
-from aries_cloudagent import main
+from aries_cloudagent.commands import run_command  # noqa
 
-main()
+if len(sys.argv) > 1:
+    command = sys.argv[1]
+    args = sys.argv[2:]
+else:
+    command = None
+    args = []
+
+run_command(command, args)
