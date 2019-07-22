@@ -163,18 +163,16 @@ Developing an ACA-Py controller is much like developing a web app that uses a RE
 
 ## Performance Demo
 
-Another demo in the `demo/runners` folder is [performance.py](runners/performance.py), that is used to test out the performance of a couple of interacting agents. The script starts up two agents, initializes them and then runs through an interaction some number of times. In this demo, the test is issuing a credential and it is repeated 100 times.
+Another example in the `demo/runners` folder is [performance.py](runners/performance.py), that is used to test out the performance of interacting agents. The script starts up agents for Alice and Faber, initializes them, and then runs through an interaction some number of times. In this case, Faber issues a credential to Alice 300 times.
 
-To run the demo, make sure that you shut down both the Alice and Faber agents. Follow the steps to start the Alice/Faber demo running either in your browser or in docker, but:
+To run the demo, make sure that you shut down any running Alice/Faber agents. Then, follow the same steps to start the Alice/Faber demo, but:
 
-* Don't start the second agent (`alice`) at all.
 * When starting the first agent, replace the agent name (e.g. `faber`) with `performance`.
+* Don't start the second agent (`alice`) at all.
 
-The script will start up both Alice and Faber agents, run the performance test, and spit out the performance results for you to review. Note that this is just an example of performance metrics tracking that can be done with ACA-Py.
+The script starts both agents, runs the performance test, spits out performance results and shuts down the agents. Note that this is just one demonstration of how performance metrics tracking can be done with ACA-Py.
 
-A parameter to the performance.py script runs the demo with Alice having a routing agent for herself, and all messages passing through the routing agent between Alice and Faber.
-
-> To Do: Add command line option to run the three agent version of the script.
+A second version of the performance test can be run by adding the parameter `--router` to the invocation. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
 
 ## Coding Challenge: Adding ACME
 
