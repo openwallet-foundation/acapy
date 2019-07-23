@@ -25,6 +25,7 @@ class CredentialExchange(BaseRecord):
     STATE_REQUEST_SENT = "request_sent"
     STATE_REQUEST_RECEIVED = "request_received"
     STATE_ISSUED = "issued"
+    STATE_CREDENTIAL_RECEIVED = "credential_received"
     STATE_STORED = "stored"
 
     def __init__(

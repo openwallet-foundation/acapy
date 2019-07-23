@@ -425,12 +425,13 @@ class CredentialManager:
             credential_exchange_record.credential = None
 
         credential_exchange_record.raw_credential = raw_credential
+        credential_exchange_record.state = CredentialExchange.STATE_CREDENTIAL_RECEIVED
 
         await credential_exchange_record.save(self.context, reason="Receive credential")
 
         return credential_exchange_record
 
-    async def store_credential(self, credential_message: CredentialIssue):
+    async def store_credential(self, credential_exchange_record: CredentialExchange):
         """
         Store a credential in the wallet.
 
@@ -438,9 +439,6 @@ class CredentialManager:
             credential_message: credential to store
 
         """
-        (credential_exchange_record) = await CredentialExchange.retrieve_by_tag_filter(
-            self.context, tag_filter={"thread_id": credential_message._thread_id}
-        )
 
         raw_credential = credential_exchange_record.raw_credential
 
@@ -463,3 +461,4 @@ class CredentialManager:
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = credential
         await credential_exchange_record.save(self.context, reason="Store credential")
+        return credential_exchange_record
