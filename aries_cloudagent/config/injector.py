@@ -10,9 +10,11 @@ from .settings import Settings
 class Injector(BaseInjector):
     """Injector implementation with static and dynamic bindings."""
 
-    def __init__(self, settings: Mapping[str, object] = None):
+    def __init__(
+        self, settings: Mapping[str, object] = None, enforce_typing: bool = True
+    ):
         """Initialize an `Injector`."""
-        self.enforce_typing = True
+        self.enforce_typing = enforce_typing
         self._providers = {}
         self._settings = Settings(settings)
 

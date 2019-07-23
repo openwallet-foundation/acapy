@@ -14,7 +14,6 @@ from ...ledger.base import BaseLedger
 from ...storage.error import StorageNotFoundError
 
 from ..connections.models.connection_record import ConnectionRecord
-from ..responder import BaseResponder
 
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_request import CredentialRequest
@@ -130,8 +129,10 @@ class CredentialManager:
                 # source credential exchange object as needed
                 parent_thread_id=source_credential_exchange.thread_id,
             )
-            await credential_exchange.save(self.context)
-            await self.updated_record(credential_exchange)
+            await credential_exchange.save(
+                self.context,
+                reason="Create automated credential exchange from cached request",
+            )
 
         else:
             # If the cache is empty, we must use the normal credential flow while
@@ -202,8 +203,7 @@ class CredentialManager:
             credential_offer=credential_offer,
             credential_values=credential_values,
         )
-        await credential_exchange.save(self.context)
-        await self.updated_record(credential_exchange)
+        await credential_exchange.save(self.context, reason="Create credential offer")
         return credential_exchange
 
     async def offer_credential(self, credential_exchange: CredentialExchange):
@@ -223,8 +223,7 @@ class CredentialManager:
         )
         credential_exchange.thread_id = credential_offer_message._thread_id
         credential_exchange.state = CredentialExchange.STATE_OFFER_SENT
-        await credential_exchange.save(self.context)
-        await self.updated_record(credential_exchange)
+        await credential_exchange.save(self.context, reason="Send credential offer")
         return credential_exchange, credential_offer_message
 
     async def receive_offer(
@@ -253,8 +252,7 @@ class CredentialManager:
             schema_id=credential_offer["schema_id"],
             credential_offer=credential_offer,
         )
-        await credential_exchange.save(self.context)
-        await self.updated_record(credential_exchange)
+        await credential_exchange.save(self.context, reason="Receive credential offer")
 
         return credential_exchange
 
@@ -308,8 +306,9 @@ class CredentialManager:
         }
 
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_SENT
-        await credential_exchange_record.save(self.context)
-        await self.updated_record(credential_exchange_record)
+        await credential_exchange_record.save(
+            self.context, reason="Create credential request"
+        )
 
         return credential_exchange_record, credential_request_message
 
@@ -330,8 +329,9 @@ class CredentialManager:
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
-        await credential_exchange_record.save(self.context)
-        await self.updated_record(credential_exchange_record)
+        await credential_exchange_record.save(
+            self.context, reason="Receive credential request"
+        )
 
         return credential_exchange_record
 
@@ -373,8 +373,7 @@ class CredentialManager:
             )
 
         credential_exchange_record.state = CredentialExchange.STATE_ISSUED
-        await credential_exchange_record.save(self.context)
-        await self.updated_record(credential_exchange_record)
+        await credential_exchange_record.save(self.context, reason="Issue credential")
 
         credential_message = CredentialIssue(
             issue=json.dumps(credential_exchange_record.credential)
@@ -441,11 +440,4 @@ class CredentialManager:
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = wallet_credential
-        await credential_exchange_record.save(self.context)
-        await self.updated_record(credential_exchange_record)
-
-    async def updated_record(self, credential_exchange: CredentialExchange):
-        """Call webhook when the record is updated."""
-        responder = await self._context.inject(BaseResponder, required=False)
-        if responder:
-            await responder.send_webhook("credentials", credential_exchange.serialize())
+        await credential_exchange_record.save(self.context, reason="Store credential")
