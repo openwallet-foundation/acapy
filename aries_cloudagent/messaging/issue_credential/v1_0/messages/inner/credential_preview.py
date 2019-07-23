@@ -116,7 +116,7 @@ class CredentialPreview(BaseModel):
     @property
     def type(self):
         """Accessor for message type."""
-        return CredentialPreview.message_type
+        return CredentialPreview.Meta.message_type
 
     def attr_dict(self, decode: bool = False):
         """

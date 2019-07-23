@@ -1,6 +1,6 @@
 from ..credential_proposal import CredentialProposal
 from ..inner.credential_preview import AttributePreview, CredentialPreview
-from ...message_types import CREDENTIAL_PROPOSAL
+from ...message_types import CREDENTIAL_PREVIEW, CREDENTIAL_PROPOSAL
 
 from unittest import mock, TestCase
 
@@ -42,6 +42,7 @@ class TestCredentialProposal(TestCase):
         )
 
         assert credential_proposal._type == CREDENTIAL_PROPOSAL
+        assert self.preview.type == CREDENTIAL_PREVIEW
 
     def test_preview(self):
         """Test preview for attr-dict and metadata-dict utilities."""
