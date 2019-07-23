@@ -42,6 +42,7 @@ class CredentialExchange(BaseRecord):
         credential_request: dict = None,
         credential_request_metadata: dict = None,
         credential_id: str = None,
+        raw_credential: dict = None,
         credential: dict = None,
         credential_values: dict = None,
         auto_issue: bool = False,
@@ -62,6 +63,7 @@ class CredentialExchange(BaseRecord):
         self.credential_request_metadata = credential_request_metadata
         self.credential_id = credential_id
         self.credential = credential
+        self.raw_credential = raw_credential
         self.credential_values = credential_values
         self.auto_issue = auto_issue
         self.error_msg = error_msg
@@ -84,6 +86,7 @@ class CredentialExchange(BaseRecord):
                 "auto_issue",
                 "credential_values",
                 "credential",
+                "raw_credential",
                 "parent_thread_id",
             )
         }
@@ -126,6 +129,7 @@ class CredentialExchangeSchema(BaseRecordSchema):
     credential_request_metadata = fields.Dict(required=False)
     credential_id = fields.Str(required=False)
     credential = fields.Dict(required=False)
+    raw_credential = fields.Dict(required=False)
     auto_issue = fields.Bool(required=False)
     credential_values = fields.Dict(required=False)
     error_msg = fields.Str(required=False)
