@@ -513,6 +513,7 @@ async def register(app: web.Application):
                 credential_exchange_send_request,
             ),
             web.post("/credential_exchange/{id}/issue", credential_exchange_issue),
+            web.post("/credential_exchange/{id}/store", credential_exchange_store),
             web.post("/credential_exchange/{id}/remove", credential_exchange_remove),
         ]
     )
