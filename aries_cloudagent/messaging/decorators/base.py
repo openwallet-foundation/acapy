@@ -1,7 +1,10 @@
 """Classes for managing a collection of decorators."""
 
 from collections import OrderedDict
-from typing import Mapping, Type
+from typing import Mapping, Sequence, Type
+
+from marshmallow import Schema
+from marshmallow.fields import Field
 
 from ...error import BaseError
 
@@ -96,20 +99,34 @@ class BaseDecoratorSet(OrderedDict):
         elif key in self:
             del self[key]
 
-    def extract_decorators(self, message: Mapping, serialized=True) -> OrderedDict:
+    def extract_decorators(
+        self,
+        message: Mapping,
+        schema: Type[Schema] = None,
+        serialized: bool = True,
+        skip_attrs: Sequence[str] = None,
+    ) -> OrderedDict:
         """Extract decorators and return the remaining properties."""
         remain = OrderedDict()
+        skip_attrs = set(skip_attrs) if skip_attrs else set()
+        if schema:
+            for field_name, field_def in schema._declared_fields.items():
+                if isinstance(field_def, Field) and field_def.data_key:
+                    skip_attrs.add(field_def.data_key)
         if message:
             pfx_len = len(self._prefix)
             for key, value in message.items():
-                if key.startswith(self._prefix):
+                if key in skip_attrs:
+                    pass
+                elif key.startswith(self._prefix):
                     key = key[pfx_len:]
                     self.load_decorator(key, value, serialized)
+                    continue
                 elif self._prefix in key:
                     field, key = key.split(self._prefix, 1)
                     self.field(field).load_decorator(key, value, serialized)
-                else:
-                    remain[key] = value
+                    continue
+                remain[key] = value
         return remain
 
     def to_dict(self, prefix: str = None) -> OrderedDict:
