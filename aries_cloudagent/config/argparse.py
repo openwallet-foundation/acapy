@@ -4,8 +4,12 @@ import abc
 import os
 
 from argparse import ArgumentParser, Namespace
+from typing import Type
 
 from .error import ArgsParseError
+
+CAT_PROVISION = "general"
+CAT_START = "start"
 
 
 class ArgumentGroup(abc.ABC):
@@ -22,26 +26,51 @@ class ArgumentGroup(abc.ABC):
         """Extract settings from the parsed arguments."""
 
 
-def load_argument_groups(parser: ArgumentParser, *groups: ArgumentGroup):
+class group:
+    """Decorator for registering argument groups."""
+
+    _registered = []
+
+    def __init__(self, *categories):
+        """Initialize the decorator."""
+        self.categories = tuple(categories)
+
+    def __call__(self, group_cls: ArgumentGroup):
+        """Register a class in the given categories."""
+        setattr(group_cls, "CATEGORIES", self.categories)
+        self._registered.append((self.categories, group_cls))
+        return group_cls
+
+    @classmethod
+    def get_registered(cls, category: str):
+        """Fetch the set of registered classes in a category."""
+        return (grp for (cats, grp) in cls._registered if category in cats)
+
+
+def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
     """Log a set of argument groups into a parser.
 
     Returns:
         A callable to convert loaded arguments into a settings dictionary
 
     """
+    group_inst = []
     for group in groups:
         g_parser = parser.add_argument_group(group.GROUP_NAME)
-        group.add_arguments(g_parser)
+        inst = group()
+        inst.add_arguments(g_parser)
+        group_inst.append(inst)
 
     def get_settings(args: Namespace):
         settings = {}
-        for group in groups:
+        for group in group_inst:
             settings.update(group.get_settings(args))
         return settings
 
     return get_settings
 
 
+@group(CAT_START)
 class AdminGroup(ArgumentGroup):
     """Admin server settings."""
 
@@ -118,6 +147,7 @@ class AdminGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_START)
 class DebugGroup(ArgumentGroup):
     """Debug settings."""
 
@@ -212,6 +242,7 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_PROVISION, CAT_START)
 class GeneralGroup(ArgumentGroup):
     """General settings."""
 
@@ -234,6 +265,7 @@ class GeneralGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_START)
 class LedgerGroup(ArgumentGroup):
     """Ledger settings."""
 
@@ -269,6 +301,7 @@ class LedgerGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_PROVISION, CAT_START)
 class LoggingGroup(ArgumentGroup):
     """Logging settings."""
 
@@ -314,6 +347,7 @@ class LoggingGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_START)
 class ProtocolGroup(ArgumentGroup):
     """Protocol settings."""
 
@@ -359,6 +393,7 @@ class ProtocolGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_START)
 class TransportGroup(ArgumentGroup):
     """Transport settings."""
 
@@ -420,6 +455,7 @@ class TransportGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_PROVISION, CAT_START)
 class WalletGroup(ArgumentGroup):
     """Wallet settings."""
 

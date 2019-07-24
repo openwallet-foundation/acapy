@@ -36,17 +36,7 @@ async def shutdown_app(conductor: Conductor):
 
 def init_argument_parser(parser: ArgumentParser):
     """Initialize an argument parser with the module's arguments."""
-    return arg.load_argument_groups(
-        parser,
-        arg.AdminGroup(),
-        arg.DebugGroup(),
-        arg.GeneralGroup(),
-        arg.LedgerGroup(),
-        arg.LoggingGroup(),
-        arg.ProtocolGroup(),
-        arg.TransportGroup(),
-        arg.WalletGroup(),
-    )
+    return arg.load_argument_groups(parser, *arg.group.get_registered(arg.CAT_START))
 
 
 def execute(argv: Sequence[str] = None):
