@@ -385,15 +385,17 @@ class CredentialManager:
 
         return credential_exchange_record, credential_message
 
-    async def store_credential(self, credential_message: CredentialIssue):
+    async def receive_credential(self, credential_message: CredentialIssue):
         """
-        Store a credential in the wallet.
+        Receive a credential a credential from an issuer.
+
+        Hold in storage to be potentially processed by controller before storing.
 
         Args:
             credential_message: credential to store
 
         """
-        credential = json.loads(credential_message.issue)
+        raw_credential = json.loads(credential_message.issue)
 
         try:
             (
@@ -422,22 +424,41 @@ class CredentialManager:
             credential_exchange_record.credential_id = None
             credential_exchange_record.credential = None
 
+        credential_exchange_record.raw_credential = raw_credential
+        credential_exchange_record.state = CredentialExchange.STATE_CREDENTIAL_RECEIVED
+
+        await credential_exchange_record.save(self.context, reason="Receive credential")
+
+        return credential_exchange_record
+
+    async def store_credential(self, credential_exchange_record: CredentialExchange):
+        """
+        Store a credential in the wallet.
+
+        Args:
+            credential_message: credential to store
+
+        """
+
+        raw_credential = credential_exchange_record.raw_credential
+
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
             credential_definition = await ledger.get_credential_definition(
-                credential["cred_def_id"]
+                raw_credential["cred_def_id"]
             )
 
         holder: BaseHolder = await self.context.inject(BaseHolder)
         credential_id = await holder.store_credential(
             credential_definition,
-            credential,
+            raw_credential,
             credential_exchange_record.credential_request_metadata,
         )
 
-        wallet_credential = await holder.get_credential(credential_id)
+        credential = await holder.get_credential(credential_id)
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         credential_exchange_record.credential_id = credential_id
-        credential_exchange_record.credential = wallet_credential
+        credential_exchange_record.credential = credential
         await credential_exchange_record.save(self.context, reason="Store credential")
+        return credential_exchange_record
