@@ -10,6 +10,7 @@ from marshmallow import fields, Schema
 from ...holder.base import BaseHolder
 from ...storage.error import StorageNotFoundError
 from ...wallet.error import WalletNotFoundError
+from ...messaging.problem_report.message import ProblemReport
 
 from ..connections.models.connection_record import ConnectionRecord
 
@@ -78,6 +79,12 @@ class CredentialListSchema(Schema):
     """Result schema for a credential query."""
 
     results = fields.List(fields.Nested(CredentialSchema()))
+
+
+class CredentialProblemReportRequestSchema(Schema):
+    """Request schema for sending a problem report."""
+
+    explain_ltxt = fields.Str(required=True)
 
 
 @docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
@@ -474,6 +481,41 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 @docs(
     tags=["credential_exchange"],
+    summary="Send a problem report for credential exchange",
+)
+@request_schema(CredentialProblemReportRequestSchema())
+async def credential_exchange_problem_report(request: web.BaseRequest):
+    """
+    Request handler for sending a problem report.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+
+    credential_exchange_id = request.match_info["id"]
+    body = await request.json()
+
+    try:
+        credential_exchange_id = request.match_info["id"]
+        credential_exchange_record = await CredentialExchange.retrieve_by_id(
+            context, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+
+    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
+    error_result.assign_thread_id(credential_exchange_record.thread_id)
+
+    await outbound_handler(
+        error_result, connection_id=credential_exchange_record.connection_id
+    )
+    return web.json_response({})
+
+
+@docs(
+    tags=["credential_exchange"],
     summary="Remove an existing credential exchange record",
 )
 async def credential_exchange_remove(request: web.BaseRequest):
@@ -514,6 +556,10 @@ async def register(app: web.Application):
             ),
             web.post("/credential_exchange/{id}/issue", credential_exchange_issue),
             web.post("/credential_exchange/{id}/store", credential_exchange_store),
+            web.post(
+                "/credential_exchange/{id}/problem_report",
+                credential_exchange_problem_report,
+            ),
             web.post("/credential_exchange/{id}/remove", credential_exchange_remove),
         ]
     )
