@@ -285,6 +285,14 @@ class LoggingGroup(ArgumentGroup):
             help="Specifies a custom logging configuration file",
         )
         parser.add_argument(
+            "--log-file",
+            dest="log_file",
+            type=str,
+            metavar="<log-file>",
+            default=None,
+            help="Redirect log output to a named file",
+        )
+        parser.add_argument(
             "--log-level",
             dest="log_level",
             type=str,
@@ -299,6 +307,8 @@ class LoggingGroup(ArgumentGroup):
         settings = {}
         if args.log_config:
             settings["log.config"] = args.log_config
+        if args.log_file:
+            settings["log.file"] = args.log_file
         if args.log_level:
             settings["log.level"] = args.log_level
         return settings

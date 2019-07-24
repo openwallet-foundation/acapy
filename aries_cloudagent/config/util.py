@@ -25,7 +25,8 @@ def common_config(settings: Mapping[str, Any]):
     # Set up logging
     log_config = settings.get("log.config")
     log_level = settings.get("log.level") or os.getenv("LOG_LEVEL")
-    LoggingConfigurator.configure(log_config, log_level)
+    log_file = settings.get("log.file")
+    LoggingConfigurator.configure(log_config, log_level, log_file)
 
     # Fetch genesis transactions if necessary
     if not settings.get("ledger.genesis_transactions") and settings.get(
