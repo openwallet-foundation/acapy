@@ -45,10 +45,7 @@ class CredentialOffer(AgentMessage):
             offers_attach: list of offer attachments
 
         """
-        super().__init__(
-            _id=_id,
-            **kwargs
-        )
+        super().__init__(_id=_id, **kwargs)
         self.comment = comment
         self.credential_preview = (
             credential_preview if credential_preview else CredentialPreview()

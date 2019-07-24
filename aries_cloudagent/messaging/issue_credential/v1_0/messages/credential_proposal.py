@@ -42,7 +42,7 @@ class CredentialProposal(AgentMessage):
             schema_id: schema identifier
             cred_def_id: credential definition identifier
         """
-        super(CredentialProposal, self).__init__(_id, **kwargs)
+        super().__init__(_id, **kwargs)
         self.comment = comment
         self.credential_proposal = (
             credential_proposal if credential_proposal else CredentialPreview()

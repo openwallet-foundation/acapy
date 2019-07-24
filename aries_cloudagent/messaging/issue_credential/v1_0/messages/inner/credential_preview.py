@@ -38,7 +38,7 @@ class AttributePreview(BaseModel):
             mime_type: MIME type
 
         """
-        super(AttributePreview, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.name = name
         self.value = value
         self.encoding = encoding or IndyHolder.DEFAULT_META_TAG.get("encoding")
@@ -89,12 +89,14 @@ class CredentialPreview(BaseModel):
     def __init__(
             self,
             *,
+            _type: str = None,
             attributes: Sequence[AttributePreview] = None,
             **kwargs):
         """
         Initialize credential preview object.
 
         Args:
+            _type: formalism for Marshmallow model creation: ignored
             attributes (list): list of attribute preview dicts; e.g., [
                 {
                     "name": "attribute_name",
@@ -110,11 +112,11 @@ class CredentialPreview(BaseModel):
             ]
 
         """
-        super(CredentialPreview, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.attributes = list(attributes) if attributes else []
 
     @property
-    def type(self):
+    def _type(self):
         """Accessor for message type."""
         return CredentialPreview.Meta.message_type
 
@@ -150,7 +152,7 @@ class CredentialPreviewSchema(BaseModelSchema):
 
         model_class = CredentialPreview
 
-    _type = fields.Str(data_key="@type", dump_only=True, required=False)
+    _type = fields.Str(data_key="@type", required=False)
     attributes = fields.Nested(
         AttributePreviewSchema,
         many=True,

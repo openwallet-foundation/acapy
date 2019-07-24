@@ -2,130 +2,123 @@ from ..credential_proposal import CredentialProposal
 from ..inner.credential_preview import AttributePreview, CredentialPreview
 from ...message_types import CREDENTIAL_PREVIEW, CREDENTIAL_PROPOSAL
 
-from unittest import mock, TestCase
+from unittest import TestCase
+
+
+CRED_PREVIEW = CredentialPreview(
+    attributes=(
+        AttributePreview.list_plain({"test": "123", "hello": "world"}) +
+        [
+            AttributePreview(
+                name="icon",
+                value="cG90YXRv",
+                encoding="base64",
+                mime_type="image/png"
+            )
+        ]
+    )
+)
 
 
 class TestCredentialProposal(TestCase):
-    """Credential proposal tests"""
-
-    preview = CredentialPreview(
-        attributes=(
-            AttributePreview.list_plain({'test': '123', 'hello': 'world'}) +
-            [
-                AttributePreview(
-                    name='icon',
-                    value='cG90YXRv',
-                    encoding='base64',
-                    mime_type='image/png'
-                )
-            ]
-        )
-    )
+    """Credential proposal tests."""
 
     def test_init(self):
-        """Test initializer"""
+        """Test initializer."""
         credential_proposal = CredentialProposal(
             comment="Hello World",
-            credential_proposal=self.preview,
+            credential_proposal=CRED_PREVIEW,
             schema_id="GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
             cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         )
-        assert credential_proposal.credential_proposal == self.preview
+        assert credential_proposal.credential_proposal == CRED_PREVIEW
 
     def test_type(self):
-        """Test type"""
+        """Test type."""
         credential_proposal = CredentialProposal(
             comment="Hello World",
-            credential_proposal=self.preview,
+            credential_proposal=CRED_PREVIEW,
             schema_id="GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
             cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         )
 
         assert credential_proposal._type == CREDENTIAL_PROPOSAL
-        assert self.preview.type == CREDENTIAL_PREVIEW
 
-    def test_preview(self):
-        """Test preview for attr-dict and metadata-dict utilities."""
-        assert self.preview.attr_dict(decode=False) == {
-            'test': '123',
-            'hello': 'world',
-            'icon': 'cG90YXRv'
-        }
-        assert self.preview.attr_dict(decode=True) == {
-            'test': '123',
-            'hello': 'world',
-            'icon': 'potato'
-        }
-        assert self.preview.metadata() == {
-            'test': {
-                'mime-type': 'text/plain'
-            },
-            'hello': {
-                'mime-type': 'text/plain'
-            },
-            'icon': {
-                'mime-type': 'image/png',
-                'encoding': 'base64'
-            }
-        }
-
-    @mock.patch(
-        "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        + "credential_proposal.CredentialProposalSchema.load"
-    )
-    def test_deserialize(self, mock_credential_proposal_schema_load):
-        """
-        Test deserialize
-        """
+    def test_deserialize(self):
+        """Test deserialize."""
         obj = {
-            'comment': "Hello World",
-            'credential_proposal': [
-                {
-                    'name': 'name',
-                    'mime-type': 'text/plain',
-                    'value': 'Alexander Delarge'
-                },
-                {
-                    'name': 'pic',
-                    'mime-type': 'image/png',
-                    'encoding': 'base64',
-                    'value': 'Abcd0123...'
-                }
-            ]
+            "comment": "Hello World",
+            "credential_proposal": {
+                "@type": CREDENTIAL_PREVIEW,
+                "attributes": [
+                    {
+                        "name": "name",
+                        "mime-type": "text/plain",
+                        "value": "Alexander Delarge"
+                    },
+                    {
+                        "name": "pic",
+                        "mime-type": "image/png",
+                        "encoding": "base64",
+                        "value": "Abcd0123..."
+                    }
+                ]
+            },
+            "schema_id": "GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
+            "cred_def_id": "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         }
 
-        credential_proposal = CredentialProposal.deserialize(obj)
-        mock_credential_proposal_schema_load.assert_called_once_with(obj)
+        cred_proposal = CredentialProposal.deserialize(obj)
+        assert type(cred_proposal) == CredentialProposal
 
-        assert credential_proposal is mock_credential_proposal_schema_load.return_value
+    def test_serialize(self):
+        """Test serialization."""
 
-    @mock.patch(
-        "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        + "credential_proposal.CredentialProposalSchema.dump"
-    )
-    def test_serialize(self, mock_credential_proposal_schema_dump):
-        """
-        Test serialization.
-        """
-        credential_proposal = CredentialProposal(
+        cred_proposal = CredentialProposal(
             comment="Hello World",
-            credential_proposal=self.preview,
+            credential_proposal=CRED_PREVIEW,
             schema_id="GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
             cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         )
 
-        credential_proposal_dict = credential_proposal.serialize()
-        mock_credential_proposal_schema_dump.assert_called_once_with(credential_proposal)
+        cred_proposal_dict = cred_proposal.serialize()
+        cred_proposal_dict.pop("@id")
 
-        assert credential_proposal_dict is mock_credential_proposal_schema_dump.return_value
+        assert cred_proposal_dict == {
+            "@type": CREDENTIAL_PROPOSAL,
+            "comment": "Hello World",
+            "credential_proposal": {
+                "@type": CREDENTIAL_PREVIEW,
+                "attributes": [
+                    {
+                        "name": "test",
+                        "mime-type": "text/plain",
+                        "value": "123"
+                    },
+                    {
+                        "name": "hello",
+                        "mime-type": "text/plain",
+                        "value": "world"
+                    },
+                    {
+                        "name": "icon",
+                        "mime-type": "image/png",
+                        "encoding": "base64",
+                        "value": "cG90YXRv"
+                    }
+                ]
+            },
+            "schema_id": "GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
+            "cred_def_id": "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
+        }
 
 
 class TestCredentialProposalSchema(TestCase):
-    """Test credential cred proposal schema"""
+    """Test credential cred proposal schema."""
 
     credential_proposal = CredentialProposal(
         comment="Hello World",
-        credential_proposal=TestCredentialProposal.preview,
+        credential_proposal=CRED_PREVIEW,
         schema_id="GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
         cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
     )

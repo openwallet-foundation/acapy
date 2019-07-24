@@ -123,6 +123,9 @@ class CredentialManager:
                 state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
                 credential_definition_id=credential_definition_id,
                 schema_id=source_credential_exchange.schema_id,
+                credential_proposal_dict=(
+                    source_credential_exchange.credential_proposal_dict
+                ),
                 credential_offer=source_credential_exchange.credential_offer,
                 credential_request=source_credential_exchange.credential_request,
                 credential_values=credential_values,
