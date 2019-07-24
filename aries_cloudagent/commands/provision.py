@@ -33,6 +33,10 @@ async def provision(category: str, settings: dict):
         wallet: BaseWallet = await context.inject(BaseWallet)
         if wallet.type != "indy":
             raise ProvisionError("Cannot provision a non-Indy wallet type")
+        if wallet.created:
+            print("Created new wallet")
+        else:
+            print("Opened existing wallet")
         print("Wallet type:", wallet.type)
         print("Wallet name:", wallet.name)
         wallet_seed = context.settings.get("wallet.seed")

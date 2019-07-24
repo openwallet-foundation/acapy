@@ -62,6 +62,11 @@ class BaseWallet(ABC):
         return None
 
     @property
+    def created(self) -> bool:
+        """Check whether the wallet was created on the last open call."""
+        return None
+
+    @property
     def opened(self) -> bool:
         """
         Check whether wallet is currently open.
