@@ -18,7 +18,9 @@ class ProvisionError(BaseError):
 
 def init_argument_parser(parser: ArgumentParser):
     """Initialize an argument parser with the module's arguments."""
-    arg.load_argument_groups(parser, *arg.group.get_registered(arg.CAT_PROVISION))
+    return arg.load_argument_groups(
+        parser, *arg.group.get_registered(arg.CAT_PROVISION)
+    )
 
 
 async def provision(category: str, settings: dict):

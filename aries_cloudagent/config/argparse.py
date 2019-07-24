@@ -42,9 +42,13 @@ class group:
         return group_cls
 
     @classmethod
-    def get_registered(cls, category: str):
+    def get_registered(cls, category: str = None):
         """Fetch the set of registered classes in a category."""
-        return (grp for (cats, grp) in cls._registered if category in cats)
+        return (
+            grp
+            for (cats, grp) in cls._registered
+            if category is None or category in cats
+        )
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):

@@ -1,16 +1,30 @@
+import itertools
 from argparse import ArgumentParser
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ..argparse import TransportGroup
+from .. import argparse
 
 
 class TestArgParse(AsyncTestCase):
+    async def test_groups(self):
+        """Test optional argument parsing."""
+        parser = ArgumentParser()
+
+        groups = (
+            g
+            for g in argparse.group.get_registered()
+            if g is not argparse.TransportGroup
+        )
+        argparse.load_argument_groups(parser, *groups)
+
+        parser.parse_args([])
+
     async def test_transport_settings(self):
-        """Test argument parsing."""
+        """Test required argument parsing."""
 
         parser = ArgumentParser()
-        group = TransportGroup()
+        group = argparse.TransportGroup()
         group.add_arguments(parser)
 
         with async_mock.patch.object(parser, "exit") as exit_parser:

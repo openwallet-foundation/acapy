@@ -5,7 +5,7 @@ import functools
 import os
 import signal
 from argparse import ArgumentParser
-from typing import Sequence
+from typing import Coroutine, Sequence
 
 from ..conductor import Conductor
 from ..config import argparse as arg
@@ -23,15 +23,6 @@ async def shutdown_app(conductor: Conductor):
     """Shut down."""
     print("\nShutting down")
     await conductor.stop()
-    tasks = [
-        task
-        for task in asyncio.Task.all_tasks()
-        if task is not asyncio.tasks.Task.current_task()
-    ]
-    for task in tasks:
-        task.cancel()
-    await asyncio.gather(*tasks, return_exceptions=True)
-    asyncio.get_event_loop().stop()
 
 
 def init_argument_parser(parser: ArgumentParser):
@@ -60,17 +51,36 @@ def execute(argv: Sequence[str] = None):
     conductor = Conductor(context_builder)
 
     # Run the application
+    run_loop(start_app(conductor), shutdown_app(conductor))
+
+
+def run_loop(startup: Coroutine, shutdown: Coroutine):
+    """Execute the application, handling signals and ctrl-c."""
+
+    async def done():
+        """Run shutdown and clean up any outstanding tasks."""
+        await shutdown
+        tasks = [
+            task
+            for task in asyncio.Task.all_tasks()
+            if task is not asyncio.Task.current_task()
+        ]
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        asyncio.get_event_loop().stop()
+
     loop = asyncio.get_event_loop()
     loop.add_signal_handler(
-        signal.SIGTERM,
-        functools.partial(asyncio.ensure_future, shutdown_app(conductor), loop=loop),
+        signal.SIGTERM, functools.partial(asyncio.ensure_future, done(), loop=loop)
     )
-    asyncio.ensure_future(start_app(conductor), loop=loop)
+    asyncio.ensure_future(startup, loop=loop)
 
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        loop.run_until_complete(shutdown_app(conductor))
+        loop.run_until_complete(done())
 
 
 if __name__ == "__main__":
