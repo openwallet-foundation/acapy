@@ -1,3 +1,5 @@
+"""Provision command for setting up agent settings before starting."""
+
 import asyncio
 from argparse import ArgumentParser
 from typing import Sequence
@@ -15,6 +17,7 @@ class ProvisionError(BaseError):
 
 
 def init_argument_parser(parser: ArgumentParser):
+    """Initialize an argument parser with the module's arguments."""
     return arg.load_argument_groups(
         parser, arg.GeneralGroup(), arg.LoggingGroup(), arg.WalletGroup()
     )

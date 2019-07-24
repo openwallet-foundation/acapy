@@ -35,6 +35,7 @@ async def shutdown_app(conductor: Conductor):
 
 
 def init_argument_parser(parser: ArgumentParser):
+    """Initialize an argument parser with the module's arguments."""
     return arg.load_argument_groups(
         parser,
         arg.AdminGroup(),

@@ -1,1 +1,1 @@
-"""Aries Cloud Agent"""
+"""Aries Cloud Agent."""

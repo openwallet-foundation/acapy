@@ -1,8 +1,11 @@
+"""Help command for indexing available commands."""
+
 from argparse import ArgumentParser
 from typing import Sequence
 
 
 def execute(argv: Sequence[str] = None):
+    """Execute the help command."""
     from . import available_commands, load_command
 
     parser = ArgumentParser()

@@ -21,6 +21,7 @@ async def get_genesis_transactions(genesis_url: str):
 
 
 def common_config(settings: Mapping[str, Any]):
+    """Perform common app configuration."""
     # Set up logging
     log_config = settings.get("log.config")
     log_level = settings.get("log.level") or os.getenv("LOG_LEVEL")

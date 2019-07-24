@@ -1,17 +1,23 @@
+from argparse import ArgumentParser
+
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ..argparse import PARSER, get_settings, parse_args
+from ..argparse import TransportGroup
 
 
 class TestArgParse(AsyncTestCase):
-    async def test_parse_settings(self):
+    async def test_transport_settings(self):
         """Test argument parsing."""
 
-        with async_mock.patch.object(PARSER, "exit") as exit_parser:
-            parse_args([])
+        parser = ArgumentParser()
+        group = TransportGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args([])
             exit_parser.assert_called_once()
 
-        result = parse_args(
+        result = parser.parse_args(
             [
                 "--inbound-transport",
                 "http",
@@ -25,7 +31,7 @@ class TestArgParse(AsyncTestCase):
         assert result.inbound_transports == [["http", "0.0.0.0", "80"]]
         assert result.outbound_transports == ["http"]
 
-        settings = get_settings(result)
+        settings = group.get_settings(result)
 
         assert settings.get("transport.inbound_configs") == [["http", "0.0.0.0", "80"]]
         assert settings.get("transport.outbound_configs") == ["http"]

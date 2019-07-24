@@ -43,9 +43,7 @@ class BasicWallet(BaseWallet):
 
     @property
     def name(self) -> str:
-        """
-        Accessor for the wallet name.
-        """
+        """Accessor for the wallet name."""
         return self._name
 
     @property

@@ -43,6 +43,8 @@ def load_argument_groups(parser: ArgumentParser, *groups: ArgumentGroup):
 
 
 class AdminGroup(ArgumentGroup):
+    """Admin server settings."""
+
     GROUP_NAME = "Admin"
 
     def add_arguments(self, parser: ArgumentParser):
@@ -348,6 +350,8 @@ class ProtocolGroup(ArgumentGroup):
 
 
 class TransportGroup(ArgumentGroup):
+    """Transport settings."""
+
     GROUP_NAME = "Transport"
 
     def add_arguments(self, parser: ArgumentParser):
