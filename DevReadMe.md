@@ -65,7 +65,7 @@ Currently, Aries Cloud Agent Python ships with both inbound and outbound transpo
 
 Most configuration parameters are provided to the the agent at startup. Refer to the section below for details on all available command-line arguments.
 
-## Command Line Arguments
+### Command Line Arguments
 
 | **argument**                          | **format example**                                                                                                                            | **effect**                                                                                                                                                                                                                              | **required** |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
@@ -106,6 +106,16 @@ Most configuration parameters are provided to the the agent at startup. Refer to
 | `--timing`                            | `--timing`                                                                                                                                    | Includes timing information in response messages.                                                                                                                                                                                       | `false`      |
 | `--protocol`                          | `--protocol`                                                                                                                                  | Instructs the agent to load an external protocol module.                                                                                                                                                                                | `false`      |
 | `--webhook-url`                       | `--webhook-url`                                                                                                                               | Instructs the agent to send webhooks containing internal state changes to a URL. This is useful for a controller to monitor changes and prompt new behaviour using the admin API.                                                       | `false`      |
+
+### Provisioning a Wallet
+
+It is possible to provision an Indy wallet before running an agent to avoid passing in the wallet seed on every invocation of `aca-py start`.
+
+```bash
+aca-py provision wallet --wallet-type indy --seed $SEED
+```
+
+For additional options, execute `aca-py provision --help`.
 
 ## Developing
 
