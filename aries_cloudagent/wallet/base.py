@@ -155,6 +155,35 @@ class BaseWallet(ABC):
 
         return None
 
+    async def set_public_did(self, did: str) -> DIDInfo:
+        """
+        Assign the public did.
+
+        Returns:
+            The created `DIDInfo`
+
+        """
+
+        # will raise an exception if not found
+        info = None if did is None else await self.get_local_did(did)
+
+        public = await self.get_public_did()
+        if public and info and public.did == info.did:
+            return public
+
+        if public:
+            metadata = public.metadata.copy()
+            del metadata["public"]
+            await self.replace_local_did_metadata(public.did, metadata)
+
+        if info:
+            metadata = info.metadata.copy()
+            metadata["public"] = True
+            await self.replace_local_did_metadata(info.did, metadata)
+            info = await self.get_local_did(info.did)
+
+        return info
+
     @abstractmethod
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
