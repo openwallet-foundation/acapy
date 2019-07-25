@@ -1,7 +1,6 @@
 """Classes to manage connections."""
 
 import logging
-import sys
 
 from typing import Tuple
 
@@ -49,15 +48,6 @@ class ConnectionManager:
         """
         self._context = context
         self._logger = logging.getLogger(__name__)
-
-    def _log_state(self, msg: str, params: dict = None):
-        """Print a message with increased visibility (for testing)."""
-        if self._context.settings.get("debug.connections"):
-            print(msg, file=sys.stderr)
-            if params:
-                for k, v in params.items():
-                    print(f"    {k}: {v}", file=sys.stderr)
-            print(file=sys.stderr)
 
     @property
     def context(self) -> InjectionContext:
@@ -116,8 +106,6 @@ class ConnectionManager:
             A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
 
         """
-        self._log_state("Creating invitation")
-
         if not my_label:
             my_label = self.context.settings.get("default_label")
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -154,13 +142,7 @@ class ConnectionManager:
             accept=accept,
         )
 
-        await connection.save(self.context)
-        await self.updated_record(connection)
-
-        self._log_state(
-            "Created new connection record",
-            {"id": connection.connection_id, "state": connection.state},
-        )
+        await connection.save(self.context, reason="Created new invitation")
 
         # Create connection invitation message
         # Note: Need to split this into two stages to support inbound routing of invites
@@ -194,10 +176,6 @@ class ConnectionManager:
             The new `ConnectionRecord` instance
 
         """
-        self._log_state(
-            "Receiving invitation", {"invitation": invitation, "role": their_role}
-        )
-
         if not invitation.did:
             if not invitation.recipient_keys:
                 raise ConnectionManagerError("Invitation must contain recipient key(s)")
@@ -217,12 +195,10 @@ class ConnectionManager:
             accept=accept,
         )
 
-        await connection.save(self.context)
-        await self.updated_record(connection)
-
-        self._log_state(
-            "Created new connection record",
-            {"id": connection.connection_id, "state": connection.state},
+        await connection.save(
+            self.context,
+            reason="Created new connection record from invitation",
+            log_params={"invitation": invitation, "role": their_role},
         )
 
         # Save the invitation for later processing
@@ -289,9 +265,7 @@ class ConnectionManager:
         connection.request_id = request._id
         connection.state = ConnectionRecord.STATE_REQUEST
 
-        await connection.save(self.context)
-        await self.updated_record(connection)
-        self._log_state("Updated connection state", {"connection": connection})
+        await connection.save(self.context, reason="Created connection request")
 
         await connection.log_activity(
             self.context, "request", connection.DIRECTION_SENT
@@ -313,7 +287,9 @@ class ConnectionManager:
             The new or updated `ConnectionRecord` instance
 
         """
-        self._log_state("Receiving connection request", {"request": request})
+        ConnectionRecord.log_state(
+            self.context, "Receiving connection request", {"request": request}
+        )
 
         connection = None
         connection_key = None
@@ -338,7 +314,9 @@ class ConnectionManager:
         if connection:
             invitation = await connection.retrieve_invitation(self.context)
             connection_key = connection.invitation_key
-            self._log_state("Found invitation", {"invitation": invitation})
+            ConnectionRecord.log_state(
+                self.context, "Found invitation", {"invitation": invitation}
+            )
 
         conn_did_doc = request.connection.did_doc
         if not conn_did_doc:
@@ -356,10 +334,9 @@ class ConnectionManager:
             connection.their_label = request.label
             connection.their_did = request.connection.did
             connection.state = ConnectionRecord.STATE_REQUEST
-
-            await connection.save(self.context)
-            await self.updated_record(connection)
-            self._log_state("Updated connection state", {"connection": connection})
+            await connection.save(
+                self.context, reason="Received connection request from invitation"
+            )
         elif not self.context.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")
         else:
@@ -375,12 +352,8 @@ class ConnectionManager:
             if self.context.settings.get("debug.auto_accept_requests"):
                 connection.accept = ConnectionRecord.ACCEPT_AUTO
 
-            await connection.save(self.context)
-            await self.updated_record(connection)
-
-            self._log_state(
-                "Created new connection record",
-                {"id": connection.connection_id, "state": connection.state},
+            await connection.save(
+                self.context, reason="Received connection request from public DID"
             )
 
         # Attach the connection request so it can be found and responded to
@@ -396,7 +369,9 @@ class ConnectionManager:
                 BaseResponder, required=False
             )
             if responder:
-                await responder.send(response, connection_id=connection.connection_id)
+                await responder.send_reply(
+                    response, connection_id=connection.connection_id
+                )
                 # refetch connection for accurate state
                 connection = await ConnectionRecord.retrieve_by_id(
                     self._context, connection.connection_id
@@ -420,8 +395,10 @@ class ConnectionManager:
             A tuple of the updated `ConnectionRecord` new `ConnectionResponse` message
 
         """
-        self._log_state(
-            "Creating connection response", {"connection_id": connection.connection_id}
+        ConnectionRecord.log_state(
+            self.context,
+            "Creating connection response",
+            {"connection_id": connection.connection_id},
         )
 
         if connection.state not in (
@@ -452,22 +429,15 @@ class ConnectionManager:
         # Sign connection field using the invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)
-        self._log_state(
-            "Created connection response",
-            {
-                "my_did": my_info.did,
-                "their_did": connection.their_did,
-                "response": response,
-            },
-        )
 
         # Update connection state
         connection.state = ConnectionRecord.STATE_RESPONSE
 
-        await connection.save(self.context)
-        await self.updated_record(connection)
-        self._log_state("Updated connection state", {"connection": connection})
-
+        await connection.save(
+            self.context,
+            reason="Created connection response",
+            log_params={"response": response},
+        )
         await connection.log_activity(
             self.context, "response", connection.DIRECTION_SENT
         )
@@ -545,9 +515,7 @@ class ConnectionManager:
         connection.their_did = their_did
         connection.state = ConnectionRecord.STATE_RESPONSE
 
-        await connection.save(self.context)
-        await self.updated_record(connection)
-
+        await connection.save(self.context, reason="Accepted connection response")
         await connection.log_activity(
             self.context, "response", connection.DIRECTION_RECEIVED
         )
@@ -594,15 +562,10 @@ class ConnectionManager:
         ):
             connection.state = ConnectionRecord.STATE_ACTIVE
 
-            await connection.save(self.context)
-            await self.updated_record(connection)
-            self._log_state("Connection promoted to active", {"connection": connection})
+            await connection.save(self.context, reason="Connection promoted to active")
         elif connection and connection.state == ConnectionRecord.STATE_INACTIVE:
             connection.state = ConnectionRecord.STATE_ACTIVE
-            await connection.save(self.context)
-            await self.updated_record(connection)
-
-            self._log_state("Connection restored to active", {"connection": connection})
+            await connection.save(self.context, reason="Connection restored to active")
 
         if not connection and my_verkey:
             try:
@@ -957,7 +920,6 @@ class ConnectionManager:
         )
         connection.routing_state = ConnectionRecord.ROUTING_STATE_REQUEST
         await connection.save(self.context)
-        await self.updated_record(connection)
         return connection.routing_state
 
     async def update_inbound(
@@ -981,7 +943,6 @@ class ConnectionManager:
             if conn_info.verkey == recip_verkey:
                 connection.routing_state = routing_state
                 await connection.save(self.context)
-                await self.updated_record(connection)
 
     async def log_activity(
         self,
@@ -992,28 +953,3 @@ class ConnectionManager:
     ):
         """Log activity against a connection record and send webhook."""
         await connection.log_activity(self._context, activity_type, direction, meta)
-        await self.updated_activity(connection)
-
-    async def updated_record(self, connection: ConnectionRecord):
-        """Call webhook when the record is updated."""
-        responder: BaseResponder = await self._context.inject(
-            BaseResponder, required=False
-        )
-        if responder:
-            await responder.send_webhook("connections", connection.serialize())
-        cache: BaseCache = await self._context.inject(BaseCache, required=False)
-        cache_key = f"connection_target::{connection.connection_id}"
-        if cache:
-            await cache.clear(cache_key)
-
-    async def updated_activity(self, connection: ConnectionRecord):
-        """Call webhook when the record activity is updated."""
-        responder: BaseResponder = await self._context.inject(
-            BaseResponder, required=False
-        )
-        if responder:
-            activity = await connection.fetch_activity(self._context)
-            await responder.send_webhook(
-                "connections_activity",
-                {"connection_id": connection.connection_id, "activity": activity},
-            )

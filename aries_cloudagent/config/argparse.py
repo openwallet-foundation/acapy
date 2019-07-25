@@ -220,6 +220,12 @@ PARSER.add_argument(
 )
 
 PARSER.add_argument(
+    "--auto-store-credential",
+    action="store_true",
+    help="Automatically store a credential upon receipt.",
+)
+
+PARSER.add_argument(
     "--auto-respond-presentation-request",
     action="store_true",
     help="Auto-respond to presentation requests with a presentation "
@@ -360,6 +366,8 @@ def get_settings(args):
 
     if args.auto_respond_credential_offer:
         settings["debug.auto_respond_credential_offer"] = True
+    if args.auto_store_credential:
+        settings["debug.auto_store_credential"] = True
     if args.auto_respond_presentation_request:
         settings["debug.auto_respond_presentation_request"] = True
     if args.auto_verify_presentation:

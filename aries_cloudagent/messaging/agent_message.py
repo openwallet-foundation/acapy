@@ -61,7 +61,9 @@ class AgentMessage(BaseModel):
         else:
             self._message_id = str(uuid.uuid4())
             self._message_new_id = True
-        self._message_decorators = _decorators or DecoratorSet()
+        self._message_decorators = (
+            _decorators if _decorators is not None else DecoratorSet()
+        )
         if not self.Meta.message_type:
             raise TypeError(
                 "Can't instantiate abstract class {} with no message_type".format(
@@ -340,7 +342,7 @@ class AgentMessageSchema(BaseModelSchema):
             ValidationError: If there is a missing field signature
 
         """
-        processed = self._decorators.extract_decorators(data)
+        processed = self._decorators.extract_decorators(data, self.__class__)
 
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         found_signatures = {}

@@ -9,6 +9,11 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Running in a Browser](#Running-in-a-Browser)
   - [Running in Docker](#Running-in-Docker)
   - [Running Locally](#Running-Locally)
+    - [Installing Prerequisites](#Installing-Prerequisites)
+    - [Start a local indy ledger](#Start-a-local-indy-ledger)
+    - [Run a local Postgres instance](#Run-a-local-Postgres-instance)
+    - [Optional: Run a von-network ledger browser](#Optional-Run-a-von-network-ledger-browser)
+    - [Run the Alice and Faber Controllers/Agents](#Run-the-Alice-and-Faber-ControllersAgents)
   - [Follow The Script](#Follow-The-Script)
 - [Learning about the Alice/Faber code](#Learning-about-the-AliceFaber-code)
 - [OpenAPI (Swagger) Demo](#OpenAPI-Swagger-Demo)
@@ -69,21 +74,55 @@ Jump to the [Follow the Script](#follow-the-script) section below for further in
 
 ### Running Locally
 
-To run locally, complete the same steps above for running in docker, except use the following in place of the `run_demo` commands for starting the two agents.
+The following is an approach to to running the Alice and Faber demo using Python3 running on a bare machine. There are other ways to run the components, but this covers the general approach.
+
+#### Installing Prerequisites
+
+We assume you have a running Python 3 environment.  To install the prerequisites specific to running the agent/controller examples in your Python environment, run the following command from this repo's `demo` folder. The precise command to run may vary based on your Python environment setup.
 
 ``` bash
-python faber-pg.py 8020
+pip3 install -r demo/requirements.txt
+```
+
+While that process will include the installation of the Indy python prerequisite, you still have to build and install the `libindy` code for your platform. Follow the [installation instructions](https://github.com/hyperledger/indy-sdk#installing-the-sdk) in the indy-sdk repo for your platform.
+
+#### Start a local indy ledger
+
+Use instructions in the [indy-sdk repo](https://github.com/hyperledger/indy-sdk#how-to-start-local-nodes-pool-with-docker) to run a local ledger. Alternately, you can run the ledger using [von-network](https://github.com/bcgov/von-network) mechanism, or some other instance of the ledger. In those cases, you must provide the agents access to the ledger genesis file, and you must ensure that the agents have write access on that ledger.
+
+#### Run a local Postgres instance
+
+The demo uses the postgres database the wallet persistence. Use the Docker Hub certified postgres image to start up a postgres instance to be used for the wallet storage:
+
+``` bash
+docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres -c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr'
+```
+
+#### Optional: Run a von-network ledger browser
+
+If you want to be able to browse your local ledger as you run the demo, clone the [von-network](https://github.com/bcgov/von-network) repo, go into the root of the cloned instance and run the following command, replacing the `/path/to/local-genesis.txt` with a path to the same genesis file as was used in starting the ledger. For example, that might be the `local-genesis.txt` file in the `demo` folder of your locally cloned `aries-cloudagent-python` repository.
+
+``` bash
+GENESIS_FILE=/path/to/local-genesis.txt PORT=9000 REGISTER_NEW_DIDS=true python -m server.server
+```
+
+If you are using another ledger mechanism (e.g. von-network), you can also use the `GENESIS_URL` environment variable if the genesis data is available via a web service.
+
+#### Run the Alice and Faber Controllers/Agents
+
+With the rest of the pieces running, you can run the Alice and Faber controllers and agents. To do so, `cd` into the `demo` folder your clone of this repo in two terminal windows and run:
+
+``` bash
+python3 -m runners.faber --port 8020
 ```
 
 ``` bash
-python alice-pg.py 8030
+python3 -m runners.alice --port 8030
 ```
 
-Note that Alice and Faber will each use 5 ports, e.g. running ```python faber-pg.py 8020``` actually uses ports 8020 through 8024. Feel free to use different ports if you want.
+Note that Alice and Faber will each use 5 ports, e.g. using the parameter `... --port 8020` actually uses ports 8020 through 8024. Feel free to use different ports if you want.
 
-To create the Alice/Faber wallets using postgres storage, just add the "--postgres" option when running the script.
-
-Refer to the [Follow the Script](#follow-the-script) section below for further instructions.
+Everything running?  See the [Follow the Script](#follow-the-script) section below for further instructions.
 
 ### Follow The Script
 
@@ -92,17 +131,18 @@ With both the Alice and Faber agents started, go to the Faber terminal window. T
 Faber:
 
 ```
-                 1 = send credential to Alice
-                 2 = send proof request to Alice
-                 3 = send a message to Alice
-                 x = stop and exit
+    1 = Issue Credential - send a credential to Alice
+    2 = Send Proof Request - send a proof request to Alice
+    3 = Send Message - send a message to Alice
+    x = Exit - Stop and exit
 ```
 
 Alice:
 
 ```
-                 3 = send a message to Faber
-                 x = stop and exit
+    3 = Send Message - send a message to Faber
+    4 = Input New Invitation
+    x = Exit - stop and exit
 ```
 
 Feel free to use the "3" option to send messages back and forth between the agents. Fun, eh? Those are secure, end-to-end encrypted messages.
@@ -113,9 +153,9 @@ You don't need to do anything with Alice's agent - her agent is implemented to a
 
 ## Learning about the Alice/Faber code
 
-These Alice and Faber scripts implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent.
+These Alice and Faber scripts (in the `demo/runners` folder) implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent.
 
-The controllers for this demo can be found in the [alice.py](alice.py) and [faber.py](faber.py) files. You can watch [this video](https://zoom.us/recording/share/hfGCVMRsYWQcObOUjTQBd1vRxSH3sldO4QbEjWYjiS6wIumekTziMw) to get a start in understanding what is going on (and where) in the controllers.
+The controllers for this demo can be found in the [alice.py](runners/alice.py) and [faber.py](runners/faber.py) files. You can watch [this video](https://zoom.us/recording/share/hfGCVMRsYWQcObOUjTQBd1vRxSH3sldO4QbEjWYjiS6wIumekTziMw) to get a start in understanding what is going on (and where) in the controllers.
 
 ## OpenAPI (Swagger) Demo
 
@@ -123,14 +163,16 @@ Developing an ACA-Py controller is much like developing a web app that uses a RE
 
 ## Performance Demo
 
-Another demo in this folder is [performance.py](performance.py), that is used to test out the performance of a couple of interacting agents. The script starts up two agents, initializes them and then runs through an interaction some number of times. In this demo, the test is issuing a credential and it is repeated 100 times.
+Another example in the `demo/runners` folder is [performance.py](runners/performance.py), that is used to test out the performance of interacting agents. The script starts up agents for Alice and Faber, initializes them, and then runs through an interaction some number of times. In this case, Faber issues a credential to Alice 300 times.
 
-To run the demo, make sure that you shut down both the Alice and Faber agents. Follow the steps to start the Alice/Faber demo running either in your browser or in docker, but:
+To run the demo, make sure that you shut down any running Alice/Faber agents. Then, follow the same steps to start the Alice/Faber demo, but:
 
-* Don't start the second agent (`alice`) at all.
 * When starting the first agent, replace the agent name (e.g. `faber`) with `performance`.
+* Don't start the second agent (`alice`) at all.
 
-The script will start up both Alice and Faber agents, run the performance test, and spit out the performance results for you to review. Note that this is just an example of performance metrics tracking that can be done with ACA-Py.
+The script starts both agents, runs the performance test, spits out performance results and shuts down the agents. Note that this is just one demonstration of how performance metrics tracking can be done with ACA-Py.
+
+A second version of the performance test can be run by adding the parameter `--router` to the invocation. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
 
 ## Coding Challenge: Adding ACME
 
@@ -140,9 +182,9 @@ Now that you have a solid foundation in using ACA-Py, time for a coding challeng
 * ACME requesting a proof of her College degree
 * ACME issuing Alice a credential after she is hired.
 
-The framework for the code is in the [acme.py](acme.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
+The framework for the code is in the [acme.py](runners/acme.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
 
 * Use the instructions above to start the Alice/Faber demo (above).
 * Start another terminal session and run the same commands as for "Alice", but replace "alice" with "acme".
 
-We'll post a way to get to a completed challenge here soon, and you can see how you did.
+All done? Checkout how we added the missing code segments [here](AcmeDemoWorkshop.md).

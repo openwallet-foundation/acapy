@@ -25,3 +25,5 @@ class ProblemReportHandler(BaseHandler):
             context.message_delivery.sender_did,
             context.message,
         )
+
+        await responder.send_webhook("problem-report", context.message.serialize())
