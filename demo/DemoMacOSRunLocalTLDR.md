@@ -386,9 +386,48 @@ $ git clone https://github.com/hyperledger/aries-cloudagent-python.git
 
 Now we can install the python module
 ```bash
-$ pip3 install -e cloudagentpy
+$ pip3 install -e /..../pathofACAPYrepo
 ```
 
+This installs the python package "aries_cloudagent" and the CLI for the agent package
+called aca-py.
+
+To test
+
+```bash
+$ python3
+Python 3.7.4 (default, Jul  9 2019, 18:13:23) 
+[Clang 10.0.1 (clang-1001.0.46.4)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import aries_cloudagent
+>>> aries_cloudagent.version.__version__
+'0.2.1'
+```
+
+
+```bash
+$ aca-py -h
+usage: aca-py [-h] -it <module> <host> <port> -ot <module>
+              [--log-config <path-to-config>] [--log-level <log-level>]
+              [-e <endpoint>] [-l <label>] [--seed <wallet-seed>]
+              [--storage-type <storage-type>] [--wallet-key <wallet-key>]
+              [--wallet-name <wallet-name>] [--wallet-type <wallet-type>]
+              [--wallet-storage-type <storage-type>]
+              [--wallet-storage-config <storage-config>]
+              [--wallet-storage-creds <storage-creds>]
+              [--pool-name <pool-name>]
+              [--genesis-transactions <genesis-transactions>]
+              [--genesis-url <genesis-url>] [--admin <host> <port>]
+              [--admin-api-key <api-key>] [--admin-insecure-mode] [--debug]
+              [--debug-seed <debug-did-seed>] [--debug-connections]
+              [--public-invites] [--auto-accept-invites]
+              [--auto-accept-requests] [--auto-ping-connection]
+              [--auto-respond-messages] [--auto-respond-credential-offer]
+              [--auto-store-credential] [--auto-respond-presentation-request]
+              [--auto-verify-presentation] [--no-receive-invites]
+              [--help-link <help-url>] [--invite] [--timing]
+              [--protocol <module>] [--webhook-url <url>]
+```
 
 ### Install Von-Network Indy Ledger Repository
 
