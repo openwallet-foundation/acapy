@@ -4,21 +4,22 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
 
 ## Table of Contents <!-- omit in toc -->
 
-- [The IIWBook Demo](#The-IIWBook-Demo)
-- [The Alice/Faber Python demo](#The-AliceFaber-Python-demo)
-  - [Running in a Browser](#Running-in-a-Browser)
-  - [Running in Docker](#Running-in-Docker)
-  - [Running Locally](#Running-Locally)
-    - [Installing Prerequisites](#Installing-Prerequisites)
-    - [Start a local indy ledger](#Start-a-local-indy-ledger)
-    - [Run a local Postgres instance](#Run-a-local-Postgres-instance)
-    - [Optional: Run a von-network ledger browser](#Optional-Run-a-von-network-ledger-browser)
-    - [Run the Alice and Faber Controllers/Agents](#Run-the-Alice-and-Faber-ControllersAgents)
-  - [Follow The Script](#Follow-The-Script)
-- [Learning about the Alice/Faber code](#Learning-about-the-AliceFaber-code)
-- [OpenAPI (Swagger) Demo](#OpenAPI-Swagger-Demo)
-- [Performance Demo](#Performance-Demo)
-- [Coding Challenge: Adding ACME](#Coding-Challenge-Adding-ACME)
+- [The IIWBook Demo](#the-iiwbook-demo)
+- [The Alice/Faber Python demo](#the-alicefaber-python-demo)
+  - [Running in a Browser](#running-in-a-browser)
+  - [Running in Docker](#running-in-docker)
+  - [Running Locally](#running-locally)
+    - [Installing Prerequisites](#installing-prerequisites)
+    - [Start a local indy ledger](#start-a-local-indy-ledger)
+    - [Genesis File handling](#genesis-file-handling)
+    - [Run a local Postgres instance](#run-a-local-postgres-instance)
+    - [Optional: Run a von-network ledger browser](#optional-run-a-von-network-ledger-browser)
+    - [Run the Alice and Faber Controllers/Agents](#run-the-alice-and-faber-controllersagents)
+  - [Follow The Script](#follow-the-script)
+- [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
+- [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
+- [Performance Demo](#performance-demo)
+- [Coding Challenge: Adding ACME](#coding-challenge-adding-acme)
 
 ## The IIWBook Demo
 
@@ -88,7 +89,13 @@ While that process will include the installation of the Indy python prerequisite
 
 #### Start a local indy ledger
 
-Use instructions in the [indy-sdk repo](https://github.com/hyperledger/indy-sdk#how-to-start-local-nodes-pool-with-docker) to run a local ledger. Alternately, you can run the ledger using [von-network](https://github.com/bcgov/von-network) mechanism, or some other instance of the ledger. In those cases, you must provide the agents access to the ledger genesis file, and you must ensure that the agents have write access on that ledger.
+Use instructions in the [indy-sdk repo](https://github.com/hyperledger/indy-sdk#how-to-start-local-nodes-pool-with-docker) to run a local ledger.
+
+#### Genesis File handling
+
+An Aries agent (or other client) connecting to an Indy ledger must know the contents of the `genesis` file for the ledger. The genesis file lets the agent/client know the IP addresses of the initial nodes of the ledger, and the agent/client sends ledger requests to those IP addresses. When using the `indy-sdk` ledger, look for the instructions in that repo for how to find/update the ledger genesis file, and note the path to that file on your local system.
+
+The envrionment variable `GENESIS_FILE` is used to let the Aries demo agents know the location of the genesis file. Use the path to that file as value of the `GENESIS_FILE` environment variable in the instructions below. You might want to copy that file to be local to the demo so the path is shorter.
 
 #### Run a local Postgres instance
 
@@ -100,29 +107,34 @@ docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432
 
 #### Optional: Run a von-network ledger browser
 
-If you want to be able to browse your local ledger as you run the demo, clone the [von-network](https://github.com/bcgov/von-network) repo, go into the root of the cloned instance and run the following command, replacing the `/path/to/local-genesis.txt` with a path to the same genesis file as was used in starting the ledger. For example, that might be the `local-genesis.txt` file in the `demo` folder of your locally cloned `aries-cloudagent-python` repository.
+If you want to be able to browse your local ledger as you run the demo, clone the [von-network](https://github.com/bcgov/von-network) repo, go into the root of the cloned instance and run the following command, replacing the `/path/to/local-genesis.txt` with a path to the same genesis file as was used in starting the ledger.
 
 ``` bash
 GENESIS_FILE=/path/to/local-genesis.txt PORT=9000 REGISTER_NEW_DIDS=true python -m server.server
 ```
 
-If you are using another ledger mechanism (e.g. von-network), you can also use the `GENESIS_URL` environment variable if the genesis data is available via a web service.
-
 #### Run the Alice and Faber Controllers/Agents
 
-With the rest of the pieces running, you can run the Alice and Faber controllers and agents. To do so, `cd` into the `demo` folder your clone of this repo in two terminal windows and run:
+With the rest of the pieces running, you can run the Alice and Faber controllers and agents. To do so, `cd` into the `demo` folder your clone of this repo in two terminal windows and run the following, replacing the `/path/to/local-genesis.txt`.
 
 ``` bash
-python3 -m runners.faber --port 8020
+GENESIS_FILE=/path/to/local-genesis.txt DEFAULT_POSTGRES=true python3 -m runners.faber --port 8020
 ```
 
 ``` bash
-python3 -m runners.alice --port 8030
+GENESIS_FILE=/path/to/local-genesis.txt DEFAULT_POSTGRES=true python3 -m runners.alice --port 8030
 ```
 
 Note that Alice and Faber will each use 5 ports, e.g. using the parameter `... --port 8020` actually uses ports 8020 through 8024. Feel free to use different ports if you want.
 
 Everything running?  See the [Follow the Script](#follow-the-script) section below for further instructions.
+
+If the demo fails with an error that references the genesis file, a timeout connecting to the Indy Pool, or an Indy `307` error, it's likely a problem with the genesis file handling. Things to check:
+
+- Review the instructions for running the ledger with `indy-sdk`. Is it running properly?
+- Is the `/path/to/local-genesis.txt` file correct in your start commands?
+- Look at the IP addresses in the genesis file you are using, and make sure that those IP addresses are accessible from the location you are running the Aries demo
+- Check to make sure that all of the nodes of the ledger started. We've seen examples of only some of the nodes starting up, triggering an Indy `307` error.
 
 ### Follow The Script
 
@@ -153,7 +165,7 @@ You don't need to do anything with Alice's agent - her agent is implemented to a
 
 ## Learning about the Alice/Faber code
 
-These Alice and Faber scripts (in the `demo/runners` folder) implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent.
+These Alice and Faber scripts (in the `demo/runners` folder) implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent. Note that this architecture, running the agent as a sub-process, is a variation on the documented architecture of running the controller and agent as separate processes/containers.
 
 The controllers for this demo can be found in the [alice.py](runners/alice.py) and [faber.py](runners/faber.py) files. You can watch [this video](https://zoom.us/recording/share/hfGCVMRsYWQcObOUjTQBd1vRxSH3sldO4QbEjWYjiS6wIumekTziMw) to get a start in understanding what is going on (and where) in the controllers.
 
@@ -172,7 +184,7 @@ To run the demo, make sure that you shut down any running Alice/Faber agents. Th
 
 The script starts both agents, runs the performance test, spits out performance results and shuts down the agents. Note that this is just one demonstration of how performance metrics tracking can be done with ACA-Py.
 
-A second version of the performance test can be run by adding the parameter `--router` to the invocation. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
+A second version of the performance test can be run by adding the parameter `--router` to the invocation above. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
 
 ## Coding Challenge: Adding ACME
 
