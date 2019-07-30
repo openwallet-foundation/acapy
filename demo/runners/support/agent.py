@@ -265,7 +265,7 @@ class DemoAgent:
             bin_path = DEFAULT_BIN_PATH
         if bin_path:
             cmd_path = os.path.join(bin_path, cmd_path)
-        return list(flatten((["python3", cmd_path], self.get_agent_args())))
+        return list(flatten((["python3", cmd_path, "start"], self.get_agent_args())))
 
     async def start_process(
         self, python_path: str = None, bin_path: str = None, wait: bool = True
