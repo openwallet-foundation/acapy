@@ -51,7 +51,7 @@ class PresentationRequestHandler(BaseHandler):
                 (
                     credentials
                 ) = await holder.get_credentials_for_presentation_request_by_referent(
-                    presentation_request, referent, 0, 2, {}
+                    presentation_request, (referent,), 0, 2, {}
                 )
                 if len(credentials) != 1:
                     self._logger.warning(
@@ -73,7 +73,7 @@ class PresentationRequestHandler(BaseHandler):
                 (
                     credentials
                 ) = await holder.get_credentials_for_presentation_request_by_referent(
-                    presentation_request, referent, 0, 2, {}
+                    presentation_request, (referent,), 0, 2, {}
                 )
                 if len(credentials) != 1:
                     self._logger.warning(
