@@ -25,7 +25,11 @@ class AliceAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Alice",
-            extra_args=["--auto-accept-invites", "--auto-accept-requests"],
+            extra_args=[
+                "--auto-accept-invites",
+                "--auto-accept-requests",
+                "--auto-store-credential",
+            ],
             seed=None,
             **kwargs,
         )
