@@ -17,11 +17,14 @@ usage() {
 
       demo  - Build the demo docker image and run an integration test or demo.
 
+      provision - Provision an agent
+
+      start - Run an agent.
+
       test  - Run unit tests.
 
       test-indy  - Run unit tests, including Indy-specific tests.
 
-      start - Run an agent.
 EOF
   exit 1
 }
@@ -66,7 +69,11 @@ shift || COMMAND=usage
 case "${COMMAND}" in
 start|up)
   exportEnvironment "$@"
-  ../scripts/run_docker $(getStartupParams "$@")
+  ../scripts/run_docker start $(getStartupParams "$@")
+  ;;
+provision)
+  exportEnvironment "$@"
+  ../scripts/run_docker provision $(getStartupParams "$@")
   ;;
 demo)
   exportEnvironment "$@"
