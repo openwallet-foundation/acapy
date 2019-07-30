@@ -357,7 +357,10 @@ class TestCredentialRoutes(AsyncTestCase):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock()
 
-        mock.app = {"request_context": "context"}
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": "context",
+        }
 
         with async_mock.patch.object(
             test_module, "ConnectionRecord", autospec=True
@@ -377,7 +380,8 @@ class TestCredentialRoutes(AsyncTestCase):
             mock_cred_ex_record = async_mock.MagicMock()
 
             mock_connection_manager.return_value.store_credential.return_value = (
-                mock_cred_ex_record
+                mock_cred_ex_record,
+                async_mock.MagicMock()
             )
 
             await test_module.credential_exchange_store(mock)
@@ -390,7 +394,10 @@ class TestCredentialRoutes(AsyncTestCase):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock()
 
-        mock.app = {"request_context": "context"}
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": "context",
+        }
 
         with async_mock.patch.object(
             test_module, "ConnectionRecord", autospec=True
@@ -423,7 +430,10 @@ class TestCredentialRoutes(AsyncTestCase):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock()
 
-        mock.app = {"request_context": "context"}
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": "context",
+        }
 
         with async_mock.patch.object(
             test_module, "ConnectionRecord", autospec=True
