@@ -17,6 +17,8 @@ PairwiseInfo = namedtuple(
 class BaseWallet(ABC):
     """Abstract wallet interface."""
 
+    WALLET_TYPE = None
+
     # TODO: break config out into params?
     def __init__(self, config: dict):
         """
@@ -28,6 +30,28 @@ class BaseWallet(ABC):
         """
 
     @property
+    def name(self) -> str:
+        """
+        Accessor for the wallet name.
+
+        Returns:
+            Defaults to None
+
+        """
+        return None
+
+    @property
+    def type(self) -> str:
+        """
+        Accessor for the wallet type.
+
+        Returns:
+            Defaults to None
+
+        """
+        return self.WALLET_TYPE
+
+    @property
     def handle(self):
         """
         Get internal wallet reference.
@@ -36,6 +60,11 @@ class BaseWallet(ABC):
             Defaults to None
 
         """
+        return None
+
+    @property
+    def created(self) -> bool:
+        """Check whether the wallet was created on the last open call."""
         return None
 
     @property
