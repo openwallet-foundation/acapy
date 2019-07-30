@@ -177,6 +177,17 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         extra_query,
     )
 
+    presentation_exchange_record.log_state(
+        context,
+        "Retrieved presentation credentials",
+        {
+            "presentation_exchange_id": presentation_exchange_id,
+            "referent": presentation_referent,
+            "extra_query": extra_query,
+            "credentials": credentials,
+        },
+    )
+
     return web.json_response(credentials)
 
 
