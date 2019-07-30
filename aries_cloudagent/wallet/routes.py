@@ -5,6 +5,8 @@ from aiohttp_apispec import docs, response_schema
 
 from marshmallow import fields, Schema
 
+from ..ledger.base import BaseLedger
+
 from .base import DIDInfo, BaseWallet
 from .error import WalletError
 
@@ -82,7 +84,7 @@ async def wallet_did_list(request: web.BaseRequest):
     filter_public = request.query.get("public")
     results = []
 
-    if filter_public and filter_public == "true":
+    if filter_public == "true":
         info = await wallet.get_public_did()
         if (
             info
@@ -110,6 +112,7 @@ async def wallet_did_list(request: web.BaseRequest):
         results = []
         for info in dids:
             results.append(format_did_info(info))
+
     results.sort(key=lambda info: info["did"])
     return web.json_response({"results": results})
 
@@ -188,6 +191,14 @@ async def wallet_set_public_did(request: web.BaseRequest):
         # DID not found or not in valid format
         raise web.HTTPBadRequest()
     info = await wallet.set_public_did(did)
+    if info:
+        # Publish endpoint if necessary
+        endpoint = context.settings.get("default_endpoint")
+        ledger = await context.inject(BaseLedger, required=False)
+        if ledger:
+            async with ledger:
+                await ledger.update_endpoint_for_did(info.did, endpoint)
+
     return web.json_response({"result": format_did_info(info)})
 
 

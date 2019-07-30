@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Sequence
 
+
 KeyInfo = namedtuple("KeyInfo", "verkey metadata")
 
 DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
@@ -169,18 +170,18 @@ class BaseWallet(ABC):
 
         public = await self.get_public_did()
         if public and info and public.did == info.did:
-            return public
+            info = public
+        else:
+            if public:
+                metadata = public.metadata.copy()
+                del metadata["public"]
+                await self.replace_local_did_metadata(public.did, metadata)
 
-        if public:
-            metadata = public.metadata.copy()
-            del metadata["public"]
-            await self.replace_local_did_metadata(public.did, metadata)
-
-        if info:
-            metadata = info.metadata.copy()
-            metadata["public"] = True
-            await self.replace_local_did_metadata(info.did, metadata)
-            info = await self.get_local_did(info.did)
+            if info:
+                metadata = info.metadata.copy()
+                metadata["public"] = True
+                await self.replace_local_did_metadata(info.did, metadata)
+                info = await self.get_local_did(info.did)
 
         return info
 
