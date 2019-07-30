@@ -23,6 +23,8 @@ from .util import b58_to_bytes, bytes_to_b58
 class BasicWallet(BaseWallet):
     """In-memory wallet implementation."""
 
+    WALLET_TYPE = "basic"
+
     def __init__(self, config: dict = None):
         """
         Initialize a `BasicWallet` instance.
@@ -38,6 +40,16 @@ class BasicWallet(BaseWallet):
         self._keys = {}
         self._local_dids = {}
         self._pair_dids = {}
+
+    @property
+    def name(self) -> str:
+        """Accessor for the wallet name."""
+        return self._name
+
+    @property
+    def created(self) -> bool:
+        """Check whether the wallet was created on the last open call."""
+        return True
 
     @property
     def opened(self) -> bool:
