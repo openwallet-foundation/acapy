@@ -16,6 +16,7 @@ from ...storage.error import StorageNotFoundError
 from ..connections.models.connection_record import ConnectionRecord
 
 from .messages.credential_issue import CredentialIssue
+from .messages.credential_stored import CredentialStored
 from .messages.credential_request import CredentialRequest
 from .messages.credential_offer import CredentialOffer
 from .models.credential_exchange import CredentialExchange
@@ -461,4 +462,29 @@ class CredentialManager:
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = credential
         await credential_exchange_record.save(self.context, reason="Store credential")
+
+        credential_stored_message = CredentialStored()
+        credential_stored_message._thread = {
+            "thid": credential_exchange_record.thread_id,
+            "pthid": credential_exchange_record.parent_thread_id,
+        }
+
+        return credential_exchange_record, credential_stored_message
+
+    async def credential_stored(self, credential_stored_message: CredentialStored):
+        """
+        Receive confirmation that holder stored credential.
+
+        Args:
+            credential_message: credential to store
+
+        """
+
+        credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
+            self.context, tag_filter={"thread_id": credential_stored_message._thread_id}
+        )
+
+        credential_exchange_record.state = CredentialExchange.STATE_STORED
+        await credential_exchange_record.save(self.context, reason="Credential stored")
+
         return credential_exchange_record
