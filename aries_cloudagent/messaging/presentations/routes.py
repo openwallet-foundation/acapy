@@ -148,7 +148,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["id"]
-    presentation_referent = request.match_info["referent"]
+    presentation_referent = request.match_info.get("referent")
 
     try:
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(
@@ -171,10 +171,21 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     credentials = await holder.get_credentials_for_presentation_request_by_referent(
         presentation_exchange_record.presentation_request,
-        presentation_referent,
+        (presentation_referent,) if presentation_referent else (),
         start,
         count,
         extra_query,
+    )
+
+    presentation_exchange_record.log_state(
+        context,
+        "Retrieved presentation credentials",
+        {
+            "presentation_exchange_id": presentation_exchange_id,
+            "referent": presentation_referent,
+            "extra_query": extra_query,
+            "credentials": credentials,
+        },
     )
 
     return web.json_response(credentials)
@@ -334,6 +345,10 @@ async def register(app: web.Application):
         [
             web.get("/presentation_exchange", presentation_exchange_list),
             web.get("/presentation_exchange/{id}", presentation_exchange_retrieve),
+            web.get(
+                "/presentation_exchange/{id}/credentials",
+                presentation_exchange_credentials_list,
+            ),
             web.get(
                 "/presentation_exchange/{id}/credentials/{referent}",
                 presentation_exchange_credentials_list,

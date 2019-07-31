@@ -16,6 +16,7 @@ class PresentationExchange(BaseRecord):
     RECORD_TYPE = "presentation_exchange"
     RECORD_ID_NAME = "presentation_exchange_id"
     WEBHOOK_TOPIC = "presentations"
+    LOG_STATE_FLAG = "debug.presentations"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"

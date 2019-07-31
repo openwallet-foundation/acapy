@@ -175,6 +175,16 @@ class DebugGroup(ArgumentGroup):
             help="Enable additional logging around connections",
         )
         parser.add_argument(
+            "--debug-credentials",
+            action="store_true",
+            help="Enable additional logging around credential exchanges",
+        )
+        parser.add_argument(
+            "--debug-presentations",
+            action="store_true",
+            help="Enable additional logging around presentation exchanges",
+        )
+        parser.add_argument(
             "--invite",
             action="store_true",
             help="Generate and print a new connection invitation URL",
@@ -224,6 +234,10 @@ class DebugGroup(ArgumentGroup):
             settings["debug.enabled"] = True
         if args.debug_connections:
             settings["debug.connections"] = True
+        if args.debug_credentials:
+            settings["debug.credentials"] = True
+        if args.debug_presentations:
+            settings["debug.presentations"] = True
         if args.debug_seed:
             settings["debug.seed"] = args.debug_seed
         if args.invite:

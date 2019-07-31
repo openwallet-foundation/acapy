@@ -25,7 +25,11 @@ class AliceAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Alice",
-            extra_args=["--auto-accept-invites", "--auto-accept-requests"],
+            extra_args=[
+                "--auto-accept-invites",
+                "--auto-accept-requests",
+                "--auto-store-credential",
+            ],
             seed=None,
             **kwargs,
         )
@@ -98,35 +102,38 @@ class AliceAgent(DemoAgent):
             )
 
             # include self-attested attributes (not included in credentials)
+            credentials_by_reft = {}
             revealed = {}
             self_attested = {}
             predicates = {}
 
-            for referent in presentation_request["requested_attributes"]:
+            # select credentials to provide for the proof
+            credentials = await self.admin_GET(
+                f"/presentation_exchange/{presentation_exchange_id}/credentials"
+            )
+            if credentials:
+                for row in credentials:
+                    for referent in row["presentation_referents"]:
+                        if referent not in credentials_by_reft:
+                            credentials_by_reft[referent] = row
 
-                # select credentials to provide for the proof
-                credentials = await self.admin_GET(
-                    f"/presentation_exchange/{presentation_exchange_id}"
-                    + f"/credentials/{referent}"
-                )
-                if credentials:
+            for referent in presentation_request["requested_attributes"]:
+                if referent in credentials_by_reft:
                     revealed[referent] = {
-                        "cred_id": credentials[0]["cred_info"]["referent"],
+                        "cred_id": credentials_by_reft[referent]["cred_info"][
+                            "referent"
+                        ],
                         "revealed": True,
                     }
                 else:
                     self_attested[referent] = "my self-attested value"
 
             for referent in presentation_request["requested_predicates"]:
-
-                # select credentials to provide for the proof
-                credentials = await self.admin_GET(
-                    f"/presentation_exchange/{presentation_exchange_id}"
-                    f"/credentials/{referent}"
-                )
-                if credentials:
+                if referent in credentials_by_reft:
                     predicates[referent] = {
-                        "cred_id": credentials[0]["cred_info"]["referent"],
+                        "cred_id": credentials_by_reft[referent]["cred_info"][
+                            "referent"
+                        ],
                         "revealed": True,
                     }
 
