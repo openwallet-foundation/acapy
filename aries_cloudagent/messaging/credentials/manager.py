@@ -399,6 +399,11 @@ class CredentialManager:
                 thid=new_thread_id, pthid=credential_exchange_record.parent_thread_id
             )
             credential_exchange_record.thread_id = new_thread_id
+        else:
+            raise CredentialManagerError(
+                "The credential exchange object must have a parent thread id"
+                + " OR thread id in order to issue a credential."
+            )
 
         await credential_exchange_record.save(self.context, reason="Issue credential")
         return credential_exchange_record, credential_message
