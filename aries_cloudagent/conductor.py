@@ -220,7 +220,7 @@ class Conductor:
             except Exception:
                 self.logger.exception("Error creating invitation")
 
-    async def stop(self, timeout=1.0):
+    async def stop(self, timeout=0.1):
         """Stop the agent."""
         tasks = []
         if self.admin_server:
