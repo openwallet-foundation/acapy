@@ -5,7 +5,9 @@ import json
 import logging
 import re
 import tempfile
+from hashlib import sha256
 from os import path
+from time import time
 from typing import Sequence, Type
 
 import indy.anoncreds
@@ -88,6 +90,7 @@ class IndyLedger(BaseLedger):
         self.cache_duration = cache_duration
         self.wallet = wallet
         self.pool_handle = None
+        self.taa_acceptance = None
 
         # TODO: ensure wallet type is indy
 
@@ -175,13 +178,14 @@ class IndyLedger(BaseLedger):
         """Context manager exit."""
         await self._context_close()
 
-    async def _submit(self, request_json: str, sign=True) -> str:
+    async def _submit(self, request_json: str, sign=True, taa_accept=False) -> str:
         """
         Sign and submit request to ledger.
 
         Args:
             request_json: The json string to submit
             sign: whether or not to sign the request
+            taa_accept: whether to apply TAA acceptance to the (signed, write) request
 
         """
 
@@ -194,6 +198,10 @@ class IndyLedger(BaseLedger):
             public_did = await self.wallet.get_public_did()
             if not public_did:
                 raise BadLedgerRequestError("Cannot sign request without a public DID")
+            if taa_accept and self.taa_acceptance:
+                req = json.loads(request_json)
+                req["taaAcceptance"] = self.taa_acceptance
+                request_json = json.dumps(req)
             submit_op = indy.ledger.sign_and_submit_request(
                 self.pool_handle, self.wallet.handle, public_did.did, request_json
             )
@@ -259,7 +267,7 @@ class IndyLedger(BaseLedger):
                 )
 
             try:
-                await self._submit(request_json)
+                await self._submit(request_json, True, True)
             except LedgerTransactionError as e:
                 # Identify possible duplicate schema errors on indy-node < 1.9 and > 1.9
                 if (
@@ -404,7 +412,7 @@ class IndyLedger(BaseLedger):
                 public_did.did, credential_definition_json
             )
 
-        await self._submit(request_json)
+        await self._submit(request_json, True, True)
 
         # TODO: validate response
 
@@ -513,7 +521,7 @@ class IndyLedger(BaseLedger):
                 request_json = await indy.ledger.build_attrib_request(
                     nym, nym, None, attr_json, None
                 )
-            await self._submit(request_json)
+            await self._submit(request_json, True, True)
             return True
         return False
 
@@ -523,3 +531,39 @@ class IndyLedger(BaseLedger):
             # remove any existing prefix
             nym = self.did_to_nym(nym)
             return f"did:sov:{nym}"
+
+    async def fetch_txn_author_agreement(self):
+        """Fetch the current AML and TAA from the ledger."""
+        did_info = await self.wallet.get_public_did()
+
+        get_aml_req = await indy.ledger.build_get_acceptance_mechanisms_request(
+            did_info and did_info.did, None, None
+        )
+        response_json = await self._submit(get_aml_req, sign=bool(did_info))
+        aml_found = (json.loads(response_json))["result"]["data"]
+
+        get_taa_req = await indy.ledger.build_get_txn_author_agreement_request(
+            did_info and did_info.did, None
+        )
+        response_json = await self._submit(get_taa_req, sign=bool(did_info))
+        taa_found = (json.loads(response_json))["result"]["data"]
+        taa_plaintext = taa_found and (taa_found["version"] + taa_found["text"])
+
+        if taa_found:
+            return {
+                "aml_record": aml_found,
+                "taa_record": taa_found,
+                "taa_digest": sha256(taa_plaintext.encode("utf-8")).digest().hex(),
+            }
+
+    async def accept_txn_author_agreement(
+        self, digest: str, mechanism: str, accept_time: int = None
+    ):
+        """Save a new record recording the acceptance of the TAA."""
+        if not accept_time:
+            accept_time = int(time())
+        self.taa_acceptance = {
+            "taaDigest": digest,
+            "mechanism": mechanism,
+            "time": accept_time,
+        }

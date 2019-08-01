@@ -162,10 +162,19 @@ class Conductor:
             public_did_info = await wallet.create_public_did(seed=wallet_seed)
             public_did = public_did_info.did
 
+        ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+        async with ledger:
+            taa_info = await ledger.fetch_txn_author_agreement()
+            if taa_info:
+                mechanism = next(iter(taa_info["aml_record"]["aml"]))
+                await ledger.accept_txn_author_agreement(
+                    taa_info["taa_digest"], mechanism
+                )
+
         # Publish endpoint if necessary
         endpoint = context.settings.get("default_endpoint")
         if public_did:
-            ledger = await context.inject(BaseLedger, required=False)
+            ledger: BaseLedger = await context.inject(BaseLedger, required=False)
             if ledger:
                 async with ledger:
                     await ledger.update_endpoint_for_did(public_did, endpoint)
