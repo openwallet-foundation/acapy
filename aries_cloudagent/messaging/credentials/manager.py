@@ -302,9 +302,10 @@ class CredentialManager:
         credential_request_message = CredentialRequest(
             request=json.dumps(credential_exchange_record.credential_request)
         )
-        credential_request_message._thread = {
-            "thid": credential_exchange_record.thread_id
-        }
+
+        credential_request_message.assign_thread_id(
+            credential_exchange_record.thread_id
+        )
 
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_SENT
         await credential_exchange_record.save(
@@ -374,16 +375,32 @@ class CredentialManager:
             )
 
         credential_exchange_record.state = CredentialExchange.STATE_ISSUED
-        await credential_exchange_record.save(self.context, reason="Issue credential")
 
         credential_message = CredentialIssue(
             issue=json.dumps(credential_exchange_record.credential)
         )
-        credential_message._thread = {
-            "thid": credential_exchange_record.thread_id,
-            "pthid": credential_exchange_record.parent_thread_id,
-        }
 
+        # If we have a thread id on the exchange object,
+        # then we not re-using a credential request and we can
+        # re-assign the thread_id to this message to continue the thread
+        if credential_exchange_record.thread_id:
+            credential_message.assign_thread_id(
+                thid=credential_exchange_record.thread_id
+            )
+        # If we have no thread_id on the exchange object, but we DO have
+        # a parent_thread_id, then we are re-using the credential
+        # request and we need to assign the parent_thread_id to this message
+        # and also keep the generated message thread_id. We also save the
+        # message's thread_id to our exchange object so we can correlate
+        # the thread to an exchange object in `credential_stored()`
+        elif credential_exchange_record.parent_thread_id:
+            new_thread_id = credential_message._thread_id
+            credential_message.assign_thread_id(
+                thid=new_thread_id, pthid=credential_exchange_record.parent_thread_id
+            )
+            credential_exchange_record.thread_id = new_thread_id
+
+        await credential_exchange_record.save(self.context, reason="Issue credential")
         return credential_exchange_record, credential_message
 
     async def receive_credential(self, credential_message: CredentialIssue):
@@ -464,10 +481,10 @@ class CredentialManager:
         await credential_exchange_record.save(self.context, reason="Store credential")
 
         credential_stored_message = CredentialStored()
-        credential_stored_message._thread = {
-            "thid": credential_exchange_record.thread_id,
-            "pthid": credential_exchange_record.parent_thread_id,
-        }
+        credential_stored_message.assign_thread_id(
+            credential_exchange_record.thread_id,
+            credential_exchange_record.parent_thread_id,
+        )
 
         return credential_exchange_record, credential_stored_message
 
