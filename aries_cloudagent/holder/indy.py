@@ -3,6 +3,9 @@
 import json
 import logging
 
+from collections import OrderedDict
+from typing import Sequence
+
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
@@ -115,7 +118,7 @@ class IndyHolder(BaseHolder):
     async def get_credentials_for_presentation_request_by_referent(
         self,
         presentation_request: dict,
-        referent: str,
+        referents: Sequence[str],
         start: int,
         count: int,
         extra_query: dict = {},
@@ -125,9 +128,9 @@ class IndyHolder(BaseHolder):
 
         Args:
             presentation_request: Valid presentation request from issuer
-            referent: Presentation request referent to use to search for creds
+            referents: Presentation request referents to use to search for creds
             start: Starting index
-            count: Number of records to return
+            count: Maximum number of records to return
             extra_query: wql query dict
 
         """
@@ -138,27 +141,45 @@ class IndyHolder(BaseHolder):
             json.dumps(extra_query),
         )
 
-        # We need to move the database cursor position manually...
-        if start > 0:
-            # TODO: move cursors in chunks to avoid exploding memory
-            await indy.anoncreds.prover_fetch_credentials_for_proof_req(
-                search_handle, referent, start
+        if not referents:
+            referents = (
+                *presentation_request["requested_attributes"],
+                *presentation_request["requested_predicates"],
             )
+        creds_dict = OrderedDict()
 
         try:
-            (
-                credentials_json
-            ) = await indy.anoncreds.prover_fetch_credentials_for_proof_req(
-                search_handle, referent, count
-            )
+            for reft in referents:
+                # We need to move the database cursor position manually...
+                if start > 0:
+                    # TODO: move cursors in chunks to avoid exploding memory
+                    await indy.anoncreds.prover_fetch_credentials_for_proof_req(
+                        search_handle, reft, start
+                    )
+                (
+                    credentials_json
+                ) = await indy.anoncreds.prover_fetch_credentials_for_proof_req(
+                    search_handle, reft, count
+                )
+                credentials = json.loads(credentials_json)
+                for cred in credentials:
+                    cred_id = cred["cred_info"]["referent"]
+                    if cred_id not in creds_dict:
+                        cred["presentation_referents"] = {reft}
+                        creds_dict[cred_id] = cred
+                    else:
+                        creds_dict[cred_id]["presentation_referents"].add(reft)
+
         finally:
             # Always close
             await indy.anoncreds.prover_close_credentials_search_for_proof_req(
                 search_handle
             )
 
-        credentials = json.loads(credentials_json)
-        return credentials
+        for cred in creds_dict.values():
+            cred["presentation_referents"] = list(cred["presentation_referents"])
+
+        return tuple(creds_dict.values())[:count]
 
     async def get_credential(self, credential_id: str):
         """
