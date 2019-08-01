@@ -208,7 +208,9 @@ class PresentationManager:
         )
         presentation_exchange_record.presentation = presentation
         await presentation_exchange_record.save(
-            self.context, reason="Create presentation"
+            self.context,
+            reason="Create presentation",
+            log_params={"requested_credentials": requested_credentials},
         )
 
         return presentation_exchange_record, presentation_message

@@ -73,7 +73,7 @@ class AliceAgent(BaseAgent):
         super().__init__("Alice", port, seed=None, **kwargs)
         self.credential_state = {}
         self.credential_event = asyncio.Event()
-        self.extra_args = ["--auto-respond-credential-offer"]
+        self.extra_args = ["--auto-respond-credential-offer", "--auto-store-credential"]
 
     async def handle_credentials(self, payload):
         cred_id = payload["credential_exchange_id"]

@@ -16,6 +16,7 @@ class CredentialExchange(BaseRecord):
     RECORD_TYPE = "credential_exchange"
     RECORD_ID_NAME = "credential_exchange_id"
     WEBHOOK_TOPIC = "credentials"
+    LOG_STATE_FLAG = "debug.credentials"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
