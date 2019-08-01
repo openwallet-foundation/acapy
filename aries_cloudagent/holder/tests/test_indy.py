@@ -110,13 +110,15 @@ class TestIndyHolder(AsyncTestCase):
         mock_prover_search_credentials_for_proof_req,
     ):
         mock_prover_search_credentials_for_proof_req.return_value = "search_handle"
-        mock_prover_fetch_credentials_for_proof_req.return_value = '{"x": "y"}'
+        mock_prover_fetch_credentials_for_proof_req.return_value = (
+            '[{"cred_info": {"referent": "asdb"}}]'
+        )
 
         mock_wallet = async_mock.MagicMock()
         holder = IndyHolder(mock_wallet)
 
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            {"p": "r"}, "asdb", 2, 3, {"e": "q"}
+            {"p": "r"}, ("asdb",), 2, 3, {"e": "q"}
         )
 
         mock_prover_search_credentials_for_proof_req.assert_called_once_with(
@@ -132,7 +134,9 @@ class TestIndyHolder(AsyncTestCase):
             "search_handle"
         )
 
-        assert credentials == json.loads('{"x": "y"}')
+        assert credentials == (
+            {"cred_info": {"referent": "asdb"}, "presentation_referents": ["asdb"]},
+        )
 
     @async_mock.patch("indy.anoncreds.prover_get_credential")
     async def test_get_credential(self, mock_get_cred):

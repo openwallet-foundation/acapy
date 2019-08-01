@@ -135,11 +135,7 @@ class Conductor:
             # at the class level (!) should not be performed multiple times
             collector.wrap(
                 ConnectionManager,
-                (
-                    "get_connection_target",
-                    "fetch_did_document",
-                    "find_connection",
-                ),
+                ("get_connection_target", "fetch_did_document", "find_connection"),
             )
 
     async def start(self) -> None:

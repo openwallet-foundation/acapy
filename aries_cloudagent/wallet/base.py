@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Sequence
 
+
 KeyInfo = namedtuple("KeyInfo", "verkey metadata")
 
 DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
@@ -16,6 +17,8 @@ PairwiseInfo = namedtuple(
 class BaseWallet(ABC):
     """Abstract wallet interface."""
 
+    WALLET_TYPE = None
+
     # TODO: break config out into params?
     def __init__(self, config: dict):
         """
@@ -27,6 +30,28 @@ class BaseWallet(ABC):
         """
 
     @property
+    def name(self) -> str:
+        """
+        Accessor for the wallet name.
+
+        Returns:
+            Defaults to None
+
+        """
+        return None
+
+    @property
+    def type(self) -> str:
+        """
+        Accessor for the wallet type.
+
+        Returns:
+            Defaults to None
+
+        """
+        return self.WALLET_TYPE
+
+    @property
     def handle(self):
         """
         Get internal wallet reference.
@@ -35,6 +60,11 @@ class BaseWallet(ABC):
             Defaults to None
 
         """
+        return None
+
+    @property
+    def created(self) -> bool:
+        """Check whether the wallet was created on the last open call."""
         return None
 
     @property
@@ -154,6 +184,35 @@ class BaseWallet(ABC):
                 return info
 
         return None
+
+    async def set_public_did(self, did: str) -> DIDInfo:
+        """
+        Assign the public did.
+
+        Returns:
+            The created `DIDInfo`
+
+        """
+
+        # will raise an exception if not found
+        info = None if did is None else await self.get_local_did(did)
+
+        public = await self.get_public_did()
+        if public and info and public.did == info.did:
+            info = public
+        else:
+            if public:
+                metadata = public.metadata.copy()
+                del metadata["public"]
+                await self.replace_local_did_metadata(public.did, metadata)
+
+            if info:
+                metadata = info.metadata.copy()
+                metadata["public"] = True
+                await self.replace_local_did_metadata(info.did, metadata)
+                info = await self.get_local_did(info.did)
+
+        return info
 
     @abstractmethod
     async def get_local_dids(self) -> Sequence[DIDInfo]:

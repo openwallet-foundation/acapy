@@ -148,7 +148,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["id"]
-    presentation_referent = request.match_info["referent"]
+    presentation_referent = request.match_info.get("referent")
 
     try:
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(
@@ -171,20 +171,78 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     credentials = await holder.get_credentials_for_presentation_request_by_referent(
         presentation_exchange_record.presentation_request,
-        presentation_referent,
+        (presentation_referent,) if presentation_referent else (),
         start,
         count,
         extra_query,
     )
 
+    presentation_exchange_record.log_state(
+        context,
+        "Retrieved presentation credentials",
+        {
+            "presentation_exchange_id": presentation_exchange_id,
+            "referent": presentation_referent,
+            "extra_query": extra_query,
+            "credentials": credentials,
+        },
+    )
+
     return web.json_response(credentials)
 
 
-@docs(tags=["presentation_exchange"], summary="Sends a presentation request")
+async def _create_request_helper(context, spec):
+    """Create a presentation request."""
+    connection_id = spec.get("connection_id")
+    name = spec.get("name")
+    version = spec.get("version")
+    requested_attributes = spec.get("requested_attributes")
+    requested_predicates = spec.get("requested_predicates")
+
+    presentation_manager = PresentationManager(context)
+
+    (
+        presentation_exchange_record,
+        presentation_request_message,
+    ) = await presentation_manager.create_request(
+        name, version, requested_attributes, requested_predicates, connection_id
+    )
+    return presentation_exchange_record, presentation_request_message
+
+
+@docs(tags=["presentation_exchange"], summary="Creates a presentation request")
+@request_schema(PresentationRequestRequestSchema())
+async def presentation_exchange_create_request(request: web.BaseRequest):
+    """
+    Request handler for creating a presentation request.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The presentation exchange details.
+
+    """
+
+    context = request.app["request_context"]
+
+    body = await request.json()
+
+    (
+        presentation_exchange_record,
+        presentation_request_message,
+    ) = await _create_request_helper(context, body)
+
+    return web.json_response(presentation_exchange_record.serialize())
+
+
+@docs(
+    tags=["presentation_exchange"], summary="Creates and sends a presentation request"
+)
 @request_schema(PresentationRequestRequestSchema())
 async def presentation_exchange_send_request(request: web.BaseRequest):
     """
-    Request handler for sending a presentation request.
+    Request handler for creating and sending a presentation request.
 
     Args:
         request: aiohttp request object
@@ -199,23 +257,15 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
 
     body = await request.json()
 
-    connection_id = body.get("connection_id")
-
-    name = body.get("name")
-    version = body.get("version")
-    requested_attributes = body.get("requested_attributes")
-    requested_predicates = body.get("requested_predicates")
-
-    presentation_manager = PresentationManager(context)
-
     (
         presentation_exchange_record,
         presentation_request_message,
-    ) = await presentation_manager.create_request(
-        name, version, requested_attributes, requested_predicates, connection_id
-    )
+    ) = await _create_request_helper(context, body)
 
-    await outbound_handler(presentation_request_message, connection_id=connection_id)
+    await outbound_handler(
+        presentation_request_message,
+        connection_id=presentation_exchange_record.connection_id,
+    )
 
     return web.json_response(presentation_exchange_record.serialize())
 
@@ -335,8 +385,16 @@ async def register(app: web.Application):
             web.get("/presentation_exchange", presentation_exchange_list),
             web.get("/presentation_exchange/{id}", presentation_exchange_retrieve),
             web.get(
+                "/presentation_exchange/{id}/credentials",
+                presentation_exchange_credentials_list,
+            ),
+            web.get(
                 "/presentation_exchange/{id}/credentials/{referent}",
                 presentation_exchange_credentials_list,
+            ),
+            web.post(
+                "/presentation_exchange/create_request",
+                presentation_exchange_create_request,
             ),
             web.post(
                 "/presentation_exchange/send_request",
