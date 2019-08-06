@@ -128,11 +128,11 @@ For additional options, execute `aca-py provision --help`.
 To run the locally, we recommend using the provided Docker images to run the software.
 
 ```bash
-./scripts/run_docker <args>
+./scripts/run_docker start <args>
 ```
 
 ```bash
-./scripts/run_docker --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
+./scripts/run_docker start --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
 ```
 
 To enable the [ptvsd](https://github.com/Microsoft/ptvsd) Python debugger for Visual Studio/VSCode use the `debug` flag
@@ -140,7 +140,7 @@ To enable the [ptvsd](https://github.com/Microsoft/ptvsd) Python debugger for Vi
 Publish any ports you will be using from the docker container using the PORTS environment variable. For example:
 
 ```bash
-PORTS="5000:5000 8000:8000 1000:1000" ./scripts/run_docker --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
+PORTS="5000:5000 8000:8000 1000:1000" ./scripts/run_docker start --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
 ```
 
 Refer to [the previous section](#Running) for instructions on how to run the software.
