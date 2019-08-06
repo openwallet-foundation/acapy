@@ -5,8 +5,9 @@ import logging
 import os
 import random
 import subprocess
+from timeit import default_timer
 
-from aiohttp import web, ClientSession, ClientRequest, ClientError
+from aiohttp import web, ClientSession, ClientRequest, ClientError, ClientTimeout
 
 from .utils import flatten, log_json, log_msg, log_timer, output_reader
 
@@ -17,6 +18,8 @@ DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
 DEFAULT_BIN_PATH = "../bin"
 DEFAULT_PYTHON_PATH = ".."
+
+START_TIMEOUT = float(os.getenv("START_TIMEOUT", 30.0))
 
 RUN_MODE = os.getenv("RUNMODE")
 
@@ -283,6 +286,7 @@ class DemoAgent:
             None, self._process, agent_args, my_env, loop
         )
         if wait:
+            await asyncio.sleep(1.0)
             await self.detect_process()
 
     def _terminate(self):
@@ -356,23 +360,34 @@ class DemoAgent:
 
     async def detect_process(self):
         text = None
-        for i in range(10):
-            # wait for process to start and retrieve swagger content
-            await asyncio.sleep(2.0)
-            try:
-                async with self.client_session.get(
-                    self.admin_url + "/api/docs/swagger.json"
-                ) as resp:
-                    if resp.status == 200:
-                        text = await resp.text()
-                        break
-            except ClientError:
-                text = None
-                continue
+
+        async def fetch_swagger(url: str, timeout: float):
+            text = None
+            start = default_timer()
+            async with ClientSession(timeout=ClientTimeout(total=3.0)) as session:
+                while default_timer() - start < timeout:
+                    try:
+                        async with session.get(url) as resp:
+                            if resp.status == 200:
+                                text = await resp.text()
+                                break
+                    except (ClientError, asyncio.TimeoutError):
+                        pass
+                    await asyncio.sleep(0.5)
+            return text
+
+        swagger_url = self.admin_url + "/api/docs/swagger.json"
+        text = await fetch_swagger(swagger_url, START_TIMEOUT)
+
         if not text:
-            raise Exception(f"Timed out waiting for agent process to start")
+            raise Exception(
+                "Timed out waiting for agent process to start. "
+                + f"Admin URL: {swagger_url}"
+            )
         if "Aries Cloud Agent" not in text:
-            raise Exception(f"Unexpected response from agent process")
+            raise Exception(
+                f"Unexpected response from agent process. Admin URL: {swagger_url}"
+            )
 
     async def fetch_timing(self):
         status = await self.admin_GET("/status")
