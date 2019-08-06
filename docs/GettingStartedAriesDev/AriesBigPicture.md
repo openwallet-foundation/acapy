@@ -6,7 +6,7 @@ Aries agents can be used in a lot of places. This classic Indy Architecture pict
 
 The agents in the picture shares many attributes:
 
-- The have some sort of storage for keys and other data related to their role as an agent
+- They have some sort of storage for keys and other data related to their role as an agent
 - They interact with other agents using secure. peer-to-peer messaging protocols
 - They have some associated mechanism to provide "business rules" to control the behaviour of the agent
   - That is often a person for phone, tablet, laptop, etc. based agents
