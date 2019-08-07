@@ -17,10 +17,10 @@ from .admin.base_server import BaseAdminServer
 from .admin.server import AdminServer
 from .config.default_context import ContextBuilder
 from .config.injection_context import InjectionContext
+from .config.ledger import ledger_config
 from .config.logging import LoggingConfigurator
 from .dispatcher import Dispatcher
 from .error import StartupError
-from .ledger.base import BaseLedger
 from .messaging.connections.manager import ConnectionManager, ConnectionManagerError
 from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError, MessagePrepareError
@@ -162,22 +162,8 @@ class Conductor:
             public_did_info = await wallet.create_public_did(seed=wallet_seed)
             public_did = public_did_info.did
 
-        ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-        async with ledger:
-            taa_info = await ledger.fetch_txn_author_agreement()
-            if taa_info:
-                mechanism = next(iter(taa_info["aml_record"]["aml"]))
-                await ledger.accept_txn_author_agreement(
-                    taa_info["taa_digest"], mechanism
-                )
-
-        # Publish endpoint if necessary
-        endpoint = context.settings.get("default_endpoint")
-        if public_did:
-            ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-            if ledger:
-                async with ledger:
-                    await ledger.update_endpoint_for_did(public_did, endpoint)
+        # Configure the ledger
+        await ledger_config(context, public_did)
 
         # Start up transports
         try:

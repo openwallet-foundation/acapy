@@ -292,7 +292,7 @@ class LedgerGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add ledger-specific command line arguments to the parser."""
         parser.add_argument(
-            "--pool-name", type=str, metavar="<pool-name>", help="Specify the pool name"
+            "--ledger-pool-name", type=str, metavar="<ledger-pool-name>", help="Specify the pool name"
         )
         parser.add_argument(
             "--genesis-transactions",
@@ -316,6 +316,8 @@ class LedgerGroup(ArgumentGroup):
             settings["ledger.genesis_url"] = args.genesis_url
         elif args.genesis_transactions:
             settings["ledger.genesis_transactions"] = args.genesis_transactions
+        if args.ledger_pool_name:
+            settings["ledger.pool_name"] = args.ledger_pool_name
         return settings
 
 

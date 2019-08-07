@@ -7,6 +7,10 @@ class LedgerError(BaseError):
     """Base class for ledger errors."""
 
 
+class LedgerConfigError(LedgerError):
+    """Base class for ledger configuration errors."""
+
+
 class BadLedgerRequestError(LedgerError):
     """The current request cannot proceed."""
 

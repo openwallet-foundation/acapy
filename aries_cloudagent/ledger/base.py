@@ -7,6 +7,8 @@ import re
 class BaseLedger(ABC):
     """Base class for ledger."""
 
+    LEDGER_TYPE = None
+
     async def __aenter__(self) -> "BaseLedger":
         """
         Context manager entry.
