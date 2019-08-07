@@ -59,18 +59,25 @@ async def accept_taa(ledger: BaseLedger, taa_info, provision: bool = False) -> b
         [
             (
                 "wallet_agreement",
-                "Accept the transaction author agreement and store the acceptance in the wallet",
+                (
+                    "Accept the transaction author agreement and store the "
+                    + "acceptance in the wallet"
+                ),
             ),
             (
                 "on_file",
-                "Acceptance of the transaction author agreement is on file in your organization",
+                (
+                    "Acceptance of the transaction author agreement is on file "
+                    + "in my organization"
+                ),
             ),
         ]
     )
     if not provision:
-        allow_opts[
-            "for_session"
-        ] = "Accept the transaction author agreement for the duration of the current session"
+        allow_opts["for_session"] = (
+            "Accept the transaction author agreement for the duration of "
+            + "the current session"
+        )
 
     found = []
     for opt in allow_opts:
