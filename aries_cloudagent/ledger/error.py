@@ -17,7 +17,3 @@ class ClosedPoolError(LedgerError):
 
 class LedgerTransactionError(LedgerError):
     """The ledger rejected the transaction."""
-
-
-class DuplicateSchemaError(LedgerError):
-    """The schema already exists on the ledger."""

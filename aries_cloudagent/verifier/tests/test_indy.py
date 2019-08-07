@@ -5,14 +5,6 @@ from asynctest import mock as async_mock
 
 import pytest
 
-from aries_cloudagent.ledger.indy import (
-    IndyLedger,
-    GENESIS_TRANSACTION_PATH,
-    ClosedPoolError,
-    LedgerTransactionError,
-    DuplicateSchemaError,
-)
-
 from aries_cloudagent.verifier.indy import IndyVerifier
 
 

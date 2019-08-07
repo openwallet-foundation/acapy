@@ -20,7 +20,6 @@ from .base import BaseLedger
 from .error import (
     BadLedgerRequestError,
     ClosedPoolError,
-    DuplicateSchemaError,
     LedgerError,
     LedgerTransactionError,
 )
@@ -210,11 +209,6 @@ class IndyLedger(BaseLedger):
 
         operation = request_result.get("op", "")
 
-        # HACK: If only there were a better way to identify this kind
-        #       of rejected request...
-        if "can have one and only one SCHEMA with name" in request_result_json:
-            raise DuplicateSchemaError()
-
         if operation in ("REQNACK", "REJECT"):
             raise LedgerTransactionError(
                 f"Ledger rejected transaction request: {request_result['reason']}"
@@ -241,29 +235,73 @@ class IndyLedger(BaseLedger):
 
         """
 
-        public_did = await self.wallet.get_public_did()
-        if not public_did:
+        public_info = await self.wallet.get_public_did()
+        if not public_info:
             raise BadLedgerRequestError("Cannot publish schema without a public DID")
 
-        with IndyErrorHandler("Exception when creating schema definition"):
-            schema_id, schema_json = await indy.anoncreds.issuer_create_schema(
-                public_did.did, schema_name, schema_version, json.dumps(attribute_names)
-            )
+        schema_id = await self.check_existing_schema(
+            public_info.did, schema_name, schema_version, attribute_names
+        )
+        if schema_id:
+            self.logger.warning("Schema already exists on ledger. Returning ID.")
+        else:
+            with IndyErrorHandler("Exception when creating schema definition"):
+                schema_id, schema_json = await indy.anoncreds.issuer_create_schema(
+                    public_info.did,
+                    schema_name,
+                    schema_version,
+                    json.dumps(attribute_names),
+                )
 
-        with IndyErrorHandler("Exception when building schema request"):
-            request_json = await indy.ledger.build_schema_request(
-                public_did.did, schema_json
-            )
+            with IndyErrorHandler("Exception when building schema request"):
+                request_json = await indy.ledger.build_schema_request(
+                    public_info.did, schema_json
+                )
 
-        try:
-            await self._submit(request_json)
-        except DuplicateSchemaError as e:
-            self.logger.warning(
-                "Schema already exists on ledger. Returning ID. Error: %s", e
-            )
-            schema_id = f"{public_did.did}:{2}:{schema_name}:{schema_version}"
+            try:
+                await self._submit(request_json)
+            except LedgerTransactionError as e:
+                # Identify possible duplicate schema errors on indy-node < 1.9 and > 1.9
+                if (
+                    "can have one and only one SCHEMA with name" in e.message
+                    or "UnauthorizedClientRequest" in e.message
+                ):
+                    # handle potential race condition if multiple agents are publishing
+                    # the same schema simultaneously
+                    schema_id = await self.check_existing_schema(
+                        public_info.did, schema_name, schema_version, attribute_names
+                    )
+                    if schema_id:
+                        self.logger.warning(
+                            "Schema already exists on ledger. Returning ID. Error: %s",
+                            e,
+                        )
+                else:
+                    raise
 
         return schema_id
+
+    async def check_existing_schema(
+        self,
+        public_did: str,
+        schema_name: str,
+        schema_version: str,
+        attribute_names: Sequence[str],
+    ) -> str:
+        """Check if a schema has already been published."""
+        fetch_schema_id = f"{public_did}:2:{schema_name}:{schema_version}"
+        schema = await self.fetch_schema(fetch_schema_id)
+        if schema:
+            fetched_attrs = schema["attrNames"].copy()
+            fetched_attrs.sort()
+            cmp_attrs = list(attribute_names)
+            cmp_attrs.sort()
+            if fetched_attrs != cmp_attrs:
+                raise LedgerTransactionError(
+                    "Schema already exists on ledger, but attributes do not match: "
+                    + f"{schema_name}:{schema_version} {fetched_attrs} != {cmp_attrs}"
+                )
+            return fetch_schema_id
 
     async def get_schema(self, schema_id: str):
         """
@@ -296,6 +334,11 @@ class IndyLedger(BaseLedger):
             )
 
         response_json = await self._submit(request_json, sign=bool(public_did))
+        response = json.loads(response_json)
+        if not response["result"]["seqNo"]:
+            # schema not found
+            return None
+
         with IndyErrorHandler("Exception when parsing schema response"):
             _, parsed_schema_json = await indy.ledger.parse_get_schema_response(
                 response_json
