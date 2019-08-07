@@ -7,8 +7,6 @@ from ..classloader import ClassLoader
 from ..config.base import BaseProvider, BaseInjector, BaseSettings
 from ..wallet.base import BaseWallet
 
-from .error import LedgerConfigError
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -31,5 +29,6 @@ class LedgerProvider(BaseProvider):
         if genesis_transactions:
             await ledger.create_pool_config(genesis_transactions, True)
         elif not await ledger.check_pool_config():
-            raise LedgerConfigError("Ledger pool configuration has not been created")
+            LOGGER.info("Ledger pool configuration has not been created")
+            ledger = None
         return ledger

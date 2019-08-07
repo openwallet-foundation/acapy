@@ -283,7 +283,7 @@ class GeneralGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_START)
+@group(CAT_START, CAT_PROVISION)
 class LedgerGroup(ArgumentGroup):
     """Ledger settings."""
 

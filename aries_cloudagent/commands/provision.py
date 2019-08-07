@@ -24,7 +24,7 @@ def init_argument_parser(parser: ArgumentParser):
     )
 
 
-async def provision(category: str, settings: dict):
+async def provision(settings: dict):
     """Perform provisioning."""
     context_builder = DefaultContextBuilder(settings)
     context = await context_builder.build()
@@ -59,7 +59,10 @@ async def provision(category: str, settings: dict):
     else:
         print("No public DID")
 
-    await ledger_config(context, public_did_info and public_did_info.did, True)
+    if await ledger_config(context, public_did_info and public_did_info.did, True):
+        print("Ledger configured")
+    else:
+        print("Ledger not configured")
 
 
 def execute(argv: Sequence[str] = None):
@@ -72,7 +75,7 @@ def execute(argv: Sequence[str] = None):
     common_config(settings)
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(provision(args.provision_category, settings))
+    loop.run_until_complete(provision(settings))
 
 
 if __name__ == "__main__":
