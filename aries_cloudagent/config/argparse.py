@@ -305,6 +305,13 @@ class LedgerGroup(ArgumentGroup):
             help="Specify the genesis transactions as a string",
         )
         parser.add_argument(
+            "--genesis-file",
+            type=str,
+            dest="genesis_file",
+            metavar="<genesis-file>",
+            help="Specify a file from which to read the genesis transactions",
+        )
+        parser.add_argument(
             "--genesis-url",
             type=str,
             dest="genesis_url",
@@ -317,6 +324,8 @@ class LedgerGroup(ArgumentGroup):
         settings = {}
         if args.genesis_url:
             settings["ledger.genesis_url"] = args.genesis_url
+        elif args.genesis_file:
+            settings["ledger.genesis_file"] = args.genesis_file
         elif args.genesis_transactions:
             settings["ledger.genesis_transactions"] = args.genesis_transactions
         if args.ledger_pool_name:
