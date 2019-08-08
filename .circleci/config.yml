@@ -2,13 +2,13 @@ version: 2
 jobs:
   agent-build:
     docker:
-      - image: bcgovimages/von-image:py36-1.9-0
+      - image: bcgovimages/von-image:py36-1.11-0
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v4-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
-            - v4-pip-dependencies-{{ .Branch }}-
+            - v5-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
+            - v5-pip-dependencies-{{ .Branch }}-
       - run:
           name: Install Python Dependencies
           command: |
@@ -20,7 +20,7 @@ jobs:
       - save_cache:
           paths:
             - /home/indy/.local/lib/python3.6/site-packages
-          key: v4-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
+          key: v5-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
 
       - run:
           name: Run Agent Tests

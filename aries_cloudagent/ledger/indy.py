@@ -5,7 +5,9 @@ import json
 import logging
 import re
 import tempfile
+from hashlib import sha256
 from os import path
+from time import time
 from typing import Sequence, Type
 
 import indy.anoncreds
@@ -14,12 +16,15 @@ import indy.pool
 from indy.error import IndyError, ErrorCode
 
 from ..cache.base import BaseCache
+from ..storage.base import StorageRecord
+from ..storage.indy import IndyStorage
 from ..wallet.base import BaseWallet
 
 from .base import BaseLedger
 from .error import (
     BadLedgerRequestError,
     ClosedPoolError,
+    LedgerConfigError,
     LedgerError,
     LedgerTransactionError,
 )
@@ -56,11 +61,14 @@ class IndyErrorHandler:
 class IndyLedger(BaseLedger):
     """Indy ledger class."""
 
+    LEDGER_TYPE = "indy"
+
+    TAA_ACCEPTED_RECORD_TYPE = "taa_accepted"
+
     def __init__(
         self,
-        name: str,
+        pool_name: str,
         wallet: BaseWallet,
-        genesis_transactions,
         *,
         keepalive: int = 0,
         cache: BaseCache = None,
@@ -70,57 +78,72 @@ class IndyLedger(BaseLedger):
         Initialize an IndyLedger instance.
 
         Args:
+            pool_name: The Indy pool ledger configuration name
             wallet: IndyWallet instance
-            genesis_transactions: String of genesis transactions
             keepalive: How many seconds to keep the ledger open
-
+            cache: The cache instance to use
+            cache_duration: The TTL for ledger cache entries
         """
         self.logger = logging.getLogger(__name__)
 
-        self.created = False
         self.opened = False
         self.ref_count = 0
         self.ref_lock = asyncio.Lock()
         self.keepalive = keepalive
         self.close_task: asyncio.Future = None
-        self.name = name
         self.cache = cache
         self.cache_duration = cache_duration
         self.wallet = wallet
         self.pool_handle = None
+        self.pool_name = pool_name
+        self.taa_acceptance = None
+        self.taa_cache = None
 
-        # TODO: ensure wallet type is indy
+        if wallet.WALLET_TYPE != "indy":
+            raise LedgerConfigError("Wallet type is not 'indy'")
+
+    async def create_pool_config(
+        self, genesis_transactions: str, recreate: bool = False
+    ):
+        """Create the pool ledger configuration."""
 
         # indy-sdk requires a file but it's only used once to bootstrap
         # the connection so we take a string instead of create a tmp file
-        with open(GENESIS_TRANSACTION_PATH, "w") as genesis_file:
+        txn_path = GENESIS_TRANSACTION_PATH
+        with open(txn_path, "w") as genesis_file:
             genesis_file.write(genesis_transactions)
+        pool_config = json.dumps({"genesis_txn": txn_path})
 
-    async def create(self):
-        """Create the pool ledger, if necessary."""
-        pool_config = json.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
+        if await self.check_pool_config():
+            if recreate:
+                self.logger.debug("Removing existing ledger config")
+                await indy.pool.delete_pool_ledger_config(self.pool_name)
+            else:
+                raise LedgerConfigError(
+                    "Ledger pool configuration already exists: %s", self.pool_name
+                )
 
-        # We only support proto ver 2
-        await indy.pool.set_protocol_version(2)
+        self.logger.debug("Creating pool ledger config")
+        with IndyErrorHandler(
+            "Exception when creating pool ledger config", LedgerConfigError
+        ):
+            await indy.pool.create_pool_ledger_config(self.pool_name, pool_config)
 
-        self.logger.debug("Creating pool ledger...")
-        with IndyErrorHandler("Exception when creating pool ledger config"):
-            try:
-                await indy.pool.create_pool_ledger_config(self.name, pool_config)
-            except IndyError as error:
-                if error.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
-                    self.logger.debug("Pool ledger already created.")
-                else:
-                    raise
-        self.created = True
+    async def check_pool_config(self) -> bool:
+        """Check if a pool config has been created."""
+        pool_names = {cfg["pool"] for cfg in await indy.pool.list_pools()}
+        return self.pool_name in pool_names
 
     async def open(self):
         """Open the pool ledger, creating it if necessary."""
-        if not self.created:
-            await self.create()
+        # We only support proto ver 2
+        with IndyErrorHandler(
+            "Exception when setting ledger protocol version", LedgerConfigError
+        ):
+            await indy.pool.set_protocol_version(2)
 
-        # TODO: allow ledger config in init?
-        self.pool_handle = await indy.pool.open_pool_ledger(self.name, "{}")
+        with IndyErrorHandler("Exception when opening pool ledger", LedgerConfigError):
+            self.pool_handle = await indy.pool.open_pool_ledger(self.pool_name, "{}")
         self.opened = True
 
     async def close(self):
@@ -175,25 +198,41 @@ class IndyLedger(BaseLedger):
         """Context manager exit."""
         await self._context_close()
 
-    async def _submit(self, request_json: str, sign=True) -> str:
+    async def _submit(self, request_json: str, sign=True, taa_accept=False) -> str:
         """
         Sign and submit request to ledger.
 
         Args:
             request_json: The json string to submit
             sign: whether or not to sign the request
+            taa_accept: whether to apply TAA acceptance to the (signed, write) request
 
         """
 
         if not self.pool_handle:
             raise ClosedPoolError(
-                "Cannot sign and submit request to closed pool {}".format(self.name)
+                "Cannot sign and submit request to closed pool {}".format(
+                    self.pool_name
+                )
             )
 
         if sign:
             public_did = await self.wallet.get_public_did()
             if not public_did:
                 raise BadLedgerRequestError("Cannot sign request without a public DID")
+            if taa_accept:
+                acceptance = await self.get_latest_txn_author_acceptance()
+                if acceptance:
+                    request_json = await (
+                        indy.ledger.append_txn_author_agreement_acceptance_to_request(
+                            request_json,
+                            acceptance["text"],
+                            acceptance["version"],
+                            acceptance["digest"],
+                            acceptance["mechanism"],
+                            acceptance["time"],
+                        )
+                    )
             submit_op = indy.ledger.sign_and_submit_request(
                 self.pool_handle, self.wallet.handle, public_did.did, request_json
             )
@@ -259,7 +298,7 @@ class IndyLedger(BaseLedger):
                 )
 
             try:
-                await self._submit(request_json)
+                await self._submit(request_json, True, True)
             except LedgerTransactionError as e:
                 # Identify possible duplicate schema errors on indy-node < 1.9 and > 1.9
                 if (
@@ -404,7 +443,7 @@ class IndyLedger(BaseLedger):
                 public_did.did, credential_definition_json
             )
 
-        await self._submit(request_json)
+        await self._submit(request_json, True, True)
 
         # TODO: validate response
 
@@ -513,7 +552,7 @@ class IndyLedger(BaseLedger):
                 request_json = await indy.ledger.build_attrib_request(
                     nym, nym, None, attr_json, None
                 )
-            await self._submit(request_json)
+            await self._submit(request_json, True, True)
             return True
         return False
 
@@ -523,3 +562,85 @@ class IndyLedger(BaseLedger):
             # remove any existing prefix
             nym = self.did_to_nym(nym)
             return f"did:sov:{nym}"
+
+    async def get_txn_author_agreement(self, reload: bool = False):
+        """Get the current transaction author agreement, fetching it if necessary."""
+        if not self.taa_cache or reload:
+            self.taa_cache = await self.fetch_txn_author_agreement()
+        return self.taa_cache
+
+    async def fetch_txn_author_agreement(self):
+        """Fetch the current AML and TAA from the ledger."""
+        did_info = await self.wallet.get_public_did()
+
+        get_aml_req = await indy.ledger.build_get_acceptance_mechanisms_request(
+            did_info and did_info.did, None, None
+        )
+        response_json = await self._submit(get_aml_req, sign=bool(did_info))
+        aml_found = (json.loads(response_json))["result"]["data"]
+
+        get_taa_req = await indy.ledger.build_get_txn_author_agreement_request(
+            did_info and did_info.did, None
+        )
+        response_json = await self._submit(get_taa_req, sign=bool(did_info))
+        taa_found = (json.loads(response_json))["result"]["data"]
+        taa_required = taa_found and taa_found["text"]
+        if taa_found:
+            taa_plaintext = taa_found["version"] + taa_found["text"]
+            taa_found["digest"] = sha256(taa_plaintext.encode("utf-8")).digest().hex()
+
+        return {
+            "aml_record": aml_found,
+            "taa_record": taa_found,
+            "taa_required": taa_required,
+        }
+
+    def get_indy_storage(self) -> IndyStorage:
+        """Get an IndyStorage instance for the current wallet."""
+        return IndyStorage(self.wallet)
+
+    async def accept_txn_author_agreement(
+        self,
+        taa_record: dict,
+        mechanism: str,
+        accept_time: int = None,
+        store: bool = False,
+    ):
+        """Save a new record recording the acceptance of the TAA."""
+        if not accept_time:
+            accept_time = int(time())
+        acceptance = {
+            "text": taa_record["text"],
+            "version": taa_record["version"],
+            "digest": taa_record["digest"],
+            "mechanism": mechanism,
+            "time": accept_time,
+        }
+        record = StorageRecord(
+            self.TAA_ACCEPTED_RECORD_TYPE,
+            json.dumps(acceptance),
+            {"pool_name": self.pool_name},
+        )
+        storage = self.get_indy_storage()
+        await storage.add_record(record)
+        cache_key = self.TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
+        await self.cache.set(cache_key, acceptance, self.cache_duration)
+
+    async def get_latest_txn_author_acceptance(self):
+        """Look up the latest TAA acceptance."""
+        cache_key = self.TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
+        acceptance = await self.cache.get(cache_key)
+        if acceptance is None:
+            storage = self.get_indy_storage()
+            tag_filter = {"pool_name": self.pool_name}
+            found = await storage.search_records(
+                self.TAA_ACCEPTED_RECORD_TYPE, tag_filter
+            ).fetch_all()
+            if found:
+                records = list(json.loads(record.value) for record in found)
+                records.sort(key=lambda v: v["time"], reverse=True)
+                acceptance = records[0]
+            else:
+                acceptance = {}
+            await self.cache.set(cache_key, acceptance, self.cache_duration)
+        return acceptance

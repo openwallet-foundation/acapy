@@ -112,7 +112,7 @@ Most configuration parameters are provided to the the agent at startup. Refer to
 It is possible to provision an Indy wallet before running an agent to avoid passing in the wallet seed on every invocation of `aca-py start`.
 
 ```bash
-aca-py provision wallet --wallet-type indy --seed $SEED
+aca-py provision --wallet-type indy --seed $SEED
 ```
 
 For additional options, execute `aca-py provision --help`.
