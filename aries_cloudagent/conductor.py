@@ -19,8 +19,8 @@ from .config.default_context import ContextBuilder
 from .config.injection_context import InjectionContext
 from .config.ledger import ledger_config
 from .config.logging import LoggingConfigurator
+from .config.wallet import wallet_config
 from .dispatcher import Dispatcher
-from .error import StartupError
 from .messaging.connections.manager import ConnectionManager, ConnectionManagerError
 from .messaging.connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError, MessagePrepareError
@@ -34,8 +34,6 @@ from .transport.inbound.base import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.queue.base import BaseOutboundMessageQueue
-from .wallet.base import BaseWallet
-from .wallet.crypto import seed_to_did
 
 
 class Conductor:
@@ -143,24 +141,8 @@ class Conductor:
 
         context = self.context
 
-        # Initialize wallet
-        wallet: BaseWallet = await context.inject(BaseWallet)
-        wallet_seed = context.settings.get("wallet.seed")
-        public_did_info = await wallet.get_public_did()
-        public_did = None
-        if public_did_info:
-            public_did = public_did_info.did
-            # If we already have a registered public did and it doesn't match
-            # the one derived from `wallet_seed` then we error out.
-            # TODO: Add a command to change public did explicitly
-            if wallet_seed and seed_to_did(wallet_seed) != public_did_info.did:
-                raise StartupError(
-                    "New seed provided which doesn't match the registered"
-                    + f" public did {public_did_info.did}"
-                )
-        elif wallet_seed:
-            public_did_info = await wallet.create_public_did(seed=wallet_seed)
-            public_did = public_did_info.did
+        # Configure the wallet
+        public_did = await wallet_config(context)
 
         # Configure the ledger
         await ledger_config(context, public_did)
@@ -195,14 +177,6 @@ class Conductor:
             public_did,
             self.admin_server,
         )
-
-        # Debug settings
-        test_seed = context.settings.get("debug.seed")
-        if context.settings.get("debug.enabled"):
-            if not test_seed:
-                test_seed = "testseed000000000000000000000001"
-        if test_seed:
-            await wallet.create_local_did(test_seed)
 
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
