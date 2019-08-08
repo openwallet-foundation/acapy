@@ -137,9 +137,13 @@ class IndyLedger(BaseLedger):
     async def open(self):
         """Open the pool ledger, creating it if necessary."""
         # We only support proto ver 2
-        await indy.pool.set_protocol_version(2)
+        with IndyErrorHandler(
+            "Exception when setting ledger protocol version", LedgerConfigError
+        ):
+            await indy.pool.set_protocol_version(2)
 
-        self.pool_handle = await indy.pool.open_pool_ledger(self.pool_name, "{}")
+        with IndyErrorHandler("Exception when opening pool ledger", LedgerConfigError):
+            self.pool_handle = await indy.pool.open_pool_ledger(self.pool_name, "{}")
         self.opened = True
 
     async def close(self):
