@@ -14,12 +14,13 @@ from aries_cloudagent.ledger.indy import (
     BadLedgerRequestError,
     ClosedPoolError,
     LedgerTransactionError,
-    DuplicateSchemaError,
 )
 
 
 @pytest.mark.indy
 class TestIndyLedger(AsyncTestCase):
+    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+
     @async_mock.patch("builtins.open")
     def test_init(self, mock_open):
         mock_open.return_value = async_mock.MagicMock()
@@ -98,6 +99,7 @@ class TestIndyLedger(AsyncTestCase):
 
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_did = mock_wallet.get_public_did.return_value
+            mock_did.did = self.test_did
 
             await ledger._submit("{}", True)
 
@@ -186,12 +188,14 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
     async def test_send_schema(
         self,
         mock_build_schema_req,
         mock_create_schema,
+        mock_fetch_schema,
         mock_submit,
         mock_close,
         mock_open,
@@ -201,6 +205,7 @@ class TestIndyLedger(AsyncTestCase):
         ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
 
         mock_create_schema.return_value = ("schema_id", "{}")
+        mock_fetch_schema.return_value = None
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock()
@@ -213,6 +218,7 @@ class TestIndyLedger(AsyncTestCase):
 
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_did = mock_wallet.get_public_did.return_value
+            mock_did.did = self.test_did
 
             schema_id = await ledger.send_schema(
                 "schema_name", "schema_version", [1, 2, 3]
@@ -235,14 +241,14 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("indy.pool.create_pool_ledger_config")
     @async_mock.patch("indy.pool.open_pool_ledger")
     @async_mock.patch("indy.pool.close_pool_ledger")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.check_existing_schema")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
     async def test_send_schema_already_exists(
         self,
         mock_build_schema_req,
         mock_create_schema,
-        mock_submit,
+        mock_check_existing,
         mock_close_pool,
         mock_open_ledger,
         mock_create_config,
@@ -256,7 +262,8 @@ class TestIndyLedger(AsyncTestCase):
 
         mock_create_schema.return_value = (1, 2)
 
-        mock_submit.side_effect = DuplicateSchemaError
+        fetch_schema_id = f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
+        mock_check_existing.return_value = fetch_schema_id
 
         ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
 
@@ -264,22 +271,17 @@ class TestIndyLedger(AsyncTestCase):
             schema_id = await ledger.send_schema(
                 "schema_name", "schema_version", [1, 2, 3]
             )
-            assert (
-                schema_id
-                == f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
-            )
+            assert schema_id == fetch_schema_id
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
-    @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_get_schema_request")
     @async_mock.patch("indy.ledger.parse_get_schema_response")
     async def test_get_schema(
         self,
         mock_parse_get_schema_req,
         mock_build_get_schema_req,
-        mock_create_schema,
         mock_submit,
         mock_close,
         mock_open,
@@ -287,8 +289,11 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.get_public_did = async_mock.CoroutineMock()
         mock_did = mock_wallet.get_public_did.return_value
+        mock_did.did = self.test_did
 
         mock_parse_get_schema_req.return_value = (None, "{}")
+
+        mock_submit.return_value = "{\"result\":{\"seqNo\":1}}"
 
         ledger = IndyLedger("name", mock_wallet, "genesis_transactions")
 
