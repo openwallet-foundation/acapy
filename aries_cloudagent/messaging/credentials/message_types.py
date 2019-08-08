@@ -5,6 +5,7 @@ MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/credential-issuance/0.1"
 CREDENTIAL_OFFER = f"{MESSAGE_FAMILY}/credential-offer"
 CREDENTIAL_REQUEST = f"{MESSAGE_FAMILY}/credential-request"
 CREDENTIAL_ISSUE = f"{MESSAGE_FAMILY}/credential-issue"
+CREDENTIAL_STORED = f"{MESSAGE_FAMILY}/credential-stored"
 
 MESSAGE_TYPES = {
     CREDENTIAL_OFFER: (
@@ -18,5 +19,9 @@ MESSAGE_TYPES = {
     CREDENTIAL_ISSUE: (
         "aries_cloudagent.messaging.credentials.messages."
         + "credential_issue.CredentialIssue"
+    ),
+    CREDENTIAL_STORED: (
+        "aries_cloudagent.messaging.credentials.messages."
+        + "credential_stored.CredentialStored"
     ),
 }
