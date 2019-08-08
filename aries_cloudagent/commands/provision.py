@@ -5,11 +5,11 @@ from argparse import ArgumentParser
 from typing import Sequence
 
 from ..config import argparse as arg
+from ..config.base import BaseError
 from ..config.default_context import DefaultContextBuilder
 from ..config.ledger import ledger_config
-from ..config.wallet import wallet_config
 from ..config.util import common_config
-from ..error import BaseError
+from ..config.wallet import wallet_config
 
 
 class ProvisionError(BaseError):
@@ -28,12 +28,15 @@ async def provision(settings: dict):
     context_builder = DefaultContextBuilder(settings)
     context = await context_builder.build()
 
-    public_did = await wallet_config(context, True)
+    try:
+        public_did = await wallet_config(context, True)
 
-    if await ledger_config(context, public_did, True):
-        print("Ledger configured")
-    else:
-        print("Ledger not configured")
+        if await ledger_config(context, public_did, True):
+            print("Ledger configured")
+        else:
+            print("Ledger not configured")
+    except BaseError as e:
+        raise ProvisionError("Error during provisioning") from e
 
 
 def execute(argv: Sequence[str] = None):

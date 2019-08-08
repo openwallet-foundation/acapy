@@ -39,10 +39,10 @@ class TestStart(AsyncTestCase):
         with async_mock.patch.object(command, "asyncio", autospec=True) as mock_asyncio:
             command.run_loop(startup_call, shutdown_call)
             mock_asyncio.get_event_loop.return_value.add_signal_handler.assert_called_once()
-            mock_asyncio.ensure_future.assert_called_once_with(
-                startup_call, loop=mock_asyncio.get_event_loop.return_value
-            )
+            init_coro = mock_asyncio.ensure_future.call_args[0][0]
             mock_asyncio.get_event_loop.return_value.run_forever.assert_called_once()
+            await init_coro
+            startup.assert_awaited_once()
 
             done_calls = (
                 mock_asyncio.get_event_loop.return_value.add_signal_handler.call_args
