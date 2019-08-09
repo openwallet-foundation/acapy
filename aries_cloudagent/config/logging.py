@@ -10,12 +10,15 @@ import pkg_resources
 from ..version import __version__
 
 
+DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
+
+
 def load_resource(path: str, encoding: str = None) -> TextIO:
     """
-    Open a resource file located in a python package or the local filesystem
+    Open a resource file located in a python package or the local filesystem.
 
     Args:
-        path (str): The resource path in the form of `dir/file` or `package:dir/file`
+        path: The resource path in the form of `dir/file` or `package:dir/file`
     Returns:
         A file-like object representing the resource
     """
@@ -53,7 +56,7 @@ class LoggingConfigurator:
         if logging_config_path is not None:
             config_path = logging_config_path
         else:
-            config_path = "aries_cloudagent.config:default_logging_config.ini"
+            config_path = DEFAULT_LOGGING_CONFIG_PATH
 
         log_config = load_resource(config_path, "utf-8")
         if log_config:
