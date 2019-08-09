@@ -3,8 +3,7 @@ FROM bcgovimages/von-image:py36-1.11-0
 ENV ENABLE_PTVSD 0
 
 # Add and install Indy Agent code
-ADD requirements.txt .
-ADD requirements.dev.txt .
+ADD requirements*.txt ./
 
 RUN pip3 install --no-cache-dir -r requirements.txt -r requirements.dev.txt
 
