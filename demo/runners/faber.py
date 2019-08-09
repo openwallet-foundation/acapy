@@ -5,8 +5,10 @@ import os
 import random
 import sys
 
-from .support.agent import DemoAgent, default_genesis_txns
-from .support.utils import (
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
+
+from runners.support.agent import DemoAgent, default_genesis_txns
+from runners.support.utils import (
     log_json,
     log_msg,
     log_status,
