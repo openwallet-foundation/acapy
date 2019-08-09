@@ -7,7 +7,7 @@ import re
 import tempfile
 from hashlib import sha256
 from os import path
-from time import time
+from datetime import datetime, date
 from typing import Sequence, Type
 
 import indy.anoncreds
@@ -599,6 +599,12 @@ class IndyLedger(BaseLedger):
         """Get an IndyStorage instance for the current wallet."""
         return IndyStorage(self.wallet)
 
+    def taa_rough_timestamp(self) -> int:
+        """ Get a timestamp accurate to the day. Anything more accurate is a
+            privacy concern.
+        """
+        return int(datetime.combine(date.today(), datetime.min.time()).timestamp())
+
     async def accept_txn_author_agreement(
         self,
         taa_record: dict,
@@ -608,7 +614,7 @@ class IndyLedger(BaseLedger):
     ):
         """Save a new record recording the acceptance of the TAA."""
         if not accept_time:
-            accept_time = int(time())
+            accept_time = self.taa_rough_timestamp()
         acceptance = {
             "text": taa_record["text"],
             "version": taa_record["version"],
