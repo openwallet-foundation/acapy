@@ -110,6 +110,9 @@ class ConnectionManager:
             my_label = self.context.settings.get("default_label")
         wallet: BaseWallet = await self.context.inject(BaseWallet)
 
+        if not my_endpoint:
+            my_endpoint = self.context.settings.get("default_endpoint")
+
         if public:
             if not self.context.settings.get("public_invites"):
                 raise ConnectionManagerError("Public invitations are not enabled")
@@ -121,12 +124,10 @@ class ConnectionManager:
                 )
             # FIXME - allow ledger instance to format public DID with prefix?
             invitation = ConnectionInvitation(
-                label=my_label, did=f"did:sov:{public_did.did}"
+                label=my_label, did=f"did:sov:{public_did.did}", endpoint=my_endpoint
             )
             return None, invitation
 
-        if not my_endpoint:
-            my_endpoint = self.context.settings.get("default_endpoint")
         if not accept and self.context.settings.get("debug.auto_accept_requests"):
             accept = ConnectionRecord.ACCEPT_AUTO
 
