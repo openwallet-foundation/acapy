@@ -79,7 +79,7 @@ async def ledger_config(
         taa_info = await ledger.get_txn_author_agreement()
         if taa_info["taa_required"] and public_did:
             taa_accepted = await ledger.get_latest_txn_author_acceptance()
-            if not taa_accepted or taa_info["taa_digest"] != taa_accepted["taaDigest"]:
+            if not taa_accepted or taa_info["taa_record"]["digest"] != taa_accepted["digest"]:
                 if not await accept_taa(ledger, taa_info, provision):
                     return False
 
