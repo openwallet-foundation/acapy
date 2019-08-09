@@ -28,6 +28,7 @@ def str_to_datetime(dt: Union[str, datetime]) -> datetime:
 
     Args:
         dt: May be a string or datetime to allow automatic conversion
+
     """
     if isinstance(dt, str):
         match = re.match(
@@ -65,6 +66,26 @@ def str_to_datetime(dt: Union[str, datetime]) -> datetime:
                 result = result - timedelta(minutes=tz_sgn * (tz_hours * 60 + tz_mins))
         return result
     return dt
+
+
+def str_to_epoch(dt: Union[str, datetime]) -> int:
+    """Convert an indy-standard datetime string to epoch seconds.
+
+    Args:
+        dt: May be a string or datetime to allow automatic conversion
+
+    """
+    return int(str_to_datetime(dt).timestamp())
+
+
+def epoch_to_str(epoch: int) -> str:
+    """Convert epoch seconds to indy-standard datetime string.
+
+    Args:
+        epoch: epoch seconds
+
+    """
+    return datetime_to_str(datetime.fromtimestamp(epoch, tz=timezone.utc))
 
 
 def datetime_now() -> datetime:

@@ -206,9 +206,26 @@ class DebugGroup(ArgumentGroup):
             help="Auto-respond to basic messages",
         )
         parser.add_argument(
+            "--auto-respond-credential-proposal",
+            action="store_true",
+            help="Auto-respond to credential proposals with corresponding "
+            + "credential offers",
+        )
+        parser.add_argument(
             "--auto-respond-credential-offer",
             action="store_true",
             help="Auto-respond to credential offers with credential request",
+        )
+        parser.add_argument(
+            "--auto-respond-credential-request",
+            action="store_true",
+            help="Auto-respond to credential requests with corresponding credentials",
+        )
+        parser.add_argument(
+            "--auto-respond-presentation-proposal",
+            action="store_true",
+            help="Auto-respond to presentation proposals with corresponding "
+            + "presentation requests",
         )
         parser.add_argument(
             "--auto-respond-presentation-request",
@@ -243,8 +260,14 @@ class DebugGroup(ArgumentGroup):
         if args.invite:
             settings["debug.print_invitation"] = True
 
+        if args.auto_respond_credential_proposal:
+            settings["debug.auto_respond_credential_proposal"] = True
         if args.auto_respond_credential_offer:
             settings["debug.auto_respond_credential_offer"] = True
+        if args.auto_respond_credential_request:
+            settings["debug.auto_respond_credential_request"] = True
+        if args.auto_respond_presentation_proposal:
+            settings["debug.auto_respond_presentation_proposal"] = True
         if args.auto_respond_presentation_request:
             settings["debug.auto_respond_presentation_request"] = True
         if args.auto_store_credential:

@@ -499,6 +499,41 @@ class IndyLedger(BaseLedger):
 
         return parsed_response
 
+    async def credential_definition_id2schema_id(self, credential_definition_id):
+        """
+        From a credential definition, get the identifier for its schema.
+
+        Args:
+            credential_definition_id: The identifier of the credential definition
+                from which to identify a schema
+        """
+
+        # scrape sequence number from cd_id
+        seq_no = int(credential_definition_id.split(":")[3])
+
+        # get txn by sequence number, retrieve schema identifier components
+        request_json = await indy.ledger.build_get_txn_request(
+            None,
+            None,
+            seq_no=seq_no
+        )
+        response = json.loads(await self._submit(request_json))
+
+        # transaction data format assumes node protocol 1.4 (circa 2018-07) or higher
+        data_txn = (response["result"].get("data", {}) or {}).get("txn", {})
+        if data_txn.get("type", None) == "101":  # marks indy-sdk schema txn type
+            (origin_did, name, version) = (
+                data_txn["metadata"]["from"],
+                data_txn["data"]["data"]["name"],
+                data_txn["data"]["data"]["version"]
+            )
+            return f"{origin_did}:2:{name}:{version}"
+
+        raise LedgerTransactionError(
+            "Could not get schema identifier from ledger for "
+            + f"credential definition id {credential_definition_id}"
+        )
+
     async def get_key_for_did(self, did: str) -> str:
         """Fetch the verkey for a ledger DID.
 
