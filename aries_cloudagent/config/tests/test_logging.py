@@ -1,6 +1,6 @@
 import contextlib
 from io import StringIO
-from unittest import mock
+from asynctest import mock
 
 from .. import logging as test_module
 
@@ -10,22 +10,28 @@ class TestLoggingConfigurator:
     host_arg_value = "host"
     port_arg_value = "port"
 
-    @mock.patch.object(test_module.path, "join")
+    @mock.patch.object(test_module, "load_resource", autospec=True)
     @mock.patch.object(test_module, "fileConfig", autospec=True)
-    def test_configure_default(self, mock_file_config, mock_os_path_join):
+    def test_configure_default(self, mock_file_config, mock_load_resource):
         test_module.LoggingConfigurator.configure()
 
+        mock_load_resource.assert_called_once_with(
+            test_module.DEFAULT_LOGGING_CONFIG_PATH, "utf-8"
+        )
         mock_file_config.assert_called_once_with(
-            mock_os_path_join.return_value, disable_existing_loggers=False
+            mock_load_resource.return_value, disable_existing_loggers=False
         )
 
-    @mock.patch.object(test_module.path, "join")
+    @mock.patch.object(test_module, "load_resource", autospec=True)
     @mock.patch.object(test_module, "fileConfig", autospec=True)
-    def test_configure_path(self, mock_file_config, mock_os_path_join):
+    def test_configure_path(self, mock_file_config, mock_load_resource):
         path = "a path"
         test_module.LoggingConfigurator.configure(path)
 
-        mock_file_config.assert_called_once_with(path, disable_existing_loggers=False)
+        mock_load_resource.assert_called_once_with(path, "utf-8")
+        mock_file_config.assert_called_once_with(
+            mock_load_resource.return_value, disable_existing_loggers=False
+        )
 
     def test_banner(self):
         stdout = StringIO()
