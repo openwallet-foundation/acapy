@@ -600,8 +600,9 @@ class IndyLedger(BaseLedger):
         return IndyStorage(self.wallet)
 
     def taa_rough_timestamp(self) -> int:
-        """ Get a timestamp accurate to the day. Anything more accurate is a
-            privacy concern.
+        """Get a timestamp accurate to the day.
+
+        Anything more accurate is a privacy concern.
         """
         return int(datetime.combine(date.today(), datetime.min.time()).timestamp())
 
