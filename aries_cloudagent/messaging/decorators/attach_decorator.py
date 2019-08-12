@@ -14,7 +14,7 @@ from typing import Union
 from marshmallow import fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import INDY_ISO8601_DATETIME
+from ..valid import BASE64, INDY_ISO8601_DATETIME, SHA256
 
 
 class AttachDecoratorData(BaseModel):
@@ -61,29 +61,29 @@ class AttachDecoratorData(BaseModel):
     @property
     def base64(self):
         """Accessor for base64 decorator data, or None."""
-        return getattr(self, 'base64_', None)
+        return getattr(self, "base64_", None)
 
     @property
     def json(self):
         """Accessor for json decorator data, or None."""
-        return getattr(self, 'json_', None)
+        return getattr(self, "json_", None)
 
     @property
     def links(self):
         """Accessor for links decorator data, or None."""
-        return getattr(self, 'links_', None)
+        return getattr(self, "links_", None)
 
     @property
     def sha256(self):
         """Accessor for sha256 decorator data, or None."""
-        return getattr(self, 'sha256_', None)
+        return getattr(self, "sha256_", None)
 
     def __eq__(self, other):
         """Equality comparator."""
-        for attr in ['base64_', 'json_', 'sha256_']:
+        for attr in ["base64_", "json_", "sha256_"]:
             if getattr(self, attr, None) != getattr(other, attr, None):
                 return False
-        if set(getattr(self, 'links_', [])) != set(getattr(other, 'links_', [])):
+        if set(getattr(self, "links_", [])) != set(getattr(other, "links_", [])):
             return False
         return True
 
@@ -96,15 +96,34 @@ class AttachDecoratorDataSchema(BaseModelSchema):
 
         model_class = AttachDecoratorData
 
-    base64_ = fields.Str(required=False, attribute='base64_', data_key='base64')
-    json_ = fields.Str(required=False, attribute='json_', data_key='json')
-    links_ = fields.List(
-        fields.Str(),
+    base64_ = fields.Str(
+        description="Base64-encoded data",
         required=False,
-        attribute='links_',
-        data_key='links'
+        attribute="base64_",
+        data_key="base64",
+        **BASE64
     )
-    sha256_ = fields.Str(required=False, attribute='sha256_', data_key='sha256')
+    json_ = fields.Str(
+        description="JSON-serialized data",
+        required=False,
+        example='{"sample": "content"}',
+        attribute="json_",
+        data_key="json"
+    )
+    links_ = fields.List(
+        fields.Str(example="https://link.to/data"),
+        description="List of hypertext links to data",
+        required=False,
+        attribute="links_",
+        data_key="links"
+    )
+    sha256_ = fields.Str(
+        description="SHA256 hash of linked data",
+        required=False,
+        attribute="sha256_",
+        data_key="sha256",
+        **SHA256
+    )
 
 
 class AttachDecorator(BaseModel):
@@ -138,7 +157,7 @@ class AttachDecorator(BaseModel):
                 identifier for the appendage
             mime_type ("mime-type" in serialization): MIME type for attachment
             filename: file name
-            lastmod_time: last modification time, '%Y-%m-%d %H:%M:%SZ'
+            lastmod_time: last modification time, "%Y-%m-%d %H:%M:%SZ"
             description: content description
             data: payload, as per `AttachDecoratorData`
 
@@ -160,7 +179,7 @@ class AttachDecorator(BaseModel):
         Returns: dict with indy object in data attachment
 
         """
-        assert hasattr(self.data, 'base64_')
+        assert hasattr(self.data, "base64_")
         return json.loads(base64.b64decode(self.data.base64_.encode()).decode())
 
     @classmethod
@@ -191,14 +210,37 @@ class AttachDecoratorSchema(BaseModelSchema):
         model_class = AttachDecorator
 
     append_id = fields.Str(
+        description="Attachment identifier",
+        example="view-1",
         required=False,
         allow_none=False,
         attribute="append_id",
         data_key="@id"
     )
-    mime_type = fields.Str(required=False, data_key="mime-type")
-    filename = fields.Str(required=False)
-    byte_count = fields.Integer(required=False)
-    lastmod_time = fields.Str(required=False, **INDY_ISO8601_DATETIME)
-    description = fields.Str(required=False)
+    mime_type = fields.Str(
+        description="MIME type",
+        example="image/png",
+        required=False,
+        data_key="mime-type"
+    )
+    filename = fields.Str(
+        description="File name",
+        example="IMG1092348.png",
+        required=False
+    )
+    byte_count = fields.Integer(
+        description="Byte count of data included by reference",
+        example=1234,
+        required=False
+    )
+    lastmod_time = fields.Str(
+        description="Hint regarding last modification datetime, in ISO-8601 format",
+        required=False,
+        **INDY_ISO8601_DATETIME
+    )
+    description = fields.Str(
+        description="Human-readable description of content",
+        example="view from doorway, facing east, with lights off",
+        required=False
+    )
     data = fields.Nested(AttachDecoratorDataSchema, required=True)

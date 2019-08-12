@@ -2,10 +2,12 @@ from marshmallow import ValidationError
 from unittest import TestCase
 
 from ..valid import (
+    BASE64,
     INDY_CRED_DEF_ID,
     INDY_SCHEMA_ID,
     INDY_PREDICATE,
-    INDY_ISO8601_DATETIME
+    INDY_ISO8601_DATETIME,
+    SHA256
 )
 
 
@@ -83,3 +85,40 @@ class TestValid(TestCase):
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00-00:00")
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00:00.1-00:00")
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00:00.123456-00:00")
+
+    def test_base64(self):
+        non_base64s = [
+            "####",
+            "abcd123",
+            "abcde===",
+            "abcd====",
+            "=abcd123",
+            "=abcd123=",
+            None
+        ]
+        for non_base64 in non_base64s:
+            with self.assertRaises(ValidationError):
+                BASE64["validate"](non_base64)
+
+        BASE64["validate"]("")
+        BASE64["validate"]("UG90YXRv")
+        BASE64["validate"]("UG90YXR=")
+        BASE64["validate"]("UG90YX==")
+
+    def test_base64(self):
+        non_sha256s = [
+            "####",
+            "abcd123",
+            "________________________________________________________________",
+            "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+        ]
+        for non_sha256 in non_sha256s:
+            with self.assertRaises(ValidationError):
+                SHA256["validate"](non_sha256)
+
+        SHA256["validate"](
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        )
+        SHA256["validate"](
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        )
