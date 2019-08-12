@@ -27,7 +27,15 @@ autodoc_mock_imports = [
     "msgpack",
     "pytest",
     "asynctest",
+    "markdown",
+    "prompt_toolkit",
     "aries_cloudagent.base_handler",
+    "aries_cloudagent.logging",
+    "aries_cloudagent.tests.test_conductor",
+    "aries_cloudagent.tests.test_init",
+    "aries_cloudagent.messaging.connections.tests",
+    "aries_cloudagent.messaging.connections.messages.tests",
+    "aries_cloudagent.messaging.introduction.messages.tests"
 ]
 
 # -- Project information -----------------------------------------------------
