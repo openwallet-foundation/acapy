@@ -6,4 +6,8 @@ from .. import help as command
 
 class TestHelp(AsyncTestCase):
     def test_exec_help(self):
-        command.execute([])
+        with async_mock.patch.object(
+            command.ArgumentParser, "print_help"
+        ) as print_help:
+            command.execute([])
+            print_help.assert_called_once()

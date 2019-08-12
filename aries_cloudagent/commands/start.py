@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+import logging
 import os
 import signal
 from argparse import ArgumentParser
@@ -11,6 +12,8 @@ from ..conductor import Conductor
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.util import common_config
+
+LOGGER = logging.getLogger(__name__)
 
 
 async def start_app(conductor: Conductor):
@@ -57,6 +60,14 @@ def execute(argv: Sequence[str] = None):
 def run_loop(startup: Coroutine, shutdown: Coroutine):
     """Execute the application, handling signals and ctrl-c."""
 
+    async def init(cleanup):
+        """Perform startup, terminating if an exception occurs."""
+        try:
+            await startup
+        except Exception:
+            LOGGER.exception("Exception during startup:")
+            cleanup()
+
     async def done():
         """Run shutdown and clean up any outstanding tasks."""
         await shutdown
@@ -72,10 +83,9 @@ def run_loop(startup: Coroutine, shutdown: Coroutine):
         asyncio.get_event_loop().stop()
 
     loop = asyncio.get_event_loop()
-    loop.add_signal_handler(
-        signal.SIGTERM, functools.partial(asyncio.ensure_future, done(), loop=loop)
-    )
-    asyncio.ensure_future(startup, loop=loop)
+    cleanup = functools.partial(asyncio.ensure_future, done(), loop=loop)
+    loop.add_signal_handler(signal.SIGTERM, cleanup)
+    asyncio.ensure_future(init(cleanup), loop=loop)
 
     try:
         loop.run_forever()

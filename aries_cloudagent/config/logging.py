@@ -1,10 +1,38 @@
 """Utilities related to logging."""
 
-from logging import getLogger, FileHandler
+import logging
+from io import TextIOWrapper
 from logging.config import fileConfig
-from os import path
+from typing import TextIO
+
+import pkg_resources
 
 from ..version import __version__
+
+
+DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
+
+
+def load_resource(path: str, encoding: str = None) -> TextIO:
+    """
+    Open a resource file located in a python package or the local filesystem.
+
+    Args:
+        path: The resource path in the form of `dir/file` or `package:dir/file`
+    Returns:
+        A file-like object representing the resource
+    """
+    components = path.rsplit(":", 1)
+    try:
+        if len(components) == 1:
+            return open(components[0], encoding=encoding)
+        else:
+            bstream = pkg_resources.resource_stream(components[0], components[1])
+            if encoding:
+                return TextIOWrapper(bstream, encoding=encoding)
+            return bstream
+    except IOError:
+        pass
 
 
 class LoggingConfigurator:
@@ -28,19 +56,24 @@ class LoggingConfigurator:
         if logging_config_path is not None:
             config_path = logging_config_path
         else:
-            config_path = path.join(
-                path.dirname(path.abspath(__file__)), "default_logging_config.ini"
-            )
+            config_path = DEFAULT_LOGGING_CONFIG_PATH
 
-        fileConfig(config_path, disable_existing_loggers=False)
+        log_config = load_resource(config_path, "utf-8")
+        if log_config:
+            fileConfig(log_config, disable_existing_loggers=False)
+        else:
+            logging.basicConfig(level=logging.WARNING)
+            logging.root.warning(f"Logging config file not found: {config_path}")
 
         if log_file:
-            getLogger().handlers.clear()
-            getLogger().handlers.append(FileHandler(log_file, encoding="utf-8"))
+            logging.root.handlers.clear()
+            logging.root.handlers.append(
+                logging.FileHandler(log_file, encoding="utf-8")
+            )
 
         if log_level:
             log_level = log_level.upper()
-            getLogger().setLevel(log_level)
+            logging.root.setLevel(log_level)
 
     @classmethod
     def print_banner(

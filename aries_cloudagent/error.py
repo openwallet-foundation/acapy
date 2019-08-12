@@ -12,6 +12,11 @@ class BaseError(Exception):
         if error_code:
             self.error_code = error_code
 
+    @property
+    def message(self) -> str:
+        """Accessor for the error message."""
+        return self.args and self.args[0]
+
 
 class StartupError(BaseError):
     """Error raised when there is a problem starting the conductor."""

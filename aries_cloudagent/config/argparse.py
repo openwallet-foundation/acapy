@@ -283,7 +283,7 @@ class GeneralGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_START)
+@group(CAT_START, CAT_PROVISION)
 class LedgerGroup(ArgumentGroup):
     """Ledger settings."""
 
@@ -292,7 +292,10 @@ class LedgerGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add ledger-specific command line arguments to the parser."""
         parser.add_argument(
-            "--pool-name", type=str, metavar="<pool-name>", help="Specify the pool name"
+            "--ledger-pool-name",
+            type=str,
+            metavar="<ledger-pool-name>",
+            help="Specify the pool name",
         )
         parser.add_argument(
             "--genesis-transactions",
@@ -300,6 +303,13 @@ class LedgerGroup(ArgumentGroup):
             dest="genesis_transactions",
             metavar="<genesis-transactions>",
             help="Specify the genesis transactions as a string",
+        )
+        parser.add_argument(
+            "--genesis-file",
+            type=str,
+            dest="genesis_file",
+            metavar="<genesis-file>",
+            help="Specify a file from which to read the genesis transactions",
         )
         parser.add_argument(
             "--genesis-url",
@@ -314,8 +324,12 @@ class LedgerGroup(ArgumentGroup):
         settings = {}
         if args.genesis_url:
             settings["ledger.genesis_url"] = args.genesis_url
+        elif args.genesis_file:
+            settings["ledger.genesis_file"] = args.genesis_file
         elif args.genesis_transactions:
             settings["ledger.genesis_transactions"] = args.genesis_transactions
+        if args.ledger_pool_name:
+            settings["ledger.pool_name"] = args.ledger_pool_name
         return settings
 
 
@@ -526,6 +540,11 @@ class WalletGroup(ArgumentGroup):
             + 'e.g., \'{"account":"postgres","password":"mysecretpassword",'
             + '"admin_account":"postgres","admin_password":"mysecretpassword"}\'',
         )
+        parser.add_argument(
+            "--replace-public-did",
+            action="store_true",
+            help="Allow the public DID to be replaced when a new seed is provided",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract wallet settings."""
@@ -544,4 +563,6 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_config"] = args.wallet_storage_config
         if args.wallet_storage_creds:
             settings["wallet.storage_creds"] = args.wallet_storage_creds
+        if args.replace_public_did:
+            settings["wallet.replace_public_did"] = True
         return settings

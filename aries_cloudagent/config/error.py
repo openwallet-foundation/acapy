@@ -1,7 +1,7 @@
 """Errors for config modules."""
 
-from ..error import BaseError
+from .base import ConfigError
 
 
-class ArgsParseError(BaseError):
+class ArgsParseError(ConfigError):
     """Error raised when there is a problem parsing the command-line arguments."""
