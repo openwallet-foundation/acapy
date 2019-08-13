@@ -133,6 +133,10 @@ class ConnectionManager:
             )
             return None, invitation
 
+        invitation_mode = ConnectionRecord.INVITATION_MODE_ONCE
+        if multi_use:
+            invitation_mode = ConnectionRecord.INVITATION_MODE_MULTI
+
         if not my_endpoint:
             my_endpoint = self.context.settings.get("default_endpoint")
         if not accept and self.context.settings.get("debug.auto_accept_requests"):
@@ -148,7 +152,7 @@ class ConnectionManager:
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
             accept=accept,
-            multi_use_invitation=multi_use
+            invitation_mode=invitation_mode
         )
 
         await connection.save(self.context, reason="Created new invitation")
@@ -327,7 +331,7 @@ class ConnectionManager:
                 self.context, "Found invitation", {"invitation": invitation}
             )
 
-            if connection.multi_use_invitation:
+            if connection.is_multiuse_invitation:
                 wallet: BaseWallet = await self.context.inject(BaseWallet)
                 my_info = await wallet.create_local_did()
                 new_connection = ConnectionRecord(
