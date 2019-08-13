@@ -176,13 +176,14 @@ async def connections_create_invitation(request: web.BaseRequest):
     context = request.app["request_context"]
     accept = request.query.get("accept")
     public = request.query.get("public")
+    multi_use = request.query.get("multi_use")
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden()
 
     connection_mgr = ConnectionManager(context)
     connection, invitation = await connection_mgr.create_invitation(
-        accept=accept, public=bool(public)
+        accept=accept, public=bool(public), multi_use=bool(multi_use)
     )
     result = {
         "connection_id": connection and connection.connection_id,
