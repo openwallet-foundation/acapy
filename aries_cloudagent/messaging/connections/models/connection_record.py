@@ -41,6 +41,7 @@ class ConnectionRecord(BaseRecord):
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
+    INITIATOR_MULTIUSE = "multiuse"
 
     STATE_INIT = "init"
     STATE_INVITATION = "invitation"
@@ -74,6 +75,7 @@ class ConnectionRecord(BaseRecord):
         error_msg: str = None,
         routing_state: str = None,
         accept: str = None,
+        multi_use_invitation: bool = False,
         **kwargs,
     ):
         """Initialize a new ConnectionRecord."""
@@ -89,6 +91,7 @@ class ConnectionRecord(BaseRecord):
         self.inbound_connection_id = inbound_connection_id
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.accept = accept or self.ACCEPT_MANUAL
+        self.multi_use_invitation = multi_use_invitation or False
 
     @property
     def connection_id(self) -> str:
@@ -116,6 +119,7 @@ class ConnectionRecord(BaseRecord):
                 "state",
                 "routing_state",
                 "accept",
+                "multi_use_invitation"
             )
         }
 
@@ -372,3 +376,4 @@ class ConnectionRecordSchema(BaseRecordSchema):
     routing_state = fields.Str(required=False)
     accept = fields.Str(required=False)
     error_msg = fields.Str(required=False)
+    multi_use_invitation = fields.Bool(required=False, default=False)
