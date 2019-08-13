@@ -64,3 +64,21 @@ class TestConnectionRecord(AsyncTestCase, TestConfig):
         fetched = await ConnectionRecord.retrieve_by_id(self.context, record_id)
 
         assert fetched.is_ready is False
+
+    async def test_invitation_is_not_multi_use(self):
+        record = ConnectionRecord(
+            my_did=self.test_did, state=ConnectionRecord.STATE_INVITATION, invitation_mode=ConnectionRecord.INVITATION_MODE_ONCE
+        )
+        record_id = await record.save(self.context)
+        fetched = await ConnectionRecord.retrieve_by_id(self.context, record_id)
+
+        assert fetched.is_multiuse_invitation is False
+
+    async def test_invitation_is_multi_use(self):
+        record = ConnectionRecord(
+            my_did=self.test_did, state=ConnectionRecord.STATE_INVITATION,invitation_mode=ConnectionRecord.INVITATION_MODE_MULTI
+        )
+        record_id = await record.save(self.context)
+        fetched = await ConnectionRecord.retrieve_by_id(self.context, record_id)
+
+        assert fetched.is_multiuse_invitation is True
