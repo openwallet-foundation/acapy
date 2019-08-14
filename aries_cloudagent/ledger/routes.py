@@ -200,7 +200,7 @@ async def ledger_get_taa(request: web.BaseRequest):
 @request_schema(TAAAcceptSchema)
 async def ledger_accept_taa(request: web.BaseRequest):
     """
-    Request handler for accepting the current transaction author agreement
+    Request handler for accepting the current transaction author agreement.
 
     Args:
         request: aiohttp request object
