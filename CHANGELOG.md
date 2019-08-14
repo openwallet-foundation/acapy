@@ -2,6 +2,7 @@
 
 ## August 14, 2019
 
+- Switch to PyNaCl instead of pysodium; update dependencies [#143](https://github.com/hyperledger/aries-cloudagent-python/pull/143)
 - Support reusable connection invitations [#142](https://github.com/hyperledger/aries-cloudagent-python/pull/142)
 - Fix --version option and optimize Docker builds [#136](https://github.com/hyperledger/aries-cloudagent-python/pull/136)
 - Add connection_id to basicmessage webhooks [#134](https://github.com/hyperledger/aries-cloudagent-python/pull/134)
