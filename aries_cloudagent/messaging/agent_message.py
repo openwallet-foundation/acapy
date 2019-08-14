@@ -324,7 +324,7 @@ class AgentMessageSchema(BaseModelSchema):
         self._signatures = {}
 
     @pre_load
-    def extract_decorators(self, data):
+    def extract_decorators(self, data, **kwargs):
         """
         Pre-load hook to extract the decorators and check the signed fields.
 
@@ -364,7 +364,7 @@ class AgentMessageSchema(BaseModelSchema):
         return processed
 
     @post_load
-    def populate_decorators(self, obj):
+    def populate_decorators(self, obj, **kwargs):
         """
         Post-load hook to populate decorators on the message.
 
@@ -379,7 +379,7 @@ class AgentMessageSchema(BaseModelSchema):
         return obj
 
     @pre_dump
-    def check_dump_decorators(self, obj):
+    def check_dump_decorators(self, obj, **kwargs):
         """
         Pre-dump hook to validate and load the message decorators.
 
@@ -410,7 +410,7 @@ class AgentMessageSchema(BaseModelSchema):
         return obj
 
     @post_dump
-    def dump_decorators(self, data):
+    def dump_decorators(self, data, **kwargs):
         """
         Post-dump hook to write the decorators to the serialized output.
 
@@ -430,7 +430,7 @@ class AgentMessageSchema(BaseModelSchema):
         return result
 
     @post_dump
-    def replace_signatures(self, data):
+    def replace_signatures(self, data, **kwargs):
         """
         Post-dump hook to write the signatures to the serialized output.
 
