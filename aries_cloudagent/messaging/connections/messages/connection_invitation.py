@@ -102,7 +102,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
     image_url = fields.Str(data_key="imageUrl", required=False, allow_none=True)
 
     @validates_schema
-    def validate_fields(self, data):
+    def validate_fields(self, data, **kwargs):
         """
         Validate schema fields.
 
