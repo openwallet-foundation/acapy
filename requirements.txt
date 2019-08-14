@@ -6,4 +6,4 @@ Markdown>=3.1.1
 marshmallow==3.0.0rc3
 msgpack>=0.6.1<0.7
 prompt_toolkit~=2.0.9
-pysodium>=0.7.1<0.8
+pynacl~=1.3.0
