@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath(".."))
 
 autodoc_mock_imports = [
     "setup",
-    "pysodium",
+    "nacl",
     "indy",
     "aiohttp_cors",
     "aiohttp",

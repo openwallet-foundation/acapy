@@ -2,15 +2,15 @@ aries\_cloudagent.transport package
 ===================================
 
 .. automodule:: aries_cloudagent.transport
-   :members:
-   :undoc-members:
-   :show-inheritance:
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Subpackages
 -----------
 
 .. toctree::
 
-   aries_cloudagent.transport.inbound
-   aries_cloudagent.transport.outbound
-   aries_cloudagent.transport.tests
+    aries_cloudagent.transport.inbound
+    aries_cloudagent.transport.outbound
+
