@@ -22,11 +22,11 @@ if ENABLE_PTVSD or "--debug" in sys.argv:
 
 from aries_cloudagent.commands import run_command  # noqa
 
-if len(sys.argv) > 1:
+if len(sys.argv) > 1 and sys.argv[1] and sys.argv[1][0] != "-":
     command = sys.argv[1]
     args = sys.argv[2:]
 else:
     command = None
-    args = []
+    args = sys.argv[1:]
 
 run_command(command, args)
