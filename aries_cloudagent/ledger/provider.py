@@ -21,14 +21,18 @@ class LedgerProvider(BaseProvider):
         pool_name = settings.get("ledger.pool_name", "default")
         keepalive = int(settings.get("ledger.keepalive", 5))
         wallet = await injector.inject(BaseWallet)
-        IndyLedger = ClassLoader.load_class(self.LEDGER_CLASSES["indy"])
-        cache = await injector.inject(BaseCache, required=False)
-        ledger = IndyLedger(pool_name, wallet, keepalive=keepalive, cache=cache)
+        ledger = None
 
-        genesis_transactions = settings.get("ledger.genesis_transactions")
-        if genesis_transactions:
-            await ledger.create_pool_config(genesis_transactions, True)
-        elif not await ledger.check_pool_config():
-            LOGGER.info("Ledger pool configuration has not been created")
-            ledger = None
+        if wallet.WALLET_TYPE == "indy":
+            IndyLedger = ClassLoader.load_class(self.LEDGER_CLASSES["indy"])
+            cache = await injector.inject(BaseCache, required=False)
+            ledger = IndyLedger(pool_name, wallet, keepalive=keepalive, cache=cache)
+
+            genesis_transactions = settings.get("ledger.genesis_transactions")
+            if genesis_transactions:
+                await ledger.create_pool_config(genesis_transactions, True)
+            elif not await ledger.check_pool_config():
+                LOGGER.info("Ledger pool configuration has not been created")
+                ledger = None
+
         return ledger
