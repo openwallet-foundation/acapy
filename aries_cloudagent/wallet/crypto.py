@@ -6,7 +6,9 @@ from typing import Callable, Optional, Sequence
 
 from marshmallow import fields, Schema, ValidationError
 import msgpack
-import pysodium
+import nacl.bindings
+import nacl.exceptions
+import nacl.utils
 
 from .error import WalletError
 from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes
@@ -58,7 +60,7 @@ def create_keypair(seed: bytes = None) -> (bytes, bytes):
     """
     if not seed:
         seed = random_seed()
-    pk, sk = pysodium.crypto_sign_seed_keypair(seed)
+    pk, sk = nacl.bindings.crypto_sign_seed_keypair(seed)
     return pk, sk
 
 
@@ -70,7 +72,7 @@ def random_seed() -> bytes:
         A new random seed
 
     """
-    return pysodium.randombytes(pysodium.crypto_secretbox_KEYBYTES)
+    return nacl.utils.random(nacl.bindings.crypto_box_SEEDBYTES)
 
 
 def seed_to_did(seed: str) -> str:
@@ -127,8 +129,8 @@ def sign_message(message: bytes, secret: bytes) -> bytes:
         The signature
 
     """
-    result = pysodium.crypto_sign(message, secret)
-    sig = result[: pysodium.crypto_sign_BYTES]
+    result = nacl.bindings.crypto_sign(message, secret)
+    sig = result[: nacl.bindings.crypto_sign_BYTES]
     return sig
 
 
@@ -145,8 +147,8 @@ def verify_signed_message(signed: bytes, verkey: bytes) -> bool:
 
     """
     try:
-        pysodium.crypto_sign_open(signed, verkey)
-    except ValueError:
+        nacl.bindings.crypto_sign_open(signed, verkey)
+    except nacl.exceptions.BadSignatureError:
         return False
     return True
 
@@ -163,8 +165,8 @@ def anon_crypt_message(message: bytes, to_verkey: bytes) -> bytes:
         The anon encrypted message
 
     """
-    pk = pysodium.crypto_sign_pk_to_box_pk(to_verkey)
-    enc_message = pysodium.crypto_box_seal(message, pk)
+    pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(to_verkey)
+    enc_message = nacl.bindings.crypto_box_seal(message, pk)
     return enc_message
 
 
@@ -181,10 +183,10 @@ def anon_decrypt_message(enc_message: bytes, secret: bytes) -> bytes:
 
     """
     sign_pk, sign_sk = create_keypair(secret)
-    pk = pysodium.crypto_sign_pk_to_box_pk(sign_pk)
-    sk = pysodium.crypto_sign_sk_to_box_sk(sign_sk)
+    pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(sign_pk)
+    sk = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(sign_sk)
 
-    message = pysodium.crypto_box_seal_open(enc_message, pk, sk)
+    message = nacl.bindings.crypto_box_seal_open(enc_message, pk, sk)
     return message
 
 
@@ -201,11 +203,11 @@ def auth_crypt_message(message: bytes, to_verkey: bytes, from_secret: bytes) -> 
         The encrypted message
 
     """
-    nonce = pysodium.randombytes(pysodium.crypto_box_NONCEBYTES)
-    target_pk = pysodium.crypto_sign_pk_to_box_pk(to_verkey)
+    nonce = nacl.utils.random(nacl.bindings.crypto_box_NONCEBYTES)
+    target_pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(to_verkey)
     sender_pk, sender_sk = create_keypair(from_secret)
-    sk = pysodium.crypto_sign_sk_to_box_sk(sender_sk)
-    enc_body = pysodium.crypto_box(message, nonce, target_pk, sk)
+    sk = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(sender_sk)
+    enc_body = nacl.bindings.crypto_box(message, nonce, target_pk, sk)
     combo_box = OrderedDict(
         [
             ("msg", bytes_to_b64(enc_body)),
@@ -214,7 +216,7 @@ def auth_crypt_message(message: bytes, to_verkey: bytes, from_secret: bytes) -> 
         ]
     )
     combo_box_bin = msgpack.packb(combo_box, use_bin_type=True)
-    enc_message = pysodium.crypto_box_seal(combo_box_bin, target_pk)
+    enc_message = nacl.bindings.crypto_box_seal(combo_box_bin, target_pk)
     return enc_message
 
 
@@ -231,16 +233,18 @@ def auth_decrypt_message(enc_message: bytes, secret: bytes) -> (bytes, str):
 
     """
     sign_pk, sign_sk = create_keypair(secret)
-    pk = pysodium.crypto_sign_pk_to_box_pk(sign_pk)
-    sk = pysodium.crypto_sign_sk_to_box_sk(sign_sk)
-    body = pysodium.crypto_box_seal_open(enc_message, pk, sk)
+    pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(sign_pk)
+    sk = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(sign_sk)
+    body = nacl.bindings.crypto_box_seal_open(enc_message, pk, sk)
 
     unpacked = msgpack.unpackb(body, raw=False)
     sender_vk = unpacked["sender"]
     nonce = b64_to_bytes(unpacked["nonce"])
     enc_message = b64_to_bytes(unpacked["msg"])
-    sender_pk = pysodium.crypto_sign_pk_to_box_pk(b58_to_bytes(sender_vk))
-    message = pysodium.crypto_box_open(enc_message, nonce, sender_pk, sk)
+    sender_pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(
+        b58_to_bytes(sender_vk)
+    )
+    message = nacl.bindings.crypto_box_open(enc_message, nonce, sender_pk, sk)
     return message, sender_vk
 
 
@@ -258,23 +262,23 @@ def prepare_pack_recipient_keys(
         A tuple of (json result, key)
 
     """
-    cek = pysodium.crypto_secretstream_xchacha20poly1305_keygen()
+    cek = nacl.bindings.crypto_secretstream_xchacha20poly1305_keygen()
     recips = []
 
     for target_vk in to_verkeys:
-        target_pk = pysodium.crypto_sign_pk_to_box_pk(target_vk)
+        target_pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(target_vk)
         if from_secret:
             sender_pk, sender_sk = create_keypair(from_secret)
             sender_vk = bytes_to_b58(sender_pk).encode("ascii")
-            enc_sender = pysodium.crypto_box_seal(sender_vk, target_pk)
-            sk = pysodium.crypto_sign_sk_to_box_sk(sender_sk)
+            enc_sender = nacl.bindings.crypto_box_seal(sender_vk, target_pk)
+            sk = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(sender_sk)
 
-            nonce = pysodium.randombytes(pysodium.crypto_box_NONCEBYTES)
-            enc_cek = pysodium.crypto_box(cek, nonce, target_pk, sk)
+            nonce = nacl.utils.random(nacl.bindings.crypto_box_NONCEBYTES)
+            enc_cek = nacl.bindings.crypto_box(cek, nonce, target_pk, sk)
         else:
             enc_sender = None
             nonce = None
-            enc_cek = pysodium.crypto_box_seal(cek, target_pk)
+            enc_cek = nacl.bindings.crypto_box_seal(cek, target_pk)
 
         recips.append(
             OrderedDict(
@@ -346,8 +350,8 @@ def locate_pack_recipient_key(
             not_found.append(recip_vk_b58)
             continue
         recip_vk = b58_to_bytes(recip_vk_b58)
-        pk = pysodium.crypto_sign_pk_to_box_pk(recip_vk)
-        sk = pysodium.crypto_sign_sk_to_box_sk(secret)
+        pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(recip_vk)
+        sk = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(secret)
 
         encrypted_key = b64_to_bytes(recip["encrypted_key"], urlsafe=True)
 
@@ -357,13 +361,15 @@ def locate_pack_recipient_key(
         enc_sender = b64_to_bytes(sender_b64, urlsafe=True) if sender_b64 else None
 
         if nonce and enc_sender:
-            sender_vk_bin = pysodium.crypto_box_seal_open(enc_sender, pk, sk)
+            sender_vk_bin = nacl.bindings.crypto_box_seal_open(enc_sender, pk, sk)
             sender_vk = sender_vk_bin.decode("ascii")
-            sender_pk = pysodium.crypto_sign_pk_to_box_pk(b58_to_bytes(sender_vk_bin))
-            cek = pysodium.crypto_box_open(encrypted_key, nonce, sender_pk, sk)
+            sender_pk = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(
+                b58_to_bytes(sender_vk_bin)
+            )
+            cek = nacl.bindings.crypto_box_open(encrypted_key, nonce, sender_pk, sk)
         else:
             sender_vk = None
-            cek = pysodium.crypto_box_seal_open(encrypted_key, pk, sk)
+            cek = nacl.bindings.crypto_box_seal_open(encrypted_key, pk, sk)
         return cek, sender_vk, recip_vk_b58
     raise ValueError("No corresponding recipient key found in {}".format(not_found))
 
@@ -383,9 +389,9 @@ def encrypt_plaintext(
         A tuple of (ciphertext, nonce, tag)
 
     """
-    nonce = pysodium.randombytes(pysodium.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
+    nonce = nacl.utils.random(nacl.bindings.crypto_aead_chacha20poly1305_ietf_NPUBBYTES)
     message_bin = message.encode("ascii")
-    output = pysodium.crypto_aead_chacha20poly1305_ietf_encrypt(
+    output = nacl.bindings.crypto_aead_chacha20poly1305_ietf_encrypt(
         message_bin, add_data, nonce, key
     )
     mlen = len(message)
@@ -410,7 +416,7 @@ def decrypt_plaintext(
         The decrypted string
 
     """
-    output = pysodium.crypto_aead_chacha20poly1305_ietf_decrypt(
+    output = nacl.bindings.crypto_aead_chacha20poly1305_ietf_decrypt(
         ciphertext, recips_bin, nonce, key
     )
     return output.decode("ascii")
