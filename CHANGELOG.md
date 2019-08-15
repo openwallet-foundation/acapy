@@ -2,6 +2,7 @@
 
 ## August 14, 2019
 
+- Do not fail with an error when no ledger is configured [#145](https://github.com/hyperledger/aries-cloudagent-python/pull/145)
 - Switch to PyNaCl instead of pysodium; update dependencies [#143](https://github.com/hyperledger/aries-cloudagent-python/pull/143)
 - Support reusable connection invitations [#142](https://github.com/hyperledger/aries-cloudagent-python/pull/142)
 - Fix --version option and optimize Docker builds [#136](https://github.com/hyperledger/aries-cloudagent-python/pull/136)
