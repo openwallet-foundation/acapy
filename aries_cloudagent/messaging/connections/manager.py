@@ -77,22 +77,28 @@ class ConnectionManager:
         channels such as SMS, Email, QR Code, NFC, etc.
 
         Structure of an invite message:
-        ```json
-        {
-            "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
-            "label": "Alice",
-            "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
-        }```
+
+        ::
+
+            {
+                "@type":
+                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "label": "Alice",
+                "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
+            }
 
         Or, in the case of a peer DID:
-        ```json
-        {
-            "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
-            "label": "Alice",
-            "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
-            "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
-            "serviceEndpoint": "https://example.com/endpoint"
-        }```
+
+        ::
+
+            {
+                "@type":
+                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "label": "Alice",
+                "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
+                "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+                "serviceEndpoint": "https://example.com/endpoint"
+            }
 
         Currently, only peer DID is supported.
 

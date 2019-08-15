@@ -2,16 +2,9 @@ aries\_cloudagent.messaging.presentations.messages package
 ==========================================================
 
 .. automodule:: aries_cloudagent.messaging.presentations.messages
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-   aries_cloudagent.messaging.presentations.messages.tests
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 ----------
@@ -20,15 +13,16 @@ aries\_cloudagent.messaging.presentations.messages.credential\_presentation modu
 ----------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.presentations.messages.credential_presentation
-   :members:
-   :undoc-members:
-   :show-inheritance:
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 aries\_cloudagent.messaging.presentations.messages.presentation\_request module
 -------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.presentations.messages.presentation_request
-   :members:
-   :undoc-members:
-   :show-inheritance:
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 

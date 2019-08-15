@@ -269,7 +269,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
             max_count: Max number of records to return
 
         Returns:
-            A list of `StorageRecord`s
+            A list of `StorageRecord`
 
         Raises:
             StorageSearchError: If the search query has not been opened
