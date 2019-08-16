@@ -9,7 +9,7 @@ wallet.
 """
 
 import asyncio
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import logging
 from typing import Coroutine, Union
 
@@ -63,6 +63,8 @@ class Conductor:
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_transport_manager: OutboundTransportManager = None
         self.sockets = OrderedDict()
+
+        self.undelivered_queue = dict
 
     async def setup(self):
         """Initialize the global request context."""
@@ -243,9 +245,20 @@ class Conductor:
             delivery.connection_id = connection.connection_id
 
         if single_response and not socket_id:
-            socket = SocketInfo(single_response=single_response)
-            socket_id = socket.socket_id
-            self.sockets[socket_id] = socket
+            # TODO: Potential location of queued sending.
+            # check for queued messages matching key and thread
+            if delivery.sender_verkey in self.undelivered_queue \
+                    and len(self.undelivered_queue[delivery.sender_verkey]):
+                pass # pending message. Transmit, then kill single_response
+                undelivered = self.undelivered_queue[delivery.sender_verkey].pop(0)
+                # send message again.
+                await self.outbound_message_router(undelivered)
+                # this consumes the 
+            else:
+                # if transport wasn't a socket, make a virtual socket used for responses
+                socket = SocketInfo(single_response=single_response)
+                socket_id = socket.socket_id
+                self.sockets[socket_id] = socket
 
         if socket_id:
             if socket_id not in self.sockets:
@@ -364,5 +377,10 @@ class Conductor:
         if message.endpoint:
             await self.outbound_transport_manager.send_message(message)
             return
+
+        #TODO: Add message to outbound queue, indexed by key
+        if message.reply_to_verkey not in self.undelivered_queue:
+            self.undelivered_queue = []
+        self.undelivered_queue[message.reply_to_verkey].append(message)
 
         self.logger.warning("No endpoint or direct route for outbound message, dropped")
