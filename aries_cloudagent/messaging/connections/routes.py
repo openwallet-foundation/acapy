@@ -44,6 +44,12 @@ def connection_sort_key(conn):
     summary="Query agent-to-agent connections",
     parameters=[
         {
+            "name": "alias",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+        {
             "name": "initiator",
             "in": "query",
             "schema": {"type": "string", "enum": ["self", "external"]},
@@ -107,6 +113,7 @@ async def connections_list(request: web.BaseRequest):
     context = request.app["request_context"]
     tag_filter = {}
     for param_name in (
+        "alias",
         "initiator",
         "invitation_id",
         "my_did",
