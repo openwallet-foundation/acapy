@@ -49,13 +49,13 @@ pip install aries-cloudagent
 
 ## Usage
 
-Instructions for running ACA-Py can be [found here](DevReadMe.md#running).
+Instructions for running ACA-Py can be [found here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/DevReadMe.md#running).
 
 ## Security
 
 The administrative API exposed by the agent for the controller to use must be protected with an API key
 (using the `--admin-api-key` command line arg) or deliberately left unsecured using the
-`----admin-insecure-mode` command line arg. The latter should not be used other than in development if the API
+`--admin-insecure-mode` command line arg. The latter should not be used other than in development if the API
 is not otherwise secured.
 
 ## API
@@ -85,14 +85,14 @@ The initial implementation of ACA-Py was developed by the Verifiable Organizatio
 
 ## Contributing
 
-Pull requests are welcome! Please read our [contributions guide](CONTRIBUTING.md) and submit your PRs. We enforce [developer certificate of origin](https://developercertificate.org/) (DCO) commit signing. See guidance [here](https://github.com/apps/dco).
+Pull requests are welcome! Please read our [contributions guide](https://github.com/hyperledger/aries-cloudagent-python/blob/master/CONTRIBUTING.md) and submit your PRs. We enforce [developer certificate of origin](https://developercertificate.org/) (DCO) commit signing. See guidance [here](https://github.com/apps/dco).
 
 We also welcome issues submitted about problems you encounter in using ACA-Py.
 
 ## Publishing Releases
 
-The [publishing](PUBLISHING.md) document provides information on tagging a release and publishing the release artifacts to PyPi.
+The [publishing](https://github.com/hyperledger/aries-cloudagent-python/blob/master/PUBLISHING.md) document provides information on tagging a release and publishing the release artifacts to PyPi.
 
 ## License
 
-[Apache License Version 2.0](LICENSE)
+[Apache License Version 2.0](https://github.com/hyperledger/aries-cloudagent-python/blob/master/LICENSE)
