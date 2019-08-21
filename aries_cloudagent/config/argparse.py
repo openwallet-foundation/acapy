@@ -173,7 +173,11 @@ class DebugGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add debug command line arguments to the parser."""
         parser.add_argument(
-            "--debug", action="store_true", help="Enables a remote debugging service that can be accessed using ptvsd for Visual Studio Code. The framework will wait for the debugger to connect at start-up. Default: false."
+            "--debug",
+            action="store_true",
+            help="Enables a remote debugging service that can be accessed\
+            using ptvsd for Visual Studio Code. The framework will wait\
+            for the debugger to connect at start-up. Default: false."
         )
         parser.add_argument(
             "--debug-seed",
