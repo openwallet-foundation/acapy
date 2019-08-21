@@ -119,8 +119,7 @@ class AdminGroup(ArgumentGroup):
             type=str,
             metavar="<help-url>",
             help="A URL to an administrative interface help web page that a controller\
-            user interface can get from the agent and provide as a link to users.
-",
+            user interface can get from the agent and provide as a link to users.",
         )
         parser.add_argument(
             "--webhook-url",
