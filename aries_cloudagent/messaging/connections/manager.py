@@ -68,6 +68,7 @@ class ConnectionManager:
         accept: str = None,
         public: bool = False,
         multi_use: bool = False,
+        alias: str = None
     ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -109,6 +110,7 @@ class ConnectionManager:
             accept: set to 'auto' to auto-accept a corresponding connection request
             public: set to True to create an invitation from the public DID
             multi_use: set to True to create an invitation for multiple use
+            alias: optional alias to apply to connection for later use
 
         Returns:
             A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
@@ -158,7 +160,8 @@ class ConnectionManager:
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
             accept=accept,
-            invitation_mode=invitation_mode
+            invitation_mode=invitation_mode,
+            alias=alias
         )
 
         await connection.save(self.context, reason="Created new invitation")
@@ -182,6 +185,7 @@ class ConnectionManager:
         invitation: ConnectionInvitation,
         their_role: str = None,
         accept: str = None,
+        alias: str = None,
     ) -> ConnectionRecord:
         """
         Create a new connection record to track a received invitation.
@@ -190,6 +194,7 @@ class ConnectionManager:
             invitation: The `ConnectionInvitation` to store
             their_role: The role assigned to this connection
             accept: set to 'auto' to auto-accept the invitation
+            alias: optional alias to set on the record
 
         Returns:
             The new `ConnectionRecord` instance
@@ -212,6 +217,7 @@ class ConnectionManager:
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
             accept=accept,
+            alias=alias
         )
 
         await connection.save(
