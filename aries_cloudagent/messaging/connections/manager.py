@@ -67,6 +67,8 @@ class ConnectionManager:
         their_role: str = None,
         accept: str = None,
         public: bool = False,
+        multi_use: bool = False,
+        alias: str = None
     ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -76,22 +78,28 @@ class ConnectionManager:
         channels such as SMS, Email, QR Code, NFC, etc.
 
         Structure of an invite message:
-        ```json
-        {
-            "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
-            "label": "Alice",
-            "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
-        }```
+
+        ::
+
+            {
+                "@type":
+                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "label": "Alice",
+                "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
+            }
 
         Or, in the case of a peer DID:
-        ```json
-        {
-            "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
-            "label": "Alice",
-            "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
-            "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
-            "serviceEndpoint": "https://example.com/endpoint"
-        }```
+
+        ::
+
+            {
+                "@type":
+                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "label": "Alice",
+                "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
+                "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+                "serviceEndpoint": "https://example.com/endpoint"
+            }
 
         Currently, only peer DID is supported.
 
@@ -101,6 +109,8 @@ class ConnectionManager:
             their_role: a role to assign the connection
             accept: set to 'auto' to auto-accept a corresponding connection request
             public: set to True to create an invitation from the public DID
+            multi_use: set to True to create an invitation for multiple use
+            alias: optional alias to apply to connection for later use
 
         Returns:
             A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
@@ -119,11 +129,21 @@ class ConnectionManager:
                 raise ConnectionManagerError(
                     "Cannot create public invitation with no public DID"
                 )
+
+            if multi_use:
+                raise ConnectionManagerError(
+                    "Cannot use public and multi_use at the same time"
+                )
+
             # FIXME - allow ledger instance to format public DID with prefix?
             invitation = ConnectionInvitation(
                 label=my_label, did=f"did:sov:{public_did.did}"
             )
             return None, invitation
+
+        invitation_mode = ConnectionRecord.INVITATION_MODE_ONCE
+        if multi_use:
+            invitation_mode = ConnectionRecord.INVITATION_MODE_MULTI
 
         if not my_endpoint:
             my_endpoint = self.context.settings.get("default_endpoint")
@@ -140,6 +160,8 @@ class ConnectionManager:
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
             accept=accept,
+            invitation_mode=invitation_mode,
+            alias=alias
         )
 
         await connection.save(self.context, reason="Created new invitation")
@@ -163,6 +185,7 @@ class ConnectionManager:
         invitation: ConnectionInvitation,
         their_role: str = None,
         accept: str = None,
+        alias: str = None,
     ) -> ConnectionRecord:
         """
         Create a new connection record to track a received invitation.
@@ -171,6 +194,7 @@ class ConnectionManager:
             invitation: The `ConnectionInvitation` to store
             their_role: The role assigned to this connection
             accept: set to 'auto' to auto-accept the invitation
+            alias: optional alias to set on the record
 
         Returns:
             The new `ConnectionRecord` instance
@@ -193,6 +217,7 @@ class ConnectionManager:
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
             accept=accept,
+            alias=alias
         )
 
         await connection.save(
@@ -317,6 +342,24 @@ class ConnectionManager:
             ConnectionRecord.log_state(
                 self.context, "Found invitation", {"invitation": invitation}
             )
+
+            if connection.is_multiuse_invitation:
+                wallet: BaseWallet = await self.context.inject(BaseWallet)
+                my_info = await wallet.create_local_did()
+                new_connection = ConnectionRecord(
+                    initiator=ConnectionRecord.INITIATOR_MULTIUSE,
+                    invitation_key=connection_key,
+                    my_did=my_info.did,
+                    state=ConnectionRecord.STATE_INVITATION,
+                    accept=connection.accept,
+                    their_role=connection.their_role,
+                )
+
+                await new_connection.save(
+                    self.context,
+                    reason="Received connection request from multi-use invitation DID"
+                )
+                connection = new_connection
 
         conn_did_doc = request.connection.did_doc
         if not conn_did_doc:

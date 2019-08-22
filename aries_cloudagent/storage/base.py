@@ -199,7 +199,7 @@ class BaseStorageRecordSearch(ABC):
             max_count: Max number of records to return
 
         Returns:
-            A list of `StorageRecord`s
+            A list of `StorageRecord`
 
         """
 

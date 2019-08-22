@@ -41,6 +41,7 @@ class ConnectionRecord(BaseRecord):
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
+    INITIATOR_MULTIUSE = "multiuse"
 
     STATE_INIT = "init"
     STATE_INVITATION = "invitation"
@@ -49,6 +50,9 @@ class ConnectionRecord(BaseRecord):
     STATE_ACTIVE = "active"
     STATE_ERROR = "error"
     STATE_INACTIVE = "inactive"
+
+    INVITATION_MODE_ONCE = "once"
+    INVITATION_MODE_MULTI = "multi"
 
     ROUTING_STATE_NONE = "none"
     ROUTING_STATE_REQUEST = "request"
@@ -74,6 +78,8 @@ class ConnectionRecord(BaseRecord):
         error_msg: str = None,
         routing_state: str = None,
         accept: str = None,
+        invitation_mode: str = None,
+        alias: str = None,
         **kwargs,
     ):
         """Initialize a new ConnectionRecord."""
@@ -89,6 +95,8 @@ class ConnectionRecord(BaseRecord):
         self.inbound_connection_id = inbound_connection_id
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.accept = accept or self.ACCEPT_MANUAL
+        self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
+        self.alias = alias
 
     @property
     def connection_id(self) -> str:
@@ -116,6 +124,8 @@ class ConnectionRecord(BaseRecord):
                 "state",
                 "routing_state",
                 "accept",
+                "invitation_mode",
+                "alias"
             )
         }
 
@@ -339,6 +349,11 @@ class ConnectionRecord(BaseRecord):
         """Accessor for connection readiness."""
         return self.state == self.STATE_ACTIVE or self.state == self.STATE_RESPONSE
 
+    @property
+    def is_multiuse_invitation(self) -> bool:
+        """Accessor for multi use invitation mode."""
+        return self.invitation_mode == self.INVITATION_MODE_MULTI
+
     async def post_save(self, context: InjectionContext, *args, **kwargs):
         """Perform post-save actions.
 
@@ -372,3 +387,5 @@ class ConnectionRecordSchema(BaseRecordSchema):
     routing_state = fields.Str(required=False)
     accept = fields.Str(required=False)
     error_msg = fields.Str(required=False)
+    invitation_mode = fields.Str(required=False)
+    alias = fields.Str(required=False)

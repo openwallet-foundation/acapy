@@ -242,7 +242,7 @@ class BaseModelSchema(Schema):
         return self._get_model_class()
 
     @pre_load
-    def skip_dump_only(self, data):
+    def skip_dump_only(self, data, **kwargs):
         """
         Skip fields that are only expected during serialization.
 
@@ -265,7 +265,7 @@ class BaseModelSchema(Schema):
         return data
 
     @post_load
-    def make_model(self, data: dict):
+    def make_model(self, data: dict, **kwargs):
         """
         Return model instance after loading.
 
@@ -276,7 +276,7 @@ class BaseModelSchema(Schema):
         return self.Model(**data)
 
     @post_dump
-    def remove_skipped_values(self, data):
+    def remove_skipped_values(self, data, **kwargs):
         """
         Remove values that are are marked to skip.
 

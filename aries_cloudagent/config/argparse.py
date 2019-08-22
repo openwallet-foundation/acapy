@@ -87,35 +87,48 @@ class AdminGroup(ArgumentGroup):
             type=str,
             nargs=2,
             metavar=("<host>", "<port>"),
-            help="Enable the administration API on a given host and port",
+            help="Specify the host and port on which to run the administrative server.\
+            If not provided, no admin server is made available.",
         )
         parser.add_argument(
             "--admin-api-key",
             type=str,
             metavar="<api-key>",
-            help="Set the api key for the admin API.",
+            help="Protect all admin endpoints with the provided API key.\
+            API clients (e.g. the controller) must pass the key in the HTTP\
+            header using 'X-API-Key: <api key>'. Either this parameter or the\
+            '--admin-insecure-mode' parameter MUST be specified.",
         )
         parser.add_argument(
             "--admin-insecure-mode",
             action="store_true",
-            help="Do not protect the admin API with token authentication.z",
+            help="Run the admin web server in insecure mode. DO NOT USE FOR\
+            PRODUCTION DEPLOYMENTS. The admin server will be publicly available\
+            to anyone who has access to the interface. Either this parameter or\
+            the '--api-key' parameter MUST be specified.",
         )
         parser.add_argument(
             "--no-receive-invites",
             action="store_true",
-            help="Disable the receive invitations administration function",
+            help="Prevents an agent from receiving invites by removing the\
+            '/connections/receive-invite' route from the administrative\
+            interface. Default: false.",
         )
         parser.add_argument(
             "--help-link",
             type=str,
             metavar="<help-url>",
-            help="Define the help URL for the administration interface",
+            help="A URL to an administrative interface help web page that a controller\
+            user interface can get from the agent and provide as a link to users.",
         )
         parser.add_argument(
             "--webhook-url",
             action="append",
             metavar="<url>",
-            help="Send webhooks to a given URL",
+            help="Send webhooks containing internal state changes to the specified\
+            URL. This is useful for a controller to monitor agent events and respond\
+            to those events using the admin API. If not specified, webhooks are not\
+            published by the agent.",
         )
 
     def get_settings(self, args: Namespace):
@@ -160,50 +173,60 @@ class DebugGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add debug command line arguments to the parser."""
         parser.add_argument(
-            "--debug", action="store_true", help="Enable debugging features"
+            "--debug",
+            action="store_true",
+            help="Enables a remote debugging service that can be accessed\
+            using ptvsd for Visual Studio Code. The framework will wait\
+            for the debugger to connect at start-up. Default: false."
         )
         parser.add_argument(
             "--debug-seed",
             dest="debug_seed",
             type=str,
             metavar="<debug-did-seed>",
-            help="Specify the debug seed to use",
+            help="Specify the debug seed to use.",
         )
         parser.add_argument(
             "--debug-connections",
             action="store_true",
-            help="Enable additional logging around connections",
+            help="Enable additional logging around connections. Default: false.",
         )
         parser.add_argument(
             "--debug-credentials",
             action="store_true",
-            help="Enable additional logging around credential exchanges",
+            help="Enable additional logging around credential exchanges.\
+            Default: false.",
         )
         parser.add_argument(
             "--debug-presentations",
             action="store_true",
-            help="Enable additional logging around presentation exchanges",
+            help="Enable additional logging around presentation exchanges.\
+            Default: false.",
         )
         parser.add_argument(
             "--invite",
             action="store_true",
-            help="Generate and print a new connection invitation URL",
+            help="After startup, generate and print a new connection invitation\
+            URL. Default: false.",
         )
 
         parser.add_argument(
             "--auto-accept-invites",
             action="store_true",
-            help="Auto-accept connection invitations",
+            help="Automatically accept invites without firing a webhook event or\
+            waiting for an admin request. Default: false.",
         )
         parser.add_argument(
             "--auto-accept-requests",
             action="store_true",
-            help="Auto-accept connection requests",
+            help="Automatically connection requests without firing a webhook event\
+            or waiting for an admin request. Default: false.",
         )
         parser.add_argument(
             "--auto-respond-messages",
             action="store_true",
-            help="Auto-respond to basic messages",
+            help="Automatically respond to basic messages indicating the message was\
+            received. Default: false.",
         )
         parser.add_argument(
             "--auto-respond-credential-proposal",
@@ -214,7 +237,8 @@ class DebugGroup(ArgumentGroup):
         parser.add_argument(
             "--auto-respond-credential-offer",
             action="store_true",
-            help="Auto-respond to credential offers with credential request",
+            help="Automatically respond to Indy credential offers with a credential\
+            request. Default: false",
         )
         parser.add_argument(
             "--auto-respond-credential-request",
@@ -230,18 +254,21 @@ class DebugGroup(ArgumentGroup):
         parser.add_argument(
             "--auto-respond-presentation-request",
             action="store_true",
-            help="Auto-respond to presentation requests with a presentation "
-            + "if exactly one credential exists to satisfy the request",
+            help="Automatically respond to Indy presentation requests with a\
+            constructed presentation if exactly one credential can be retrieved\
+            for every referent in the presentation request. Default: false.",
         )
         parser.add_argument(
             "--auto-store-credential",
             action="store_true",
-            help="Automatically store a credential upon receipt.",
+            help="Automatically store an issued credential upon receipt.\
+            Default: false.",
         )
         parser.add_argument(
             "--auto-verify-presentation",
             action="store_true",
-            help="Automatically verify a presentation when it is received",
+            help="Automatically verify a presentation when it is received.\
+            Default: false.",
         )
 
     def get_settings(self, args: Namespace) -> dict:
@@ -295,7 +322,9 @@ class GeneralGroup(ArgumentGroup):
             "--storage-type",
             type=str,
             metavar="<storage-type>",
-            help="Specify the storage implementation to use",
+            help="Specifies the type of storage provider to use for the internal\
+            storage engine. This storage interface is used to store internal state.\
+            Supported internal storage types are 'basic' (memory) and 'indy'.",
         )
 
     def get_settings(self, args: Namespace) -> dict:
@@ -318,28 +347,34 @@ class LedgerGroup(ArgumentGroup):
             "--ledger-pool-name",
             type=str,
             metavar="<ledger-pool-name>",
-            help="Specify the pool name",
+            help="Specifies the name of the indy pool to be opened.\
+            This is useful if you have multiple pool configurations.",
         )
         parser.add_argument(
             "--genesis-transactions",
             type=str,
             dest="genesis_transactions",
             metavar="<genesis-transactions>",
-            help="Specify the genesis transactions as a string",
+            help="Specifies the genesis transactions to use to connect to\
+            an Hyperledger Indy ledger. The transactions are provided as string\
+            of JSON e.g. '{\"reqSignature\":{},\"txn\":{\"data\":{\"d... <snip>'",
         )
         parser.add_argument(
             "--genesis-file",
             type=str,
             dest="genesis_file",
             metavar="<genesis-file>",
-            help="Specify a file from which to read the genesis transactions",
+            help="Specifies a local file from which to read the genesis transactions.",
         )
         parser.add_argument(
             "--genesis-url",
             type=str,
             dest="genesis_url",
             metavar="<genesis-url>",
-            help="Specify a url from which to fetch the genesis transactions",
+            help="Specifies the url from which to download the genesis\
+            transactions. For example, if you are using 'von-network',\
+            the URL might be 'http://localhost:9000/genesis'.\
+            Genesis transactions URLs are available for the Sovrin test/main networks.",
         )
 
     def get_settings(self, args: Namespace) -> dict:
@@ -378,7 +413,8 @@ class LoggingGroup(ArgumentGroup):
             type=str,
             metavar="<log-file>",
             default=None,
-            help="Redirect log output to a named file",
+            help="Overrides the output destination for the root logger (as defined\
+            by the log config file) to the named <log-file>.",
         )
         parser.add_argument(
             "--log-level",
@@ -386,8 +422,8 @@ class LoggingGroup(ArgumentGroup):
             type=str,
             metavar="<log-level>",
             default=None,
-            help="Specifies a custom logging level "
-            + "(debug, info, warning, error, critical)",
+            help="Specifies a custom logging level as one of:\
+            ('debug', 'info', 'warning', 'error', 'critical')",
         )
 
     def get_settings(self, args: Namespace) -> dict:
@@ -415,23 +451,26 @@ class ProtocolGroup(ArgumentGroup):
             action="append",
             required=False,
             metavar="<module>",
-            help="Provide external protocol modules",
+            help="Load <module> as external protocol module. Multiple\
+            instances of this parameter can be specified.",
         )
         parser.add_argument(
             "--auto-ping-connection",
             action="store_true",
-            help="Automatically send a trust ping when a "
-            + "connection response is accepted",
+            help="Automatically send a trust ping immediately after a\
+            connection response is accepted. Some agents require this before\
+            marking a connection as 'active'. Default: false.",
         )
         parser.add_argument(
             "--public-invites",
             action="store_true",
-            help="Send invitations and receive requests via the public DID",
+            help="Send invitations out, and receive connection requests,\
+            using the public DID for the agent. Default: false.",
         )
         parser.add_argument(
             "--timing",
             action="store_true",
-            help="Including timing information in response messages",
+            help="Include timing information in response messages.",
         )
 
     def get_settings(self, args: Namespace) -> dict:
@@ -465,7 +504,10 @@ class TransportGroup(ArgumentGroup):
             nargs=3,
             required=True,
             metavar=("<module>", "<host>", "<port>"),
-            help="Choose which interface(s) to listen on",
+            help="REQUIRED. Defines the inbound transport(s) on which the agent\
+            listens for receiving messages from other agents. This parameter can\
+            be specified multiple times to create multiple interfaces.\
+            Supported inbound transport types are 'http' and 'ws'.",
         )
 
         parser.add_argument(
@@ -476,7 +518,10 @@ class TransportGroup(ArgumentGroup):
             action="append",
             required=True,
             metavar="<module>",
-            help="Choose which outbound transport handlers to register",
+            help="REQUIRED. Defines the outbound transport(s) on which the agent\
+            will send outgoing messages to other agents. This parameter can be passed\
+            multiple times to supoort multiple transport types. Supported outbound\
+            transport types are 'http' and 'ws'.",
         )
 
         parser.add_argument(
@@ -484,8 +529,13 @@ class TransportGroup(ArgumentGroup):
             "--endpoint",
             type=str,
             metavar="<endpoint>",
-            help="Specify the default endpoint to use when "
-            + "creating connection invitations and requests",
+            help="Specifies the endpoint to put into invitations and DIDDocs\
+            to inform other agents of where they should send messages destined\
+            for this agent. The endpoint could be one of the specified inbound\
+            transports for this agent, or the endpoint could be that of\
+            another agent (e.g. 'https://example.com/agent-endpoint') if the\
+            routing of messages to this agent by a mediator is configured.\
+            The endpoint is used in the formation of a connection with another agent.",
         )
 
         parser.add_argument(
@@ -493,8 +543,8 @@ class TransportGroup(ArgumentGroup):
             "--label",
             type=str,
             metavar="<label>",
-            help="Specify the default label to use when creating"
-            + " connection invitations and requests",
+            help="Specifies the label for this agent. This label is publicized\
+            (self-attested) to other agents as part of forming a connection.",
         )
 
     def get_settings(self, args: Namespace):
@@ -522,51 +572,62 @@ class WalletGroup(ArgumentGroup):
             "--seed",
             type=str,
             metavar="<wallet-seed>",
-            help="Seed to use when creating the public DID",
+            help="Specifies the seed to use for the creation of a public DID\
+            for the agent to use with a Hyperledger Indy ledger. The DID\
+            must already exist on the ledger.",
         )
         parser.add_argument(
             "--wallet-key",
             type=str,
             metavar="<wallet-key>",
-            help="Specify the master key value to use when opening the wallet",
+            help="Specifies the master key value to use for opening the wallet.",
         )
         parser.add_argument(
             "--wallet-name",
             type=str,
             metavar="<wallet-name>",
-            help="Specify the wallet name",
+            help="Specifies the wallet name to be used by the agent.\
+            This is useful if your deployment has multiple wallets.",
         )
         parser.add_argument(
             "--wallet-type",
             type=str,
             metavar="<wallet-type>",
-            help="Specify the wallet implementation to use",
+            help="Specifies the type of Indy wallet provider to use.\
+            Supported internal storage types are 'basic' (memory) and 'indy'.",
         )
         parser.add_argument(
             "--wallet-storage-type",
             type=str,
             metavar="<storage-type>",
-            help="Specify the wallet storage implementation to use",
+            help="Specifies the type of Indy wallet backend to use.\
+            Supported internal storage types are 'basic' (memory),\
+            'indy', and 'postgres_storage'.",
         )
         parser.add_argument(
             "--wallet-storage-config",
             type=str,
             metavar="<storage-config>",
-            help="Specify the storage configuration to use (required for postgres) "
-            + 'e.g., \'{"url":"localhost:5432"}\'',
+            help="Specifies the storage configuration to use for the wallet.\
+            This is required if you are for using 'postgres_storage' wallet\
+            storage type. For example, '{\"url\":\"localhost:5432\"}'.",
         )
         parser.add_argument(
             "--wallet-storage-creds",
             type=str,
             metavar="<storage-creds>",
-            help="Specify the storage credentials to use (required for postgres) "
-            + 'e.g., \'{"account":"postgres","password":"mysecretpassword",'
-            + '"admin_account":"postgres","admin_password":"mysecretpassword"}\'',
+            help="Specify the storage credentials to use for the wallet.\
+            This is required if you are for using 'postgres_storage' wallet\
+            For example, '{\"account\":\"postgres\",\"password\":\
+            \"mysecretpassword\",\"admin_account\":\"postgres\",\"admin_password\":\
+            \"mysecretpassword\"}'",
         )
         parser.add_argument(
             "--replace-public-did",
             action="store_true",
-            help="Allow the public DID to be replaced when a new seed is provided",
+            help="If this parameter is set and an agent already has a public DID,\
+            and the '--seed' parameter specifies a new DID, the agent will use\
+            the new DID in place of the existing DID. Default: false.",
         )
 
     def get_settings(self, args: Namespace) -> dict:
