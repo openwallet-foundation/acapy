@@ -65,7 +65,7 @@ class Conductor:
         self.outbound_transport_manager: OutboundTransportManager = None
         self.sockets = OrderedDict()
 
-        self.undelivered_queue = DeliveryQueue()
+        self.undelivered_queue: DeliveryQueue = None
 
     async def setup(self):
         """Initialize the global request context."""
@@ -74,6 +74,9 @@ class Conductor:
 
         # Populate message serializer
         self.message_serializer = await context.inject(MessageSerializer)
+
+        # Setup Delivery Queue
+        self.undelivered_queue = DeliveryQueue()
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -250,7 +253,9 @@ class Conductor:
             # check for queued messages matching key and thread
             if self.undelivered_queue.has_message_for_key(delivery.sender_verkey):
                 # pending message. Transmit, then kill single_response
-                undelivered = self.undelivered_queue.get_one_message_for_key(delivery.sender_verkey)
+                undelivered = self.undelivered_queue.get_one_message_for_key(
+                    delivery.sender_verkey
+                )
                 # send message again.
                 print("Sending Queued Message via inbound connection")
                 await self.outbound_message_router(undelivered)

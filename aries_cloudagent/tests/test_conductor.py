@@ -204,7 +204,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.outbound_message_router(message)
 
-            mock_delivery_queue.add_message.assert_awaited_once_with(
+            mock_delivery_queue.return_value.add_message.assert_called_once_with(
                 message
             )
 
