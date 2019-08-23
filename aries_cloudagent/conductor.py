@@ -9,10 +9,11 @@ wallet.
 """
 
 import asyncio
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 import logging
 from typing import Coroutine, Union
 
+from aries_cloudagent.delivery_queue import DeliveryQueue
 from .admin.base_server import BaseAdminServer
 from .admin.server import AdminServer
 from .config.default_context import ContextBuilder
@@ -64,7 +65,7 @@ class Conductor:
         self.outbound_transport_manager: OutboundTransportManager = None
         self.sockets = OrderedDict()
 
-        self.undelivered_queue = dict
+        self.undelivered_queue = DeliveryQueue()
 
     async def setup(self):
         """Initialize the global request context."""
@@ -247,13 +248,13 @@ class Conductor:
         if single_response and not socket_id:
             # TODO: Potential location of queued sending.
             # check for queued messages matching key and thread
-            if delivery.sender_verkey in self.undelivered_queue \
-                    and len(self.undelivered_queue[delivery.sender_verkey]):
-                pass # pending message. Transmit, then kill single_response
-                undelivered = self.undelivered_queue[delivery.sender_verkey].pop(0)
+            if self.undelivered_queue.has_message_for_key(delivery.sender_verkey):
+                # pending message. Transmit, then kill single_response
+                undelivered = self.undelivered_queue.get_one_message_for_key(delivery.sender_verkey)
                 # send message again.
+                print("Sending Queued Message via inbound connection")
                 await self.outbound_message_router(undelivered)
-                # this consumes the 
+                # this may consume the inbound transport's ability to receive.
             else:
                 # if transport wasn't a socket, make a virtual socket used for responses
                 socket = SocketInfo(single_response=single_response)
@@ -378,9 +379,7 @@ class Conductor:
             await self.outbound_transport_manager.send_message(message)
             return
 
-        #TODO: Add message to outbound queue, indexed by key
-        if message.reply_to_verkey not in self.undelivered_queue:
-            self.undelivered_queue = []
-        self.undelivered_queue[message.reply_to_verkey].append(message)
+        # Add message to outbound queue, indexed by key
+        self.undelivered_queue.add_message(message)
 
         self.logger.warning("No endpoint or direct route for outbound message, dropped")
