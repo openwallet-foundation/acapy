@@ -400,4 +400,3 @@ class Conductor:
         # Add message to outbound queue, indexed by key
         self.undelivered_queue.add_message(message)
 
-        self.logger.warning("No endpoint or direct route for outbound message, dropped")
