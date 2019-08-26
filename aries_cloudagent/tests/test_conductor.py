@@ -242,12 +242,6 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 f2 = asyncio.Future()
                 f2.set_result(None)
                 f1.set_result(f2)
-                #async def nothing():
-                #    f = asyncio.Future()
-                #    await asyncio.sleep(1)
-
-                #     f.set_result(None)
-                #     return f
                 mock_dispatch.return_value = f1
 
                 message_body = "{}"
@@ -255,6 +249,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 delivery_future = asyncio.Future()
                 await conductor.inbound_message_router(message_body, transport, single_response=delivery_future)
 
+                #mock_delivery_queue.return_value.has_message_for_key.assert_called_once()
                 mock_delivery_queue.return_value.has_message_for_key.assert_called_once_with(
                     sender_pk.value
                 )

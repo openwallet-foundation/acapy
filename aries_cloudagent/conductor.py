@@ -288,28 +288,27 @@ class Conductor:
             # if a reply mode is present, then a response is allowed over this connection
             # wait till dispatch is complete, then check to see if any queued responses can be sent.
             if socket.reply_mode:
-                complete.add_done_callback(functools.partial(self.queue_processing, socket))
+                await complete
+                await self.queue_processing(socket)
 
             # close a single_response socket if no answer given by now.
             complete.add_done_callback(lambda fut: socket.dispatch_complete())
         return complete
 
-    async def queue_processing(self, socket, completed_dispatch):
-        print("Now Processing Queue for pending messages.")
-
+    async def queue_processing(self, socket):
         # socket has a list of reply_to_verkeys
         for key in socket.reply_verkeys:
 
             # socket also has a select method to see if the socket return route params match a message
             # we should add a new conductor method as a callback that considers these options before allowing the done callback to happen
-            if self.undelivered_queue.has_message_for_key(key):
+            if self.undelivered_queue.has_message_for_key(key.value):
 
-                for undelivered_message in self.undelivered_queue.inspect_all_messages_for_key(key):
+                for undelivered_message in self.undelivered_queue.inspect_all_messages_for_key(key.value):
                     # pending message. Transmit, then kill single_response
                     if socket.select_outgoing(undelivered_message):
                         print("Sending Queued Message via inbound connection")
-                        self.undelivered_queue.remove_message_for_key(key, undelivered_message)
-                        socket.send(undelivered_message)
+                        self.undelivered_queue.remove_message_for_key(key.value, undelivered_message)
+                        await socket.send(undelivered_message)
 
     async def prepare_outbound_message(
         self, message: OutboundMessage, context: InjectionContext = None
