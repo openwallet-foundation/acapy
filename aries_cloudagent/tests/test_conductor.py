@@ -182,12 +182,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
     async def test_outbound_queue_add_with_no_endpoint(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
-        #set up relationship without endpoint
+        # set up relationship without endpoint
         with async_mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, async_mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, async_mock.patch.object(
             test_module, "DeliveryQueue", autospec=True
         ) as mock_delivery_queue:
 
@@ -208,32 +204,79 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 message
             )
 
+    async def test_outbound_queue_check_on_inbound(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
 
-            # delivery = MessageDelivery()
-            # parsed_msg = {}
-            # mock_serializer = builder.message_serializer
-            # mock_serializer.extract_message_type.return_value = messaging.trustping.message_types.PING
-            # mock_serializer.parse_message.return_value = (parsed_msg, delivery)
-            #
-            # delivery_future = asyncio.Future()
-            # await conductor.inbound_message_router(payload, single_response=delivery_future)
-            #
-            # try:
-            #     await asyncio.wait_for(delivery_future, 30)
-            # except asyncio.TimeoutError:
-            #     if not delivery_future.done():
-            #         delivery_future.cancel()
-            #     print("Timeout Error")
-            # except asyncio.CancelledError:
-            #
-            #     queued_message = delivery_future.result()
-            #     print("CancelledError")
-            # assert queued_message == payload
+        with async_mock.patch.object(
+            test_module, "DeliveryQueue", autospec=True
+        ) as mock_delivery_queue:
+
+            await conductor.setup()
+            # set up relationship without endpoint
+            with async_mock.patch.object(
+                test_module, "InboundTransportManager", autospec=True
+            ) as mock_inbound_mgr, async_mock.patch.object(
+                test_module, "OutboundTransportManager", autospec=True
+            ) as mock_outbound_mgr, async_mock.patch.object(
+                conductor.dispatcher, "dispatch", autospec=True
+            ) as mock_dispatch, async_mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_connection_manager:
 
 
-        #send message out to that relationship
-        #receive message from that relationship
-        #verify queued message was returned to that connection
+                sender_did_doc, sender_pk = self.make_did_doc(self.test_did, self.test_verkey)
+
+                # we don't need the connection, so avoid looking for one.
+                mock_connection_manager.find_message_connection.return_value = None
+
+                delivery = MessageDelivery()
+                delivery.sender_verkey = sender_pk
+                delivery.direct_response_requested = "all"
+                parsed_msg = {}
+                mock_serializer = builder.message_serializer
+                mock_serializer.extract_message_type.return_value = "message_type" # messaging.trustping.message_types.PING
+                mock_serializer.parse_message.return_value = (parsed_msg, delivery)
+
+                f1 = asyncio.Future()
+                f2 = asyncio.Future()
+                f2.set_result(None)
+                f1.set_result(f2)
+                #async def nothing():
+                #    f = asyncio.Future()
+                #    await asyncio.sleep(1)
+
+                #     f.set_result(None)
+                #     return f
+                mock_dispatch.return_value = f1
+
+                message_body = "{}"
+                transport = "http"
+                delivery_future = asyncio.Future()
+                await conductor.inbound_message_router(message_body, transport, single_response=delivery_future)
+
+                mock_delivery_queue.return_value.has_message_for_key.assert_called_once_with(
+                    sender_pk.value
+                )
+
+
+                #
+                # try:
+                #     await asyncio.wait_for(delivery_future, 30)
+                # except asyncio.TimeoutError:
+                #     if not delivery_future.done():
+                #         delivery_future.cancel()
+                #     print("Timeout Error")
+                # except asyncio.CancelledError:
+                #
+                #     queued_message = delivery_future.result()
+                #     print("CancelledError")
+                # assert queued_message == payload
+
+
+            #send message out to that relationship
+            #receive message from that relationship
+            #verify queued message was returned to that connection
 
 
 

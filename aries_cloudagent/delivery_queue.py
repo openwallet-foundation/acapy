@@ -30,8 +30,14 @@ class DeliveryQueue:
                 self.queue_by_key[recipient_key] = []
             self.queue_by_key[recipient_key].append(msg)
 
-    def has_message_for_key(self, key):
+    def has_message_for_key(self, key:str):
         return key in self.queue_by_key and len(self.queue_by_key[key])
 
     def get_one_message_for_key(self, key):
         return self.queue_by_key[key].pop(0)
+
+    def inspect_all_messages_for_key(self, key:str):
+        return self.queue_by_key[key]
+
+    def remove_message_for_key(self, key, undelivered_message):
+        self.queue_by_key[key].remove(undelivered_message)

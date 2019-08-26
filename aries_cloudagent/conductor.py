@@ -9,11 +9,12 @@ wallet.
 """
 
 import asyncio
+import functools
 from collections import OrderedDict
 import logging
 from typing import Coroutine, Union
 
-from aries_cloudagent.delivery_queue import DeliveryQueue
+from .delivery_queue import DeliveryQueue
 from .admin.base_server import BaseAdminServer
 from .admin.server import AdminServer
 from .config.default_context import ContextBuilder
@@ -249,22 +250,10 @@ class Conductor:
             delivery.connection_id = connection.connection_id
 
         if single_response and not socket_id:
-            # TODO: Potential location of queued sending.
-            # check for queued messages matching key and thread
-            if self.undelivered_queue.has_message_for_key(delivery.sender_verkey):
-                # pending message. Transmit, then kill single_response
-                undelivered = self.undelivered_queue.get_one_message_for_key(
-                    delivery.sender_verkey
-                )
-                # send message again.
-                print("Sending Queued Message via inbound connection")
-                await self.outbound_message_router(undelivered)
-                # this may consume the inbound transport's ability to receive.
-            else:
-                # if transport wasn't a socket, make a virtual socket used for responses
-                socket = SocketInfo(single_response=single_response)
-                socket_id = socket.socket_id
-                self.sockets[socket_id] = socket
+            # if transport wasn't a socket, make a virtual socket used for responses
+            socket = SocketInfo(single_response=single_response)
+            socket_id = socket.socket_id
+            self.sockets[socket_id] = socket
 
         if socket_id:
             if socket_id not in self.sockets:
@@ -296,8 +285,31 @@ class Conductor:
             parsed_msg, delivery, connection, self.outbound_message_router
         )
         if socket:
+            # if a reply mode is present, then a response is allowed over this connection
+            # wait till dispatch is complete, then check to see if any queued responses can be sent.
+            if socket.reply_mode:
+                complete.add_done_callback(functools.partial(self.queue_processing, socket))
+
+            # close a single_response socket if no answer given by now.
             complete.add_done_callback(lambda fut: socket.dispatch_complete())
         return complete
+
+    async def queue_processing(self, socket, completed_dispatch):
+        print("Now Processing Queue for pending messages.")
+
+        # socket has a list of reply_to_verkeys
+        for key in socket.reply_verkeys:
+
+            # socket also has a select method to see if the socket return route params match a message
+            # we should add a new conductor method as a callback that considers these options before allowing the done callback to happen
+            if self.undelivered_queue.has_message_for_key(key):
+
+                for undelivered_message in self.undelivered_queue.inspect_all_messages_for_key(key):
+                    # pending message. Transmit, then kill single_response
+                    if socket.select_outgoing(undelivered_message):
+                        print("Sending Queued Message via inbound connection")
+                        self.undelivered_queue.remove_message_for_key(key, undelivered_message)
+                        socket.send(undelivered_message)
 
     async def prepare_outbound_message(
         self, message: OutboundMessage, context: InjectionContext = None
