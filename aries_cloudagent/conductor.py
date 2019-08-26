@@ -301,13 +301,15 @@ class Conductor:
 
             # socket also has a select method to see if the socket return route params match a message
             # we should add a new conductor method as a callback that considers these options before allowing the done callback to happen
-            if self.undelivered_queue.has_message_for_key(key.value):
+            if not isinstance(key, str):
+                key = key.value
+            if self.undelivered_queue.has_message_for_key(key):
 
-                for undelivered_message in self.undelivered_queue.inspect_all_messages_for_key(key.value):
+                for undelivered_message in self.undelivered_queue.inspect_all_messages_for_key(key):
                     # pending message. Transmit, then kill single_response
                     if socket.select_outgoing(undelivered_message):
                         print("Sending Queued Message via inbound connection")
-                        self.undelivered_queue.remove_message_for_key(key.value, undelivered_message)
+                        self.undelivered_queue.remove_message_for_key(key, undelivered_message)
                         await socket.send(undelivered_message)
 
     async def prepare_outbound_message(
