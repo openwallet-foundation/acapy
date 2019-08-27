@@ -215,10 +215,6 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             await conductor.setup()
             # set up relationship without endpoint
             with async_mock.patch.object(
-                test_module, "InboundTransportManager", autospec=True
-            ) as mock_inbound_mgr, async_mock.patch.object(
-                test_module, "OutboundTransportManager", autospec=True
-            ) as mock_outbound_mgr, async_mock.patch.object(
                 conductor.dispatcher, "dispatch", autospec=True
             ) as mock_dispatch, async_mock.patch.object(
                 test_module, "ConnectionManager", autospec=True
@@ -249,30 +245,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 delivery_future = asyncio.Future()
                 await conductor.inbound_message_router(message_body, transport, single_response=delivery_future)
 
-                #mock_delivery_queue.return_value.has_message_for_key.assert_called_once()
                 mock_delivery_queue.return_value.has_message_for_key.assert_called_once_with(
                     sender_pk.value
                 )
-
-
-                #
-                # try:
-                #     await asyncio.wait_for(delivery_future, 30)
-                # except asyncio.TimeoutError:
-                #     if not delivery_future.done():
-                #         delivery_future.cancel()
-                #     print("Timeout Error")
-                # except asyncio.CancelledError:
-                #
-                #     queued_message = delivery_future.result()
-                #     print("CancelledError")
-                # assert queued_message == payload
-
-
-            #send message out to that relationship
-            #receive message from that relationship
-            #verify queued message was returned to that connection
-
 
 
     async def test_admin(self):
