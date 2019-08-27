@@ -45,7 +45,9 @@ class DeliveryQueue:
         Arguments:
             key: The key to use for lookup
         """
-        return key in self.queue_by_key and len(self.queue_by_key[key])
+        if key in self.queue_by_key and len(self.queue_by_key[key]):
+            return True
+        return False
 
     def get_one_message_for_key(self, key: str):
         """
