@@ -1,6 +1,6 @@
 # Becoming an Indy/Aries Developer
 
-This guide is to get you from (pretty much) zero to developing code for issuing (and verifying) credentials with your own Aries agent. On the way, you'll look at Hyperledger Indy and how it works, find out about the architecture and components of an Aries agent and it's underlying messaging protocols. Scan the list of topics below and jump in as soon as you hit a topic you don't know.
+This guide is to get you from (pretty much) zero to developing code for issuing (and verifying) credentials with your own Aries agent. On the way, you'll look at Hyperledger Indy and how it works, find out about the architecture and components of an Aries agent and its underlying messaging protocols. Scan the list of topics below and jump in as soon as you hit a topic you don't know.
 
 Note that in the guidance we have here, we include not only the links to look at, but we recommend that you **not** look at certain material to which you might naturally gravitate. That's because the material is out of date and will take you down some unnecessary rabbit holes. Keep your eyes on the goal - developing with Indy and Aries.
 

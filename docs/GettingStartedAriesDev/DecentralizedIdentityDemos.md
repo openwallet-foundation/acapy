@@ -6,7 +6,7 @@ The following are some demos that you can go through to see verifiable credentia
 
 The Hyperledger Indy community is littered with "Alice and Faber" demos. Alice is a former student of [Faber College](https://en.wikipedia.org/wiki/Animal_House) (motto: Knowledge is Good), and is offered from Faber a verifiable credential that she can use to prove her educational accomplishments. Alice proves the claims in the credential to get a job at ACME Corp, and then uses a credential about her job at ACME Corp. to get a loan from Thrift Bank.
 
-The edX course version of the Alie/Faber story is good if you are new to Indy because in going through the story you get a web interface to see the interactions/technical steps in establishing connections between agents and the process for issuing and verifying credentials. **DO NOT** look into the underlying code because it is not maintained, and it is out-of-date.
+The edX course version of the Alice/Faber story is good if you are new to Indy because in going through the story you get a web interface to see the interactions/technical steps in establishing connections between agents and the process for issuing and verifying credentials. **DO NOT** look into the underlying code because it is not maintained, and it is out-of-date.
 
 We recommend using the "In Browser" steps to run the demo vs. getting things running on your local machine.
 
@@ -14,11 +14,11 @@ Link: [Alice and Faber - edX Version](https://github.com/hyperledger/education/b
 
 ### BC Gov's OrgBook and Greenlight
 
-BC Gov's Verifiable Organizations Network (VON) project implemented the first production Indy app (TheOrgBook, and now just "OrgBook") that exists to bootstrap verifiable credentials ecosystems. The Greenlight use case is a demo showing how verifiable credentials can be used for reducing the red tape businesses face in trying to get a government permit (for example, to open a restaurant). The business challenge addressed by Greenlight is figuring out what other permits and licenses need to be in place before a business can get the permit it actually wants. The demo simulates a business identifying their goal permit, seeing a roadmap of the prerequisite credentials already collected and still needed, and using links to get the needed credentials. Since in these early days fo decentralized identity, business don't have their own digital wallet, in applying for each credential, each permitting service is using OrgBook to get proof of the prerequisite credentials, and issuing the new credential back to the OrgBook.
+BC Gov's Verifiable Organizations Network (VON) project implemented the first production Indy app (TheOrgBook, and now just "OrgBook") that exists to bootstrap verifiable credentials ecosystems. The Greenlight use case is a demo showing how verifiable credentials can be used for reducing the red tape businesses face in trying to get a government permit (for example, to open a restaurant). The business challenge addressed by Greenlight is figuring out what other permits and licenses need to be in place before a business can get the permit it actually wants. The demo simulates a business identifying their goal permit, seeing a roadmap of the prerequisite credentials already collected and still needed, and using links to get the needed credentials. Since in these early days of decentralized identity, business don't have their own digital wallet, in applying for each credential, each permitting service is using OrgBook to get proof of the prerequisite credentials, and issuing the new credential back to the OrgBook.
 
 If you are interested in using/contributing to VON and OrgBook, contact the folks from BC Gov using links on https://vonx.io.
 
-Link: [Greenlight](https://greenlight.orgbook.gov.bc.ca/) - choose the "City of Surrey - Busienss Licence"
+Link: [Greenlight](https://greenlight.orgbook.gov.bc.ca/) - choose the "City of Surrey - Business License"
 Link: [Information about Verifiable Organizations Network (VON)](https://vonx.io)
 Link: [OrgBook BC - Production Instance](https://orgbook.gov.bc.ca/)
 
