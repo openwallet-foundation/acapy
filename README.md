@@ -27,8 +27,10 @@ issuing, verifying and holding verifiable credentials.
   - [Quickstart](#quickstart)
   - [Architectural Deep Dive](#architectural-deep-dive)
   - [Getting Started Guide](#getting-started-guide)
+  - [Read the Docs](#read-the-docs)
+  - [What to Focus On?](#what-to-focus-on)
+- [Credit](#credit)
 - [Contributing](#contributing)
-- [Publishing Releases](#publishing-releases)
 - [License](#license)
 
 ## Background
@@ -77,9 +79,16 @@ The ACA-Py team presented an architectural deep dive webinar that can be viewed 
 
 For everyone those new to SSI, Indy and Aries, we've created a [Getting Started Guide](https://github.com/hyperledger/aries-cloudagent-python/blob/master/docs/GettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services in a hurry. Along the way, you'll run some early Indy apps, apps built on ACA-Py and developer-oriented demos for interacting with ACA-Py. The guide has a good table of contents so that you can skip the parts you already know.
 
-We'll soon have a ReadTheDocs site published with docstrings extracted from the ACA-Py code.
+### Read the Docs
+
+The ACA-Py Python docstrings are used as the source of a [Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) code overview site. Want to review the
+modules that make up ACA-Py? This is the best place to go.
+
+### What to Focus On?
 
 Not sure where your focus should be? Building apps? Aries? Indy? Indy's Blockchain? Ursa? Here is a [document](https://github.com/hyperledger/aries-cloudagent-python/blob/master/docs/GettingStartedAriesDev/IndyAriesDevOptions.md) that goes through the technical stack to show how the projects fit together, so you can decide where you want to focus your efforts.
+
+## Credit
 
 The initial implementation of ACA-Py was developed by the Verifiable Organizations Network (VON) team based at the Province of British Columbia. To learn more about VON and what's happening with decentralized identity in British Columbia, please go to [https://vonx.io](https://vonx.io).
 
@@ -88,10 +97,6 @@ The initial implementation of ACA-Py was developed by the Verifiable Organizatio
 Pull requests are welcome! Please read our [contributions guide](https://github.com/hyperledger/aries-cloudagent-python/blob/master/CONTRIBUTING.md) and submit your PRs. We enforce [developer certificate of origin](https://developercertificate.org/) (DCO) commit signing. See guidance [here](https://github.com/apps/dco).
 
 We also welcome issues submitted about problems you encounter in using ACA-Py.
-
-## Publishing Releases
-
-The [publishing](https://github.com/hyperledger/aries-cloudagent-python/blob/master/PUBLISHING.md) document provides information on tagging a release and publishing the release artifacts to PyPi.
 
 ## License
 

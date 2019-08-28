@@ -3,8 +3,41 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Aries Cloud Agent Python Documentation
+Aries Cloud Agent Python Code Documentation
 ===================================================
+
+Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building decentralized
+identity applications and services running in non-mobile environments.
+
+This is the Read The Docs site for the Hyperledger 
+`Aries Cloud Agent Python <https://github.com/hyperledger/aries-cloudagent-python>`_.
+This site contains only the ACA-Py docstrings documentation
+extracted from the Python Code. For other documentation, please consult the links
+in the Readme for the `ACA-Py <https://github.com/hyperledger/aries-cloudagent-python>`_
+GitHub Repo. If you are getting started with verifiable credentials or Aries,
+we recommend that you start with this `verifiable credentials and agents
+getting started guide
+<https://github.com/hyperledger/aries-cloudagent-python/tree/master/docs/GettingStartedAriesDev>`_.
+
+All of the code in ACA-Py is within the `aries_cloudagent
+<generated/aries_cloudagent.html>`_ module. To investigate the
+code, use search or click on the `aries_cloudagent package` link in the left menu to
+drill down into the modules, subpackages and submodules that make up ACA-Py.
+
+Developers that are interested in what DIDComm protocols are supported in ACA-Py
+should take a look at the `messaging <generated/aries_cloudagent.messaging.html>`_ subpackage. 
+Other general purpose subpackages that might be of particular interest include
+`wallet <generated/aries_cloudagent.wallet.html>`_ and
+`storage <generated/aries_cloudagent.messaging.html>`_. For those
+agents playing different roles in a verifiable credential exchange, take a look
+at the `issuer <generated/aries_cloudagent.issuer.html>`_,
+`holder <generated/aries_cloudagent.holder.html>`_ and
+`verifier <generated/aries_cloudagent.verifier.html>`_ packages.
+
+Please see the `ACA-Py Contribution guidelines 
+<https://github.com/hyperledger/aries-cloudagent-python/blob/master/README.md#contributing>`_
+for how to contribute to ACA-Py, including for how to submit issues about ACA-Py.
+
 
 .. toctree::
    :maxdepth: 2
