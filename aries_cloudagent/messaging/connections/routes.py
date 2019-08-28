@@ -44,6 +44,12 @@ def connection_sort_key(conn):
     summary="Query agent-to-agent connections",
     parameters=[
         {
+            "name": "alias",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+        {
             "name": "initiator",
             "in": "query",
             "schema": {"type": "string", "enum": ["self", "external"]},
@@ -107,6 +113,7 @@ async def connections_list(request: web.BaseRequest):
     context = request.app["request_context"]
     tag_filter = {}
     for param_name in (
+        "alias",
         "initiator",
         "invitation_id",
         "my_did",
@@ -153,6 +160,12 @@ async def connections_retrieve(request: web.BaseRequest):
     summary="Create a new connection invitation",
     parameters=[
         {
+            "name": "alias",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+        {
             "name": "accept",
             "in": "query",
             "schema": {"type": "string", "enum": ["none", "auto"]},
@@ -175,6 +188,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     accept = request.query.get("accept")
+    alias = request.query.get("alias")
     public = request.query.get("public")
     multi_use = request.query.get("multi_use")
 
@@ -183,13 +197,17 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     connection_mgr = ConnectionManager(context)
     connection, invitation = await connection_mgr.create_invitation(
-        accept=accept, public=bool(public), multi_use=bool(multi_use)
+        accept=accept, public=bool(public), multi_use=bool(multi_use), alias=alias
     )
     result = {
         "connection_id": connection and connection.connection_id,
         "invitation": invitation.serialize(),
         "invitation_url": invitation.to_url(),
     }
+
+    if connection and connection.alias:
+        result["alias"] = connection.alias
+
     return web.json_response(result)
 
 
@@ -198,11 +216,17 @@ async def connections_create_invitation(request: web.BaseRequest):
     summary="Receive a new connection invitation",
     parameters=[
         {
+            "name": "alias",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+        {
             "name": "accept",
             "in": "query",
             "schema": {"type": "string", "enum": ["none", "auto"]},
             "required": False,
-        }
+        },
     ],
 )
 @request_schema(ConnectionInvitationSchema())
@@ -225,7 +249,10 @@ async def connections_receive_invitation(request: web.BaseRequest):
     invitation_json = await request.json()
     invitation = ConnectionInvitation.deserialize(invitation_json)
     accept = request.query.get("accept")
-    connection = await connection_mgr.receive_invitation(invitation, accept=accept)
+    alias = request.query.get("alias")
+    connection = await connection_mgr.receive_invitation(
+        invitation, accept=accept, alias=alias
+    )
     return web.json_response(connection.serialize())
 
 

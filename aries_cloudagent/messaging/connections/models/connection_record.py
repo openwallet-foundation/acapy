@@ -79,6 +79,7 @@ class ConnectionRecord(BaseRecord):
         routing_state: str = None,
         accept: str = None,
         invitation_mode: str = None,
+        alias: str = None,
         **kwargs,
     ):
         """Initialize a new ConnectionRecord."""
@@ -95,6 +96,7 @@ class ConnectionRecord(BaseRecord):
         self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.accept = accept or self.ACCEPT_MANUAL
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
+        self.alias = alias
 
     @property
     def connection_id(self) -> str:
@@ -122,7 +124,8 @@ class ConnectionRecord(BaseRecord):
                 "state",
                 "routing_state",
                 "accept",
-                "invitation_mode"
+                "invitation_mode",
+                "alias"
             )
         }
 
@@ -385,3 +388,4 @@ class ConnectionRecordSchema(BaseRecordSchema):
     accept = fields.Str(required=False)
     error_msg = fields.Str(required=False)
     invitation_mode = fields.Str(required=False)
+    alias = fields.Str(required=False)
