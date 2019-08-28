@@ -58,8 +58,23 @@ class TestDeliveryQueue(AsyncTestCase):
         msg = OutboundMessage("x", target=t)
         queue.add_message(msg)
         assert queue.has_message_for_key("aaa")
-        msg_list = queue.inspect_all_messages_for_key("aaa")
+        msg_list = [m for m in queue.inspect_all_messages_for_key("aaa")]
+        assert queue.message_count_for_key("aaa") == 1
         assert len(msg_list) == 1
         assert msg_list[0] == msg
         queue.remove_message_for_key("aaa", msg)
         assert queue.has_message_for_key("aaa") is False
+
+    async def test_message_ttl(self):
+        queue = DeliveryQueue()
+
+        t = ConnectionTarget(recipient_keys=["aaa"])
+        msg = OutboundMessage("x", target=t)
+        queue.add_message(msg)
+        assert queue.has_message_for_key("aaa")
+        queue.expire_messages(ttl=-10)
+        assert queue.has_message_for_key("aaa") is False
+
+    async def test_count_zero_with_no_items(self):
+        queue = DeliveryQueue()
+        assert queue.message_count_for_key("aaa") == 0
