@@ -109,7 +109,7 @@ async def indy_proof_request2indy_requested_creds(
 
             req_creds[category][referent] = {
                 "cred_id": credentials[0]["cred_info"]["referent"],
-                "revealed": True
+                "revealed": True  # TODO allow specification of unrevealed attrs?
             }
 
     return req_creds

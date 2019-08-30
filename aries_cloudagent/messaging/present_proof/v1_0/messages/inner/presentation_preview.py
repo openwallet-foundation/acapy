@@ -325,13 +325,17 @@ class PresentationPreview(BaseModel):
         }
 
         for attr_spec in self.attributes:
-            cd_id = attr_spec.cred_def_id
-            revo_support = bool(ledger and await ledger.get_credential_definition(
-                cd_id
-            )["value"]["revocation"])
+            if attr_spec.posture == PresAttrSpec.Posture.SELF_ATTESTED:
+                proof_req["requested_attributes"][f"{canon(attr_spec.name)}"] = {
+                    "name": canon(attr_spec.name)
+                }
+            else:
+                cd_id = attr_spec.cred_def_id
+                revo_support = bool(ledger and await ledger.get_credential_definition(
+                    cd_id
+                )["value"]["revocation"])
 
-            timestamp = non_revo(attr_spec.cred_def_id)
-            if attr_spec.posture != PresAttrSpec.Posture.SELF_ATTESTED:
+                timestamp = non_revo(attr_spec.cred_def_id)
                 proof_req["requested_attributes"][
                     "{}_{}_uuid".format(
                         ord_cred_def_id(cd_id),
@@ -339,9 +343,7 @@ class PresentationPreview(BaseModel):
                     )
                 ] = {
                     "name": canon(attr_spec.name),
-                    "restrictions": [
-                        {"cred_def_id": cd_id}
-                    ],
+                    "restrictions": [{"cred_def_id": cd_id}],
                     **{
                         "non_revoked": {
                             "from": timestamp,

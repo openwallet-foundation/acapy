@@ -256,7 +256,7 @@ class TestPresentationPreviewAsync(AsyncTestCase):
             spec["name"] = canon(spec["name"])
         for spec in CANON_INDY_PROOF_REQ["requested_predicates"].values():
             spec["name"] = canon(spec["name"])
-            
+
         pres_preview = deepcopy(PRES_PREVIEW)
 
         indy_proof_req = await pres_preview.indy_proof_request(
@@ -264,6 +264,22 @@ class TestPresentationPreviewAsync(AsyncTestCase):
         )
 
         assert indy_proof_req == CANON_INDY_PROOF_REQ
+
+    async def test_to_indy_proof_request_self_attested(self):
+        """Test presentation preview to inty proof request with self-attested values."""
+
+        pres_preview_selfie = deepcopy(PRES_PREVIEW)
+        for attr_spec in pres_preview_selfie.attributes:
+            attr_spec.cred_def_id=None
+
+        indy_proof_req_selfie = await pres_preview_selfie.indy_proof_request(
+            **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")}
+        )
+
+        assert not any(
+            "restrictions" in attr_spec
+            for attr_spec in indy_proof_req_selfie["requested_attributes"].values()
+        )
 
     @pytest.mark.asyncio
     async def test_satisfaction(self):
@@ -281,6 +297,13 @@ class TestPresentationPreviewAsync(AsyncTestCase):
             value=1234567
         )
         assert attr_spec.satisfies(pred_spec)
+
+        attr_spec = PresAttrSpec(
+            name="HIGHSCORE",
+            cred_def_id=CD_ID,
+            value=985260
+        )
+        assert not attr_spec.satisfies(pred_spec)
 
 
 @pytest.mark.indy
