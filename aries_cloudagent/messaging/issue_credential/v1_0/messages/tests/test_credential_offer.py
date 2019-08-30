@@ -1,7 +1,7 @@
 from .....decorators.attach_decorator import AttachDecorator
 from ...message_types import CREDENTIAL_OFFER
 from ..credential_offer import CredentialOffer
-from ..inner.credential_preview import CredentialAttrPreview, CredentialPreview
+from ..inner.credential_preview import CredAttrSpec, CredentialPreview
 
 from unittest import mock, TestCase
 
@@ -33,7 +33,7 @@ class TestCredentialOffer(TestCase):
         }
     }
     preview = CredentialPreview(
-        attributes=CredentialAttrPreview.list_plain(
+        attributes=CredAttrSpec.list_plain(
             {'member': 'James Bond', 'favourite': 'martini'}
         )
     )
@@ -66,7 +66,7 @@ class TestCredentialOffer(TestCase):
 
     @mock.patch(
         "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        + "credential_offer.CredentialOfferSchema.load"
+        "credential_offer.CredentialOfferSchema.load"
     )
     def test_deserialize(self, mock_credential_offer_schema_load):
         """
@@ -81,7 +81,7 @@ class TestCredentialOffer(TestCase):
 
     @mock.patch(
         "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        + "credential_offer.CredentialOfferSchema.dump"
+        "credential_offer.CredentialOfferSchema.dump"
     )
     def test_serialize(self, mock_credential_offer_schema_dump):
         """

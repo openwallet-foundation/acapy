@@ -1,30 +1,34 @@
 from ..presentation_proposal import PresentationProposal
-from ..inner.presentation_preview import PresentationAttrPreview, PresentationPreview
+from ..inner.presentation_preview import PresAttrSpec, PresPredSpec, PresentationPreview
 from ...message_types import PRESENTATION_PREVIEW, PRESENTATION_PROPOSAL
 
 from unittest import TestCase
 
 
-CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
+S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
+CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
 PRES_PREVIEW = PresentationPreview(
-    attributes={
-        CD_ID: {
-            "player": PresentationAttrPreview(value="Richie Knucklez"),
-            "screenCapture": PresentationAttrPreview(
-                mime_type="image/png",
-                encoding="base64",
-                value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl"
-            )
-        }
-    },
-    predicates={
-        CD_ID: {
-            ">=": {
-                "highScore": "1000000"
-            }
-        }
-    },
-    non_revocation_times={}
+    attributes=[
+        PresAttrSpec(
+            name="player",
+            cred_def_id=CD_ID,
+            value="Richie Knucklez"
+        ),
+        PresAttrSpec(
+            name="screenCapture",
+            cred_def_id=CD_ID,
+            mime_type="image/png",
+            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl"
+        )
+    ],
+    predicates=[
+        PresPredSpec(
+            name="highScore",
+            cred_def_id=CD_ID,
+            predicate=">=",
+            threshold=1000000
+        )
+    ]
 )
 
 
@@ -52,29 +56,7 @@ class TestPresentationProposal(TestCase):
         obj = {
             "@type": PRESENTATION_PROPOSAL,
             "comment": "Hello World",
-            "presentation_proposal": {
-                "@type": PRESENTATION_PREVIEW,
-                "attributes": {
-                    CD_ID: {
-                        "player": {
-                            "value": "Richie Knucklez"
-                        },
-                        "screenCapture": {
-                            "value": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-                            "encoding": "base64",
-                            "mime-type": "image/png"
-                        }
-                    }
-                },
-                "predicates": {
-                    CD_ID: {
-                        ">=": {
-                            "highScore": 1000000
-                        }
-                    }
-                },
-                "non_revocation_times": {}
-            }
+            "presentation_proposal": PRES_PREVIEW.serialize()
         }
 
         pres_proposal = PresentationProposal.deserialize(obj)
@@ -94,29 +76,7 @@ class TestPresentationProposal(TestCase):
         assert pres_proposal_dict == {
             "@type": PRESENTATION_PROPOSAL,
             "comment": "Hello World",
-            "presentation_proposal": {
-                "@type": PRESENTATION_PREVIEW,
-                "attributes": {
-                    CD_ID: {
-                        "player": {
-                            "value": "Richie Knucklez",
-                        },
-                        "screenCapture": {
-                            "value": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-                            "encoding": "base64",
-                            "mime-type": "image/png"
-                        }
-                    }
-                },
-                "predicates": {
-                    CD_ID: {
-                        ">=": {
-                            "highScore": 1000000
-                        }
-                    }
-                },
-                "non_revocation_times": {}
-            }
+            "presentation_proposal": PRES_PREVIEW.serialize()
         }
 
 class TestPresentationProposalSchema(TestCase):

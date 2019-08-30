@@ -2,6 +2,8 @@
 
 import json
 
+from uuid import uuid4
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
@@ -10,6 +12,15 @@ from ....holder.base import BaseHolder
 from ....storage.error import StorageNotFoundError
 
 from ...connections.models.connection_record import ConnectionRecord
+from ...decorators.attach_decorator import AttachDecorator
+from ...valid import (
+    INDY_CRED_DEF_ID,
+    INDY_DID,
+    INDY_PREDICATE,
+    INDY_SCHEMA_ID,
+    INDY_VERSION,
+    INT_EPOCH
+)
 
 from .manager import PresentationManager
 from .messages.inner.presentation_preview import (
@@ -17,6 +28,7 @@ from .messages.inner.presentation_preview import (
     PresentationPreviewSchema
 )
 from .messages.presentation_proposal import PresentationProposal
+from .messages.presentation_request import PresentationRequest
 from .models.presentation_exchange import (
     V10PresentationExchange,
     V10PresentationExchangeSchema,
@@ -40,7 +52,7 @@ class V10PresentationProposalRequestSchema(Schema):
         description="Human-readable comment",
         required=False,
         default="")
-    presentation_proposal = fields.Nested(PresentationPreviewSchema, required=True)
+    presentation_proposal = fields.Nested(PresentationPreviewSchema(), required=True)
     auto_present = fields.Boolean(
         description=(
             "Whether to respond automatically to presentation requests, building "
@@ -51,26 +63,146 @@ class V10PresentationProposalRequestSchema(Schema):
     )
 
 
-class V10PresentationProposalResultSchema(V10PresentationExchangeSchema):
-    """Result schema for sending a presentation proposal admin message."""
+class IndyProofReqSpecRestrictionsSchema(Schema):
+    """Schema for restrictions in attr or pred specifier indy proof request."""
+
+    credential_definition_id = fields.Str(
+        description="Credential definition identifier",
+        required=True,
+        **INDY_CRED_DEF_ID
+    )
+    schema_id = fields.String(
+        description="Schema identifier",
+        required=False,
+        **INDY_SCHEMA_ID
+    )
+    schema_issuer_did = fields.String(
+        description="Schema issuer (origin) DID",
+        required=False,
+        **INDY_DID
+    )
+    schema_name = fields.String(
+        example="transcript",
+        description="Schema name",
+        required=False
+    )
+    schema_version = fields.String(
+        description="Schema version",
+        required=False,
+        **INDY_VERSION
+    )
+    issuer_did = fields.String(
+        description="Credential issuer DID",
+        required=False,
+        **INDY_DID
+    )
+    cred_def_id = fields.String(
+        description="Credential definition identifier",
+        required=False,
+        **INDY_CRED_DEF_ID
+    )
+
+
+class IndyProofReqNonRevoked(Schema):
+    """Non-revocation times specification in indy proof request."""
+
+    from_epoch = fields.Int(
+        description="Earliest epoch of interest for non-revocation proof",
+        required=True,
+        **INT_EPOCH
+    )
+    to_epoch = fields.Int(
+        description="Latest epoch of interest for non-revocation proof",
+        required=True,
+        **INT_EPOCH
+    )
+
+
+class IndyProofReqAttrSpecSchema(Schema):
+    """Schema for attribute specification in indy proof request."""
+
+    name = fields.String(
+        example="favouriteDrink",
+        description="Attribute name",
+        required=True)
+    restrictions = fields.List(
+        fields.Nested(IndyProofReqSpecRestrictionsSchema()),
+        description="If present, credential must satisfy one of given restrictions",
+        required=False
+    )
+    non_revoked = fields.Nested(
+        IndyProofReqNonRevoked(),
+        description="Non-revocation times of interest for revocable credentials",
+        required=False
+    )
+
+
+class IndyProofReqPredSpecSchema(Schema):
+    """Schema for predicate specification in indy proof request."""
+
+    name = fields.String(
+        example="index",
+        description="Attribute name",
+        required=True)
+    p_type: fields.String(
+        description="Predicate type (indy currently supports only '>=')",
+        required=True,
+        **INDY_PREDICATE
+    )
+    p_value: fields.Integer(
+        description="Threshold value",
+        required=True,
+    )
+    restrictions = fields.List(
+        fields.Nested(IndyProofReqSpecRestrictionsSchema()),
+        description="If present, credential must satisfy one of given restrictions",
+        required=False
+    )
+    non_revoked = fields.Nested(
+        IndyProofReqNonRevoked(),
+        required=False
+    )
+
+
+class IndyProofRequestSchema(Schema):
+    """Schema for indy proof request."""
+
+    nonce = fields.String(
+        description="Nonce",
+        required=False,
+        example="1234567890"
+    )
+    name = fields.String(
+        description="Proof request name",
+        required=False,
+        example="Proof request",
+        default="Proof request"
+    )
+    version = fields.String(
+        description="Proof request version",
+        required=False,
+        default="1.0",
+        **INDY_VERSION
+    )
+    requested_attributes = fields.Dict(
+        description=("Requested attribute specifications of proof request"),
+        required=True,
+        keys=fields.Str(example="0_attr_uuid"),  # marshmallow/apispec v3.0 ignores
+        values=fields.Nested(IndyProofReqAttrSpecSchema())
+    )
+    requested_predicates = fields.Dict(
+        description=("Requested predicate specifications of proof request"),
+        required=True,
+        keys=fields.Str(example="0_age_GE_uuid"),  # marshmallow/apispec v3.0 ignores
+        values=fields.Nested(IndyProofReqPredSpecSchema())
+    )
 
 
 class V10PresentationRequestRequestSchema(Schema):
     """Request schema for sending a proof request."""
 
     connection_id = fields.UUID(description="Connection identifier", required=True)
-    name = fields.String(example="proof-request", description="Proof request name")
-    version = fields.String(example="1.0", description="Proof request version")
-    comment = fields.String(
-        description="Human-readable comment",
-        required=False,
-        default=""
-    )
-    presentation_proposal = fields.Nested(PresentationPreviewSchema, required=True)
-
-
-class V10PresentationRequestResultSchema(V10PresentationExchangeSchema):
-    """Result schema for sending a presentation request admin message."""
+    proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
 
 
 class IndyRequestedCredsRequestedAttrSchema(Schema):
@@ -105,7 +237,7 @@ class V10PresentationRequestSchema(Schema):
     self_attested_attributes = fields.Dict(
         description=("Self-attested attributes to build into proof"),
         required=True,
-        keys=fields.Str(example="attr_name"),  # marshmallow/apispec v3.0rc3 ignores
+        keys=fields.Str(example="attr_name"),  # marshmallow/apispec v3.0 ignores
         values=fields.Str(
             example="self_attested_value",
             description=(
@@ -120,7 +252,7 @@ class V10PresentationRequestSchema(Schema):
             "requested-attribute specifiers"
         ),
         required=True,
-        keys=fields.Str(example="attr_referent"),  # marshmallow/apispec v3.0rc3 ignores
+        keys=fields.Str(example="attr_referent"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyRequestedCredsRequestedAttrSchema())
     )
     requested_predicates = fields.Dict(
@@ -129,13 +261,13 @@ class V10PresentationRequestSchema(Schema):
             "requested-predicate specifiers"
         ),
         required=True,
-        keys=fields.Str(example="pred_referent"),  # marshmallow/apispec v3.0rc3 ignores
+        keys=fields.Str(example="pred_referent"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyRequestedCredsRequestedPredSchema())
     )
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
     summary="Fetch all present-proof exchange records"
 )
 @response_schema(V10PresentationExchangeListSchema(), 200)
@@ -166,7 +298,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
     summary="Fetch a single presentation exchange record"
 )
 @response_schema(V10PresentationExchangeSchema(), 200)
@@ -194,7 +326,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
     summary="Fetch credentials for a presentation request from wallet",
     parameters=[
         {
@@ -231,7 +363,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
-    presentation_referent = request.match_info["referent"]
+    presentation_referent = request.match_info.get("referent")
 
     try:
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
@@ -261,15 +393,25 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         extra_query
     )
 
+    presentation_exchange_record.log_state(
+        context,
+        "Retrieved presentation credentials",
+        {
+            "presentation_exchange_id": presentation_exchange_id,
+            "referent": presentation_referent,
+            "extra_query": extra_query,
+            "credentials": credentials
+        }
+    )
     return web.json_response(credentials)
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
-    summary="Sends a presentation request"
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    summary="Sends a presentation proposal"
 )
 @request_schema(V10PresentationProposalRequestSchema())
-@response_schema(V10PresentationProposalResultSchema(), 200)
+@response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_send_proposal(request: web.BaseRequest):
     """
     Request handler for sending a presentation proposal.
@@ -296,7 +438,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     comment = body.get("comment")
     # Aries#0037 calls it a proposal in the proposal struct but it's of type preview
@@ -325,11 +467,11 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
     summary="Sends a free presentation request not bound to any proposal"
 )
 @request_schema(V10PresentationRequestRequestSchema())
-@response_schema(V10PresentationRequestResultSchema(), 200)
+@response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_send_free_request(request: web.BaseRequest):
     """
     Request handler for sending a presentation request free from any proposal.
@@ -356,33 +498,27 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     comment = body.get("comment")
-    name = body.get("name", "proof-request")
-    version = body.get("version", "1.0")
-    presentation_proposal = body.get("presentation_proposal")
-    presentation_proposal_message = PresentationProposal(
-        comment=comment,
-        presentation_proposal=PresentationPreview.deserialize(presentation_proposal)
-    )
+    indy_proof_request = body.get("proof_request")
+    if not indy_proof_request.get("nonce"):
+        indy_proof_request["nonce"] = str(uuid4().int)
 
-    presentation_exchange_record = V10PresentationExchange(
-        connection_id=connection_id,
-        initiator=V10PresentationExchange.INITIATOR_SELF,
-        presentation_proposal_dict=presentation_proposal_message.serialize()
+    presentation_request_message = PresentationRequest(
+        comment=comment,
+        request_presentations_attach=[
+            AttachDecorator.from_indy_dict(indy_proof_request)
+        ]
     )
 
     presentation_manager = PresentationManager(context)
 
-    (
-        presentation_exchange_record,
-        presentation_request_message,
-    ) = await presentation_manager.create_request(
-        presentation_exchange_record,
-        name=name,
-        version=version,
-        comment=comment
+    presentation_exchange_record = (
+        await presentation_manager.create_exchange_for_request(
+            connection_id=connection_id,
+            presentation_request_message=presentation_request_message
+        )
     )
 
     await outbound_handler(presentation_request_message, connection_id=connection_id)
@@ -391,11 +527,11 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
     summary="Sends a presentation request in reference to a proposal"
 )
 @request_schema(V10PresentationRequestRequestSchema())
-@response_schema(V10PresentationRequestResultSchema(), 200)
+@response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     """
     Request handler for sending a presentation request free from any proposal.
@@ -430,14 +566,14 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     presentation_manager = PresentationManager(context)
 
     (
         presentation_exchange_record,
         presentation_request_message
-    ) = await presentation_manager.create_request(
+    ) = await presentation_manager.create_bound_request(
         presentation_exchange_record
     )
 
@@ -447,7 +583,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
     summary="Sends a proof presentation"
 )
 @request_schema(V10PresentationRequestSchema())
@@ -483,7 +619,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     assert (
         presentation_exchange_record.state
@@ -509,7 +645,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
     summary="Verify a received presentation"
 )
 @response_schema(V10PresentationExchangeSchema())
@@ -544,7 +680,7 @@ async def presentation_exchange_verify_presentation(
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     assert (
         presentation_exchange_record.state
@@ -560,7 +696,7 @@ async def presentation_exchange_verify_presentation(
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0037 v1.0 present-proof exchange"],
+    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
     summary="Remove an existing presentation exchange record",
 )
 async def presentation_exchange_remove(request: web.BaseRequest):
@@ -590,37 +726,44 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get("/v1.0/present_proof_exchange", presentation_exchange_list),
             web.get(
-                "/v1.0/present_proof_exchange/{pres_ex_id}",
+                "/aries0037/v1.0/present_proof",
+                presentation_exchange_list
+            ),
+            web.get(
+                "/aries0037/v1.0/present_proof/{pres_ex_id}",
                 presentation_exchange_retrieve
             ),
             web.get(
-                "/v1.0/present_proof_exchange/{pres_ex_id}/credentials/{referent}",
+                "/aries0037/v1.0/present_proof/{pres_ex_id}/credentials",
+                presentation_exchange_credentials_list,
+            ),
+            web.get(
+                "/aries0037/v1.0/present_proof/{pres_ex_id}/credentials/{referent}",
                 presentation_exchange_credentials_list,
             ),
             web.post(
-                "/v1.0/present_proof_exchange/send_proposal",
+                "/aries0037/v1.0/present_proof/send_proposal",
                 presentation_exchange_send_proposal,
             ),
             web.post(
-                "/v1.0/present_proof_exchange/send_request",
+                "/aries0037/v1.0/present_proof/send_request",
                 presentation_exchange_send_free_request,
             ),
             web.post(
-                "/v1.0/present_proof_exchange/{pres_ex_id}/send_request",
+                "/aries0037/v1.0/present_proof/{pres_ex_id}/send_request",
                 presentation_exchange_send_bound_request,
             ),
             web.post(
-                "/v1.0/present_proof_exchange/{pres_ex_id}/send_presentation",
+                "/aries0037/v1.0/present_proof/{pres_ex_id}/send_presentation",
                 presentation_exchange_send_presentation,
             ),
             web.post(
-                "/v1.0/present_proof_exchange/{pres_ex_id}/verify_presentation",
+                "/aries0037/v1.0/present_proof/{pres_ex_id}/verify_presentation",
                 presentation_exchange_verify_presentation,
             ),
             web.post(
-                "/v1.0/present_proof_exchange/{pres_ex_id}/remove",
+                "/aries0037/v1.0/present_proof/{pres_ex_id}/remove",
                 presentation_exchange_remove
             ),
         ]

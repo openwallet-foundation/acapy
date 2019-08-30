@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from ....message_types import CREDENTIAL_PREVIEW
 from ..credential_preview import (
-    CredentialAttrPreview,
+    CredAttrSpec,
     CredentialPreview,
     CredentialPreviewSchema
 )
@@ -10,120 +10,57 @@ from ..credential_preview import (
 
 CRED_PREVIEW = CredentialPreview(
     attributes=(
-        CredentialAttrPreview.list_plain({'test': '123', 'hello': 'world'}) +
+        CredAttrSpec.list_plain({'test': '123', 'hello': 'world'}) +
         [
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name='icon',
                 value='cG90YXRv',
-                encoding='base64',
-                mime_type='image/png'
+                mime_type='image/PNG'
             )
         ]
     )
 )
 
 
-class TestCredentialAttrPreview(TestCase):
+class TestCredAttrSpec(TestCase):
     """Attribute preview tests"""
 
     def test_eq(self):
         attr_previews_none_plain = [
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name="item",
                 value="value"
             ),
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name="item",
                 value="value",
-                encoding=None,
                 mime_type=None
-            ),
-            CredentialAttrPreview(
-                name="item",
-                value="value",
-                encoding=None,
-                mime_type="text/plain"
-            ),
-            CredentialAttrPreview(
-                name="item",
-                value="value",
-                encoding=None,
-                mime_type="TEXT/PLAIN"
-            )
-        ]
-        attr_previews_b64_plain = [
-            CredentialAttrPreview(
-                name="item",
-                value="dmFsdWU=",
-                encoding="base64"
-            ),
-            CredentialAttrPreview(   
-                name="item",
-                value="dmFsdWU=",
-                encoding="base64",
-                mime_type=None
-            ),
-            CredentialAttrPreview(
-                name="item",
-                value="dmFsdWU=",
-                encoding="base64",
-                mime_type="text/plain"
-            ),
-            CredentialAttrPreview(
-                name="item",
-                value="dmFsdWU=",
-                encoding="BASE64",
-                mime_type="text/plain"
-            ),
-            CredentialAttrPreview(
-                name="item",
-                value="dmFsdWU=",
-                encoding="base64",
-                mime_type="TEXT/PLAIN"
             )
         ]
         attr_previews_different = [
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name="item",
                 value="dmFsdWU=",
-                encoding="base64",
                 mime_type="image/png"
             ),
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name="item",
-                value="distinct value",
-                mime_type=None
+                value="distinct value"
             ),
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name="distinct_name",
                 value="distinct value",
                 mime_type=None
-            ),
-            CredentialAttrPreview(
-                name="item",
-                value="xyzzy"
             )
         ]
 
         for lhs in attr_previews_none_plain:
-            for rhs in attr_previews_b64_plain:
-                assert lhs == rhs  # values decode to same
-
-        for lhs in attr_previews_none_plain:
-            for rhs in attr_previews_different:
-                assert lhs != rhs
-
-        for lhs in attr_previews_b64_plain:
             for rhs in attr_previews_different:
                 assert lhs != rhs
 
         for lidx in range(len(attr_previews_none_plain) - 1):
             for ridx in range(lidx + 1, len(attr_previews_none_plain)):
                 assert attr_previews_none_plain[lidx] == attr_previews_none_plain[ridx]
-
-        for lidx in range(len(attr_previews_b64_plain) - 1):
-            for ridx in range(lidx + 1, len(attr_previews_b64_plain)):
-                assert attr_previews_b64_plain[lidx] == attr_previews_b64_plain[ridx]
 
         for lidx in range(len(attr_previews_different) - 1):
             for ridx in range(lidx + 1, len(attr_previews_different)):
@@ -153,15 +90,8 @@ class TestCredentialPreview(TestCase):
             'hello': 'world',
             'icon': 'potato'
         }
-        assert CRED_PREVIEW.metadata() == {
-            'test': {
-            },
-            'hello': {
-            },
-            'icon': {
-                'mime-type': 'image/png',
-                'encoding': 'base64'
-            }
+        assert CRED_PREVIEW.mime_types() == {
+            'icon': 'image/png'  # canonicalize to lower case
         }
 
     def test_deserialize(self):
@@ -171,13 +101,11 @@ class TestCredentialPreview(TestCase):
             'attributes': [
                 {
                     'name': 'name',
-                    'mime-type': 'text/plain',
                     'value': 'Alexander Delarge'
                 },
                 {
                     'name': 'pic',
                     'mime-type': 'image/png',
-                    'encoding': 'base64',
                     'value': 'Abcd0123...'
                 }
             ]
@@ -204,7 +132,6 @@ class TestCredentialPreview(TestCase):
                 {
                     "name": "icon",
                     "mime-type": "image/png",
-                    "encoding": "base64",
                     "value": "cG90YXRv"
                 }
             ]

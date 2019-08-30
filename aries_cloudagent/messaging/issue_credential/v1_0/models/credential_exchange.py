@@ -15,7 +15,7 @@ class V10CredentialExchange(BaseRecord):
 
     RECORD_TYPE = "v10_credential_exchange"
     RECORD_ID_NAME = "credential_exchange_id"
-    WEBHOOK_TOPIC = "Aries#0036 v1.0 credentials"
+    WEBHOOK_TOPIC = "aries36_v10_credentials"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -27,6 +27,7 @@ class V10CredentialExchange(BaseRecord):
     STATE_REQUEST_SENT = "request_sent"
     STATE_REQUEST_RECEIVED = "request_received"
     STATE_ISSUED = "issued"
+    STATE_CREDENTIAL_RECEIVED = "credential_received"
     STATE_STORED = "stored"
 
     def __init__(
@@ -45,7 +46,8 @@ class V10CredentialExchange(BaseRecord):
         credential_request: dict = None,  # indy credential request
         credential_request_metadata: dict = None,
         credential_id: str = None,
-        credential: dict = None,  # indy credential
+        raw_credential: dict = None,  # indy credential as received
+        credential: dict = None,  # indy credential as stored
         auto_offer: bool = False,
         auto_issue: bool = False,
         error_msg: str = None,
@@ -66,6 +68,7 @@ class V10CredentialExchange(BaseRecord):
         self.credential_request = credential_request
         self.credential_request_metadata = credential_request_metadata
         self.credential_id = credential_id
+        self.raw_credential = raw_credential
         self.credential = credential
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
@@ -88,6 +91,7 @@ class V10CredentialExchange(BaseRecord):
             "error_msg",
             "auto_offer",
             "auto_issue",
+            "raw_credential",
             "credential",
             "parent_thread_id"
         ):
@@ -136,6 +140,7 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
     credential_request = fields.Dict(required=False)
     credential_request_metadata = fields.Dict(required=False)
     credential_id = fields.Str(required=False)
+    raw_credential = fields.Dict(required=False)
     credential = fields.Dict(required=False)
     auto_offer = fields.Bool(required=False)
     auto_issue = fields.Bool(required=False)

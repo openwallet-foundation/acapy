@@ -15,7 +15,7 @@ class V10PresentationExchange(BaseRecord):
 
     RECORD_TYPE = "v10_presentation_exchange"
     RECORD_ID_NAME = "presentation_exchange_id"
-    WEBHOOK_TOPIC = "Aries#0037 v1.0 presentations"
+    WEBHOOK_TOPIC = "aries37_v10_presentations"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"

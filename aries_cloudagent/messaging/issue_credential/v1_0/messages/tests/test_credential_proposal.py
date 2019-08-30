@@ -1,5 +1,5 @@
 from ..credential_proposal import CredentialProposal
-from ..inner.credential_preview import CredentialAttrPreview, CredentialPreview
+from ..inner.credential_preview import CredAttrSpec, CredentialPreview
 from ...message_types import CREDENTIAL_PREVIEW, CREDENTIAL_PROPOSAL
 
 from unittest import TestCase
@@ -7,12 +7,11 @@ from unittest import TestCase
 
 CRED_PREVIEW = CredentialPreview(
     attributes=(
-        CredentialAttrPreview.list_plain({"test": "123", "hello": "world"}) +
+        CredAttrSpec.list_plain({"test": "123", "hello": "world"}) +
         [
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name="icon",
                 value="cG90YXRv",
-                encoding="base64",
                 mime_type="image/png"
             )
         ]
@@ -28,7 +27,7 @@ class TestCredentialProposal(TestCase):
         credential_proposal = CredentialProposal(
             comment="Hello World",
             credential_proposal=CRED_PREVIEW,
-            schema_id="GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
+            schema_id="GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1560364003.0",
             cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         )
         assert credential_proposal.credential_proposal == CRED_PREVIEW
@@ -38,7 +37,7 @@ class TestCredentialProposal(TestCase):
         credential_proposal = CredentialProposal(
             comment="Hello World",
             credential_proposal=CRED_PREVIEW,
-            schema_id="GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
+            schema_id="GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1560364003.0",
             cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         )
 
@@ -58,12 +57,11 @@ class TestCredentialProposal(TestCase):
                     {
                         "name": "pic",
                         "mime-type": "image/png",
-                        "encoding": "base64",
                         "value": "Abcd0123..."
                     }
                 ]
             },
-            "schema_id": "GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
+            "schema_id": "GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1560364003.0",
             "cred_def_id": "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         }
 
@@ -76,7 +74,7 @@ class TestCredentialProposal(TestCase):
         cred_proposal = CredentialProposal(
             comment="Hello World",
             credential_proposal=CRED_PREVIEW,
-            schema_id="GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
+            schema_id="GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1560364003.0",
             cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         )
 
@@ -100,12 +98,11 @@ class TestCredentialProposal(TestCase):
                     {
                         "name": "icon",
                         "mime-type": "image/png",
-                        "encoding": "base64",
                         "value": "cG90YXRv"
                     }
                 ]
             },
-            "schema_id": "GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
+            "schema_id": "GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1560364003.0",
             "cred_def_id": "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
         }
 
@@ -116,7 +113,7 @@ class TestCredentialProposalSchema(TestCase):
     credential_proposal = CredentialProposal(
         comment="Hello World",
         credential_proposal=CRED_PREVIEW,
-        schema_id="GMm4vMw8LLrLJjp81kRRLp:2:tails_load:1560364003.0",
+        schema_id="GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1560364003.0",
         cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
     )
 

@@ -32,4 +32,16 @@ class CredentialIssueHandler(BaseHandler):
 
         credential_manager = CredentialManager(context)
 
-        await credential_manager.store_credential(context.message)
+        credential_exchange_record = await credential_manager.receive_credential(
+            context.message
+        )
+
+        # Automatically move to next state if flag is set
+        if context.settings.get("debug.auto_store_credential"):
+            (
+                credential_exchange_record,
+                credential_stored_message,
+            ) = await credential_manager.store_credential(credential_exchange_record)
+
+            # Notify issuer that credential was stored
+            await responder.send_reply(credential_stored_message)

@@ -1,11 +1,14 @@
 """Connection handling admin routes."""
 
+import asyncio
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
 
 from ....holder.base import BaseHolder
 from ....storage.error import StorageNotFoundError
+from ....messaging.problem_report.message import ProblemReport
 
 from ...connections.models.connection_record import ConnectionRecord
 from ...valid import INDY_CRED_DEF_ID
@@ -13,7 +16,7 @@ from ...valid import INDY_CRED_DEF_ID
 from .manager import CredentialManager
 from .messages.credential_proposal import CredentialProposal
 from .messages.inner.credential_preview import (
-    CredentialAttrPreview,
+    CredAttrSpec,
     CredentialPreview,
     CredentialPreviewSchema
 )
@@ -23,8 +26,21 @@ from .models.credential_exchange import (
 )
 
 
+class V10AttributeMimeTypesResultSchema(Schema):
+    """Result schema for credential attribute MIME types by credential definition."""
+
+
+class V10CredentialExchangeListResultSchema(Schema):
+    """Result schema for Aries#0036 v1.0 credential exchange query."""
+
+    results = fields.List(
+        fields.Nested(V10CredentialExchangeSchema),
+        description="Aries#0036 v1.0 credential exchange records"
+    )
+
+
 class V10CredentialProposalRequestSchema(Schema):
-    """Request schema for sending a credential proposal admin message."""
+    """Request schema for sending credential proposal admin message."""
 
     connection_id = fields.UUID(description="Connection identifier", required=True)
     credential_definition_id = fields.Str(
@@ -39,12 +55,8 @@ class V10CredentialProposalRequestSchema(Schema):
     credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialProposalResultSchema(V10CredentialExchangeSchema):
-    """Result schema for sending a credential proposal admin message."""
-
-
 class V10CredentialOfferRequestSchema(Schema):
-    """Request schema for sending a credential offer admin message."""
+    """Request schema for sending credential offer admin message."""
 
     connection_id = fields.UUID(description="Connection identifier", required=True)
     credential_definition_id = fields.Str(
@@ -67,78 +79,50 @@ class V10CredentialOfferRequestSchema(Schema):
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialOfferResultSchema(V10CredentialExchangeSchema):
-    """Result schema for sending a credential offer admin message."""
-
-
-class V10CredentialRequestResultSchema(Schema):
-    """Result schema for sending a credential request admin message."""
-
-    credential_id = fields.Str()
-
-
 class V10CredentialIssueRequestSchema(Schema):
-    """Request schema for sending a credential issue admin message."""
+    """Request schema for sending credential issue admin message."""
 
-    comments = fields.Str(
+    comment = fields.Str(
         description="Human-readable comment",
         required=False
     )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialIssueResultSchema(Schema):
-    """Result schema for sending a credential issue admin message."""
+class V10CredentialProblemReportRequestSchema(Schema):
+    """Request schema for sending problem report."""
 
-    credential_exchange = fields.Nested(V10CredentialExchangeSchema)
-
-
-class V10CredentialExchangeListSchema(Schema):
-    """Result schema for an Aries#0036 v1.0 credential exchange query."""
-
-    results = fields.List(
-        fields.Nested(V10CredentialExchangeSchema),
-        description="Aries#0036 v1.0 credential exchange records"
-    )
-
-
-class V10AttributeMetadataResultSchema(Schema):
-    """Result schema for credential attribute metadatas by credential definition."""
-
-    # properties undefined
+    explain_ltxt = fields.Str(required=True)
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 credentials"],
-    summary="Get attribute metadata from wallet"
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 credentials"],
+    summary="Get attribute MIME types from wallet"
 )
-@response_schema(V10AttributeMetadataResultSchema(), 200)
-async def attribute_metadata_get(request: web.BaseRequest):
+@response_schema(V10AttributeMimeTypesResultSchema(), 200)
+async def attribute_mime_types_get(request: web.BaseRequest):
     """
-    Request handler for getting credential attribute metadata.
+    Request handler for getting credential attribute MIME types.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The metadata response
+        The MIME types response
 
     """
     context = request.app["request_context"]
-
     credential_id = request.match_info["credential_id"]
-
     holder: BaseHolder = await context.inject(BaseHolder)
-    metadata = await holder.get_metadata(credential_id)
 
-    return web.json_response(metadata)
+    return web.json_response(await holder.get_mime_type(credential_id))
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
     summary="Fetch all credential exchange records"
 )
-@response_schema(V10CredentialExchangeListSchema(), 200)
+@response_schema(V10CredentialExchangeListResultSchema(), 200)
 async def credential_exchange_list(request: web.BaseRequest):
     """
     Request handler for searching connection records.
@@ -166,19 +150,19 @@ async def credential_exchange_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
     summary="Fetch a single credential exchange record"
 )
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
-    Request handler for fetching a single connection record.
+    Request handler for fetching single connection record.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The credential exchange record response
+        The credential exchange record
 
     """
     context = request.app["request_context"]
@@ -189,28 +173,100 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
             credential_exchange_id
         )
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     return web.json_response(record.serialize())
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
-    summary="Send issuer a credential proposal"
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    summary="Send credential, automating entire flow"
 )
 @request_schema(V10CredentialProposalRequestSchema())
-@response_schema(V10CredentialProposalResultSchema(), 200)
-async def credential_exchange_send_proposal(request: web.BaseRequest):
+@response_schema(V10CredentialExchangeSchema(), 200)
+async def credential_exchange_send(request: web.BaseRequest):
     """
-    Request handler for sending a credential proposal.
+    Request handler for sending credential from issuer to holder from attr values.
+
+    If both issuer and holder are configured for automatic responses, the operation
+    ultimately results in credential issue; otherwise, the result waits on the first
+    response not automated; the credential exchange record retains state regardless.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The credential proposal details
+        The credential exchange record
 
     """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
 
+    body = await request.json()
+
+    connection_id = body.get("connection_id")
+    credential_definition_id = body.get("credential_definition_id")
+    comment = body.get("comment")
+    credential_proposal = CredentialProposal(
+        comment=comment,
+        credential_proposal=CredentialPreview(
+            attributes=[
+                CredAttrSpec(
+                    name=attr_preview['name'],
+                    mime_type=attr_preview.get('mime-type', None),
+                    value=attr_preview['value']
+                ) for attr_preview in body.get("credential_proposal")['attributes']
+            ]
+        ),
+        cred_def_id=credential_definition_id
+    )
+
+    if not credential_proposal:
+        raise web.HTTPBadRequest(
+            reason="credential_proposal must be provided with attribute values."
+        )
+
+    credential_manager = CredentialManager(context)
+
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context,
+            connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
+
+    if not connection_record.is_ready:
+        raise web.HTTPForbidden()
+
+    credential_exchange_record = await credential_manager.prepare_send(
+        credential_definition_id,
+        connection_id,
+        credential_proposal=credential_proposal
+    )
+    asyncio.ensure_future(
+        credential_manager.perform_send(credential_exchange_record, outbound_handler)
+    )
+
+    return web.json_response(credential_exchange_record.serialize())
+
+
+@docs(
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    summary="Send issuer a credential proposal"
+)
+@request_schema(V10CredentialProposalRequestSchema())
+@response_schema(V10CredentialExchangeSchema(), 200)
+async def credential_exchange_send_proposal(request: web.BaseRequest):
+    """
+    Request handler for sending credential proposal.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential exchange record
+
+    """
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -221,10 +277,9 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     comment = body.get("comment")
     credential_preview = CredentialPreview(
         attributes=[
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name=attr_preview['name'],
                 mime_type=attr_preview.get('mime-type', None),
-                encoding=attr_preview.get('encoding', None),
                 value=attr_preview['value']
             ) for attr_preview in body.get("credential_proposal")['attributes']
         ]
@@ -246,7 +301,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     credential_exchange_record = await credential_manager.create_proposal(
         connection_id,
@@ -266,14 +321,14 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
     summary="Send holder a credential offer, free from reference to any proposal"
 )
 @request_schema(V10CredentialOfferRequestSchema())
-@response_schema(V10CredentialOfferResultSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send_free_offer(request: web.BaseRequest):
     """
-    Request handler for sending a free credential offer.
+    Request handler for sending free credential offer.
 
     An issuer initiates a such a credential offer, which is free any
     holder-initiated corresponding proposal.
@@ -282,7 +337,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The credential offer details
+        The credential exchange record
 
     """
 
@@ -300,10 +355,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     comment = body.get("comment", None)
     credential_preview = CredentialPreview(
         attributes=[
-            CredentialAttrPreview(
+            CredAttrSpec(
                 name=attr_preview['name'],
                 value=attr_preview['value'],
-                encoding=attr_preview.get('encoding', None),
                 mime_type=attr_preview.get('mime_type', None)
             ) for attr_preview in body.get("credential_preview")["attributes"]
         ]
@@ -331,14 +385,15 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     credential_exchange_record = V10CredentialExchange(
         connection_id=connection_id,
         initiator=V10CredentialExchange.INITIATOR_SELF,
         credential_definition_id=credential_definition_id,
         credential_proposal_dict=credential_proposal.serialize(),
-        auto_issue=auto_issue)
+        auto_issue=auto_issue
+    )
 
     (
         credential_exchange_record,
@@ -354,19 +409,22 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
     summary="Send holder a credential offer in reference to a proposal"
 )
-@response_schema(V10CredentialOfferResultSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     """
-    Request handler for sending a credential offer to proposal.
+    Request handler for sending bound credential offer.
+
+    A holder initiates this sequence with a credential proposal; this message
+    responds with an offer bound to the proposal.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The credential exchange details with credential offer
+        The credential exchange record
 
     """
 
@@ -392,7 +450,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     credential_manager = CredentialManager(context)
 
@@ -410,22 +468,21 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
     summary="Send a credential request"
 )
-@response_schema(V10CredentialRequestResultSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send_request(request: web.BaseRequest):
     """
-    Request handler for sending a credential request.
+    Request handler for sending credential request.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The credential request details
+        The credential exchange record
 
     """
-
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -451,7 +508,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     (
         credential_exchange_record,
@@ -466,20 +523,20 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
     summary="Send a credential"
 )
 @request_schema(V10CredentialIssueRequestSchema())
-@response_schema(V10CredentialIssueResultSchema(), 200)
+@response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_issue(request: web.BaseRequest):
     """
-    Request handler for sending a credential.
+    Request handler for sending credential.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The credential details.
+        The credential exchange record
 
     """
     context = request.app["request_context"]
@@ -491,7 +548,8 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_exch_record = await V10CredentialExchange.retrieve_by_id(
-        context, credential_exchange_id
+        context,
+        credential_exchange_id
     )
     connection_id = cred_exch_record.connection_id
 
@@ -508,7 +566,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     if not connection_record.is_ready:
-        return web.HTTPForbidden()
+        raise web.HTTPForbidden()
 
     (
         cred_exch_record,
@@ -524,7 +582,98 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* Aries#0036 v1.0 issue-credential exchange"],
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    summary="Stored a received credential"
+)
+@response_schema(V10CredentialExchangeSchema(), 200)
+async def credential_exchange_store(request: web.BaseRequest):
+    """
+    Request handler for storing credential.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential exchange record
+
+    """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+
+    credential_exchange_id = request.match_info["cred_ex_id"]
+    credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
+        context,
+        credential_exchange_id
+    )
+    connection_id = credential_exchange_record.connection_id
+
+    assert (
+        credential_exchange_record.state == (
+            V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
+        )
+    )
+
+    credential_manager = CredentialManager(context)
+
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context,
+            connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
+
+    if not connection_record.is_ready:
+        raise web.HTTPForbidden()
+
+    (
+        credential_exchange_record,
+        credential_stored_message,
+    ) = await credential_manager.store_credential(credential_exchange_record)
+
+    await outbound_handler(credential_stored_message, connection_id=connection_id)
+    return web.json_response(credential_exchange_record.serialize())
+
+
+@docs(
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    summary="Send a problem report for credential exchange",
+)
+@request_schema(V10CredentialProblemReportRequestSchema())
+async def credential_exchange_problem_report(request: web.BaseRequest):
+    """
+    Request handler for sending problem report.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+
+    credential_exchange_id = request.match_info["cred_ex_id"]
+    body = await request.json()
+
+    try:
+        credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
+            context,
+            credential_exchange_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+
+    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
+    error_result.assign_thread_id(credential_exchange_record.thread_id)
+
+    await outbound_handler(
+        error_result,
+        connection_id=credential_exchange_record.connection_id
+    )
+    return web.json_response({})
+
+
+@docs(
+    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
     summary="Remove an existing credential exchange record",
 )
 async def credential_exchange_remove(request: web.BaseRequest):
@@ -533,6 +682,7 @@ async def credential_exchange_remove(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
+
     """
     context = request.app["request_context"]
     credential_exchange_id = request.match_info["cred_ex_id"]
@@ -543,7 +693,7 @@ async def credential_exchange_remove(request: web.BaseRequest):
             credential_exchange_id
         )
     except StorageNotFoundError:
-        return web.HTTPNotFound()
+        raise web.HTTPNotFound()
     await credential_exchange_record.delete_record(context)
     return web.json_response({})
 
@@ -554,36 +704,51 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get(
-                "/v1.0/credential_metadata/{credential_id}",
-                attribute_metadata_get
+                "/aries0036/v1.0/mime_types/{credential_id}",
+                attribute_mime_types_get
             ),
-            web.get("/v1.0/issue_credential_exchange", credential_exchange_list),
             web.get(
-                "/v1.0/issue_credential_exchange/{cred_ex_id}",
+                "/aries0036/v1.0/credential_exchange",
+                credential_exchange_list
+            ),
+            web.get(
+                "/aries0036/v1.0/issue_credential/{cred_ex_id}",
                 credential_exchange_retrieve
             ),
             web.post(
-                "/v1.0/issue_credential_exchange/send_proposal",
+                "/aries0036/v1.0/issue_credential/send",
+                credential_exchange_send
+            ),
+            web.post(
+                "/aries0036/v1.0/issue_credential/send_proposal",
                 credential_exchange_send_proposal
             ),
             web.post(
-                "/v1.0/issue_credential_exchange/send_offer",
+                "/aries0036/v1.0/issue_credential/send_offer",
                 credential_exchange_send_free_offer
             ),
             web.post(
-                "/v1.0/issue_credential_exchange/{cred_ex_id}/send_offer",
+                "/aries0036/v1.0/issue_credential/{cred_ex_id}/send_offer",
                 credential_exchange_send_bound_offer
             ),
             web.post(
-                "/v1.0/issue_credential_exchange/{cred_ex_id}/send_request",
+                "/aries0036/v1.0/issue_credential/{cred_ex_id}/send_request",
                 credential_exchange_send_request
             ),
             web.post(
-                "/v1.0/issue_credential_exchange/{cred_ex_id}/issue",
+                "/aries0036/v1.0/issue_credential/{cred_ex_id}/issue",
                 credential_exchange_issue
             ),
             web.post(
-                "/v1.0/issue_credential_exchange/{cred_ex_id}/remove",
+                "/aries0036/v1.0/issue_credential/{cred_ex_id}/store",
+                credential_exchange_store
+            ),
+            web.post(
+                "/aries0036/v1.0/issue_credential/{cred_ex_id}/problem_report",
+                credential_exchange_problem_report
+            ),
+            web.post(
+                "/aries0036/v1.0/issue_credential/{cred_ex_id}/remove",
                 credential_exchange_remove
             )
         ]

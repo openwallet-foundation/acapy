@@ -8,7 +8,6 @@ An attach decorator embeds content or specifies appended content.
 import base64
 import json
 
-from datetime import datetime
 from typing import Union
 
 from marshmallow import fields
@@ -141,7 +140,7 @@ class AttachDecorator(BaseModel):
         description: str = None,
         filename: str = None,
         mime_type: str = None,
-        lastmod_time: datetime = None,
+        lastmod_time: str = None,
         byte_count: int = None,
         data: AttachDecoratorData,
         **kwargs

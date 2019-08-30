@@ -59,27 +59,43 @@ First locate the code that is triggered by option ```2```:
                 # TODO presentation requests
 ```
 
-Add the following code under the ```# TODO``` commment:
+Add the replace the ```# TODO``` commment:
 
 ```
-                # TODO presentation requests
-                # ask for any degree, don't restrict to Faber (we can check the issuer when we receive the proof)
-                proof_attrs = [
-                    {"name": "name", "restrictions": [{"schema_name": "degree schema"}]},
-                    {"name": "date", "restrictions": [{"schema_name": "degree schema"}]}, 
-                    {"name": "degree", "restrictions": [{"schema_name": "degree schema"}]}, 
+                req_attrs = [
+                    {
+                        "name": "name",
+                        "restrictions": [{"schema_name": "degree schema"}]
+                    },
+                    {
+                        "name": "date",
+                        "restrictions": [{"schema_name": "degree schema"}]
+                    },
+                    {
+                        "name": "degree",
+                        "restrictions": [{"schema_name": "degree schema"}]
+                    }
                 ]
-                proof_predicates = []
-                proof_request = {
+                req_preds = []
+                indy_proof_request = {
                     "name": "Proof of Education",
                     "version": "1.0",
-                    "connection_id": agent.connection_id,
-                    "requested_attributes": proof_attrs,
-                    "requested_predicates": proof_predicates,
+                    "nonce": str(uuid4().int),
+                    "requested_attributes": {
+                        f"0_{req_attr['name']}_uuid": req_attr
+                        for req_attr in req_attrs
+                    },
+                    "requested_predicates": {}
                 }
-                # this sends the request to our agent, which forwards it to Alice (based on the connection_id)
+                proof_request_web_request = {
+                    "connection_id": agent.connection_id,
+                    "proof_request": indy_proof_request
+                }
+                # this sends the request to our agent, which forwards it to Alice
+                # (based on the connection_id)
                 await agent.admin_POST(
-                    "/presentation_exchange/send_request", proof_request
+                    "/aries0037/v1.0/present_proof/send_request",
+                    proof_request_web_request
                 )
 ```
 
@@ -91,29 +107,36 @@ Now we need to handle receipt of the proof.  Locate the code that handles receiv
             pass
 ```
 
-Add the following code under the ```# TODO``` comment (replace ```pass```):
+then replace the ```# TODO``` comment and the ```pass``` statement:
 
 ```
-            # TODO handle received presentations
-            # if presentation is a degree schema (proof of education), check the received values
-            is_proof_of_education = (message['presentation_request']['name'] == 'Proof of Education')
+            # if presentation is a degree schema (proof of education),
+            # check values received
+            pres_req = message["presentation_request"]
+            pres = message["presentation"]
+            is_proof_of_education = (
+                pres_req["name"] == "Proof of Education"
+            )
             if is_proof_of_education:
                 log_status("#28.1 Received proof of education, check claims")
-                for attr, value in message['presentation_request']['requested_attributes'].items():
-                    # just print out the received claim values
-                    self.log(value['name'], message['presentation']['requested_proof']['revealed_attrs'][attr]['raw'])
-                for identifier in message['presentation']['identifiers']:
+                for (referent, attr_spec) in pres_req["requested_attributes"].items():
+                    self.log(
+                        f"{attr_spec['name']}: "
+                        f"{pres['requested_proof']['revealed_attrs'][referent]['raw']}"
+                    )
+                for id_spec in pres["identifiers"]:
                     # just print out the schema/cred def id's of presented claims
-                    self.log(identifier['schema_id'], identifier['cred_def_id'])
+                    self.log(f"schema_id: {id_spec['schema_id']}")
+                    self.log(f"cred_def_id {id_spec['cred_def_id']}")
                 # TODO placeholder for the next step
             else:
                 # in case there are any other kinds of proofs received
-                self.log("#28.1 Received ", message['presentation_request']['name'])
+                self.log("#28.1 Received ", message["presentation_request"]["name"])
 ```
 
-Right now this just prints out information received in the proof, but in "real life" your application could do somethign useful with this information.
+Right now this just prints out information received in the proof, but in "real life" your application could do something useful with this information.
 
-Now you can run the Faber/Alice/Acme script from the "preview" section above, and you should see Acme receive a proof from Alice!
+Now you can run the Faber/Alice/Acme script from the "Preview of the Acme Controller" section above, and you should see Acme receive a proof from Alice!
 
 
 ## Issuing Alice a Work Credential
@@ -127,19 +150,48 @@ We're going to do option (a), but you can try to implement option (b) as homewor
 First though we need to register a schema and credential definition.  Find this code:
 
 ```
+        with log_timer("Publish schema duration:"):
+            pass
             # TODO define schema
-            #(schema_id, credential_definition_id) = await agent.register_schema_and_creddef(
-            #    "employee id schema", version, ["employee_id", "name", "date", "position"]
-            #    )
+            # version = format(
+            #     "%d.%d.%d"
+            #     % (
+            #         random.randint(1, 101),
+            #         random.randint(1, 101),
+            #         random.randint(1, 101),
+            #     )
+            # )
+            # (
+            #     schema_id,
+            #     credential_definition_id,
+            # ) = await agent.register_schema_and_creddef(
+            #     "employee id schema",
+            #     version,
+            #     ["employee_id", "name", "date", "position"],
+            # )
 ```
 
-... and just uncommment it.  Easy, no?
+... and just remove the ```pass``` statement and ```TODO ```, then uncommment the rest.  Easy, no?
 
 ```
-            # TODO define schema
-            (schema_id, credential_definition_id) = await agent.register_schema_and_creddef(
-                "employee id schema", version, ["employee_id", "name", "date", "position"]
+        with log_timer("Publish schema duration:"):
+            # define schema
+            version = format(
+                "%d.%d.%d"
+                % (
+                    random.randint(1, 101),
+                    random.randint(1, 101),
+                    random.randint(1, 101),
                 )
+            )
+            (
+                schema_id,
+                credential_definition_id,
+            ) = await agent.register_schema_and_creddef(
+                "employee id schema",
+                version,
+                ["employee_id", "name", "date", "position"],
+            )
 ```
 
 For option (a) we want to replace the ```# TODO``` comment here:
@@ -150,22 +202,29 @@ For option (a) we want to replace the ```# TODO``` comment here:
                 # TODO credential offers
 ```
 
-Add the following code:
+with the following code:
 
 ```
-                # TODO credential offers
-                log_status("#13 Issue credential offer to X")
-                offer = {
-                    "credential_definition_id": credential_definition_id,
-                    "connection_id": agent.connection_id,
-                }
                 agent.cred_attrs[credential_definition_id] = {
                     "employee_id": "ACME0009",
                     "name": "Alice Smith",
-                    "date": "2019-06-30",
-                    "position": "CEO",
+                    "date": date.isoformat(date.today()),
+                    "position": "CEO"
                 }
-                await agent.admin_POST("/credential_exchange/send-offer", offer)
+                offer_request = {
+                    "connection_id": agent.connection_id,
+                    "credential_definition_id": credential_definition_id,
+                    "comment": f"Offer on cred def id {credential_definition_id}",
+                    "credential_preview": CredentialPreview(
+                        attributes=CredAttrSpec.list_plain(
+                            agent.cred_attrs[credential_definition_id]
+                        )
+                    ).serialize()
+                }
+                await agent.admin_POST(
+                    "/aries0036/v1.0/issue_credential/send_offer",
+                    offer_request
+                )
 ```
 
 ... and then locate the code that handles the credential request callback:
@@ -176,17 +235,20 @@ Add the following code:
             pass
 ```
 
-... and add the following code:
+... and replace the ```# TODO``` comment and ```pass``` statement with the following code:
 
 ```
-            # TODO issue credentials based on the credential_definition_id
+            # issue credentials based on the credential_definition_id
             cred_attrs = self.cred_attrs[message["credential_definition_id"]]
             await self.admin_POST(
-                f"/credential_exchange/{credential_exchange_id}/issue",
-                {"credential_values": cred_attrs},
+                f"/aries0036/v1.0/issue_credential/{credential_exchange_id}/issue",
+                {
+                    "comment": f"Issuing credential, exchange {credential_exchange_id}",
+                    "credential_preview": CredentialPreview(
+                        attributes=CredAttrSpec.list_plain(cred_attrs)
+                    ).serialize()
+                }
             )
 ```
 
 Now you can run the Faber/Alice/Acme script again.  You should be able to receive a proof and then issue a credential to Alice.
-
-

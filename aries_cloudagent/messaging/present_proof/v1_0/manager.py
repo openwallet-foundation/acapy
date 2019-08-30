@@ -109,9 +109,8 @@ class PresentationManager:
 
         return presentation_exchange_record
 
-    async def create_request(
+    async def create_bound_request(
         self,
-        # TODO recall that in routes, to create free request, first populate proposal
         presentation_exchange_record: V10PresentationExchange,
         name: str = None,
         version: str = None,
@@ -119,7 +118,7 @@ class PresentationManager:
         comment: str = None
     ):
         """
-        Create a presentation request.
+        Create a presentation request bound to a proposal.
 
         Args:
             presentation_exchange_record: Presentation exchange record for which
@@ -131,8 +130,10 @@ class PresentationManager:
 
         """
         indy_proof_request = (
-            PresentationProposal.deserialize(
-                presentation_exchange_record.presentation_proposal_dict
+            await (
+                PresentationProposal.deserialize(
+                    presentation_exchange_record.presentation_proposal_dict
+                )
             ).presentation_proposal.indy_proof_request(
                 name=name,
                 version=version,
@@ -155,10 +156,41 @@ class PresentationManager:
         presentation_exchange_record.presentation_request = indy_proof_request
         await presentation_exchange_record.save(
             self.context,
-            reason="Aries#0037v1.0 create presentation request"
+            reason="Aries#0037v1.0 create (bound) presentation request"
         )
 
         return presentation_exchange_record, presentation_request_message
+
+    async def create_exchange_for_request(
+        self,
+        connection_id: str,
+        presentation_request_message: PresentationRequest
+    ):
+        """
+        Create a presentation exchange record for input presentation request.
+
+        Args:
+            connection_id: connection identifier
+            presentation_request_message: presentation request to use in creating
+                exchange record, extracting indy proof request and thread id
+
+        Returns:
+            Presentation exchange record
+
+        """
+        presentation_exchange_record = V10PresentationExchange(
+            connection_id=connection_id,
+            thread_id=presentation_request_message._thread_id,
+            initiator=V10PresentationExchange.INITIATOR_SELF,
+            state=V10PresentationExchange.STATE_REQUEST_SENT,
+            presentation_request=presentation_request_message.indy_proof_request()
+        )
+        await presentation_exchange_record.save(
+            self.context,
+            reason="Aries#0037v1.0 create (free) presentation request"
+        )
+
+        return presentation_exchange_record
 
     async def receive_request(
         self,
@@ -200,22 +232,25 @@ class PresentationManager:
 
             e.g.,
 
-            {
-                "self_attested_attributes": {
-                    "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
-                },
-                "requested_attributes": {
-                    "6253ffbb-bd35-49b3-934f-46e083106f6c": {
-                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
-                        "revealed": true
-                    }
-                },
-                "requested_predicates": {
-                    "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
-                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
+            ::
+
+                {
+                    "self_attested_attributes": {
+                        "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
+                    },
+                    "requested_attributes": {
+                        "6253ffbb-bd35-49b3-934f-46e083106f6c": {
+                            "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
+                            "revealed": true
+                        }
+                    },
+                    "requested_predicates": {
+                        "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
+                            "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
+                        }
                     }
                 }
-            }
+
             comment: optional human-readable comment
 
         """
@@ -296,7 +331,11 @@ class PresentationManager:
         (
             presentation_exchange_record
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
-            self.context, tag_filter={"thread_id": thread_id}
+            self.context,
+            tag_filter={
+                "thread_id": thread_id
+                # initiator may be issuer (via request) or holder (via proposal)
+            }
         )
 
         presentation_exchange_record.presentation = presentation

@@ -1,13 +1,43 @@
 """Validators for schema fields."""
 
-from base58 import alphabet
 from datetime import datetime
+
+from base58 import alphabet
 from marshmallow.exceptions import ValidationError
-from marshmallow.validate import OneOf, Regexp
+from marshmallow.validate import OneOf, Range, Regexp
 
 from .util import epoch_to_str
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
+
+
+class IntEpoch(Range):
+    """Validate value against (integer) epoch format."""
+
+    EXAMPLE = int(datetime.now().timestamp())
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            min=0,
+            max=2147483647,
+            error="Value {input} is not a valid integer epoch time."
+        )
+
+
+class IndyDID(Regexp):
+    """Validate value against indy DID."""
+
+    EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            rf"^[{B58}]{{21,22}}$",
+            error="Value {input} is not an indy decentralized identifier (DID)."
+        )
 
 
 class IndyCredDefId(Regexp):
@@ -19,8 +49,28 @@ class IndyCredDefId(Regexp):
         """Initializer."""
 
         super().__init__(
-            rf"^[{B58}]{{21,22}}:3:CL:[1-9][0-9]*:.+$",
+            (
+                rf"([{B58}]{{21,22}})"  # issuer DID
+                f":3"  # cred def id marker
+                f":CL"  # sig alg
+                rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
+                f"(.+)?$"  # tag
+            ),
             error="Value {input} is not an indy credential definition identifier."
+        )
+
+
+class IndyVersion(Regexp):
+    """Validate value against indy version specification."""
+
+    EXAMPLE = "1.0"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            rf"^[0-9.]+$",
+            error="Value {input} is not an indy version (use only digits and '.')."
         )
 
 
@@ -85,7 +135,7 @@ class Base64(Regexp):
 
         if value is None or len(value) % 4:
             raise ValidationError(self.error)
-            
+
         return super().__call__(value)
 
 
@@ -104,9 +154,21 @@ class SHA256Hash(Regexp):
 
 
 # Instances for marshmallow schema specification
+INT_EPOCH = {
+    "validate": IntEpoch(),
+    "example": IntEpoch.EXAMPLE
+}
+INDY_DID = {
+    "validate": IndyDID(),
+    "example": IndyDID.EXAMPLE
+}
 INDY_CRED_DEF_ID = {
     "validate": IndyCredDefId(),
     "example": IndyCredDefId.EXAMPLE
+}
+INDY_VERSION = {
+    "validate": IndyVersion(),
+    "example": IndyVersion.EXAMPLE
 }
 INDY_SCHEMA_ID = {
     "validate": IndySchemaId(),

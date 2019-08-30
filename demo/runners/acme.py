@@ -2,9 +2,17 @@ import asyncio
 import json
 import logging
 import os
+import random
 import sys
 
+from datetime import date
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
+
+from aries_cloudagent.messaging.issue_credential.v1_0.messages.inner.credential_preview import (
+    CredAttrSpec,
+    CredentialPreview
+)
 
 from runners.support.agent import DemoAgent, default_genesis_txns
 from runners.support.utils import (
@@ -22,7 +30,14 @@ LOGGER = logging.getLogger(__name__)
 
 class AcmeAgent(DemoAgent):
     def __init__(self, http_port: int, admin_port: int, **kwargs):
-        super().__init__("Acme Agent", http_port, admin_port, prefix="Acme", **kwargs)
+        super().__init__(
+            "Acme Agent",
+            http_port,
+            admin_port,
+            prefix="Acme",
+            extra_args=["--auto-accept-invites", "--auto-accept-requests"],
+            **kwargs
+        )
         self.connection_id = None
         self._connection_ready = asyncio.Future()
         self.cred_state = {}
@@ -43,7 +58,7 @@ class AcmeAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_credentials(self, message):
+    async def handle_aries36_v10_credentials(self, message):
         state = message["state"]
         credential_exchange_id = message["credential_exchange_id"]
         prev_state = self.cred_state.get(credential_exchange_id)
@@ -62,7 +77,7 @@ class AcmeAgent(DemoAgent):
             # TODO issue credentials based on the credential_definition_id
             pass
 
-    async def handle_presentations(self, message):
+    async def handle_aries37_v10_presentations(self, message):
         state = message["state"]
 
         presentation_exchange_id = message["presentation_exchange_id"]

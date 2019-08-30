@@ -48,7 +48,7 @@ class PresentationProposalHandler(BaseHandler):
             (
                 presentation_exchange_record,
                 presentation_request_message,
-            ) = await presentation_manager.create_request(
+            ) = await presentation_manager.create_bound_request(
                 presentation_exchange_record=presentation_exchange_record,
                 comment=context.message.comment
             )

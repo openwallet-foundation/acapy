@@ -100,13 +100,13 @@ class TestCredentialIssue(TestCase):
 
     @mock.patch(
         "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        + "credential_issue.CredentialIssueSchema.load"
+        "credential_issue.CredentialIssueSchema.load"
     )
     def test_deserialize(self, mock_credential_issue_schema_load):
         """
         Test deserialize
         """
-        obj = self.indy_cred
+        obj = self.cred_issue
 
         credential_issue = CredentialIssue.deserialize(obj)
         mock_credential_issue_schema_load.assert_called_once_with(obj)
@@ -115,25 +115,22 @@ class TestCredentialIssue(TestCase):
 
     @mock.patch(
         "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        + "credential_issue.CredentialIssueSchema.dump"
+        "credential_issue.CredentialIssueSchema.dump"
     )
     def test_serialize(self, mock_credential_issue_schema_dump):
         """
         Test serialization.
         """
-        credential_issue = CredentialIssue(
-            comment="Test",
-            credentials_attach=[AttachDecorator.from_indy_dict(self.indy_cred)]
-        )
+        obj = self.cred_issue
 
-        credential_issue_dict = credential_issue.serialize()
-        mock_credential_issue_schema_dump.assert_called_once_with(credential_issue)
+        credential_issue_dict = obj.serialize()
+        mock_credential_issue_schema_dump.assert_called_once_with(obj)
 
         assert credential_issue_dict is mock_credential_issue_schema_dump.return_value
 
 
 class TestCredentialIssueSchema(TestCase):
-    """Test credential cred request schema"""
+    """Test credential cred issue schema"""
 
     credential_issue = CredentialIssue(
         comment="Test",

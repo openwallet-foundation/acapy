@@ -8,119 +8,96 @@ import base64
 from marshmallow import fields, validate
 
 from .....models.base import BaseModel, BaseModelSchema
+from .....util import canon
 from ...message_types import CREDENTIAL_PREVIEW
 
 
-class CredentialAttrPreview(BaseModel):
+class CredAttrSpec(BaseModel):
     """Class representing a preview of an attibute."""
-
-    DEFAULT_META = {"mime-type": "text/plain"}
 
     class Meta:
         """Attribute preview metadata."""
 
-        schema_class = "CredentialAttrPreviewSchema"
+        schema_class = "CredAttrSpecSchema"
 
     def __init__(
-            self,
-            *,
-            name: str,
-            value: str,
-            encoding: str = None,
-            mime_type: str = None,
-            **kwargs):
+        self,
+        *,
+        name: str,
+        value: str,
+        mime_type: str = None,
+        **kwargs
+    ):
         """
         Initialize attribute preview object.
 
         Args:
             name: attribute name
-            value: attribute value
-            encoding: encoding (omit or "base64")
-            mime_type: MIME type
+            value: attribute value; caller must base64-encode for attributes with
+                non-empty MIME type
+            mime_type: MIME type (default null)
 
         """
         super().__init__(**kwargs)
-        self.name = name
+
+        self.name = canon(name)
         self.value = value
-        self.encoding = encoding.lower() if encoding else None
-        self.mime_type = (
-            mime_type.lower()
-            if mime_type and mime_type != CredentialAttrPreview.DEFAULT_META.get(
-                "mime-type"
-            )
-            else None
-        )
+        self.mime_type = mime_type.lower() if mime_type else None
 
     @staticmethod
     def list_plain(plain: dict):
         """
-        Return a list of `CredentialAttrPreview` for plain text from names/values.
+        Return a list of `CredAttrSpec` without MIME types from names/values.
 
         Args:
             plain: dict mapping names to values
 
         Returns:
-            CredentialAttrPreview on name/values pairs with default MIME type
+            List of CredAttrSpecs with no MIME types
 
         """
-        return [CredentialAttrPreview(name=k, value=plain[k]) for k in plain]
+        return [CredAttrSpec(name=k, value=plain[k]) for k in plain]
 
     def b64_decoded_value(self) -> str:
         """Value, base64-decoded if applicable."""
 
         return base64.b64decode(self.value.encode()).decode(
-        ) if (
-            self.value and
-            self.encoding and
-            self.encoding.lower() == "base64"
-        ) else self.value
+        ) if self.value and self.mime_type else self.value
 
     def __eq__(self, other):
         """Equality comparator."""
 
-        if all(
-            getattr(self, attr, CredentialAttrPreview.DEFAULT_META.get(attr)) ==
-            getattr(other, attr, CredentialAttrPreview.DEFAULT_META.get(attr))
-            for attr in vars(self)
-        ):
-            return True  # all attrs exactly match
-
         if self.name != other.name:
             return False  # distinct attribute names
 
-        if (
-            self.mime_type or "text/plain"
-        ).lower() != (other.mime_type or "text/plain").lower():
+        if (self.mime_type != other.mime_type):
             return False  # distinct MIME types
 
         return self.b64_decoded_value() == other.b64_decoded_value()
 
 
-class CredentialAttrPreviewSchema(BaseModelSchema):
+class CredAttrSpecSchema(BaseModelSchema):
     """Attribute preview schema."""
 
     class Meta:
         """Attribute preview schema metadata."""
 
-        model_class = CredentialAttrPreview
+        model_class = CredAttrSpec
 
-    name = fields.Str(description="Attribute name", required=True, example="attr_name")
+    name = fields.Str(
+        description="Attribute name",
+        required=True,
+        example="favourite_drink")
     mime_type = fields.Str(
-        description="MIME type",
+        description='MIME type: omit for (null) default',
         required=False,
         data_key="mime-type",
-        example="text/plain"
-    )
-    encoding = fields.Str(
-        description="Encoding (specify base64 or omit for none)",
-        required=False,
-        example="base64",
-        validate=validate.Equal("base64", error="Must be absent or equal to {other}")
+        example="image/jpeg"
     )
     value = fields.Str(
-        description="Attribute value",
+        description="Attribute value: base64-encode if MIME type is present",
         required=True,
-        example="attr_value"
+        example="martini"
     )
 
 
@@ -134,11 +111,12 @@ class CredentialPreview(BaseModel):
         message_type = CREDENTIAL_PREVIEW
 
     def __init__(
-            self,
-            *,
-            _type: str = None,
-            attributes: Sequence[CredentialAttrPreview] = None,
-            **kwargs):
+        self,
+        *,
+        _type: str = None,
+        attributes: Sequence[CredAttrSpec] = None,
+        **kwargs
+    ):
         """
         Initialize credential preview object.
 
@@ -147,13 +125,11 @@ class CredentialPreview(BaseModel):
             attributes (list): list of attribute preview dicts; e.g., [
                 {
                     "name": "attribute_name",
-                    "mime-type": "text/plain",
                     "value": "value"
                 },
                 {
                     "name": "icon",
                     "mime-type": "image/png",
-                    "encoding": "base64",
                     "value": "cG90YXRv"
                 }
             ]
@@ -172,26 +148,25 @@ class CredentialPreview(BaseModel):
         Return name:value pair per attribute.
 
         Args:
-            decode: whether first to decode attributes marked as having encoding
+            decode: whether first to decode attributes with MIME type
 
         """
+
         return {
             attr.name: base64.b64decode(attr.value.encode()).decode()
-            if (
-                attr.encoding
-                and attr.encoding.lower() == "base64"
-                and decode
-            ) else attr.value
+            if attr.mime_type and decode else attr.value
             for attr in self.attributes
         }
 
-    def metadata(self):
-        """Return per-attribute mapping from name to MIME type and encoding."""
+    def mime_types(self):
+        """
+        Return per-attribute mapping from name to MIME type and encoding.
+
+        Return empty dict if no attribute has MIME type.
+
+        """
         return {
-            attr.name: {
-                **{"mime-type": attr.mime_type for attr in [attr] if attr.mime_type},
-                **{"encoding": attr.encoding for attr in [attr] if attr.encoding}
-            } for attr in self.attributes
+            attr.name: attr.mime_type for attr in self.attributes if attr.mime_type
         }
 
 
@@ -214,7 +189,7 @@ class CredentialPreviewSchema(BaseModelSchema):
         )
     )
     attributes = fields.Nested(
-        CredentialAttrPreviewSchema,
+        CredAttrSpecSchema,
         many=True,
         required=True,
         data_key="attributes"

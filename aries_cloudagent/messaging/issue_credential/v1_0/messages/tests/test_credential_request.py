@@ -55,7 +55,7 @@ class TestCredentialRequest(TestCase):
 
     @mock.patch(
         "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        + "credential_request.CredentialRequestSchema.load"
+        "credential_request.CredentialRequestSchema.load"
     )
     def test_deserialize(self, mock_credential_request_schema_load):
         """
@@ -70,7 +70,7 @@ class TestCredentialRequest(TestCase):
 
     @mock.patch(
         "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        + "credential_request.CredentialRequestSchema.dump"
+        "credential_request.CredentialRequestSchema.dump"
     )
     def test_serialize(self, mock_credential_request_schema_dump):
         """

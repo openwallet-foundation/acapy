@@ -96,3 +96,19 @@ def datetime_now() -> datetime:
 def time_now() -> str:
     """Timestamp in ISO format."""
     return datetime_to_str(datetime_now())
+
+
+def canon(raw_attr_name: str) -> str:
+    """
+    Canonicalize input attribute name for indy proofs and credential offers.
+
+    Args:
+        raw_attr_name: raw attribute name
+
+    Returns:
+        canonicalized attribute name
+
+    """
+    if raw_attr_name:  # do not dereference None, and "" is already canonical
+        return raw_attr_name.replace(" ", "").lower()
+    return raw_attr_name
