@@ -327,7 +327,10 @@ class CredentialManager:
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={"thread_id": credential_request_message._thread_id},
+            tag_filter={
+                "thread_id": credential_request_message._thread_id,
+                "initiator": "self",
+            },
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
@@ -424,7 +427,11 @@ class CredentialManager:
             (
                 credential_exchange_record
             ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context, tag_filter={"thread_id": credential_message._thread_id}
+                self.context,
+                tag_filter={
+                    "thread_id": credential_message._thread_id,
+                    "initiator": "external",
+                },
             )
         except StorageNotFoundError:
 
@@ -439,7 +446,11 @@ class CredentialManager:
             (
                 credential_exchange_record
             ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context, tag_filter={"thread_id": credential_message._thread.pthid}
+                self.context,
+                tag_filter={
+                    "thread_id": credential_message._thread.pthid,
+                    "initiator": "external",
+                },
             )
 
             credential_exchange_record._id = None
@@ -503,7 +514,11 @@ class CredentialManager:
         """
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context, tag_filter={"thread_id": credential_stored_message._thread_id}
+            self.context,
+            tag_filter={
+                "thread_id": credential_stored_message._thread_id,
+                "initiator": "self",
+            },
         )
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED
