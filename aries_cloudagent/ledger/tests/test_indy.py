@@ -407,6 +407,55 @@ class TestIndyLedger(AsyncTestCase):
 
             assert response == json.loads(mock_parse_get_cred_def_req.return_value[1])
 
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("indy.ledger.build_get_txn_request")
+    async def test_credential_definition_id2schema_id(
+        self,
+        mock_build_get_txn_req,
+        mock_submit,
+        mock_close,
+        mock_open,
+    ):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.WALLET_TYPE = "indy"
+
+        mock_build_get_txn_req.return_value = json.dumps("dummy")
+        mock_submit.return_value = json.dumps({
+            "result": {
+                "data": {
+                    "txn": {
+                        "type": "101",
+                        "metadata": {
+                            "from": f"{TestIndyLedger.test_did}"
+                        },
+                        "data": {
+                            "data": {
+                                "name": "favourite_drink",
+                                "version": "1.0"
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        ledger = IndyLedger("name", mock_wallet)
+
+        async with ledger:
+            s_id_short = await ledger.credential_definition_id2schema_id(
+                f"{TestIndyLedger.test_did}:3:CL:9999:tag"
+            )
+            mock_build_get_txn_req.assert_called_once_with(None, None, seq_no=9999)
+            mock_submit.assert_called_once_with(mock_build_get_txn_req.return_value)
+
+            assert s_id_short == f"{TestIndyLedger.test_did}:2:favourite_drink:1.0"
+            s_id_long = await ledger.credential_definition_id2schema_id(
+                f"{TestIndyLedger.test_did}:3:CL:{s_id_short}:tag"
+            )
+            assert s_id_long == s_id_short
+
     def test_error_handler(self):
         with self.assertRaises(LedgerTransactionError):
             with IndyErrorHandler("message", LedgerTransactionError):

@@ -420,7 +420,12 @@ class AdminServer(BaseAdminServer):
             full_webhook_url, json=payload
         ) as response:
             if response.status < 200 or response.status > 299:
-                raise Exception("Unexpected response status")
+                # raise Exception(f"Unexpected response status {response.status}")
+                raise Exception(
+                    f"Unexpected: target {target_url}\n"
+                    f"full {full_webhook_url}\n"
+                    f"response {response}"
+                )
 
     async def complete_webhooks(self):
         """Wait for all pending webhooks to be dispatched, used in testing."""

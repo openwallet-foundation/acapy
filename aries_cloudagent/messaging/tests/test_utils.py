@@ -1,7 +1,14 @@
 from datetime import datetime, timezone
 from unittest import mock, TestCase
 
-from ..util import str_to_datetime, datetime_to_str, datetime_now, time_now
+from ..util import (
+    datetime_now,
+    datetime_to_str,
+    epoch_to_str,
+    str_to_datetime,
+    str_to_epoch,
+    time_now
+)
 
 
 class TestUtils(TestCase):
@@ -42,3 +49,10 @@ class TestUtils(TestCase):
         }
         for datetime_val, expected in tests.items():
             assert datetime_to_str(datetime_val) == expected
+
+    def test_epoch(self):
+        dt_now = datetime_now()
+        epoch_now = int(dt_now.timestamp())
+
+        assert epoch_now == str_to_epoch(dt_now) and isinstance(epoch_now, int)
+        assert epoch_to_str(epoch_now) == datetime_to_str(dt_now.replace(microsecond=0))
