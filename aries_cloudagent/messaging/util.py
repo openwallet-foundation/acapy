@@ -28,6 +28,7 @@ def str_to_datetime(dt: Union[str, datetime]) -> datetime:
 
     Args:
         dt: May be a string or datetime to allow automatic conversion
+
     """
     if isinstance(dt, str):
         match = re.match(
@@ -67,6 +68,26 @@ def str_to_datetime(dt: Union[str, datetime]) -> datetime:
     return dt
 
 
+def str_to_epoch(dt: Union[str, datetime]) -> int:
+    """Convert an indy-standard datetime string to epoch seconds.
+
+    Args:
+        dt: May be a string or datetime to allow automatic conversion
+
+    """
+    return int(str_to_datetime(dt).timestamp())
+
+
+def epoch_to_str(epoch: int) -> str:
+    """Convert epoch seconds to indy-standard datetime string.
+
+    Args:
+        epoch: epoch seconds
+
+    """
+    return datetime_to_str(datetime.fromtimestamp(epoch, tz=timezone.utc))
+
+
 def datetime_now() -> datetime:
     """Timestamp in UTC."""
     return datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -75,3 +96,19 @@ def datetime_now() -> datetime:
 def time_now() -> str:
     """Timestamp in ISO format."""
     return datetime_to_str(datetime_now())
+
+
+def canon(raw_attr_name: str) -> str:
+    """
+    Canonicalize input attribute name for indy proofs and credential offers.
+
+    Args:
+        raw_attr_name: raw attribute name
+
+    Returns:
+        canonicalized attribute name
+
+    """
+    if raw_attr_name:  # do not dereference None, and "" is already canonical
+        return raw_attr_name.replace(" ", "").lower()
+    return raw_attr_name
