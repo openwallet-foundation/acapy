@@ -188,7 +188,10 @@ async def credentials_list(request: web.BaseRequest):
     return web.json_response({"results": credentials})
 
 
-@docs(tags=["credential_exchange"], summary="Fetch all credential exchange records")
+@docs(
+    tags=["credential_exchange *DEPRECATED*"],
+    summary="Fetch all credential exchange records",
+)
 @response_schema(CredentialExchangeListSchema(), 200)
 async def credential_exchange_list(request: web.BaseRequest):
     """
@@ -216,7 +219,10 @@ async def credential_exchange_list(request: web.BaseRequest):
     return web.json_response({"results": [record.serialize() for record in records]})
 
 
-@docs(tags=["credential_exchange"], summary="Fetch a single credential exchange record")
+@docs(
+    tags=["credential_exchange *DEPRECATED*"],
+    summary="Fetch a single credential exchange record",
+)
 @response_schema(CredentialExchangeSchema(), 200)
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
@@ -241,7 +247,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["credential_exchange"],
+    tags=["credential_exchange *DEPRECATED*"],
     summary="Sends a credential and automates the entire flow",
 )
 @request_schema(CredentialSendRequestSchema())
@@ -289,7 +295,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["credential_exchange"], summary="Sends a credential offer")
+@docs(tags=["credential_exchange *DEPRECATED*"], summary="Sends a credential offer")
 @request_schema(CredentialOfferRequestSchema())
 @response_schema(CredentialOfferResultSchema(), 200)
 async def credential_exchange_send_offer(request: web.BaseRequest):
@@ -337,7 +343,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["credential_exchange"], summary="Sends a credential request")
+@docs(tags=["credential_exchange *DEPRECATED*"], summary="Sends a credential request")
 @response_schema(CredentialRequestResultSchema(), 200)
 async def credential_exchange_send_request(request: web.BaseRequest):
     """
@@ -385,7 +391,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["credential_exchange"], summary="Sends a credential")
+@docs(tags=["credential_exchange *DEPRECATED*"], summary="Sends a credential")
 @request_schema(CredentialIssueRequestSchema())
 @response_schema(CredentialIssueResultSchema(), 200)
 async def credential_exchange_issue(request: web.BaseRequest):
@@ -434,7 +440,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["credential_exchange"], summary="Stores a received credential")
+@docs(tags=["credential_exchange *DEPRECATED*"], summary="Stores a received credential")
 @response_schema(CredentialRequestResultSchema(), 200)
 async def credential_exchange_store(request: web.BaseRequest):
     """
@@ -483,7 +489,7 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 
 @docs(
-    tags=["credential_exchange"],
+    tags=["credential_exchange *DEPRECATED*"],
     summary="Send a problem report for credential exchange",
 )
 @request_schema(CredentialProblemReportRequestSchema())
@@ -518,7 +524,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
 
 @docs(
-    tags=["credential_exchange"],
+    tags=["credential_exchange *DEPRECATED*"],
     summary="Remove an existing credential exchange record",
 )
 async def credential_exchange_remove(request: web.BaseRequest):
