@@ -13,9 +13,9 @@ class V10PresentationExchange(BaseRecord):
 
         schema_class = "V10PresentationExchangeSchema"
 
-    RECORD_TYPE = "v10_presentation_exchange"
+    RECORD_TYPE = "presentation_exchange_v10"
     RECORD_ID_NAME = "presentation_exchange_id"
-    WEBHOOK_TOPIC = "aries37_v10_presentations"
+    WEBHOOK_TOPIC = "present_proof"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -71,7 +71,7 @@ class V10PresentationExchange(BaseRecord):
             "presentation_request",
             "presentation",
             "auto_present",
-            "error_msg"
+            "error_msg",
         ):
             val = getattr(self, prop)
             if val:
@@ -82,13 +82,7 @@ class V10PresentationExchange(BaseRecord):
     def record_tags(self) -> dict:
         """Accessor for the record tags generated for this presentation exchange."""
         result = {}
-        for prop in (
-            "connection_id",
-            "thread_id",
-            "initiator",
-            "state",
-            "verified"
-        ):
+        for prop in ("connection_id", "thread_id", "initiator", "state", "verified"):
             val = getattr(self, prop)
             if val:
                 result[prop] = val

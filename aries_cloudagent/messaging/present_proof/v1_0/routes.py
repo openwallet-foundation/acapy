@@ -267,7 +267,7 @@ class V10PresentationRequestSchema(Schema):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Fetch all present-proof exchange records"
 )
 @response_schema(V10PresentationExchangeListSchema(), 200)
@@ -298,7 +298,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Fetch a single presentation exchange record"
 )
 @response_schema(V10PresentationExchangeSchema(), 200)
@@ -326,7 +326,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Fetch credentials for a presentation request from wallet",
     parameters=[
         {
@@ -407,7 +407,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Sends a presentation proposal"
 )
 @request_schema(V10PresentationProposalRequestSchema())
@@ -467,7 +467,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Sends a free presentation request not bound to any proposal"
 )
 @request_schema(V10PresentationRequestRequestSchema())
@@ -527,7 +527,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Sends a presentation request in reference to a proposal"
 )
 @request_schema(V10PresentationRequestRequestSchema())
@@ -583,7 +583,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Sends a proof presentation"
 )
 @request_schema(V10PresentationRequestSchema())
@@ -645,7 +645,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Verify a received presentation"
 )
 @response_schema(V10PresentationExchangeSchema())
@@ -696,7 +696,7 @@ async def presentation_exchange_verify_presentation(
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0037 v1.0 present-proof exchange"],
+    tags=["present-proof"],
     summary="Remove an existing presentation exchange record",
 )
 async def presentation_exchange_remove(request: web.BaseRequest):
@@ -727,43 +727,43 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get(
-                "/aries0037/v1.0/present_proof",
+                "/present-proof/records",
                 presentation_exchange_list
             ),
             web.get(
-                "/aries0037/v1.0/present_proof/{pres_ex_id}",
+                "/present-proof/records/{pres_ex_id}",
                 presentation_exchange_retrieve
             ),
             web.get(
-                "/aries0037/v1.0/present_proof/{pres_ex_id}/credentials",
+                "/present-proof/records/{pres_ex_id}/credentials",
                 presentation_exchange_credentials_list,
             ),
             web.get(
-                "/aries0037/v1.0/present_proof/{pres_ex_id}/credentials/{referent}",
+                "/present-proof/records/{pres_ex_id}/credentials/{referent}",
                 presentation_exchange_credentials_list,
             ),
             web.post(
-                "/aries0037/v1.0/present_proof/send_proposal",
+                "/present-proof/send-proposal",
                 presentation_exchange_send_proposal,
             ),
             web.post(
-                "/aries0037/v1.0/present_proof/send_request",
+                "/present-proof/send-request",
                 presentation_exchange_send_free_request,
             ),
             web.post(
-                "/aries0037/v1.0/present_proof/{pres_ex_id}/send_request",
+                "/present-proof/records/{pres_ex_id}/send-request",
                 presentation_exchange_send_bound_request,
             ),
             web.post(
-                "/aries0037/v1.0/present_proof/{pres_ex_id}/send_presentation",
+                "/present-proof/records/{pres_ex_id}/send-presentation",
                 presentation_exchange_send_presentation,
             ),
             web.post(
-                "/aries0037/v1.0/present_proof/{pres_ex_id}/verify_presentation",
+                "/present-proof/records/{pres_ex_id}/verify-presentation",
                 presentation_exchange_verify_presentation,
             ),
             web.post(
-                "/aries0037/v1.0/present_proof/{pres_ex_id}/remove",
+                "/present-proof/records/{pres_ex_id}/remove",
                 presentation_exchange_remove
             ),
         ]
