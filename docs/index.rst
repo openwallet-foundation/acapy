@@ -28,7 +28,7 @@ Developers that are interested in what DIDComm protocols are supported in ACA-Py
 should take a look at the `messaging <generated/aries_cloudagent.messaging.html>`_ subpackage. 
 Other general purpose subpackages that might be of particular interest include
 `wallet <generated/aries_cloudagent.wallet.html>`_ and
-`storage <generated/aries_cloudagent.messaging.html>`_. For those
+`storage <generated/aries_cloudagent.storage.html>`_. For those
 agents playing different roles in a verifiable credential exchange, take a look
 at the `issuer <generated/aries_cloudagent.issuer.html>`_,
 `holder <generated/aries_cloudagent.holder.html>`_ and
