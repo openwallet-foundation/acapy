@@ -94,7 +94,7 @@ Add the replace the ```# TODO``` commment:
                 # this sends the request to our agent, which forwards it to Alice
                 # (based on the connection_id)
                 await agent.admin_POST(
-                    "/aries0037/v1.0/present_proof/send_request",
+                    "/present-proof/send-request",
                     proof_request_web_request
                 )
 ```
@@ -222,7 +222,7 @@ with the following code:
                     ).serialize()
                 }
                 await agent.admin_POST(
-                    "/aries0036/v1.0/issue_credential/send_offer",
+                    "/issue-credential/send-offer",
                     offer_request
                 )
 ```
@@ -241,7 +241,7 @@ with the following code:
             # issue credentials based on the credential_definition_id
             cred_attrs = self.cred_attrs[message["credential_definition_id"]]
             await self.admin_POST(
-                f"/aries0036/v1.0/issue_credential/{credential_exchange_id}/issue",
+                f"/issue-credential/records/{credential_exchange_id}/issue",
                 {
                     "comment": f"Issuing credential, exchange {credential_exchange_id}",
                     "credential_preview": CredentialPreview(

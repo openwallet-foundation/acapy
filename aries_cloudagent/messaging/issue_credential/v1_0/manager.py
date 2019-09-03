@@ -140,10 +140,7 @@ class CredentialManager:
             )
             await credential_exchange.save(
                 self.context,
-                reason=(
-                    "Aries#0036v1.0 create automated credential exchange "
-                    "from cached request"
-                )
+                reason="create automated credential exchange from cached request"
             )
 
         else:
@@ -160,9 +157,7 @@ class CredentialManager:
             )
             (credential_exchange, _) = await self.create_offer(
                 credential_exchange_record=credential_exchange,
-                comment=(
-                    "Aries#0036v1.0 create automated credential exchange "
-                )
+                comment="create automated credential exchange"
             )
 
             # Mark this credential exchange as the current cached one for this cred def
@@ -263,7 +258,7 @@ class CredentialManager:
         )
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 create credential proposal")
+            reason="create credential proposal")
         return credential_exchange_record
 
     async def receive_proposal(
@@ -310,7 +305,7 @@ class CredentialManager:
         )
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential proposal"
+            reason="receive credential proposal"
         )
 
         return credential_exchange_record
@@ -361,7 +356,7 @@ class CredentialManager:
         credential_exchange_record.credential_offer = credential_offer
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 create credential offer"
+            reason="create credential offer"
         )
 
         return (credential_exchange_record, credential_offer_message)
@@ -383,7 +378,7 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential offer"
+            reason="receive credential offer"
         )
 
         return credential_exchange_record
@@ -445,7 +440,7 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_SENT
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 create credential request"
+            reason="create credential request"
         )
 
         return credential_exchange_record, credential_request_message
@@ -476,7 +471,7 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential request"
+            reason="receive credential request"
         )
 
         return credential_exchange_record
@@ -531,7 +526,7 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential"
+            reason="receive credential"
         )
 
         credential_message = CredentialIssue(
@@ -607,7 +602,7 @@ class CredentialManager:
 
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential"
+            reason="receive credential"
         )
         return credential_exchange_record
 
@@ -649,7 +644,7 @@ class CredentialManager:
         credential_exchange_record.credential = credential
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 store credential"
+            reason="store credential"
         )
 
         credential_stored_message = CredentialStored()
@@ -682,7 +677,7 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_STORED
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 credential stored"
+            reason="credential stored"
         )
 
         return credential_exchange_record

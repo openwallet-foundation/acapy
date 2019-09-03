@@ -13,9 +13,9 @@ class V10CredentialExchange(BaseRecord):
 
         schema_class = "V10CredentialExchangeSchema"
 
-    RECORD_TYPE = "v10_credential_exchange"
+    RECORD_TYPE = "credential_exchange_v10"
     RECORD_ID_NAME = "credential_exchange_id"
-    WEBHOOK_TOPIC = "aries36_v10_credentials"
+    WEBHOOK_TOPIC = "issue_credential"
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -93,7 +93,7 @@ class V10CredentialExchange(BaseRecord):
             "auto_issue",
             "raw_credential",
             "credential",
-            "parent_thread_id"
+            "parent_thread_id",
         ):
             val = getattr(self, prop)
             if val:
