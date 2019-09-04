@@ -428,9 +428,10 @@ class IndyLedger(BaseLedger):
         except IndyError as error:
             if error.error_code == ErrorCode.AnoncredsCredDefAlreadyExistsError:
                 try:
-                    cred_def_id = re.search(r"\w*:\d*:CL:\d*:\w*", error.message).group(
-                        0
-                    )
+                    cred_def_id = re.search(
+                        r"\w*:3:CL:(([1-9][0-9]*)|(.{21,22}:2:.+:[0-9.]+)):\w*",
+                        error.message
+                    ).group(0)
                     return cred_def_id
                 # The regex search failed so let the error bubble up
                 except AttributeError:
@@ -498,6 +499,45 @@ class IndyLedger(BaseLedger):
             )
 
         return parsed_response
+
+    async def credential_definition_id2schema_id(self, credential_definition_id):
+        """
+        From a credential definition, get the identifier for its schema.
+
+        Args:
+            credential_definition_id: The identifier of the credential definition
+                from which to identify a schema
+        """
+
+        # scrape schema id or sequence number from cred def id
+        tokens = credential_definition_id.split(":")
+        if len(tokens) == 8:  # node protocol >= 1.4: cred def id has 5 or 8 tokens
+            return ":".join(tokens[3:7])  # schema id spans 0-based positions 3-6
+
+        seq_no = int(tokens[3])
+
+        # get txn by sequence number, retrieve schema identifier components
+        request_json = await indy.ledger.build_get_txn_request(
+            None,
+            None,
+            seq_no=seq_no
+        )
+        response = json.loads(await self._submit(request_json))
+
+        # transaction data format assumes node protocol >= 1.4 (circa 2018-07)
+        data_txn = (response["result"].get("data", {}) or {}).get("txn", {})
+        if data_txn.get("type", None) == "101":  # marks indy-sdk schema txn type
+            (origin_did, name, version) = (
+                data_txn["metadata"]["from"],
+                data_txn["data"]["data"]["name"],
+                data_txn["data"]["data"]["version"]
+            )
+            return f"{origin_did}:2:{name}:{version}"
+
+        raise LedgerTransactionError(
+            "Could not get schema identifier from ledger for "
+            + f"credential definition id {credential_definition_id}"
+        )
 
     async def get_key_for_did(self, did: str) -> str:
         """Fetch the verkey for a ledger DID.

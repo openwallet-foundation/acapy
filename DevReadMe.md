@@ -16,8 +16,9 @@ See the [README](README.md) for details about this repository and information ab
   - [Prerequisites](#prerequisites)
   - [Running Locally](#running-locally)
   - [Running Tests](#running-tests)
-  - [Development Workflow](#development-workflow)
-  - [Dynamic Injection of Services](#dynamic-injection-of-services)
+- [Development Workflow](#development-workflow)
+- [Publishing Releases](#publishing-releases)
+- [Dynamic Injection of Services](#dynamic-injection-of-services)
 
 ## Introduction
 
@@ -140,7 +141,7 @@ To run the tests including [Indy SDK](https://github.com/hyperledger/indy-sdk) a
 ./scripts/run_tests_indy
 ```
 
-### Development Workflow
+## Development Workflow
 
 We use [Flake8](http://flake8.pycqa.org/en/latest/) to enforce a coding style guide.
 
@@ -156,7 +157,11 @@ The test suite also displays the current code coverage after each run so you can
 
 Please also refer to the [contributing guidelines](/CONTRIBUTING.md) and [code of conduct](/CODE_OF_CONDUCT.md).
 
-### Dynamic Injection of Services
+## Publishing Releases
+
+The [publishing](https://github.com/hyperledger/aries-cloudagent-python/blob/master/PUBLISHING.md) document provides information on tagging a release and publishing the release artifacts to PyPi.
+
+## Dynamic Injection of Services
 
 The Agent employs a dynamic injection system whereby providers of base classes are registered with the `RequestContext` instance, currently within `conductor.py`. Message handlers and services request an instance of the selected implementation using `await context.inject(BaseClass)`; for instance the wallet instance may be injected using `wallet = await context.inject(BaseWallet)`. The `inject` method normally throws an exception if no implementation of the base class is provided, but can be called with `required=False` for optional dependencies (in which case a value of `None` may be returned).
 

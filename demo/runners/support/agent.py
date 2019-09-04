@@ -331,9 +331,16 @@ class DemoAgent:
 
     async def handle_webhook(self, topic: str, payload):
         if topic != "webhook":  # would recurse
-            method = getattr(self, f"handle_{topic}", None)
+            handler = f"handle_{topic}"
+            method = getattr(self, handler, None)
             if method:
                 await method(payload)
+            else:
+                log_msg(
+                    f"Error: agent {self.ident} "
+                    f"has no method {handler} "
+                    f"to handle webhook on topic {topic}"
+                )
 
     async def admin_request(self, method, path, data=None, text=False, params=None):
         params = {k: v for (k, v) in (params or {}).items() if v is not None}

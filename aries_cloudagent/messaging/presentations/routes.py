@@ -54,7 +54,10 @@ class SendPresentationRequestSchema(Schema):
     requested_predicates = fields.Dict(required=True)
 
 
-@docs(tags=["presentation_exchange"], summary="Fetch all presentation exchange records")
+@docs(
+    tags=["presentation_exchange *DEPRECATED*"],
+    summary="Fetch all presentation exchange records",
+)
 @response_schema(PresentationExchangeListSchema(), 200)
 async def presentation_exchange_list(request: web.BaseRequest):
     """
@@ -83,7 +86,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["presentation_exchange"],
+    tags=["presentation_exchange *DEPRECATED*"],
     summary="Fetch a single presentation exchange record",
 )
 @response_schema(PresentationExchangeSchema(), 200)
@@ -110,7 +113,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["presentation_exchange"],
+    tags=["presentation_exchange *DEPRECATED*"],
     parameters=[
         {
             "name": "start",
@@ -210,7 +213,10 @@ async def _create_request_helper(context, spec):
     return presentation_exchange_record, presentation_request_message
 
 
-@docs(tags=["presentation_exchange"], summary="Creates a presentation request")
+@docs(
+    tags=["presentation_exchange *DEPRECATED*"],
+    summary="Creates a presentation request",
+)
 @request_schema(PresentationRequestRequestSchema())
 async def presentation_exchange_create_request(request: web.BaseRequest):
     """
@@ -237,7 +243,8 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["presentation_exchange"], summary="Creates and sends a presentation request"
+    tags=["presentation_exchange *DEPRECATED*"],
+    summary="Creates and sends a presentation request",
 )
 @request_schema(PresentationRequestRequestSchema())
 async def presentation_exchange_send_request(request: web.BaseRequest):
@@ -270,7 +277,10 @@ async def presentation_exchange_send_request(request: web.BaseRequest):
     return web.json_response(presentation_exchange_record.serialize())
 
 
-@docs(tags=["presentation_exchange"], summary="Sends a credential presentation")
+@docs(
+    tags=["presentation_exchange *DEPRECATED*"],
+    summary="Sends a credential presentation",
+)
 @request_schema(SendPresentationRequestSchema())
 @response_schema(PresentationExchangeSchema())
 async def presentation_exchange_send_credential_presentation(request: web.BaseRequest):
@@ -315,7 +325,8 @@ async def presentation_exchange_send_credential_presentation(request: web.BaseRe
 
 
 @docs(
-    tags=["presentation_exchange"], summary="Verify a received credential presentation"
+    tags=["presentation_exchange *DEPRECATED*"],
+    summary="Verify a received credential presentation",
 )
 @response_schema(PresentationExchangeSchema())
 async def presentation_exchange_verify_credential_presentation(
@@ -354,7 +365,7 @@ async def presentation_exchange_verify_credential_presentation(
 
 
 @docs(
-    tags=["presentation_exchange"],
+    tags=["presentation_exchange *DEPRECATED*"],
     summary="Remove an existing presentation exchange record",
 )
 async def presentation_exchange_remove(request: web.BaseRequest):
