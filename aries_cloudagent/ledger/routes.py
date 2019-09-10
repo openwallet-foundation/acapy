@@ -3,13 +3,8 @@
 from aiohttp import web
 from aiohttp_apispec import docs, response_schema
 
-from marshmallow import fields, Schema
-
 from .base import BaseLedger
-
-from ..wallet.base import DIDInfo, BaseWallet
-from .error import WalletError
-
+from .error import LedgerTransactionError
 
 @docs(
     tags=["ledger"],
@@ -39,9 +34,12 @@ async def register_ledger_nym(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     alias, role = request.query.get("alias"), request.query.get("role")
-    r = await ledger.register_nym(did, verkey, alias, role)
-    print(r)
-    return web.json_response()
+    async with ledger:
+        try:
+            r = await ledger.register_nym(did, verkey, alias, role)
+        except LedgerTransactionError as e:
+            raise web.HTTPForbidden(text=e.message)
+    return web.json_response(r)
 
 
 @docs(
@@ -67,7 +65,8 @@ async def get_did_verkey(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest()
 
-    r = await ledger.get_key_for_did(did)
+    async with ledger:
+        r = await ledger.get_key_for_did(did)
     return web.json_response({"verkey": r})
 
 
@@ -94,7 +93,8 @@ async def get_did_endpoint(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest()
 
-    r = await ledger.get_endpoint_for_did(did)
+    async with ledger:
+        r = await ledger.get_endpoint_for_did(did)
     return web.json_response({"endpoint": r})
 
 
