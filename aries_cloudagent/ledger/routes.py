@@ -34,12 +34,14 @@ async def register_ledger_nym(request: web.BaseRequest):
         raise web.HTTPBadRequest()
 
     alias, role = request.query.get("alias"), request.query.get("role")
+    success = False
     async with ledger:
         try:
             r = await ledger.register_nym(did, verkey, alias, role)
+            success = True
         except LedgerTransactionError as e:
             raise web.HTTPForbidden(text=e.message)
-    return web.json_response(r)
+    return web.json_response({"success": success})
 
 
 @docs(
