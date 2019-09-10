@@ -1,19 +1,24 @@
 """Ledger admin routes."""
 
 from aiohttp import web
-from aiohttp_apispec import docs, response_schema
+from aiohttp_apispec import docs
 
 from .base import BaseLedger
 from .error import LedgerTransactionError
+
 
 @docs(
     tags=["ledger"],
     summary="Send a NYM registration to the ledger.",
     parameters=[
-        {"name": "did", "in": "query", "schema": {"type": "string"}, "required": True},
-        {"name": "verkey", "in": "query", "schema": {"type": "string"}, "required": True},
-        {"name": "alias", "in": "query", "schema": {"type": "string"}, "required": False},
-        {"name": "role", "in": "query", "schema": {"type": "string"}, "required": False}
+        {"name": "did", "in": "query", "schema": {"type": "string"},
+         "required": True},
+        {"name": "verkey", "in": "query", "schema": {"type": "string"},
+         "required": True},
+        {"name": "alias", "in": "query", "schema": {"type": "string"},
+         "required": False},
+        {"name": "role", "in": "query", "schema": {"type": "string"},
+         "required": False}
     ]
 )
 async def register_ledger_nym(request: web.BaseRequest):
@@ -37,7 +42,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     success = False
     async with ledger:
         try:
-            r = await ledger.register_nym(did, verkey, alias, role)
+            await ledger.register_nym(did, verkey, alias, role)
             success = True
         except LedgerTransactionError as e:
             raise web.HTTPForbidden(text=e.message)

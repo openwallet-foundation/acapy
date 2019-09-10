@@ -45,10 +45,10 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            result = await test_module.get_did_verkey(request)
             self.ledger.get_key_for_did.return_value = self.test_verkey
+            result = await test_module.get_did_verkey(request)
             json_response.assert_called_once_with(
-                {"verkey": self.test_verkey}
+                {"verkey": self.ledger.get_key_for_did.return_value }
             )
             assert result is json_response.return_value
 
@@ -59,10 +59,10 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            result = await test_module.get_did_endpoint(request)
             self.ledger.get_endpoint_for_did.return_value = self.test_endpoint
+            result = await test_module.get_did_endpoint(request)
             json_response.assert_called_once_with(
-                {"endpoint": self.test_endpoint}
+                {"endpoint": self.ledger.get_endpoint_for_did.return_value}
             )
             assert result is json_response.return_value
 
@@ -77,9 +77,9 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            result = await test_module.register_ledger_nym(request)
             self.ledger.register_nym.return_value = True
+            result = await test_module.register_ledger_nym(request)
             json_response.assert_called_once_with(
-                {"success": True}
+                {"success": self.ledger.register_nym.return_value }
             )
             assert result is json_response.return_value

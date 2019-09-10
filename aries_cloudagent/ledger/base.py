@@ -48,9 +48,10 @@ class BaseLedger(ABC):
         """
 
     @abstractmethod
-    async def register_nym(self, did: str, verkey: str, alias: str = None, role: str = None):
+    async def register_nym(self, did: str, verkey: str, alias: str = None,
+                           role: str = None):
         """
-       Register a nym on the ledger.
+        Register a nym on the ledger.
 
         Args:
             did: DID to register on the ledger.
