@@ -74,26 +74,23 @@ class PresentationManager:
             auto_present=auto_present,
         )
         await presentation_exchange_record.save(
-            self.context, reason="create presentation proposal"
+            self.context,
+            reason="create presentation proposal"
         )
 
         return presentation_exchange_record
 
-    async def receive_proposal(
-        self, connection_id: str, presentation_proposal_message: PresentationProposal
-    ):
+    async def receive_proposal(self):
         """
         Receive a presentation proposal.
-
-        Args:
-            presentation_proposal_message: Presentation proposal message to receive
 
         Returns:
             Presentation exchange record
 
         """
+        presentation_proposal_message = self.context.message
         presentation_exchange_record = V10PresentationExchange(
-            connection_id=connection_id,
+            connection_id=self.context.connection_record.connection_id,
             thread_id=presentation_proposal_message._thread_id,
             initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
@@ -119,18 +116,20 @@ class PresentationManager:
         Args:
             presentation_exchange_record: Presentation exchange record for which
                 to create presentation request
-            comment: Optional human-readable comment pertaining to offer creation
+            comment: Optional human-readable comment pertaining to request creation
 
         Return:
             A tuple (presentation_exchange_record, presentation_request_message)
 
         """
-        indy_proof_request = await (
-            PresentationProposal.deserialize(
-                presentation_exchange_record.presentation_proposal_dict
+        indy_proof_request = (
+            await (
+                PresentationProposal.deserialize(
+                    presentation_exchange_record.presentation_proposal_dict
+                )
+            ).presentation_proposal.indy_proof_request(
+                name=name, version=version, nonce=nonce
             )
-        ).presentation_proposal.indy_proof_request(
-            name=name, version=version, nonce=nonce
         )
 
         presentation_request_message = PresentationRequest(
@@ -147,7 +146,8 @@ class PresentationManager:
         presentation_exchange_record.state = V10PresentationExchange.STATE_REQUEST_SENT
         presentation_exchange_record.presentation_request = indy_proof_request
         await presentation_exchange_record.save(
-            self.context, reason="create (bound) presentation request"
+            self.context,
+            reason="create (bound) presentation request"
         )
 
         return presentation_exchange_record, presentation_request_message
@@ -175,7 +175,8 @@ class PresentationManager:
             presentation_request=presentation_request_message.indy_proof_request(),
         )
         await presentation_exchange_record.save(
-            self.context, reason="create (free) presentation request"
+            self.context,
+            reason="create (free) presentation request"
         )
 
         return presentation_exchange_record
@@ -309,15 +310,17 @@ class PresentationManager:
 
         return presentation_exchange_record, presentation_message
 
-    async def receive_presentation(self, presentation: dict, thread_id: str):
+    async def receive_presentation(self):
         """Receive a presentation."""
+        presentation = self.context.message.indy_proof()
+        thread_id = self.context.message._thread_id
         (
             presentation_exchange_record
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
             self.context,
             tag_filter={
-                "thread_id": thread_id
-                # initiator may be issuer (via request) or holder (via proposal)
+                "thread_id": thread_id,
+                "connection_id": self.context.connection_record.connection_id
             },
         )
 
@@ -327,7 +330,8 @@ class PresentationManager:
         )
 
         await presentation_exchange_record.save(
-            self.context, reason="receive presentation"
+            self.context,
+            reason="receive presentation"
         )
 
         return presentation_exchange_record
@@ -375,7 +379,8 @@ class PresentationManager:
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
 
         await presentation_exchange_record.save(
-            self.context, reason="verify presentation"
+            self.context,
+            reason="verify presentation"
         )
 
         return presentation_exchange_record

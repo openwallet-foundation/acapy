@@ -12,7 +12,6 @@ from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger
 from ....storage.error import StorageNotFoundError
 
-from ...connections.models.connection_record import ConnectionRecord
 from ...decorators.attach_decorator import AttachDecorator
 
 from .messages.credential_issue import CredentialIssue
@@ -263,14 +262,11 @@ class CredentialManager:
 
     async def receive_proposal(
         self,
-        credential_proposal_message: CredentialProposal,
-        connection_id
     ):
         """
         Receive a credential proposal.
 
         Args:
-            credential_proposal_message: Credential proposal to receive
             connection_id: Connection to receive offer on
 
         Returns:
@@ -278,6 +274,8 @@ class CredentialManager:
 
         """
         # go to cred def via ledger to get authoritative schema id
+        credential_proposal_message = self.context.message
+        connection_id = self.context.connection_record.connection_id
         cred_def_id = credential_proposal_message.cred_def_id
         if cred_def_id:
             ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -313,7 +311,6 @@ class CredentialManager:
     async def create_offer(
         self,
         credential_exchange_record: V10CredentialExchange,
-        *,
         comment: str = None
     ):
         """
@@ -321,7 +318,7 @@ class CredentialManager:
 
         Args:
             credential_exchange_record: Credential exchange to create offer for
-            comment: Optional human-readable comment pertaining to offer creation
+            comment: optional human-readable comment to set in offer message
 
         Return:
             A tuple (credential_exchange, credential_offer_message)
@@ -386,14 +383,14 @@ class CredentialManager:
     async def create_request(
         self,
         credential_exchange_record: V10CredentialExchange,
-        connection_record: ConnectionRecord
+        holder_did: str
     ):
         """
         Create a credential request.
 
         Args:
             credential_exchange_record: Credential exchange to create request for
-            connection_record: Connection to create the request for
+            holder_did: holder DID
 
         Return:
             A tuple (credential_exchange_record, credential_request_message)
@@ -401,8 +398,6 @@ class CredentialManager:
         """
         credential_definition_id = credential_exchange_record.credential_definition_id
         credential_offer = credential_exchange_record.credential_offer
-
-        did = connection_record.my_did
 
         if credential_exchange_record.credential_request:
             self._logger.warning(
@@ -423,7 +418,7 @@ class CredentialManager:
             ) = await holder.create_credential_request(
                 credential_offer,
                 credential_definition,
-                did
+                holder_did
             )
 
         credential_request_message = CredentialRequest(
@@ -445,10 +440,7 @@ class CredentialManager:
 
         return credential_exchange_record, credential_request_message
 
-    async def receive_request(
-        self,
-        credential_request_message: CredentialRequest
-    ):
+    async def receive_request(self):
         """
         Receive a credential request.
 
@@ -457,14 +449,15 @@ class CredentialManager:
 
         """
 
+        credential_request_message = self.context.message
         assert len(credential_request_message.requests_attach or []) == 1
         credential_request = credential_request_message.indy_cred_req(0)
 
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
             self.context,
             tag_filter={
-                "thread_id": credential_request_message._thread_id
-                # initiator may be issuer (via request) or holder (via proposal)
+                "thread_id": credential_request_message._thread_id,
+                "connection_id": self.context.connection_record.connection_id
             }
         )
         credential_exchange_record.credential_request = credential_request
@@ -489,6 +482,7 @@ class CredentialManager:
         Args:
             credential_exchange_record: The credential exchange we are issuing a
                 credential for
+            comment: optional human-readable comment pertaining to credential issue
             credential_values: dict of credential attribute {name: value} pairs
 
         Returns:
@@ -540,24 +534,19 @@ class CredentialManager:
             "pthid": credential_exchange_record.parent_thread_id
         }
 
-        return credential_exchange_record, credential_message
+        return (credential_exchange_record, credential_message)
 
-    async def receive_credential(
-        self,
-        credential_message: CredentialIssue
-    ):
+    async def receive_credential(self):
         """
         Receive a credential from an issuer.
 
         Hold in storage potentially to be processed by controller before storing.
 
-        Args:
-            credential_message: credential to store
-
         Returns:
             Credential exchange record
 
         """
+        credential_message = self.context.message
         assert len(credential_message.credentials_attach or []) == 1
         raw_credential = credential_message.indy_credential(0)
 
@@ -566,8 +555,8 @@ class CredentialManager:
                 await V10CredentialExchange.retrieve_by_tag_filter(
                     self.context,
                     tag_filter={
-                        "thread_id": credential_message._thread_id
-                        # initiator may be issuer (via request) or holder (via proposal)
+                        "thread_id": credential_message._thread_id,
+                        "connection_id": self.context.connection_record.connection_id
                     }
                 )
             )
@@ -584,8 +573,8 @@ class CredentialManager:
                 await V10CredentialExchange.retrieve_by_tag_filter(
                     self.context,
                     tag_filter={
-                        "thread_id": credential_message._thread.pthid
-                        # initiator may be issuer (via request) or holder (via proposal)
+                        "thread_id": credential_message._thread.pthid,
+                        "connection_id": self.context.connection_record.connection_id
                     }
                 )
             )
@@ -655,22 +644,20 @@ class CredentialManager:
 
         return (credential_exchange_record, credential_stored_message)
 
-    async def credential_stored(self, credential_stored_message: CredentialStored):
+    async def credential_stored(self):
         """
         Receive confirmation that holder stored credential.
-
-        Args:
-            credential_message: credential to store
 
         Returns:
             credential exchange record
 
         """
+        credential_stored_message = self.context.message
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
             self.context,
             tag_filter={
-                "thread_id": credential_stored_message._thread_id
-                # initiator may be issuer (via request) or holder (via proposal)
+                "thread_id": credential_stored_message._thread_id,
+                "connection_id": self.context.connection_record.connection_id
             }
         )
 

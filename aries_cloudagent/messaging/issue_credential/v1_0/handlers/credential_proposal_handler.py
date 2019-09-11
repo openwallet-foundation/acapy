@@ -36,10 +36,7 @@ class CredentialProposalHandler(BaseHandler):
             raise HandlerException("No connection established for credential proposal")
 
         credential_manager = CredentialManager(context)
-        credential_exchange_record = await credential_manager.receive_proposal(
-            credential_proposal_message=context.message,
-            connection_id=context.connection_record.connection_id
-        )
+        credential_exchange_record = await credential_manager.receive_proposal()
 
         # If auto_offer is enabled, respond immediately with offer
         if credential_exchange_record.auto_offer:
