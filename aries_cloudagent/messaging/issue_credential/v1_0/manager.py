@@ -55,7 +55,13 @@ class CredentialManager:
         self,
         credential_exchange_record: V10CredentialExchange
     ):
-        """Cache a credential exchange to avoid redundant credential requests."""
+        """
+        Cache a credential exchange to avoid redundant credential requests.
+
+        Args:
+            credential_exchange_record: credential exchange record
+
+        """
         cache: BaseCache = await self.context.inject(BaseCache)
         await cache.set(
             "v10_credential_exchange::"
@@ -81,7 +87,7 @@ class CredentialManager:
                 attribute values to use if auto_issue is enabled
 
         Returns:
-            A new `V10CredentialExchange` record
+            A new credential exchange record
 
         """
 
@@ -169,8 +175,14 @@ class CredentialManager:
         credential_exchange: V10CredentialExchange,
         outbound_handler
     ):
-        """Send first message from credential exchange, issuer to holder."""
+        """
+        Send first (cred offer) message from credential exchange, issuer to holder.
 
+        Args:
+            credentials_exchange: credential exchange record
+            outbound_handler: outbound handler to send offer on creation
+
+        """
         if credential_exchange.credential_request:
             (credential_exchange, credential_message) = await self.issue_credential(
                 credential_exchange
@@ -212,13 +224,14 @@ class CredentialManager:
             connection_id: Connection to create proposal for
             auto_offer: Should this proposal request automatically be handled to
                 offer a credential
+            comment: Optional human-readable comment to include in proposal
             credential_preview: The credential preview to use to create
                 the credential proposal
             credential_definition_id: Credential definition id for the
                 credential proposal
 
-        Return:
-            Resulting credential_exchange_record including credential proposal
+        Returns:
+            Resulting credential exchange record including credential proposal
 
         """
         # Credential definition id must be present
@@ -264,13 +277,10 @@ class CredentialManager:
         self,
     ):
         """
-        Receive a credential proposal.
-
-        Args:
-            connection_id: Connection to receive offer on
+        Receive a credential proposal from message in context on manager creation.
 
         Returns:
-            The credential_exchange_record
+            The resulting credential exchange record, created
 
         """
         # go to cred def via ledger to get authoritative schema id
@@ -314,14 +324,14 @@ class CredentialManager:
         comment: str = None
     ):
         """
-        Create a credential offer.
+        Create a credential offer, update credential exchange record.
 
         Args:
             credential_exchange_record: Credential exchange to create offer for
             comment: optional human-readable comment to set in offer message
 
-        Return:
-            A tuple (credential_exchange, credential_offer_message)
+        Returns:
+            A tuple (credential exchange record, credential offer message)
 
         """
         credential_definition_id = credential_exchange_record.credential_definition_id
@@ -369,7 +379,7 @@ class CredentialManager:
             credential_exchange_record: Credential exchange record with offer to receive
 
         Returns:
-            The credential_exchange_record
+            The credential exchange record, updated
 
         """
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
@@ -389,11 +399,12 @@ class CredentialManager:
         Create a credential request.
 
         Args:
-            credential_exchange_record: Credential exchange to create request for
+            credential_exchange_record: Credential exchange record
+                for which to create request
             holder_did: holder DID
 
-        Return:
-            A tuple (credential_exchange_record, credential_request_message)
+        Returns:
+            A tuple (credential exchange record, credential request message)
 
         """
         credential_definition_id = credential_exchange_record.credential_definition_id
@@ -447,8 +458,10 @@ class CredentialManager:
         Args:
             credential_request_message: Credential request to receive
 
-        """
+        Returns:
+            credential exchange record, retrieved and updated
 
+        """
         credential_request_message = self.context.message
         assert len(credential_request_message.requests_attach or []) == 1
         credential_request = credential_request_message.indy_cred_req(0)
@@ -480,8 +493,8 @@ class CredentialManager:
         Issue a credential.
 
         Args:
-            credential_exchange_record: The credential exchange we are issuing a
-                credential for
+            credential_exchange_record: The credential exchange record
+                for which to issue a credential
             comment: optional human-readable comment pertaining to credential issue
             credential_values: dict of credential attribute {name: value} pairs
 
@@ -489,7 +502,6 @@ class CredentialManager:
             Tuple: (Updated credential exchange record, credential message)
 
         """
-
         schema_id = credential_exchange_record.schema_id
 
         if credential_exchange_record.credential:
@@ -543,7 +555,7 @@ class CredentialManager:
         Hold in storage potentially to be processed by controller before storing.
 
         Returns:
-            Credential exchange record
+            Credential exchange record, retrieved and updated
 
         """
         credential_message = self.context.message
@@ -600,7 +612,8 @@ class CredentialManager:
         Store a credential in the wallet.
 
         Args:
-            credential_message: credential to store
+            credential_exchange_record: credential exchange record
+                with credential to store
 
         Returns:
             Tuple: (Updated credential exchange record, credential-stored message)
@@ -649,7 +662,7 @@ class CredentialManager:
         Receive confirmation that holder stored credential.
 
         Returns:
-            credential exchange record
+            credential exchange record, retrieved and updated
 
         """
         credential_stored_message = self.context.message

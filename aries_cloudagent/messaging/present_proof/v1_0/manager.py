@@ -28,7 +28,7 @@ class PresentationManager:
         Initialize a PresentationManager.
 
         Args:
-            context: The context for this credential
+            context: The context for this presentation
         """
 
         self._context = context
@@ -62,7 +62,7 @@ class PresentationManager:
                 (default to configuration setting)
 
         Returns:
-            Presentation exchange record
+            Presentation exchange record, created
 
         """
         presentation_exchange_record = V10PresentationExchange(
@@ -82,10 +82,10 @@ class PresentationManager:
 
     async def receive_proposal(self):
         """
-        Receive a presentation proposal.
+        Receive a presentation proposal from message in context on manager creation.
 
         Returns:
-            Presentation exchange record
+            Presentation exchange record, created
 
         """
         presentation_proposal_message = self.context.message
@@ -116,10 +116,13 @@ class PresentationManager:
         Args:
             presentation_exchange_record: Presentation exchange record for which
                 to create presentation request
+            name: name to use in presentation request (None for default)
+            version: version to use in presentation request (None for default)
+            nonce: nonce to use in presentation request (None to generate)
             comment: Optional human-readable comment pertaining to request creation
 
-        Return:
-            A tuple (presentation_exchange_record, presentation_request_message)
+        Returns:
+            A tuple (updated presentation exchange record, presentation request message)
 
         """
         indy_proof_request = (
@@ -164,7 +167,7 @@ class PresentationManager:
                 exchange record, extracting indy proof request and thread id
 
         Returns:
-            Presentation exchange record
+            Presentation exchange record, updated
 
         """
         presentation_exchange_record = V10PresentationExchange(
@@ -192,7 +195,7 @@ class PresentationManager:
                 request to receive
 
         Returns:
-            The presentation_exchange_record
+            The presentation_exchange_record, updated
 
         """
         presentation_exchange_record.state = (
@@ -239,6 +242,9 @@ class PresentationManager:
                 }
 
             comment: optional human-readable comment
+
+        Returns:
+            A tuple (updated presentation exchange record, presentation message)
 
         """
         # Get all credential ids for this presentation
@@ -311,7 +317,13 @@ class PresentationManager:
         return presentation_exchange_record, presentation_message
 
     async def receive_presentation(self):
-        """Receive a presentation."""
+        """
+        Receive a presentation, from message in context on manager creation.
+
+        Returns:
+            presentation exchange record, retrieved and updated
+
+        """
         presentation = self.context.message.indy_proof()
         thread_id = self.context.message._thread_id
         (
@@ -339,8 +351,17 @@ class PresentationManager:
     async def verify_presentation(
         self, presentation_exchange_record: V10PresentationExchange
     ):
-        """Verify a presentation."""
+        """
+        Verify a presentation.
 
+        Args:
+            presentation_exchange_record: presentation exchange record
+                with presentation request and presentation to verify
+
+        Returns:
+            presentation record, updated
+
+        """
         indy_proof_request = presentation_exchange_record.presentation_request
         indy_proof = presentation_exchange_record.presentation
 
