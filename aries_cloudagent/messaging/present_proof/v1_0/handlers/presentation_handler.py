@@ -34,10 +34,7 @@ class PresentationHandler(BaseHandler):
 
         presentation_manager = PresentationManager(context)
 
-        presentation_exchange_record = await presentation_manager.receive_presentation(
-            context.message.indy_proof(),
-            context.message._thread_id
-        )
+        presentation_exchange_record = await presentation_manager.receive_presentation()
 
         if context.settings.get("debug.auto_verify_presentation"):
             await presentation_manager.verify_presentation(presentation_exchange_record)
