@@ -465,12 +465,15 @@ class CredentialManager:
 
         return credential_exchange_record
 
-    async def store_credential(self, credential_exchange_record: CredentialExchange):
+    async def store_credential(
+        self, credential_exchange_record: CredentialExchange, credential_id: str
+    ):
         """
         Store a credential in the wallet.
 
         Args:
             credential_message: credential to store
+            credential_id: string to use as id for record in wallet
 
         """
 
@@ -487,6 +490,7 @@ class CredentialManager:
             credential_definition,
             raw_credential,
             credential_exchange_record.credential_request_metadata,
+            credential_id=credential_id
         )
 
         credential = await holder.get_credential(credential_id)
