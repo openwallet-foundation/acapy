@@ -457,6 +457,9 @@ async def credential_exchange_store(request: web.BaseRequest):
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
+    body = await request.json()
+    credential_id = body.get("credential_id")
+
     credential_exchange_id = request.match_info["id"]
     credential_exchange_record = await CredentialExchange.retrieve_by_id(
         context, credential_exchange_id
@@ -482,7 +485,9 @@ async def credential_exchange_store(request: web.BaseRequest):
     (
         credential_exchange_record,
         credential_stored_message,
-    ) = await credential_manager.store_credential(credential_exchange_record)
+    ) = await credential_manager.store_credential(
+        credential_exchange_record, credential_id
+    )
 
     await outbound_handler(credential_stored_message, connection_id=connection_id)
     return web.json_response(credential_exchange_record.serialize())
