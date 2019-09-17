@@ -36,9 +36,7 @@ class CredentialRequestHandler(BaseHandler):
             raise HandlerException("No connection established for credential request")
 
         credential_manager = CredentialManager(context)
-        cred_exchange_rec = await credential_manager.receive_request(
-            credential_request_message=context.message
-        )
+        cred_exchange_rec = await credential_manager.receive_request()
 
         # If auto_issue is enabled, respond immediately
         if cred_exchange_rec.auto_issue:

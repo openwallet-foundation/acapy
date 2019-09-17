@@ -515,7 +515,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         credential_request_message,
     ) = await credential_manager.create_request(
         credential_exchange_record,
-        connection_record
+        connection_record.my_did
     )
 
     await outbound_handler(credential_request_message, connection_id=connection_id)

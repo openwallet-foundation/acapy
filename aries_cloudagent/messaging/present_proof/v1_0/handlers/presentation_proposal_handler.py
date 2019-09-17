@@ -1,6 +1,5 @@
 """Aries0037 v1.0 presentation proposal handler."""
 
-
 from ....base_handler import (
     BaseHandler,
     BaseResponder,
@@ -38,10 +37,7 @@ class PresentationProposalHandler(BaseHandler):
             )
 
         presentation_manager = PresentationManager(context)
-        presentation_exchange_record = await presentation_manager.receive_proposal(
-            connection_id=context.connection_record.connection_id,
-            presentation_proposal_message=context.message
-        )
+        presentation_exchange_record = await presentation_manager.receive_proposal()
 
         # If auto_respond_presentation_proposal is set, reply with proof req
         if context.settings.get("debug.auto_respond_presentation_proposal"):
