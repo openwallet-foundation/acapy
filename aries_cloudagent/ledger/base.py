@@ -48,6 +48,19 @@ class BaseLedger(ABC):
         """
 
     @abstractmethod
+    async def register_nym(self, did: str, verkey: str, alias: str = None,
+                           role: str = None):
+        """
+        Register a nym on the ledger.
+
+        Args:
+            did: DID to register on the ledger.
+            verkey: The verification key of the keypair.
+            alias: Human-friendly alias to assign to the DID.
+            role: For permissioned ledgers, what role should the new DID have.
+        """
+
+    @abstractmethod
     def nym_to_did(self, nym: str) -> str:
         """Format a nym with the ledger's DID prefix."""
 
