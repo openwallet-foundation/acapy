@@ -54,7 +54,8 @@ class CredentialOfferHandler(BaseHandler):
                 await V10CredentialExchange.retrieve_by_tag_filter(
                     context,
                     {
-                        "thread_id": context.message._thread_id
+                        "thread_id": context.message._thread_id,
+                        "connection_id": context.connection_record.connection_id
                     }
                 )
             )
@@ -81,6 +82,6 @@ class CredentialOfferHandler(BaseHandler):
         if context.settings.get("debug.auto_respond_credential_offer"):
             (_, credential_request_message) = await credential_manager.create_request(
                 credential_exchange_record=credential_exchange_record,
-                connection_record=context.connection_record
+                holder_did=context.connection_record.my_did,
             )
             await responder.send_reply(credential_request_message)

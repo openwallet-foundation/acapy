@@ -1,4 +1,4 @@
-"""Connection handling admin routes."""
+"""Credential exchange admin routes."""
 
 import asyncio
 
@@ -96,7 +96,7 @@ class V10CredentialProblemReportRequestSchema(Schema):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 credentials"],
+    tags=["issue-credential"],
     summary="Get attribute MIME types from wallet"
 )
 @response_schema(V10AttributeMimeTypesResultSchema(), 200)
@@ -119,7 +119,7 @@ async def attribute_mime_types_get(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Fetch all credential exchange records"
 )
 @response_schema(V10CredentialExchangeListResultSchema(), 200)
@@ -150,7 +150,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential exchange"],
     summary="Fetch a single credential exchange record"
 )
 @response_schema(V10CredentialExchangeSchema(), 200)
@@ -178,7 +178,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Send credential, automating entire flow"
 )
 @request_schema(V10CredentialProposalRequestSchema())
@@ -251,7 +251,7 @@ async def credential_exchange_send(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Send issuer a credential proposal"
 )
 @request_schema(V10CredentialProposalRequestSchema())
@@ -321,7 +321,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Send holder a credential offer, free from reference to any proposal"
 )
 @request_schema(V10CredentialOfferRequestSchema())
@@ -409,7 +409,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Send holder a credential offer in reference to a proposal"
 )
 @response_schema(V10CredentialExchangeSchema(), 200)
@@ -468,7 +468,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Send a credential request"
 )
 @response_schema(V10CredentialExchangeSchema(), 200)
@@ -515,7 +515,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         credential_request_message,
     ) = await credential_manager.create_request(
         credential_exchange_record,
-        connection_record
+        connection_record.my_did
     )
 
     await outbound_handler(credential_request_message, connection_id=connection_id)
@@ -523,7 +523,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Send a credential"
 )
 @request_schema(V10CredentialIssueRequestSchema())
@@ -582,7 +582,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Stored a received credential"
 )
 @response_schema(V10CredentialExchangeSchema(), 200)
@@ -636,7 +636,7 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Send a problem report for credential exchange",
 )
 @request_schema(V10CredentialProblemReportRequestSchema())
@@ -673,7 +673,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
 
 @docs(
-    tags=["*EXPERIMENTAL* aries#0036 v1.0 issue-credential exchange"],
+    tags=["issue-credential"],
     summary="Remove an existing credential exchange record",
 )
 async def credential_exchange_remove(request: web.BaseRequest):
@@ -704,51 +704,51 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get(
-                "/aries0036/v1.0/mime_types/{credential_id}",
+                "/issue-credential/mime-types/{credential_id}",
                 attribute_mime_types_get
             ),
             web.get(
-                "/aries0036/v1.0/credential_exchange",
+                "/issue-credential/records",
                 credential_exchange_list
             ),
             web.get(
-                "/aries0036/v1.0/issue_credential/{cred_ex_id}",
+                "/issue-credential/records/{cred_ex_id}",
                 credential_exchange_retrieve
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/send",
+                "/issue-credential/send",
                 credential_exchange_send
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/send_proposal",
+                "/issue-credential/send-proposal",
                 credential_exchange_send_proposal
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/send_offer",
+                "/issue-credential/send-offer",
                 credential_exchange_send_free_offer
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/{cred_ex_id}/send_offer",
+                "/issue-credential/records/{cred_ex_id}/send-offer",
                 credential_exchange_send_bound_offer
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/{cred_ex_id}/send_request",
+                "/issue-credential/records/{cred_ex_id}/send-request",
                 credential_exchange_send_request
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/{cred_ex_id}/issue",
+                "/issue-credential/records/{cred_ex_id}/issue",
                 credential_exchange_issue
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/{cred_ex_id}/store",
+                "/issue-credential/records/{cred_ex_id}/store",
                 credential_exchange_store
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/{cred_ex_id}/problem_report",
+                "/issue-credential/records/{cred_ex_id}/problem-report",
                 credential_exchange_problem_report
             ),
             web.post(
-                "/aries0036/v1.0/issue_credential/{cred_ex_id}/remove",
+                "/issue-credential/records/{cred_ex_id}/remove",
                 credential_exchange_remove
             )
         ]

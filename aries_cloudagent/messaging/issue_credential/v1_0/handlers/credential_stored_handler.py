@@ -34,4 +34,4 @@ class CredentialStoredHandler(BaseHandler):
 
         credential_manager = CredentialManager(context)
 
-        await credential_manager.credential_stored(context.message)
+        await credential_manager.credential_stored()

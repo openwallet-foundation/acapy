@@ -28,7 +28,7 @@ class PresentationManager:
         Initialize a PresentationManager.
 
         Args:
-            context: The context for this credential
+            context: The context for this presentation
         """
 
         self._context = context
@@ -49,7 +49,7 @@ class PresentationManager:
         self,
         connection_id: str,
         presentation_proposal_message: PresentationProposal,
-        auto_present: bool = None
+        auto_present: bool = None,
     ):
         """
         Create a presentation exchange record for input presentation proposal.
@@ -62,7 +62,7 @@ class PresentationManager:
                 (default to configuration setting)
 
         Returns:
-            Presentation exchange record
+            Presentation exchange record, created
 
         """
         presentation_exchange_record = V10PresentationExchange(
@@ -71,40 +71,33 @@ class PresentationManager:
             initiator=V10PresentationExchange.INITIATOR_SELF,
             state=V10PresentationExchange.STATE_PROPOSAL_SENT,
             presentation_proposal_dict=presentation_proposal_message.serialize(),
-            auto_present=auto_present
+            auto_present=auto_present,
         )
         await presentation_exchange_record.save(
             self.context,
-            reason="Aries#0037v1.0 create presentation proposal"
+            reason="create presentation proposal"
         )
 
         return presentation_exchange_record
 
-    async def receive_proposal(
-        self,
-        connection_id: str,
-        presentation_proposal_message: PresentationProposal
-    ):
+    async def receive_proposal(self):
         """
-        Receive a presentation proposal.
-
-        Args:
-            presentation_proposal_message: Presentation proposal message to receive
+        Receive a presentation proposal from message in context on manager creation.
 
         Returns:
-            Presentation exchange record
+            Presentation exchange record, created
 
         """
+        presentation_proposal_message = self.context.message
         presentation_exchange_record = V10PresentationExchange(
-            connection_id=connection_id,
+            connection_id=self.context.connection_record.connection_id,
             thread_id=presentation_proposal_message._thread_id,
             initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
-            presentation_proposal_dict=presentation_proposal_message.serialize()
+            presentation_proposal_dict=presentation_proposal_message.serialize(),
         )
         await presentation_exchange_record.save(
-            self.context,
-            reason="Aries#0037v1.0 receive presentation request"
+            self.context, reason="receive presentation request"
         )
 
         return presentation_exchange_record
@@ -115,7 +108,7 @@ class PresentationManager:
         name: str = None,
         version: str = None,
         nonce: str = None,
-        comment: str = None
+        comment: str = None,
     ):
         """
         Create a presentation request bound to a proposal.
@@ -123,10 +116,13 @@ class PresentationManager:
         Args:
             presentation_exchange_record: Presentation exchange record for which
                 to create presentation request
-            comment: Optional human-readable comment pertaining to offer creation
+            name: name to use in presentation request (None for default)
+            version: version to use in presentation request (None for default)
+            nonce: nonce to use in presentation request (None to generate)
+            comment: Optional human-readable comment pertaining to request creation
 
-        Return:
-            A tuple (presentation_exchange_record, presentation_request_message)
+        Returns:
+            A tuple (updated presentation exchange record, presentation request message)
 
         """
         indy_proof_request = (
@@ -135,9 +131,7 @@ class PresentationManager:
                     presentation_exchange_record.presentation_proposal_dict
                 )
             ).presentation_proposal.indy_proof_request(
-                name=name,
-                version=version,
-                nonce=nonce
+                name=name, version=version, nonce=nonce
             )
         )
 
@@ -145,7 +139,7 @@ class PresentationManager:
             comment=comment,
             request_presentations_attach=[
                 AttachDecorator.from_indy_dict(indy_proof_request)
-            ]
+            ],
         )
         presentation_request_message._thread = {
             "thid": presentation_exchange_record.thread_id
@@ -156,15 +150,13 @@ class PresentationManager:
         presentation_exchange_record.presentation_request = indy_proof_request
         await presentation_exchange_record.save(
             self.context,
-            reason="Aries#0037v1.0 create (bound) presentation request"
+            reason="create (bound) presentation request"
         )
 
         return presentation_exchange_record, presentation_request_message
 
     async def create_exchange_for_request(
-        self,
-        connection_id: str,
-        presentation_request_message: PresentationRequest
+        self, connection_id: str, presentation_request_message: PresentationRequest
     ):
         """
         Create a presentation exchange record for input presentation request.
@@ -175,7 +167,7 @@ class PresentationManager:
                 exchange record, extracting indy proof request and thread id
 
         Returns:
-            Presentation exchange record
+            Presentation exchange record, updated
 
         """
         presentation_exchange_record = V10PresentationExchange(
@@ -183,18 +175,17 @@ class PresentationManager:
             thread_id=presentation_request_message._thread_id,
             initiator=V10PresentationExchange.INITIATOR_SELF,
             state=V10PresentationExchange.STATE_REQUEST_SENT,
-            presentation_request=presentation_request_message.indy_proof_request()
+            presentation_request=presentation_request_message.indy_proof_request(),
         )
         await presentation_exchange_record.save(
             self.context,
-            reason="Aries#0037v1.0 create (free) presentation request"
+            reason="create (free) presentation request"
         )
 
         return presentation_exchange_record
 
     async def receive_request(
-        self,
-        presentation_exchange_record: V10PresentationExchange
+        self, presentation_exchange_record: V10PresentationExchange
     ):
         """
         Receive a presentation request.
@@ -204,15 +195,14 @@ class PresentationManager:
                 request to receive
 
         Returns:
-            The presentation_exchange_record
+            The presentation_exchange_record, updated
 
         """
         presentation_exchange_record.state = (
             V10PresentationExchange.STATE_REQUEST_RECEIVED
         )
         await presentation_exchange_record.save(
-            self.context,
-            reason="Aries#0037v1.0 receive presentation request"
+            self.context, reason="receive presentation request"
         )
 
         return presentation_exchange_record
@@ -221,7 +211,7 @@ class PresentationManager:
         self,
         presentation_exchange_record: V10PresentationExchange,
         requested_credentials: dict,
-        comment: str = None
+        comment: str = None,
     ):
         """
         Create a presentation.
@@ -252,6 +242,9 @@ class PresentationManager:
                 }
 
             comment: optional human-readable comment
+
+        Returns:
+            A tuple (updated presentation exchange record, presentation message)
 
         """
         # Get all credential ids for this presentation
@@ -307,12 +300,10 @@ class PresentationManager:
 
         presentation_message = Presentation(
             comment=comment,
-            presentations_attach=[AttachDecorator.from_indy_dict(indy_proof)]
+            presentations_attach=[AttachDecorator.from_indy_dict(indy_proof)],
         )
 
-        presentation_message._thread = {
-            "thid": presentation_exchange_record.thread_id
-        }
+        presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
 
         # save presentation exchange state
         presentation_exchange_record.state = (
@@ -320,22 +311,29 @@ class PresentationManager:
         )
         presentation_exchange_record.presentation = indy_proof
         await presentation_exchange_record.save(
-            self.context,
-            reason="Aries#0037v1.0 create presentation"
+            self.context, reason="create presentation"
         )
 
         return presentation_exchange_record, presentation_message
 
-    async def receive_presentation(self, presentation: dict, thread_id: str):
-        """Receive a presentation."""
+    async def receive_presentation(self):
+        """
+        Receive a presentation, from message in context on manager creation.
+
+        Returns:
+            presentation exchange record, retrieved and updated
+
+        """
+        presentation = self.context.message.indy_proof()
+        thread_id = self.context.message._thread_id
         (
             presentation_exchange_record
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
             self.context,
             tag_filter={
-                "thread_id": thread_id
-                # initiator may be issuer (via request) or holder (via proposal)
-            }
+                "thread_id": thread_id,
+                "connection_id": self.context.connection_record.connection_id
+            },
         )
 
         presentation_exchange_record.presentation = presentation
@@ -345,17 +343,25 @@ class PresentationManager:
 
         await presentation_exchange_record.save(
             self.context,
-            reason="Aries#0037v1.0 receive presentation"
+            reason="receive presentation"
         )
 
         return presentation_exchange_record
 
     async def verify_presentation(
-        self,
-        presentation_exchange_record: V10PresentationExchange
+        self, presentation_exchange_record: V10PresentationExchange
     ):
-        """Verify a presentation."""
+        """
+        Verify a presentation.
 
+        Args:
+            presentation_exchange_record: presentation exchange record
+                with presentation request and presentation to verify
+
+        Returns:
+            presentation record, updated
+
+        """
         indy_proof_request = presentation_exchange_record.presentation_request
         indy_proof = presentation_exchange_record.presentation
 
@@ -386,19 +392,16 @@ class PresentationManager:
                 credential_definitions[credential_definition_id] = credential_definition
 
         verifier: BaseVerifier = await self.context.inject(BaseVerifier)
-        presentation_exchange_record.verified = json.dumps(   # tag: needs string value
+        presentation_exchange_record.verified = json.dumps(  # tag: needs string value
             await verifier.verify_presentation(
-                indy_proof_request,
-                indy_proof,
-                schemas,
-                credential_definitions
+                indy_proof_request, indy_proof, schemas, credential_definitions
             )
         )
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
 
         await presentation_exchange_record.save(
             self.context,
-            reason="Aries#0037v1.0 verify presentation"
+            reason="verify presentation"
         )
 
         return presentation_exchange_record

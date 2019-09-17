@@ -1,3 +1,12 @@
+# 0.3.2
+
+## September 3, 2019
+
+- Merge support for Aries #36 (issue-credential) and Aries #37 (present-proof) protocols [#164](https://github.com/hyperledger/aries-cloudagent-python/pull/164), [#167](https://github.com/hyperledger/aries-cloudagent-python/pull/167)
+- Add `initiator` to connection record queries to ensure uniqueness in the case of a self-connection [#161](https://github.com/hyperledger/aries-cloudagent-python/pull/161)
+- Add connection aliases [#149](https://github.com/hyperledger/aries-cloudagent-python/pull/149)
+- Misc documentation updates
+
 # 0.3.1
 
 ## August 15, 2019

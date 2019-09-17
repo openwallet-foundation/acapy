@@ -12,7 +12,6 @@ from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger
 from ....storage.error import StorageNotFoundError
 
-from ...connections.models.connection_record import ConnectionRecord
 from ...decorators.attach_decorator import AttachDecorator
 
 from .messages.credential_issue import CredentialIssue
@@ -56,7 +55,13 @@ class CredentialManager:
         self,
         credential_exchange_record: V10CredentialExchange
     ):
-        """Cache a credential exchange to avoid redundant credential requests."""
+        """
+        Cache a credential exchange to avoid redundant credential requests.
+
+        Args:
+            credential_exchange_record: credential exchange record
+
+        """
         cache: BaseCache = await self.context.inject(BaseCache)
         await cache.set(
             "v10_credential_exchange::"
@@ -82,7 +87,7 @@ class CredentialManager:
                 attribute values to use if auto_issue is enabled
 
         Returns:
-            A new `V10CredentialExchange` record
+            A new credential exchange record
 
         """
 
@@ -140,10 +145,7 @@ class CredentialManager:
             )
             await credential_exchange.save(
                 self.context,
-                reason=(
-                    "Aries#0036v1.0 create automated credential exchange "
-                    "from cached request"
-                )
+                reason="create automated credential exchange from cached request"
             )
 
         else:
@@ -160,9 +162,7 @@ class CredentialManager:
             )
             (credential_exchange, _) = await self.create_offer(
                 credential_exchange_record=credential_exchange,
-                comment=(
-                    "Aries#0036v1.0 create automated credential exchange "
-                )
+                comment="create automated credential exchange"
             )
 
             # Mark this credential exchange as the current cached one for this cred def
@@ -175,8 +175,14 @@ class CredentialManager:
         credential_exchange: V10CredentialExchange,
         outbound_handler
     ):
-        """Send first message from credential exchange, issuer to holder."""
+        """
+        Send first (cred offer) message from credential exchange, issuer to holder.
 
+        Args:
+            credentials_exchange: credential exchange record
+            outbound_handler: outbound handler to send offer on creation
+
+        """
         if credential_exchange.credential_request:
             (credential_exchange, credential_message) = await self.issue_credential(
                 credential_exchange
@@ -218,13 +224,14 @@ class CredentialManager:
             connection_id: Connection to create proposal for
             auto_offer: Should this proposal request automatically be handled to
                 offer a credential
+            comment: Optional human-readable comment to include in proposal
             credential_preview: The credential preview to use to create
                 the credential proposal
             credential_definition_id: Credential definition id for the
                 credential proposal
 
-        Return:
-            Resulting credential_exchange_record including credential proposal
+        Returns:
+            Resulting credential exchange record including credential proposal
 
         """
         # Credential definition id must be present
@@ -263,26 +270,22 @@ class CredentialManager:
         )
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 create credential proposal")
+            reason="create credential proposal")
         return credential_exchange_record
 
     async def receive_proposal(
         self,
-        credential_proposal_message: CredentialProposal,
-        connection_id
     ):
         """
-        Receive a credential proposal.
-
-        Args:
-            credential_proposal_message: Credential proposal to receive
-            connection_id: Connection to receive offer on
+        Receive a credential proposal from message in context on manager creation.
 
         Returns:
-            The credential_exchange_record
+            The resulting credential exchange record, created
 
         """
         # go to cred def via ledger to get authoritative schema id
+        credential_proposal_message = self.context.message
+        connection_id = self.context.connection_record.connection_id
         cred_def_id = credential_proposal_message.cred_def_id
         if cred_def_id:
             ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -310,7 +313,7 @@ class CredentialManager:
         )
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential proposal"
+            reason="receive credential proposal"
         )
 
         return credential_exchange_record
@@ -318,18 +321,17 @@ class CredentialManager:
     async def create_offer(
         self,
         credential_exchange_record: V10CredentialExchange,
-        *,
         comment: str = None
     ):
         """
-        Create a credential offer.
+        Create a credential offer, update credential exchange record.
 
         Args:
             credential_exchange_record: Credential exchange to create offer for
-            comment: Optional human-readable comment pertaining to offer creation
+            comment: optional human-readable comment to set in offer message
 
-        Return:
-            A tuple (credential_exchange, credential_offer_message)
+        Returns:
+            A tuple (credential exchange record, credential offer message)
 
         """
         credential_definition_id = credential_exchange_record.credential_definition_id
@@ -361,7 +363,7 @@ class CredentialManager:
         credential_exchange_record.credential_offer = credential_offer
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 create credential offer"
+            reason="create credential offer"
         )
 
         return (credential_exchange_record, credential_offer_message)
@@ -377,13 +379,13 @@ class CredentialManager:
             credential_exchange_record: Credential exchange record with offer to receive
 
         Returns:
-            The credential_exchange_record
+            The credential exchange record, updated
 
         """
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential offer"
+            reason="receive credential offer"
         )
 
         return credential_exchange_record
@@ -391,23 +393,22 @@ class CredentialManager:
     async def create_request(
         self,
         credential_exchange_record: V10CredentialExchange,
-        connection_record: ConnectionRecord
+        holder_did: str
     ):
         """
         Create a credential request.
 
         Args:
-            credential_exchange_record: Credential exchange to create request for
-            connection_record: Connection to create the request for
+            credential_exchange_record: Credential exchange record
+                for which to create request
+            holder_did: holder DID
 
-        Return:
-            A tuple (credential_exchange_record, credential_request_message)
+        Returns:
+            A tuple (credential exchange record, credential request message)
 
         """
         credential_definition_id = credential_exchange_record.credential_definition_id
         credential_offer = credential_exchange_record.credential_offer
-
-        did = connection_record.my_did
 
         if credential_exchange_record.credential_request:
             self._logger.warning(
@@ -428,7 +429,7 @@ class CredentialManager:
             ) = await holder.create_credential_request(
                 credential_offer,
                 credential_definition,
-                did
+                holder_did
             )
 
         credential_request_message = CredentialRequest(
@@ -445,38 +446,38 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_SENT
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 create credential request"
+            reason="create credential request"
         )
 
         return credential_exchange_record, credential_request_message
 
-    async def receive_request(
-        self,
-        credential_request_message: CredentialRequest
-    ):
+    async def receive_request(self):
         """
         Receive a credential request.
 
         Args:
             credential_request_message: Credential request to receive
 
-        """
+        Returns:
+            credential exchange record, retrieved and updated
 
+        """
+        credential_request_message = self.context.message
         assert len(credential_request_message.requests_attach or []) == 1
         credential_request = credential_request_message.indy_cred_req(0)
 
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
             self.context,
             tag_filter={
-                "thread_id": credential_request_message._thread_id
-                # initiator may be issuer (via request) or holder (via proposal)
+                "thread_id": credential_request_message._thread_id,
+                "connection_id": self.context.connection_record.connection_id
             }
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential request"
+            reason="receive credential request"
         )
 
         return credential_exchange_record
@@ -492,15 +493,15 @@ class CredentialManager:
         Issue a credential.
 
         Args:
-            credential_exchange_record: The credential exchange we are issuing a
-                credential for
+            credential_exchange_record: The credential exchange record
+                for which to issue a credential
+            comment: optional human-readable comment pertaining to credential issue
             credential_values: dict of credential attribute {name: value} pairs
 
         Returns:
             Tuple: (Updated credential exchange record, credential message)
 
         """
-
         schema_id = credential_exchange_record.schema_id
 
         if credential_exchange_record.credential:
@@ -531,7 +532,7 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential"
+            reason="receive credential"
         )
 
         credential_message = CredentialIssue(
@@ -545,24 +546,19 @@ class CredentialManager:
             "pthid": credential_exchange_record.parent_thread_id
         }
 
-        return credential_exchange_record, credential_message
+        return (credential_exchange_record, credential_message)
 
-    async def receive_credential(
-        self,
-        credential_message: CredentialIssue
-    ):
+    async def receive_credential(self):
         """
         Receive a credential from an issuer.
 
         Hold in storage potentially to be processed by controller before storing.
 
-        Args:
-            credential_message: credential to store
-
         Returns:
-            Credential exchange record
+            Credential exchange record, retrieved and updated
 
         """
+        credential_message = self.context.message
         assert len(credential_message.credentials_attach or []) == 1
         raw_credential = credential_message.indy_credential(0)
 
@@ -571,8 +567,8 @@ class CredentialManager:
                 await V10CredentialExchange.retrieve_by_tag_filter(
                     self.context,
                     tag_filter={
-                        "thread_id": credential_message._thread_id
-                        # initiator may be issuer (via request) or holder (via proposal)
+                        "thread_id": credential_message._thread_id,
+                        "connection_id": self.context.connection_record.connection_id
                     }
                 )
             )
@@ -589,8 +585,8 @@ class CredentialManager:
                 await V10CredentialExchange.retrieve_by_tag_filter(
                     self.context,
                     tag_filter={
-                        "thread_id": credential_message._thread.pthid
-                        # initiator may be issuer (via request) or holder (via proposal)
+                        "thread_id": credential_message._thread.pthid,
+                        "connection_id": self.context.connection_record.connection_id
                     }
                 )
             )
@@ -607,7 +603,7 @@ class CredentialManager:
 
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 receive credential"
+            reason="receive credential"
         )
         return credential_exchange_record
 
@@ -616,7 +612,8 @@ class CredentialManager:
         Store a credential in the wallet.
 
         Args:
-            credential_message: credential to store
+            credential_exchange_record: credential exchange record
+                with credential to store
 
         Returns:
             Tuple: (Updated credential exchange record, credential-stored message)
@@ -649,7 +646,7 @@ class CredentialManager:
         credential_exchange_record.credential = credential
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 store credential"
+            reason="store credential"
         )
 
         credential_stored_message = CredentialStored()
@@ -660,29 +657,27 @@ class CredentialManager:
 
         return (credential_exchange_record, credential_stored_message)
 
-    async def credential_stored(self, credential_stored_message: CredentialStored):
+    async def credential_stored(self):
         """
         Receive confirmation that holder stored credential.
 
-        Args:
-            credential_message: credential to store
-
         Returns:
-            credential exchange record
+            credential exchange record, retrieved and updated
 
         """
+        credential_stored_message = self.context.message
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
             self.context,
             tag_filter={
-                "thread_id": credential_stored_message._thread_id
-                # initiator may be issuer (via request) or holder (via proposal)
+                "thread_id": credential_stored_message._thread_id,
+                "connection_id": self.context.connection_record.connection_id
             }
         )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_STORED
         await credential_exchange_record.save(
             self.context,
-            reason="Aries#0036v1.0 credential stored"
+            reason="credential stored"
         )
 
         return credential_exchange_record
