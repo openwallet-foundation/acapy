@@ -391,7 +391,9 @@ class IndyLedger(BaseLedger):
 
         return parsed_response
 
-    async def send_credential_definition(self, schema_id: str, tag: str = "default"):
+    async def send_credential_definition(
+        self, schema_id: str, tag: str = "default"
+    ):
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -430,7 +432,7 @@ class IndyLedger(BaseLedger):
                 try:
                     cred_def_id = re.search(
                         r"\w*:3:CL:(([1-9][0-9]*)|(.{21,22}:2:.+:[0-9.]+)):\w*",
-                        error.message
+                        error.message,
                     ).group(0)
                     return cred_def_id
                 # The regex search failed so let the error bubble up
@@ -518,9 +520,7 @@ class IndyLedger(BaseLedger):
 
         # get txn by sequence number, retrieve schema identifier components
         request_json = await indy.ledger.build_get_txn_request(
-            None,
-            None,
-            seq_no=seq_no
+            None, None, seq_no=seq_no
         )
         response = json.loads(await self._submit(request_json))
 
@@ -530,7 +530,7 @@ class IndyLedger(BaseLedger):
             (origin_did, name, version) = (
                 data_txn["metadata"]["from"],
                 data_txn["data"]["data"]["name"],
-                data_txn["data"]["data"]["version"]
+                data_txn["data"]["data"]["version"],
             )
             return f"{origin_did}:2:{name}:{version}"
 
