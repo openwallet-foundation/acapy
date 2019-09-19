@@ -327,6 +327,7 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.anoncreds.issuer_create_and_store_credential_def")
     @async_mock.patch("indy.ledger.build_cred_def_request")
@@ -335,6 +336,7 @@ class TestIndyLedger(AsyncTestCase):
         mock_build_cred_def,
         mock_create_store_cred_def,
         mock_submit,
+        mock_fetch_cred_def,
         mock_close,
         mock_open,
         mock_get_schema,
@@ -346,6 +348,8 @@ class TestIndyLedger(AsyncTestCase):
         cred_id = "cred_id"
         cred_json = "[]"
         mock_create_store_cred_def.return_value = (cred_id, cred_json)
+
+        mock_fetch_cred_def.return_value = None
 
         ledger = IndyLedger("name", mock_wallet)
 
