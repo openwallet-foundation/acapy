@@ -73,7 +73,7 @@ class CredentialExchangeListSchema(Schema):
 class CredentialStoreRequestSchema(Schema):
     """Request schema for sending a credential store admin message."""
 
-    credential_id = fields.Str(required=True)
+    credential_id = fields.Str(required=False)
 
 
 class CredentialSchema(Schema):
@@ -466,7 +466,7 @@ async def credential_exchange_store(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     try:
-        body = await request.json()
+        body = await request.json() or None 
         credential_id = body.get("credential_id")
     except JSONDecodeError:
         credential_id = None
