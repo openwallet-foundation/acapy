@@ -25,6 +25,10 @@ class BaseRecordImplSchema(BaseRecordSchema):
         model_class = BaseRecordImpl
 
 
+class UnencTestImpl(BaseRecord):
+    UNENCRYPTED_TAGS = {"a", "b"}
+
+
 class TestBaseRecord(AsyncTestCase):
     def test_init_undef(self):
         with self.assertRaises(TypeError):
@@ -180,3 +184,15 @@ class TestBaseRecord(AsyncTestCase):
         topic = "topic"
         await record.send_webhook(context, payload, topic=topic)
         assert mock_responder.webhooks == [(topic, payload)]
+
+    async def test_tag_prefix(self):
+        tags = {"~x": "a", "y": "b"}
+        assert UnencTestImpl.strip_tag_prefix(tags) == {"x": "a", "y": "b"}
+
+        tags = {"a": "x", "b": "y", "c": "z"}
+        assert UnencTestImpl.prefix_tag_filter(tags) == {"~a": "x", "~b": "y", "c": "z"}
+
+        tags = {"$or": [{"a": "x"}, {"c": "z"}]}
+        assert UnencTestImpl.prefix_tag_filter(tags) == {
+            "$or": [{"~a": "x"}, {"c": "z"}]
+        }
