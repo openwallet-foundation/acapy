@@ -466,7 +466,7 @@ async def credential_exchange_store(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     try:
-        body = await request.json() or None 
+        body = await request.json() or {}
         credential_id = body.get("credential_id")
     except JSONDecodeError:
         credential_id = None
