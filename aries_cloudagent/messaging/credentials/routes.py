@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from json.decoder import JSONDecodeError
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
@@ -67,6 +68,12 @@ class CredentialExchangeListSchema(Schema):
     """Result schema for a credential exchange query."""
 
     results = fields.List(fields.Nested(CredentialExchangeSchema()))
+
+
+class CredentialStoreRequestSchema(Schema):
+    """Request schema for sending a credential store admin message."""
+
+    credential_id = fields.Str(required=False)
 
 
 class CredentialSchema(Schema):
@@ -441,6 +448,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
 
 @docs(tags=["credential_exchange *DEPRECATED*"], summary="Stores a received credential")
+@request_schema(CredentialStoreRequestSchema())
 @response_schema(CredentialRequestResultSchema(), 200)
 async def credential_exchange_store(request: web.BaseRequest):
     """
@@ -457,8 +465,11 @@ async def credential_exchange_store(request: web.BaseRequest):
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
-    body = await request.json()
-    credential_id = body.get("credential_id")
+    try:
+        body = await request.json() or {}
+        credential_id = body.get("credential_id")
+    except JSONDecodeError:
+        credential_id = None
 
     credential_exchange_id = request.match_info["id"]
     credential_exchange_record = await CredentialExchange.retrieve_by_id(
