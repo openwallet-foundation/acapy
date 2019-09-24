@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from json.decoder import JSONDecodeError
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
@@ -67,6 +68,12 @@ class CredentialExchangeListSchema(Schema):
     """Result schema for a credential exchange query."""
 
     results = fields.List(fields.Nested(CredentialExchangeSchema()))
+
+
+class CredentialStoreRequestSchema(Schema):
+    """Request schema for sending a credential store admin message."""
+
+    credential_id = fields.Str(required=False)
 
 
 class CredentialSchema(Schema):
@@ -188,7 +195,10 @@ async def credentials_list(request: web.BaseRequest):
     return web.json_response({"results": credentials})
 
 
-@docs(tags=["credential_exchange"], summary="Fetch all credential exchange records")
+@docs(
+    tags=["credential_exchange *DEPRECATED*"],
+    summary="Fetch all credential exchange records",
+)
 @response_schema(CredentialExchangeListSchema(), 200)
 async def credential_exchange_list(request: web.BaseRequest):
     """
@@ -216,7 +226,10 @@ async def credential_exchange_list(request: web.BaseRequest):
     return web.json_response({"results": [record.serialize() for record in records]})
 
 
-@docs(tags=["credential_exchange"], summary="Fetch a single credential exchange record")
+@docs(
+    tags=["credential_exchange *DEPRECATED*"],
+    summary="Fetch a single credential exchange record",
+)
 @response_schema(CredentialExchangeSchema(), 200)
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
@@ -241,7 +254,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["credential_exchange"],
+    tags=["credential_exchange *DEPRECATED*"],
     summary="Sends a credential and automates the entire flow",
 )
 @request_schema(CredentialSendRequestSchema())
@@ -289,7 +302,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["credential_exchange"], summary="Sends a credential offer")
+@docs(tags=["credential_exchange *DEPRECATED*"], summary="Sends a credential offer")
 @request_schema(CredentialOfferRequestSchema())
 @response_schema(CredentialOfferResultSchema(), 200)
 async def credential_exchange_send_offer(request: web.BaseRequest):
@@ -337,7 +350,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["credential_exchange"], summary="Sends a credential request")
+@docs(tags=["credential_exchange *DEPRECATED*"], summary="Sends a credential request")
 @response_schema(CredentialRequestResultSchema(), 200)
 async def credential_exchange_send_request(request: web.BaseRequest):
     """
@@ -385,7 +398,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["credential_exchange"], summary="Sends a credential")
+@docs(tags=["credential_exchange *DEPRECATED*"], summary="Sends a credential")
 @request_schema(CredentialIssueRequestSchema())
 @response_schema(CredentialIssueResultSchema(), 200)
 async def credential_exchange_issue(request: web.BaseRequest):
@@ -434,7 +447,8 @@ async def credential_exchange_issue(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["credential_exchange"], summary="Stores a received credential")
+@docs(tags=["credential_exchange *DEPRECATED*"], summary="Stores a received credential")
+@request_schema(CredentialStoreRequestSchema())
 @response_schema(CredentialRequestResultSchema(), 200)
 async def credential_exchange_store(request: web.BaseRequest):
     """
@@ -450,6 +464,12 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
+
+    try:
+        body = await request.json() or {}
+        credential_id = body.get("credential_id")
+    except JSONDecodeError:
+        credential_id = None
 
     credential_exchange_id = request.match_info["id"]
     credential_exchange_record = await CredentialExchange.retrieve_by_id(
@@ -476,14 +496,16 @@ async def credential_exchange_store(request: web.BaseRequest):
     (
         credential_exchange_record,
         credential_stored_message,
-    ) = await credential_manager.store_credential(credential_exchange_record)
+    ) = await credential_manager.store_credential(
+        credential_exchange_record, credential_id
+    )
 
     await outbound_handler(credential_stored_message, connection_id=connection_id)
     return web.json_response(credential_exchange_record.serialize())
 
 
 @docs(
-    tags=["credential_exchange"],
+    tags=["credential_exchange *DEPRECATED*"],
     summary="Send a problem report for credential exchange",
 )
 @request_schema(CredentialProblemReportRequestSchema())
@@ -518,7 +540,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
 
 @docs(
-    tags=["credential_exchange"],
+    tags=["credential_exchange *DEPRECATED*"],
     summary="Remove an existing credential exchange record",
 )
 async def credential_exchange_remove(request: web.BaseRequest):

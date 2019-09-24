@@ -1,8 +1,11 @@
 import asyncio
+import base64
+import binascii
 import json
 import logging
 import os
 import sys
+from urllib.parse import urlparse
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
@@ -16,6 +19,7 @@ from runners.support.utils import (
     prompt_loop,
     require_indy,
 )
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +56,7 @@ class AliceAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_credentials(self, message):
+    async def handle_issue_credential(self, message):
         state = message["state"]
         credential_exchange_id = message["credential_exchange_id"]
         prev_state = self.cred_state.get(credential_exchange_id)
@@ -70,12 +74,14 @@ class AliceAgent(DemoAgent):
         if state == "offer_received":
             log_status("#15 After receiving credential offer, send credential request")
             await self.admin_POST(
-                f"/credential_exchange/{credential_exchange_id}/send-request"
+                "/issue-credential/records/" f"{credential_exchange_id}/send-request"
             )
 
         elif state == "stored":
-            self.log("Stored credential in wallet")
+            # elif state == "credential_received": ??
+            self.log("Storing credential in wallet")
             cred_id = message["credential_id"]
+            log_status(f"#18.1 Stored credential {cred_id} in wallet")
             resp = await self.admin_GET(f"/credential/{cred_id}")
             log_json(resp, label="Credential details:")
             log_json(
@@ -86,7 +92,7 @@ class AliceAgent(DemoAgent):
             self.log("credential_definition_id", message["credential_definition_id"])
             self.log("schema_id", message["schema_id"])
 
-    async def handle_presentations(self, message):
+    async def handle_present_proof(self, message):
         state = message["state"]
         presentation_exchange_id = message["presentation_exchange_id"]
         presentation_request = message["presentation_request"]
@@ -111,7 +117,7 @@ class AliceAgent(DemoAgent):
 
             # select credentials to provide for the proof
             credentials = await self.admin_GET(
-                f"/presentation_exchange/{presentation_exchange_id}/credentials"
+                f"/present-proof/records/{presentation_exchange_id}/credentials"
             )
             if credentials:
                 for row in credentials:
@@ -140,9 +146,7 @@ class AliceAgent(DemoAgent):
                     }
 
             log_status("#25 Generate the proof")
-            proof = {
-                "name": presentation_request["name"],
-                "version": presentation_request["version"],
+            request = {
                 "requested_predicates": predicates,
                 "requested_attributes": revealed,
                 "self_attested_attributes": self_attested,
@@ -150,8 +154,11 @@ class AliceAgent(DemoAgent):
 
             log_status("#26 Send the proof to X")
             await self.admin_POST(
-                f"/presentation_exchange/{presentation_exchange_id}/send_presentation",
-                proof,
+                (
+                    "/present-proof/records/"
+                    f"{presentation_exchange_id}/send-presentation"
+                ),
+                request,
             )
 
     async def handle_basicmessages(self, message):
@@ -160,13 +167,33 @@ class AliceAgent(DemoAgent):
 
 async def input_invitation(agent):
     async for details in prompt_loop("Invite details: "):
+        b64_invite = None
+        try:
+            url = urlparse(details)
+            query = url.query
+            if query and "c_i=" in query:
+                pos = query.index("c_i=") + 4
+                b64_invite = query[pos:]
+            else:
+                b64_invite = details
+        except ValueError:
+            b64_invite = details
+
+        if b64_invite:
+            try:
+                invite_json = base64.urlsafe_b64decode(b64_invite)
+                details = invite_json.decode("utf-8")
+            except binascii.Error:
+                pass
+            except UnicodeDecodeError:
+                pass
+
         if details:
             try:
                 json.loads(details)
                 break
             except json.JSONDecodeError as e:
-                log_msg("Invalid JSON:", str(e))
-                pass
+                log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
         connection = await agent.admin_POST("/connections/receive-invitation", details)

@@ -99,7 +99,7 @@ def canon_ref(did: str, ref: str, delimiter: str = None):
 
 def ok_did(token: str) -> bool:
     """
-    Whether input token looks like a valid distributed identifier.
+    Whether input token looks like a valid decentralized identifier.
 
     Args:
         token: candidate string

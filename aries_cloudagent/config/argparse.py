@@ -209,6 +209,30 @@ class DebugGroup(ArgumentGroup):
             help="After startup, generate and print a new connection invitation\
             URL. Default: false.",
         )
+        parser.add_argument(
+            "--invite-role",
+            dest="invite_role",
+            type=str,
+            metavar="<role>",
+            help="Specify the role of the generated invitation."
+        )
+        parser.add_argument(
+            "--invite-label",
+            dest="invite_label",
+            type=str,
+            metavar="<label>",
+            help="Specify the label of the generated invitation."
+        )
+        parser.add_argument(
+            "--invite-multi-use",
+            action="store_true",
+            help="Flag specifying the generated invite should be multi-use."
+        )
+        parser.add_argument(
+            "--invite-public",
+            action="store_true",
+            help="Flag specifying the generated invite should be public."
+        )
 
         parser.add_argument(
             "--auto-accept-invites",
@@ -229,10 +253,27 @@ class DebugGroup(ArgumentGroup):
             received. Default: false.",
         )
         parser.add_argument(
+            "--auto-respond-credential-proposal",
+            action="store_true",
+            help="Auto-respond to credential proposals with corresponding "
+            + "credential offers",
+        )
+        parser.add_argument(
             "--auto-respond-credential-offer",
             action="store_true",
             help="Automatically respond to Indy credential offers with a credential\
             request. Default: false",
+        )
+        parser.add_argument(
+            "--auto-respond-credential-request",
+            action="store_true",
+            help="Auto-respond to credential requests with corresponding credentials",
+        )
+        parser.add_argument(
+            "--auto-respond-presentation-proposal",
+            action="store_true",
+            help="Auto-respond to presentation proposals with corresponding "
+            + "presentation requests",
         )
         parser.add_argument(
             "--auto-respond-presentation-request",
@@ -269,9 +310,23 @@ class DebugGroup(ArgumentGroup):
             settings["debug.seed"] = args.debug_seed
         if args.invite:
             settings["debug.print_invitation"] = True
+        if args.invite_role:
+            settings["debug.invite_role"] = args.invite_role
+        if args.invite_label:
+            settings["debug.invite_label"] = args.invite_label
+        if args.invite_multi_use:
+            settings["debug.invite_multi_use"] = True
+        if args.invite_public:
+            settings["debug.invite_public"] = True
 
+        if args.auto_respond_credential_proposal:
+            settings["debug.auto_respond_credential_proposal"] = True
         if args.auto_respond_credential_offer:
             settings["debug.auto_respond_credential_offer"] = True
+        if args.auto_respond_credential_request:
+            settings["debug.auto_respond_credential_request"] = True
+        if args.auto_respond_presentation_proposal:
+            settings["debug.auto_respond_presentation_proposal"] = True
         if args.auto_respond_presentation_request:
             settings["debug.auto_respond_presentation_request"] = True
         if args.auto_store_credential:

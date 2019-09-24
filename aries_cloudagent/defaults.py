@@ -16,6 +16,12 @@ from .messaging.presentations.message_types import (
 from .messaging.credentials.message_types import MESSAGE_TYPES as CREDENTIAL_MESSAGES
 from .messaging.trustping.message_types import MESSAGE_TYPES as TRUSTPING_MESSAGES
 from .messaging.routing.message_types import MESSAGE_TYPES as ROUTING_MESSAGES
+from .messaging.issue_credential.v1_0.message_types import (
+    MESSAGE_TYPES as V10_ISSUE_CREDENTIAL_MESSAGES
+)
+from .messaging.present_proof.v1_0.message_types import (
+    MESSAGE_TYPES as V10_PRESENT_PROOF_MESSAGES
+)
 
 from .messaging.problem_report.message import (
     MESSAGE_TYPE as PROBLEM_REPORT,
@@ -34,7 +40,9 @@ def default_protocol_registry() -> ProtocolRegistry:
         DISCOVERY_MESSAGES,
         INTRODUCTION_MESSAGES,
         PRESENTATION_MESSAGES,
+        V10_PRESENT_PROOF_MESSAGES,
         CREDENTIAL_MESSAGES,
+        V10_ISSUE_CREDENTIAL_MESSAGES,
         ROUTING_MESSAGES,
         TRUSTPING_MESSAGES,
         {PROBLEM_REPORT: ProblemReport},

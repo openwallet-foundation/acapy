@@ -818,3 +818,38 @@ class IndyWallet(BaseWallet):
         to_verkey = unpacked.get("recipient_verkey", None)
         from_verkey = unpacked.get("sender_verkey", None)
         return message, from_verkey, to_verkey
+
+    async def get_credential_definition_tag_policy(self, credential_definition_id: str):
+        """Return the tag policy for a given credential definition ID."""
+        policy_json = await indy.anoncreds.prover_get_credential_attr_tag_policy(
+            self.handle, credential_definition_id
+        )
+        return json.loads(policy_json) if policy_json else None
+
+    async def set_credential_definition_tag_policy(
+        self,
+        credential_definition_id: str,
+        taggables: Sequence[str] = None,
+        retroactive: bool = True,
+    ):
+        """
+        Set the tag policy for a given credential definition ID.
+
+        Args:
+            credential_definition_id: The ID of the credential definition
+            taggables: A sequence of string values representing attribute names
+            retroactive: Whether to apply the policy to previously-stored credentials
+        """
+
+        if taggables is not None:
+            self.logger.info(
+                "Set tagging policy: %s %s", credential_definition_id, taggables
+            )
+            await indy.anoncreds.prover_set_credential_attr_tag_policy(
+                self.handle,
+                credential_definition_id,
+                json.dumps(taggables),
+                retroactive,
+            )
+        else:
+            self.logger.info("Clear tagging policy: %s", credential_definition_id)

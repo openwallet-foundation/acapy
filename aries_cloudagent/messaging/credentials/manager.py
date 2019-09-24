@@ -327,7 +327,10 @@ class CredentialManager:
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={"thread_id": credential_request_message._thread_id},
+            tag_filter={
+                "thread_id": credential_request_message._thread_id,
+                "initiator": "self",
+            },
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
@@ -424,7 +427,11 @@ class CredentialManager:
             (
                 credential_exchange_record
             ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context, tag_filter={"thread_id": credential_message._thread_id}
+                self.context,
+                tag_filter={
+                    "thread_id": credential_message._thread_id,
+                    "initiator": "external",
+                },
             )
         except StorageNotFoundError:
 
@@ -439,7 +446,11 @@ class CredentialManager:
             (
                 credential_exchange_record
             ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context, tag_filter={"thread_id": credential_message._thread.pthid}
+                self.context,
+                tag_filter={
+                    "thread_id": credential_message._thread.pthid,
+                    "initiator": "external",
+                },
             )
 
             credential_exchange_record._id = None
@@ -454,12 +465,15 @@ class CredentialManager:
 
         return credential_exchange_record
 
-    async def store_credential(self, credential_exchange_record: CredentialExchange):
+    async def store_credential(
+        self, credential_exchange_record: CredentialExchange, credential_id: str = None
+    ):
         """
         Store a credential in the wallet.
 
         Args:
             credential_message: credential to store
+            credential_id: string to use as id for record in wallet
 
         """
 
@@ -476,6 +490,7 @@ class CredentialManager:
             credential_definition,
             raw_credential,
             credential_exchange_record.credential_request_metadata,
+            credential_id=credential_id
         )
 
         credential = await holder.get_credential(credential_id)
@@ -503,7 +518,11 @@ class CredentialManager:
         """
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context, tag_filter={"thread_id": credential_stored_message._thread_id}
+            self.context,
+            tag_filter={
+                "thread_id": credential_stored_message._thread_id,
+                "initiator": "self",
+            },
         )
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED

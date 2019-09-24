@@ -54,7 +54,7 @@ In one of the terminal windows, follow the [Running the Network Locally](https:/
 To start the DMV agent, open up a second terminal window and in it change directory to the root of your clone of this repo and execute the following command:
 
 ```bash
-PORTS="5000:5000 10000:10000" ./scripts/run_docker -it http 0.0.0.0 10000 -ot http --admin 0.0.0.0 5000 -e http://`docker run --net=host codenvy/che-ip`:10000 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000000 --auto-ping-connection --auto-accept-invites --auto-accept-requests --auto-verify-presentation --wallet-type indy --label "DMV Agent"
+PORTS="5000:5000 10000:10000" ./scripts/run_docker -it http 0.0.0.0 10000 -ot http --admin 0.0.0.0 5000 -e http://`docker run --net=host codenvy/che-ip`:10000 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000000 --admin-insecure-mode --auto-ping-connection --auto-accept-invites --auto-accept-requests --auto-respond-credential-request --auto-verify-presentation --wallet-type indy --label "DMV Agent"
 ```
 
 If all goes well, the agent will show a message indicating it is running. Use the second of the browser tabs to navigate to [http://localhost:5000](http://localhost:5000). You should see an OpenAPI user interface with a (long-ish) list of API endpoints. These are the endpoints exposed by the DMV Agent.
@@ -66,7 +66,7 @@ The `run_docker` script provides a lot of options for configuring your agent. We
 To start Alice’s agent, open up a third terminal window and in it change directory to the root of your clone of this repo and execute the following command:
 
 ``` bash
-PORTS="5001:5001 10001:10001" ./scripts/run_docker -it http 0.0.0.0 10001 -ot http --admin 0.0.0.0 5001 -e http://`docker run --net=host codenvy/che-ip`:10001 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000001 --auto-ping-connection --accept-invites --accept-requests --auto-verify-presentation --auto-respond-credential-offer --auto-respond-presentation-request --wallet-type indy --label "Alice Agent"
+PORTS="5001:5001 10001:10001" ./scripts/run_docker -it http 0.0.0.0 10001 -ot http --admin 0.0.0.0 5001 -e http://`docker run --net=host codenvy/che-ip`:10001 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000001 --admin-insecure-mode --auto-ping-connection --auto-accept-invites --auto-accept-requests --auto-respond-credential-offer --auto-respond-presentation-request --auto-store-credential --wallet-type indy --label "Alice Agent"
 ```
 
 If all goes well, the agent will show a message indicating it is running. Use the third tab to navigate to [http://localhost:5001](http://localhost:5001). Again, you should see an OpenAPI user interface with a list of API endpoints, this time the endpoints for Alice’s agent.
@@ -75,8 +75,8 @@ If all goes well, the agent will show a message indicating it is running. Use th
 
 When you are done, or to stop the demo so you can restart it, carry out the following steps:
 
-1. In the DMV and Alice agent terminal windows, hit Ctrl-C to terminate the agents.
-2. In the `von-network` terminal window, hit Ctrl-C to stop the logging, and then run the command `./manage down` to both stop the network and remove the data on the ledger. 
+1. in the DMV and Alice agent terminal windows, hit Ctrl-C to terminate the agents;
+2. in the `von-network` terminal window, hit Ctrl-C to stop the logging, and then run the command `./manage down` to both stop the network and remove the data on the ledger. 
 
 ### Running the Demo Steps
 
@@ -84,12 +84,12 @@ The demo is run entirely in the Browser tabs - DMV ([http://localhost:5000](http
 
 Using the OpenAPI user interface is pretty simple. In the steps below, we’ll indicate what API endpoint you need use, such as **`POST /connections/create-invitation`**. That means you must:
 
-1. Scroll to and find that endpoint.
-2. Click on the endpoint name to expand its section of the UI.
-3. Click on the `Try it now` button.
-4. Fill in any data necessary to run the command.
-5. Click `Execute`
-6. Check the response to see if the request worked.
+1. scroll to and find that endpoint;
+2. click on the endpoint name to expand its section of the UI;
+3. click on the `Try it out` button.
+4. fill in any data necessary to run the command.
+5. click `Execute`
+6. check the response to see if the request worked.
 
 So, the mechanical steps are easy. It’s fourth step from the list above that can be tricky. Supplying the right data and, where JSON is involved, getting the syntax correct - braces and quotes. When steps don’t work, start your debugging by looking at your JSON.
 
@@ -143,10 +143,10 @@ To publish that schema, go to the DMV browser and get ready to execute the **`PO
 
 ``` JSONC
 {
-
   "schema_name": "drivers-licence",
   "attributes": [
-    "age" , "hair_colour"
+    "age",
+    "hair_colour"
   ],
   "schema_version": "1.0"
 }
@@ -178,23 +178,30 @@ OK, we have the one time setup work for issuing a credential complete. We can no
 
 ## Issuing a Credential
 
-Issuing a credential from the DMV agent to Alice’s agent is easy. In the DMV browser tab, scroll down to the **`POST /credential_exchange/send`** and get ready to (but don’t yet) execute the request. Before execution, you need to find some other data to complete the JSON. 
+Issuing a credential from the DMV agent to Alice’s agent is easy. In the DMV browser tab, scroll down to the **`POST /issue-credential/send`** and get ready to (but don’t yet) execute the request. Before execution, you need to find some other data to complete the JSON. 
 
-First, scroll back up to the **`GET /connections`** API endpoint and execute it. From the result, find the the `connection_id` and copy the value. Go back to the `/credential_exchange/send` section and paste it as the value for the `connection_id`
+First, scroll back up to the **`GET /connections`** API endpoint and execute it. From the result, find the the `connection_id` and copy the value. Go back to the **`POST /issue-credential/send`** section and paste it as the value for the `connection_id`.
 
-Next, scroll down to the **`POST /credential-definitions`** section that was executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the **`POST /credential_exchange/send`** section and paste it as the value for the `credential_defintion_id`.
+Next, scroll down to the **`POST /credential-definitions`** section that you executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the **`POST /issue-credential/send`** section and paste it as the value for the `credential_defintion_id`.
 
-Finally, for the credential values, put the following between the curly brackets:
+Finally, for the credential values, put the following between the `attributes` square brackets:
 
 ```
-"age" : "19", "hair_colour" : "brown"
+      {
+        "name": "age",
+        "value": "19"
+      },
+      {
+        "name": "hair_colour",
+        "value": "brown"
+      }
 ```
 
 Ok, finally, you are ready to click `Execute`. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?
 
-To confirm the issuance worked, scroll up to the top of the credential_exchange section and excute the **`GET /credential_exchange`** endpoint. You should see a lot of information about the exchange, including the state - `issued`.
+To confirm the issuance worked, scroll up to the top of the `v1.0 issue-credential exchange` section and execute the **`GET /issue-credential/records`** endpoint. You should see a lot of information about the exchange, including the state - `stored`.
 
-Let’s look at it from Alice’s side. Switch to the Alice’s agent browser tab, find the `Credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the DMV agent.
+Let’s look at it from Alice’s side. Switch to the Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the DMV agent.
 
 You’ve done it, issued a credential!  W00t!
 
@@ -202,48 +209,54 @@ You’ve done it, issued a credential!  W00t!
 
 Those that know something about the Indy process for issuing a credential and the DIDcomm `Issue Credential` protocol know that there a multiple steps to issuing credentials, a back and forth between the Issuer and the Holder to (at least) offer, request and issue the credential. All of those messages happened, but the two agents took care of those details rather than bothering the controller (you, in this case) with managing the back and forth.
 
-* On the DMV agent side, this is because we used the **`POST /credential_exchange/send`** administrative message, which handles the back and forth for the issuer automatically. We could have used the other `/credential_exchange/` endpoint to allow the controller to handle each step of the protocol.
-* On Alice's agent side, this is because in the startup options for the agent, we used the `--auto-respond-credential-offer` parameter.
+* On the DMV agent side, this is because we used the **`POST /issue-credential/send`** administrative message, which handles the back and forth for the issuer automatically. We could have used the other `/issue-credential/` endpoints to allow the controller to handle each step of the protocol.
+* On Alice's agent side, this is because in the startup options for the agent, we used the `--auto-respond-credential-offer` and `--auto-store-credential` parameters.
 
 ### Bonus Points
 
-If you would like to manually perform all of the issuance steps on the DMV agent side, use a sequence of the other `/credential_exchange/` messages. Use the **`GET /credential_exchange`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests. If you want to run both the DMV and Alice sides in sequence, you’ll have to rerun the tutorial with Alice’s agent started without the `--auto-respond-credential-offer` parameter set.
+If you would like to perform all of the issuance steps manually on the DMV agent side, use a sequence of the other `/issue-credential/` messages. Use the **`GET /issue-credential/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests. If you want to run both the DMV and Alice sides in sequence, you’ll have to rerun the tutorial with Alice’s agent started without the `--auto-respond-credential-offer` and `--auto-store-credential` parameters set.
 
 ## Requesting/Presenting a Proof
 
 Alice now has her DMV credential. Let’s have the DMV agent send a request for a presentation (a proof) using that credential. This should be pretty easy for you at this point.
 
-From the DMV browser tab, get ready to execute the **`POST /presentation_exchange/send_request`** endpoint. Replace the pre-populated text with the following. In doing so, use the techniques we used in issuing the credential to replace the `string` values for each instance of `cred_def_id` (there are two) and `connection_id`.
+From the DMV browser tab, get ready to execute the **`POST /present-proof/send_request`** endpoint. Select the entire pre-populated text and replace it with the following. In doing so, use the techniques we used in issuing the credential to replace the sample values for each instance of `cred_def_id` (there are four) and `connection_id`.
 
 ``` JSONC
 {
-  "requested_predicates": [
-    {
-      "name": "age",
-      "p_type": ">=",
-      "restrictions": [
-        {"cred_def_id" : "string"}
-      ],
-      "p_value":  18
+  "connection_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "proof_request": {
+    "name": "bar-checks",
+    "version": "1.0",
+    "requested_attributes": {
+      "0_hair_colour_uuid": {
+        "name": "hair_colour",
+        "restrictions": [
+          {
+            "cred_def_id": "4QxzWk3ajdnEA37NdNU5Kt:3:CL:7:default"
+          }
+        ]
+      }
+    },
+    "requested_predicates": {
+      "0_age_GE_uuid": {
+        "name": "age",
+        "p_type": ">=",
+        "p_value": 18,
+        "restrictions": [
+          {
+            "cred_def_id": "4QxzWk3ajdnEA37NdNU5Kt:3:CL:7:default"
+          }
+        ]
+      }
     }
-  ],
-  "requested_attributes": [
-    {
-      "name": "hair_colour",
-      "restrictions": [
-        {"cred_def_id" : "string"}
-      ]
-    }
-  ],
-  "name": "bar-checks",
-  "version": "1.0",
-  "connection_id": "string"
+  }
 }
 ```
 
 Notice that the proof request is using a predicate to check if Alice is older than 18 without asking for her age. Click `Execute` and cross your fingers. If the request fails check your JSON!
 
-Note that in the response, the state is `request_sent`. That is because when the HTTP response was generated (immediately after sending the request), Alice’s agent had not yet responded to the request. We’ll have to do another request to verify the presentation worked. Copy the value of the `presentation_exchange_id` field from the response and use it in executing the **`GET /presentation_exchange/{id}`** endpoint. That should return a result showing a status of `verified`. Proof positive!
+Note that in the response, the state is `request_sent`. That is because when the HTTP response was generated (immediately after sending the request), Alice’s agent had not yet responded to the request. We’ll have to do another request to verify the presentation worked. Copy the value of the `presentation_exchange_id` field from the response and use it in executing the **`GET /present-proof/records/{pres_ex_id}`** endpoint. That should return a result showing the state as `verified` and `verified` as `true`. Proof positive!
 
 ### Notes
 

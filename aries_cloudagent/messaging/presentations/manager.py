@@ -82,6 +82,7 @@ class PresentationManager:
             presentation_request=presentation_request,
             thread_id=presentation_request_message._thread_id,
         )
+
         await presentation_exchange.save(
             self.context, reason="Create presentation request"
         )
@@ -105,6 +106,7 @@ class PresentationManager:
             state=PresentationExchange.STATE_REQUEST_RECEIVED,
             presentation_request=json.loads(presentation_request_message.request),
         )
+
         await presentation_exchange.save(
             self.context, reason="Receive presentation request"
         )
@@ -222,7 +224,7 @@ class PresentationManager:
         (
             presentation_exchange_record
         ) = await PresentationExchange.retrieve_by_tag_filter(
-            self.context, tag_filter={"thread_id": thread_id}
+            self.context, tag_filter={"thread_id": thread_id, "initiator": "self"}
         )
 
         presentation_exchange_record.presentation = presentation

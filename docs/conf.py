@@ -64,7 +64,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.coverage",
     "sphinx.ext.viewcode",
-    "sphinx.ext.githubpages",
+    "sphinx.ext.githubpages"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -73,7 +73,7 @@ templates_path = ["_templates"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = [".rst", ".md"]
+source_suffix = ['.rst', '.md']
 # source_suffix = '.rst'
 
 # The master toctree document.
@@ -187,7 +187,8 @@ texinfo_documents = [
         "Aries CloudAgent Python Documentation",
         author,
         "AriesCloudAgentPython",
-        "A Hyperledger Aries cloud agent implemented in Python and suitable for use in (almost) any non-mobile environment.",
+        "A Hyperledger Aries cloud agent implemented in Python and\
+        suitable for use in (almost) any non-mobile environment.",
         "Miscellaneous",
     )
 ]

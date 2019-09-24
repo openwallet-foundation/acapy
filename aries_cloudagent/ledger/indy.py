@@ -50,12 +50,24 @@ class IndyErrorHandler:
     def __exit__(self, err_type, err_value, err_traceback):
         """Exit the context manager."""
         if err_type is IndyError:
-            err_msg = self.message or "Exception while performing ledger operation"
-            indy_message = hasattr(err_value, "message") and err_value.message
-            if indy_message:
-                err_msg += f": {indy_message}"
-            # TODO: may wish to attach backtrace when available
-            raise self.error_cls(err_msg) from err_value
+            raise self.wrap_error(
+                err_value, self.message, self.error_cls
+            ) from err_value
+
+    @classmethod
+    def wrap_error(
+        cls,
+        err_value: IndyError,
+        message: str = None,
+        error_cls: Type[LedgerError] = LedgerError,
+    ) -> LedgerError:
+        """Create an instance of LedgerError from an IndyError."""
+        err_msg = message or "Exception while performing ledger operation"
+        indy_message = hasattr(err_value, "message") and err_value.message
+        if indy_message:
+            err_msg += f": {indy_message}"
+        # TODO: may wish to attach backtrace when available
+        return error_cls(err_msg)
 
 
 class IndyLedger(BaseLedger):
@@ -428,24 +440,41 @@ class IndyLedger(BaseLedger):
         except IndyError as error:
             if error.error_code == ErrorCode.AnoncredsCredDefAlreadyExistsError:
                 try:
-                    cred_def_id = re.search(r"\w*:\d*:CL:\d*:\w*", error.message).group(
-                        0
-                    )
-                    return cred_def_id
+                    credential_definition_id = re.search(
+                        r"\w*:3:CL:(([1-9][0-9]*)|(.{21,22}:2:.+:[0-9.]+)):\w*",
+                        error.message,
+                    ).group(0)
                 # The regex search failed so let the error bubble up
                 except AttributeError:
-                    raise error
+                    raise LedgerError(
+                        "Previous credential definition exists, but ID could "
+                        "not be extracted"
+                    )
             else:
-                raise
+                raise IndyErrorHandler.wrap_error(error) from error
 
-        with IndyErrorHandler("Exception when building cred def request"):
-            request_json = await indy.ledger.build_cred_def_request(
-                public_did.did, credential_definition_json
+        # check if the cred def already exists on the ledger
+        cred_def = json.loads(credential_definition_json)
+        exist_def = await self.fetch_credential_definition(credential_definition_id)
+        if exist_def:
+            if exist_def["value"] != cred_def["value"]:
+                self.logger.warning(
+                    "Ledger definition of cred def %s will be replaced",
+                    credential_definition_id,
+                )
+                exist_def = None
+
+        if not exist_def:
+            with IndyErrorHandler("Exception when building cred def request"):
+                request_json = await indy.ledger.build_cred_def_request(
+                    public_did.did, credential_definition_json
+                )
+            await self._submit(request_json, True, True)
+        else:
+            self.logger.warning(
+                "Ledger definition of cred def %s already exists",
+                credential_definition_id,
             )
-
-        await self._submit(request_json, True, True)
-
-        # TODO: validate response
 
         return credential_definition_id
 
@@ -484,11 +513,15 @@ class IndyLedger(BaseLedger):
         response_json = await self._submit(request_json, sign=bool(public_did))
 
         with IndyErrorHandler("Exception when parsing cred def response"):
-            (
-                _,
-                parsed_credential_definition_json,
-            ) = await indy.ledger.parse_get_cred_def_response(response_json)
-        parsed_response = json.loads(parsed_credential_definition_json)
+            try:
+                (
+                    _,
+                    parsed_credential_definition_json,
+                ) = await indy.ledger.parse_get_cred_def_response(response_json)
+                parsed_response = json.loads(parsed_credential_definition_json)
+            except IndyError as error:
+                if error.error_code == ErrorCode.LedgerNotFound:
+                    parsed_response = None
 
         if parsed_response and self.cache:
             await self.cache.set(
@@ -498,6 +531,43 @@ class IndyLedger(BaseLedger):
             )
 
         return parsed_response
+
+    async def credential_definition_id2schema_id(self, credential_definition_id):
+        """
+        From a credential definition, get the identifier for its schema.
+
+        Args:
+            credential_definition_id: The identifier of the credential definition
+                from which to identify a schema
+        """
+
+        # scrape schema id or sequence number from cred def id
+        tokens = credential_definition_id.split(":")
+        if len(tokens) == 8:  # node protocol >= 1.4: cred def id has 5 or 8 tokens
+            return ":".join(tokens[3:7])  # schema id spans 0-based positions 3-6
+
+        seq_no = int(tokens[3])
+
+        # get txn by sequence number, retrieve schema identifier components
+        request_json = await indy.ledger.build_get_txn_request(
+            None, None, seq_no=seq_no
+        )
+        response = json.loads(await self._submit(request_json))
+
+        # transaction data format assumes node protocol >= 1.4 (circa 2018-07)
+        data_txn = (response["result"].get("data", {}) or {}).get("txn", {})
+        if data_txn.get("type", None) == "101":  # marks indy-sdk schema txn type
+            (origin_did, name, version) = (
+                data_txn["metadata"]["from"],
+                data_txn["data"]["data"]["name"],
+                data_txn["data"]["data"]["version"],
+            )
+            return f"{origin_did}:2:{name}:{version}"
+
+        raise LedgerTransactionError(
+            "Could not get schema identifier from ledger for "
+            + f"credential definition id {credential_definition_id}"
+        )
 
     async def get_key_for_did(self, did: str) -> str:
         """Fetch the verkey for a ledger DID.
@@ -555,6 +625,24 @@ class IndyLedger(BaseLedger):
             await self._submit(request_json, True, True)
             return True
         return False
+
+    async def register_nym(
+        self, did: str, verkey: str, alias: str = None, role: str = None
+    ):
+        """
+        Register a nym on the ledger.
+
+        Args:
+            did: DID to register on the ledger.
+            verkey: The verification key of the keypair.
+            alias: Human-friendly alias to assign to the DID.
+            role: For permissioned ledgers, what role should the new DID have.
+        """
+        public_did = await self.wallet.get_public_did()
+        r = await indy.ledger.build_nym_request(
+            public_did and public_did.did, did, verkey, alias, role
+        )
+        await self._submit(r, True, True)
 
     def nym_to_did(self, nym: str) -> str:
         """Format a nym with the ledger's DID prefix."""

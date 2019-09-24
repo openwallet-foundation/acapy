@@ -5,6 +5,8 @@ import os
 import random
 import sys
 
+from uuid import uuid4
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from runners.support.agent import DemoAgent, default_genesis_txns
@@ -16,6 +18,10 @@ from runners.support.utils import (
     prompt,
     prompt_loop,
     require_indy,
+)
+
+CRED_PREVIEW_TYPE = (
+    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -51,7 +57,7 @@ class FaberAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_credentials(self, message):
+    async def handle_issue_credential(self, message):
         state = message["state"]
         credential_exchange_id = message["credential_exchange_id"]
         prev_state = self.cred_state.get(credential_exchange_id)
@@ -70,12 +76,21 @@ class FaberAgent(DemoAgent):
             log_status("#17 Issue credential to X")
             # issue credentials based on the credential_definition_id
             cred_attrs = self.cred_attrs[message["credential_definition_id"]]
+            cred_preview = {
+                "@type": CRED_PREVIEW_TYPE,
+                "attributes": [
+                    {"name": n, "value": v} for (n, v) in cred_attrs.items()
+                ],
+            }
             await self.admin_POST(
-                f"/credential_exchange/{credential_exchange_id}/issue",
-                {"credential_values": cred_attrs},
+                f"/issue-credential/records/{credential_exchange_id}/issue",
+                {
+                    "comment": f"Issuing credential, exchange {credential_exchange_id}",
+                    "credential_preview": cred_preview,
+                },
             )
 
-    async def handle_presentations(self, message):
+    async def handle_present_proof(self, message):
         state = message["state"]
 
         presentation_exchange_id = message["presentation_exchange_id"]
@@ -90,7 +105,8 @@ class FaberAgent(DemoAgent):
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/presentation_exchange/{presentation_exchange_id}/verify_presentation"
+                f"/present-proof/records/{presentation_exchange_id}/"
+                "verify-presentation"
             )
             self.log("Proof =", proof["verified"])
 
@@ -132,7 +148,7 @@ async def main(start_port: int, show_timing: bool = False):
                 )
             )
             (
-                schema_id,
+                _,  # schema id
                 credential_definition_id,
             ) = await agent.register_schema_and_creddef(
                 "degree schema", version, ["name", "date", "degree", "age"]
@@ -165,10 +181,7 @@ async def main(start_port: int, show_timing: bool = False):
 
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
-                offer = {
-                    "credential_definition_id": credential_definition_id,
-                    "connection_id": agent.connection_id,
-                }
+
                 # TODO define attributes to send for credential
                 agent.cred_attrs[credential_definition_id] = {
                     "name": "Alice Smith",
@@ -176,28 +189,58 @@ async def main(start_port: int, show_timing: bool = False):
                     "degree": "Maths",
                     "age": "24",
                 }
-                await agent.admin_POST("/credential_exchange/send-offer", offer)
+
+                cred_preview = {
+                    "@type": CRED_PREVIEW_TYPE,
+                    "attributes": [
+                        {"name": n, "value": v}
+                        for (n, v) in agent.cred_attrs[credential_definition_id].items()
+                    ],
+                }
+                offer_request = {
+                    "connection_id": agent.connection_id,
+                    "credential_definition_id": credential_definition_id,
+                    "comment": f"Offer on cred def id {credential_definition_id}",
+                    "credential_preview": cred_preview,
+                }
+                await agent.admin_POST("/issue-credential/send-offer", offer_request)
 
                 # TODO issue an additional credential for Student ID
 
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
-                proof_attrs = [
+                req_attrs = [
                     {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "degree", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "self_attested_thing"},
                 ]
-                proof_predicates = [{"name": "age", "p_type": ">=", "p_value": 18}]
-                proof_request = {
+                req_preds = [
+                    {
+                        "name": "age",
+                        "p_type": ">=",
+                        "p_value": 18,
+                        "restrictions": [{"issuer_did": agent.did}],
+                    }
+                ]
+                indy_proof_request = {
                     "name": "Proof of Education",
                     "version": "1.0",
+                    "nonce": str(uuid4().int),
+                    "requested_attributes": {
+                        f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
+                    },
+                    "requested_predicates": {
+                        f"0_{req_pred['name']}_GE_uuid": req_pred
+                        for req_pred in req_preds
+                    },
+                }
+                proof_request_web_request = {
                     "connection_id": agent.connection_id,
-                    "requested_attributes": proof_attrs,
-                    "requested_predicates": proof_predicates,
+                    "proof_request": indy_proof_request,
                 }
                 await agent.admin_POST(
-                    "/presentation_exchange/send_request", proof_request
+                    "/present-proof/send-request", proof_request_web_request
                 )
 
             elif option == "3":

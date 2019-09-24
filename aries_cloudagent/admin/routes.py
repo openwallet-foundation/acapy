@@ -6,6 +6,12 @@ from ..messaging.actionmenu.routes import register as register_actionmenu
 from ..messaging.connections.routes import register as register_connections
 from ..messaging.credentials.routes import register as register_credentials
 from ..messaging.introduction.routes import register as register_introduction
+from ..messaging.issue_credential.v1_0.routes import (
+    register as register_v10_issue_credential
+)
+from ..messaging.present_proof.v1_0.routes import (
+    register as register_v10_present_proof
+)
 from ..messaging.presentations.routes import register as register_presentations
 from ..messaging.schemas.routes import register as register_schemas
 from ..messaging.credential_definitions.routes import (
@@ -15,6 +21,7 @@ from ..messaging.basicmessage.routes import register as register_basicmessages
 from ..messaging.discovery.routes import register as register_discovery
 from ..messaging.trustping.routes import register as register_trustping
 from ..wallet.routes import register as register_wallet
+from ..ledger.routes import register as register_ledger
 
 
 async def register_module_routes(app: web.Application):
@@ -34,4 +41,7 @@ async def register_module_routes(app: web.Application):
     await register_basicmessages(app)
     await register_discovery(app)
     await register_trustping(app)
+    await register_v10_issue_credential(app)
+    await register_v10_present_proof(app)
     await register_wallet(app)
+    await register_ledger(app)

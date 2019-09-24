@@ -6,6 +6,7 @@ from typing import Mapping, Sequence
 from .error import StorageDuplicateError, StorageNotFoundError
 from .record import StorageRecord
 
+
 DEFAULT_PAGE_SIZE = 100
 
 
