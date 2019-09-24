@@ -465,6 +465,30 @@ class ProtocolGroup(ArgumentGroup):
 
 
 @group(CAT_START)
+class QueueGroup(ArgumentGroup):
+    """Queue settings."""
+
+    GROUP_NAME = "Queue"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add queue-specific command line arguments to the parser."""
+        parser.add_argument(
+            "--enable-undelivered-queue",
+            action="store_true",
+            help="Enable the outbound undelivered queue that enables this agent to hold messages\
+            for delivery to agents without an endpoint. This option will require\
+            additional memory to store messages in the queue.",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract queue settings."""
+        settings = {}
+        settings["queue.enable_undelivered_queue"] = args.enable_undelivered_queue
+
+        return settings
+
+
+@group(CAT_START)
 class TransportGroup(ArgumentGroup):
     """Transport settings."""
 

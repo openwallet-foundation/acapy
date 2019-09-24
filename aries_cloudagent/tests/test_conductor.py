@@ -26,7 +26,7 @@ class Config:
     good_outbound_transports = {"transport.outbound_configs": ["http"]}
     bad_inbound_transports = {"transport.inbound_configs": [["bad", "host", 80]]}
     bad_outbound_transports = {"transport.outbound_configs": ["bad"]}
-    test_settings = {}
+    test_settings = {"queue.enable_undelivered_queue": True}
 
 class TestDIDs:
 

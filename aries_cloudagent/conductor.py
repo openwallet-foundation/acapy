@@ -76,7 +76,8 @@ class Conductor:
         self.message_serializer = await context.inject(MessageSerializer)
 
         # Setup Delivery Queue
-        self.undelivered_queue = DeliveryQueue()
+        if context.settings.get("queue.enable_undelivered_queue") or False:
+            self.undelivered_queue = DeliveryQueue()
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -404,4 +405,5 @@ class Conductor:
             return
 
         # Add message to outbound queue, indexed by key
-        self.undelivered_queue.add_message(message)
+        if self.undelivered_queue:
+            self.undelivered_queue.add_message(message)
