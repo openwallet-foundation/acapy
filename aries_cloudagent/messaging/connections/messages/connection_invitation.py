@@ -53,7 +53,7 @@ class ConnectionInvitation(AgentMessage):
         self.endpoint = endpoint
         self.routing_keys = list(routing_keys) if routing_keys else None
 
-    def to_url(self) -> str:
+    def to_url(self, base_url: str = None) -> str:
         """
         Convert an invitation to URL format for sharing.
 
@@ -63,7 +63,7 @@ class ConnectionInvitation(AgentMessage):
         """
         c_json = self.to_json()
         c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
-        result = urljoin(self.endpoint, "?c_i={}".format(c_i))
+        result = urljoin(base_url or self.endpoint or "", "?c_i={}".format(c_i))
         return result
 
     @classmethod

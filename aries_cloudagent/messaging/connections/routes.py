@@ -194,6 +194,7 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden()
+    base_url = context.settings.get("invite_base_url")
 
     connection_mgr = ConnectionManager(context)
     connection, invitation = await connection_mgr.create_invitation(
@@ -202,7 +203,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     result = {
         "connection_id": connection and connection.connection_id,
         "invitation": invitation.serialize(),
-        "invitation_url": invitation.to_url(),
+        "invitation_url": invitation.to_url(base_url),
     }
 
     if connection and connection.alias:
