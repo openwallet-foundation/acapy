@@ -310,21 +310,21 @@ class Conductor:
         Args:
             socket: The incoming socket connection
         """
-
-        for key in socket.reply_verkeys:
-            if not isinstance(key, str):
-                key = key.value
-            if self.undelivered_queue.has_message_for_key(key):
-                for undelivered_message in \
-                        self.undelivered_queue.inspect_all_messages_for_key(key):
-                    # pending message. Transmit, then kill single_response
-                    if socket.select_outgoing(undelivered_message):
-                        print("Sending Queued Message via inbound connection")
-                        self.undelivered_queue.remove_message_for_key(
-                            key,
-                            undelivered_message
-                        )
-                        await socket.send(undelivered_message)
+        if self.undelivered_queue:
+            for key in socket.reply_verkeys:
+                if not isinstance(key, str):
+                    key = key.value
+                if self.undelivered_queue.has_message_for_key(key):
+                    for undelivered_message in \
+                            self.undelivered_queue.inspect_all_messages_for_key(key):
+                        # pending message. Transmit, then kill single_response
+                        if socket.select_outgoing(undelivered_message):
+                            print("Sending Queued Message via inbound connection")
+                            self.undelivered_queue.remove_message_for_key(
+                                key,
+                                undelivered_message
+                            )
+                            await socket.send(undelivered_message)
 
     async def prepare_outbound_message(
         self, message: OutboundMessage, context: InjectionContext = None
