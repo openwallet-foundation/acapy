@@ -197,7 +197,8 @@ class Conductor:
                     ),
                     public=context.settings.get("debug.invite_public", False)
                 )
-                invite_url = invitation.to_url()
+                base_url = context.settings.get("invite_base_url")
+                invite_url = invitation.to_url(base_url)
                 print("Invitation URL:")
                 print(invite_url)
             except Exception:
