@@ -1,4 +1,4 @@
-"""Represents a protocol discovery query message."""
+"""Represents a feature discovery query message."""
 
 from marshmallow import fields
 
@@ -11,7 +11,7 @@ HANDLER_CLASS = (
 
 
 class Query(AgentMessage):
-    """Represents a protocol discovery query.
+    """Represents a feature discovery query.
 
     Used for inspecting what message types are supported by the agent.
     """
