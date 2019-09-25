@@ -18,11 +18,11 @@ class ArgumentGroup(abc.ABC):
     GROUP_NAME = None
 
     @abc.abstractmethod
-    def add_arguments(parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser):
         """Add arguments to the provided argument parser."""
 
     @abc.abstractmethod
-    def get_settings(args: Namespace) -> dict:
+    def get_settings(self, args: Namespace) -> dict:
         """Extract settings from the parsed arguments."""
 
 

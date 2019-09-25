@@ -21,7 +21,7 @@ class BaseCache(ABC):
         """
 
     @abstractmethod
-    async def set(self, key: Text, value: Any, ttl: int):
+    async def set(self, key: Text, value: Any, ttl: int = None):
         """
         Add an item to the cache with an optional ttl.
 
