@@ -490,7 +490,7 @@ class CredentialManager:
             credential_definition,
             raw_credential,
             credential_exchange_record.credential_request_metadata,
-            credential_id=credential_id
+            credential_id=credential_id,
         )
 
         credential = await holder.get_credential(credential_id)
@@ -498,6 +498,13 @@ class CredentialManager:
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = credential
+
+        # clear unnecessary data
+        credential_exchange_record.credential_offer = None
+        credential_exchange_record.credential_request = None
+        credential_exchange_record.raw_credential = None
+        # credential_request_metadata may be reused
+
         await credential_exchange_record.save(self.context, reason="Store credential")
 
         credential_stored_message = CredentialStored()
@@ -524,6 +531,12 @@ class CredentialManager:
                 "initiator": "self",
             },
         )
+
+        # clear unnecessary data
+        credential_exchange_record.credential_offer = None
+        credential_exchange_record.credential_request = None
+        credential_exchange_record.credential_request_metadata = None
+        credential_exchange_record.credential_values = None
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         await credential_exchange_record.save(self.context, reason="Credential stored")

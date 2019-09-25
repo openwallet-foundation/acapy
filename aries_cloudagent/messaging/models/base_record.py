@@ -31,6 +31,7 @@ class BaseRecord(BaseModel):
     LOG_STATE_FLAG = None
     CACHE_TTL = 60
     CACHE_ENABLED = False
+    UNENCRYPTED_TAGS = ()
 
     def __init__(
         self,
@@ -83,7 +84,7 @@ class BaseRecord(BaseModel):
     @property
     def value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
-        ret = self.tags
+        ret = self.strip_tag_prefix(self.tags)
         ret.update({"created_at": self.created_at, "updated_at": self.updated_at})
         ret.update(self.record_value)
         return ret
@@ -98,8 +99,9 @@ class BaseRecord(BaseModel):
         """Accessor for the record tags generated for this record."""
         tags = {"state": self.state}
         tags.update(self.record_tags)
+        unenc = self.UNENCRYPTED_TAGS or ()
         # tag values must be non-empty
-        return {k: v for (k, v) in tags.items() if v}
+        return {(f"~{k}" if k in unenc else k): v for (k, v) in tags.items() if v}
 
     @classmethod
     def cache_key(cls, record_id: str, record_type: str = None):
@@ -186,7 +188,7 @@ class BaseRecord(BaseModel):
             result = await storage.get_record(cls.RECORD_TYPE, record_id)
             vals = json.loads(result.value)
             if result.tags:
-                vals.update(result.tags)
+                vals.update(cls.strip_tag_prefix(result.tags))
             if cls.CACHE_ENABLED:
                 await cls.set_cached_key(context, cache_key, vals)
 
@@ -204,10 +206,10 @@ class BaseRecord(BaseModel):
         """
         storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.search_records(
-            cls.RECORD_TYPE, tag_filter
+            cls.RECORD_TYPE, cls.prefix_tag_filter(tag_filter)
         ).fetch_single()
         vals = json.loads(result.value)
-        vals.update(result.tags)
+        vals.update(cls.strip_tag_prefix(result.tags))
         return cls.from_storage(result.id, vals)
 
     @classmethod
@@ -221,11 +223,13 @@ class BaseRecord(BaseModel):
             tag_filter: An optional dictionary of tag filter clauses
         """
         storage: BaseStorage = await context.inject(BaseStorage)
-        found = await storage.search_records(cls.RECORD_TYPE, tag_filter).fetch_all()
+        found = await storage.search_records(
+            cls.RECORD_TYPE, cls.prefix_tag_filter(tag_filter)
+        ).fetch_all()
         result = []
         for record in found:
             vals = json.loads(record.value)
-            vals.update(record.tags)
+            vals.update(cls.strip_tag_prefix(record.tags))
             result.append(cls.from_storage(record.id, vals))
         return result
 
@@ -357,6 +361,31 @@ class BaseRecord(BaseModel):
                 for k, v in params.items():
                     out += f"    {k}: {v}\n"
             print(out, file=sys.stderr)
+
+    @classmethod
+    def strip_tag_prefix(cls, tags: dict):
+        """Strip tilde from unencrypted tag names."""
+        return (
+            {(k[1:] if "~" in k else k): v for (k, v) in tags.items()} if tags else {}
+        )
+
+    @classmethod
+    def prefix_tag_filter(cls, tag_filter: dict):
+        """Prefix unencrypted tags used in the tag filter."""
+        ret = None
+        if tag_filter:
+            unenc = cls.UNENCRYPTED_TAGS or ()
+            ret = {}
+            for k, v in tag_filter.items():
+                if k in ("$or", "$and") and isinstance(v, list):
+                    ret[k] = [cls.prefix_tag_filter(clause) for clause in v]
+                elif k == "$not" and isinstance(v, dict):
+                    ret[k] = cls.prefix_tag_filter(v)
+                elif k in unenc:
+                    ret[f"~{k}"] = v
+                else:
+                    ret[k] = v
+        return ret
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

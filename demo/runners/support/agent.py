@@ -1,4 +1,5 @@
 import asyncio
+import asyncpg
 import functools
 import json
 import logging
@@ -117,6 +118,7 @@ class DemoAgent:
         )
         self.wallet_key = params.get("wallet_key") or self.ident + rand_name
         self.did = None
+        self.wallet_stats = []
 
     async def register_schema_and_creddef(self, schema_name, version, schema_attrs):
         # Create a schema
@@ -168,29 +170,8 @@ class DemoAgent:
             result.extend(
                 [
                     ("--wallet-storage-type", "postgres_storage"),
-                    (
-                        "--wallet-storage-config",
-                        json.dumps(
-                            {
-                                "url": f"{self.internal_host}:5432",
-                                "tls": "None",
-                                "max_connections": 5,
-                                "min_idle_time": 0,
-                                "connection_timeout": 10,
-                            }
-                        ),
-                    ),
-                    (
-                        "--wallet-storage-creds",
-                        json.dumps(
-                            {
-                                "account": "postgres",
-                                "password": "mysecretpassword",
-                                "admin_account": "postgres",
-                                "admin_password": "mysecretpassword",
-                            }
-                        ),
-                    ),
+                    ("--wallet-storage-config", json.dumps(self.postgres_config)),
+                    ("--wallet-storage-creds", json.dumps(self.postgres_creds)),
                 ]
             )
         if self.webhook_url:
@@ -426,3 +407,80 @@ class DemoAgent:
 
     async def reset_timing(self):
         await self.admin_POST("/status/reset", text=True)
+
+    @property
+    def postgres_config(self):
+        return {
+            "url": f"{self.internal_host}:5432",
+            "tls": "None",
+            "max_connections": 5,
+            "min_idle_time": 0,
+            "connection_timeout": 10,
+        }
+
+    @property
+    def postgres_creds(self):
+        return {
+            "account": "postgres",
+            "password": "mysecretpassword",
+            "admin_account": "postgres",
+            "admin_password": "mysecretpassword",
+        }
+
+    async def collect_postgres_stats(self, ident: str, vacuum_full: bool = True):
+        creds = self.postgres_creds
+
+        conn = await asyncpg.connect(
+            host=self.internal_host,
+            port="5432",
+            user=creds["admin_account"],
+            password=creds["admin_password"],
+            database=self.wallet_name,
+        )
+
+        tables = ("items", "tags_encrypted", "tags_plaintext")
+        for t in tables:
+            await conn.execute(f"VACUUM FULL {t}" if vacuum_full else f"VACUUM {t}")
+
+        sizes = await conn.fetch(
+            """
+            SELECT relname AS "relation",
+                pg_size_pretty(pg_total_relation_size(C.oid)) AS "total_size"
+            FROM pg_class C
+            LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+            WHERE nspname = 'public'
+            ORDER BY pg_total_relation_size(C.oid) DESC;
+            """
+        )
+        results = {k: [0, "0B"] for k in tables}
+        for row in sizes:
+            if row["relation"] in results:
+                results[row["relation"]][1] = row["total_size"].replace(" ", "")
+        for t in tables:
+            row = await conn.fetchrow(f"""SELECT COUNT(*) AS "count" FROM {t}""")
+            results[t][0] = row["count"]
+        self.wallet_stats.append((ident, results))
+
+        await conn.close()
+
+    def format_postgres_stats(self):
+        if not self.wallet_stats:
+            return
+        yield "{:30} | {:>17} | {:>17} | {:>17}".format(
+            f"{self.wallet_name} DB", "items", "tags_encrypted", "tags_plaintext"
+        )
+        yield "=" * 90
+        for ident, stats in self.wallet_stats:
+            yield "{:30} | {:8d} {:>8} | {:8d} {:>8} | {:8d} {:>8}".format(
+                ident,
+                stats["items"][0],
+                stats["items"][1],
+                stats["tags_encrypted"][0],
+                stats["tags_encrypted"][1],
+                stats["tags_plaintext"][0],
+                stats["tags_plaintext"][1],
+            )
+        yield ""
+
+    def reset_postgres_stats(self):
+        self.wallet_stats.clear()

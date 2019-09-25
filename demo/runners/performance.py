@@ -94,6 +94,10 @@ class AliceAgent(BaseAgent):
     async def update_creds(self):
         await self.credential_event.wait()
 
+    async def set_tag_policy(self, cred_def_id, taggables):
+        req_body = {"taggables": taggables}
+        await self.admin_POST(f"/wallet/tag-policy/{cred_def_id}", req_body)
+
 
 class FaberAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
@@ -205,6 +209,7 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
 
         with log_timer("Publish duration:"):
             await faber.publish_defs()
+            # await alice.set_tag_policy(faber.credential_definition_id, ["name"])
 
         with log_timer("Connect duration:"):
             if routing:
@@ -292,6 +297,15 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
         avg = recv_timer.duration / issue_count
         alice.log(f"Average time per credential: {avg:.2f}s ({1/avg:.2f}/s)")
 
+        if alice.postgres:
+            await alice.collect_postgres_stats(str(issue_count) + " creds")
+            for line in alice.format_postgres_stats():
+                alice.log(line)
+        if faber.postgres:
+            await faber.collect_postgres_stats(str(issue_count) + " creds")
+            for line in faber.format_postgres_stats():
+                faber.log(line)
+
         if show_timing:
             timing = await alice.fetch_timing()
             if timing:
@@ -358,6 +372,8 @@ if __name__ == "__main__":
     require_indy()
 
     try:
-        asyncio.get_event_loop().run_until_complete(main(args.port, True, args.routing))
+        asyncio.get_event_loop().run_until_complete(
+            main(args.port, False, args.routing)
+        )
     except KeyboardInterrupt:
         os._exit(1)
