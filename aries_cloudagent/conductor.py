@@ -9,6 +9,7 @@ wallet.
 """
 
 import asyncio
+import functools
 from collections import OrderedDict
 import logging
 from typing import Coroutine, Union
@@ -291,26 +292,20 @@ class Conductor:
         complete = await self.dispatcher.dispatch(
             parsed_msg, delivery, connection, self.outbound_message_router
         )
-        if socket:
-            # if a reply mode is present then a response is allowed over this connection
-            # wait till dispatch is complete,
-            # then check to see if any queued responses can be sent.
-            if socket.reply_mode:
-                await complete
-                await self.queue_processing(socket)
 
-            # close a single_response socket if no answer given by now.
-            complete.add_done_callback(lambda fut: socket.dispatch_complete())
+        # close a single_response socket if no answer given by now.
+        complete.add_done_callback(functools.partial(self.queue_processing, socket))
         return complete
 
-    async def queue_processing(self, socket):
+    async def queue_processing(self, socket, _fut):
         """
         Interact with undelivered queue to find applicable messages.
 
         Args:
             socket: The incoming socket connection
         """
-        if self.undelivered_queue:
+        print("Queue Processing Ran!")
+        if socket and socket.reply_mode and self.undelivered_queue:
             for key in socket.reply_verkeys:
                 if not isinstance(key, str):
                     key = key.value
@@ -325,6 +320,8 @@ class Conductor:
                                 undelivered_message
                             )
                             await socket.send(undelivered_message)
+        if socket:
+            socket.dispatch_complete()
 
     async def prepare_outbound_message(
         self, message: OutboundMessage, context: InjectionContext = None

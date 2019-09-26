@@ -26,7 +26,8 @@ class Config:
     good_outbound_transports = {"transport.outbound_configs": ["http"]}
     bad_inbound_transports = {"transport.inbound_configs": [["bad", "host", 80]]}
     bad_outbound_transports = {"transport.outbound_configs": ["bad"]}
-    test_settings = {"queue.enable_undelivered_queue": True}
+    test_settings = {}
+    test_settings_with_queue = {"queue.enable_undelivered_queue": True}
 
 class TestDIDs:
 
@@ -180,7 +181,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
     async def test_outbound_queue_add_with_no_endpoint(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder: ContextBuilder = StubContextBuilder(self.test_settings_with_queue)
         conductor = test_module.Conductor(builder)
         # set up relationship without endpoint
         with async_mock.patch.object(
@@ -205,21 +206,25 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
 
     async def test_outbound_queue_check_on_inbound(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder: ContextBuilder = StubContextBuilder(self.test_settings_with_queue)
         conductor = test_module.Conductor(builder)
 
         with async_mock.patch.object(
             test_module, "DeliveryQueue", autospec=True
         ) as mock_delivery_queue:
-
             await conductor.setup()
+
+            async def mock_dispatch(parsed_msg, delivery, connection, outbound):
+                result = asyncio.Future()
+                result.set_result(None)
+                return result
+
             # set up relationship without endpoint
             with async_mock.patch.object(
-                conductor.dispatcher, "dispatch", autospec=True
-            ) as mock_dispatch, async_mock.patch.object(
+                conductor.dispatcher, "dispatch", mock_dispatch
+            ) as mock_dispatch_method, async_mock.patch.object(
                 test_module, "ConnectionManager", autospec=True
             ) as mock_connection_manager:
-
 
                 sender_did_doc, sender_pk = self.make_did_doc(self.test_did, self.test_verkey)
 
@@ -234,17 +239,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 mock_serializer.extract_message_type.return_value = "message_type" # messaging.trustping.message_types.PING
                 mock_serializer.parse_message.return_value = (parsed_msg, delivery)
 
-                f1 = asyncio.Future()
-                f2 = asyncio.Future()
-                f2.set_result(None)
-                f1.set_result(f2)
-                mock_dispatch.return_value = f1
+
 
                 message_body = "{}"
                 transport = "http"
                 delivery_future = asyncio.Future()
-                await conductor.inbound_message_router(message_body, transport, single_response=delivery_future)
-
+                r_future = conductor.inbound_message_router(message_body, transport, single_response=delivery_future)
+                r_future_result = await r_future
                 mock_delivery_queue.return_value.has_message_for_key.assert_called_once_with(
                     sender_pk.value
                 )
