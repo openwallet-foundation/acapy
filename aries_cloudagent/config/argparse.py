@@ -494,6 +494,12 @@ class ProtocolGroup(ArgumentGroup):
             marking a connection as 'active'. Default: false.",
         )
         parser.add_argument(
+            "--invite-base-url",
+            type=str,
+            metavar="<base-url>",
+            help="Base URL to use when formatting connection invitations in URL format."
+        )
+        parser.add_argument(
             "--public-invites",
             action="store_true",
             help="Send invitations out, and receive connection requests,\
@@ -512,6 +518,8 @@ class ProtocolGroup(ArgumentGroup):
             settings["external_protocols"] = args.external_protocols
         if args.auto_ping_connection:
             settings["auto_ping_connection"] = True
+        if args.invite_base_url:
+            settings["invite_base_url"] = args.invite_base_url
         if args.public_invites:
             settings["public_invites"] = True
         if args.timing:
