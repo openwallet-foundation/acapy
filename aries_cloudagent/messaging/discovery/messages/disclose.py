@@ -1,4 +1,4 @@
-"""Represents a protocol discovery disclosure message."""
+"""Represents a feature discovery disclosure message."""
 
 from typing import Mapping
 
@@ -13,7 +13,7 @@ HANDLER_CLASS = (
 
 
 class Disclose(AgentMessage):
-    """Represents a protocol discovery disclosure, the response to a query message."""
+    """Represents a feature discovery disclosure, the response to a query message."""
 
     class Meta:
         """Disclose metadata."""

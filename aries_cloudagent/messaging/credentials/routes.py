@@ -519,7 +519,6 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
-    credential_exchange_id = request.match_info["id"]
     body = await request.json()
 
     try:
@@ -553,7 +552,6 @@ async def credential_exchange_remove(request: web.BaseRequest):
     context = request.app["request_context"]
     credential_exchange_id = request.match_info["id"]
     try:
-        credential_exchange_id = request.match_info["id"]
         credential_exchange_record = await CredentialExchange.retrieve_by_id(
             context, credential_exchange_id
         )

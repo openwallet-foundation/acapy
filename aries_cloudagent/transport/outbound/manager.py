@@ -145,7 +145,9 @@ class OutboundTransportManager:
         self.processor = TaskProcessor(max_pending=10)
         async for message in self.queue:
             await self.processor.run_retry(
-                lambda pending: self.dispatch_message(message, pending.attempts + 1),
+                lambda pending, msg=message: self.dispatch_message(
+                    msg, pending.attempts + 1
+                ),
                 retries=5,
                 retry_delay=10.0,
             )

@@ -30,7 +30,7 @@ class MenuJsonSchema(Schema):
 
     title = fields.Str(required=False)
     description = fields.Str(required=False)
-    errormsg = description = fields.Str(required=False)
+    errormsg = fields.Str(required=False)
     options = fields.List(fields.Nested(MenuOptionSchema), required=True)
 
 

@@ -17,7 +17,7 @@ from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
 
 
-class ConnectionRecord(BaseRecord):
+class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
     """Represents a single pairwise connection."""
 
     class Meta:
@@ -125,7 +125,7 @@ class ConnectionRecord(BaseRecord):
                 "routing_state",
                 "accept",
                 "invitation_mode",
-                "alias"
+                "alias",
             )
         }
 
