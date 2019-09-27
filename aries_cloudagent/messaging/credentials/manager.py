@@ -372,7 +372,7 @@ class CredentialManager:
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             (
                 credential_exchange_record.credential,
-                credential_revocation_id,
+                _,  # credential_revocation_id
             ) = await issuer.create_credential(
                 schema, credential_offer, credential_request, credential_values
             )

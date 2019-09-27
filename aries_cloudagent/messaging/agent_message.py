@@ -357,7 +357,7 @@ class AgentMessageSchema(BaseModelSchema):
                         f"Message defines both field signature and value: {field_name}"
                     )
                 found_signatures[field_name] = field["sig"]
-                processed[field_name], _ts = field["sig"].decode()
+                processed[field_name], _ = field["sig"].decode()  # _ = timestamp
         for field_name in expect_fields:
             if field_name not in found_signatures:
                 raise ValidationError(f"Expected field signature: {field_name}")
