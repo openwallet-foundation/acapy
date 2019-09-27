@@ -198,7 +198,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest()
     try:
-        info = await wallet.get_local_did(did)
+        _ = await wallet.get_local_did(did)
     except WalletError:
         # DID not found or not in valid format
         raise web.HTTPBadRequest()
