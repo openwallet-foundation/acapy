@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py36-1.11-0
+FROM bcgovimages/von-image:py36-1.11-1
 
 ENV ENABLE_PTVSD 0
 
