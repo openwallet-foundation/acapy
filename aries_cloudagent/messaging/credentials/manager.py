@@ -524,6 +524,7 @@ class CredentialManager:
 
         """
 
+        # Get current exchange record by thread id
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
             self.context,
             tag_filter={
@@ -532,13 +533,28 @@ class CredentialManager:
             },
         )
 
-        # clear unnecessary data
-        credential_exchange_record.credential_offer = None
-        credential_exchange_record.credential_request = None
-        credential_exchange_record.credential_request_metadata = None
-        credential_exchange_record.credential_values = None
+        # Get parent exchange record if parent id exists
+        parent_thread_id = credential_exchange_record.parent_thread_id
+        if parent_thread_id:
+            (
+                parent_credential_exchange_record
+            ) = await CredentialExchange.retrieve_by_tag_filter(
+                self.context,
+                tag_filter={"thread_id": parent_thread_id, "initiator": "self"},
+            )
 
-        credential_exchange_record.state = CredentialExchange.STATE_STORED
-        await credential_exchange_record.save(self.context, reason="Credential stored")
+            # Get cached id
+            cache: BaseCache = await self._context.inject(BaseCache)
+            cached_credential_id = await cache.get(
+                "credential_exchange::"
+                + f"{parent_credential_exchange_record.credential_definition_id}::"
+                + f"{parent_credential_exchange_record.connection_id}"
+            )
 
-        return credential_exchange_record
+            # If "this" record's parent isn't the cached record, the cache has
+            # expired so we can delete it
+            if parent_credential_exchange_record.credential_id != cached_credential_id:
+                await parent_credential_exchange_record.delete_record(self.context)
+
+        # Always delete the current record because we're done with it
+        credential_exchange_record.delete_record(self.context)
