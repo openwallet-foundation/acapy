@@ -367,13 +367,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--routing", action="store_true", help="Enable inbound routing demonstration"
     )
+    parser.add_argument(
+        "--timing", action="store_true", help="Enable detailed timing report"
+    )
     args = parser.parse_args()
 
     require_indy()
 
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, False, args.routing)
+            main(args.port, args.timing, args.routing)
         )
     except KeyboardInterrupt:
         os._exit(1)
