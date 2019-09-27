@@ -552,7 +552,6 @@ async def credential_exchange_remove(request: web.BaseRequest):
     context = request.app["request_context"]
     credential_exchange_id = request.match_info["id"]
     try:
-        credential_exchange_id = request.match_info["id"]
         credential_exchange_record = await CredentialExchange.retrieve_by_id(
             context, credential_exchange_id
         )
