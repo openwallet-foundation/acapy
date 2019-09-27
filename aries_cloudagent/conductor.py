@@ -64,7 +64,6 @@ class Conductor:
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_transport_manager: OutboundTransportManager = None
         self.sockets = OrderedDict()
-
         self.undelivered_queue: DeliveryQueue = None
 
     async def setup(self):
@@ -76,7 +75,7 @@ class Conductor:
         self.message_serializer = await context.inject(MessageSerializer)
 
         # Setup Delivery Queue
-        if context.settings.get("queue.enable_undelivered_queue") or False:
+        if context.settings.get("queue.enable_undelivered_queue"):
             self.undelivered_queue = DeliveryQueue()
 
         # Register all inbound transports
@@ -274,7 +273,7 @@ class Conductor:
                 socket_id = None
 
         delivery.socket_id = socket_id
-        socket = self.sockets[socket_id] if socket_id else None
+        socket: SocketInfo = self.sockets[socket_id] if socket_id else None
 
         if socket:
             socket.process_incoming(parsed_msg, delivery)
@@ -306,7 +305,12 @@ class Conductor:
         Args:
             socket: The incoming socket connection
         """
-        if socket and socket.reply_mode and self.undelivered_queue:
+        if (
+            socket
+            and socket.reply_mode
+            and not socket.closed
+            and self.undelivered_queue
+        ):
             for key in socket.reply_verkeys:
                 if not isinstance(key, str):
                     key = key.value
