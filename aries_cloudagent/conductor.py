@@ -383,17 +383,17 @@ class Conductor:
             self.logger.debug("Returned message to socket %s", sel_socket.socket_id)
             return
 
+        try:
+            await self.prepare_outbound_message(message, context)
+        except MessagePrepareError:
+            self.logger.exception(
+                "Error preparing outbound message for transmission"
+            )
+            return
+
         # deliver directly to endpoint
         if message.endpoint:
-            try:
-                await self.prepare_outbound_message(message, context)
-            except MessagePrepareError:
-                self.logger.exception(
-                    "Error preparing outbound message for transmission"
-                )
-                return
-
             await self.outbound_transport_manager.send_message(message)
             return
 
-        self.logger.warning("No endpoint or direct route for outbound message, dropped")
+        self.logger.error("No endpoint or direct route for outbound message, dropped")
