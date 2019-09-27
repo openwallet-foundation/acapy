@@ -255,6 +255,16 @@ class CredentialManager:
         )
         await credential_exchange.save(self.context, reason="Receive credential offer")
 
+        # Cache latest received credential offer exchange record so
+        # we can identify and purge later
+        cache: BaseCache = await self._context.inject(BaseCache)
+        await cache.set(
+            "credential_exchange::offer_exchange_id::"
+            + f"{credential_exchange.credential_definition_id}::"
+            + f"{credential_exchange.connection_id}",
+            credential_exchange.credential_id,
+        )
+
         return credential_exchange
 
     async def create_request(
@@ -453,8 +463,12 @@ class CredentialManager:
                 },
             )
 
+            # Copy values from parent but create new record on save (no id)
             credential_exchange_record._id = None
             credential_exchange_record.thread_id = credential_message._thread_id
+            credential_exchange_record.parent_thread_id = (
+                credential_message._thread.pthid
+            )
             credential_exchange_record.credential_id = None
             credential_exchange_record.credential = None
 
@@ -499,19 +513,44 @@ class CredentialManager:
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = credential
 
-        # clear unnecessary data
-        credential_exchange_record.credential_offer = None
-        credential_exchange_record.credential_request = None
-        credential_exchange_record.raw_credential = None
-        # credential_request_metadata may be reused
-
-        await credential_exchange_record.save(self.context, reason="Store credential")
-
         credential_stored_message = CredentialStored()
         credential_stored_message.assign_thread_id(
             credential_exchange_record.thread_id,
             credential_exchange_record.parent_thread_id,
         )
+
+        async def remove_record():
+            # Get parent exchange record if parent id exists
+            parent_thread_id = credential_exchange_record.parent_thread_id
+            if parent_thread_id:
+                (
+                    parent_credential_exchange_record
+                ) = await CredentialExchange.retrieve_by_tag_filter(
+                    self.context,
+                    tag_filter={"thread_id": parent_thread_id, "initiator": "external"},
+                )
+
+                # Get cached id
+                cache: BaseCache = await self._context.inject(BaseCache)
+                in_use_parent_exchange_id = await cache.get(
+                    "credential_exchange::offer_exchange_id::"
+                    + f"{credential_exchange_record.credential_definition_id}::"
+                    + f"{credential_exchange_record.connection_id}"
+                )
+
+                # If "this" record's parent isn't the cached record, the cache has
+                # expired so we can delete it
+                if (
+                    parent_credential_exchange_record.credential_id
+                    != in_use_parent_exchange_id
+                ):
+                    await parent_credential_exchange_record.delete_record(self.context)
+
+                # We also delete the current record but only if it has a parent_id
+                # because we don't want to delete any new parents
+                credential_exchange_record.delete_record(self.context)
+
+        asyncio.ensure_future(remove_record())
 
         return credential_exchange_record, credential_stored_message
 
@@ -556,5 +595,6 @@ class CredentialManager:
             if parent_credential_exchange_record.credential_id != cached_credential_id:
                 await parent_credential_exchange_record.delete_record(self.context)
 
-        # Always delete the current record because we're done with it
-        credential_exchange_record.delete_record(self.context)
+            # We also delete the current record but only if it has a parent_id
+            # because we don't want to delete any new parents
+            credential_exchange_record.delete_record(self.context)
