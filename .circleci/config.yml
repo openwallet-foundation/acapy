@@ -2,7 +2,7 @@ version: 2
 jobs:
   agent-build:
     docker:
-      - image: bcgovimages/von-image:py36-1.11-0
+      - image: bcgovimages/von-image:py36-1.11-1
     steps:
       - checkout
       - restore_cache:

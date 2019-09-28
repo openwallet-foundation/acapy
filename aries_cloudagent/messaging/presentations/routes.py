@@ -376,7 +376,6 @@ async def presentation_exchange_remove(request: web.BaseRequest):
         request: aiohttp request object
     """
     context = request.app["request_context"]
-    presentation_exchange_id = request.match_info["id"]
     try:
         presentation_exchange_id = request.match_info["id"]
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(

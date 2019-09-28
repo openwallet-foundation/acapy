@@ -487,7 +487,7 @@ def decode_pack_message(
     try:
         recips_outer = PackRecipientsSchema().loads(recips_json)
     except ValidationError:
-        ValueError("Invalid packed message recipients")
+        raise ValueError("Invalid packed message recipients")
 
     alg = recips_outer["alg"]
     is_authcrypt = alg == "Authcrypt"

@@ -1,6 +1,6 @@
-"""Message type identifiers for Protocol Discovery."""
+"""Message type identifiers for Feature Discovery."""
 
-MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/protocol-discovery/1.0"
+MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/discover-features/1.0"
 
 DISCLOSE = f"{MESSAGE_FAMILY}/disclose"
 QUERY = f"{MESSAGE_FAMILY}/query"

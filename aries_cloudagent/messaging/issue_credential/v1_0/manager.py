@@ -52,8 +52,7 @@ class CredentialManager:
         return self._context
 
     async def cache_credential_exchange(
-        self,
-        credential_exchange_record: V10CredentialExchange
+        self, credential_exchange_record: V10CredentialExchange
     ):
         """
         Cache a credential exchange to avoid redundant credential requests.
@@ -75,7 +74,7 @@ class CredentialManager:
         self,
         credential_definition_id: str,
         connection_id: str,
-        credential_proposal: CredentialProposal
+        credential_proposal: CredentialProposal,
     ) -> V10CredentialExchange:
         """
         Set up a new credential exchange for an automated send.
@@ -113,8 +112,7 @@ class CredentialManager:
             lookup_start = time.perf_counter()
             while True:
                 source_credential_exchange = await V10CredentialExchange.retrieve_by_id(
-                    self._context,
-                    source_credential_exchange_id
+                    self._context, source_credential_exchange_id
                 )
                 if source_credential_exchange.credential_request:
                     break
@@ -145,7 +143,7 @@ class CredentialManager:
             )
             await credential_exchange.save(
                 self.context,
-                reason="create automated credential exchange from cached request"
+                reason="create automated credential exchange from cached request",
             )
 
         else:
@@ -158,11 +156,11 @@ class CredentialManager:
                 connection_id=connection_id,
                 initiator=V10CredentialExchange.INITIATOR_SELF,
                 credential_definition_id=credential_definition_id,
-                credential_proposal_dict=credential_proposal.serialize()
+                credential_proposal_dict=credential_proposal.serialize(),
             )
             (credential_exchange, _) = await self.create_offer(
                 credential_exchange_record=credential_exchange,
-                comment="create automated credential exchange"
+                comment="create automated credential exchange",
             )
 
             # Mark this credential exchange as the current cached one for this cred def
@@ -171,9 +169,7 @@ class CredentialManager:
         return credential_exchange
 
     async def perform_send(
-        self,
-        credential_exchange: V10CredentialExchange,
-        outbound_handler
+        self, credential_exchange: V10CredentialExchange, outbound_handler
     ):
         """
         Send first (cred offer) message from credential exchange, issuer to holder.
@@ -188,20 +184,16 @@ class CredentialManager:
                 credential_exchange
             )
             await outbound_handler(
-                credential_message,
-                connection_id=credential_exchange.connection_id
+                credential_message, connection_id=credential_exchange.connection_id
             )
         else:
-            (
-                credential_exchange,
-                credential_offer_message
-            ) = await self.create_offer(
+            (credential_exchange, credential_offer_message) = await self.create_offer(
                 credential_exchange,
                 comment=(
                     "Automated offer creation on cred def id "
                     f"{credential_exchange.credential_definition_id}, "
                     f"parent thread {credential_exchange.parent_thread_id}"
-                )
+                ),
             )
             await outbound_handler(
                 credential_offer_message,
@@ -215,7 +207,7 @@ class CredentialManager:
         auto_offer: bool = None,
         comment: str = None,
         credential_preview: CredentialPreview = None,
-        credential_definition_id: str
+        credential_definition_id: str,
     ):
         """
         Create a credential proposal.
@@ -236,15 +228,11 @@ class CredentialManager:
         """
         # Credential definition id must be present
         if not credential_definition_id:
-            raise CredentialManagerError(
-                "credential_definition_id is not set"
-            )
+            raise CredentialManagerError("credential_definition_id is not set")
 
         # Credential preview must be present
         if not credential_preview:
-            raise CredentialManagerError(
-                "credential_preview is not set"
-            )
+            raise CredentialManagerError("credential_preview is not set")
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
@@ -256,7 +244,8 @@ class CredentialManager:
             comment=comment,
             credential_proposal=credential_preview,
             schema_id=schema_id,
-            cred_def_id=credential_definition_id)
+            cred_def_id=credential_definition_id,
+        )
 
         credential_exchange_record = V10CredentialExchange(
             connection_id=connection_id,
@@ -266,16 +255,14 @@ class CredentialManager:
             credential_definition_id=credential_definition_id,
             schema_id=schema_id,
             credential_proposal_dict=credential_proposal_message.serialize(),
-            auto_offer=auto_offer
+            auto_offer=auto_offer,
         )
         await credential_exchange_record.save(
-            self.context,
-            reason="create credential proposal")
+            self.context, reason="create credential proposal"
+        )
         return credential_exchange_record
 
-    async def receive_proposal(
-        self,
-    ):
+    async def receive_proposal(self,):
         """
         Receive a credential proposal from message in context on manager creation.
 
@@ -309,19 +296,16 @@ class CredentialManager:
             ),
             auto_issue=self.context.settings.get(
                 "debug.auto_respond_credential_request"
-            )
+            ),
         )
         await credential_exchange_record.save(
-            self.context,
-            reason="receive credential proposal"
+            self.context, reason="receive credential proposal"
         )
 
         return credential_exchange_record
 
     async def create_offer(
-        self,
-        credential_exchange_record: V10CredentialExchange,
-        comment: str = None
+        self, credential_exchange_record: V10CredentialExchange, comment: str = None
     ):
         """
         Create a credential offer, update credential exchange record.
@@ -347,7 +331,7 @@ class CredentialManager:
         credential_offer_message = CredentialOffer(
             comment=comment,
             credential_preview=cred_preview,
-            offers_attach=[AttachDecorator.from_indy_dict(credential_offer)]
+            offers_attach=[AttachDecorator.from_indy_dict(credential_offer)],
         )
 
         credential_offer_message._thread = {
@@ -356,22 +340,18 @@ class CredentialManager:
 
         credential_exchange_record.thread_id = credential_offer_message._thread_id
         credential_exchange_record.schema_id = credential_offer["schema_id"]
-        credential_exchange_record.credential_definition_id = (
-            credential_offer["cred_def_id"]
-        )
+        credential_exchange_record.credential_definition_id = credential_offer[
+            "cred_def_id"
+        ]
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_SENT
         credential_exchange_record.credential_offer = credential_offer
         await credential_exchange_record.save(
-            self.context,
-            reason="create credential offer"
+            self.context, reason="create credential offer"
         )
 
         return (credential_exchange_record, credential_offer_message)
 
-    async def receive_offer(
-        self,
-        credential_exchange_record: V10CredentialExchange,
-    ):
+    async def receive_offer(self, credential_exchange_record: V10CredentialExchange):
         """
         Receive a credential offer.
 
@@ -384,16 +364,13 @@ class CredentialManager:
         """
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
         await credential_exchange_record.save(
-            self.context,
-            reason="receive credential offer"
+            self.context, reason="receive credential offer"
         )
 
         return credential_exchange_record
 
     async def create_request(
-        self,
-        credential_exchange_record: V10CredentialExchange,
-        holder_did: str
+        self, credential_exchange_record: V10CredentialExchange, holder_did: str
     ):
         """
         Create a credential request.
@@ -413,7 +390,7 @@ class CredentialManager:
         if credential_exchange_record.credential_request:
             self._logger.warning(
                 "create_request called multiple times for v1.0 credential exchange: %s",
-                credential_exchange_record.credential_exchange_id
+                credential_exchange_record.credential_exchange_id,
             )
         else:
             ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -427,9 +404,7 @@ class CredentialManager:
                 credential_exchange_record.credential_request,
                 credential_exchange_record.credential_request_metadata,
             ) = await holder.create_credential_request(
-                credential_offer,
-                credential_definition,
-                holder_did
+                credential_offer, credential_definition, holder_did
             )
 
         credential_request_message = CredentialRequest(
@@ -445,8 +420,7 @@ class CredentialManager:
 
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_SENT
         await credential_exchange_record.save(
-            self.context,
-            reason="create credential request"
+            self.context, reason="create credential request"
         )
 
         return credential_exchange_record, credential_request_message
@@ -470,14 +444,13 @@ class CredentialManager:
             self.context,
             tag_filter={
                 "thread_id": credential_request_message._thread_id,
-                "connection_id": self.context.connection_record.connection_id
-            }
+                "connection_id": self.context.connection_record.connection_id,
+            },
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
         await credential_exchange_record.save(
-            self.context,
-            reason="receive credential request"
+            self.context, reason="receive credential request"
         )
 
         return credential_exchange_record
@@ -487,7 +460,7 @@ class CredentialManager:
         credential_exchange_record: V10CredentialExchange,
         *,
         comment: str = None,
-        credential_values: dict
+        credential_values: dict,
     ):
         """
         Issue a credential.
@@ -508,7 +481,7 @@ class CredentialManager:
             self._logger.warning(
                 "issue_credential called multiple times for "
                 + "v1.0 credential exchange: %s",
-                credential_exchange_record.credential_exchange_id
+                credential_exchange_record.credential_exchange_id,
             )
         else:
             credential_offer = credential_exchange_record.credential_offer
@@ -521,29 +494,23 @@ class CredentialManager:
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             (
                 credential_exchange_record.credential,
-                _credential_revocation_id
+                _,  # credential_revocation_id
             ) = await issuer.create_credential(
-                schema,
-                credential_offer,
-                credential_request,
-                credential_values
+                schema, credential_offer, credential_request, credential_values
             )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
-        await credential_exchange_record.save(
-            self.context,
-            reason="receive credential"
-        )
+        await credential_exchange_record.save(self.context, reason="receive credential")
 
         credential_message = CredentialIssue(
             comment=comment,
             credentials_attach=[
                 AttachDecorator.from_indy_dict(credential_exchange_record.credential)
-            ]
+            ],
         )
         credential_message._thread = {
             "thid": credential_exchange_record.thread_id,
-            "pthid": credential_exchange_record.parent_thread_id
+            "pthid": credential_exchange_record.parent_thread_id,
         }
 
         return (credential_exchange_record, credential_message)
@@ -563,13 +530,13 @@ class CredentialManager:
         raw_credential = credential_message.indy_credential(0)
 
         try:
-            credential_exchange_record = (
-                await V10CredentialExchange.retrieve_by_tag_filter(
+            credential_exchange_record = await (
+                V10CredentialExchange.retrieve_by_tag_filter(
                     self.context,
                     tag_filter={
                         "thread_id": credential_message._thread_id,
-                        "connection_id": self.context.connection_record.connection_id
-                    }
+                        "connection_id": self.context.connection_record.connection_id,
+                    },
                 )
             )
         except StorageNotFoundError:
@@ -581,13 +548,13 @@ class CredentialManager:
             # re-using information from parent. In this case, we need the parent
             # exchange state object to retrieve and re-use the
             # credential_request_metadata
-            credential_exchange_record = (
-                await V10CredentialExchange.retrieve_by_tag_filter(
+            credential_exchange_record = await (
+                V10CredentialExchange.retrieve_by_tag_filter(
                     self.context,
                     tag_filter={
                         "thread_id": credential_message._thread.pthid,
-                        "connection_id": self.context.connection_record.connection_id
-                    }
+                        "connection_id": self.context.connection_record.connection_id,
+                    },
                 )
             )
 
@@ -601,10 +568,7 @@ class CredentialManager:
             V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
         )
 
-        await credential_exchange_record.save(
-            self.context,
-            reason="receive credential"
-        )
+        await credential_exchange_record.save(self.context, reason="receive credential")
         return credential_exchange_record
 
     async def store_credential(self, credential_exchange_record: V10CredentialExchange):
@@ -636,7 +600,7 @@ class CredentialManager:
                 credential_exchange_record.credential_proposal_dict[
                     "credential_proposal"
                 ]
-            ).mime_types()
+            ).mime_types(),
         )
 
         credential = await holder.get_credential(credential_id)
@@ -644,15 +608,12 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_STORED
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = credential
-        await credential_exchange_record.save(
-            self.context,
-            reason="store credential"
-        )
+        await credential_exchange_record.save(self.context, reason="store credential")
 
         credential_stored_message = CredentialStored()
         credential_stored_message.assign_thread_id(
             credential_exchange_record.thread_id,
-            credential_exchange_record.parent_thread_id
+            credential_exchange_record.parent_thread_id,
         )
 
         return (credential_exchange_record, credential_stored_message)
@@ -670,14 +631,11 @@ class CredentialManager:
             self.context,
             tag_filter={
                 "thread_id": credential_stored_message._thread_id,
-                "connection_id": self.context.connection_record.connection_id
-            }
+                "connection_id": self.context.connection_record.connection_id,
+            },
         )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_STORED
-        await credential_exchange_record.save(
-            self.context,
-            reason="credential stored"
-        )
+        await credential_exchange_record.save(self.context, reason="credential stored")
 
         return credential_exchange_record
