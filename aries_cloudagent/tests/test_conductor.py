@@ -305,7 +305,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 r_future = await conductor.inbound_message_router(
                     message_body, transport, single_response=delivery_future
                 )
-                r_future_result = await r_future
+                r_future_result = await r_future  # required for test passing.
                 mock_delivery_queue.return_value.has_message_for_key.assert_called_once_with(
                     sender_pk.value
                 )
