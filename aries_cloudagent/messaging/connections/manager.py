@@ -911,8 +911,6 @@ class ConnectionManager:
         for service in doc.service.values():
             if not service.recip_keys:
                 raise ConnectionManagerError("DIDDoc service has no recipient key(s)")
-            if not service.endpoint:
-                raise ConnectionManagerError("DIDDoc service has no service endpoint")
 
             return ConnectionTarget(
                 did=doc.did,
