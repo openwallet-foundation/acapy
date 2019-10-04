@@ -117,6 +117,14 @@ class SocketInfo:
             ):
                 return True
             if (
+                mode == self.REPLY_MODE_ALL
+                and message.target
+                and message.target.recipient_keys
+                and any(True for k in message.target.recipient_keys
+                        if k in self.reply_verkeys)
+            ):
+                return True
+            if (
                 mode == self.REPLY_MODE_THREAD
                 and message.reply_thread_id
                 and message.reply_thread_id in self.reply_thread_ids
