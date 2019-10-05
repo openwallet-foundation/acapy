@@ -108,7 +108,7 @@ class CredentialManager:
                     # It's possible that the cached credential expired
                     # and was deleted while we are waiting. In this case,
                     # it is time to issue a new credential offer.
-                    return
+                    break
 
                 if source_credential_exchange.credential_request:
                     break
