@@ -558,11 +558,23 @@ class CredentialManager:
                     parent_credential_exchange_record.credential_id
                     != in_use_parent_exchange_id
                 ):
-                    await parent_credential_exchange_record.delete_record(self.context)
+                    try:
+                        await parent_credential_exchange_record.delete_record(
+                            self.context
+                        )
+                    except StorageNotFoundError:
+                        # It's possible for another thread to have already deleted
+                        # this record
+                        pass
 
                 # We also delete the current record but only if it has a parent_id
                 # because we don't want to delete any new parents
-                await credential_exchange_record.delete_record(self.context)
+                try:
+                    await credential_exchange_record.delete_record(self.context)
+                except StorageNotFoundError:
+                    # It's possible for another thread to have already deleted
+                    # this record
+                    pass
 
         asyncio.ensure_future(remove_record())
 
@@ -611,8 +623,18 @@ class CredentialManager:
             # If "this" record's parent isn't the cached record, the cache has
             # expired so we can delete it
             if parent_credential_exchange_record.credential_id != cached_credential_id:
-                await parent_credential_exchange_record.delete_record(self.context)
+                try:
+                    await parent_credential_exchange_record.delete_record(self.context)
+                except StorageNotFoundError:
+                    # It's possible for another thread to have already deleted
+                    # this record
+                    pass
 
             # We also delete the current record but only if it has a parent_id
             # because we don't want to delete any new parents
-            await credential_exchange_record.delete_record(self.context)
+            try:
+                await credential_exchange_record.delete_record(self.context)
+            except StorageNotFoundError:
+                # It's possible for another thread to have already deleted
+                # this record
+                pass
