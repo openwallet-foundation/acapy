@@ -93,16 +93,23 @@ class CredentialManager:
         source_credential_exchange = None
 
         if source_credential_exchange_id:
-
             # The cached credential exchange ID may not have an associated credential
             # request yet. Wait up to 30 seconds for that to be populated, then
             # move on and replace it as the cached credential exchange
-
             lookup_start = time.perf_counter()
             while True:
-                source_credential_exchange = await CredentialExchange.retrieve_by_id(
-                    self._context, source_credential_exchange_id
-                )
+                try:
+                    (
+                        source_credential_exchange
+                    ) = await CredentialExchange.retrieve_by_id(
+                        self._context, source_credential_exchange_id
+                    )
+                except StorageNotFoundError:
+                    # It's possible that the cached credential expired
+                    # and was deleted while we are waiting. In this case,
+                    # it is time to issue a new credential offer.
+                    return
+
                 if source_credential_exchange.credential_request:
                     break
                 if lookup_start + 30 < time.perf_counter():
@@ -523,12 +530,19 @@ class CredentialManager:
             # Get parent exchange record if parent id exists
             parent_thread_id = credential_exchange_record.parent_thread_id
             if parent_thread_id:
-                (
-                    parent_credential_exchange_record
-                ) = await CredentialExchange.retrieve_by_tag_filter(
-                    self.context,
-                    tag_filter={"thread_id": parent_thread_id, "initiator": "external"},
-                )
+                try:
+                    (
+                        parent_credential_exchange_record
+                    ) = await CredentialExchange.retrieve_by_tag_filter(
+                        self.context,
+                        tag_filter={
+                            "thread_id": parent_thread_id,
+                            "initiator": "external",
+                        },
+                    )
+                except StorageNotFoundError:
+                    # If this record doesn't exist, it's already been deleted
+                    return
 
                 # Get cached id
                 cache: BaseCache = await self._context.inject(BaseCache)
@@ -548,7 +562,7 @@ class CredentialManager:
 
                 # We also delete the current record but only if it has a parent_id
                 # because we don't want to delete any new parents
-                credential_exchange_record.delete_record(self.context)
+                await credential_exchange_record.delete_record(self.context)
 
         asyncio.ensure_future(remove_record())
 
@@ -575,12 +589,16 @@ class CredentialManager:
         # Get parent exchange record if parent id exists
         parent_thread_id = credential_exchange_record.parent_thread_id
         if parent_thread_id:
-            (
-                parent_credential_exchange_record
-            ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context,
-                tag_filter={"thread_id": parent_thread_id, "initiator": "self"},
-            )
+            try:
+                (
+                    parent_credential_exchange_record
+                ) = await CredentialExchange.retrieve_by_tag_filter(
+                    self.context,
+                    tag_filter={"thread_id": parent_thread_id, "initiator": "self"},
+                )
+            except StorageNotFoundError:
+                # If this record doesn't exist, it's already been deleted
+                return
 
             # Get cached id
             cache: BaseCache = await self._context.inject(BaseCache)
@@ -597,4 +615,4 @@ class CredentialManager:
 
             # We also delete the current record but only if it has a parent_id
             # because we don't want to delete any new parents
-            credential_exchange_record.delete_record(self.context)
+            await credential_exchange_record.delete_record(self.context)
