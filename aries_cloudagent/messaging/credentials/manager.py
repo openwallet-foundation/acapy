@@ -585,9 +585,22 @@ class CredentialManager:
                     # If this credential isn't in the cache and there are no child
                     # records which reference this as parent, we can delete
                     if len(child_records) == 0:
-                        await old_credential_exchange_record.delete_record(self.context)
+                        try:
+                            await old_credential_exchange_record.delete_record(
+                                self.context
+                            )
+                            self._logger.info(
+                                "Parent credential exchange record successfully deleted"
+                            )
+                        except StorageNotFoundError:
+                            # It's possible for another thread to have already deleted
+                            # this record
+                            self._logger.info(
+                                "Failed to delete parent credential exchange record"
+                            )
+                            pass
 
-        asyncio.ensure_future(remove_record())
+        # asyncio.ensure_future(remove_record())
 
         return credential_exchange_record, credential_stored_message
 
@@ -659,4 +672,15 @@ class CredentialManager:
                 # If this credential isn't in the cache and there are no child
                 # records which reference this as parent, we can delete
                 if len(child_records) == 0:
-                    await old_credential_exchange_record.delete_record(self.context)
+                    try:
+                        await old_credential_exchange_record.delete_record(self.context)
+                        self._logger.info(
+                            "Parent credential exchange record successfully deleted"
+                        )
+                    except StorageNotFoundError:
+                        # It's possible for another thread to have already deleted
+                        # this record
+                        self._logger.info(
+                            "Failed to delete parent credential exchange record"
+                        )
+                        pass
