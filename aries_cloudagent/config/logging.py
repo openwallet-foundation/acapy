@@ -74,6 +74,7 @@ class LoggingConfigurator:
         if log_level:
             log_level = log_level.upper()
             logging.root.setLevel(log_level)
+            logging.getLogger("indy").setLevel(logging.CRITICAL)
 
     @classmethod
     def print_banner(
