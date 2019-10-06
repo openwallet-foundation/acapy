@@ -13,6 +13,6 @@ pydocstyle==3.0.0
 sphinx==1.8.4
 sphinx-rtd-theme>=0.4.3
 
-ptvsd>=4.2<5.0
+ptvsd==4.3.2
 pydevd==1.5.1
 
