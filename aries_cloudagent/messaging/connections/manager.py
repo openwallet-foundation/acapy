@@ -68,7 +68,7 @@ class ConnectionManager:
         accept: str = None,
         public: bool = False,
         multi_use: bool = False,
-        alias: str = None
+        alias: str = None,
     ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -161,7 +161,7 @@ class ConnectionManager:
             state=ConnectionRecord.STATE_INVITATION,
             accept=accept,
             invitation_mode=invitation_mode,
-            alias=alias
+            alias=alias,
         )
 
         await connection.save(self.context, reason="Created new invitation")
@@ -217,7 +217,7 @@ class ConnectionManager:
             their_role=their_role,
             state=ConnectionRecord.STATE_INVITATION,
             accept=accept,
-            alias=alias
+            alias=alias,
         )
 
         await connection.save(
@@ -357,7 +357,7 @@ class ConnectionManager:
 
                 await new_connection.save(
                     self.context,
-                    reason="Received connection request from multi-use invitation DID"
+                    reason="Received connection request from multi-use invitation DID",
                 )
                 connection = new_connection
 
@@ -565,6 +565,52 @@ class ConnectionManager:
 
         return connection
 
+    async def create_static_connection(
+        self,
+        my_seed: str,
+        their_seed: str,
+        their_endpoint: str,
+        their_role: str = None,
+        their_label: str = None,
+        alias: str = None,
+    ) -> ConnectionRecord:
+        """
+        Register a new static connection (for use by the test suite).
+
+        Args:
+            my_seed: the seed used to generate our DID and keys
+            their_seed: the seed used to generate their DID and keys
+            their_endpoint: their URL endpoint
+            their_role: their role in this connection
+            their_label: their connection label
+            alias: an alias for this connection record
+
+        Returns:
+            The new `ConnectionRecord` instance
+
+        """
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+
+        my_info = await wallet.create_local_did(my_seed)
+        their_info = await wallet.create_local_did(their_seed)
+
+        # Create connection record
+        connection = ConnectionRecord(
+            initiator=ConnectionRecord.INITIATOR_SELF,
+            my_did=my_info.did,
+            their_did=their_info.did,
+            their_role=their_role,
+            state=ConnectionRecord.STATE_ACTIVE,
+            alias=alias,
+        )
+        await connection.save(self.context, reason="Created new static connection")
+
+        # Synthesize their DID doc
+        did_doc = await self.create_did_document(their_info, None, their_endpoint)
+        await self.store_did_document(did_doc)
+
+        return connection
+
     async def find_connection(
         self,
         their_did: str,
@@ -675,27 +721,27 @@ class ConnectionManager:
 
     async def create_did_document(
         self,
-        my_info: DIDInfo,
+        did_info: DIDInfo,
         inbound_connection_id: str = None,
-        my_endpoint: str = None,
+        svc_endpoint: str = None,
     ) -> DIDDoc:
         """Create our DID document for a given DID.
 
         Args:
-            my_info: The DID I am using in this connection
-            inbound_connection_id: The inbound routing connection id to use
-            my_endpoint: A custom endpoint for the DID Document
+            did_info: The DID information (DID and verkey) used in the connection
+            inbound_connection_id: The ID of the inbound routing connection to use
+            svc_endpoint: A custom endpoint for the DID Document
 
         Returns:
             The prepared `DIDDoc` instance
 
         """
 
-        did_doc = DIDDoc(did=my_info.did)
-        did_controller = my_info.did
-        did_key = my_info.verkey
+        did_doc = DIDDoc(did=did_info.did)
+        did_controller = did_info.did
+        did_key = did_info.verkey
         pk = PublicKey(
-            my_info.did,
+            did_info.did,
             "1",
             did_key,
             PublicKeyType.ED25519_SIG_2018,
@@ -729,7 +775,7 @@ class ConnectionManager:
                         "Routing DIDDoc service has no recipient key(s)"
                     )
                 rk = PublicKey(
-                    my_info.did,
+                    did_info.did,
                     f"routing-{router_idx}",
                     service.recip_keys[0].value,
                     PublicKeyType.ED25519_SIG_2018,
@@ -737,14 +783,14 @@ class ConnectionManager:
                     True,
                 )
                 routing_keys.append(rk)
-                my_endpoint = service.endpoint
+                svc_endpoint = service.endpoint
                 break
             router_id = router.inbound_connection_id
 
-        if not my_endpoint:
-            my_endpoint = self.context.settings.get("default_endpoint")
+        if not svc_endpoint:
+            svc_endpoint = self.context.settings.get("default_endpoint")
         service = Service(
-            my_info.did, "indy", "IndyAgent", [pk], routing_keys, my_endpoint
+            did_info.did, "indy", "IndyAgent", [pk], routing_keys, svc_endpoint
         )
         did_doc.set(service)
 
