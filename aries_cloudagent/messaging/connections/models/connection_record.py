@@ -13,7 +13,7 @@ from ....storage.record import StorageRecord
 
 from ...models.base_record import BaseRecord, BaseRecordSchema
 from ...util import time_now
-from ...valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUID4
+from ...valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
@@ -380,7 +380,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
     connection_id = fields.Str(
         required=False,
         description="Connection identifier",
-        **UUID4
+        example=UUIDFour.EXAMPLE,
     )
     my_did = fields.Str(
         required=False,
@@ -405,7 +405,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
     inbound_connection_id = fields.Str(
         required=False,
         description="Inbound routing connection id to use",
-        **UUID4
+        example=UUIDFour.EXAMPLE,
     )
     initiator = fields.Str(
         required=False,
@@ -421,7 +421,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
     request_id = fields.Str(
         required=False,
         description="Connection request identifier",
-        **UUID4
+        example=UUIDFour.EXAMPLE,
     )
     routing_state = fields.Str(
         required=False,

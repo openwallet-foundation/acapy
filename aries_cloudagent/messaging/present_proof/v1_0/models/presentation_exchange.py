@@ -4,7 +4,7 @@ from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from ....models.base_record import BaseRecord, BaseRecordSchema
-from ....valid import UUID4
+from ....valid import UUIDFour
 
 
 class V10PresentationExchange(BaseRecord):
@@ -102,17 +102,17 @@ class V10PresentationExchangeSchema(BaseRecordSchema):
     presentation_exchange_id = fields.Str(
         required=False,
         description="Presentation exchange identifier",
-        **UUID4
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
     )
     connection_id = fields.Str(
         required=False,
         description="Connection identifier",
-        **UUID4
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
     )
     thread_id = fields.Str(
         required=False,
         description="Thread identifier",
-        **UUID4
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
     )
     initiator = fields.Str(
         required=False,

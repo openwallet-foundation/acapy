@@ -8,7 +8,7 @@ from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUID4
+from ..valid import UUIDFour
 
 
 class TransportDecorator(BaseModel):
@@ -57,7 +57,7 @@ class TransportDecoratorSchema(BaseModelSchema):
     return_route_thread = fields.Str(
         required=False,
         description="Identifier for thread for which to enable return routing",
-        example=UUID4["example"],
+        example=UUIDFour.EXAMPLE,
     )
     queued_message_count = fields.Int(
         required=False,
