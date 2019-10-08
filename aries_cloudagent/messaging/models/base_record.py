@@ -17,6 +17,7 @@ from ...storage.record import StorageRecord
 from .base import BaseModel, BaseModelSchema
 from ..responder import BaseResponder
 from ..util import datetime_to_str, time_now
+from ..valid import INDY_ISO8601_DATETIME
 
 
 class BaseRecord(BaseModel):
@@ -400,6 +401,18 @@ class BaseRecordSchema(BaseModelSchema):
     class Meta:
         """BaseRecordSchema metadata."""
 
-    state = fields.Str(required=False)
-    created_at = fields.Str(required=False)
-    updated_at = fields.Str(required=False)
+    state = fields.Str(
+        required=False,
+        description="Current record state",
+        example="active",
+    )
+    created_at = fields.Str(
+        required=False,
+        description="Time of record creation",
+        **INDY_ISO8601_DATETIME
+    )
+    updated_at = fields.Str(
+        required=False,
+        description="Time of last record update",
+        **INDY_ISO8601_DATETIME
+    )

@@ -5,6 +5,7 @@ from typing import Sequence
 from marshmallow import fields
 
 from ...models.base import BaseModel, BaseModelSchema
+from ...valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 
 
 class ConnectionTarget(BaseModel):
@@ -51,9 +52,40 @@ class ConnectionTargetSchema(BaseModelSchema):
 
         model_class = ConnectionTarget
 
-    did = fields.Str(required=False)
-    endpoint = fields.Str(required=False)
-    label = fields.Str(required=False)
-    recipient_keys = fields.List(fields.Str(), required=False)
-    routing_keys = fields.List(fields.Str(), required=False)
-    sender_key = fields.Str(required=False)
+    did = fields.Str(
+        required=False,
+        description="",
+        **INDY_DID
+    )
+    endpoint = fields.Str(
+        required=False,
+        description="Connection endpoint",
+        example="http://192.168.56.102:8020",
+    )
+    label = fields.Str(
+        required=False,
+        description="Connection label",
+        example="Bob"
+    )
+    recipient_keys = fields.List(
+        fields.Str(
+            description="Recipient public key",
+            **INDY_RAW_PUBLIC_KEY
+        ),
+        required=False,
+        description="List of recipient keys"
+    )
+    routing_keys = fields.List(
+        fields.Str(
+            description="Routing key",
+            **INDY_RAW_PUBLIC_KEY
+        ),
+        data_key="routingKeys",
+        required=False,
+        description="List of routing keys",
+    )
+    sender_key = fields.Str(
+        required=False,
+        description="Sender public key",
+        **INDY_RAW_PUBLIC_KEY
+    )

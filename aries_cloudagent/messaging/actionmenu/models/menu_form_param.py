@@ -31,6 +31,9 @@ class MenuFormParam(BaseModel):
             title: The parameter title
             default: A default value for the parameter
             description: Additional descriptive text for the menu form parameter
+            input_type: Input type
+            required: Whether the parameter is required
+
         """
         self.name = name
         self.title = title
@@ -48,9 +51,34 @@ class MenuFormParamSchema(BaseModelSchema):
 
         model_class = MenuFormParam
 
-    name = fields.Str(required=True)
-    title = fields.Str(required=True)
-    default = fields.Str(required=False)
-    description = fields.Str(required=False)
-    input_type = fields.Str(required=False, data_key="type")
-    required = fields.Bool(required=False)
+    name = fields.Str(
+        required=True,
+        description="Menu parameter name",
+        example="delay",
+    )
+    title = fields.Str(
+        required=True,
+        description="Menu parameter title",
+        example="Delay in seconds"
+    )
+    default = fields.Str(
+        required=False,
+        description="Default parameter value",
+        example="0",
+    )
+    description = fields.Str(
+        required=False,
+        description="Additional descriptive text for menu form parameter",
+        example="Delay in seconds before starting",
+    )
+    input_type = fields.Str(
+        required=False,
+        description="Menu form parameter input type",
+        example="int",
+        data_key="type",
+    )
+    required = fields.Bool(
+        required=False,
+        description="Whether parameter is required",
+        example="False",
+    )

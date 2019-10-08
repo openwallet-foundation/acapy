@@ -7,12 +7,13 @@ from aiohttp_apispec import docs, request_schema
 
 from marshmallow import fields, Schema
 
+from ...storage.error import StorageNotFoundError
 from ..connections.models.connection_record import ConnectionRecord
+from ..valid import UUIDFour
 from .messages.menu import Menu
 from .messages.menu_request import MenuRequest
 from .messages.perform import Perform
 from .models.menu_option import MenuOptionSchema
-from ...storage.error import StorageNotFoundError
 from .util import retrieve_connection_menu, save_connection_menu
 
 LOGGER = logging.getLogger(__name__)
@@ -21,23 +22,48 @@ LOGGER = logging.getLogger(__name__)
 class PerformRequestSchema(Schema):
     """Request schema for performing a menu action."""
 
-    name = fields.Str()
-    params = fields.Dict(required=False)
+    name = fields.Str(description="Menu option name", example="Query")
+    params = fields.Dict(
+        description=("Input parameter values"),
+        required=False,
+        keys=fields.Str(example="parameter"),  # marshmallow/apispec v3.0 ignores
+        values=fields.Str(example=UUIDFour.EXAMPLE),
+    )
 
 
 class MenuJsonSchema(Schema):
     """Matches MenuSchema but without the inherited AgentMessage properties."""
 
-    title = fields.Str(required=False)
-    description = fields.Str(required=False)
-    errormsg = fields.Str(required=False)
-    options = fields.List(fields.Nested(MenuOptionSchema), required=True)
+    title = fields.Str(
+        required=False,
+        description="Menu title",
+        example="My Menu",
+    )
+    description = fields.Str(
+        required=False,
+        description="Introductory text for the menu",
+        example="User preferences for window settings",
+    )
+    errormsg = fields.Str(
+        required=False,
+        description="Optional error message to display in menu header",
+        example="Error: item not present",
+    )
+    options = fields.List(
+        fields.Nested(MenuOptionSchema),
+        required=True,
+        description="List of menu options",
+    )
 
 
 class SendMenuSchema(Schema):
     """Request schema for sending a menu to a connection."""
 
-    menu = fields.Nested(MenuJsonSchema(), required=True)
+    menu = fields.Nested(
+        MenuJsonSchema(),
+        required=True,
+        description="Menu to send to connection",
+    )
 
 
 @docs(

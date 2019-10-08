@@ -9,23 +9,62 @@ from marshmallow import fields, Schema
 
 from ...ledger.base import BaseLedger
 
+from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
+
 
 class CredentialDefinitionSendRequestSchema(Schema):
     """Request schema for schema send request."""
 
-    schema_id = fields.Str()
+    schema_id = fields.Str(
+        description="Schema identifier",
+        **INDY_SCHEMA_ID
+    )
 
 
 class CredentialDefinitionSendResultsSchema(Schema):
     """Results schema for schema send request."""
 
-    credential_definition_id = fields.Str()
+    credential_definition_id = fields.Str(
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID
+    )
+
+
+class CredentialDefinitionSchema(Schema):
+    """Credential definition schema."""
+
+    ver = fields.Str(
+        description="Node protocol version",
+        **INDY_VERSION
+    )
+    ident = fields.Str(
+        description="Credential definition identifier",
+        data_key="id",
+        **INDY_CRED_DEF_ID
+    )
+    schemaId = fields.Str(
+        description="Schema identifier within credential definition identifier",
+        example=":".join(INDY_CRED_DEF_ID["example"].split(":")[3:-1])  # long or short
+    )
+    typ = fields.Constant(
+        constant="CL",
+        description="Signature type: CL for Camenisch-Lysyanskaya",
+        data_key="type",
+        example="CL",
+    )
+    tag = fields.Str(
+        description="Tag within credential definition identifier",
+        example=INDY_CRED_DEF_ID["example"].split(":")[-1]
+    )
+    value = fields.Dict(
+        description="Credential definition primary and revocation values"
+    )
 
 
 class CredentialDefinitionGetResultsSchema(Schema):
     """Results schema for schema get request."""
 
-    credential_definition = fields.Dict()
+    credential_definition = fields.Nested(CredentialDefinitionSchema)
 
 
 @docs(

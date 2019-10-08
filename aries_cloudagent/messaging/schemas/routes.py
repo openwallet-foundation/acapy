@@ -8,26 +8,78 @@ from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
 
 from ...ledger.base import BaseLedger
+from ..valid import INDY_SCHEMA_ID, INDY_VERSION
 
 
 class SchemaSendRequestSchema(Schema):
     """Request schema for schema send request."""
 
-    schema_name = fields.Str(required=True)
-    schema_version = fields.Str(required=True)
-    attributes = fields.List(fields.Str(), required=True)
+    schema_name = fields.Str(
+        required=True,
+        description="Schema name",
+        example="prefs",
+    )
+    schema_version = fields.Str(
+        required=True,
+        description="Schema version",
+        **INDY_VERSION
+    )
+    attributes = fields.List(
+        fields.Str(
+            description="attribute name",
+            example="score",
+        ),
+        required=True,
+        description="List of schema attributes"
+    )
 
 
 class SchemaSendResultsSchema(Schema):
     """Results schema for schema send request."""
 
-    schema_id = fields.Str()
+    schema_id = fields.Str(
+        description="Schema identifier",
+        **INDY_SCHEMA_ID
+    )
+
+
+class SchemaSchema(Schema):
+    """Content for returned schema."""
+
+    ver = fields.Str(
+        description="Node protocol version",
+        **INDY_VERSION
+    )
+    ident = fields.Str(
+        data_key="id",
+        description="Schema identifier",
+        **INDY_SCHEMA_ID
+    )
+    name = fields.Str(
+        description="Schema name",
+        example=INDY_SCHEMA_ID["example"].split(":")[2],
+    )
+    version = fields.Str(
+        description="Schema version",
+        **INDY_VERSION
+    )
+    attr_names = fields.List(
+        fields.Str(
+            description="Attribute name",
+            example="score",
+        ),
+        description="Schema attribute names",
+    )
+    seqNo = fields.Integer(
+        description="Schema sequence number",
+        example=999
+    )
 
 
 class SchemaGetResultsSchema(Schema):
     """Results schema for schema get request."""
 
-    schema_json = fields.Dict()
+    schema_json = fields.Nested(SchemaSchema())
 
 
 @docs(tags=["schema"], summary="Sends a schema to the ledger")

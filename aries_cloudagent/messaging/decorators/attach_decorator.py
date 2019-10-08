@@ -242,4 +242,7 @@ class AttachDecoratorSchema(BaseModelSchema):
         example="view from doorway, facing east, with lights off",
         required=False
     )
-    data = fields.Nested(AttachDecoratorDataSchema, required=True)
+    data = fields.Nested(
+        AttachDecoratorDataSchema,
+        required=True,
+    )
