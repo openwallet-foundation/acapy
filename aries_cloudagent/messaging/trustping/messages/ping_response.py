@@ -41,4 +41,9 @@ class PingResponseSchema(AgentMessageSchema):
 
         model_class = PingResponse
 
-    comment = fields.Str(required=False, allow_none=True)
+    comment = fields.Str(
+        required=False,
+        description="Optional comment to include",
+        example="Hello",
+        allow_none=True,
+    )

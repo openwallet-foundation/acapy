@@ -35,8 +35,22 @@ class IndyDID(Regexp):
         """Initializer."""
 
         super().__init__(
-            rf"^[{B58}]{{21,22}}$",
+            rf"^(did:sov:)?[{B58}]{{21,22}}$",
             error="Value {input} is not an indy decentralized identifier (DID)."
+        )
+
+
+class IndyRawPublicKey(Regexp):
+    """Validate value against indy (Ed25519VerificationKey2018) raw public key."""
+
+    EXAMPLE = "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            rf"^[{B58}]{{43,44}}$",
+            error="Value {input} is not a raw Ed25519VerificationKey2018 key."
         )
 
 
@@ -88,6 +102,25 @@ class IndySchemaId(Regexp):
         )
 
 
+class IndyRevRegId(Regexp):
+    """Validate value against indy revocation registry identifier specification."""
+
+    EXAMPLE = f"WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            (
+                rf"^([{B58}]{{21,22}}):4:"
+                rf"([{B58}]{{21,22}}):3:"
+                rf"CL:(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))(:.+)?:"
+                rf"CL_ACCUM:.+$"
+            ),
+            error="Value {input} is not an indy revocation registry identifier."
+        )
+
+
 class IndyPredicate(OneOf):
     """Validate value against indy predicate."""
 
@@ -111,8 +144,8 @@ class IndyISO8601DateTime(Regexp):
         """Initializer."""
 
         super().__init__(
-            r"^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)"
-            r"(?:\:(\d\d(?:\.\d{1,6})?))?([+-]\d\d:?\d\d|Z)$",
+            r"^\d{4}-\d\d-\d\d[T ]\d\d:\d\d"
+            r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z)$",
             error="Value {input} is not a date in valid format."
         )
 
@@ -127,7 +160,29 @@ class Base64(Regexp):
 
         super().__init__(
             r"^[a-zA-Z0-9+/]*={0,2}$",
-            error="Value is not a valid base64 encoding"
+            error="Value {input} is not a valid base64 encoding"
+        )
+
+    def __call__(self, value):
+        """Validate input value."""
+
+        if value is None or len(value) % 4:
+            raise ValidationError(self.error)
+
+        return super().__call__(value)
+
+
+class Base64URL(Regexp):
+    """Validate base64 value."""
+
+    EXAMPLE = "ey4uLn0="
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            r"^[-_a-zA-Z0-9]*={0,2}$",
+            error="Value {input} is not a valid base64url encoding"
         )
 
     def __call__(self, value):
@@ -149,7 +204,25 @@ class SHA256Hash(Regexp):
 
         super().__init__(
             r"^[a-fA-F0-9+/]{64}$",
-            error="Value is not a valid (binhex-encoded) SHA-256 hash"
+            error="Value {input} is not a valid (binhex-encoded) SHA-256 hash"
+        )
+
+
+class UUIDFour(Regexp):
+    """Validate UUID4: 8-4-4-4-12 hex digits, the 13th of which being 4."""
+
+    EXAMPLE = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            r"[a-fA-F0-9]{8}-"
+            r"[a-fA-F0-9]{4}-"
+            r"4[a-fA-F0-9]{3}-"
+            r"[a-fA-F0-9]{4}-"
+            r"[a-fA-F0-9]{12}",
+            error="Value {input} is not a UUID4 (8-4-4-4-12 hex digits with digit#13=4)"
         )
 
 
@@ -162,17 +235,25 @@ INDY_DID = {
     "validate": IndyDID(),
     "example": IndyDID.EXAMPLE
 }
-INDY_CRED_DEF_ID = {
-    "validate": IndyCredDefId(),
-    "example": IndyCredDefId.EXAMPLE
-}
-INDY_VERSION = {
-    "validate": IndyVersion(),
-    "example": IndyVersion.EXAMPLE
+INDY_RAW_PUBLIC_KEY = {
+    "validate": IndyRawPublicKey(),
+    "example": IndyRawPublicKey.EXAMPLE
 }
 INDY_SCHEMA_ID = {
     "validate": IndySchemaId(),
     "example": IndySchemaId.EXAMPLE
+}
+INDY_CRED_DEF_ID = {
+    "validate": IndyCredDefId(),
+    "example": IndyCredDefId.EXAMPLE
+}
+INDY_REV_REG_ID = {
+    "validate": IndyRevRegId(),
+    "example": IndyRevRegId.EXAMPLE
+}
+INDY_VERSION = {
+    "validate": IndyVersion(),
+    "example": IndyVersion.EXAMPLE
 }
 INDY_PREDICATE = {
     "validate": IndyPredicate(),
@@ -186,7 +267,15 @@ BASE64 = {
     "validate": Base64(),
     "example": Base64.EXAMPLE
 }
+BASE64URL = {
+    "validate": Base64URL(),
+    "example": Base64.EXAMPLE
+}
 SHA256 = {
     "validate": SHA256Hash(),
     "example": SHA256Hash.EXAMPLE
+}
+UUID4 = {
+    "validate": UUIDFour(),
+    "example": UUIDFour.EXAMPLE
 }

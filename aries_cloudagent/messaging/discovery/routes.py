@@ -11,7 +11,11 @@ from ..protocol_registry import ProtocolRegistry
 class QueryResultSchema(Schema):
     """Result schema for the protocol list."""
 
-    results = fields.Dict(fields.Str(), fields.Dict())
+    results = fields.Dict(
+        keys=fields.Str(description="protocol"),
+        values=fields.Dict(description="Protocol descriptor"),
+        description="Query results keyed by protocol",
+    )
 
 
 @docs(

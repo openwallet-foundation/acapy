@@ -36,6 +36,7 @@ class ConnectionRequest(AgentMessage):
         Args:
             connection (ConnectionDetail): Connection details object
             label: Label for this connection request
+            image_url: Optional image URL for this connection request
         """
         super(ConnectionRequest, self).__init__(**kwargs)
         self.connection = connection
@@ -50,6 +51,19 @@ class ConnectionRequestSchema(AgentMessageSchema):
 
         model_class = ConnectionRequest
 
-    connection = fields.Nested(ConnectionDetailSchema, required=True)
-    label = fields.Str(required=True)
-    image_url = fields.Str(data_key="imageUrl", required=False, allow_none=True)
+    connection = fields.Nested(
+        ConnectionDetailSchema,
+        required=True,
+    )
+    label = fields.Str(
+        required=True,
+        description="Label for connection request",
+        example="Request to connect with Bob",
+    )
+    image_url = fields.Str(
+        data_key="imageUrl",
+        required=False,
+        description="Optional image URL for connection request",
+        example="http://192.168.56.101/img/logo.jpg",
+        allow_none=True,
+    )

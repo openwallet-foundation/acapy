@@ -5,27 +5,39 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
+from ...storage.error import StorageNotFoundError
+
+from ..valid import UUIDFour
+
 from .manager import ConnectionManager
 from .messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
 from .models.connection_record import ConnectionRecord, ConnectionRecordSchema
-from ...storage.error import StorageNotFoundError
 
 
 class ConnectionListSchema(Schema):
     """Result schema for connection list."""
 
-    results = fields.List(fields.Nested(ConnectionRecordSchema()))
+    results = fields.List(
+        fields.Nested(ConnectionRecordSchema()),
+        description="List of connection records",
+    )
 
 
 class InvitationResultSchema(Schema):
     """Result schema for a new connection invitation."""
 
-    connection_id = fields.Str()
+    connection_id = fields.Str(
+        description="Connection identifier",
+        example=UUIDFour.EXAMPLE,
+    )
     invitation = fields.Nested(ConnectionInvitationSchema())
-    invitation_url = fields.Str()
+    invitation_url = fields.Str(
+        description="Invitation URL",
+        example="http:192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ=="
+    )
 
 
 def connection_sort_key(conn):
