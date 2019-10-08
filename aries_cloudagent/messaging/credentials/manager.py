@@ -109,7 +109,8 @@ class CredentialManager:
                     # and was deleted while we are waiting. In this case,
                     # it is time to issue a new credential offer.
                     self._logger.info(
-                        "Credential exchange deleted while waiting for credential request"
+                        "Credential exchange deleted while"
+                        + " waiting for credential request"
                     )
                     break
 
