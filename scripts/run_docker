@@ -19,5 +19,11 @@ if [ ! -z "${WEBHOOK_URL}" ]; then
 	ARGS="${ARGS} -e WEBHOOK_URL=\"${WEBHOOK_URL}\""
 fi
 
+if [ "$OSTYPE" == "msys" ]; then
+  DOCKER="winpty docker"
+else
+  DOCKER="docker"
+fi
+
 RAND_NAME=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
-docker run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" $ARGS aries-cloudagent-run "$@"
+$DOCKER run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" $ARGS aries-cloudagent-run "$@"
