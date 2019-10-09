@@ -6,6 +6,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 from marshmallow import ValidationError, fields, validates_schema
 
 from ...agent_message import AgentMessage, AgentMessageSchema
+from ...valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 from ..message_types import CONNECTION_INVITATION
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 
@@ -45,6 +46,7 @@ class ConnectionInvitation(AgentMessage):
             recipient_keys: List of recipient keys
             endpoint: Endpoint which this agent can be reached at
             routing_keys: List of routing keys
+            image_url: Optional image URL for connection invitation
         """
         super(ConnectionInvitation, self).__init__(**kwargs)
         self.label = label
@@ -94,12 +96,47 @@ class ConnectionInvitationSchema(AgentMessageSchema):
 
         model_class = ConnectionInvitation
 
-    label = fields.Str()
-    did = fields.Str(required=False)
-    recipient_keys = fields.List(fields.Str(), data_key="recipientKeys", required=False)
-    endpoint = fields.Str(data_key="serviceEndpoint", required=False)
-    routing_keys = fields.List(fields.Str(), data_key="routingKeys", required=False)
-    image_url = fields.Str(data_key="imageUrl", required=False, allow_none=True)
+    label = fields.Str(
+        required=False,
+        description="Optional label for connection",
+        example="Bob",
+    )
+    did = fields.Str(
+        required=False,
+        description="DID for connection invitation",
+        **INDY_DID
+    )
+    recipient_keys = fields.List(
+        fields.Str(
+            description="Recipient public key",
+            **INDY_RAW_PUBLIC_KEY
+        ),
+        data_key="recipientKeys",
+        required=False,
+        description="List of recipient keys",
+    )
+    endpoint = fields.Str(
+        data_key="serviceEndpoint",
+        required=False,
+        description="Service endpoint at which to reach this agent",
+        example="http://192.168.56.101:8020",
+    )
+    routing_keys = fields.List(
+        fields.Str(
+            description="Routing key",
+            **INDY_RAW_PUBLIC_KEY
+        ),
+        data_key="routingKeys",
+        required=False,
+        description="List of routing keys",
+    )
+    image_url = fields.URL(
+        data_key="imageUrl",
+        required=False,
+        allow_none=True,
+        description="Optional image URL for connection invitation",
+        example="http://192.168.56.101/img/logo.jpg",
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

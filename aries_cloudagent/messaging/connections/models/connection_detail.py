@@ -3,6 +3,7 @@
 from marshmallow import fields
 
 from ...models.base import BaseModel, BaseModelSchema
+from ...valid import INDY_DID
 
 from ..models.diddoc import DIDDoc
 
@@ -94,5 +95,14 @@ class ConnectionDetailSchema(BaseModelSchema):
 
         model_class = "ConnectionDetail"
 
-    did = fields.Str(data_key="DID", required=False)
-    did_doc = DIDDocWrapper(data_key="DIDDoc", required=False)
+    did = fields.Str(
+        data_key="DID",
+        required=False,
+        description="DID for connection detail",
+        **INDY_DID
+    )
+    did_doc = DIDDocWrapper(
+        data_key="DIDDoc",
+        required=False,
+        description="DID document for connection detail",
+    )

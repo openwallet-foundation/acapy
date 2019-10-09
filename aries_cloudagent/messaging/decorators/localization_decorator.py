@@ -23,7 +23,7 @@ class LocalizationDecorator(BaseModel):
         catalogs: Sequence[str] = None,
     ):
         """
-        Initialize a TimingDecorator instance.
+        Initialize a LocalizationDecorator instance.
 
         Args:
             locale: The locale of this message
@@ -45,6 +45,24 @@ class LocalizationDecoratorSchema(BaseModelSchema):
 
         model_class = LocalizationDecorator
 
-    locale = fields.Str(required=True)
-    localizable = fields.List(fields.Str(), required=False)
-    catalogs = fields.List(fields.Str(), required=False)
+    locale = fields.Str(
+        required=True,
+        description="Locale specifier",
+        example="en-CA",
+    )
+    localizable = fields.List(
+        fields.Str(
+            description="Localizable field",
+            example="note",
+        ),
+        required=False,
+        description="List of localizable fields",
+    )
+    catalogs = fields.List(
+        fields.Str(
+            description="",
+            example="https://192.168.56.111/my-project/catalog.json",
+        ),
+        required=False,
+        description="List of message catalog URIs",
+    )

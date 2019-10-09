@@ -13,6 +13,7 @@ from collections import OrderedDict
 import logging
 from typing import Coroutine, Union
 
+from .delivery_queue import DeliveryQueue
 from .admin.base_server import BaseAdminServer
 from .admin.server import AdminServer
 from .config.default_context import ContextBuilder
@@ -63,6 +64,7 @@ class Conductor:
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_transport_manager: OutboundTransportManager = None
         self.sockets = OrderedDict()
+        self.undelivered_queue: DeliveryQueue = None
 
     async def setup(self):
         """Initialize the global request context."""
@@ -71,6 +73,10 @@ class Conductor:
 
         # Populate message serializer
         self.message_serializer = await context.inject(MessageSerializer)
+
+        # Setup Delivery Queue
+        if context.settings.get("queue.enable_undelivered_queue"):
+            self.undelivered_queue = DeliveryQueue()
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -249,6 +255,7 @@ class Conductor:
             delivery.connection_id = connection.connection_id
 
         if single_response and not socket_id:
+            # if transport wasn't a socket, make a virtual socket used for responses
             socket = SocketInfo(single_response=single_response)
             socket_id = socket.socket_id
             self.sockets[socket_id] = socket
@@ -266,7 +273,7 @@ class Conductor:
                 socket_id = None
 
         delivery.socket_id = socket_id
-        socket = self.sockets[socket_id] if socket_id else None
+        socket: SocketInfo = self.sockets[socket_id] if socket_id else None
 
         if socket:
             socket.process_incoming(parsed_msg, delivery)
@@ -279,12 +286,47 @@ class Conductor:
                 delivery.transport_type,
             )
 
-        complete = await self.dispatcher.dispatch(
+        handler_done = await self.dispatcher.dispatch(
             parsed_msg, delivery, connection, self.outbound_message_router
         )
+        return asyncio.ensure_future(self.complete_dispatch(handler_done, socket))
+
+    async def complete_dispatch(self, dispatch: asyncio.Future, socket: SocketInfo):
+        """Wait for the dispatch to complete and perform final actions."""
+        await dispatch
+        await self.queue_processing(socket)
         if socket:
-            complete.add_done_callback(lambda fut: socket.dispatch_complete())
-        return complete
+            socket.dispatch_complete()
+
+    async def queue_processing(self, socket: SocketInfo):
+        """
+        Interact with undelivered queue to find applicable messages.
+
+        Args:
+            socket: The incoming socket connection
+        """
+        if (
+            socket
+            and socket.reply_mode
+            and not socket.closed
+            and self.undelivered_queue
+        ):
+            for key in socket.reply_verkeys:
+                if not isinstance(key, str):
+                    key = key.value
+                if self.undelivered_queue.has_message_for_key(key):
+                    for (
+                        undelivered_message
+                    ) in self.undelivered_queue.inspect_all_messages_for_key(key):
+                        # pending message. Transmit, then kill single_response
+                        if socket.select_outgoing(undelivered_message):
+                            self.logger.debug(
+                                "Sending Queued Message via inbound connection"
+                            )
+                            self.undelivered_queue.remove_message_for_key(
+                                key, undelivered_message
+                            )
+                            await socket.send(undelivered_message)
 
     async def get_connection_target(
         self, connection_id: str, context: InjectionContext = None
@@ -386,9 +428,7 @@ class Conductor:
         try:
             await self.prepare_outbound_message(message, context)
         except MessagePrepareError:
-            self.logger.exception(
-                "Error preparing outbound message for transmission"
-            )
+            self.logger.exception("Error preparing outbound message for transmission")
             return
 
         # deliver directly to endpoint
@@ -396,4 +436,6 @@ class Conductor:
             await self.outbound_transport_manager.send_message(message)
             return
 
-        self.logger.error("No endpoint or direct route for outbound message, dropped")
+        # Add message to outbound queue, indexed by key
+        if self.undelivered_queue:
+            self.undelivered_queue.add_message(message)

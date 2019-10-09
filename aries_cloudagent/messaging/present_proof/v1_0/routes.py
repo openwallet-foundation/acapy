@@ -19,7 +19,8 @@ from ...valid import (
     INDY_PREDICATE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
-    INT_EPOCH
+    INT_EPOCH,
+    UUIDFour,
 )
 
 from .manager import PresentationManager
@@ -47,7 +48,11 @@ class V10PresentationExchangeListSchema(Schema):
 class V10PresentationProposalRequestSchema(Schema):
     """Request schema for sending a presentation proposal admin message."""
 
-    connection_id = fields.UUID(description="Connection identifier", required=True)
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,
+    )
     comment = fields.Str(
         description="Human-readable comment",
         required=False,
@@ -132,7 +137,6 @@ class IndyProofReqAttrSpecSchema(Schema):
     )
     non_revoked = fields.Nested(
         IndyProofReqNonRevoked(),
-        description="Non-revocation times of interest for revocable credentials",
         required=False
     )
 
@@ -201,7 +205,11 @@ class IndyProofRequestSchema(Schema):
 class V10PresentationRequestRequestSchema(Schema):
     """Request schema for sending a proof request."""
 
-    connection_id = fields.UUID(description="Connection identifier", required=True)
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,
+    )
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
 
 

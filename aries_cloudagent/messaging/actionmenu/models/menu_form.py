@@ -48,7 +48,25 @@ class MenuFormSchema(BaseModelSchema):
 
         model_class = MenuForm
 
-    title = fields.Str(required=False)
-    description = fields.Str(required=False)
-    params = fields.List(fields.Nested(MenuFormParamSchema()), required=False)
-    submit_label = fields.Str(data_key="submit-label", required=False)
+    title = fields.Str(
+        required=False,
+        description="Menu form title",
+        example="Preferences",
+    )
+    description = fields.Str(
+        required=False,
+        description="Additional descriptive text for menu form",
+        example="Window preference settings",
+    )
+    params = fields.List(
+        fields.Nested(MenuFormParamSchema()),
+        required=False,
+        description="List of form parameters",
+        example="[alpha, x_offset, y_offset, height, width, bgcolor, fgcolor]",
+    )
+    submit_label = fields.Str(
+        required=False,
+        data_key="submit-label",
+        description="Alternative label for form submit button",
+        example="Send",
+    )

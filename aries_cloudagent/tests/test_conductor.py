@@ -4,6 +4,13 @@ from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from aries_cloudagent import messaging
+from aries_cloudagent.messaging.connections.models.diddoc import (
+    DIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
 from .. import conductor as test_module
 from ..admin.base_server import BaseAdminServer
 from ..config.base_context import ContextBuilder
@@ -31,6 +38,35 @@ class Config:
     bad_inbound_transports = {"transport.inbound_configs": [["bad", "host", 80]]}
     bad_outbound_transports = {"transport.outbound_configs": ["bad"]}
     test_settings = {}
+    test_settings_with_queue = {"queue.enable_undelivered_queue": True}
+
+
+class TestDIDs:
+
+    test_seed = "testseed000000000000000000000001"
+    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+    test_endpoint = "http://localhost"
+
+    test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
+    test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+
+    def make_did_doc(self, did, verkey):
+        doc = DIDDoc(did=did)
+        controller = did
+        ident = "1"
+        pk_value = verkey
+        pk = PublicKey(
+            did, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
+        )
+        doc.set(pk)
+        recip_keys = [pk]
+        router_keys = []
+        service = Service(
+            did, "indy", "IndyAgent", recip_keys, router_keys, self.test_endpoint
+        )
+        doc.set(service)
+        return doc, pk
 
 
 class StubContextBuilder(ContextBuilder):
@@ -58,7 +94,7 @@ class StubCollectorContextBuilder(StubContextBuilder):
         return context
 
 
-class TestConductor(AsyncTestCase, Config):
+class TestConductor(AsyncTestCase, Config, TestDIDs):
     async def test_startup(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings(self.good_inbound_transports)
@@ -195,6 +231,84 @@ class TestConductor(AsyncTestCase, Config):
             mock_outbound_mgr.return_value.send_message.assert_awaited_once_with(
                 message
             )
+
+    async def test_outbound_queue_add_with_no_endpoint(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings_with_queue)
+        conductor = test_module.Conductor(builder)
+        # set up relationship without endpoint
+        with async_mock.patch.object(
+            test_module, "DeliveryQueue", autospec=True
+        ) as mock_delivery_queue:
+
+            await conductor.setup()
+
+            sender_did_doc, sender_pk = self.make_did_doc(
+                self.test_did, self.test_verkey
+            )
+            target_did_doc, target_pk = self.make_did_doc(
+                self.test_target_did, self.test_target_verkey
+            )
+
+            payload = "{}"
+            target = ConnectionTarget(
+                recipient_keys=[target_pk], routing_keys=(), sender_key=sender_pk
+            )
+            message = OutboundMessage(payload=payload, target=target)
+
+            await conductor.outbound_message_router(message)
+
+            mock_delivery_queue.return_value.add_message.assert_called_once_with(
+                message
+            )
+
+    async def test_outbound_queue_check_on_inbound(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings_with_queue)
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "DeliveryQueue", autospec=True
+        ) as mock_delivery_queue:
+            await conductor.setup()
+
+            async def mock_dispatch(parsed_msg, delivery, connection, outbound):
+                result = asyncio.Future()
+                result.set_result(None)
+                return result
+
+            # set up relationship without endpoint
+            with async_mock.patch.object(
+                conductor.dispatcher, "dispatch", mock_dispatch
+            ) as mock_dispatch_method, async_mock.patch.object(
+                test_module, "ConnectionManager", autospec=True
+            ) as mock_connection_manager:
+
+                sender_did_doc, sender_pk = self.make_did_doc(
+                    self.test_did, self.test_verkey
+                )
+
+                # we don't need the connection, so avoid looking for one.
+                mock_connection_manager.find_message_connection.return_value = None
+
+                delivery = MessageDelivery()
+                delivery.sender_verkey = sender_pk
+                delivery.direct_response_requested = "all"
+                parsed_msg = {}
+                mock_serializer = builder.message_serializer
+                mock_serializer.extract_message_type.return_value = (
+                    "message_type"
+                )  # messaging.trustping.message_types.PING
+                mock_serializer.parse_message.return_value = (parsed_msg, delivery)
+
+                message_body = "{}"
+                transport = "http"
+                delivery_future = asyncio.Future()
+                r_future = await conductor.inbound_message_router(
+                    message_body, transport, single_response=delivery_future
+                )
+                r_future_result = await r_future  # required for test passing.
+                mock_delivery_queue.return_value.has_message_for_key.assert_called_once_with(
+                    sender_pk.value
+                )
 
     async def test_connection_target(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)

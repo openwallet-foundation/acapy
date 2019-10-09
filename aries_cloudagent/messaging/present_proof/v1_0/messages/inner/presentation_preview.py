@@ -413,13 +413,11 @@ class PresentationPreviewSchema(BaseModelSchema):
     )
     attributes = fields.Nested(
         PresAttrSpecSchema,
-        description="List of attribute specifications",
         required=True,
         many=True
     )
     predicates = fields.Nested(
         PresPredSpecSchema,
-        description="List of predicate specifications",
         required=True,
         many=True
     )

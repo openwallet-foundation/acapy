@@ -30,7 +30,10 @@ LOGGER = logging.getLogger(__name__)
 class AdminModulesSchema(Schema):
     """Schema for the modules endpoint."""
 
-    result = fields.List(fields.Str())
+    result = fields.List(
+        fields.Str(description="admin module"),
+        description="List of admin modules",
+    )
 
 
 class AdminStatusSchema(Schema):

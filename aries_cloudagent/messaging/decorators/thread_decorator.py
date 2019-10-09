@@ -10,6 +10,7 @@ from typing import Mapping
 from marshmallow import fields
 
 from ..models.base import BaseModel, BaseModelSchema
+from ..valid import UUIDFour
 
 
 class ThreadDecorator(BaseModel):
@@ -117,9 +118,33 @@ class ThreadDecoratorSchema(BaseModelSchema):
 
         model_class = ThreadDecorator
 
-    thid = fields.Str(required=False, allow_none=True)
-    pthid = fields.Str(required=False, allow_none=True)
-    sender_order = fields.Integer(required=False, allow_none=True)
+    thid = fields.Str(
+        required=False,
+        allow_none=True,
+        description="Thread identifier",
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+    )
+    pthid = fields.Str(
+        required=False,
+        allow_none=True,
+        description="Parent thread identifier",
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+    )
+    sender_order = fields.Integer(
+        required=False,
+        allow_none=True,
+        description="Ordinal of message among all from current sender in thread",
+        example=11
+    )
     received_orders = fields.Dict(
-        values=fields.Integer(), keys=fields.Str(), required=False, allow_none=True
+        keys=fields.Str(description="Sender key"),
+        values=fields.Integer(
+            description="Highest sender_order value for sender",
+            example="3",
+        ),
+        required=False,
+        allow_none=True,
+        description=(
+            "Highest sender_order value that sender has seen from others on thread"
+        ),
     )

@@ -16,7 +16,10 @@ from .messages.basicmessage import BasicMessage
 class SendMessageSchema(Schema):
     """Request schema for sending a message."""
 
-    content = fields.Str()
+    content = fields.Str(
+        description="Message content",
+        example="Hello"
+    )
 
 
 @docs(tags=["basicmessage"], summary="Send a basic message to a connection")

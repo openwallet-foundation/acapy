@@ -7,6 +7,7 @@ from marshmallow import fields
 
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ...util import datetime_now, datetime_to_str
+from ...valid import INDY_ISO8601_DATETIME
 
 from ..message_types import BASIC_MESSAGE
 
@@ -40,6 +41,8 @@ class BasicMessage(AgentMessage):
         Args:
             sent_time: Time message was sent
             content: message content
+            localization: localization
+
         """
         super(BasicMessage, self).__init__(**kwargs)
         if not sent_time:
@@ -57,6 +60,19 @@ class BasicMessageSchema(AgentMessageSchema):
 
         model_class = BasicMessage
 
-    localization = fields.Str(data_key="l10n", required=False)
-    sent_time = fields.Str(required=False)
-    content = fields.Str(required=True)
+    localization = fields.Str(
+        required=False,
+        description="Localization",
+        example="en-CA",
+        data_key="l10n",
+    )
+    sent_time = fields.Str(
+        required=False,
+        description="Time message was sent, ISO8601 with space date/time separator",
+        **INDY_ISO8601_DATETIME
+    )
+    content = fields.Str(
+        required=True,
+        description="Message content",
+        example="Hello",
+    )

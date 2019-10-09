@@ -1,8 +1,10 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
 from marshmallow import fields
+from marshmallow.validate import OneOf
 
 from ....models.base_record import BaseRecord, BaseRecordSchema
+from ....valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 
 
 class V10CredentialExchange(BaseRecord):
@@ -127,21 +129,88 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
 
         model_class = V10CredentialExchange
 
-    credential_exchange_id = fields.Str(required=False)
-    connection_id = fields.Str(required=False)
-    thread_id = fields.Str(required=False)
-    parent_thread_id = fields.Str(required=False)
-    initiator = fields.Str(required=False)
-    state = fields.Str(required=False)
-    credential_definition_id = fields.Str(required=False)
-    schema_id = fields.Str(required=False)
-    credential_proposal_dict = fields.Dict(required=False)
-    credential_offer = fields.Dict(required=False)
-    credential_request = fields.Dict(required=False)
-    credential_request_metadata = fields.Dict(required=False)
-    credential_id = fields.Str(required=False)
-    raw_credential = fields.Dict(required=False)
-    credential = fields.Dict(required=False)
-    auto_offer = fields.Bool(required=False)
-    auto_issue = fields.Bool(required=False)
-    error_msg = fields.Str(required=False)
+    credential_exchange_id = fields.Str(
+        required=False,
+        description="Credential exchange identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    connection_id = fields.Str(
+        required=False,
+        description="Connection identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    thread_id = fields.Str(
+        required=False,
+        description="Thread identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    parent_thread_id = fields.Str(
+        required=False,
+        description="Parent thread identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    initiator = fields.Str(
+        required=False,
+        description="Issue-credential exchange initiator: self or external",
+        example=V10CredentialExchange.INITIATOR_SELF,
+        validate=OneOf(["self", "external"]),
+    )
+    state = fields.Str(
+        required=False,
+        description="Issue-credential exchange state",
+        example=V10CredentialExchange.STATE_STORED,
+    )
+    credential_definition_id = fields.Str(
+        required=False,
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID
+    )
+    schema_id = fields.Str(
+        required=False,
+        description="Schema identifier",
+        **INDY_SCHEMA_ID
+    )
+    credential_proposal_dict = fields.Dict(
+        required=False,
+        description="Serialized credential proposal message"
+    )
+    credential_offer = fields.Dict(
+        required=False,
+        description="(Indy) credential offer",
+    )
+    credential_request = fields.Dict(
+        required=False,
+        description="(Indy) credential request",
+    )
+    credential_request_metadata = fields.Dict(
+        required=False,
+        description="(Indy) credential request metadata",
+    )
+    credential_id = fields.Str(
+        required=False,
+        description="Credential identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    raw_credential = fields.Dict(
+        required=False,
+        description="Credential as received, prior to storage in holder wallet"
+    )
+    credential = fields.Dict(
+        required=False,
+        description="Credential as stored",
+    )
+    auto_offer = fields.Bool(
+        required=False,
+        description="Holder choice to accept offer in this credential exchange",
+        example=False,
+    )
+    auto_issue = fields.Bool(
+        required=False,
+        description="Issuer choice to issue to request in this credential exchange",
+        example=False,
+    )
+    error_msg = fields.Str(
+        required=False,
+        description="Error message",
+        example="credential definition identifier is not set in proposal",
+    )

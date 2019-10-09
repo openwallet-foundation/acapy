@@ -11,6 +11,7 @@ from ...wallet.base import BaseWallet
 from ...wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..models.base import BaseModel, BaseModelSchema
+from ..valid import Base64URL, BASE64URL, INDY_RAW_PUBLIC_KEY
 
 
 class SignatureDecorator(BaseModel):
@@ -128,7 +129,28 @@ class SignatureDecoratorSchema(BaseModelSchema):
 
         model_class = SignatureDecorator
 
-    signature_type = fields.Str(data_key="@type", required=True)
-    signature = fields.Str(required=True)
-    sig_data = fields.Str(required=True)
-    signer = fields.Str(required=True)
+    signature_type = fields.Str(
+        data_key="@type",
+        required=True,
+        description="Signature type",
+        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single"
+    )
+    signature = fields.Str(
+        required=True,
+        description="signature value, base64url-encoded",
+        example=(
+            "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-"
+            "l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg=="
+        ),
+        validate=Base64URL()
+    )
+    sig_data = fields.Str(
+        required=True,
+        description="Signature data, base64url-encoded",
+        **BASE64URL
+    )
+    signer = fields.Str(
+        required=True,
+        description="Signer verification key",
+        **INDY_RAW_PUBLIC_KEY
+    )
