@@ -7,7 +7,7 @@ from marshmallow import fields, Schema
 
 from ...storage.error import StorageNotFoundError
 
-from ..valid import UUIDFour
+from ..valid import IndyDID, UUIDFour
 
 from .manager import ConnectionManager
 from .messages.connection_invitation import (
@@ -30,14 +30,38 @@ class InvitationResultSchema(Schema):
     """Result schema for a new connection invitation."""
 
     connection_id = fields.Str(
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,
+        description="Connection identifier", example=UUIDFour.EXAMPLE
     )
     invitation = fields.Nested(ConnectionInvitationSchema())
     invitation_url = fields.Str(
         description="Invitation URL",
-        example="http:192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ=="
+        example="http://192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ==",
     )
+
+
+class ConnectionStaticRequestSchema(Schema):
+    """Request schema for a new static connection."""
+
+    my_seed = fields.Str(description="Seed to use for the local DID", required=False)
+    my_did = fields.Str(
+        description="Local DID", required=False, example=IndyDID.EXAMPLE
+    )
+    their_seed = fields.Str(
+        description="Seed to use for the remote DID", required=False
+    )
+    their_did = fields.Str(
+        description="Remote DID", required=False, example=IndyDID.EXAMPLE
+    )
+    their_verkey = fields.Str(description="Remote verification key", required=False)
+    their_endpoint = fields.Str(
+        description="URL endpoint for the other party",
+        required=False,
+        example="http://192.168.56.101:5000",
+    )
+    their_role = fields.Str(
+        description="Role to assign to this connection", required=False
+    )
+    alias = fields.Str(description="Alias to assign to this connection", required=False)
 
 
 def connection_sort_key(conn):
@@ -399,6 +423,39 @@ async def connections_remove(request: web.BaseRequest):
         raise web.HTTPNotFound()
     await connection.delete_record(context)
     return web.json_response({})
+
+
+@docs(tags=["connection"], summary="Create a new static connection")
+@request_schema(ConnectionStaticRequestSchema())
+@response_schema(ConnectionRecordSchema(), 200)
+async def connections_create_static(request: web.BaseRequest):
+    """
+    Request handler for creating a new static connection.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The new connection record
+
+    """
+    context = request.app["request_context"]
+    body = await request.json()
+
+    connection_mgr = ConnectionManager(context)
+    connection = await connection_mgr.create_static_connection(
+        my_seed=body.get("my_seed") or None,
+        my_did=body.get("my_did") or None,
+        their_seed=body.get("their_seed") or None,
+        their_did=body.get("their_did") or None,
+        their_verkey=body.get("their_verkey") or None,
+        their_endpoint=body.get("their_endpoint") or None,
+        their_role=body.get("their_role") or None,
+        alias=body.get("alias") or None,
+    )
+    result = connection.serialize()
+
+    return web.json_response(result)
 
 
 async def register(app: web.Application):

@@ -13,7 +13,9 @@ from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageNotFoundError
 from ...storage.record import StorageRecord
 from ...wallet.base import BaseWallet, DIDInfo
+from ...wallet.crypto import create_keypair, seed_to_did
 from ...wallet.error import WalletNotFoundError
+from ...wallet.util import bytes_to_b58
 
 from ..message_delivery import MessageDelivery
 from ..responder import BaseResponder
@@ -276,8 +278,10 @@ class ConnectionManager:
             connection.my_did = my_info.did
 
         # Create connection request message
+        if not my_endpoint:
+            my_endpoint = self.context.settings.get("default_endpoint")
         did_doc = await self.create_did_document(
-            my_info, connection.inbound_connection_id
+            my_info, connection.inbound_connection_id, my_endpoint
         )
         if not my_label:
             my_label = self.context.settings.get("default_label")
@@ -461,6 +465,8 @@ class ConnectionManager:
             connection.my_did = my_info.did
 
         # Create connection response message
+        if not my_endpoint:
+            my_endpoint = self.context.settings.get("default_endpoint")
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoint
         )
@@ -567,22 +573,26 @@ class ConnectionManager:
 
     async def create_static_connection(
         self,
-        my_seed: str,
-        their_seed: str,
-        their_endpoint: str,
+        my_did: str = None,
+        my_seed: str = None,
+        their_did: str = None,
+        their_seed: str = None,
+        their_verkey: str = None,
+        their_endpoint: str = None,
         their_role: str = None,
-        their_label: str = None,
         alias: str = None,
     ) -> ConnectionRecord:
         """
         Register a new static connection (for use by the test suite).
 
         Args:
-            my_seed: the seed used to generate our DID and keys
-            their_seed: the seed used to generate their DID and keys
-            their_endpoint: their URL endpoint
+            my_did: override the DID used in the connection
+            my_seed: provide a seed used to generate our DID and keys
+            their_did: provide the DID used by the other party
+            their_seed: provide a seed used to generate their DID and keys
+            their_verkey: provide the verkey used by the other party
+            their_endpoint: their URL endpoint for routing messages
             their_role: their role in this connection
-            their_label: their connection label
             alias: an alias for this connection record
 
         Returns:
@@ -591,8 +601,22 @@ class ConnectionManager:
         """
         wallet: BaseWallet = await self.context.inject(BaseWallet)
 
-        my_info = await wallet.create_local_did(my_seed)
-        their_info = await wallet.create_local_did(their_seed)
+        # seed and DID optional
+        my_info = await wallet.create_local_did(my_seed, my_did)
+
+        # must provide their DID and verkey if the seed is not known
+        if (not their_did or not their_verkey) and not their_seed:
+            raise ConnectionManagerError(
+                "Either a verkey or seed must be provided for the other party"
+            )
+        if not their_did:
+            their_did = seed_to_did(their_seed)
+        if not their_verkey:
+            their_verkey_bin, _ = create_keypair(their_seed)
+            their_verkey = bytes_to_b58(their_verkey_bin)
+        their_info = DIDInfo(their_did, their_verkey, {})
+
+        print(their_info, my_info)
 
         # Create connection record
         connection = ConnectionRecord(
@@ -787,12 +811,11 @@ class ConnectionManager:
                 break
             router_id = router.inbound_connection_id
 
-        if not svc_endpoint:
-            svc_endpoint = self.context.settings.get("default_endpoint")
-        service = Service(
-            did_info.did, "indy", "IndyAgent", [pk], routing_keys, svc_endpoint
-        )
-        did_doc.set(service)
+        if svc_endpoint:
+            service = Service(
+                did_info.did, "indy", "IndyAgent", [pk], routing_keys, svc_endpoint
+            )
+            did_doc.set(service)
 
         return did_doc
 

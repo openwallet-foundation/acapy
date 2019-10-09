@@ -194,12 +194,11 @@ class Conductor:
             mgr = ConnectionManager(self.context)
             their_endpoint = context.settings["debug.test_suite_endpoint"]
             test_conn = await mgr.create_static_connection(
-                hashlib.sha256(b"aries-protocol-test-subject").digest(),
-                hashlib.sha256(b"aries-protocol-test-suite").digest(),
-                their_endpoint,
-                "tester",
-                "Aries Protocol Test Suite",
-                "test-suite",
+                my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
+                their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
+                their_endpoint=their_endpoint,
+                their_role="tester",
+                alias="test-suite",
             )
             print("Created static connection for test suite")
             print(" - My DID:", test_conn.my_did)
