@@ -5,7 +5,7 @@ import json
 
 from ......messaging.util import str_to_datetime, str_to_epoch
 from ......messaging.decorators.attach_decorator import AttachDecorator
-from ...message_types import PRESENTATION_PREVIEW, PRESENTATION
+from ...message_types import ATTACH_DECO_IDS, PRESENTATION_PREVIEW, PRESENTATION
 from ..presentation import Presentation, PresentationSchema
 
 
@@ -1654,11 +1654,13 @@ INDY_PROOF = json.loads("""{
     ]
 }""")
 
-PRES_IDENT = "presentation-0"
 PRES = Presentation(
     comment="Test",
     presentations_attach=[
-        AttachDecorator.from_indy_dict(indy_dict=INDY_PROOF, ident=PRES_IDENT)
+        AttachDecorator.from_indy_dict(
+            indy_dict=INDY_PROOF,
+            ident=ATTACH_DECO_IDS[PRESENTATION],
+        )
     ]
 )
 
@@ -1682,7 +1684,7 @@ class TestPresentation(TestCase):
             "presentations~attach": [
                 AttachDecorator.from_indy_dict(
                     indy_dict=INDY_PROOF,
-                    ident=PRES_IDENT,
+                    ident=ATTACH_DECO_IDS[PRESENTATION],
                 ).serialize()
             ]
         })
@@ -1700,7 +1702,7 @@ class TestPresentation(TestCase):
             "presentations~attach": [
                 AttachDecorator.from_indy_dict(
                     indy_dict=INDY_PROOF,
-                    ident=PRES_IDENT,
+                    ident=ATTACH_DECO_IDS[PRESENTATION],
                 ).serialize()
             ],
             "comment": "Test"

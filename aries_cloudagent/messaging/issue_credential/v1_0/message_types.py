@@ -21,3 +21,10 @@ MESSAGE_TYPES = {
 
 # Inner object types
 CREDENTIAL_PREVIEW = f"{MESSAGE_FAMILY}credential-preview"
+
+# Identifiers to use in attachment decorators
+ATTACH_DECO_IDS = {
+    CREDENTIAL_OFFER: "libindy-cred-offer-0",
+    CREDENTIAL_REQUEST: "libindy-cred-request-0",
+    CREDENTIAL_ISSUE: "libindy-cred-0"
+}

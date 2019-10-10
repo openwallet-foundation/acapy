@@ -5,7 +5,7 @@ import json
 
 from ......messaging.util import str_to_datetime, str_to_epoch
 from ......messaging.decorators.attach_decorator import AttachDecorator
-from ...message_types import PRESENTATION_PREVIEW, PRESENTATION_REQUEST
+from ...message_types import ATTACH_DECO_IDS, PRESENTATION_PREVIEW, PRESENTATION_REQUEST
 from ..presentation_request import PresentationRequest, PresentationRequestSchema
 
 
@@ -59,11 +59,14 @@ INDY_PROOF_REQ = json.loads(f"""{{
         }}
     }}
 }}""")
-PRES_REQ_IDENT = "presentation-0"
+
 PRES_REQ = PresentationRequest(
     comment="Test",
     request_presentations_attach=[
-        AttachDecorator.from_indy_dict(indy_dict=INDY_PROOF_REQ, ident=PRES_REQ_IDENT)
+        AttachDecorator.from_indy_dict(
+            indy_dict=INDY_PROOF_REQ,
+            ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+        )
     ]
 )
 
@@ -87,7 +90,7 @@ class TestPresentationRequest(TestCase):
             "request_presentations~attach": [
                 AttachDecorator.from_indy_dict(
                     indy_dict=INDY_PROOF_REQ,
-                    ident=PRES_REQ_IDENT,
+                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
                 ).serialize()
             ]
         })
@@ -105,7 +108,7 @@ class TestPresentationRequest(TestCase):
             "request_presentations~attach": [
                 AttachDecorator.from_indy_dict(
                     indy_dict=INDY_PROOF_REQ,
-                    ident=PRES_REQ_IDENT,
+                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
                 ).serialize()
             ],
             "comment": "Test"
