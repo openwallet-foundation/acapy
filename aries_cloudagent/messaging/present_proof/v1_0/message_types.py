@@ -17,3 +17,9 @@ MESSAGE_TYPES = {
 
 # Inner object types
 PRESENTATION_PREVIEW = f"{MESSAGE_FAMILY}presentation-preview"
+
+# Identifiers to use in attachment decorators
+ATTACH_DECO_IDS = {
+    PRESENTATION_REQUEST: "libindy-request-presentation-0",
+    PRESENTATION: "libindy-presentation-0"
+}

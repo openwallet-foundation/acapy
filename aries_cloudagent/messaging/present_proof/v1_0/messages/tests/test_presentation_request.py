@@ -5,7 +5,7 @@ import json
 
 from ......messaging.util import str_to_datetime, str_to_epoch
 from ......messaging.decorators.attach_decorator import AttachDecorator
-from ...message_types import PRESENTATION_PREVIEW, PRESENTATION_REQUEST
+from ...message_types import ATTACH_DECO_IDS, PRESENTATION_PREVIEW, PRESENTATION_REQUEST
 from ..presentation_request import PresentationRequest, PresentationRequestSchema
 
 
@@ -59,10 +59,14 @@ INDY_PROOF_REQ = json.loads(f"""{{
         }}
     }}
 }}""")
+
 PRES_REQ = PresentationRequest(
     comment="Test",
     request_presentations_attach=[
-        AttachDecorator.from_indy_dict(INDY_PROOF_REQ)
+        AttachDecorator.from_indy_dict(
+            indy_dict=INDY_PROOF_REQ,
+            ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+        )
     ]
 )
 
@@ -84,7 +88,10 @@ class TestPresentationRequest(TestCase):
             "@type": PRESENTATION_REQUEST,
             "comment": "Hello World",
             "request_presentations~attach": [
-                AttachDecorator.from_indy_dict(INDY_PROOF_REQ).serialize()
+                AttachDecorator.from_indy_dict(
+                    indy_dict=INDY_PROOF_REQ,
+                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                ).serialize()
             ]
         })
 
@@ -99,7 +106,10 @@ class TestPresentationRequest(TestCase):
         assert pres_req_dict == {
             "@type": PRESENTATION_REQUEST,
             "request_presentations~attach": [
-                AttachDecorator.from_indy_dict(INDY_PROOF_REQ).serialize()
+                AttachDecorator.from_indy_dict(
+                    indy_dict=INDY_PROOF_REQ,
+                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                ).serialize()
             ],
             "comment": "Test"
         }

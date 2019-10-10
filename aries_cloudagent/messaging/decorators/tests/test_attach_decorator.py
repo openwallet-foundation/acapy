@@ -3,17 +3,18 @@ from unittest import TestCase
 
 import base64
 import json
+import uuid
 
 from ..attach_decorator import AttachDecorator, AttachDecoratorData
 
 
 class TestAttachDecorator(TestCase):
-    append_id = 'image-0'
-    mime_type = 'image/png'
-    filename = 'potato.png'
-    byte_count = 123456
-    lastmod_time = datetime.now().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
+    ident = str(uuid.uuid4())
     description = 'To one trained by "Bob," Truth can be found in a potato'
+    filename = 'potato.png'
+    mime_type = 'image/png'
+    lastmod_time = datetime.now().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
+    byte_count = 123456
     data_b64 = AttachDecoratorData(
         base64_=base64.b64encode('sample image with padding'.encode()).decode()
     )
@@ -89,7 +90,7 @@ class TestAttachDecorator(TestCase):
 
     def test_init_appended_b64(self):
         decorator = AttachDecorator(
-            append_id=self.append_id,
+            ident=self.ident,
             mime_type=self.mime_type,
             filename=self.filename,
             lastmod_time=self.lastmod_time,
@@ -97,7 +98,7 @@ class TestAttachDecorator(TestCase):
             data=self.data_b64
         )
 
-        assert decorator.append_id == self.append_id
+        assert decorator.ident == self.ident
         assert decorator.mime_type == self.mime_type
         assert decorator.filename == self.filename
         assert decorator.lastmod_time == self.lastmod_time
@@ -106,7 +107,7 @@ class TestAttachDecorator(TestCase):
 
     def test_serialize_load_appended_b64(self):
         decorator = AttachDecorator(
-            append_id=self.append_id,
+            ident=self.ident,
             mime_type=self.mime_type,
             filename=self.filename,
             lastmod_time=self.lastmod_time,
@@ -117,7 +118,7 @@ class TestAttachDecorator(TestCase):
         dumped = decorator.serialize()
         loaded = AttachDecorator.deserialize(dumped)
 
-        assert loaded.append_id == self.append_id
+        assert loaded.ident == self.ident
         assert loaded.mime_type == self.mime_type
         assert loaded.filename == self.filename
         assert loaded.lastmod_time == self.lastmod_time
@@ -126,7 +127,7 @@ class TestAttachDecorator(TestCase):
 
     def test_init_appended_links(self):
         decorator = AttachDecorator(
-            append_id=self.append_id,
+            ident=self.ident,
             mime_type=self.mime_type,
             filename=self.filename,
             byte_count=self.byte_count,
@@ -134,7 +135,7 @@ class TestAttachDecorator(TestCase):
             description=self.description,
             data=self.data_links
         )
-        assert decorator.append_id == self.append_id
+        assert decorator.ident == self.ident
         assert decorator.mime_type == self.mime_type
         assert decorator.filename == self.filename
         assert decorator.byte_count == self.byte_count
@@ -144,7 +145,7 @@ class TestAttachDecorator(TestCase):
 
     def test_serialize_load_appended_links(self):
         decorator = AttachDecorator(
-            append_id=self.append_id,
+            ident=self.ident,
             mime_type=self.mime_type,
             filename=self.filename,
             byte_count=self.byte_count,
@@ -156,7 +157,7 @@ class TestAttachDecorator(TestCase):
         dumped = decorator.serialize()
         loaded = AttachDecorator.deserialize(dumped)
 
-        assert loaded.append_id == self.append_id
+        assert loaded.ident == self.ident
         assert loaded.mime_type == self.mime_type
         assert loaded.filename == self.filename
         assert loaded.byte_count == self.byte_count
@@ -165,7 +166,22 @@ class TestAttachDecorator(TestCase):
         assert loaded.data == self.data_links
 
     def test_indy_dict(self):
-        deco_indy = AttachDecorator.from_indy_dict(self.indy_cred)
+        deco_indy = AttachDecorator.from_indy_dict(
+            indy_dict=self.indy_cred,
+            ident=self.ident,
+            description=self.description,
+            filename=self.filename,
+            lastmod_time=self.lastmod_time,
+            byte_count=self.byte_count
+        )
         assert deco_indy.mime_type == 'application/json'
         assert hasattr(deco_indy.data, 'base64_')
         assert deco_indy.indy_dict == self.indy_cred
+        assert deco_indy.ident == self.ident
+        assert deco_indy.description == self.description
+        assert deco_indy.filename == self.filename
+        assert deco_indy.lastmod_time == self.lastmod_time
+        assert deco_indy.byte_count == self.byte_count
+
+        deco_indy_auto_id = AttachDecorator.from_indy_dict(indy_dict=self.indy_cred)
+        assert deco_indy_auto_id.ident
