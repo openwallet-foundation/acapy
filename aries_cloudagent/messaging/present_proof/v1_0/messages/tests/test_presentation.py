@@ -1654,10 +1654,11 @@ INDY_PROOF = json.loads("""{
     ]
 }""")
 
+PRES_IDENT = "presentation-0"
 PRES = Presentation(
     comment="Test",
     presentations_attach=[
-        AttachDecorator.from_indy_dict(INDY_PROOF)
+        AttachDecorator.from_indy_dict(indy_dict=INDY_PROOF, ident=PRES_IDENT)
     ]
 )
 
@@ -1679,7 +1680,10 @@ class TestPresentation(TestCase):
             "@type": PRESENTATION,
             "comment": "Hello World",
             "presentations~attach": [
-                AttachDecorator.from_indy_dict(INDY_PROOF).serialize()
+                AttachDecorator.from_indy_dict(
+                    indy_dict=INDY_PROOF,
+                    ident=PRES_IDENT,
+                ).serialize()
             ]
         })
 
@@ -1694,7 +1698,10 @@ class TestPresentation(TestCase):
         assert pres_dict == {
             "@type": PRESENTATION,
             "presentations~attach": [
-                AttachDecorator.from_indy_dict(INDY_PROOF).serialize()
+                AttachDecorator.from_indy_dict(
+                    indy_dict=INDY_PROOF,
+                    ident=PRES_IDENT,
+                ).serialize()
             ],
             "comment": "Test"
         }

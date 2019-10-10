@@ -59,10 +59,11 @@ INDY_PROOF_REQ = json.loads(f"""{{
         }}
     }}
 }}""")
+PRES_REQ_IDENT = "presentation-0"
 PRES_REQ = PresentationRequest(
     comment="Test",
     request_presentations_attach=[
-        AttachDecorator.from_indy_dict(INDY_PROOF_REQ)
+        AttachDecorator.from_indy_dict(indy_dict=INDY_PROOF_REQ, ident=PRES_REQ_IDENT)
     ]
 )
 
@@ -84,7 +85,10 @@ class TestPresentationRequest(TestCase):
             "@type": PRESENTATION_REQUEST,
             "comment": "Hello World",
             "request_presentations~attach": [
-                AttachDecorator.from_indy_dict(INDY_PROOF_REQ).serialize()
+                AttachDecorator.from_indy_dict(
+                    indy_dict=INDY_PROOF_REQ,
+                    ident=PRES_REQ_IDENT,
+                ).serialize()
             ]
         })
 
@@ -99,7 +103,10 @@ class TestPresentationRequest(TestCase):
         assert pres_req_dict == {
             "@type": PRESENTATION_REQUEST,
             "request_presentations~attach": [
-                AttachDecorator.from_indy_dict(INDY_PROOF_REQ).serialize()
+                AttachDecorator.from_indy_dict(
+                    indy_dict=INDY_PROOF_REQ,
+                    ident=PRES_REQ_IDENT,
+                ).serialize()
             ],
             "comment": "Test"
         }

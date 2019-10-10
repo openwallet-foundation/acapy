@@ -4,7 +4,6 @@ from ..credential_issue import CredentialIssue
 
 from unittest import mock, TestCase
 
-
 class TestCredentialIssue(TestCase):
     """Credential issue tests"""
 
@@ -87,6 +86,7 @@ class TestCredentialIssue(TestCase):
             credentials_attach=[AttachDecorator.from_indy_dict(self.indy_cred)]
         )
         assert credential_issue.credentials_attach[0].indy_dict == self.indy_cred
+        assert credential_issue.credentials_attach[0].ident  # auto-generates UUID4
         assert credential_issue.indy_credential(0) == self.indy_cred
 
     def test_type(self):
