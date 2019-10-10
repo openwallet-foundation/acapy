@@ -61,8 +61,8 @@ is not otherwise secured.
 
 ## API
 
-A deployed instance of an ACA-Py agent assembles an API from the protocols loaded with the agent that is used by a controller application (written in any language) to control the behaviour of the agent. The controller can initiate agent actions such as issuing a credential, and can respond to agent events, such
-as requesting a proof after the DID Exchange process. Agent events are delivered to the controller as webhooks to a configured URL.
+A deployed instance of an ACA-Py agent assembles an OpenAPI-documented REST interface from the protocols loaded with the agent. This is used by a controller application (written in any language) to manage the behaviour of the agent. The controller can initiate agent actions such as issuing a credential, and can respond to agent events, such
+as sending a presentation request after a new pairwise DID Exchange connection has been accepted. Agent events are delivered to the controller as webhooks to a configured URL. More information on the administration API and webhooks can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/AdminAPI.md).
 
 ## Resources
 
