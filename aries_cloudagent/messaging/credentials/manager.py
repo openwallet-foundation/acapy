@@ -565,7 +565,7 @@ class CredentialManager:
 
         await self.remove_expired_records(
             credential_exchange_record,
-            CredentialExchange.INITIATOR_EXTERNAL,
+            CredentialExchange.INITIATOR_SELF,
             "credential_exchange::"
         )
 
