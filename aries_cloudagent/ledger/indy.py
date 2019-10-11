@@ -210,7 +210,13 @@ class IndyLedger(BaseLedger):
         """Context manager exit."""
         await self._context_close()
 
-    async def _submit(self, request_json: str, sign=True, taa_accept=False) -> str:
+    async def _submit(
+        self,
+        request_json: str,
+        sign: bool = None,
+        taa_accept: bool = False,
+        public_did: str = "",
+    ) -> str:
         """
         Sign and submit request to ledger.
 
@@ -218,6 +224,7 @@ class IndyLedger(BaseLedger):
             request_json: The json string to submit
             sign: whether or not to sign the request
             taa_accept: whether to apply TAA acceptance to the (signed, write) request
+            public_did: override the public DID used to sign the request
 
         """
 
@@ -228,8 +235,14 @@ class IndyLedger(BaseLedger):
                 )
             )
 
+        if (sign is None and public_did == "") or (sign and not public_did):
+            did_info = await self.wallet.get_public_did()
+            if did_info:
+                public_did = did_info.did
+        if public_did and sign is None:
+            sign = True
+
         if sign:
-            public_did = await self.wallet.get_public_did()
             if not public_did:
                 raise BadLedgerRequestError("Cannot sign request without a public DID")
             if taa_accept:
@@ -246,7 +259,7 @@ class IndyLedger(BaseLedger):
                         )
                     )
             submit_op = indy.ledger.sign_and_submit_request(
-                self.pool_handle, self.wallet.handle, public_did.did, request_json
+                self.pool_handle, self.wallet.handle, public_did, request_json
             )
         else:
             submit_op = indy.ledger.submit_request(self.pool_handle, request_json)
@@ -310,7 +323,7 @@ class IndyLedger(BaseLedger):
                 )
 
             try:
-                await self._submit(request_json, True, True)
+                await self._submit(request_json, public_did=public_info.did)
             except LedgerTransactionError as e:
                 # Identify possible duplicate schema errors on indy-node < 1.9 and > 1.9
                 if (
@@ -377,14 +390,15 @@ class IndyLedger(BaseLedger):
 
         """
 
-        public_did = await self.wallet.get_public_did()
+        public_info = await self.wallet.get_public_did()
+        public_did = public_info.did if public_info else None
 
         with IndyErrorHandler("Exception when building schema request"):
             request_json = await indy.ledger.build_get_schema_request(
-                public_did.did if public_did else None, schema_id
+                public_did, schema_id
             )
 
-        response_json = await self._submit(request_json, sign=bool(public_did))
+        response_json = await self._submit(request_json, public_did=public_did)
         response = json.loads(response_json)
         if not response["result"]["seqNo"]:
             # schema not found
@@ -413,8 +427,8 @@ class IndyLedger(BaseLedger):
 
         """
 
-        public_did = await self.wallet.get_public_did()
-        if not public_did:
+        public_info = await self.wallet.get_public_did()
+        if not public_info:
             raise BadLedgerRequestError(
                 "Cannot publish credential definition without a public DID"
             )
@@ -428,7 +442,7 @@ class IndyLedger(BaseLedger):
                 credential_definition_json,
             ) = await indy.anoncreds.issuer_create_and_store_credential_def(
                 self.wallet.handle,
-                public_did.did,
+                public_info.did,
                 json.dumps(schema),
                 tag,
                 "CL",
@@ -467,9 +481,9 @@ class IndyLedger(BaseLedger):
         if not exist_def:
             with IndyErrorHandler("Exception when building cred def request"):
                 request_json = await indy.ledger.build_cred_def_request(
-                    public_did.did, credential_definition_json
+                    public_info.did, credential_definition_json
                 )
-            await self._submit(request_json, True, True)
+            await self._submit(request_json, True, public_did=public_info.did)
         else:
             self.logger.warning(
                 "Ledger definition of cred def %s already exists",
@@ -503,14 +517,15 @@ class IndyLedger(BaseLedger):
 
         """
 
-        public_did = await self.wallet.get_public_did()
+        public_info = await self.wallet.get_public_did()
+        public_did = public_info.did if public_info else None
 
         with IndyErrorHandler("Exception when building cred def request"):
             request_json = await indy.ledger.build_get_cred_def_request(
-                public_did.did if public_did else None, credential_definition_id
+                public_did, credential_definition_id
             )
 
-        response_json = await self._submit(request_json, sign=bool(public_did))
+        response_json = await self._submit(request_json, public_did=public_did)
 
         with IndyErrorHandler("Exception when parsing cred def response"):
             try:
@@ -576,12 +591,13 @@ class IndyLedger(BaseLedger):
             did: The DID to look up on the ledger or in the cache
         """
         nym = self.did_to_nym(did)
-        public_did = await self.wallet.get_public_did()
+        public_info = await self.wallet.get_public_did()
+        public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception when building nym request"):
             request_json = await indy.ledger.build_get_nym_request(
-                public_did and public_did.did, nym
+                public_did, nym
             )
-        response_json = await self._submit(request_json, bool(public_did))
+        response_json = await self._submit(request_json, public_did=public_did)
         data_json = (json.loads(response_json))["result"]["data"]
         return json.loads(data_json)["verkey"]
 
@@ -592,12 +608,13 @@ class IndyLedger(BaseLedger):
             did: The DID to look up on the ledger or in the cache
         """
         nym = self.did_to_nym(did)
-        public_did = await self.wallet.get_public_did()
+        public_info = await self.wallet.get_public_did()
+        public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception when building attribute request"):
             request_json = await indy.ledger.build_get_attrib_request(
-                public_did and public_did.did, nym, "endpoint", None, None
+                public_did, nym, "endpoint", None, None
             )
-        response_json = await self._submit(request_json, sign=bool(public_did))
+        response_json = await self._submit(request_json, public_did=public_did)
         endpoint_json = json.loads(response_json)["result"]["data"]
         if endpoint_json:
             address = json.loads(endpoint_json)["endpoint"].get("endpoint", None)
@@ -638,11 +655,12 @@ class IndyLedger(BaseLedger):
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
         """
-        public_did = await self.wallet.get_public_did()
+        public_info = await self.wallet.get_public_did()
+        public_did = public_info.did if public_info else None
         r = await indy.ledger.build_nym_request(
-            public_did and public_did.did, did, verkey, alias, role
+            public_did, did, verkey, alias, role
         )
-        await self._submit(r, True, True)
+        await self._submit(r, True, True, public_did=public_did)
 
     def nym_to_did(self, nym: str) -> str:
         """Format a nym with the ledger's DID prefix."""
@@ -659,18 +677,19 @@ class IndyLedger(BaseLedger):
 
     async def fetch_txn_author_agreement(self):
         """Fetch the current AML and TAA from the ledger."""
-        did_info = await self.wallet.get_public_did()
+        public_info = await self.wallet.get_public_did()
+        public_did = public_info.did if public_info else None
 
         get_aml_req = await indy.ledger.build_get_acceptance_mechanisms_request(
-            did_info and did_info.did, None, None
+            public_did, None, None
         )
-        response_json = await self._submit(get_aml_req, sign=bool(did_info))
+        response_json = await self._submit(get_aml_req, public_did=public_did)
         aml_found = (json.loads(response_json))["result"]["data"]
 
         get_taa_req = await indy.ledger.build_get_txn_author_agreement_request(
-            did_info and did_info.did, None
+            public_did, None
         )
-        response_json = await self._submit(get_taa_req, sign=bool(did_info))
+        response_json = await self._submit(get_taa_req, public_did=public_did)
         taa_found = (json.loads(response_json))["result"]["data"]
         taa_required = taa_found and taa_found["text"]
         if taa_found:

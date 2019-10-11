@@ -150,7 +150,9 @@ class TestIndyLedger(AsyncTestCase):
 
             mock_wallet.get_public_did.assert_not_called()
 
-            mock_submit.assert_called_once_with(ledger.pool_handle, "{}")
+            mock_submit.assert_called_once_with(
+                ledger.pool_handle, "{}",
+            )
 
     @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.create_pool_ledger_config")
@@ -246,7 +248,9 @@ class TestIndyLedger(AsyncTestCase):
                 mock_did.did, mock_create_schema.return_value[1]
             )
 
-            mock_submit.assert_called_once_with(mock_build_schema_req.return_value, True, True)
+            mock_submit.assert_called_once_with(
+                mock_build_schema_req.return_value, public_did=mock_did.did
+            )
 
             assert schema_id == mock_create_schema.return_value[0]
 
@@ -308,7 +312,7 @@ class TestIndyLedger(AsyncTestCase):
 
         mock_parse_get_schema_req.return_value = (None, "{}")
 
-        mock_submit.return_value = "{\"result\":{\"seqNo\":1}}"
+        mock_submit.return_value = '{"result":{"seqNo":1}}'
 
         ledger = IndyLedger("name", mock_wallet)
 
@@ -318,7 +322,7 @@ class TestIndyLedger(AsyncTestCase):
             mock_wallet.get_public_did.assert_called_once_with()
             mock_build_get_schema_req.assert_called_once_with(mock_did.did, "schema_id")
             mock_submit.assert_called_once_with(
-                mock_build_get_schema_req.return_value, sign=True
+                mock_build_get_schema_req.return_value, public_did=mock_did.did
             )
             mock_parse_get_schema_req.assert_called_once_with(mock_submit.return_value)
 
@@ -327,7 +331,9 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition")
+    @async_mock.patch(
+        "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
+    )
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.anoncreds.issuer_create_and_store_credential_def")
     @async_mock.patch("indy.ledger.build_cred_def_request")
@@ -403,11 +409,15 @@ class TestIndyLedger(AsyncTestCase):
             response = await ledger.get_credential_definition("cred_def_id")
 
             mock_wallet.get_public_did.assert_called_once_with()
-            mock_build_get_cred_def_req.assert_called_once_with(mock_did.did, "cred_def_id")
-            mock_submit.assert_called_once_with(
-                mock_build_get_cred_def_req.return_value, sign=True
+            mock_build_get_cred_def_req.assert_called_once_with(
+                mock_did.did, "cred_def_id"
             )
-            mock_parse_get_cred_def_req.assert_called_once_with(mock_submit.return_value)
+            mock_submit.assert_called_once_with(
+                mock_build_get_cred_def_req.return_value, public_did=mock_did.did
+            )
+            mock_parse_get_cred_def_req.assert_called_once_with(
+                mock_submit.return_value
+            )
 
             assert response == json.loads(mock_parse_get_cred_def_req.return_value[1])
 
@@ -416,34 +426,27 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_txn_request")
     async def test_credential_definition_id2schema_id(
-        self,
-        mock_build_get_txn_req,
-        mock_submit,
-        mock_close,
-        mock_open,
+        self, mock_build_get_txn_req, mock_submit, mock_close, mock_open
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.WALLET_TYPE = "indy"
 
         mock_build_get_txn_req.return_value = json.dumps("dummy")
-        mock_submit.return_value = json.dumps({
-            "result": {
-                "data": {
-                    "txn": {
-                        "type": "101",
-                        "metadata": {
-                            "from": f"{TestIndyLedger.test_did}"
-                        },
-                        "data": {
+        mock_submit.return_value = json.dumps(
+            {
+                "result": {
+                    "data": {
+                        "txn": {
+                            "type": "101",
+                            "metadata": {"from": f"{TestIndyLedger.test_did}"},
                             "data": {
-                                "name": "favourite_drink",
-                                "version": "1.0"
-                            }
+                                "data": {"name": "favourite_drink", "version": "1.0"}
+                            },
                         }
                     }
                 }
             }
-        })
+        )
 
         ledger = IndyLedger("name", mock_wallet)
 
@@ -452,7 +455,9 @@ class TestIndyLedger(AsyncTestCase):
                 f"{TestIndyLedger.test_did}:3:CL:9999:tag"
             )
             mock_build_get_txn_req.assert_called_once_with(None, None, seq_no=9999)
-            mock_submit.assert_called_once_with(mock_build_get_txn_req.return_value)
+            mock_submit.assert_called_once_with(
+                mock_build_get_txn_req.return_value,
+            )
 
             assert s_id_short == f"{TestIndyLedger.test_did}:2:favourite_drink:1.0"
             s_id_long = await ledger.credential_definition_id2schema_id(
