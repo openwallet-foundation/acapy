@@ -21,6 +21,8 @@ class V10CredentialExchange(BaseRecord):
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
+    ROLE_ISSUER = "issuer"
+    ROLE_HOLDER = "holder"
 
     STATE_PROPOSAL_SENT = "proposal_sent"
     STATE_PROPOSAL_RECEIVED = "proposal_received"
@@ -40,6 +42,7 @@ class V10CredentialExchange(BaseRecord):
         thread_id: str = None,
         parent_thread_id: str = None,
         initiator: str = None,
+        role: str = None,
         state: str = None,
         credential_definition_id: str = None,
         schema_id: str = None,
@@ -62,6 +65,7 @@ class V10CredentialExchange(BaseRecord):
         self.thread_id = thread_id
         self.parent_thread_id = parent_thread_id
         self.initiator = initiator
+        self.role = role
         self.state = state
         self.credential_definition_id = credential_definition_id
         self.schema_id = schema_id
@@ -110,6 +114,7 @@ class V10CredentialExchange(BaseRecord):
             "connection_id",
             "thread_id",
             "initiator",
+            "role",
             "state",
             "credential_definition_id",
             "schema_id",
@@ -154,6 +159,12 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
         description="Issue-credential exchange initiator: self or external",
         example=V10CredentialExchange.INITIATOR_SELF,
         validate=OneOf(["self", "external"]),
+    )
+    role = fields.Str(
+        required=False,
+        description="Issue-credential exchange role: holder or issuer",
+        example=V10CredentialExchange.ROLE_ISSUER,
+        validate=OneOf(['holder', 'issuer'])
     )
     state = fields.Str(
         required=False,
