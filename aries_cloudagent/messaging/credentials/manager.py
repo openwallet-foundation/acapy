@@ -60,7 +60,7 @@ class CredentialManager:
             + f"{credential_exchange_record.credential_definition_id}::"
             + f"{credential_exchange_record.connection_id}",
             credential_exchange_record.credential_exchange_id,
-            600,
+            15,
         )
 
     async def prepare_send(
@@ -532,76 +532,70 @@ class CredentialManager:
             credential_exchange_record.parent_thread_id,
         )
 
-        async def remove_record():
+        # Get parent exchange record if parent id exists
+        parent_thread_id = credential_exchange_record.parent_thread_id
+        if parent_thread_id:
+            # We delete the current record but only if it has a parent_id
+            # because we don't want to delete any new parents
+            try:
+                await credential_exchange_record.delete_record(self.context)
+                self._logger.info("Credential exchange record successfully deleted")
+            except StorageNotFoundError:
+                # It's possible for another thread to have already deleted
+                # this record
+                self._logger.info("Failed to delete credential exchange record")
 
-            # Get parent exchange record if parent id exists
-            parent_thread_id = credential_exchange_record.parent_thread_id
-            if parent_thread_id:
-                # We delete the current record but only if it has a parent_id
-                # because we don't want to delete any new parents
-                try:
-                    await credential_exchange_record.delete_record(self.context)
-                    self._logger.info("Credential exchange record successfully deleted")
-                except StorageNotFoundError:
-                    # It's possible for another thread to have already deleted
-                    # this record
-                    self._logger.info("Failed to delete credential exchange record")
-                    pass
+        # Query undeleted stored exchange records for possible expired parents
+        old_credential_exchange_records = await CredentialExchange.query(
+            self.context,
+            tag_filter={
+                "state": CredentialExchange.STATE_STORED,
+                "initiator": CredentialExchange.INITIATOR_EXTERNAL,
+            },
+        )
 
-            # Query undeleted stored exchange records for possible expired parents
-            old_credential_exchange_records = await CredentialExchange.query(
-                self.context,
-                tag_filter={
-                    "state": CredentialExchange.STATE_STORED,
-                    "initiator": CredentialExchange.INITIATOR_EXTERNAL,
-                },
+        for old_credential_exchange_record in old_credential_exchange_records:
+            cache: BaseCache = await self._context.inject(BaseCache)
+            in_use_parent_exchange_id = await cache.get(
+                "credential_exchange::offer_exchange_id::"
+                + f"{credential_exchange_record.credential_definition_id}::"
+                + f"{credential_exchange_record.connection_id}"
             )
 
-            for old_credential_exchange_record in old_credential_exchange_records:
-                cache: BaseCache = await self._context.inject(BaseCache)
-                in_use_parent_exchange_id = await cache.get(
-                    "credential_exchange::offer_exchange_id::"
-                    + f"{credential_exchange_record.credential_definition_id}::"
-                    + f"{credential_exchange_record.connection_id}"
+            # If this old credential is still in the cache, then it's definitely
+            # an active parent record
+            if (
+                old_credential_exchange_record.credential_exchange_id
+                != in_use_parent_exchange_id
+            ):
+                # We check if any child threads are still relying on
+                # information from this record. If not, we can delete.
+                child_records = await CredentialExchange.query(
+                    self.context,
+                    tag_filter={
+                        "parent_thread_id": (
+                            old_credential_exchange_record.thread_id
+                        ),
+                        "initiator": CredentialExchange.INITIATOR_EXTERNAL,
+                    },
                 )
 
-                # If this old credential is still in the cache, then it's definitely
-                # an active parent record
-                if (
-                    old_credential_exchange_record.credential_exchange_id
-                    != in_use_parent_exchange_id
-                ):
-                    # We check if any child threads are still relying on
-                    # information from this record. If not, we can delete.
-                    child_records = await CredentialExchange.query(
-                        self.context,
-                        tag_filter={
-                            "parent_thread_id": (
-                                old_credential_exchange_record.thread_id
-                            ),
-                            "initiator": CredentialExchange.INITIATOR_EXTERNAL,
-                        },
-                    )
-
-                    # If this credential isn't in the cache and there are no child
-                    # records which reference this as parent, we can delete
-                    if len(child_records) == 0:
-                        try:
-                            await old_credential_exchange_record.delete_record(
-                                self.context
-                            )
-                            self._logger.info(
-                                "Parent credential exchange record successfully deleted"
-                            )
-                        except StorageNotFoundError:
-                            # It's possible for another thread to have already deleted
-                            # this record
-                            self._logger.info(
-                                "Failed to delete parent credential exchange record"
-                            )
-                            pass
-
-        # asyncio.ensure_future(remove_record())
+                # If this credential isn't in the cache and there are no child
+                # records which reference this as parent, we can delete
+                if len(child_records) == 0:
+                    try:
+                        await old_credential_exchange_record.delete_record(
+                            self.context
+                        )
+                        self._logger.info(
+                            "Parent credential exchange record successfully deleted"
+                        )
+                    except StorageNotFoundError:
+                        # It's possible for another thread to have already deleted
+                        # this record
+                        self._logger.info(
+                            "Failed to delete parent credential exchange record"
+                        )
 
         return credential_exchange_record, credential_stored_message
 
@@ -638,7 +632,6 @@ class CredentialManager:
                 # It's possible for another thread to have already deleted
                 # this record
                 self._logger.info("Failed to delete credential exchange record")
-                pass
 
         # Query undeleted stored exchange records for possible expired parents
         old_credential_exchange_records = await CredentialExchange.query(
@@ -684,4 +677,3 @@ class CredentialManager:
                         self._logger.info(
                             "Failed to delete parent credential exchange record"
                         )
-                        pass
