@@ -552,7 +552,7 @@ class IndyLedger(BaseLedger):
         request_json = await indy.ledger.build_get_txn_request(
             None, None, seq_no=seq_no
         )
-        response = json.loads(await self._submit(request_json))
+        response = json.loads(await self._submit(request_json, sign=False))
 
         # transaction data format assumes node protocol >= 1.4 (circa 2018-07)
         data_txn = (response["result"].get("data", {}) or {}).get("txn", {})
