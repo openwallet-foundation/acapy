@@ -5,6 +5,8 @@ import json
 import logging
 import time
 
+from typing import Union
+
 from ...config.injection_context import InjectionContext
 from ...error import BaseError
 from ...cache.base import BaseCache
@@ -532,70 +534,11 @@ class CredentialManager:
             credential_exchange_record.parent_thread_id,
         )
 
-        # Get parent exchange record if parent id exists
-        parent_thread_id = credential_exchange_record.parent_thread_id
-        if parent_thread_id:
-            # We delete the current record but only if it has a parent_id
-            # because we don't want to delete any new parents
-            try:
-                await credential_exchange_record.delete_record(self.context)
-                self._logger.info("Credential exchange record successfully deleted")
-            except StorageNotFoundError:
-                # It's possible for another thread to have already deleted
-                # this record
-                self._logger.info("Failed to delete credential exchange record")
-
-        # Query undeleted stored exchange records for possible expired parents
-        old_credential_exchange_records = await CredentialExchange.query(
-            self.context,
-            tag_filter={
-                "state": CredentialExchange.STATE_STORED,
-                "initiator": CredentialExchange.INITIATOR_EXTERNAL,
-            },
+        await self.remove_expired_records(
+            credential_exchange_record,
+            CredentialExchange.INITIATOR_EXTERNAL,
+            "credential_exchange::offer_exchange_id::"
         )
-
-        for old_credential_exchange_record in old_credential_exchange_records:
-            cache: BaseCache = await self._context.inject(BaseCache)
-            in_use_parent_exchange_id = await cache.get(
-                "credential_exchange::offer_exchange_id::"
-                + f"{credential_exchange_record.credential_definition_id}::"
-                + f"{credential_exchange_record.connection_id}"
-            )
-
-            # If this old credential is still in the cache, then it's definitely
-            # an active parent record
-            if (
-                old_credential_exchange_record.credential_exchange_id
-                != in_use_parent_exchange_id
-            ):
-                # We check if any child threads are still relying on
-                # information from this record. If not, we can delete.
-                child_records = await CredentialExchange.query(
-                    self.context,
-                    tag_filter={
-                        "parent_thread_id": (
-                            old_credential_exchange_record.thread_id
-                        ),
-                        "initiator": CredentialExchange.INITIATOR_EXTERNAL,
-                    },
-                )
-
-                # If this credential isn't in the cache and there are no child
-                # records which reference this as parent, we can delete
-                if len(child_records) == 0:
-                    try:
-                        await old_credential_exchange_record.delete_record(
-                            self.context
-                        )
-                        self._logger.info(
-                            "Parent credential exchange record successfully deleted"
-                        )
-                    except StorageNotFoundError:
-                        # It's possible for another thread to have already deleted
-                        # this record
-                        self._logger.info(
-                            "Failed to delete parent credential exchange record"
-                        )
 
         return credential_exchange_record, credential_stored_message
 
@@ -620,6 +563,29 @@ class CredentialManager:
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         await credential_exchange_record.save(self.context, reason="Credential stored")
 
+        await self.remove_expired_records(
+            credential_exchange_record,
+            CredentialExchange.INITIATOR_EXTERNAL,
+            "credential_exchange::"
+        )
+
+    async def remove_expired_records(
+        self,
+        credential_exchange_record: CredentialExchange,
+        initiator: Union[
+            CredentialExchange.INITIATOR_SELF, CredentialExchange.INITIATOR_SELF
+        ],
+        cache_key_namespace: str,
+    ):
+        """
+        Delete old credential exchange records that are no longer needed.
+
+        Args:
+            credential_exchange_record: credential exchange record to clean
+            initiator: who initiated this thread
+            cache_key_namespace: cache key namespace for active parent thread
+
+        """
         # Get parent exchange record if parent id exists
         parent_thread_id = credential_exchange_record.parent_thread_id
         if parent_thread_id:
@@ -636,13 +602,17 @@ class CredentialManager:
         # Query undeleted stored exchange records for possible expired parents
         old_credential_exchange_records = await CredentialExchange.query(
             self.context,
-            tag_filter={"state": CredentialExchange.STATE_STORED, "initiator": "self"},
+            tag_filter={
+                "state": CredentialExchange.STATE_STORED,
+                "initiator": initiator,
+            },
         )
 
         for old_credential_exchange_record in old_credential_exchange_records:
             cache: BaseCache = await self._context.inject(BaseCache)
+
             cached_credential_ex_id = await cache.get(
-                "credential_exchange::"
+                cache_key_namespace
                 + f"{old_credential_exchange_record.credential_definition_id}::"
                 + f"{old_credential_exchange_record.connection_id}"
             )
@@ -659,7 +629,7 @@ class CredentialManager:
                     self.context,
                     tag_filter={
                         "parent_thread_id": old_credential_exchange_record.thread_id,
-                        "initiator": "self",
+                        "initiator": initiator,
                     },
                 )
 
