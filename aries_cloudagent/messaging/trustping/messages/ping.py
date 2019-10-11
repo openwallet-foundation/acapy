@@ -43,5 +43,15 @@ class PingSchema(AgentMessageSchema):
 
         model_class = Ping
 
-    response_requested = fields.Bool(default=True, required=False)
-    comment = fields.Str(required=False, allow_none=True)
+    response_requested = fields.Bool(
+        default=True,
+        required=False,
+        description="Whether response is requested (default True)",
+        example=True,
+    )
+    comment = fields.Str(
+        required=False,
+        description="Optional comment to include",
+        example="Hello",
+        allow_none=True,
+    )

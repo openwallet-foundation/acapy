@@ -43,5 +43,13 @@ class PerformSchema(AgentMessageSchema):
 
         model_class = Perform
 
-    name = fields.Str(required=True)
-    params = fields.Dict(fields.Str(), fields.Str(), required=False)
+    name = fields.Str(
+        required=True,
+        description="Menu option name",
+        example="Query",
+    )
+    params = fields.Dict(
+        required=False,
+        keys=fields.Str(example="parameter"),  # marshmallow/apispec v3.0 ignores
+        values=fields.Str(example="value"),
+    )

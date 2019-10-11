@@ -1,5 +1,5 @@
 from .....decorators.attach_decorator import AttachDecorator
-from ...message_types import CREDENTIAL_REQUEST
+from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_REQUEST
 from ..credential_request import CredentialRequest
 
 from unittest import mock, TestCase
@@ -32,14 +32,24 @@ class TestCredentialRequest(TestCase):
 
     cred_req = CredentialRequest(
         comment="Test",
-        requests_attach=[AttachDecorator.from_indy_dict(indy_cred_req)]
+        requests_attach=[
+            AttachDecorator.from_indy_dict(
+                indy_dict=indy_cred_req,
+                ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
+            )
+        ]
     )
 
     def test_init(self):
         """Test initializer"""
         credential_request = CredentialRequest(
             comment="Test",
-            requests_attach=[AttachDecorator.from_indy_dict(self.indy_cred_req)]
+            requests_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_cred_req,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
+                )
+            ]
         )
         assert credential_request.requests_attach[0].indy_dict == self.indy_cred_req
         assert credential_request.indy_cred_req(0) == self.indy_cred_req
@@ -48,7 +58,12 @@ class TestCredentialRequest(TestCase):
         """Test type"""
         credential_request = CredentialRequest(
             comment="Test",
-            requests_attach=[AttachDecorator.from_indy_dict(self.indy_cred_req)]
+            requests_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_cred_req,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
+                )
+            ]
         )
 
         assert credential_request._type == CREDENTIAL_REQUEST
@@ -78,7 +93,12 @@ class TestCredentialRequest(TestCase):
         """
         credential_request = CredentialRequest(
             comment="Test",
-            requests_attach=[AttachDecorator.from_indy_dict(self.indy_cred_req)]
+            requests_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_cred_req,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
+                )
+            ]
         )
 
         credential_request_dict = credential_request.serialize()
@@ -92,7 +112,9 @@ class TestCredentialRequestSchema(TestCase):
 
     credential_request = CredentialRequest(
         comment="Test",
-        requests_attach=[AttachDecorator.from_indy_dict(TestCredentialRequest.indy_cred_req)]
+        requests_attach=[
+            AttachDecorator.from_indy_dict(TestCredentialRequest.indy_cred_req)
+        ]
     )
 
     def test_make_model(self):

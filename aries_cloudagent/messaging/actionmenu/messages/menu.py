@@ -55,7 +55,23 @@ class MenuSchema(AgentMessageSchema):
 
         model_class = Menu
 
-    title = fields.Str(required=False)
-    description = fields.Str(required=False)
-    errormsg = fields.Str(required=False)
-    options = fields.List(fields.Nested(MenuOptionSchema), required=True)
+    title = fields.Str(
+        required=False,
+        description="Menu title",
+        example="My Menu",
+    )
+    description = fields.Str(
+        required=False,
+        description="Introductory text for the menu",
+        example="This menu presents options",
+    )
+    errormsg = fields.Str(
+        required=False,
+        description="An optional error message to display in menu header",
+        example="Error: item not found",
+    )
+    options = fields.List(
+        fields.Nested(MenuOptionSchema),
+        required=True,
+        description="List of menu options",
+    )

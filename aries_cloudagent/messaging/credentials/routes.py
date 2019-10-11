@@ -14,6 +14,7 @@ from ...wallet.error import WalletNotFoundError
 from ...messaging.problem_report.message import ProblemReport
 
 from ..connections.models.connection_record import ConnectionRecord
+from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID, INDY_SCHEMA_ID
 
 from .manager import CredentialManager
 from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema
@@ -76,10 +77,60 @@ class CredentialStoreRequestSchema(Schema):
     credential_id = fields.Str(required=False)
 
 
+class RawEncCredAttrSchema(Schema):
+    """Credential attribute schema."""
+
+    raw = fields.Str(description="Raw value", example="Alex")
+    encoded = fields.Str(
+        description="(Numeric string) encoded value",
+        example="412821674062189604125602903860586582569826459817431467861859655321"
+    )
+
+
+class RevRegSchema(Schema):
+    """Revocation registry schema."""
+
+    accum = fields.Str(
+        description="Revocation registry accumulator state",
+        example="21 136D54EA439FC26F03DB4b812 21 123DE9F624B86823A00D ..."
+    )
+
+
+class WitnessSchema(Schema):
+    """Witness schema."""
+
+    omega = fields.Str(
+        description="Revocation registry witness omega state",
+        example="21 129EA8716C921058BB91826FD 21 8F19B91313862FE916C0 ..."
+    )
+
+
 class CredentialSchema(Schema):
     """Result schema for a credential query."""
 
-    # properties undefined
+    schema_id = fields.Str(
+        description="Schema identifier",
+        **INDY_SCHEMA_ID
+    )
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID
+    )
+    rev_reg_id = fields.Str(
+        description="Revocation registry identifier",
+        **INDY_REV_REG_ID
+    )
+    values = fields.Dict(
+        keys=fields.Str(
+            description="Attribute name"
+        ),
+        values=fields.Nested(RawEncCredAttrSchema),
+        description="Attribute names mapped to their raw and encoded values"
+    )
+    signature = fields.Dict(description="Digital signature")
+    signature_correctness_proof = fields.Dict(description="Signature correctness proof")
+    rev_reg = fields.Nested(RevRegSchema)
+    witness = fields.Nested(WitnessSchema)
 
 
 class CredentialListSchema(Schema):

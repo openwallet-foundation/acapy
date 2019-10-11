@@ -44,6 +44,13 @@ class RouteQueryRequestSchema(AgentMessageSchema):
         model_class = RouteQueryRequest
 
     filter = fields.Dict(
-        fields.Str(), fields.List(fields.Str()), required=False, allow_none=True
+        keys=fields.Str(description="field"),
+        values=fields.List(
+            fields.Str(description="value"),
+            description="List of values",
+        ),
+        required=False,
+        allow_none=True,
+        description="Filter by field name and value",
     )
     paginate = fields.Nested(PaginateSchema(), required=False, allow_none=True)

@@ -26,6 +26,7 @@ from .models.base import (
     resolve_class,
     resolve_meta_property,
 )
+from .valid import UUIDFour
 
 
 class AgentMessageError(BaseModelError):
@@ -301,8 +302,19 @@ class AgentMessageSchema(BaseModelSchema):
         signed_fields = None
 
     # Avoid clobbering keywords
-    _type = fields.Str(data_key="@type", dump_only=True, required=False)
-    _id = fields.Str(data_key="@id", required=False)
+    _type = fields.Str(
+        data_key="@type",
+        dump_only=True,
+        required=False,
+        description="Message type",
+        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/my-family/1.0/my-message-type",
+    )
+    _id = fields.Str(
+        data_key="@id",
+        required=False,
+        description="Message identifier",
+        example=UUIDFour.EXAMPLE,
+    )
 
     def __init__(self, *args, **kwargs):
         """

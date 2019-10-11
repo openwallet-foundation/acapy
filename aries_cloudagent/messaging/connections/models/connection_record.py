@@ -5,6 +5,7 @@ import json
 from typing import Sequence
 
 from marshmallow import fields
+from marshmallow.validate import OneOf
 
 from ....config.injection_context import InjectionContext
 from ....storage.base import BaseStorage
@@ -12,6 +13,7 @@ from ....storage.record import StorageRecord
 
 from ...models.base_record import BaseRecord, BaseRecordSchema
 from ...util import time_now
+from ...valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
@@ -375,17 +377,76 @@ class ConnectionRecordSchema(BaseRecordSchema):
 
         model_class = ConnectionRecord
 
-    connection_id = fields.Str(required=False)
-    my_did = fields.Str(required=False)
-    their_did = fields.Str(required=False)
-    their_label = fields.Str(required=False)
-    their_role = fields.Str(required=False)
-    inbound_connection_id = fields.Str(required=False)
-    initiator = fields.Str(required=False)
-    invitation_key = fields.Str(required=False)
-    request_id = fields.Str(required=False)
-    routing_state = fields.Str(required=False)
-    accept = fields.Str(required=False)
-    error_msg = fields.Str(required=False)
-    invitation_mode = fields.Str(required=False)
-    alias = fields.Str(required=False)
+    connection_id = fields.Str(
+        required=False,
+        description="Connection identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    my_did = fields.Str(
+        required=False,
+        description="Our DID for connection",
+        **INDY_DID
+    )
+    their_did = fields.Str(
+        required=False,
+        description="Their DID for connection",
+        **INDY_DID
+    )
+    their_label = fields.Str(
+        required=False,
+        description="Their label for connection",
+        example="Bob"
+    )
+    their_role = fields.Str(
+        required=False,
+        description="Their assigned role for connection",
+        example="Point of contact"
+    )
+    inbound_connection_id = fields.Str(
+        required=False,
+        description="Inbound routing connection id to use",
+        example=UUIDFour.EXAMPLE,
+    )
+    initiator = fields.Str(
+        required=False,
+        description="Connection initiator: self, external, or multiuse",
+        example=ConnectionRecord.INITIATOR_SELF,
+        validate=OneOf(["self", "external", "multiuse"]),
+    )
+    invitation_key = fields.Str(
+        required=False,
+        description="Public key for connection",
+        **INDY_RAW_PUBLIC_KEY
+    )
+    request_id = fields.Str(
+        required=False,
+        description="Connection request identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    routing_state = fields.Str(
+        required=False,
+        description="Routing state of connection",
+        example=ConnectionRecord.ROUTING_STATE_ACTIVE,
+    )
+    accept = fields.Str(
+        required=False,
+        description="Connection acceptance: manual or auto",
+        example=ConnectionRecord.ACCEPT_AUTO,
+        validate=OneOf(["manual", "auto"]),
+    )
+    error_msg = fields.Str(
+        required=False,
+        description="Error message",
+        example="No DIDDoc provided; cannot connect to public DID",
+    )
+    invitation_mode = fields.Str(
+        required=False,
+        description="Invitation mode: once or multi",
+        example=ConnectionRecord.INVITATION_MODE_ONCE,
+        validate=OneOf(["once", "multi"])
+    )
+    alias = fields.Str(
+        required=False,
+        description="Optional alias to apply to connection for later use",
+        example="Bob, providing quotes",
+    )

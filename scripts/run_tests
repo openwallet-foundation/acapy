@@ -14,5 +14,5 @@ else
 fi
 
 $DOCKER run --rm -ti --name aries-cloudagent-runner \
-	-v "$(pwd)/../test-reports:/usr/src/app/test-reports" \
+	-v "/$(pwd)/../test-reports:/usr/src/app/test-reports" \
 	aries-cloudagent-test "$@"

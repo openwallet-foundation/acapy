@@ -14,6 +14,7 @@ from .models.presentation_exchange import V10PresentationExchange
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
+from .message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
 
 
 class PresentationManagerError(BaseError):
@@ -138,7 +139,10 @@ class PresentationManager:
         presentation_request_message = PresentationRequest(
             comment=comment,
             request_presentations_attach=[
-                AttachDecorator.from_indy_dict(indy_proof_request)
+                AttachDecorator.from_indy_dict(
+                    indy_dict=indy_proof_request,
+                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                )
             ],
         )
         presentation_request_message._thread = {
@@ -300,7 +304,12 @@ class PresentationManager:
 
         presentation_message = Presentation(
             comment=comment,
-            presentations_attach=[AttachDecorator.from_indy_dict(indy_proof)],
+            presentations_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=indy_proof,
+                    ident=ATTACH_DECO_IDS[PRESENTATION],
+                )
+            ],
         )
 
         presentation_message._thread = {"thid": presentation_exchange_record.thread_id}

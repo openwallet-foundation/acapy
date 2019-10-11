@@ -20,6 +20,12 @@ from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.credential_stored import CredentialStored
 from .messages.inner.credential_preview import CredentialPreview
+from .message_types import (
+    ATTACH_DECO_IDS,
+    CREDENTIAL_ISSUE,
+    CREDENTIAL_OFFER,
+    CREDENTIAL_REQUEST,
+)
 from .models.credential_exchange import V10CredentialExchange
 
 
@@ -331,7 +337,12 @@ class CredentialManager:
         credential_offer_message = CredentialOffer(
             comment=comment,
             credential_preview=cred_preview,
-            offers_attach=[AttachDecorator.from_indy_dict(credential_offer)],
+            offers_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=credential_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                )
+            ],
         )
 
         credential_offer_message._thread = {
@@ -410,7 +421,8 @@ class CredentialManager:
         credential_request_message = CredentialRequest(
             requests_attach=[
                 AttachDecorator.from_indy_dict(
-                    credential_exchange_record.credential_request
+                    indy_dict=credential_exchange_record.credential_request,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
                 )
             ]
         )
@@ -505,7 +517,10 @@ class CredentialManager:
         credential_message = CredentialIssue(
             comment=comment,
             credentials_attach=[
-                AttachDecorator.from_indy_dict(credential_exchange_record.credential)
+                AttachDecorator.from_indy_dict(
+                    indy_dict=credential_exchange_record.credential,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE]
+                )
             ],
         )
         credential_message._thread = {

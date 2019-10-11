@@ -1,8 +1,10 @@
 """Aries#0037 v1.0 presentation exchange information with non-secrets storage."""
 
 from marshmallow import fields
+from marshmallow.validate import OneOf
 
 from ....models.base_record import BaseRecord, BaseRecordSchema
+from ....valid import UUIDFour
 
 
 class V10PresentationExchange(BaseRecord):
@@ -97,14 +99,57 @@ class V10PresentationExchangeSchema(BaseRecordSchema):
 
         model_class = V10PresentationExchange
 
-    presentation_exchange_id = fields.Str(required=False)
-    connection_id = fields.Str(required=False)
-    thread_id = fields.Str(required=False)
-    initiator = fields.Str(required=False)
-    state = fields.Str(required=False)
-    presentation_proposal_dict = fields.Dict(required=False)
-    presentation_request = fields.Dict(required=False)
-    presentation = fields.Dict(required=False)
-    verified = fields.Str(required=False)
-    auto_present = fields.Bool(required=False)
-    error_msg = fields.Str(required=False)
+    presentation_exchange_id = fields.Str(
+        required=False,
+        description="Presentation exchange identifier",
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+    )
+    connection_id = fields.Str(
+        required=False,
+        description="Connection identifier",
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+    )
+    thread_id = fields.Str(
+        required=False,
+        description="Thread identifier",
+        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+    )
+    initiator = fields.Str(
+        required=False,
+        description="Present-proof exchange initiator: self or external",
+        example=V10PresentationExchange.INITIATOR_SELF,
+        validate=OneOf(["self", "external"]),
+    )
+    state = fields.Str(
+        required=False,
+        description="Present-proof exchange state",
+        example=V10PresentationExchange.STATE_VERIFIED,
+    )
+    presentation_proposal_dict = fields.Dict(
+        required=False,
+        description="Serialized presentation proposal message",
+    )
+    presentation_request = fields.Dict(
+        required=False,
+        description="(Indy) presentation request (also known as proof request)",
+    )
+    presentation = fields.Dict(
+        required=False,
+        description="(Indy) presentation (also known as proof)"
+    )
+    verified = fields.Str(  # tag: must be a string
+        required=False,
+        description="Whether presentation is verified: true or false",
+        example="true",
+        validate=OneOf(["true", "false"]),
+    )
+    auto_present = fields.Bool(
+        required=False,
+        description="Prover choice to auto-present proof as verifier requests",
+        example=False,
+    )
+    error_msg = fields.Str(
+        required=False,
+        description="Error message",
+        example="Invalid structure"
+    )

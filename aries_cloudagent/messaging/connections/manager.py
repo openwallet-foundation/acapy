@@ -683,7 +683,7 @@ class ConnectionManager:
 
         Args:
             my_info: The DID I am using in this connection
-            inbound_connection_id: The DID of the inbound routing connection to use
+            inbound_connection_id: The inbound routing connection id to use
             my_endpoint: A custom endpoint for the DID Document
 
         Returns:
