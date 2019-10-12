@@ -162,6 +162,7 @@ class CredentialManager:
                 auto_issue=True,
                 connection_id=connection_id,
                 initiator=V10CredentialExchange.INITIATOR_SELF,
+                role=V10CredentialExchange.ROLE_ISSUER,
                 credential_definition_id=credential_definition_id,
                 credential_proposal_dict=credential_proposal.serialize(),
             )
