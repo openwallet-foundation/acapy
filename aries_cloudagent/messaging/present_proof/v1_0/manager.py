@@ -70,6 +70,7 @@ class PresentationManager:
             connection_id=connection_id,
             thread_id=presentation_proposal_message._thread_id,
             initiator=V10PresentationExchange.INITIATOR_SELF,
+            role=V10PresentationExchange.ROLE_PROVER,
             state=V10PresentationExchange.STATE_PROPOSAL_SENT,
             presentation_proposal_dict=presentation_proposal_message.serialize(),
             auto_present=auto_present,
@@ -94,6 +95,7 @@ class PresentationManager:
             connection_id=self.context.connection_record.connection_id,
             thread_id=presentation_proposal_message._thread_id,
             initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
+            role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
             presentation_proposal_dict=presentation_proposal_message.serialize(),
         )
@@ -178,6 +180,7 @@ class PresentationManager:
             connection_id=connection_id,
             thread_id=presentation_request_message._thread_id,
             initiator=V10PresentationExchange.INITIATOR_SELF,
+            role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_REQUEST_SENT,
             presentation_request=presentation_request_message.indy_proof_request(),
         )
