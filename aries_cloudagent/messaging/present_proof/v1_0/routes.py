@@ -211,6 +211,7 @@ class V10PresentationRequestRequestSchema(Schema):
         example=UUIDFour.EXAMPLE,
     )
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
+    comment = fields.Str(required=False)
 
 
 class IndyRequestedCredsRequestedAttrSchema(Schema):
