@@ -67,6 +67,7 @@ class CredentialOfferHandler(BaseHandler):
                 connection_id=context.connection_record.connection_id,
                 thread_id=context.message._thread_id,
                 initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
+                role=V10CredentialExchange.ROLE_HOLDER,
                 credential_definition_id=indy_offer["cred_def_id"],
                 schema_id=indy_offer["schema_id"],
                 credential_proposal_dict=credential_proposal_dict
