@@ -33,13 +33,15 @@ class TestProofRoutes(AsyncTestCase):
             mock_holder.get_credentials_for_presentation_request_by_referent = (
                 async_mock.CoroutineMock()
             )
-            mock_holder.get_credentials_for_presentation_request_by_referent.return_value = [
-                {}
-            ]
+
+            returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
+            mock_holder.get_credentials_for_presentation_request_by_referent.return_value = (
+                returned_credentials
+            )
 
             await test_module.presentation_exchange_credentials_list(mock)
 
-            test_module.web.json_response.assert_called_once_with([{}])
+            test_module.web.json_response.assert_called_once_with(returned_credentials)
 
     async def test_present_proof_credentials_list_multiple_referents(self):
         mock = async_mock.MagicMock()
@@ -66,13 +68,15 @@ class TestProofRoutes(AsyncTestCase):
             mock_holder.get_credentials_for_presentation_request_by_referent = (
                 async_mock.CoroutineMock()
             )
-            mock_holder.get_credentials_for_presentation_request_by_referent.return_value = [
-                {}
-            ]
+
+            returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
+            mock_holder.get_credentials_for_presentation_request_by_referent.return_value = (
+                returned_credentials
+            )
 
             await test_module.presentation_exchange_credentials_list(mock)
 
-            test_module.web.json_response.assert_called_once_with([{}])
+            test_module.web.json_response.assert_called_once_with(returned_credentials)
 
     async def test_present_proof_send_proposal(self):
         mock = async_mock.MagicMock()
