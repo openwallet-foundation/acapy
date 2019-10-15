@@ -1,39 +1,25 @@
 """Admin routes for presentations."""
 
 import json
-
 from uuid import uuid4
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
-from marshmallow import fields, Schema
+from marshmallow import Schema, fields
 
 from ....holder.base import BaseHolder
 from ....storage.error import StorageNotFoundError
-
 from ...connections.models.connection_record import ConnectionRecord
 from ...decorators.attach_decorator import AttachDecorator
-from ...valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_PREDICATE,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
-    INT_EPOCH,
-    UUIDFour,
-)
-
+from ...valid import (INDY_CRED_DEF_ID, INDY_DID, INDY_PREDICATE,
+                      INDY_SCHEMA_ID, INDY_VERSION, INT_EPOCH, UUIDFour)
 from .manager import PresentationManager
-from .messages.inner.presentation_preview import (
-    PresentationPreview,
-    PresentationPreviewSchema
-)
+from .messages.inner.presentation_preview import (PresentationPreview,
+                                                  PresentationPreviewSchema)
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
-from .models.presentation_exchange import (
-    V10PresentationExchange,
-    V10PresentationExchangeSchema,
-)
+from .models.presentation_exchange import (V10PresentationExchange,
+                                           V10PresentationExchangeSchema)
 
 
 class V10PresentationExchangeListSchema(Schema):

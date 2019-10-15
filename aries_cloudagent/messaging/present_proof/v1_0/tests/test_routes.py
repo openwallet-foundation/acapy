@@ -7,114 +7,72 @@ from .. import routes as test_module
 
 
 class TestProofRoutes(AsyncTestCase):
-    # async def test_present_proof_send(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
+    def setUp(self):
+        self.mock_context = async_mock.MagicMock()
+        self.test_instance = test_module.PresentationManager(self.mock_context)
 
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
+    async def test_present_proof_credentials_list_single_referent(self):
+        mock = async_mock.MagicMock()
+        mock.match_info = {"pres_ex_id": "123-456-789", "referent": "myReferent1"}
+        mock.query = {"extra_query": {}}
+        mock.app = {"request_context": self.mock_context}
 
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_credential_manager:
-    #         test_module.web.json_response = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_exchange:
 
-    #         mock_credential_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
+            test_module.web.json_response = async_mock.CoroutineMock()
 
-    #         mock_cred_ex_record = async_mock.MagicMock()
+            mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
+                async_mock.MagicMock()
+            )
 
-    #         mock_credential_manager.return_value.prepare_send.return_value = (
-    #             mock_cred_ex_record
-    #         )
+            # mock BaseHolder injection
+            inject = self.test_instance.context.inject = async_mock.CoroutineMock()
+            mock_holder = inject.return_value
+            mock_holder.get_credentials_for_presentation_request_by_referent = (
+                async_mock.CoroutineMock()
+            )
+            mock_holder.get_credentials_for_presentation_request_by_referent.return_value = [
+                {}
+            ]
 
-    #         await test_module.credential_exchange_send(mock)
+            await test_module.presentation_exchange_credentials_list(mock)
 
-    #         test_module.web.json_response.assert_called_once_with(
-    #             mock_cred_ex_record.serialize.return_value
-    #         )
+            test_module.web.json_response.assert_called_once_with([{}])
 
-    # async def test_present_proof_send_no_conn_record(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
+    async def test_present_proof_credentials_list_multiple_referents(self):
+        mock = async_mock.MagicMock()
+        mock.match_info = {
+            "pres_ex_id": "123-456-789",
+            "referent": "myReferent1,myReferent2",
+        }
+        mock.query = {"extra_query": {}}
+        mock.app = {"request_context": self.mock_context}
 
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
+        with async_mock.patch.object(
+            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_exchange:
 
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager:
+            test_module.web.json_response = async_mock.CoroutineMock()
 
-    #         test_module.web.json_response = async_mock.CoroutineMock()
+            mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
+                async_mock.MagicMock()
+            )
 
-    #         # Emulate storage not found (bad connection id)
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
-    #             side_effect=StorageNotFoundError
-    #         )
+            # mock BaseHolder injection
+            inject = self.test_instance.context.inject = async_mock.CoroutineMock()
+            mock_holder = inject.return_value
+            mock_holder.get_credentials_for_presentation_request_by_referent = (
+                async_mock.CoroutineMock()
+            )
+            mock_holder.get_credentials_for_presentation_request_by_referent.return_value = [
+                {}
+            ]
 
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
+            await test_module.presentation_exchange_credentials_list(mock)
 
-    #         with self.assertRaises(test_module.web.HTTPBadRequest):
-    #             await test_module.credential_exchange_send(mock)
-
-    # async def test_present_proof_send_not_ready(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate connection not ready
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_connection_record.retrieve_by_id.return_value.is_ready = False
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPForbidden):
-    #             await test_module.credential_exchange_send(mock)
+            test_module.web.json_response.assert_called_once_with([{}])
 
     async def test_present_proof_send_proposal(self):
         mock = async_mock.MagicMock()
@@ -122,21 +80,15 @@ class TestProofRoutes(AsyncTestCase):
 
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.MagicMock()
+            "request_context": self.mock_context,
         }
 
         with async_mock.patch.object(
-            test_module,
-            "ConnectionRecord",
-            autospec=True
+            test_module, "ConnectionRecord", autospec=True
         ) as mock_connection_record, async_mock.patch.object(
-            test_module,
-            "PresentationManager",
-            autospec=True
+            test_module, "PresentationManager", autospec=True
         ) as mock_presentation_manager, async_mock.patch.object(
-            test_module,
-            "PresentationPreview",
-            autospec=True
+            test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal:
 
             test_module.web.json_response = async_mock.CoroutineMock()
@@ -161,873 +113,65 @@ class TestProofRoutes(AsyncTestCase):
                 mock_presentation_exchange_record.serialize.return_value
             )
 
-    # async def test_present_proof_send_proposal_no_conn_record(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate storage not found (bad connection id)
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
-    #             side_effect=StorageNotFoundError
-    #         )
-
-    #         mock_connection_manager.return_value.create_proposal = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_proposal.return_value = (
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPBadRequest):
-    #             await test_module.credential_exchange_send_proposal(mock)
-
-    # async def test_present_proof_send_proposal_not_ready(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate connection not ready
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_connection_record.retrieve_by_id.return_value.is_ready = False
-
-    #         mock_connection_manager.return_value.create_proposal = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_proposal.return_value = (
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPForbidden):
-    #             await test_module.credential_exchange_send_proposal(mock)
-
-    # async def test_present_proof_send_free_offer(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-    #     mock.json.return_value["auto_issue"] = True
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": async_mock.patch.object(
-    #             aio_web,
-    #             "BaseRequest",
-    #             autospec=True
-    #         )
-    #     }
-    #     mock.app["request_context"].settings = {}
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-
-    #         mock_cred_ex_record = async_mock.MagicMock()
-
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             mock_cred_ex_record,
-    #             async_mock.MagicMock()
-    #         )
-
-    #         await test_module.credential_exchange_send_free_offer(mock)
-
-    #         test_module.web.json_response.assert_called_once_with(
-    #             mock_cred_ex_record.serialize.return_value
-    #         )
-
-    # async def test_present_proof_send_free_offer_no_conn_record(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-    #     mock.json.return_value["auto_issue"] = True
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": async_mock.patch.object(
-    #             aio_web,
-    #             "BaseRequest",
-    #             autospec=True
-    #         )
-    #     }
-    #     mock.app["request_context"].settings = {}
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-
-    #         mock_cred_ex_record = async_mock.MagicMock()
-
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             mock_cred_ex_record,
-    #             async_mock.MagicMock()
-    #         )
-
-    #         await test_module.credential_exchange_send_free_offer(mock)
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate storage not found (bad connection id)
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
-    #             side_effect=StorageNotFoundError
-    #         )
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPBadRequest):
-    #             await test_module.credential_exchange_send_free_offer(mock)
-
-    # async def test_present_proof_send_free_offer_not_ready(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-    #     mock.json.return_value["auto_issue"] = True
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": async_mock.patch.object(
-    #             aio_web,
-    #             "BaseRequest",
-    #             autospec=True
-    #         )
-    #     }
-    #     mock.app["request_context"].settings = {}
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate connection not ready
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_connection_record.retrieve_by_id.return_value.is_ready = False
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPForbidden):
-    #             await test_module.credential_exchange_send_free_offer(mock)
-
-    # async def test_present_proof_send_bound_offer(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_PROPOSAL_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-
-    #         mock_cred_ex_record = async_mock.MagicMock()
-
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             mock_cred_ex_record,
-    #             async_mock.MagicMock(),
-    #         )
-
-    #         await test_module.credential_exchange_send_bound_offer(mock)
-
-    #         test_module.web.json_response.assert_called_once_with(
-    #             mock_cred_ex_record.serialize.return_value
-    #         )
-
-    # async def test_present_proof_send_bound_offer_no_conn_record(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_PROPOSAL_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate storage not found (bad connection id)
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
-    #             side_effect=StorageNotFoundError
-    #         )
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPBadRequest):
-    #             await test_module.credential_exchange_send_bound_offer(mock)
-
-    # async def test_present_proof_send_bound_offer_not_ready(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_PROPOSAL_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate connection not ready
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_connection_record.retrieve_by_id.return_value.is_ready = False
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPForbidden):
-    #             await test_module.credential_exchange_send_bound_offer(mock)
-
-    # async def test_present_proof_send_request(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_OFFER_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_cred_ex_record = async_mock.MagicMock()
-
-    #         mock_connection_manager.return_value.create_request.return_value = (
-    #             mock_cred_ex_record,
-    #             async_mock.MagicMock(),
-    #         )
-
-    #         await test_module.credential_exchange_send_request(mock)
-
-    #         test_module.web.json_response.assert_called_once_with(
-    #             mock_cred_ex_record.serialize.return_value
-    #         )
-
-    # async def test_present_proof_send_request_no_conn_record(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_OFFER_RECEIVED
-    #         )
-
-    #         # Emulate storage not found (bad connection id)
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
-    #             side_effect=StorageNotFoundError
-    #         )
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPBadRequest):
-    #             await test_module.credential_exchange_send_request(mock)
-
-    # async def test_present_proof_send_request_not_ready(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_OFFER_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate connection not ready
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_connection_record.retrieve_by_id.return_value.is_ready = False
-
-    #         mock_connection_manager.return_value.create_offer = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.create_offer.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPForbidden):
-    #             await test_module.credential_exchange_send_request(mock)
-
-    # async def test_present_proof_issue(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context"
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialPreview",
-    #         autospec=True
-    #     ) as mock_cred_preview:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_REQUEST_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_cred_ex_record = async_mock.MagicMock()
-
-    #         mock_connection_manager.return_value.issue_credential.return_value = (
-    #             mock_cred_ex_record,
-    #             async_mock.MagicMock()
-    #         )
-
-    #         mock_cred_preview.return_value.deserialize.return_value = (
-    #             async_mock.MagicMock()
-    #         )
-    #         mock_cred_preview.return_value.attr_dict.return_value = (
-    #             async_mock.MagicMock()
-    #         )
-
-    #         await test_module.credential_exchange_issue(mock)
-
-    #         test_module.web.json_response.assert_called_once_with(
-    #             mock_cred_ex_record.serialize.return_value
-    #         )
-
-    # async def test_present_proof_issue_no_conn_record(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialPreview",
-    #         autospec=True
-    #     ) as mock_cred_preview:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_REQUEST_RECEIVED
-    #         )
-
-    #         # Emulate storage not found (bad connection id)
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
-    #             side_effect=StorageNotFoundError
-    #         )
-
-    #         mock_connection_manager.return_value.issue_credential = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.issue_credential.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         mock_cred_preview.return_value.deserialize.return_value = (
-    #             async_mock.MagicMock()
-    #         )
-    #         mock_cred_preview.return_value.attr_dict.return_value = (
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPBadRequest):
-    #             await test_module.credential_exchange_issue(mock)
-
-    # async def test_present_proof_issue_not_ready(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialPreview",
-    #         autospec=True
-    #     ) as mock_cred_preview:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_REQUEST_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate connection not ready
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_connection_record.retrieve_by_id.return_value.is_ready = False
-
-    #         mock_connection_manager.return_value.issue_credential = (
-    #             async_mock.CoroutineMock()
-    #         )
-    #         mock_connection_manager.return_value.issue_credential.return_value = (
-    #             async_mock.MagicMock(),
-    #             async_mock.MagicMock()
-    #         )
-
-    #         mock_cred_preview.return_value.deserialize.return_value = (
-    #             async_mock.MagicMock()
-    #         )
-    #         mock_cred_preview.return_value.attr_dict.return_value = (
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPForbidden):
-    #             await test_module.credential_exchange_issue(mock)
-
-    # async def test_present_proof_store(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_CREDENTIAL_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_cred_ex_record = async_mock.MagicMock()
-
-    #         mock_connection_manager.return_value.store_credential.return_value = (
-    #             mock_cred_ex_record,
-    #             async_mock.MagicMock()
-    #         )
-
-    #         await test_module.credential_exchange_store(mock)
-
-    #         test_module.web.json_response.assert_called_once_with(
-    #             mock_cred_ex_record.serialize.return_value
-    #         )
-
-    # async def test_present_proof_store_no_conn_record(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_CREDENTIAL_RECEIVED
-    #         )
-
-    #         # Emulate storage not found (bad connection id)
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
-    #             side_effect=StorageNotFoundError
-    #         )
-
-    #         mock_connection_manager.return_value.store_credential.return_value = (
-    #             mock_cred_ex,
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPBadRequest):
-    #             await test_module.credential_exchange_store(mock)
-
-    # async def test_present_proof_store_not_ready(self):
-    #     mock = async_mock.MagicMock()
-    #     mock.json = async_mock.CoroutineMock()
-
-    #     mock.app = {
-    #         "outbound_message_router": async_mock.CoroutineMock(),
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_cred_ex.retrieve_by_id.return_value.state = (
-    #             mock_cred_ex.STATE_CREDENTIAL_RECEIVED
-    #         )
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         # Emulate connection not ready
-    #         mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
-    #         mock_connection_record.retrieve_by_id.return_value.is_ready = False
-
-    #         mock_connection_manager.return_value.store_credential.return_value = (
-    #             mock_cred_ex,
-    #             async_mock.MagicMock()
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPForbidden):
-    #             await test_module.credential_exchange_store(mock)
-
-    # async def test_present_proof_problem_report(self):
-    #     mock_request = async_mock.MagicMock()
-    #     mock_request.json = async_mock.CoroutineMock()
-
-    #     mock_outbound = async_mock.CoroutineMock()
-
-    #     mock_request.app = {
-    #         "outbound_message_router": mock_outbound,
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex, async_mock.patch.object(
-    #         test_module,
-    #         "ProblemReport",
-    #         autospec=True
-    #     ) as mock_prob_report:
-
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
-
-    #         test_module.web.json_response = async_mock.CoroutineMock()
-
-    #         await test_module.credential_exchange_problem_report(mock_request)
-
-    #         test_module.web.json_response.assert_called_once_with({})
-    #         mock_outbound.assert_called_once_with(
-    #             mock_prob_report.return_value,
-    #             connection_id=mock_cred_ex.retrieve_by_id.return_value.connection_id,
-    #         )
-
-    # async def test_present_proof_problem_report_no_cred_record(self):
-
-    #     mock_request = async_mock.MagicMock()
-    #     mock_request.json = async_mock.CoroutineMock()
-
-    #     mock_outbound = async_mock.CoroutineMock()
-
-    #     mock_request.app = {
-    #         "outbound_message_router": mock_outbound,
-    #         "request_context": "context",
-    #     }
-
-    #     with async_mock.patch.object(
-    #         test_module,
-    #         "ConnectionRecord",
-    #         autospec=True
-    #     ) as mock_connection_record, async_mock.patch.object(
-    #         test_module,
-    #         "CredentialManager",
-    #         autospec=True
-    #     ) as mock_connection_manager, async_mock.patch.object(
-    #         test_module,
-    #         "V10CredentialExchange",
-    #         autospec=True
-    #     ) as mock_cred_ex, async_mock.patch.object(
-    #         test_module,
-    #         "ProblemReport",
-    #         autospec=True
-    #     ) as mock_prob_report:
-
-    #         # Emulate storage not found (bad connection id)
-    #         mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock(
-    #             side_effect=StorageNotFoundError
-    #         )
-
-    #         with self.assertRaises(test_module.web.HTTPNotFound):
-    #             await test_module.credential_exchange_problem_report(mock_request)
+    async def test_present_proof_send_proposal_no_conn_record(self):
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock()
+
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": self.mock_context,
+        }
+
+        with async_mock.patch.object(
+            test_module, "ConnectionRecord", autospec=True
+        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "PresentationManager", autospec=True
+        ) as mock_presentation_manager:
+
+            test_module.web.json_response = async_mock.CoroutineMock()
+
+            # Emulate storage not found (bad connection id)
+            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError
+            )
+
+            mock_presentation_manager.return_value.create_exchange_for_proposal = (
+                async_mock.CoroutineMock()
+            )
+            mock_presentation_manager.return_value.create_exchange_for_proposal.return_value = (
+                async_mock.MagicMock()
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.presentation_exchange_send_proposal(mock)
+
+    async def test_present_proof_send_proposal_not_ready(self):
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock()
+
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": self.mock_context,
+        }
+
+        with async_mock.patch.object(
+            test_module, "ConnectionRecord", autospec=True
+        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "PresentationManager", autospec=True
+        ) as mock_presentation_manager:
+
+            test_module.web.json_response = async_mock.CoroutineMock()
+
+            # Emulate connection not ready
+            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_connection_record.retrieve_by_id.return_value.is_ready = False
+
+            mock_presentation_manager.return_value.create_exchange_for_proposal = (
+                async_mock.CoroutineMock()
+            )
+            mock_presentation_manager.return_value.create_exchange_for_proposal.return_value = (
+                async_mock.MagicMock()
+            )
+
+            with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.presentation_exchange_send_proposal(mock)
