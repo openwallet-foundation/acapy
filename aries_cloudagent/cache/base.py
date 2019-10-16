@@ -1,7 +1,7 @@
 """Abstract base classes for cache."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Text
+from typing import Any, Sequence, Text, Union
 
 
 class BaseCache(ABC):
@@ -21,12 +21,12 @@ class BaseCache(ABC):
         """
 
     @abstractmethod
-    async def set(self, key: Text, value: Any, ttl: int = None):
+    async def set(self, keys: Union[Text, Sequence[Text]], value: Any, ttl: int = None):
         """
         Add an item to the cache with an optional ttl.
 
         Args:
-            key: the key to set an item for
+            keys: the key or keys for which to set an item
             value: the value to store in the cache
             ttl: number of second that the record should persist
 

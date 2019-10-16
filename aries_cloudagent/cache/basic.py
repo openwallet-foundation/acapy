@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 
-from typing import Any, Text
+from typing import Any, Sequence, Text, Union
 
 from .base import BaseCache
 
@@ -40,26 +40,29 @@ class BasicCache(BaseCache):
         self._remove_expired_cache_items()
         return self._cache.get(key)["value"] if self._cache.get(key) else None
 
-    async def set(self, key: Text, value: Any, ttl: int = None):
+    async def set(self, keys: Union[Text, Sequence[Text]], value: Any, ttl: int = None):
         """
         Add an item to the cache with an optional ttl.
 
         Overwrites existing cache entries.
 
         Args:
-            key: the key to set an item for
+            keys: the key or keys for which to set an item
             value: the value to store in the cache
             ttl: number of seconds that the record should persist
 
         """
         self._remove_expired_cache_items()
         now = datetime.now()
+        expires_ts = None
         if ttl:
             expires = now + timedelta(seconds=ttl)
             expires_ts = expires.timestamp()
-            self._cache[key] = {"expires": expires_ts, "value": value}
-        else:
-            self._cache[key] = {"expires": None, "value": value}
+        for key in ([keys] if isinstance(keys, Text) else keys):
+            self._cache[key] = {
+                "expires": expires_ts,
+                "value": value
+            }
 
     async def clear(self, key: Text):
         """
