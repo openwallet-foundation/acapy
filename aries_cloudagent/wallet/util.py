@@ -18,6 +18,13 @@ def bytes_to_b64(val: bytes, urlsafe=False) -> str:
     return base64.b64encode(val).decode("ascii")
 
 
+def set_urlsafe_b64(val: str, urlsafe: bool = True) -> str:
+    """Set URL safety in base64 encoding."""
+    if urlsafe:
+        return val.replace("+", "-").replace("/", "_")
+    return val.replace("-", "+").replace("_", "/")
+
+
 def b58_to_bytes(val: str) -> bytes:
     """Convert a base 58 string to bytes."""
     return base58.b58decode(val)

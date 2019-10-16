@@ -5,7 +5,6 @@ An attach decorator embeds content or specifies appended content.
 """
 
 
-import base64
 import json
 import uuid
 
@@ -14,7 +13,13 @@ from typing import Union
 from marshmallow import fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import BASE64, INDY_ISO8601_DATETIME, SHA256, UUIDFour
+from ..valid import (
+    BASE64,
+    INDY_ISO8601_DATETIME,
+    SHA256,
+    UUIDFour,
+)
+from ...wallet.util import b64_to_bytes, bytes_to_b64
 
 
 class AttachDecoratorData(BaseModel):
@@ -179,7 +184,7 @@ class AttachDecorator(BaseModel):
 
         """
         assert hasattr(self.data, "base64_")
-        return json.loads(base64.b64decode(self.data.base64_.encode()).decode())
+        return json.loads(b64_to_bytes(self.data.base64_))
 
     @classmethod
     def from_indy_dict(
@@ -215,7 +220,7 @@ class AttachDecorator(BaseModel):
             lastmod_time=lastmod_time,
             byte_count=byte_count,
             data=AttachDecoratorData(
-                base64_=base64.b64encode(json.dumps(indy_dict).encode()).decode()
+                base64_=bytes_to_b64(json.dumps(indy_dict).encode())
             )
         )
 

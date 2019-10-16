@@ -499,7 +499,7 @@ class IndyLedger(BaseLedger):
         Get a credential definition from the ledger by id.
 
         Args:
-            credential_definition_id: The schema id of the schema to fetch cred def for
+            credential_definition_id: The cred def id of the cred def to fetch
 
         """
 
