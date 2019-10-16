@@ -19,22 +19,21 @@
 ## Aries RFC Features
 
 - [0019-encryption-envelope](https://github.com/hyperledger/aries-rfcs/tree/master/features/0019-encryption-envelope)
-- **In Progress**: [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange)
-  - The agent currently supports the Indy-HIPE [0031-connection-protocol](https://github.com/hyperledger/indy-hipe/tree/master/text/0031-connection-protocol) protocol. We will be deprecating that (but continuing to use it for existing implementations) and support DID Exchange as well. Note that the only difference between the protocols at this time is the protocol name and the message type names.
-  - The agent supports DID exchange initiated from both plaintext invitations and public DIDs that enable bypassing the invitation message.
+- [0160-connection-protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0160-connection-protocol)
+  - We will soon (Fall 2019) be switching from 0160-connection-protocol to [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange). The switch will be a one time event and we will not support the two methods in parallel.
+  - The agent supports Connection/DID exchange initiated from both plaintext invitations and public DIDs that enable bypassing the invitation message.
   - Note that the [did:peer DID Method](https://github.com/openssi/peer-did-method-spec) is not yet supported. We are currently exploring the specification and considering the impact of how the agent will support the specification.
-  - The 0030-sync-connection protocol is not yet supported, meaning that a pairwise DID, once exchanged, cannot be updated.
+  - The [0030-sync-connection](https://github.com/hyperledger/aries-rfcs/tree/master/features/0030-sync-connection) protocol is not yet supported, meaning that a pairwise DID, once exchanged, cannot be updated.
 - [0035-didcomm-transports](https://github.com/hyperledger/aries-rfcs/tree/master/features/0025-didcomm-transports)
   - The agent currently supports HTTP and WebSockets for both inbound and outbound messaging. Transports are pluggable and an agent instance can use multiple inbound and outbound transports.
 - [0031-discover-features](https://github.com/hyperledger/aries-rfcs/tree/master/features/0031-discover-features)
 - [0032-message-timing](https://github.com/hyperledger/aries-rfcs/tree/master/features/0032-message-timing)
 - [0035-report-problem](https://github.com/hyperledger/aries-rfcs/tree/master/features/0035-report-problem)
   - Claiming support for this protocol is tricky. The intention of this protocol is that it define a standard mechanism for handling errors in executing a protocol. However, the error handling is in the context of each protocol. Thus, while this protocol is technically supported in the agent, it is adopted by each protocol and thus it's handling is specific to each protocol.
-- **In Progress** [0036-issue-credential](https://github.com/hyperledger/aries-rfcs/tree/master/features/0036-issue-credential) - see [PR #60](https://github.com/hyperledger/aries-cloudagent-python/pull/60)
-  - The agent (along with a number of other agents in the community) currently supports [Version 0.1](https://hackmd.io/s/HkklVzww4) of this protocol. This protocol will be deprecated when support for RFC 0036 is added.
-- **To Be Implemented** [0037-present-proof](https://github.com/hyperledger/aries-rfcs/tree/master/features/0037-present-proof)
-  - The agent (along with a number of other agents in the community) currently supports [Version 0.1](https://hackmd.io/s/HkklVzww4) of this protocol. This protocol will be deprecated when support for RFC 0037 is added.
-  - Work is just starting (as of the time of this update) on implementing RFC 0037 and should be completed before any other agent supports it. Should anyone need support for this now, we'll up the priority of this work.
+- [0036-issue-credential](https://github.com/hyperledger/aries-rfcs/tree/master/features/0036-issue-credential) - see [PR #60](https://github.com/hyperledger/aries-cloudagent-python/pull/60)
+  - This agent (along with a number of other agents in the community) also has deprecated support for [Version 0.1](https://hackmd.io/s/HkklVzww4) of the issue credential protocol.
+- [0037-present-proof](https://github.com/hyperledger/aries-rfcs/tree/master/features/0037-present-proof)
+  - This agent (along with a number of other agents in the community) also has deprecated support for [Version 0.1](https://hackmd.io/s/HkklVzww4) of the present proof protocol.
 - [0048-trust-ping](https://github.com/hyperledger/aries-rfcs/tree/master/features/0048-trust-ping)
 - [0067-didcomm-diddoc-conventions](https://github.com/hyperledger/aries-rfcs/tree/master/features/0067-didcomm-diddoc-conventions)
 - [0092-transport-return-route](https://github.com/hyperledger/aries-rfcs/tree/master/features/0092-transport-return-route)
@@ -43,7 +42,7 @@
 
 ## Other Capabilities
 
-- An Adminstrative API is core to the functionality of the ACA-Py implementation. The Administrative API is extended by each protocol deployed in an instance of ACA-Py. Each protocol provides a set of HTTP JSON requests to control the use of the protocol. With the Adminstrative API, a controller application can initiate instances of protocols (for example, issuing a credential) and can respond to events triggered by protocols started by other agents and protocols that are in flight.
-- Protocol events are triggered as messages are received from other agents. The events are sent using a webhook mechanism to a controller for the ACA-Py agent instance. The controller is expected to handle the event, potentially responding by sending a request to the Administrative API.
+- An Adminstrative API is core to the functionality of the ACA-Py implementation. The Administrative API is extended by each protocol deployed in an instance of ACA-Py. Each protocol provides a set of HTTP JSON requests to control the use of the protocol. With the Adminstrative API, a controller application can initiate instances of protocols (for example, issuing a credential) and can respond to events triggered by protocols started by other agents and protocols that are in flight. See the [Admin API documentation](AdminAPI.md) for more details.
+- Protocol events are triggered as messages are received from other agents. The events are sent using a webhook mechanism to a controller for the ACA-Py agent instance. The controller is expected to handle the event, potentially responding by sending a request to the Administrative API. See the [Admin API documentation](AdminAPI.md) for more details.
 - [Action Menu](https://hackmd.io/s/HkpyhdGtV) is a protocol to enable a simple request/response mechanism between agents. We anticipate using the mechanism to enable (for example) an enterprise agent to send a list of actions to a connected agent used by a person. From the menu, the person can select an action (possibly with a text parameter), triggering the enterprise agent to take some action. Think of it like an Interactive Voice Response (IVR) system used in automated call handling system. Just not as annoying.
   - An Aries RFC for Action Menu will be introduced Real Soon Now.
