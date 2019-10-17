@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 from unittest import TestCase
 
-import base64
 import json
 import uuid
+
+from ....wallet.util import bytes_to_b64
 
 from ..attach_decorator import AttachDecorator, AttachDecoratorData
 
@@ -16,7 +17,7 @@ class TestAttachDecorator(TestCase):
     lastmod_time = datetime.now().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
     byte_count = 123456
     data_b64 = AttachDecoratorData(
-        base64_=base64.b64encode('sample image with padding'.encode()).decode()
+        base64_=bytes_to_b64(b'sample image with padding')
     )
     data_json = AttachDecoratorData(
         json_=json.dumps({'preference': 'hasselback', 'variety': 'russet'})
