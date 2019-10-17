@@ -150,9 +150,7 @@ class TestIndyLedger(AsyncTestCase):
 
             mock_wallet.get_public_did.assert_not_called()
 
-            mock_submit.assert_called_once_with(
-                ledger.pool_handle, "{}",
-            )
+            mock_submit.assert_called_once_with(ledger.pool_handle, "{}")
 
     @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.create_pool_ledger_config")
@@ -202,14 +200,16 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_id")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_seq_no")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
     async def test_send_schema(
         self,
         mock_build_schema_req,
         mock_create_schema,
-        mock_fetch_schema,
+        mock_fetch_schema_by_seq_no,
+        mock_fetch_schema_by_id,
         mock_submit,
         mock_close,
         mock_open,
@@ -220,7 +220,8 @@ class TestIndyLedger(AsyncTestCase):
         ledger = IndyLedger("name", mock_wallet)
 
         mock_create_schema.return_value = ("schema_id", "{}")
-        mock_fetch_schema.return_value = None
+        mock_fetch_schema_by_id.return_value = None
+        mock_fetch_schema_by_seq_no.return_value = None
 
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock()
@@ -423,43 +424,27 @@ class TestIndyLedger(AsyncTestCase):
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
-    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
-    @async_mock.patch("indy.ledger.build_get_txn_request")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
     async def test_credential_definition_id2schema_id(
-        self, mock_build_get_txn_req, mock_submit, mock_close, mock_open
+        self, mock_get_schema, mock_close, mock_open
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.WALLET_TYPE = "indy"
 
-        mock_build_get_txn_req.return_value = json.dumps("dummy")
-        mock_submit.return_value = json.dumps(
-            {
-                "result": {
-                    "data": {
-                        "txn": {
-                            "type": "101",
-                            "metadata": {"from": f"{TestIndyLedger.test_did}"},
-                            "data": {
-                                "data": {"name": "favourite_drink", "version": "1.0"}
-                            },
-                        }
-                    }
-                }
-            }
-        )
+        S_ID = f"{TestIndyLedger.test_did}:2:favourite_drink:1.0"
+        SEQ_NO = "9999"
+        mock_get_schema.return_value = {"id": S_ID}
 
         ledger = IndyLedger("name", mock_wallet)
 
         async with ledger:
             s_id_short = await ledger.credential_definition_id2schema_id(
-                f"{TestIndyLedger.test_did}:3:CL:9999:tag"
-            )
-            mock_build_get_txn_req.assert_called_once_with(None, None, seq_no=9999)
-            mock_submit.assert_called_once_with(
-                mock_build_get_txn_req.return_value,
+                f"{TestIndyLedger.test_did}:3:CL:{SEQ_NO}:tag"
             )
 
-            assert s_id_short == f"{TestIndyLedger.test_did}:2:favourite_drink:1.0"
+            mock_get_schema.assert_called_once_with(SEQ_NO)
+
+            assert s_id_short == S_ID
             s_id_long = await ledger.credential_definition_id2schema_id(
                 f"{TestIndyLedger.test_did}:3:CL:{s_id_short}:tag"
             )

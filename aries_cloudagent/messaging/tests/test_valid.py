@@ -21,8 +21,8 @@ class TestValid(TestCase):
 
     def test_epoch(self):
         non_epochs = [
-            -1,
-            2147483648
+            -9223372036854775809,
+            9223372036854775808
         ]
         for non_epoch in non_epochs:
             with self.assertRaises(ValidationError):
@@ -30,6 +30,8 @@ class TestValid(TestCase):
 
         INT_EPOCH["validate"](0)
         INT_EPOCH["validate"](2147483647)
+        INT_EPOCH["validate"](-9223372036854775808)
+        INT_EPOCH["validate"](9223372036854775807)
 
     def test_indy_did(self):
         non_indy_dids = [
