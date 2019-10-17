@@ -19,9 +19,9 @@ class IntEpoch(Range):
     def __init__(self):
         """Initializer."""
 
-        super().__init__(
-            min=0,
-            max=2147483647,
+        super().__init__(  # use 64-bit for Aries RFC compatibility
+            min=-9223372036854775808,
+            max=9223372036854775807,
             error="Value {input} is not a valid integer epoch time."
         )
 

@@ -35,6 +35,13 @@ class TestBasicCache:
         assert cache._cache["key"]["value"] == {"dictkey": "dval"}
 
     @pytest.mark.asyncio
+    async def test_set_multi(self, cache):
+        item = await cache.set([f"key{i}" for i in range(4)], {"dictkey": "dval"})
+        for key in [f"key{i}" for i in range(4)]:
+            assert cache._cache[key] is not None
+            assert cache._cache[key]["value"] == {"dictkey": "dval"}
+
+    @pytest.mark.asyncio
     async def test_set_expires(self, cache):
         item = await cache.set("key", {"dictkey": "dval"}, 0.05)
         assert cache._cache["key"] is not None
@@ -44,6 +51,19 @@ class TestBasicCache:
 
         item = await cache.get("key")
         assert item is None
+
+    @pytest.mark.asyncio
+    async def test_set_expires_multi(self, cache):
+        item = await cache.set([f"key{i}" for i in range(4)], {"dictkey": "dval"}, 0.05)
+        for key in [f"key{i}" for i in range(4)]:
+            assert cache._cache[key] is not None
+            assert cache._cache[key]["value"] == {"dictkey": "dval"}
+
+        await sleep(0.05)
+
+        for key in [f"key{i}" for i in range(4)]:
+            item = await cache.get(key)
+            assert item is None
 
     @pytest.mark.asyncio
     async def test_flush(self, cache):

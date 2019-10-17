@@ -164,7 +164,7 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
         required=False,
         description="Issue-credential exchange role: holder or issuer",
         example=V10CredentialExchange.ROLE_ISSUER,
-        validate=OneOf(['holder', 'issuer'])
+        validate=OneOf(["holder", "issuer"]),
     )
     state = fields.Str(
         required=False,

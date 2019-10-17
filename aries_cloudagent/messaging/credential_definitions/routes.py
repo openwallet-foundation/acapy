@@ -19,6 +19,12 @@ class CredentialDefinitionSendRequestSchema(Schema):
         description="Schema identifier",
         **INDY_SCHEMA_ID
     )
+    tag = fields.Str(
+        required=False,
+        description="Credential definition identifier tag",
+        default="default",
+        example="default",
+    )
 
 
 class CredentialDefinitionSendResultsSchema(Schema):
@@ -90,11 +96,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     body = await request.json()
 
     schema_id = body.get("schema_id")
+    tag = body.get("tag")
 
     ledger: BaseLedger = await context.inject(BaseLedger)
     async with ledger:
         credential_definition_id = await shield(
-            ledger.send_credential_definition(schema_id)
+            ledger.send_credential_definition(schema_id, tag)
         )
 
     return web.json_response({"credential_definition_id": credential_definition_id})

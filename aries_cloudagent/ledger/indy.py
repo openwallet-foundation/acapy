@@ -29,6 +29,7 @@ from .error import (
     LedgerTransactionError,
 )
 
+
 GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
 GENESIS_TRANSACTION_PATH = path.join(
     GENESIS_TRANSACTION_PATH, "indy_genesis_transactions.txt"
@@ -341,7 +342,7 @@ class IndyLedger(BaseLedger):
     ) -> str:
         """Check if a schema has already been published."""
         fetch_schema_id = f"{public_did}:2:{schema_name}:{schema_version}"
-        schema = await self.fetch_schema(fetch_schema_id)
+        schema = await self.fetch_schema_by_id(fetch_schema_id)
         if schema:
             fetched_attrs = schema["attrNames"].copy()
             fetched_attrs.sort()
@@ -359,24 +360,30 @@ class IndyLedger(BaseLedger):
         Get a schema from the cache if available, otherwise fetch from the ledger.
 
         Args:
-            schema_id: The schema id to retrieve
+            schema_id: The schema id (or stringified sequence number) to retrieve
 
         """
         if self.cache:
             result = await self.cache.get(f"schema::{schema_id}")
             if result:
                 return result
-        return await self.fetch_schema(schema_id)
 
-    async def fetch_schema(self, schema_id: str):
+        if schema_id.isdigit():
+            return await self.fetch_schema_by_seq_no(int(schema_id))
+        else:
+            return await self.fetch_schema_by_id(schema_id)
+
+    async def fetch_schema_by_id(self, schema_id: str):
         """
         Get schema from ledger.
 
         Args:
-            schema_id: The schema id to retrieve
+            schema_id: The schema id (or stringified sequence number) to retrieve
+
+        Returns:
+            Indy schema dict
 
         """
-
         public_did = await self.wallet.get_public_did()
 
         with IndyErrorHandler("Exception when building schema request"):
@@ -398,10 +405,44 @@ class IndyLedger(BaseLedger):
         parsed_response = json.loads(parsed_schema_json)
         if parsed_response and self.cache:
             await self.cache.set(
-                f"schema::{schema_id}", parsed_response, self.cache_duration
+                [f"schema::{schema_id}", f"schema::{response['result']['seqNo']}"],
+                parsed_response,
+                self.cache_duration
             )
 
         return parsed_response
+
+    async def fetch_schema_by_seq_no(self, seq_no: int):
+        """
+        Fetch a schema by its sequence number.
+
+        Args:
+            seq_no: schema ledger sequence number
+
+        Returns:
+            Indy schema dict
+
+        """
+        # get txn by sequence number, retrieve schema identifier components
+        request_json = await indy.ledger.build_get_txn_request(
+            None, None, seq_no=seq_no
+        )
+        response = json.loads(await self._submit(request_json))
+
+        # transaction data format assumes node protocol >= 1.4 (circa 2018-07)
+        data_txn = (response["result"].get("data", {}) or {}).get("txn", {})
+        if data_txn.get("type", None) == "101":  # marks indy-sdk schema txn type
+            (origin_did, name, version) = (
+                data_txn["metadata"]["from"],
+                data_txn["data"]["data"]["name"],
+                data_txn["data"]["data"]["version"],
+            )
+            schema_id = f"{origin_did}:2:{name}:{version}"
+            return await self.get_schema(schema_id)
+
+        raise LedgerTransactionError(
+            f"Could not get schema from ledger for seq no {seq_no}"
+        )
 
     async def send_credential_definition(self, schema_id: str, tag: str = "default"):
         """
@@ -492,6 +533,7 @@ class IndyLedger(BaseLedger):
             )
             if result:
                 return result
+
         return await self.fetch_credential_definition(credential_definition_id)
 
     async def fetch_credential_definition(self, credential_definition_id: str):
@@ -499,7 +541,7 @@ class IndyLedger(BaseLedger):
         Get a credential definition from the ledger by id.
 
         Args:
-            credential_definition_id: The schema id of the schema to fetch cred def for
+            credential_definition_id: The cred def id of the cred def to fetch
 
         """
 
@@ -546,28 +588,9 @@ class IndyLedger(BaseLedger):
         if len(tokens) == 8:  # node protocol >= 1.4: cred def id has 5 or 8 tokens
             return ":".join(tokens[3:7])  # schema id spans 0-based positions 3-6
 
-        seq_no = int(tokens[3])
-
         # get txn by sequence number, retrieve schema identifier components
-        request_json = await indy.ledger.build_get_txn_request(
-            None, None, seq_no=seq_no
-        )
-        response = json.loads(await self._submit(request_json))
-
-        # transaction data format assumes node protocol >= 1.4 (circa 2018-07)
-        data_txn = (response["result"].get("data", {}) or {}).get("txn", {})
-        if data_txn.get("type", None) == "101":  # marks indy-sdk schema txn type
-            (origin_did, name, version) = (
-                data_txn["metadata"]["from"],
-                data_txn["data"]["data"]["name"],
-                data_txn["data"]["data"]["version"],
-            )
-            return f"{origin_did}:2:{name}:{version}"
-
-        raise LedgerTransactionError(
-            "Could not get schema identifier from ledger for "
-            + f"credential definition id {credential_definition_id}"
-        )
+        seq_no = tokens[3]
+        return (await self.get_schema(seq_no))["id"]
 
     async def get_key_for_did(self, did: str) -> str:
         """Fetch the verkey for a ledger DID.
