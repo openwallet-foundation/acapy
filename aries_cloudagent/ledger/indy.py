@@ -459,7 +459,7 @@ class IndyLedger(BaseLedger):
             f"Could not get schema from ledger for seq no {seq_no}"
         )
 
-    async def send_credential_definition(self, schema_id: str, tag: str = "default"):
+    async def send_credential_definition(self, schema_id: str, tag: str = None):
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -486,7 +486,7 @@ class IndyLedger(BaseLedger):
                 self.wallet.handle,
                 public_info.did,
                 json.dumps(schema),
-                tag,
+                tag or "default",
                 "CL",
                 json.dumps({"support_revocation": False}),
             )
