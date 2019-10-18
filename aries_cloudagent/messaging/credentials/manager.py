@@ -546,7 +546,6 @@ class CredentialManager:
 
         # Run approx every 100 runs
         if random.randint(1, 100) == 1:
-        # if True:
             # Query undeleted stored exchange records for possible expired parents
             old_credential_exchange_records = await CredentialExchange.query(
                 self.context,
@@ -559,7 +558,7 @@ class CredentialManager:
             for old_credential_exchange_record in old_credential_exchange_records:
                 last_updated_string = old_credential_exchange_record.updated_at
                 last_updated = str_to_datetime(last_updated_string)
-                one_hour_ago = datetime_now() - datetime.timedelta(seconds=10)
+                one_hour_ago = datetime_now() - datetime.timedelta(hours=1)
 
                 # delete parent exchange records more than 1 hour old
                 if last_updated < one_hour_ago:
@@ -611,7 +610,6 @@ class CredentialManager:
 
         # Run approx every 100 runs
         if random.randint(1, 100) == 1:
-        # if True:
             # Query undeleted stored exchange records for possible expired parents
             old_credential_exchange_records = await CredentialExchange.query(
                 self.context,
