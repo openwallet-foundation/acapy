@@ -358,7 +358,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
-    presentation_referents = request.match_info.get("referent").split(",")
+    referents = request.match_info.get("referent")
+    presentation_referents = referents.split(",") if referents else ()
 
     try:
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
