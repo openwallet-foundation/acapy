@@ -112,7 +112,7 @@ class CredentialManager:
                     # It's possible that the cached credential expired
                     # and was deleted while we are waiting. In this case,
                     # it is time to issue a new credential offer.
-                    self._logger.info(
+                    self._logger.debug(
                         "Credential exchange deleted while"
                         + " waiting for credential request"
                     )
@@ -538,7 +538,7 @@ class CredentialManager:
             except StorageNotFoundError:
                 # It's possible for another thread to have already deleted
                 # this record
-                self._logger.info("Failed to delete credential exchange record")
+                self._logger.debug("Failed to delete credential exchange record")
 
         # Delete old records if they are no longer used
 
@@ -565,7 +565,9 @@ class CredentialManager:
                     except StorageNotFoundError:
                         # It's possible for another thread to have already deleted
                         # this record
-                        self._logger.info("Failed to delete credential exchange record")
+                        self._logger.debug(
+                            "Failed to delete credential exchange record"
+                        )
 
         return credential_exchange_record, credential_stored_message
 
@@ -602,7 +604,7 @@ class CredentialManager:
             except StorageNotFoundError:
                 # It's possible for another thread to have already deleted
                 # this record
-                self._logger.info("Failed to delete credential exchange record")
+                self._logger.debug("Failed to delete credential exchange record")
 
         # Delete old records if they are no longer used
 
@@ -651,12 +653,12 @@ class CredentialManager:
                             await old_credential_exchange_record.delete_record(
                                 self.context
                             )
-                            self._logger.info(
+                            self._logger.debug(
                                 "Parent credential exchange record successfully deleted"
                             )
                         except StorageNotFoundError:
                             # It's possible for another thread to have already deleted
                             # this record
-                            self._logger.info(
+                            self._logger.debug(
                                 "Failed to delete parent credential exchange record"
                             )
