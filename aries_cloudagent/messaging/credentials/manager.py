@@ -64,7 +64,7 @@ class CredentialManager:
             + f"{credential_exchange_record.credential_definition_id}::"
             + f"{credential_exchange_record.connection_id}",
             credential_exchange_record.credential_exchange_id,
-            5,
+            600,
         )
 
     async def prepare_send(
