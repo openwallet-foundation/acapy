@@ -7,8 +7,6 @@ import logging
 import time
 import random
 
-from typing import Union
-
 from ..util import str_to_datetime, datetime_now
 
 from ...config.injection_context import InjectionContext

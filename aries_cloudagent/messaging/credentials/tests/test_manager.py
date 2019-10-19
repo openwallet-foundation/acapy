@@ -1,9 +1,13 @@
+import datetime
+
 from asyncio import sleep
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .. import manager as test_module
+
+from ...util import str_to_datetime, datetime_now, datetime_to_str
 
 from ....storage.error import StorageNotFoundError
 
@@ -327,6 +331,116 @@ class TestCredentialManager(AsyncTestCase):
 
             mock_credential_exchange_instance.parent_thread_id = "asd"
             mock_credential_exchange_instance.delete_record = async_mock.CoroutineMock()
+
+            mock_credential_stored_message = async_mock.CoroutineMock()
+
+            await self.test_instance.store_credential(mock_credential_exchange_instance, "1")
+
+            assert mock_credential_exchange_instance.delete_record.called
+
+
+
+    async def test_store_credential_expired_old_deleted(self):
+        mock_credential_offer_message = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module, "CredentialExchange", autospec=True
+        ) as mock_credential_exchange, async_mock.patch.object(
+            test_module, "json", autospec=True
+        ) as mock_json, async_mock.patch.object(
+            test_module, "random", autospec=True
+        ) as mock_random:
+
+            mock_random.randint.return_value = 1
+
+            mock_json.loads.return_value = async_mock.MagicMock()
+
+            mock_credential_exchange_instance = async_mock.CoroutineMock()
+
+            mock_credential_exchange_instance.save = async_mock.CoroutineMock()
+
+            mock_ledger = async_mock.CoroutineMock()
+            mock_ledger.get_credential_definition = async_mock.CoroutineMock()
+            mock_ledger.__aexit__ = mock_ledger.__aenter__ = async_mock.CoroutineMock()
+
+            mock_holder = async_mock.CoroutineMock()
+            mock_holder.store_credential = async_mock.CoroutineMock()
+            mock_holder.get_credential = async_mock.CoroutineMock()
+
+            inject = self.test_instance.context.inject = async_mock.CoroutineMock()
+            inject.side_effect = [mock_ledger, mock_holder]
+
+            mock_credential_exchange_instance.parent_thread_id = "asd"
+            mock_credential_exchange_instance.delete_record = async_mock.CoroutineMock()
+
+
+            # Old cred query
+            old_credential_exchange = async_mock.CoroutineMock()
+
+            mock_credential_exchange.query = async_mock.CoroutineMock()
+            mock_credential_exchange.query.side_effect = [[old_credential_exchange]]
+
+            old_credential_exchange.delete_record = async_mock.CoroutineMock()
+            
+            just_over_one_hour_ago = datetime_now() - datetime.timedelta(hours=1, minutes=1)
+            
+            # expired
+            old_credential_exchange.updated_at = datetime_to_str(just_over_one_hour_ago)
+
+            mock_credential_stored_message = async_mock.CoroutineMock()
+
+            await self.test_instance.store_credential(mock_credential_exchange_instance, "1")
+
+            assert mock_credential_exchange_instance.delete_record.called
+
+
+
+    async def test_store_credential_not_expired_old_not_deleted(self):
+        mock_credential_offer_message = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module, "CredentialExchange", autospec=True
+        ) as mock_credential_exchange, async_mock.patch.object(
+            test_module, "json", autospec=True
+        ) as mock_json, async_mock.patch.object(
+            test_module, "random", autospec=True
+        ) as mock_random:
+
+            mock_random.randint.return_value = 1
+
+            mock_json.loads.return_value = async_mock.MagicMock()
+
+            mock_credential_exchange_instance = async_mock.CoroutineMock()
+
+            mock_credential_exchange_instance.save = async_mock.CoroutineMock()
+
+            mock_ledger = async_mock.CoroutineMock()
+            mock_ledger.get_credential_definition = async_mock.CoroutineMock()
+            mock_ledger.__aexit__ = mock_ledger.__aenter__ = async_mock.CoroutineMock()
+
+            mock_holder = async_mock.CoroutineMock()
+            mock_holder.store_credential = async_mock.CoroutineMock()
+            mock_holder.get_credential = async_mock.CoroutineMock()
+
+            inject = self.test_instance.context.inject = async_mock.CoroutineMock()
+            inject.side_effect = [mock_ledger, mock_holder]
+
+            mock_credential_exchange_instance.parent_thread_id = "asd"
+            mock_credential_exchange_instance.delete_record = async_mock.CoroutineMock()
+
+
+            # Old cred query
+            old_credential_exchange = async_mock.CoroutineMock()
+
+            mock_credential_exchange.query = async_mock.CoroutineMock()
+            mock_credential_exchange.query.side_effect = [[old_credential_exchange]]
+
+            old_credential_exchange.delete_record = async_mock.CoroutineMock()
+            
+            just_over_one_hour_ago = datetime_now() - datetime.timedelta(minutes=30)
+            
+            # not expired
+            old_credential_exchange.updated_at = datetime_to_str(just_over_one_hour_ago)
 
             mock_credential_stored_message = async_mock.CoroutineMock()
 
