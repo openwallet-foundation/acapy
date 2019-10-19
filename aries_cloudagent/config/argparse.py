@@ -474,6 +474,8 @@ class LoggingGroup(ArgumentGroup):
 class ProtocolGroup(ArgumentGroup):
     """Protocol settings."""
 
+    GROUP_NAME = "Protocol"
+
     def add_arguments(self, parser: ArgumentParser):
         """Add protocol-specific command line arguments to the parser."""
         parser.add_argument(

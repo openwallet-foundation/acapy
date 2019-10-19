@@ -11,7 +11,7 @@ from ..util import (
 )
 
 
-class TestUtils(TestCase):
+class TestUtil(TestCase):
     def test_parse(self):
         now = datetime_now()
         assert isinstance(now, datetime)
