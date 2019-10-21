@@ -317,7 +317,7 @@ class AttachDecorator(BaseModel):
             )
         )
 
-    def _pack_bytes(self, timestamp: int):
+    def _pack_bytes(self, timestamp: int) -> bytes:
         """
         Timestamp and struct-pack data for signing.
 
@@ -326,6 +326,7 @@ class AttachDecorator(BaseModel):
 
         Returns:
             Packed bytes on timestamp and base64url-encoded data to sign
+
         """
         assert self.data and self.data.base64
 
