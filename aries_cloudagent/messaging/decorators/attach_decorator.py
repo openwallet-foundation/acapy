@@ -6,20 +6,26 @@ An attach decorator embeds content or specifies appended content.
 
 
 import json
+import struct
 import uuid
 
+from time import time
 from typing import Union
 
 from marshmallow import fields
 
+from ...wallet.base import BaseWallet
+from ...wallet.util import b64_to_bytes, bytes_to_b64, set_urlsafe_b64
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import (
     BASE64,
+    Base64URL,
     INDY_ISO8601_DATETIME,
+    INDY_RAW_PUBLIC_KEY,
+    INT_EPOCH,
     SHA256,
     UUIDFour,
 )
-from ...wallet.util import b64_to_bytes, bytes_to_b64
 
 
 class AttachDecoratorData(BaseModel):
@@ -131,6 +137,90 @@ class AttachDecoratorDataSchema(BaseModelSchema):
     )
 
 
+class AttachDecoratorSig(BaseModel):
+    """Attach decorator signature."""
+
+    class Meta:
+        """Attach decorator signature metadata."""
+
+        schema_class = "AttachDecoratorSigSchema"
+
+    TYPE_ED25519SHA512 = (
+        "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single"
+    )
+
+    def __init__(
+        self,
+        *,
+        signature_type: str = None,
+        ts: int = None,
+        signature: str = None,
+        signers: str = None,
+    ):
+        """
+        Initialize a FieldSignature instance.
+
+        Args:
+            signature_type: Type of signature
+            ts: Timestamp (epoch seconds), default now
+            signature: The signature
+            signers: The verkey of the signer
+
+        """
+        self.signature_type = signature_type or AttachDecoratorSig.TYPE_ED25519SHA512
+        self.ts = ts or int(time())
+        self.signature = signature
+        self.signers = signers
+
+    def decode(self) -> (object, int):
+        """
+        Decode the signature to its timestamp and value.
+
+        Returns:
+            A tuple of (decoded message, timestamp)
+
+        """
+        b_msg = b64_to_bytes(self.signature, urlsafe=True)
+        (timestamp,) = struct.unpack_from("!Q", b_msg, 0)
+        return (json.loads(b_msg[8:]), timestamp)
+
+
+class AttachDecoratorSigSchema(BaseModelSchema):
+    """Attach decorator signature schema."""
+
+    class Meta:
+        """Attach decorator data signature schema metadata."""
+
+        model_class = AttachDecoratorSig
+
+    signature_type = fields.Constant(
+        constant=AttachDecoratorSig.TYPE_ED25519SHA512,
+        description=f"Signature type: {AttachDecoratorSig.TYPE_ED25519SHA512}",
+        required=False,
+        data_key="type",
+        example=AttachDecoratorSig.TYPE_ED25519SHA512,
+    )
+    ts = fields.Int(
+        description="Timestamp as EPOCH int",
+        required=False,
+        **INT_EPOCH
+    )
+    signature = fields.Str(
+        required=True,
+        description="Signature value, base64url-encoded",
+        example=(
+            "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-"
+            "l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg=="
+        ),
+        validate=Base64URL(),
+    )
+    signers = fields.Str(
+        required=True,
+        description="Signer verification key (singular for the present)",
+        **INDY_RAW_PUBLIC_KEY
+    )
+
+
 class AttachDecorator(BaseModel):
     """Class representing attach decorator."""
 
@@ -149,6 +239,7 @@ class AttachDecorator(BaseModel):
         lastmod_time: str = None,
         byte_count: int = None,
         data: AttachDecoratorData,
+        sig: AttachDecoratorSig = None,
         **kwargs
     ):
         """
@@ -164,6 +255,7 @@ class AttachDecorator(BaseModel):
             lastmod_time: last modification time, "%Y-%m-%d %H:%M:%SZ"
             description: content description
             data: payload, as per `AttachDecoratorData`
+            sig: signature, as per `AttachDecoratorSig`
 
         """
         super().__init__(**kwargs)
@@ -174,6 +266,7 @@ class AttachDecorator(BaseModel):
         self.lastmod_time = lastmod_time
         self.byte_count = byte_count
         self.data = data
+        self.sig = sig
 
     @property
     def indy_dict(self):
@@ -224,6 +317,68 @@ class AttachDecorator(BaseModel):
             )
         )
 
+    def _pack_bytes(self, timestamp: int):
+        """
+        Timestamp and struct-pack data for signing.
+
+        Args:
+            timestamp: timestamp (EPOCH seconds)
+
+        Returns:
+            Packed bytes on timestamp and base64url-encoded data to sign
+        """
+        assert self.data and self.data.base64
+
+        b_timestamp = struct.pack("!Q", int(timestamp))
+
+        b_value = set_urlsafe_b64(self.data.base64, urlsafe=True).encode("ascii")
+        # 8 byte, big-endian encoded, unsigned int (long)
+        b_timestamp = struct.pack("!Q", int(timestamp))
+
+        return b_timestamp + b_value
+
+    async def sign(self, signer: str, wallet: BaseWallet, timestamp: int = None):
+        """
+        Sign data value of attachment and set the resulting signature content.
+
+        Args:
+            signer: Verkey of the signing party
+            wallet: The wallet to use for the signature
+            timestamp: Epoch (integer) time of signature, default now
+
+        """
+        if not timestamp:
+            timestamp = int(time())
+
+        b_msg = self._pack_bytes(timestamp)
+        b64_sig = bytes_to_b64(
+            await wallet.sign_message(message=b_msg, from_verkey=signer),
+            urlsafe=True,
+        )
+        self.sig = AttachDecoratorSig(
+            signature_type=None,
+            ts=timestamp,
+            signature=b64_sig,
+            signers=signer,
+        )
+
+    async def verify(self, wallet: BaseWallet) -> bool:
+        """
+        Verify the signature against the signer's public key.
+
+        Args:
+            wallet: Wallet to use to verify signature
+
+        Returns:
+            True if verification succeeds else False
+
+        """
+        if self.sig.signature_type != AttachDecoratorSig.TYPE_ED25519SHA512:
+            return False
+        b_msg = self._pack_bytes(self.sig.ts)
+        b_sig = b64_to_bytes(self.sig.signature, urlsafe=True)
+        return await wallet.verify_message(b_msg, b_sig, self.sig.signers)
+
 
 class AttachDecoratorSchema(BaseModelSchema):
     """Attach decorator schema used in serialization/deserialization."""
@@ -269,4 +424,8 @@ class AttachDecoratorSchema(BaseModelSchema):
     data = fields.Nested(
         AttachDecoratorDataSchema,
         required=True,
+    )
+    sig = fields.Nested(
+        AttachDecoratorSigSchema,
+        required=False,
     )
