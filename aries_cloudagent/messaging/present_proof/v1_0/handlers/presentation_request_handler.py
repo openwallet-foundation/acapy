@@ -28,6 +28,7 @@ class PresentationRequestHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
+
         self._logger.debug(f"PresentationRequestHandler called with context {context}")
 
         assert isinstance(context.message, PresentationRequest)

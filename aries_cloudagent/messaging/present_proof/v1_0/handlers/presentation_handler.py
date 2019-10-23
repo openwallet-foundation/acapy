@@ -22,11 +22,13 @@ class PresentationHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
         self._logger.debug(f"PresentationHandler called with context {context}")
         assert isinstance(context.message, Presentation)
         self._logger.info(
-            f"Received presentation: {context.message.indy_proof(0)}"
+            "Received presentation: %s",
+            context.message.serialize(as_string=True),
         )
 
         if not context.connection_ready:

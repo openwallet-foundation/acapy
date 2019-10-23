@@ -32,6 +32,7 @@ class V10PresentationExchange(BaseRecord):
     STATE_PRESENTATION_SENT = "presentation_sent"
     STATE_PRESENTATION_RECEIVED = "presentation_received"
     STATE_VERIFIED = "verified"
+    STATE_PRESENTATION_ACKED = "presentation_acked"
 
     def __init__(
         self,

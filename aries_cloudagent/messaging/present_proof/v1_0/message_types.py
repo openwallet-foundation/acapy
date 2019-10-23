@@ -7,12 +7,14 @@ MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/"
 PRESENTATION_PROPOSAL = f"{MESSAGE_FAMILY}propose-presentation"
 PRESENTATION_REQUEST = f"{MESSAGE_FAMILY}request-presentation"
 PRESENTATION = f"{MESSAGE_FAMILY}presentation"
+PRESENTATION_ACK = f"{MESSAGE_FAMILY}ack"
 
 TOP = "aries_cloudagent.messaging.present_proof.v1_0"
 MESSAGE_TYPES = {
     PRESENTATION_PROPOSAL: f"{TOP}.messages.presentation_proposal.PresentationProposal",
     PRESENTATION_REQUEST: f"{TOP}.messages.presentation_request.PresentationRequest",
-    PRESENTATION: f"{TOP}.messages.presentation.Presentation"
+    PRESENTATION: f"{TOP}.messages.presentation.Presentation",
+    PRESENTATION_ACK: f"{TOP}.messages.presentation_ack.PresentationAck",
 }
 
 # Inner object types
