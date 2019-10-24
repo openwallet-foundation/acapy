@@ -24,6 +24,6 @@ if [ ! -z "$POSTGRES_URL" ]; then
 fi
 
 $DOCKER run --rm -ti --name aries-cloudagent-runner \
-  -v "$(pwd)/../test-reports:/home/indy/src/app/test-reports" \
+  -v "/$(pwd)/../test-reports:/home/indy/src/app/test-reports" \
   $DOCKER_ARGS \
   aries-cloudagent-test "$@"

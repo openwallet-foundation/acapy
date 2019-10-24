@@ -82,8 +82,9 @@ class TestBasicWallet:
         assert info.did == self.test_did
         assert info.verkey == self.test_verkey
 
-        with pytest.raises(WalletDuplicateError):
-            await wallet.create_local_did(self.test_seed, None)
+        # should not raise WalletDuplicateError - same verkey
+        await wallet.create_local_did(self.test_seed, None)
+
         with pytest.raises(WalletError):
             _ = await wallet.create_local_did("invalid-seed", None)
 

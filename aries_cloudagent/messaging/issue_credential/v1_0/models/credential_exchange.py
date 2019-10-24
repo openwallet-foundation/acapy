@@ -1,8 +1,10 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
 from marshmallow import fields
+from marshmallow.validate import OneOf
 
 from ....models.base_record import BaseRecord, BaseRecordSchema
+from ....valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 
 
 class V10CredentialExchange(BaseRecord):
@@ -19,6 +21,8 @@ class V10CredentialExchange(BaseRecord):
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
+    ROLE_ISSUER = "issuer"
+    ROLE_HOLDER = "holder"
 
     STATE_PROPOSAL_SENT = "proposal_sent"
     STATE_PROPOSAL_RECEIVED = "proposal_received"
@@ -38,6 +42,7 @@ class V10CredentialExchange(BaseRecord):
         thread_id: str = None,
         parent_thread_id: str = None,
         initiator: str = None,
+        role: str = None,
         state: str = None,
         credential_definition_id: str = None,
         schema_id: str = None,
@@ -60,6 +65,7 @@ class V10CredentialExchange(BaseRecord):
         self.thread_id = thread_id
         self.parent_thread_id = parent_thread_id
         self.initiator = initiator
+        self.role = role
         self.state = state
         self.credential_definition_id = credential_definition_id
         self.schema_id = schema_id
@@ -108,6 +114,7 @@ class V10CredentialExchange(BaseRecord):
             "connection_id",
             "thread_id",
             "initiator",
+            "role",
             "state",
             "credential_definition_id",
             "schema_id",
@@ -127,21 +134,94 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
 
         model_class = V10CredentialExchange
 
-    credential_exchange_id = fields.Str(required=False)
-    connection_id = fields.Str(required=False)
-    thread_id = fields.Str(required=False)
-    parent_thread_id = fields.Str(required=False)
-    initiator = fields.Str(required=False)
-    state = fields.Str(required=False)
-    credential_definition_id = fields.Str(required=False)
-    schema_id = fields.Str(required=False)
-    credential_proposal_dict = fields.Dict(required=False)
-    credential_offer = fields.Dict(required=False)
-    credential_request = fields.Dict(required=False)
-    credential_request_metadata = fields.Dict(required=False)
-    credential_id = fields.Str(required=False)
-    raw_credential = fields.Dict(required=False)
-    credential = fields.Dict(required=False)
-    auto_offer = fields.Bool(required=False)
-    auto_issue = fields.Bool(required=False)
-    error_msg = fields.Str(required=False)
+    credential_exchange_id = fields.Str(
+        required=False,
+        description="Credential exchange identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    connection_id = fields.Str(
+        required=False,
+        description="Connection identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    thread_id = fields.Str(
+        required=False,
+        description="Thread identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    parent_thread_id = fields.Str(
+        required=False,
+        description="Parent thread identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    initiator = fields.Str(
+        required=False,
+        description="Issue-credential exchange initiator: self or external",
+        example=V10CredentialExchange.INITIATOR_SELF,
+        validate=OneOf(["self", "external"]),
+    )
+    role = fields.Str(
+        required=False,
+        description="Issue-credential exchange role: holder or issuer",
+        example=V10CredentialExchange.ROLE_ISSUER,
+        validate=OneOf(["holder", "issuer"]),
+    )
+    state = fields.Str(
+        required=False,
+        description="Issue-credential exchange state",
+        example=V10CredentialExchange.STATE_STORED,
+    )
+    credential_definition_id = fields.Str(
+        required=False,
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID
+    )
+    schema_id = fields.Str(
+        required=False,
+        description="Schema identifier",
+        **INDY_SCHEMA_ID
+    )
+    credential_proposal_dict = fields.Dict(
+        required=False,
+        description="Serialized credential proposal message"
+    )
+    credential_offer = fields.Dict(
+        required=False,
+        description="(Indy) credential offer",
+    )
+    credential_request = fields.Dict(
+        required=False,
+        description="(Indy) credential request",
+    )
+    credential_request_metadata = fields.Dict(
+        required=False,
+        description="(Indy) credential request metadata",
+    )
+    credential_id = fields.Str(
+        required=False,
+        description="Credential identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    raw_credential = fields.Dict(
+        required=False,
+        description="Credential as received, prior to storage in holder wallet"
+    )
+    credential = fields.Dict(
+        required=False,
+        description="Credential as stored",
+    )
+    auto_offer = fields.Bool(
+        required=False,
+        description="Holder choice to accept offer in this credential exchange",
+        example=False,
+    )
+    auto_issue = fields.Bool(
+        required=False,
+        description="Issuer choice to issue to request in this credential exchange",
+        example=False,
+    )
+    error_msg = fields.Str(
+        required=False,
+        description="Error message",
+        example="credential definition identifier is not set in proposal",
+    )

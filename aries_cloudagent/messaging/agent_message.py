@@ -26,6 +26,7 @@ from .models.base import (
     resolve_class,
     resolve_meta_property,
 )
+from .valid import UUIDFour
 
 
 class AgentMessageError(BaseModelError):
@@ -301,8 +302,19 @@ class AgentMessageSchema(BaseModelSchema):
         signed_fields = None
 
     # Avoid clobbering keywords
-    _type = fields.Str(data_key="@type", dump_only=True, required=False)
-    _id = fields.Str(data_key="@id", required=False)
+    _type = fields.Str(
+        data_key="@type",
+        dump_only=True,
+        required=False,
+        description="Message type",
+        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/my-family/1.0/my-message-type",
+    )
+    _id = fields.Str(
+        data_key="@id",
+        required=False,
+        description="Message identifier",
+        example=UUIDFour.EXAMPLE,
+    )
 
     def __init__(self, *args, **kwargs):
         """
@@ -357,7 +369,7 @@ class AgentMessageSchema(BaseModelSchema):
                         f"Message defines both field signature and value: {field_name}"
                     )
                 found_signatures[field_name] = field["sig"]
-                processed[field_name], _ts = field["sig"].decode()
+                processed[field_name], _ = field["sig"].decode()  # _ = timestamp
         for field_name in expect_fields:
             if field_name not in found_signatures:
                 raise ValidationError(f"Expected field signature: {field_name}")

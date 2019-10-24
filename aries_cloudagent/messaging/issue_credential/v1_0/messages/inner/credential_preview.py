@@ -3,10 +3,9 @@
 
 from typing import Sequence
 
-import base64
-
 from marshmallow import fields, validate
 
+from ......wallet.util import b64_to_str
 from .....models.base import BaseModel, BaseModelSchema
 from .....util import canon
 from ...message_types import CREDENTIAL_PREVIEW
@@ -61,8 +60,7 @@ class CredAttrSpec(BaseModel):
     def b64_decoded_value(self) -> str:
         """Value, base64-decoded if applicable."""
 
-        return base64.b64decode(self.value.encode()).decode(
-        ) if self.value and self.mime_type else self.value
+        return b64_to_str(self.value) if self.value and self.mime_type else self.value
 
     def __eq__(self, other):
         """Equality comparator."""
@@ -153,14 +151,14 @@ class CredentialPreview(BaseModel):
         """
 
         return {
-            attr.name: base64.b64decode(attr.value.encode()).decode()
-            if attr.mime_type and decode else attr.value
-            for attr in self.attributes
+            attr.name: b64_to_str(
+                attr.value
+            ) if attr.mime_type and decode else attr.value for attr in self.attributes
         }
 
     def mime_types(self):
         """
-        Return per-attribute mapping from name to MIME type and encoding.
+        Return per-attribute mapping from name to MIME type.
 
         Return empty dict if no attribute has MIME type.
 

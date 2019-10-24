@@ -11,7 +11,7 @@ from ....storage.error import StorageNotFoundError
 from ....messaging.problem_report.message import ProblemReport
 
 from ...connections.models.connection_record import ConnectionRecord
-from ...valid import INDY_CRED_DEF_ID
+from ...valid import INDY_CRED_DEF_ID, UUIDFour
 
 from .manager import CredentialManager
 from .messages.credential_proposal import CredentialProposal
@@ -42,7 +42,11 @@ class V10CredentialExchangeListResultSchema(Schema):
 class V10CredentialProposalRequestSchema(Schema):
     """Request schema for sending credential proposal admin message."""
 
-    connection_id = fields.UUID(description="Connection identifier", required=True)
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
     credential_definition_id = fields.Str(
         description="Credential definition identifier",
         required=True,
@@ -58,7 +62,11 @@ class V10CredentialProposalRequestSchema(Schema):
 class V10CredentialOfferRequestSchema(Schema):
     """Request schema for sending credential offer admin message."""
 
-    connection_id = fields.UUID(description="Connection identifier", required=True)
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
     credential_definition_id = fields.Str(
         description="Credential definition identifier",
         required=True,
@@ -515,7 +523,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         credential_request_message,
     ) = await credential_manager.create_request(
         credential_exchange_record,
-        connection_record
+        connection_record.my_did
     )
 
     await outbound_handler(credential_request_message, connection_id=connection_id)
@@ -687,7 +695,6 @@ async def credential_exchange_remove(request: web.BaseRequest):
     context = request.app["request_context"]
     credential_exchange_id = request.match_info["cred_ex_id"]
     try:
-        credential_exchange_id = request.match_info["cred_ex_id"]
         credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
             context,
             credential_exchange_id

@@ -5,15 +5,21 @@ An attach decorator embeds content or specifies appended content.
 """
 
 
-import base64
 import json
+import uuid
 
 from typing import Union
 
 from marshmallow import fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import BASE64, INDY_ISO8601_DATETIME, SHA256
+from ..valid import (
+    BASE64,
+    INDY_ISO8601_DATETIME,
+    SHA256,
+    UUIDFour,
+)
+from ...wallet.util import b64_to_bytes, bytes_to_b64
 
 
 class AttachDecoratorData(BaseModel):
@@ -136,7 +142,7 @@ class AttachDecorator(BaseModel):
     def __init__(
         self,
         *,
-        append_id: str = None,
+        ident: str = None,
         description: str = None,
         filename: str = None,
         mime_type: str = None,
@@ -152,8 +158,7 @@ class AttachDecorator(BaseModel):
         content to a message.
 
         Args:
-            append_id ("@id" in serialization): if appending,
-                identifier for the appendage
+            ident ("@id" in serialization): identifier for the appendage
             mime_type ("mime-type" in serialization): MIME type for attachment
             filename: file name
             lastmod_time: last modification time, "%Y-%m-%d %H:%M:%SZ"
@@ -162,7 +167,7 @@ class AttachDecorator(BaseModel):
 
         """
         super().__init__(**kwargs)
-        self.append_id = append_id
+        self.ident = ident
         self.description = description
         self.filename = filename
         self.mime_type = mime_type
@@ -179,10 +184,19 @@ class AttachDecorator(BaseModel):
 
         """
         assert hasattr(self.data, "base64_")
-        return json.loads(base64.b64decode(self.data.base64_.encode()).decode())
+        return json.loads(b64_to_bytes(self.data.base64_))
 
     @classmethod
-    def from_indy_dict(cls, indy_dict: dict):
+    def from_indy_dict(
+        cls,
+        indy_dict: dict,
+        *,
+        ident: str = None,
+        description: str = None,
+        filename: str = None,
+        lastmod_time: str = None,
+        byte_count: int = None,
+    ):
         """
         Create `AttachDecorator` instance from indy object (dict).
 
@@ -191,11 +205,22 @@ class AttachDecorator(BaseModel):
 
         Args:
             indy_dict: indy (dict) data structure
+            ident: optional attachment identifier (default random UUID4)
+            description: optional attachment description
+            filename: optional attachment filename
+            lastmod_time: optional attachment last modification time
+            byte_count: optional attachment byte count
+
         """
         return AttachDecorator(
+            ident=ident or str(uuid.uuid4()),
+            description=description,
+            filename=filename,
             mime_type="application/json",
+            lastmod_time=lastmod_time,
+            byte_count=byte_count,
             data=AttachDecoratorData(
-                base64_=base64.b64encode(json.dumps(indy_dict).encode()).decode()
+                base64_=bytes_to_b64(json.dumps(indy_dict).encode())
             )
         )
 
@@ -208,12 +233,11 @@ class AttachDecoratorSchema(BaseModelSchema):
 
         model_class = AttachDecorator
 
-    append_id = fields.Str(
+    ident = fields.Str(
         description="Attachment identifier",
-        example="view-1",
+        example=UUIDFour.EXAMPLE,
         required=False,
         allow_none=False,
-        attribute="append_id",
         data_key="@id"
     )
     mime_type = fields.Str(
@@ -242,4 +266,7 @@ class AttachDecoratorSchema(BaseModelSchema):
         example="view from doorway, facing east, with lights off",
         required=False
     )
-    data = fields.Nested(AttachDecoratorDataSchema, required=True)
+    data = fields.Nested(
+        AttachDecoratorDataSchema,
+        required=True,
+    )

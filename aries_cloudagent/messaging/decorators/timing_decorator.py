@@ -12,8 +12,7 @@ from marshmallow import fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..util import datetime_to_str
-
-DT_FORMAT = "%Y-%m-%d %H:%M:%S.%fZ"
+from ..valid import INDY_ISO8601_DATETIME
 
 
 class TimingDecorator(BaseModel):
@@ -62,9 +61,33 @@ class TimingDecoratorSchema(BaseModelSchema):
 
         model_class = TimingDecorator
 
-    in_time = fields.Str(format=DT_FORMAT, required=False)
-    out_time = fields.Str(format=DT_FORMAT, required=False)
-    stale_time = fields.Str(format=DT_FORMAT, required=False)
-    expires_time = fields.Str(format=DT_FORMAT, required=False)
-    delay_milli = fields.Int(required=False)
-    wait_until_time = fields.Str(format=DT_FORMAT, required=False)
+    in_time = fields.Str(
+        required=False,
+        description="Time of message receipt",
+        **INDY_ISO8601_DATETIME
+    )
+    out_time = fields.Str(
+        required=False,
+        description="Time of message dispatch",
+        **INDY_ISO8601_DATETIME
+    )
+    stale_time = fields.Str(
+        required=False,
+        description="Time when message should be considered stale",
+        **INDY_ISO8601_DATETIME
+    )
+    expires_time = fields.Str(
+        required=False,
+        description="Time when message should be considered expired",
+        **INDY_ISO8601_DATETIME
+    )
+    delay_milli = fields.Int(
+        required=False,
+        description="Number of milliseconds to delay processing",
+        example=1000
+    )
+    wait_until_time = fields.Str(
+        required=False,
+        description="Earliest time at which to perform processing",
+        **INDY_ISO8601_DATETIME
+    )

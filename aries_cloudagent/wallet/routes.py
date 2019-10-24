@@ -1,11 +1,12 @@
 """Wallet admin routes."""
 
 from aiohttp import web
-from aiohttp_apispec import docs, response_schema
+from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
 from ..ledger.base import BaseLedger
+from ..messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 
 from .base import DIDInfo, BaseWallet
 from .error import WalletError
@@ -14,21 +15,61 @@ from .error import WalletError
 class DIDSchema(Schema):
     """Result schema for a DID."""
 
-    did = fields.Str()
-    verkey = fields.Str()
-    public = fields.Bool()
+    did = fields.Str(
+        description="DID of interest",
+        **INDY_DID
+    )
+    verkey = fields.Str(
+        description="Public verification key",
+        **INDY_RAW_PUBLIC_KEY
+    )
+    public = fields.Bool(
+        description="Whether DID is public",
+        example=False
+    )
 
 
 class DIDResultSchema(Schema):
     """Result schema for a DID."""
 
-    result = fields.Nested(DIDSchema())
+    result = fields.Nested(
+        DIDSchema()
+    )
 
 
 class DIDListSchema(Schema):
     """Result schema for connection list."""
 
-    results = fields.List(fields.Nested(DIDSchema()))
+    results = fields.List(
+        fields.Nested(DIDSchema()),
+        description="DID list",
+    )
+
+
+class GetTagPolicyResultSchema(Schema):
+    """Result schema for tagging policy get request."""
+
+    taggables = fields.List(
+        fields.Str(
+            description="Taggable attribute",
+            example="score",
+        ),
+        description=(
+            "List of attributes taggable for credential search under current policy"
+        )
+    )
+
+
+class SetTagPolicyRequestSchema(Schema):
+    """Request schema for tagging policy set request."""
+
+    taggables = fields.List(
+        fields.Str(
+            description="Taggable attribute",
+            example="score",
+        ),
+        description="List of attributes to set taggable for credential search",
+    )
 
 
 def format_did_info(info: DIDInfo):
@@ -127,7 +168,7 @@ async def wallet_create_did(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The DID list response
+        The DID info
 
     """
     context = request.app["request_context"]
@@ -148,7 +189,7 @@ async def wallet_get_public_did(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The DID list response
+        The DID info
 
     """
     context = request.app["request_context"]
@@ -186,7 +227,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest()
     try:
-        info = await wallet.get_local_did(did)
+        _ = await wallet.get_local_did(did)
     except WalletError:
         # DID not found or not in valid format
         raise web.HTTPBadRequest()
@@ -202,6 +243,59 @@ async def wallet_set_public_did(request: web.BaseRequest):
     return web.json_response({"result": format_did_info(info)})
 
 
+@docs(tags=["wallet"], summary="Get the tagging policy for a credential definition")
+@response_schema(GetTagPolicyResultSchema())
+async def wallet_get_tagging_policy(request: web.BaseRequest):
+    """
+    Request handler for getting the tag policy associated with a cred def.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        A JSON object containing the tagging policy
+
+    """
+    context = request.app["request_context"]
+
+    credential_definition_id = request.match_info["id"]
+
+    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    if not wallet or wallet.WALLET_TYPE != "indy":
+        raise web.HTTPForbidden()
+    result = await wallet.get_credential_definition_tag_policy(credential_definition_id)
+    return web.json_response({"taggables": result})
+
+
+@docs(tags=["wallet"], summary="Set the tagging policy for a credential definition")
+@request_schema(SetTagPolicyRequestSchema())
+async def wallet_set_tagging_policy(request: web.BaseRequest):
+    """
+    Request handler for setting the tag policy associated with a cred def.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        An empty JSON response
+
+    """
+    context = request.app["request_context"]
+
+    credential_definition_id = request.match_info["id"]
+
+    body = await request.json()
+    taggables = body.get("taggables")
+
+    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    if not wallet or wallet.WALLET_TYPE != "indy":
+        raise web.HTTPForbidden()
+    await wallet.set_credential_definition_tag_policy(
+        credential_definition_id, taggables
+    )
+    return web.json_response({})
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -211,5 +305,7 @@ async def register(app: web.Application):
             web.post("/wallet/did/create", wallet_create_did),
             web.get("/wallet/did/public", wallet_get_public_did),
             web.post("/wallet/did/public", wallet_set_public_did),
+            web.get("/wallet/tag-policy/{id}", wallet_get_tagging_policy),
+            web.post("/wallet/tag-policy/{id}", wallet_set_tagging_policy),
         ]
     )

@@ -5,27 +5,39 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
+from ...storage.error import StorageNotFoundError
+
+from ..valid import UUIDFour
+
 from .manager import ConnectionManager
 from .messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
 from .models.connection_record import ConnectionRecord, ConnectionRecordSchema
-from ...storage.error import StorageNotFoundError
 
 
 class ConnectionListSchema(Schema):
     """Result schema for connection list."""
 
-    results = fields.List(fields.Nested(ConnectionRecordSchema()))
+    results = fields.List(
+        fields.Nested(ConnectionRecordSchema()),
+        description="List of connection records",
+    )
 
 
 class InvitationResultSchema(Schema):
     """Result schema for a new connection invitation."""
 
-    connection_id = fields.Str()
+    connection_id = fields.Str(
+        description="Connection identifier",
+        example=UUIDFour.EXAMPLE,
+    )
     invitation = fields.Nested(ConnectionInvitationSchema())
-    invitation_url = fields.Str()
+    invitation_url = fields.Str(
+        description="Invitation URL",
+        example="http:192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ=="
+    )
 
 
 def connection_sort_key(conn):
@@ -194,6 +206,7 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden()
+    base_url = context.settings.get("invite_base_url")
 
     connection_mgr = ConnectionManager(context)
     connection, invitation = await connection_mgr.create_invitation(
@@ -202,7 +215,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     result = {
         "connection_id": connection and connection.connection_id,
         "invitation": invitation.serialize(),
-        "invitation_url": invitation.to_url(),
+        "invitation_url": invitation.to_url(base_url),
     }
 
     if connection and connection.alias:

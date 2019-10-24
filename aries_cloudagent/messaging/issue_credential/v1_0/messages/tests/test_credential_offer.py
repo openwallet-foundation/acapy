@@ -1,5 +1,5 @@
 from .....decorators.attach_decorator import AttachDecorator
-from ...message_types import CREDENTIAL_OFFER
+from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER
 from ..credential_offer import CredentialOffer
 from ..inner.credential_preview import CredAttrSpec, CredentialPreview
 
@@ -40,7 +40,12 @@ class TestCredentialOffer(TestCase):
     offer = CredentialOffer(
         comment="shaken, not stirred",
         credential_preview=preview,
-        offers_attach=[AttachDecorator.from_indy_dict(indy_offer)]
+        offers_attach=[
+            AttachDecorator.from_indy_dict(
+                indy_dict=indy_offer,
+                ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+            )
+        ]
     )
 
     def test_init(self):
@@ -48,7 +53,12 @@ class TestCredentialOffer(TestCase):
         credential_offer = CredentialOffer(
             comment="shaken, not stirred",
             credential_preview=self.preview,
-            offers_attach=[AttachDecorator.from_indy_dict(self.indy_offer)]
+            offers_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                )
+            ]
         )
         assert credential_offer.credential_preview == self.preview
         assert credential_offer.offers_attach[0].indy_dict == self.indy_offer
@@ -59,7 +69,12 @@ class TestCredentialOffer(TestCase):
         credential_offer = CredentialOffer(
             comment="shaken, not stirred",
             credential_preview=self.preview,
-            offers_attach=[AttachDecorator.from_indy_dict(self.indy_offer)]
+            offers_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                )
+            ]
         )
 
         assert credential_offer._type == CREDENTIAL_OFFER
@@ -90,7 +105,12 @@ class TestCredentialOffer(TestCase):
         credential_offer = CredentialOffer(
             comment="shaken, not stirred",
             credential_preview=self.preview,
-            offers_attach=[AttachDecorator.from_indy_dict(self.indy_offer)]
+            offers_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                )
+            ]
         )
 
         credential_offer_dict = credential_offer.serialize()

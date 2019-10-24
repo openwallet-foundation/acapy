@@ -13,6 +13,7 @@ from collections import OrderedDict
 import logging
 from typing import Coroutine, Union
 
+from .delivery_queue import DeliveryQueue
 from .admin.base_server import BaseAdminServer
 from .admin.server import AdminServer
 from .config.default_context import ContextBuilder
@@ -63,6 +64,7 @@ class Conductor:
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_transport_manager: OutboundTransportManager = None
         self.sockets = OrderedDict()
+        self.undelivered_queue: DeliveryQueue = None
 
     async def setup(self):
         """Initialize the global request context."""
@@ -71,6 +73,10 @@ class Conductor:
 
         # Populate message serializer
         self.message_serializer = await context.inject(MessageSerializer)
+
+        # Setup Delivery Queue
+        if context.settings.get("queue.enable_undelivered_queue"):
+            self.undelivered_queue = DeliveryQueue()
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -182,8 +188,14 @@ class Conductor:
         if context.settings.get("debug.print_invitation"):
             try:
                 mgr = ConnectionManager(self.context)
-                _connection, invitation = await mgr.create_invitation()
-                invite_url = invitation.to_url()
+                _connection, invitation = await mgr.create_invitation(
+                    their_role=context.settings.get("debug.invite_role"),
+                    my_label=context.settings.get("debug.invite_label"),
+                    multi_use=context.settings.get("debug.invite_multi_use", False),
+                    public=context.settings.get("debug.invite_public", False),
+                )
+                base_url = context.settings.get("invite_base_url")
+                invite_url = invitation.to_url(base_url)
                 print("Invitation URL:")
                 print(invite_url)
             except Exception:
@@ -243,6 +255,7 @@ class Conductor:
             delivery.connection_id = connection.connection_id
 
         if single_response and not socket_id:
+            # if transport wasn't a socket, make a virtual socket used for responses
             socket = SocketInfo(single_response=single_response)
             socket_id = socket.socket_id
             self.sockets[socket_id] = socket
@@ -260,7 +273,7 @@ class Conductor:
                 socket_id = None
 
         delivery.socket_id = socket_id
-        socket = self.sockets[socket_id] if socket_id else None
+        socket: SocketInfo = self.sockets[socket_id] if socket_id else None
 
         if socket:
             socket.process_incoming(parsed_msg, delivery)
@@ -273,54 +286,103 @@ class Conductor:
                 delivery.transport_type,
             )
 
-        complete = await self.dispatcher.dispatch(
+        handler_done = await self.dispatcher.dispatch(
             parsed_msg, delivery, connection, self.outbound_message_router
         )
+        return asyncio.ensure_future(self.complete_dispatch(handler_done, socket))
+
+    async def complete_dispatch(self, dispatch: asyncio.Future, socket: SocketInfo):
+        """Wait for the dispatch to complete and perform final actions."""
+        await dispatch
+        await self.queue_processing(socket)
         if socket:
-            complete.add_done_callback(lambda fut: socket.dispatch_complete())
-        return complete
+            socket.dispatch_complete()
+
+    async def queue_processing(self, socket: SocketInfo):
+        """
+        Interact with undelivered queue to find applicable messages.
+
+        Args:
+            socket: The incoming socket connection
+        """
+        if (
+            socket
+            and socket.reply_mode
+            and not socket.closed
+            and self.undelivered_queue
+        ):
+            for key in socket.reply_verkeys:
+                if not isinstance(key, str):
+                    key = key.value
+                if self.undelivered_queue.has_message_for_key(key):
+                    for (
+                        undelivered_message
+                    ) in self.undelivered_queue.inspect_all_messages_for_key(key):
+                        # pending message. Transmit, then kill single_response
+                        if socket.select_outgoing(undelivered_message):
+                            self.logger.debug(
+                                "Sending Queued Message via inbound connection"
+                            )
+                            self.undelivered_queue.remove_message_for_key(
+                                key, undelivered_message
+                            )
+                            await socket.send(undelivered_message)
+
+    async def get_connection_target(
+        self, connection_id: str, context: InjectionContext = None
+    ):
+        """Get a `ConnectionTarget` instance representing a connection.
+
+        Args:
+            connection_id: The connection record identifier
+            context: An optional injection context
+        """
+
+        context = context or self.context
+
+        try:
+            record = await ConnectionRecord.retrieve_by_id(context, connection_id)
+        except StorageNotFoundError as e:
+            raise MessagePrepareError(
+                "Could not locate connection record: {}".format(connection_id)
+            ) from e
+        mgr = ConnectionManager(context)
+        try:
+            target = await mgr.get_connection_target(record)
+        except ConnectionManagerError as e:
+            raise MessagePrepareError(str(e)) from e
+        if not target:
+            raise MessagePrepareError(
+                "No target found for connection: {}".format(connection_id)
+            )
+        return target
 
     async def prepare_outbound_message(
-        self, message: OutboundMessage, context: InjectionContext = None
+        self,
+        message: OutboundMessage,
+        context: InjectionContext = None,
+        direct_response: bool = False,
     ):
         """Prepare a response message for transmission.
 
         Args:
             message: An outbound message to be sent
             context: Optional request context
+            direct_response: Skip wrapping the response in forward messages
         """
 
         context = context or self.context
 
         if message.connection_id and not message.target:
-            try:
-                record = await ConnectionRecord.retrieve_by_id(
-                    context, message.connection_id
-                )
-            except StorageNotFoundError as e:
-                raise MessagePrepareError(
-                    "Could not locate connection record: {}".format(
-                        message.connection_id
-                    )
-                ) from e
-            mgr = ConnectionManager(context)
-            try:
-                target = await mgr.get_connection_target(record)
-            except ConnectionManagerError as e:
-                raise MessagePrepareError(str(e)) from e
-            if not target:
-                raise MessagePrepareError(
-                    "No connection target for message: {}".format(message.connection_id)
-                )
-            message.target = target
+            message.target = await self.get_connection_target(message.connection_id)
 
         if not message.encoded and message.target:
             target = message.target
             message.payload = await self.message_serializer.encode_message(
                 context,
                 message.payload,
-                target.recipient_keys,
-                target.routing_keys,
+                target.recipient_keys or [],
+                (not direct_response) and target.routing_keys or [],
                 target.sender_key,
             )
             message.encoded = True
@@ -335,11 +397,6 @@ class Conductor:
             message: An outbound message to be sent
             context: Optional request context
         """
-        try:
-            await self.prepare_outbound_message(message, context)
-        except MessagePrepareError:
-            self.logger.exception("Error preparing outbound message for transmission")
-            return
 
         # try socket connections first, preferring the same socket ID
         socket_id = message.reply_socket_id
@@ -356,8 +413,22 @@ class Conductor:
                     sel_socket = socket
                     break
         if sel_socket:
+            try:
+                await self.prepare_outbound_message(message, context, True)
+            except MessagePrepareError:
+                self.logger.exception(
+                    "Error preparing outbound message for direct response"
+                )
+                return
+
             await sel_socket.send(message)
             self.logger.debug("Returned message to socket %s", sel_socket.socket_id)
+            return
+
+        try:
+            await self.prepare_outbound_message(message, context)
+        except MessagePrepareError:
+            self.logger.exception("Error preparing outbound message for transmission")
             return
 
         # deliver directly to endpoint
@@ -365,4 +436,6 @@ class Conductor:
             await self.outbound_transport_manager.send_message(message)
             return
 
-        self.logger.warning("No endpoint or direct route for outbound message, dropped")
+        # Add message to outbound queue, indexed by key
+        if self.undelivered_queue:
+            self.undelivered_queue.add_message(message)

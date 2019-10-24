@@ -2,12 +2,12 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import fields
+from marshmallow import fields, validate
 
 from ..agent_message import AgentMessage, AgentMessageSchema
 
-HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
 
+HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
 MESSAGE_TYPE = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/notification/1.0/problem-report"
 
 
@@ -78,21 +78,90 @@ class ProblemReportSchema(AgentMessageSchema):
 
         model_class = ProblemReport
 
-    msg_catalog = fields.Str(data_key="@msg_catalog", required=False)
-    locale = fields.Str(data_key="@locale", required=False)
-    explain_ltxt = fields.Str(data_key="explain-ltxt", required=False)
-    explain_l10n = fields.Dict(fields.Str(), fields.Str(), required=False)
+    msg_catalog = fields.Str(
+        data_key="@msg_catalog",
+        required=False,
+        description="Reference to a message catalog",
+        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/error-codes",
+    )
+    locale = fields.Str(
+        data_key="@locale",
+        required=False,
+        description="Locale",
+        example="en-US",
+    )
+    explain_ltxt = fields.Str(
+        data_key="explain-ltxt",
+        required=False,
+        description="Localized message",
+        example="Item not found",
+    )
+    explain_l10n = fields.Dict(
+        keys=fields.Str(description="Locale"),
+        values=fields.Str(description="Localized message"),
+        required=False,
+        description="Dictionary of localizations",
+    )
     problem_items = fields.List(
-        fields.Dict(fields.Str(), fields.Str()),
+        fields.Dict(
+            keys=fields.Str(description="Problematic parameter or item"),
+            values=fields.Str(description="Problem text/number/value"),
+            description="Problem item",
+        ),
         data_key="problem-items",
         required=False,
+        description="List of problem items",
     )
-    who_retries = fields.Str(data_key="who-retries", required=False)
+    who_retries = fields.Str(
+        data_key="who-retries",
+        required=False,
+        description="Party to retry: you, me, both, none",
+        example="you",
+        validate=validate.OneOf(["you", "me", "both", "none"]),
+    )
     fix_hint_ltxt = fields.Dict(
-        fields.Str(), fields.Str(), data_key="fix-hint-ltxt", required=False
+        keys=fields.Str(description="Locale", example="en-US"),
+        values=fields.Str(
+            description="Localized message",
+            example="Synchronize time to NTP"
+        ),
+        data_key="fix-hint-ltxt",
+        required=False,
+        description="Human-readable localized suggestions how to fix problem"
     )
-    impact = fields.Str(required=False)
-    where = fields.Str(required=False)
-    time_noticed = fields.Str(data_key="time-noticed", required=False)
-    tracking_uri = fields.Str(data_key="tracking-uri", required=False)
-    escalation_uri = fields.Str(data_key="escalation-uri", required=False)
+    impact = fields.Str(
+        required=False,
+        description="Breadth of impact of problem: message, thread, or connection",
+        example="thread",
+        validate=validate.OneOf(["message", "thread", "connection"]),
+    )
+    where = fields.Str(
+        required=False,
+        description="Where the error occurred, from reporter perspective",
+        example="you - agency",
+        validate=validate.Regexp(
+            r"(you)|(me)|(other) - .+"
+        ),
+    )
+    time_noticed = fields.Str(
+        data_key="time-noticed",
+        required=False,
+        description="Problem detection time, precision at least day up to millisecond",
+        example="1970-01-01 00:00:00.000Z",
+        validate=validate.Regexp(
+            r"^\d{4}-\d\d-\d\d"
+            r"(?:(?: \d\d:\d\d(?:\:\d\d(?:\.\d{1,6})?)(?:[+=]\d\d:?\d\d|Z)?)?)$"
+        ),
+    )
+    tracking_uri = fields.Str(
+        data_key="tracking-uri",
+        required=False,
+        description="URI allowing recipient to track error status",
+        example="http://myservice.com/status",
+    )
+    escalation_uri = fields.Str(
+        data_key="escalation-uri",
+        required=False,
+        description="URI to supply additional help",
+        example="mailto://help.desk@myservice.com",
+    )

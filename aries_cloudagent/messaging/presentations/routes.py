@@ -151,7 +151,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["id"]
-    presentation_referent = request.match_info.get("referent")
+    presentation_referents = request.match_info.get("referent").split(",")
 
     try:
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(
@@ -174,7 +174,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     credentials = await holder.get_credentials_for_presentation_request_by_referent(
         presentation_exchange_record.presentation_request,
-        (presentation_referent,) if presentation_referent else (),
+        presentation_referents,
         start,
         count,
         extra_query,
@@ -185,7 +185,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         "Retrieved presentation credentials",
         {
             "presentation_exchange_id": presentation_exchange_id,
-            "referent": presentation_referent,
+            "referents": presentation_referents,
             "extra_query": extra_query,
             "credentials": credentials,
         },
@@ -376,7 +376,6 @@ async def presentation_exchange_remove(request: web.BaseRequest):
         request: aiohttp request object
     """
     context = request.app["request_context"]
-    presentation_exchange_id = request.match_info["id"]
     try:
         presentation_exchange_id = request.match_info["id"]
         presentation_exchange_record = await PresentationExchange.retrieve_by_id(

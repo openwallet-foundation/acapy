@@ -10,24 +10,24 @@ This demo is for developers comfortable with playing around with APIs using the 
 
 # Table of Contents <!-- omit in toc -->
 
-- [Running in a Browser](#Running-in-a-Browser)
-- [Running in Docker](#Running-in-Docker)
-  - [Starting Up](#Starting-Up)
-  - [Start the VON Network](#Start-the-VON-Network)
-  - [Running the Faber Agent](#Running-the-Faber-Agent)
-  - [Running Alice’s Agent](#Running-Alices-Agent)
-  - [Restarting the Docker Containers](#Restarting-the-Docker-Containers)
-- [Using the Swagger User Interface](#Using-the-Swagger-User-Interface)
-- [Establishing a Connection](#Establishing-a-Connection)
-  - [Notes](#Notes)
-- [Preparing to Issue a Credential](#Preparing-to-Issue-a-Credential)
-  - [Notes](#Notes-1)
-- [Issuing a Credential](#Issuing-a-Credential)
-  - [Notes](#Notes-2)
-  - [Bonus Points](#Bonus-Points)
-- [Requesting/Presenting a Proof](#RequestingPresenting-a-Proof)
-  - [Notes](#Notes-3)
-- [Conclusion](#Conclusion)
+- [Running in a Browser](#running-in-a-browser)
+- [Running in Docker](#running-in-docker)
+  - [Starting Up](#starting-up)
+  - [Start the VON Network](#start-the-von-network)
+  - [Running the Faber Agent](#running-the-faber-agent)
+  - [Running Alice’s Agent](#running-alices-agent)
+  - [Restarting the Docker Containers](#restarting-the-docker-containers)
+- [Using the Swagger User Interface](#using-the-swagger-user-interface)
+- [Establishing a Connection](#establishing-a-connection)
+  - [Notes](#notes)
+- [Preparing to Issue a Credential](#preparing-to-issue-a-credential)
+  - [Notes](#notes-1)
+- [Issuing a Credential](#issuing-a-credential)
+  - [Notes](#notes-2)
+  - [Bonus Points](#bonus-points)
+- [Requesting/Presenting a Proof](#requestingpresenting-a-proof)
+  - [Notes](#notes-3)
+- [Conclusion](#conclusion)
 
 
 ## Running in a Browser
@@ -60,7 +60,7 @@ Once the Alice agent has started up (with the `invite:` prompt displayed), click
 
 Finally, open up a third browser tab and navigate to [http://dev.greenlight.bcovrin.vonx.io](http://dev.greenlight.bcovrin.vonx.io). This will be called the "Ledger tab" in the instructions below.
 
-You are ready to go. Skip down to the [Using the Swagger User Interface](using-the-swagger-user-interface) section.
+You are ready to go. Skip down to the [Using the Swagger User Interface](#using-the-swagger-user-interface) section.
 
 ## Running in Docker
 
@@ -195,7 +195,7 @@ Ok, finally, you are ready to click `Execute`. The request should work, but if i
 
 To confirm the issuance worked, scroll up to the top of the `v1.0 issue-credential exchange` section and execute the **`GET /issue-credential/records`** endpoint. You should see a lot of information about the exchange, including the state - `stored`.
 
-Let’s look at it from Alice’s side. Switch to the Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent.
+Let’s look at it from Alice’s side. Switch to the Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element `referent` is the value of the `credential_id` element used in other calls. `referent` is the name returned in the `indy-sdk` call to get the set of credentials for the wallet and ACA-Py code is not changing it in the response.
 
 You’ve done it, issued a credential!  W00t!
 

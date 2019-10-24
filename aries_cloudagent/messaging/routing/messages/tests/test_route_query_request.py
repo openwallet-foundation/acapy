@@ -9,7 +9,7 @@ class TestRouteQueryRequest(TestCase):
     test_limit = 100
     test_offset = 10
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
-    test_filter = {"recipient_key": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"}
+    test_filter = {"recipient_key": ["3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"]}
 
     def setUp(self):
         self.paginate = Paginate(limit=self.test_limit, offset=self.test_offset)

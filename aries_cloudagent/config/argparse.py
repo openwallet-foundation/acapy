@@ -18,11 +18,11 @@ class ArgumentGroup(abc.ABC):
     GROUP_NAME = None
 
     @abc.abstractmethod
-    def add_arguments(parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser):
         """Add arguments to the provided argument parser."""
 
     @abc.abstractmethod
-    def get_settings(args: Namespace) -> dict:
+    def get_settings(self, args: Namespace) -> dict:
         """Extract settings from the parsed arguments."""
 
 
@@ -209,6 +209,30 @@ class DebugGroup(ArgumentGroup):
             help="After startup, generate and print a new connection invitation\
             URL. Default: false.",
         )
+        parser.add_argument(
+            "--invite-role",
+            dest="invite_role",
+            type=str,
+            metavar="<role>",
+            help="Specify the role of the generated invitation."
+        )
+        parser.add_argument(
+            "--invite-label",
+            dest="invite_label",
+            type=str,
+            metavar="<label>",
+            help="Specify the label of the generated invitation."
+        )
+        parser.add_argument(
+            "--invite-multi-use",
+            action="store_true",
+            help="Flag specifying the generated invite should be multi-use."
+        )
+        parser.add_argument(
+            "--invite-public",
+            action="store_true",
+            help="Flag specifying the generated invite should be public."
+        )
 
         parser.add_argument(
             "--auto-accept-invites",
@@ -286,6 +310,14 @@ class DebugGroup(ArgumentGroup):
             settings["debug.seed"] = args.debug_seed
         if args.invite:
             settings["debug.print_invitation"] = True
+        if args.invite_role:
+            settings["debug.invite_role"] = args.invite_role
+        if args.invite_label:
+            settings["debug.invite_label"] = args.invite_label
+        if args.invite_multi_use:
+            settings["debug.invite_multi_use"] = True
+        if args.invite_public:
+            settings["debug.invite_public"] = True
 
         if args.auto_respond_credential_proposal:
             settings["debug.auto_respond_credential_proposal"] = True
@@ -442,6 +474,8 @@ class LoggingGroup(ArgumentGroup):
 class ProtocolGroup(ArgumentGroup):
     """Protocol settings."""
 
+    GROUP_NAME = "Protocol"
+
     def add_arguments(self, parser: ArgumentParser):
         """Add protocol-specific command line arguments to the parser."""
         parser.add_argument(
@@ -462,6 +496,12 @@ class ProtocolGroup(ArgumentGroup):
             marking a connection as 'active'. Default: false.",
         )
         parser.add_argument(
+            "--invite-base-url",
+            type=str,
+            metavar="<base-url>",
+            help="Base URL to use when formatting connection invitations in URL format."
+        )
+        parser.add_argument(
             "--public-invites",
             action="store_true",
             help="Send invitations out, and receive connection requests,\
@@ -480,10 +520,36 @@ class ProtocolGroup(ArgumentGroup):
             settings["external_protocols"] = args.external_protocols
         if args.auto_ping_connection:
             settings["auto_ping_connection"] = True
+        if args.invite_base_url:
+            settings["invite_base_url"] = args.invite_base_url
         if args.public_invites:
             settings["public_invites"] = True
         if args.timing:
             settings["timing.enabled"] = True
+        return settings
+
+
+@group(CAT_START)
+class QueueGroup(ArgumentGroup):
+    """Queue settings."""
+
+    GROUP_NAME = "Queue"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add queue-specific command line arguments to the parser."""
+        parser.add_argument(
+            "--enable-undelivered-queue",
+            action="store_true",
+            help="Enable the outbound undelivered queue that enables this agent to hold messages\
+            for delivery to agents without an endpoint. This option will require\
+            additional memory to store messages in the queue.",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract queue settings."""
+        settings = {}
+        settings["queue.enable_undelivered_queue"] = args.enable_undelivered_queue
+
         return settings
 
 

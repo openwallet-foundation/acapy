@@ -1,38 +1,25 @@
 """Admin routes for presentations."""
 
 import json
-
 from uuid import uuid4
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
-from marshmallow import fields, Schema
+from marshmallow import Schema, fields
 
 from ....holder.base import BaseHolder
 from ....storage.error import StorageNotFoundError
-
 from ...connections.models.connection_record import ConnectionRecord
 from ...decorators.attach_decorator import AttachDecorator
-from ...valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_PREDICATE,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
-    INT_EPOCH
-)
-
+from ...valid import (INDY_CRED_DEF_ID, INDY_DID, INDY_PREDICATE,
+                      INDY_SCHEMA_ID, INDY_VERSION, INT_EPOCH, UUIDFour)
 from .manager import PresentationManager
-from .messages.inner.presentation_preview import (
-    PresentationPreview,
-    PresentationPreviewSchema
-)
+from .messages.inner.presentation_preview import (PresentationPreview,
+                                                  PresentationPreviewSchema)
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
-from .models.presentation_exchange import (
-    V10PresentationExchange,
-    V10PresentationExchangeSchema,
-)
+from .models.presentation_exchange import (V10PresentationExchange,
+                                           V10PresentationExchangeSchema)
 
 
 class V10PresentationExchangeListSchema(Schema):
@@ -47,7 +34,11 @@ class V10PresentationExchangeListSchema(Schema):
 class V10PresentationProposalRequestSchema(Schema):
     """Request schema for sending a presentation proposal admin message."""
 
-    connection_id = fields.UUID(description="Connection identifier", required=True)
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,
+    )
     comment = fields.Str(
         description="Human-readable comment",
         required=False,
@@ -132,7 +123,6 @@ class IndyProofReqAttrSpecSchema(Schema):
     )
     non_revoked = fields.Nested(
         IndyProofReqNonRevoked(),
-        description="Non-revocation times of interest for revocable credentials",
         required=False
     )
 
@@ -201,8 +191,13 @@ class IndyProofRequestSchema(Schema):
 class V10PresentationRequestRequestSchema(Schema):
     """Request schema for sending a proof request."""
 
-    connection_id = fields.UUID(description="Connection identifier", required=True)
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,
+    )
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
+    comment = fields.Str(required=False)
 
 
 class IndyRequestedCredsRequestedAttrSchema(Schema):
@@ -363,7 +358,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
-    presentation_referent = request.match_info.get("referent")
+    referents = request.match_info.get("referent")
+    presentation_referents = referents.split(",") if referents else ()
 
     try:
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
@@ -387,7 +383,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     credentials = await holder.get_credentials_for_presentation_request_by_referent(
         presentation_exchange_record.presentation_request,
-        (presentation_referent,) if presentation_referent else (),
+        presentation_referents,
         start,
         count,
         extra_query
@@ -398,7 +394,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         "Retrieved presentation credentials",
         {
             "presentation_exchange_id": presentation_exchange_id,
-            "referent": presentation_referent,
+            "referents": presentation_referents,
             "extra_query": extra_query,
             "credentials": credentials
         }

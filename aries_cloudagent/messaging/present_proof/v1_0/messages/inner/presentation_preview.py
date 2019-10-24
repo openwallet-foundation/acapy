@@ -6,11 +6,10 @@ from uuid import uuid4
 from time import time
 from typing import Mapping, Sequence
 
-import base64
-
 from marshmallow import fields, validate
 
 from ......ledger.indy import IndyLedger
+from ......wallet.util import b64_to_str
 from .....models.base import BaseModel, BaseModelSchema
 from .....util import canon
 from .....valid import INDY_CRED_DEF_ID, INDY_PREDICATE
@@ -120,7 +119,6 @@ class PresAttrSpec(BaseModel):
             name: attribute name
             cred_def_id: credential definition identifier
                 (None for self-attested attribute)
-            encoding: encoding (omit or "base64")
             mime_type: MIME type
             value: attribute value as credential stores it
                 (None for unrevealed attribute)
@@ -172,8 +170,7 @@ class PresAttrSpec(BaseModel):
     def b64_decoded_value(self) -> str:
         """Value, base64-decoded if applicable."""
 
-        return base64.b64decode(self.value.encode()).decode(
-        ) if self.value and self.mime_type else self.value
+        return b64_to_str(self.value) if self.value and self.mime_type else self.value
 
     def satisfies(self, pred_spec: PresPredSpec):
         """Whether current specified attribute satisfied input specified predicate."""
@@ -413,13 +410,11 @@ class PresentationPreviewSchema(BaseModelSchema):
     )
     attributes = fields.Nested(
         PresAttrSpecSchema,
-        description="List of attribute specifications",
         required=True,
         many=True
     )
     predicates = fields.Nested(
         PresPredSpecSchema,
-        description="List of predicate specifications",
         required=True,
         many=True
     )

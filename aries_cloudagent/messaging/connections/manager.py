@@ -683,7 +683,7 @@ class ConnectionManager:
 
         Args:
             my_info: The DID I am using in this connection
-            inbound_connection_id: The DID of the inbound routing connection to use
+            inbound_connection_id: The inbound routing connection id to use
             my_endpoint: A custom endpoint for the DID Document
 
         Returns:
@@ -911,8 +911,6 @@ class ConnectionManager:
         for service in doc.service.values():
             if not service.recip_keys:
                 raise ConnectionManagerError("DIDDoc service has no recipient key(s)")
-            if not service.endpoint:
-                raise ConnectionManagerError("DIDDoc service has no service endpoint")
 
             return ConnectionTarget(
                 did=doc.did,

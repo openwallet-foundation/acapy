@@ -155,11 +155,11 @@ class BasicWallet(BaseWallet):
         """
         seed = validate_seed(seed) or random_seed()
         verkey, secret = create_keypair(seed)
+        verkey_enc = bytes_to_b58(verkey)
         if not did:
             did = bytes_to_b58(verkey[:16])
-        if did in self._local_dids:
+        if did in self._local_dids and self._local_dids[did]["verkey"] != verkey_enc:
             raise WalletDuplicateError("DID already exists in wallet")
-        verkey_enc = bytes_to_b58(verkey)
         self._local_dids[did] = {
             "seed": seed,
             "secret": secret,

@@ -50,5 +50,14 @@ class ProblemReportSchema(AgentMessageSchema):
 
         model_class = ProblemReport
 
-    explain = fields.Str(required=False)
-    problem_code = fields.Str(data_key="problem-code", required=False)
+    explain = fields.Str(
+        required=False,
+        description="Localized error explanation",
+        example="Invitation not accepted",
+    )
+    problem_code = fields.Str(
+        data_key="problem-code",
+        required=False,
+        description="Standard error identifier",
+        example=ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
+    )

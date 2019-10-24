@@ -1,8 +1,9 @@
-"""Represents a protocol discovery disclosure message."""
+"""Represents a feature discovery disclosure message."""
 
 from typing import Mapping
 
 from marshmallow import fields, Schema
+from marshmallow.validate import OneOf
 
 from ...agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import DISCLOSE
@@ -13,7 +14,7 @@ HANDLER_CLASS = (
 
 
 class Disclose(AgentMessage):
-    """Represents a protocol discovery disclosure, the response to a query message."""
+    """Represents a feature discovery disclosure, the response to a query message."""
 
     class Meta:
         """Disclose metadata."""
@@ -37,7 +38,16 @@ class ProtocolDescriptorSchema(Schema):
     """Schema for an entry in the protocols list."""
 
     pid = fields.Str(required=True)
-    roles = fields.List(fields.Str(), required=False, allow_none=True)
+    roles = fields.List(
+        fields.Str(
+            description="Role: requester or responder",
+            example="requester",
+            validate=OneOf(["requester", "responder"]),
+        ),
+        required=False,
+        allow_none=True,
+        description="List of roles",
+    )
 
 
 class DiscloseSchema(AgentMessageSchema):
@@ -48,4 +58,8 @@ class DiscloseSchema(AgentMessageSchema):
 
         model_class = Disclose
 
-    protocols = fields.List(fields.Nested(ProtocolDescriptorSchema()), required=True)
+    protocols = fields.List(
+        fields.Nested(ProtocolDescriptorSchema()),
+        required=True,
+        description="List of protocol descriptors",
+    )

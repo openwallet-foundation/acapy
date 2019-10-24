@@ -1,9 +1,8 @@
 from .....decorators.attach_decorator import AttachDecorator
-from ...message_types import CREDENTIAL_ISSUE
+from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE
 from ..credential_issue import CredentialIssue
 
 from unittest import mock, TestCase
-
 
 class TestCredentialIssue(TestCase):
     """Credential issue tests"""
@@ -77,23 +76,39 @@ class TestCredentialIssue(TestCase):
 
     cred_issue = CredentialIssue(
         comment="Test",
-        credentials_attach=[AttachDecorator.from_indy_dict(indy_cred)]
+        credentials_attach=[
+            AttachDecorator.from_indy_dict(
+                indy_dict=indy_cred,
+                ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+            )
+        ]
     )
 
     def test_init(self):
         """Test initializer"""
         credential_issue = CredentialIssue(
             comment="Test",
-            credentials_attach=[AttachDecorator.from_indy_dict(self.indy_cred)]
+            credentials_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_cred,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                )
+            ]
         )
         assert credential_issue.credentials_attach[0].indy_dict == self.indy_cred
+        assert credential_issue.credentials_attach[0].ident  # auto-generates UUID4
         assert credential_issue.indy_credential(0) == self.indy_cred
 
     def test_type(self):
         """Test type"""
         credential_issue = CredentialIssue(
             comment="Test",
-            credentials_attach=[AttachDecorator.from_indy_dict(self.indy_cred)]
+            credentials_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_cred,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                )
+            ]
         )
 
         assert credential_issue._type == CREDENTIAL_ISSUE
@@ -134,7 +149,6 @@ class TestCredentialIssueSchema(TestCase):
 
     credential_issue = CredentialIssue(
         comment="Test",
-        # credentials_attach=[AttachDecorator.from_indy_dict(TestCredentialIssue.indy_cred)]
         credentials_attach=[AttachDecorator.from_indy_dict({'hello': 'world'})]
     )
 

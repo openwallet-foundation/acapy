@@ -21,6 +21,7 @@ from ..messaging.basicmessage.routes import register as register_basicmessages
 from ..messaging.discovery.routes import register as register_discovery
 from ..messaging.trustping.routes import register as register_trustping
 from ..wallet.routes import register as register_wallet
+from ..ledger.routes import register as register_ledger
 
 
 async def register_module_routes(app: web.Application):
@@ -43,3 +44,4 @@ async def register_module_routes(app: web.Application):
     await register_v10_issue_credential(app)
     await register_v10_present_proof(app)
     await register_wallet(app)
+    await register_ledger(app)

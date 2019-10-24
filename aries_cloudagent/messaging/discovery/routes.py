@@ -1,4 +1,4 @@
-"""Protocol discovery admin routes."""
+"""Feature discovery admin routes."""
 
 from aiohttp import web
 from aiohttp_apispec import docs, response_schema
@@ -9,14 +9,18 @@ from ..protocol_registry import ProtocolRegistry
 
 
 class QueryResultSchema(Schema):
-    """Result schema for connection list."""
+    """Result schema for the protocol list."""
 
-    results = fields.Dict(fields.Str(), fields.Dict())
+    results = fields.Dict(
+        keys=fields.Str(description="protocol"),
+        values=fields.Dict(description="Protocol descriptor"),
+        description="Query results keyed by protocol",
+    )
 
 
 @docs(
     tags=["server"],
-    summary="Query supported protocols",
+    summary="Query supported features",
     parameters=[
         {
             "name": "query",
@@ -27,7 +31,7 @@ class QueryResultSchema(Schema):
     ],
 )
 @response_schema(QueryResultSchema(), 200)
-async def query_protocols(request: web.BaseRequest):
+async def query_features(request: web.BaseRequest):
     """
     Request handler for inspecting supported protocols.
 
@@ -48,4 +52,4 @@ async def query_protocols(request: web.BaseRequest):
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.get("/protocols", query_protocols)])
+    app.add_routes([web.get("/features", query_features)])
