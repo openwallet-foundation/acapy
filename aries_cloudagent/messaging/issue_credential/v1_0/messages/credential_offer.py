@@ -1,6 +1,5 @@
 """A credential offer content message."""
 
-
 from typing import Sequence
 
 from marshmallow import fields

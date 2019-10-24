@@ -1,4 +1,4 @@
-"""Aries0037 v1.0 presentation proposal handler."""
+"""Presentation proposal message handler."""
 
 from ....base_handler import (
     BaseHandler,
@@ -21,14 +21,15 @@ class PresentationProposalHandler(BaseHandler):
         Args:
             context: proposal context
             responder: responder callback
+
         """
-
-        self._logger.debug(f"PresentationProposalHandler called with context {context}")
-
+        self._logger.debug(
+            "PresentationProposalHandler called with context %s",
+            context
+        )
         assert isinstance(context.message, PresentationProposal)
-
         self._logger.info(
-            "Received presentation proposal: %s",
+            "Received presentation proposal message: %s",
             context.message.serialize(as_string=True)
         )
 

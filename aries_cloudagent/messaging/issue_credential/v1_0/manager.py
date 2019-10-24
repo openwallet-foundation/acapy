@@ -18,7 +18,7 @@ from .messages.credential_issue import CredentialIssue
 from .messages.credential_offer import CredentialOffer
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
-from .messages.credential_stored import CredentialStored
+from .messages.credential_ack import CredentialAck
 from .messages.inner.credential_preview import CredentialPreview
 from .message_types import (
     ATTACH_DECO_IDS,
@@ -592,14 +592,14 @@ class CredentialManager:
 
     async def store_credential(self, credential_exchange_record: V10CredentialExchange):
         """
-        Store a credential in the wallet.
+        Store a credential in holder wallet; send ack to issuer.
 
         Args:
             credential_exchange_record: credential exchange record
-                with credential to store
+                with credential to store and ack
 
         Returns:
-            Tuple: (Updated credential exchange record, credential-stored message)
+            Tuple: (Updated credential exchange record, credential ack message)
 
         """
         raw_credential = credential_exchange_record.raw_credential
@@ -624,37 +624,37 @@ class CredentialManager:
 
         credential = await holder.get_credential(credential_id)
 
-        credential_exchange_record.state = V10CredentialExchange.STATE_STORED
+        credential_exchange_record.state = V10CredentialExchange.STATE_ACKED
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = credential
         await credential_exchange_record.save(self.context, reason="store credential")
 
-        credential_stored_message = CredentialStored()
-        credential_stored_message.assign_thread_id(
+        credential_ack_message = CredentialAck()
+        credential_ack_message.assign_thread_id(
             credential_exchange_record.thread_id,
             credential_exchange_record.parent_thread_id,
         )
 
-        return (credential_exchange_record, credential_stored_message)
+        return (credential_exchange_record, credential_ack_message)
 
-    async def credential_stored(self):
+    async def receive_credential_ack(self):
         """
-        Receive confirmation that holder stored credential.
+        Receive credential ack from holder.
 
         Returns:
             credential exchange record, retrieved and updated
 
         """
-        credential_stored_message = self.context.message
+        credential_ack_message = self.context.message
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
             self.context,
             tag_filter={
-                "thread_id": credential_stored_message._thread_id,
+                "thread_id": credential_ack_message._thread_id,
                 "connection_id": self.context.connection_record.connection_id,
             },
         )
 
-        credential_exchange_record.state = V10CredentialExchange.STATE_STORED
-        await credential_exchange_record.save(self.context, reason="credential stored")
+        credential_exchange_record.state = V10CredentialExchange.STATE_ACKED
+        await credential_exchange_record.save(self.context, reason="credential acked")
 
         return credential_exchange_record

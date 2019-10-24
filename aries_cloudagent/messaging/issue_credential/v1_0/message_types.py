@@ -8,7 +8,7 @@ CREDENTIAL_PROPOSAL = f"{MESSAGE_FAMILY}propose-credential"
 CREDENTIAL_OFFER = f"{MESSAGE_FAMILY}offer-credential"
 CREDENTIAL_REQUEST = f"{MESSAGE_FAMILY}request-credential"
 CREDENTIAL_ISSUE = f"{MESSAGE_FAMILY}issue-credential"
-CREDENTIAL_STORED = f"{MESSAGE_FAMILY}/credential-stored"
+CREDENTIAL_ACK = f"{MESSAGE_FAMILY}ack"
 
 TOP = "aries_cloudagent.messaging.issue_credential.v1_0"
 MESSAGE_TYPES = {
@@ -16,7 +16,7 @@ MESSAGE_TYPES = {
     CREDENTIAL_OFFER: f"{TOP}.messages.credential_offer.CredentialOffer",
     CREDENTIAL_REQUEST: f"{TOP}.messages.credential_request.CredentialRequest",
     CREDENTIAL_ISSUE: f"{TOP}.messages.credential_issue.CredentialIssue",
-    CREDENTIAL_STORED: f"{TOP}.messages.credential_stored.CredentialStored"
+    CREDENTIAL_ACK: f"{TOP}.messages.credential_ack.CredentialAck"
 }
 
 # Inner object types

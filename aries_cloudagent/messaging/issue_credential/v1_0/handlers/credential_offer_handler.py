@@ -1,4 +1,4 @@
-"""Basic message handler."""
+"""Credential offer message handler."""
 
 
 from .....storage.error import StorageNotFoundError
@@ -24,13 +24,12 @@ class CredentialOfferHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
-        self._logger.debug(f"CredentialOfferHandler called with context {context}")
-
+        self._logger.debug("CredentialOfferHandler called with context %s", context)
         assert isinstance(context.message, CredentialOffer)
-
         self._logger.info(
-            "Received credential offer: %s",
+            "Received credential offer message: %s",
             context.message.serialize(as_string=True)
         )
 

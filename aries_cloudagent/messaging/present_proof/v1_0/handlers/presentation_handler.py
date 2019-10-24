@@ -1,5 +1,4 @@
-"""Aries#0037 v1.0 presentation handler."""
-
+"""Presentation message handler."""
 
 from ....base_handler import (
     BaseHandler,
@@ -24,11 +23,11 @@ class PresentationHandler(BaseHandler):
             responder: responder callback
 
         """
-        self._logger.debug(f"PresentationHandler called with context {context}")
+        self._logger.debug("PresentationHandler called with context %s", context)
         assert isinstance(context.message, Presentation)
         self._logger.info(
-            "Received presentation: %s",
-            context.message.serialize(as_string=True),
+            "Received presentation message: %s",
+            context.message.serialize(as_string=True)
         )
 
         if not context.connection_ready:

@@ -87,7 +87,7 @@ class AliceAgent(BaseAgent):
         pending = 0
         total = len(self.credential_state)
         for result in self.credential_state.values():
-            if result != "stored":
+            if result != "acked":
                 pending += 1
         return pending, total
 
@@ -117,7 +117,7 @@ class FaberAgent(BaseAgent):
         pending = 0
         total = len(self.credential_state)
         for result in self.credential_state.values():
-            if result != "stored":
+            if result != "acked":
                 pending += 1
         return pending, total
 
