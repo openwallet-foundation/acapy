@@ -17,6 +17,7 @@ class CredentialExchange(BaseRecord):
     RECORD_ID_NAME = "credential_exchange_id"
     WEBHOOK_TOPIC = "credentials"
     LOG_STATE_FLAG = "debug.credentials"
+    TAG_NAMES = {"connection_id", "thread_id", "initiator", "state"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -90,19 +91,6 @@ class CredentialExchange(BaseRecord):
                 "credential",
                 "raw_credential",
                 "parent_thread_id",
-            )
-        }
-
-    @property
-    def record_tags(self) -> dict:
-        """Accessor for the record tags generated for this credential exchange."""
-        return {
-            prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "thread_id",
-                "initiator",
-                "state",
                 "credential_definition_id",
                 "schema_id",
                 "credential_id",

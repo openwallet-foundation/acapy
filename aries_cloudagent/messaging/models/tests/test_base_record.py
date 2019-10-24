@@ -26,7 +26,7 @@ class BaseRecordImplSchema(BaseRecordSchema):
 
 
 class UnencTestImpl(BaseRecord):
-    UNENCRYPTED_TAGS = {"a", "b"}
+    TAG_NAMES = {"~a", "~b", "c"}
 
 
 class TestBaseRecord(AsyncTestCase):

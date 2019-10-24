@@ -32,6 +32,14 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
     WEBHOOK_TOPIC_ACTIVITY = "connections_activity"
     LOG_STATE_FLAG = "debug.connections"
     CACHE_ENABLED = True
+    TAG_NAMES = {
+        "initiator",
+        "my_did",
+        "their_did",
+        "request_id",
+        "invitation_key",
+        "state",
+    }
 
     RECORD_TYPE = "connection"
     RECORD_TYPE_ACTIVITY = "connection_activity"
@@ -108,26 +116,17 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
     @property
     def record_value(self) -> dict:
         """Accessor to for the JSON record value properties for this connection."""
-        return {"error_msg": self.error_msg, "their_label": self.their_label}
-
-    @property
-    def record_tags(self) -> dict:
-        """Accessor for the record tags generated for this connection."""
         return {
             prop: getattr(self, prop)
             for prop in (
-                "my_did",
-                "their_did",
                 "their_role",
                 "inbound_connection_id",
-                "initiator",
-                "invitation_key",
-                "request_id",
-                "state",
                 "routing_state",
                 "accept",
                 "invitation_mode",
                 "alias",
+                "error_msg",
+                "their_label",
             )
         }
 
@@ -378,29 +377,21 @@ class ConnectionRecordSchema(BaseRecordSchema):
         model_class = ConnectionRecord
 
     connection_id = fields.Str(
-        required=False,
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,
+        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
     )
     my_did = fields.Str(
-        required=False,
-        description="Our DID for connection",
-        **INDY_DID
+        required=False, description="Our DID for connection", **INDY_DID
     )
     their_did = fields.Str(
-        required=False,
-        description="Their DID for connection",
-        **INDY_DID
+        required=False, description="Their DID for connection", **INDY_DID
     )
     their_label = fields.Str(
-        required=False,
-        description="Their label for connection",
-        example="Bob"
+        required=False, description="Their label for connection", example="Bob"
     )
     their_role = fields.Str(
         required=False,
         description="Their assigned role for connection",
-        example="Point of contact"
+        example="Point of contact",
     )
     inbound_connection_id = fields.Str(
         required=False,
@@ -414,9 +405,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
         validate=OneOf(["self", "external", "multiuse"]),
     )
     invitation_key = fields.Str(
-        required=False,
-        description="Public key for connection",
-        **INDY_RAW_PUBLIC_KEY
+        required=False, description="Public key for connection", **INDY_RAW_PUBLIC_KEY
     )
     request_id = fields.Str(
         required=False,
@@ -443,7 +432,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
         required=False,
         description="Invitation mode: once or multi",
         example=ConnectionRecord.INVITATION_MODE_ONCE,
-        validate=OneOf(["once", "multi"])
+        validate=OneOf(["once", "multi"]),
     )
     alias = fields.Str(
         required=False,

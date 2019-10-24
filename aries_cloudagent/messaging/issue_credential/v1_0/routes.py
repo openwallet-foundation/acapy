@@ -146,10 +146,9 @@ async def credential_exchange_list(request: web.BaseRequest):
     tag_filter = {}
     for param_name in (
         "connection_id",
-        "initiator",
+        "role",
         "state",
-        "credential_definition_id",
-        "schema_id",
+        "thread_id",
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
