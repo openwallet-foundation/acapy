@@ -17,7 +17,7 @@ class CredentialExchange(BaseRecord):
     RECORD_ID_NAME = "credential_exchange_id"
     WEBHOOK_TOPIC = "credentials"
     LOG_STATE_FLAG = "debug.credentials"
-    TAG_NAMES = {"connection_id", "thread_id", "initiator", "state"}
+    TAG_NAMES = {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -82,6 +82,8 @@ class CredentialExchange(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
+                "connection_id",
+                "initiator",
                 "credential_offer",
                 "credential_request",
                 "credential_request_metadata",
@@ -94,6 +96,7 @@ class CredentialExchange(BaseRecord):
                 "credential_definition_id",
                 "schema_id",
                 "credential_id",
+                "state",
             )
         }
 

@@ -33,12 +33,10 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
     LOG_STATE_FLAG = "debug.connections"
     CACHE_ENABLED = True
     TAG_NAMES = {
-        "initiator",
         "my_did",
         "their_did",
         "request_id",
         "invitation_key",
-        "state",
     }
 
     RECORD_TYPE = "connection"
@@ -119,6 +117,7 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         return {
             prop: getattr(self, prop)
             for prop in (
+                "initiator",
                 "their_role",
                 "inbound_connection_id",
                 "routing_state",
@@ -127,6 +126,7 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
                 "alias",
                 "error_msg",
                 "their_label",
+                "state",
             )
         }
 
@@ -151,9 +151,10 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
             tag_filter["their_did"] = their_did
         if my_did:
             tag_filter["my_did"] = my_did
+        post_filter = {}
         if initiator:
-            tag_filter["initiator"] = initiator
-        return await cls.retrieve_by_tag_filter(context, tag_filter)
+            post_filter["initiator"] = initiator
+        return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_invitation_key(
@@ -166,10 +167,11 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
             invitation_key: The key on the originating invitation
             initiator: Filter by the initiator value
         """
-        tag_filter = {"invitation_key": invitation_key, "state": cls.STATE_INVITATION}
+        tag_filter = {"invitation_key": invitation_key}
+        post_filter = {"state": cls.STATE_INVITATION}
         if initiator:
-            tag_filter["initiator"] = initiator
-        return await cls.retrieve_by_tag_filter(context, tag_filter)
+            post_filter["initiator"] = initiator
+        return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_request_id(

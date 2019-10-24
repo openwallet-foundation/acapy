@@ -18,7 +18,7 @@ class V10CredentialExchange(BaseRecord):
     RECORD_TYPE = "credential_exchange_v10"
     RECORD_ID_NAME = "credential_exchange_id"
     WEBHOOK_TOPIC = "issue_credential"
-    TAG_NAMES = {"connection_id", "thread_id", "role", "state"}
+    TAG_NAMES = {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -92,6 +92,7 @@ class V10CredentialExchange(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
+                "connection_id",
                 "credential_proposal_dict",
                 "credential_offer",
                 "credential_request",
@@ -106,6 +107,8 @@ class V10CredentialExchange(BaseRecord):
                 "credential_definition_id",
                 "schema_id",
                 "credential_id",
+                "role",
+                "state",
             )
         }
 

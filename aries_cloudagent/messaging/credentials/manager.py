@@ -342,8 +342,10 @@ class CredentialManager:
 
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={
+            {
                 "thread_id": credential_request_message._thread_id,
+            },
+            {
                 "initiator": "self",
             },
         )
@@ -443,8 +445,10 @@ class CredentialManager:
                 credential_exchange_record
             ) = await CredentialExchange.retrieve_by_tag_filter(
                 self.context,
-                tag_filter={
+                {
                     "thread_id": credential_message._thread_id,
+                },
+                {
                     "initiator": "external",
                 },
             )
@@ -462,8 +466,10 @@ class CredentialManager:
                 credential_exchange_record
             ) = await CredentialExchange.retrieve_by_tag_filter(
                 self.context,
-                tag_filter={
+                {
                     "thread_id": credential_message._thread.pthid,
+                },
+                {
                     "initiator": "external",
                 },
             )
@@ -583,8 +589,10 @@ class CredentialManager:
         # Get current exchange record by thread id
         credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={
+            {
                 "thread_id": credential_stored_message._thread_id,
+            },
+            {
                 "initiator": "self",
             },
         )

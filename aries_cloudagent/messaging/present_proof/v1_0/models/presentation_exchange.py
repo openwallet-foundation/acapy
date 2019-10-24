@@ -18,7 +18,7 @@ class V10PresentationExchange(BaseRecord):
     RECORD_TYPE = "presentation_exchange_v10"
     RECORD_ID_NAME = "presentation_exchange_id"
     WEBHOOK_TOPIC = "present_proof"
-    TAG_NAMES = {"connection_id", "thread_id", "role", "state"}
+    TAG_NAMES = {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -76,10 +76,13 @@ class V10PresentationExchange(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
+                "connection_id",
                 "initiator",
                 "presentation_proposal_dict",
                 "presentation_request",
                 "presentation",
+                "role",
+                "state",
                 "auto_present",
                 "error_msg",
                 "verified",

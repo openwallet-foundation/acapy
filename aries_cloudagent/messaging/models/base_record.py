@@ -11,13 +11,21 @@ from marshmallow import fields
 
 from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
-from ...storage.base import BaseStorage
+from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
 
 from .base import BaseModel, BaseModelSchema
 from ..responder import BaseResponder
 from ..util import datetime_to_str, time_now
 from ..valid import INDY_ISO8601_DATETIME
+
+
+def match_post_filter(record: dict, post_filter: dict) -> bool:
+    """Determine if a record value matches the post-filter."""
+    for k, v in post_filter.items():
+        if record.get(k) != v:
+            return False
+    return True
 
 
 class BaseRecord(BaseModel):
@@ -204,45 +212,59 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def retrieve_by_tag_filter(
-        cls, context: InjectionContext, tag_filter: dict
+        cls, context: InjectionContext, tag_filter: dict, post_filter: dict = None
     ) -> "BaseRecord":
         """Retrieve a record by tag filter.
 
         Args:
             context: The injection context to use
             tag_filter: The filter dictionary to apply
+            post_filter: Additional value filters to apply after retrieval
         """
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
+        result = storage.search_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
             None,
             {"retrieveTags": False},
-        ).fetch_single()
-        vals = json.loads(result.value)
-        return cls.from_storage(result.id, vals)
+        )
+        found = None
+        async for record in result:
+            vals = json.loads(record.value)
+            if not post_filter or match_post_filter(vals, post_filter):
+                if found:
+                    raise StorageDuplicateError("Multiple records located")
+                found = cls.from_storage(record.id, vals)
+        if not found:
+            raise StorageNotFoundError("Record not found")
+        return found
 
     @classmethod
     async def query(
-        cls, context: InjectionContext, tag_filter: dict = None
+        cls,
+        context: InjectionContext,
+        tag_filter: dict = None,
+        post_filter: dict = None,
     ) -> Sequence["BaseRecord"]:
         """Query stored records.
 
         Args:
             context: The injection context to use
             tag_filter: An optional dictionary of tag filter clauses
+            post_filter: Additional value filters to apply
         """
         storage: BaseStorage = await context.inject(BaseStorage)
-        found = await storage.search_records(
+        result = storage.search_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
             None,
             {"retrieveTags": False},
-        ).fetch_all()
+        )
         result = []
-        for record in found:
+        async for record in result:
             vals = json.loads(record.value)
-            result.append(cls.from_storage(record.id, vals))
+            if not post_filter or match_post_filter(vals, post_filter):
+                result.append(cls.from_storage(record.id, vals))
         return result
 
     async def save(

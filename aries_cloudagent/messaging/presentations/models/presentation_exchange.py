@@ -17,7 +17,7 @@ class PresentationExchange(BaseRecord):
     RECORD_ID_NAME = "presentation_exchange_id"
     WEBHOOK_TOPIC = "presentations"
     LOG_STATE_FLAG = "debug.presentations"
-    TAG_NAMES = ("connection_id", "initiator", "thread_id", "state")
+    TAG_NAMES = {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -64,10 +64,13 @@ class PresentationExchange(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
+                "connection_id",
+                "initiator",
                 "presentation_request",
                 "presentation",
                 "error_msg",
                 "verified",
+                "state",
             )
         }
 

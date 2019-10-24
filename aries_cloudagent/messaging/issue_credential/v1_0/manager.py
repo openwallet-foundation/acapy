@@ -474,10 +474,8 @@ class CredentialManager:
 
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={
-                "thread_id": credential_request_message._thread_id,
-                "connection_id": self.context.connection_record.connection_id,
-            },
+            {"thread_id": credential_request_message._thread_id},
+            {"connection_id": self.context.connection_record.connection_id},
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
@@ -568,10 +566,8 @@ class CredentialManager:
             credential_exchange_record = await (
                 V10CredentialExchange.retrieve_by_tag_filter(
                     self.context,
-                    tag_filter={
-                        "thread_id": credential_message._thread_id,
-                        "connection_id": self.context.connection_record.connection_id,
-                    },
+                    {"thread_id": credential_message._thread_id},
+                    {"connection_id": self.context.connection_record.connection_id},
                 )
             )
         except StorageNotFoundError:
@@ -586,10 +582,8 @@ class CredentialManager:
             credential_exchange_record = await (
                 V10CredentialExchange.retrieve_by_tag_filter(
                     self.context,
-                    tag_filter={
-                        "thread_id": credential_message._thread.pthid,
-                        "connection_id": self.context.connection_record.connection_id,
-                    },
+                    {"thread_id": credential_message._thread.pthid},
+                    {"connection_id": self.context.connection_record.connection_id},
                 )
             )
 
@@ -708,10 +702,8 @@ class CredentialManager:
         credential_stored_message = self.context.message
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={
-                "thread_id": credential_stored_message._thread_id,
-                "connection_id": self.context.connection_record.connection_id,
-            },
+            {"thread_id": credential_stored_message._thread_id},
+            {"connection_id": self.context.connection_record.connection_id},
         )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_STORED

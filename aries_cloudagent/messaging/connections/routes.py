@@ -125,17 +125,23 @@ async def connections_list(request: web.BaseRequest):
     context = request.app["request_context"]
     tag_filter = {}
     for param_name in (
-        "alias",
-        "initiator",
         "invitation_id",
         "my_did",
-        "state",
         "their_did",
-        "their_role",
+        "request_id",
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
-    records = await ConnectionRecord.query(context, tag_filter)
+    post_filter = {}
+    for param_name in (
+        "alias",
+        "initiator",
+        "state",
+        "their_role",
+    ):
+        if param_name in request.query and request.query[param_name] != "":
+            post_filter[param_name] = request.query[param_name]
+    records = await ConnectionRecord.query(context, tag_filter, post_filter)
     results = []
     for record in records:
         row = record.serialize()
