@@ -330,8 +330,6 @@ class AttachDecorator(BaseModel):
         """
         assert self.data and self.data.base64
 
-        b_timestamp = struct.pack("!Q", int(timestamp))
-
         b_value = set_urlsafe_b64(self.data.base64, urlsafe=True).encode("ascii")
         # 8 byte, big-endian encoded, unsigned int (long)
         b_timestamp = struct.pack("!Q", int(timestamp))
