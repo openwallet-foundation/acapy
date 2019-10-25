@@ -60,7 +60,7 @@ Once the Alice agent has started up (with the `invite:` prompt displayed), click
 
 Finally, open up a third browser tab and navigate to [http://dev.greenlight.bcovrin.vonx.io](http://dev.greenlight.bcovrin.vonx.io). This will be called the "Ledger tab" in the instructions below.
 
-You are ready to go. Skip down to the [Using the Swagger User Interface](using-the-swagger-user-interface) section.
+You are ready to go. Skip down to the [Using the Swagger User Interface](#using-the-swagger-user-interface) section.
 
 ## Running in Docker
 
