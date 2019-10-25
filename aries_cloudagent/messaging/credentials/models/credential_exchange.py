@@ -2,6 +2,8 @@
 
 from marshmallow import fields
 
+from ....config.injection_context import InjectionContext
+
 from ...models.base_record import BaseRecord, BaseRecordSchema
 
 
@@ -99,6 +101,44 @@ class CredentialExchange(BaseRecord):
                 "state",
             )
         }
+
+    @classmethod
+    async def retrieve_by_thread_and_initiator(
+        cls, context: InjectionContext, thread_id: str, initiator: str
+    ) -> "CredentialExchange":
+        """Retrieve a credential exchange record by thread ID and inititator."""
+        cache_key = f"credential_exchange_tidx::{thread_id}::{initiator}"
+        record_id = await cls.get_cached_key(context, cache_key)
+        if record_id:
+            record = await cls.retrieve_by_id(context, record_id)
+        else:
+            record = await cls.retrieve_by_tag_filter(
+                context, {"thread_id": thread_id}, {"initiator": initiator}
+            )
+            await cls.set_cached_key(context, cache_key, record.credential_exchange_id)
+        return record
+
+    async def post_save(
+        self,
+        context: InjectionContext,
+        new_record: bool,
+        last_state: str,
+        webhook: bool = None,
+    ):
+        """Perform post-save actions.
+
+        Args:
+            context: The injection context to use
+            new_record: Flag indicating if the record was just created
+            last_state: The previous state value
+            webhook: Adjust whether the webhook is called
+        """
+        await super(CredentialExchange, self).post_save(
+            context, new_record, last_state, webhook
+        )
+        if self.thread_id and self.initiator:
+            cache_key = f"credential_exchange_tidx::{self.thread_id}::{self.initiator}"
+            await self.set_cached_key(context, cache_key, self.credential_exchange_id)
 
 
 class CredentialExchangeSchema(BaseRecordSchema):

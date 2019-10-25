@@ -222,14 +222,14 @@ class BaseRecord(BaseModel):
             post_filter: Additional value filters to apply after retrieval
         """
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = storage.search_records(
+        query = storage.search_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
             None,
             {"retrieveTags": False},
         )
         found = None
-        async for record in result:
+        async for record in query:
             vals = json.loads(record.value)
             if not post_filter or match_post_filter(vals, post_filter):
                 if found:
@@ -254,14 +254,14 @@ class BaseRecord(BaseModel):
             post_filter: Additional value filters to apply
         """
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = storage.search_records(
+        query = storage.search_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
             None,
             {"retrieveTags": False},
         )
         result = []
-        async for record in result:
+        async for record in query:
             vals = json.loads(record.value)
             if not post_filter or match_post_filter(vals, post_filter):
                 result.append(cls.from_storage(record.id, vals))
