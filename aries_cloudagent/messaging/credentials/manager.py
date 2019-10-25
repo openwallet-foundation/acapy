@@ -340,12 +340,10 @@ class CredentialManager:
 
         credential_request = json.loads(credential_request_message.request)
 
-        credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context,
-            tag_filter={
-                "thread_id": credential_request_message._thread_id,
-                "initiator": "self",
-            },
+        (
+            credential_exchange_record
+        ) = await CredentialExchange.retrieve_by_thread_and_initiator(
+            self.context, credential_request_message._thread_id, "self"
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
@@ -441,12 +439,8 @@ class CredentialManager:
         try:
             (
                 credential_exchange_record
-            ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context,
-                tag_filter={
-                    "thread_id": credential_message._thread_id,
-                    "initiator": "external",
-                },
+            ) = await CredentialExchange.retrieve_by_thread_and_initiator(
+                self.context, credential_message._thread_id, "external"
             )
         except StorageNotFoundError:
 
@@ -460,12 +454,8 @@ class CredentialManager:
             # credential_request_metadata
             (
                 credential_exchange_record
-            ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context,
-                tag_filter={
-                    "thread_id": credential_message._thread.pthid,
-                    "initiator": "external",
-                },
+            ) = await CredentialExchange.retrieve_by_thread_and_initiator(
+                self.context, credential_message._thread.pthid, "external"
             )
 
             # Copy values from parent but create new record on save (no id)
@@ -581,12 +571,10 @@ class CredentialManager:
         """
 
         # Get current exchange record by thread id
-        credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context,
-            tag_filter={
-                "thread_id": credential_stored_message._thread_id,
-                "initiator": "self",
-            },
+        (
+            credential_exchange_record
+        ) = await CredentialExchange.retrieve_by_thread_and_initiator(
+            self.context, credential_stored_message._thread_id, "self"
         )
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED

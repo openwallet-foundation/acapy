@@ -33,7 +33,7 @@ class TestCredentialManager(AsyncTestCase):
             mock_json.loads.return_value = async_mock.MagicMock()
 
             mock_credential_exchange_instance = (
-                mock_credential_exchange.retrieve_by_tag_filter.return_value
+                mock_credential_exchange.retrieve_by_thread_and_initiator.return_value
             ) = async_mock.CoroutineMock()
 
             mock_credential_exchange_instance.save = async_mock.CoroutineMock()
@@ -75,7 +75,7 @@ class TestCredentialManager(AsyncTestCase):
             mock_json.loads.return_value = async_mock.MagicMock()
 
             mock_credential_exchange_instance = (
-                mock_credential_exchange.retrieve_by_tag_filter.return_value
+                mock_credential_exchange.retrieve_by_thread_and_initiator.return_value
             ) = async_mock.CoroutineMock()
 
             mock_credential_exchange_instance.save = async_mock.CoroutineMock()
@@ -116,7 +116,7 @@ class TestCredentialManager(AsyncTestCase):
             mock_json.loads.return_value = async_mock.MagicMock()
 
             mock_credential_exchange_instance = (
-                mock_credential_exchange.retrieve_by_tag_filter.return_value
+                mock_credential_exchange.retrieve_by_thread_and_initiator.return_value
             ) = async_mock.CoroutineMock()
 
             mock_credential_exchange_instance.save = async_mock.CoroutineMock()
@@ -171,7 +171,7 @@ class TestCredentialManager(AsyncTestCase):
             mock_json.loads.return_value = async_mock.MagicMock()
 
             mock_credential_exchange_instance = (
-                mock_credential_exchange.retrieve_by_tag_filter.return_value
+                mock_credential_exchange.retrieve_by_thread_and_initiator.return_value
             ) = async_mock.CoroutineMock()
 
             mock_credential_exchange_instance.save = async_mock.CoroutineMock()
@@ -226,7 +226,7 @@ class TestCredentialManager(AsyncTestCase):
             mock_json.loads.return_value = async_mock.MagicMock()
 
             mock_credential_exchange_instance = (
-                mock_credential_exchange.retrieve_by_tag_filter.return_value
+                mock_credential_exchange.retrieve_by_thread_and_initiator.return_value
             ) = async_mock.CoroutineMock()
 
             mock_credential_exchange_instance.save = async_mock.CoroutineMock()
