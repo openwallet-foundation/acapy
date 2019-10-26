@@ -65,23 +65,33 @@ class Timer:
         """Initialize the Timer instance."""
         self.collector = collector
         self.groups = groups
-        self.start = None
+        self.start_time = None
 
     @classmethod
     def now(cls):
         """Fetch a standard timer value."""
         return time.perf_counter()
 
+    def start(self) -> "Timer":
+        """Start the timer."""
+        self.start_time = self.now()
+        return self
+
+    def stop(self):
+        """Stop the timer."""
+        if self.start_time:
+            dur = self.now() - self.start_time
+            for grp in self.groups:
+                self.collector.log(grp, dur)
+        self.start_time = None
+
     def __enter__(self):
         """Enter the context manager."""
-        self.start = self.now()
-        return self
+        return self.start()
 
     def __exit__(self, type, value, tb):
         """Exit the context manager."""
-        dur = self.now() - self.start
-        for grp in self.groups:
-            self.collector.log(grp, dur)
+        self.stop()
 
 
 class Collector:

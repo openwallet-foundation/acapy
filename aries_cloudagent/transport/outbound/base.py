@@ -5,6 +5,7 @@ import asyncio
 
 from ...error import BaseError
 from ...messaging.outbound_message import OutboundMessage
+from ...stats import Collector
 
 
 class BaseOutboundTransport(ABC):
@@ -12,6 +13,17 @@ class BaseOutboundTransport(ABC):
 
     def __init__(self) -> None:
         """Initialize a `BaseOutboundTransport` instance."""
+        self._collector = None
+
+    @property
+    def collector(self) -> Collector:
+        """Accessor for the stats collector instance."""
+        return self._collector
+
+    @collector.setter
+    def collector(self, coll: Collector):
+        """Assign a new stats collector instance."""
+        self._collector = coll
 
     async def __aenter__(self):
         """Async context manager enter."""

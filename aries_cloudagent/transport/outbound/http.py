@@ -5,6 +5,7 @@ import logging
 from aiohttp import ClientSession
 
 from ...messaging.outbound_message import OutboundMessage
+from ..stats import StatsTracer
 
 from .base import BaseOutboundTransport
 
@@ -21,7 +22,12 @@ class HttpTransport(BaseOutboundTransport):
 
     async def start(self):
         """Start the transport."""
-        self.client_session = ClientSession()
+        session_args = {}
+        if self.collector:
+            session_args["trace_configs"] = [
+                StatsTracer(self.collector, "outbound-http:")
+            ]
+        self.client_session = ClientSession(**session_args)
         return self
 
     async def stop(self):
