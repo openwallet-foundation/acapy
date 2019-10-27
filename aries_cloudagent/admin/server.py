@@ -439,6 +439,6 @@ class AdminServer(BaseAdminServer):
         """Wait for all pending webhooks to be dispatched, used in testing."""
         if self.webhook_queue:
             await self.webhook_queue.join()
-        self.webhook_queue.stop()
+            self.webhook_queue.reset()
         if self.webhook_processor:
             await self.webhook_processor.wait_done()

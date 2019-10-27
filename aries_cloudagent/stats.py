@@ -136,13 +136,13 @@ class Collector:
     ):
         """Wrap a method on a class or class instance."""
         if not prop_name:
-            return
+            raise ValueError("missing prop_name")
         if isinstance(prop_name, str):
             method = getattr(obj, prop_name, None)
             if method:
                 setattr(obj, prop_name, self(method, groups))
             elif not ignore_missing:
-                raise KeyError(prop_name)
+                raise AttributeError(prop_name)
         else:
             for prop in prop_name:
                 self.wrap(obj, prop, groups)
