@@ -346,13 +346,14 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    credential_exchange_record = await credential_manager.prepare_send(
-        credential_definition_id, connection_id, credential_values
-    )
-    asyncio.ensure_future(
-        credential_manager.perform_send(credential_exchange_record, outbound_handler)
+    (
+        credential_exchange_record,
+        credential_offer_message,
+    ) = await credential_manager.create_offer(
+        credential_definition_id, connection_id, True, credential_values
     )
 
+    await outbound_handler(credential_offer_message, connection_id=connection_id)
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -391,16 +392,14 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    credential_exchange_record = await credential_manager.create_offer(
-        credential_definition_id, connection_id
-    )
-
     (
         credential_exchange_record,
         credential_offer_message,
-    ) = await credential_manager.offer_credential(credential_exchange_record)
-    await outbound_handler(credential_offer_message, connection_id=connection_id)
+    ) = await credential_manager.create_offer(
+        credential_definition_id, connection_id
+    )
 
+    await outbound_handler(credential_offer_message, connection_id=connection_id)
     return web.json_response(credential_exchange_record.serialize())
 
 
