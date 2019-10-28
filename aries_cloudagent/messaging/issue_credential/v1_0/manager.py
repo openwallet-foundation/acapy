@@ -209,10 +209,18 @@ class CredentialManager:
         """
         credential_definition_id = credential_exchange_record.credential_definition_id
 
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-        credential_offer = await issuer.create_credential_offer(
-            credential_definition_id
-        )
+        cache_key = f"credential_offer::{credential_definition_id}"
+        cached = await V10CredentialExchange.get_cached_key(self.context, cache_key)
+        if cached:
+            credential_offer = cached["offer"]
+        else:
+            issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+            credential_offer = await issuer.create_credential_offer(
+                credential_definition_id
+            )
+            await V10CredentialExchange.set_cached_key(
+                self.context, cache_key, {"offer": credential_offer}, 3600
+            )
 
         cred_preview = CredentialProposal.deserialize(
             credential_exchange_record.credential_proposal_dict
@@ -286,19 +294,42 @@ class CredentialManager:
                 credential_exchange_record.credential_exchange_id,
             )
         else:
-            ledger: BaseLedger = await self.context.inject(BaseLedger)
-            async with ledger:
-                credential_definition = await ledger.get_credential_definition(
-                    credential_definition_id
+            nonce = credential_offer["nonce"]
+            cache_key = (
+                f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
+            )
+            cached = await V10CredentialExchange.get_cached_key(self.context, cache_key)
+            if cached:
+                (
+                    credential_exchange_record.credential_request,
+                    credential_exchange_record.credential_request_metadata,
+                ) = (cached["request"], cached["metadata"])
+            else:
+                ledger: BaseLedger = await self.context.inject(BaseLedger)
+                async with ledger:
+                    credential_definition = await ledger.get_credential_definition(
+                        credential_definition_id
+                    )
+
+                holder: BaseHolder = await self.context.inject(BaseHolder)
+                (
+                    credential_exchange_record.credential_request,
+                    credential_exchange_record.credential_request_metadata,
+                ) = await holder.create_credential_request(
+                    credential_offer, credential_definition, holder_did
                 )
 
-            holder: BaseHolder = await self.context.inject(BaseHolder)
-            (
-                credential_exchange_record.credential_request,
-                credential_exchange_record.credential_request_metadata,
-            ) = await holder.create_credential_request(
-                credential_offer, credential_definition, holder_did
-            )
+                await V10CredentialExchange.set_cached_key(
+                    self.context,
+                    cache_key,
+                    {
+                        "request": credential_exchange_record.credential_request,
+                        "metadata": (
+                            credential_exchange_record.credential_request_metadata
+                        ),
+                    },
+                    7200,
+                )
 
         credential_request_message = CredentialRequest(
             requests_attach=[
@@ -334,10 +365,12 @@ class CredentialManager:
         assert len(credential_request_message.requests_attach or []) == 1
         credential_request = credential_request_message.indy_cred_req(0)
 
-        credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
+        (
+            credential_exchange_record
+        ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
             self.context,
-            {"thread_id": credential_request_message._thread_id},
-            {"connection_id": self.context.connection_record.connection_id},
+            self.context.connection_record.connection_id,
+            credential_request_message._thread_id,
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
@@ -403,9 +436,7 @@ class CredentialManager:
                 )
             ],
         )
-        credential_message._thread = {
-            "thid": credential_exchange_record.thread_id
-        }
+        credential_message._thread = {"thid": credential_exchange_record.thread_id}
 
         return (credential_exchange_record, credential_message)
 
@@ -423,12 +454,12 @@ class CredentialManager:
         assert len(credential_message.credentials_attach or []) == 1
         raw_credential = credential_message.indy_credential(0)
 
-        credential_exchange_record = await (
-            V10CredentialExchange.retrieve_by_tag_filter(
-                self.context,
-                {"thread_id": credential_message._thread_id},
-                {"connection_id": self.context.connection_record.connection_id},
-            )
+        (
+            credential_exchange_record
+        ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
+            self.context,
+            self.context.connection_record.connection_id,
+            credential_message._thread_id,
         )
 
         credential_exchange_record.raw_credential = raw_credential
@@ -495,10 +526,12 @@ class CredentialManager:
 
         """
         credential_stored_message = self.context.message
-        credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
+        (
+            credential_exchange_record
+        ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
             self.context,
-            {"thread_id": credential_stored_message._thread_id},
-            {"connection_id": self.context.connection_record.connection_id},
+            self.context.connection_record.connection_id,
+            credential_stored_message._thread_id,
         )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_STORED
