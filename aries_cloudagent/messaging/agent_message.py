@@ -218,11 +218,11 @@ class AgentMessage(BaseModel):
             raise BaseModelError(
                 "Field signature verification failed: {}".format(field_name)
             )
-        if signer_verkey is not None and sig.signer != signer_verkey:
+        if signer_verkey is not None and sig.signers != signer_verkey:
             raise BaseModelError(
                 "Signer verkey of signature does not match: {}".format(field_name)
             )
-        return sig.signer
+        return sig.signers
 
     async def verify_signatures(self, wallet: BaseWallet) -> bool:
         """

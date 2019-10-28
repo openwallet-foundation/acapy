@@ -32,7 +32,7 @@ class SignatureDecorator(BaseModel):
         signature_type: str = None,
         signature: str = None,
         sig_data: str = None,
-        signer: str = None,
+        signers: str = None,
     ):
         """
         Initialize a FieldSignature instance.
@@ -41,12 +41,12 @@ class SignatureDecorator(BaseModel):
             signature_type: Type of signature
             signature: The signature
             sig_data: Signature data
-            signer: The verkey of the signer
+            signers: The verkey of the signer
         """
         self.signature_type = signature_type
         self.signature = signature
         self.sig_data = sig_data
-        self.signer = signer
+        self.signers = signers
 
     @classmethod
     async def create(
@@ -79,7 +79,7 @@ class SignatureDecorator(BaseModel):
             signature_type=cls.TYPE_ED25519SHA512,
             signature=bytes_to_b64(signature_bin, urlsafe=True),
             sig_data=bytes_to_b64(msg_combined_bin, urlsafe=True),
-            signer=signer,
+            signers=signer,
         )
 
     def decode(self) -> (object, int):
@@ -109,7 +109,7 @@ class SignatureDecorator(BaseModel):
             return False
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         sig_bin = b64_to_bytes(self.signature, urlsafe=True)
-        return await wallet.verify_message(msg_bin, sig_bin, self.signer)
+        return await wallet.verify_message(msg_bin, sig_bin, self.signers)
 
     def __str__(self):
         """Get a string representation of this class."""
@@ -117,7 +117,7 @@ class SignatureDecorator(BaseModel):
             f"{self.__class__.__name__}"
             + f"(signature_type='{self.signature_type,}', "
             + f"signature='{self.signature,}', "
-            + f"sig_data='{self.sig_data}', signer='{self.signer}')"
+            + f"sig_data='{self.sig_data}', signers='{self.signers}')"
         )
 
 
@@ -149,7 +149,7 @@ class SignatureDecoratorSchema(BaseModelSchema):
         description="Signature data, base64url-encoded",
         **BASE64URL
     )
-    signer = fields.Str(
+    signers = fields.Str(
         required=True,
         description="Signer verification key",
         **INDY_RAW_PUBLIC_KEY
