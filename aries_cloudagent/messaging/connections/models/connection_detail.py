@@ -96,13 +96,13 @@ class ConnectionDetailSchema(BaseModelSchema):
         model_class = "ConnectionDetail"
 
     did = fields.Str(
-        data_key="DID",
+        data_key="did",
         required=False,
         description="DID for connection detail",
         **INDY_DID
     )
     did_doc = DIDDocWrapper(
-        data_key="DIDDoc",
+        data_key="did_doc",
         required=False,
         description="DID document for connection detail",
     )
