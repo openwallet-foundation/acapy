@@ -19,6 +19,7 @@ from ..messaging.responder import BaseResponder
 from ..stats import Collector
 from ..task_processor import TaskProcessor
 from ..transport.outbound.queue.base import BaseOutboundMessageQueue
+from ..transport.stats import StatsTracer
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -386,7 +387,11 @@ class AdminServer(BaseAdminServer):
 
     async def _process_webhooks(self):
         """Continuously poll webhook queue and dispatch to targets."""
-        self.webhook_session = ClientSession()
+        session_args = {}
+        collector: Collector = await self.context.inject(Collector, required=False)
+        if collector:
+            session_args["trace_configs"] = [StatsTracer(collector, "webhook-http:")]
+        self.webhook_session = ClientSession(**session_args)
         self.webhook_processor = TaskProcessor(max_pending=5)
         async for topic, payload in self.webhook_queue:
             for queue in self.websocket_queues.values():
@@ -434,6 +439,6 @@ class AdminServer(BaseAdminServer):
         """Wait for all pending webhooks to be dispatched, used in testing."""
         if self.webhook_queue:
             await self.webhook_queue.join()
-        self.webhook_queue.stop()
+            self.webhook_queue.reset()
         if self.webhook_processor:
             await self.webhook_processor.wait_done()

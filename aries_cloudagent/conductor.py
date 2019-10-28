@@ -93,9 +93,14 @@ class Conductor:
                 self.logger.exception("Unable to register inbound transport")
                 raise
 
+        # Fetch stats collector, if any
+        collector = await context.inject(Collector, required=False)
+
         # Register all outbound transports
         outbound_queue = await context.inject(BaseOutboundMessageQueue)
-        self.outbound_transport_manager = OutboundTransportManager(outbound_queue)
+        self.outbound_transport_manager = OutboundTransportManager(
+            outbound_queue, collector
+        )
         outbound_transports = context.settings.get("transport.outbound_configs") or []
         for outbound_transport in outbound_transports:
             try:
@@ -124,7 +129,6 @@ class Conductor:
         self.context = context
         self.dispatcher = Dispatcher(self.context)
 
-        collector = await context.inject(Collector, required=False)
         if collector:
             # add stats to our own methods
             collector.wrap(

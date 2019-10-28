@@ -56,8 +56,15 @@ class TestStats(AsyncTestCase):
             "TestStats.test_method_decorator.<locals>.TestClass.test_wrap",
         }
 
+        with self.assertRaises(AttributeError):
+            stats.wrap(instance, "test_missing")
+
+        with self.assertRaises(ValueError):
+            stats.wrap(instance, "")
+
     async def test_disable(self):
         stats = Collector()
+        assert stats.enabled
         stats.enabled = False
 
         stats.log("test", 1.0)
