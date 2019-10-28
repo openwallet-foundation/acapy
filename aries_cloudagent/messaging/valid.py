@@ -3,7 +3,6 @@
 from datetime import datetime
 
 from base58 import alphabet
-from marshmallow.exceptions import ValidationError
 from marshmallow.validate import OneOf, Range, Regexp
 
 from .util import epoch_to_str
@@ -163,14 +162,6 @@ class Base64(Regexp):
             error="Value {input} is not a valid base64 encoding"
         )
 
-    def __call__(self, value):
-        """Validate input value."""
-
-        if value is None or len(value) % 4:
-            raise ValidationError(self.error)
-
-        return super().__call__(value)
-
 
 class Base64URL(Regexp):
     """Validate base64 value."""
@@ -185,13 +176,23 @@ class Base64URL(Regexp):
             error="Value {input} is not a valid base64url encoding"
         )
 
-    def __call__(self, value):
-        """Validate input value."""
 
-        if value is None or len(value) % 4:
-            raise ValidationError(self.error)
+class JSONWebToken(Regexp):
+    """Validate JSON Web token."""
 
-        return super().__call__(value)
+    EXAMPLE = (
+        "eyJhbGciOiJFZERTQSJ9."
+        "eyJhIjogIjAifQ."
+        "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+    )
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$",
+            error="Value {input} is not a valid JSON Web token"
+        )
 
 
 class SHA256Hash(Regexp):
@@ -270,6 +271,10 @@ BASE64 = {
 BASE64URL = {
     "validate": Base64URL(),
     "example": Base64.EXAMPLE
+}
+JWT = {
+    "validate": JSONWebToken(),
+    "example": JSONWebToken.EXAMPLE
 }
 SHA256 = {
     "validate": SHA256Hash(),

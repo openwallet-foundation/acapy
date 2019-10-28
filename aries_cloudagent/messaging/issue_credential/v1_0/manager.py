@@ -1,16 +1,12 @@
 """Classes to manage credentials."""
 
-import asyncio
 import logging
-import time
 
-from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....error import BaseError
 from ....holder.base import BaseHolder
 from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger
-from ....storage.error import StorageNotFoundError
 
 from ...decorators.attach_decorator import AttachDecorator
 
@@ -57,25 +53,6 @@ class CredentialManager:
         """
         return self._context
 
-    async def cache_credential_exchange(
-        self, credential_exchange_record: V10CredentialExchange
-    ):
-        """
-        Cache a credential exchange to avoid redundant credential requests.
-
-        Args:
-            credential_exchange_record: credential exchange record
-
-        """
-        cache: BaseCache = await self.context.inject(BaseCache)
-        await cache.set(
-            "v10_credential_exchange::"
-            + f"{credential_exchange_record.credential_definition_id}::"
-            + f"{credential_exchange_record.connection_id}",
-            credential_exchange_record.credential_exchange_id,
-            600,
-        )
-
     async def prepare_send(
         self,
         credential_definition_id: str,
@@ -96,117 +73,19 @@ class CredentialManager:
 
         """
 
-        cache: BaseCache = await self._context.inject(BaseCache)
-
-        # This cache is populated in credential_request_handler.py
-        # Do we have a source (parent) credential exchange for which
-        # we can re-use the credential request/offer?
-        source_credential_exchange_id = await cache.get(
-            "v10_credential_exchange::"
-            + f"{credential_definition_id}::"
-            + f"{connection_id}"
+        credential_exchange = V10CredentialExchange(
+            auto_issue=True,
+            connection_id=connection_id,
+            initiator=V10CredentialExchange.INITIATOR_SELF,
+            role=V10CredentialExchange.ROLE_ISSUER,
+            credential_definition_id=credential_definition_id,
+            credential_proposal_dict=credential_proposal.serialize(),
         )
-
-        source_credential_exchange = None
-
-        if source_credential_exchange_id:
-
-            # The cached credential exchange ID may not have an associated credential
-            # request yet. Wait up to 30 seconds for that to be populated, then
-            # move on and replace it as the cached credential exchange
-
-            lookup_start = time.perf_counter()
-            while True:
-                source_credential_exchange = await V10CredentialExchange.retrieve_by_id(
-                    self._context, source_credential_exchange_id
-                )
-                if source_credential_exchange.credential_request:
-                    break
-                if lookup_start + 30 < time.perf_counter():
-                    source_credential_exchange = None
-                    break
-                await asyncio.sleep(0.3)
-
-        if source_credential_exchange:
-
-            # Since we have the source exchange cache, we can re-use the schema_id,
-            # credential_offer, and credential_request to save a round trip
-            credential_exchange = V10CredentialExchange(
-                auto_issue=True,
-                connection_id=connection_id,
-                initiator=V10CredentialExchange.INITIATOR_SELF,
-                role=V10CredentialExchange.ROLE_ISSUER,
-                state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
-                credential_definition_id=credential_definition_id,
-                schema_id=source_credential_exchange.schema_id,
-                credential_proposal_dict=credential_proposal.serialize(),
-                credential_offer=source_credential_exchange.credential_offer,
-                credential_request=source_credential_exchange.credential_request,
-                # We use the source credential exchange's thread id as the parent
-                # thread id. This thread is a branch of that parent so that the other
-                # agent can use the parent thread id to look up its corresponding
-                # source credential exchange object as needed
-                parent_thread_id=source_credential_exchange.thread_id,
-            )
-            await credential_exchange.save(
-                self.context,
-                reason="create automated credential exchange from cached request",
-            )
-
-        else:
-            # If the cache is empty, we must use the normal credential flow while
-            # also instructing the agent to automatically issue the credential
-            # once it receives the credential request
-
-            credential_exchange = V10CredentialExchange(
-                auto_issue=True,
-                connection_id=connection_id,
-                initiator=V10CredentialExchange.INITIATOR_SELF,
-                role=V10CredentialExchange.ROLE_ISSUER,
-                credential_definition_id=credential_definition_id,
-                credential_proposal_dict=credential_proposal.serialize(),
-            )
-            (credential_exchange, _) = await self.create_offer(
-                credential_exchange_record=credential_exchange,
-                comment="create automated credential exchange",
-            )
-
-            # Mark this credential exchange as the current cached one for this cred def
-            await self.cache_credential_exchange(credential_exchange)
-
+        (credential_exchange, _) = await self.create_offer(
+            credential_exchange_record=credential_exchange,
+            comment="create automated credential exchange",
+        )
         return credential_exchange
-
-    async def perform_send(
-        self, credential_exchange: V10CredentialExchange, outbound_handler
-    ):
-        """
-        Send first (cred offer) message from credential exchange, issuer to holder.
-
-        Args:
-            credentials_exchange: credential exchange record
-            outbound_handler: outbound handler to send offer on creation
-
-        """
-        if credential_exchange.credential_request:
-            (credential_exchange, credential_message) = await self.issue_credential(
-                credential_exchange
-            )
-            await outbound_handler(
-                credential_message, connection_id=credential_exchange.connection_id
-            )
-        else:
-            (credential_exchange, credential_offer_message) = await self.create_offer(
-                credential_exchange,
-                comment=(
-                    "Automated offer creation on cred def id "
-                    f"{credential_exchange.credential_definition_id}, "
-                    f"parent thread {credential_exchange.parent_thread_id}"
-                ),
-            )
-            await outbound_handler(
-                credential_offer_message,
-                connection_id=credential_exchange.connection_id,
-            )
 
     async def create_proposal(
         self,
@@ -343,8 +222,7 @@ class CredentialManager:
             credential_preview=cred_preview,
             offers_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=credential_offer,
-                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    indy_dict=credential_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER]
                 )
             ],
         )
@@ -458,10 +336,8 @@ class CredentialManager:
 
         credential_exchange_record = await V10CredentialExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={
-                "thread_id": credential_request_message._thread_id,
-                "connection_id": self.context.connection_record.connection_id,
-            },
+            {"thread_id": credential_request_message._thread_id},
+            {"connection_id": self.context.connection_record.connection_id},
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
@@ -523,13 +399,12 @@ class CredentialManager:
             credentials_attach=[
                 AttachDecorator.from_indy_dict(
                     indy_dict=credential_exchange_record.credential,
-                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE]
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
                 )
             ],
         )
         credential_message._thread = {
-            "thid": credential_exchange_record.thread_id,
-            "pthid": credential_exchange_record.parent_thread_id,
+            "thid": credential_exchange_record.thread_id
         }
 
         return (credential_exchange_record, credential_message)
@@ -548,39 +423,13 @@ class CredentialManager:
         assert len(credential_message.credentials_attach or []) == 1
         raw_credential = credential_message.indy_credential(0)
 
-        try:
-            credential_exchange_record = await (
-                V10CredentialExchange.retrieve_by_tag_filter(
-                    self.context,
-                    tag_filter={
-                        "thread_id": credential_message._thread_id,
-                        "connection_id": self.context.connection_record.connection_id,
-                    },
-                )
+        credential_exchange_record = await (
+            V10CredentialExchange.retrieve_by_tag_filter(
+                self.context,
+                {"thread_id": credential_message._thread_id},
+                {"connection_id": self.context.connection_record.connection_id},
             )
-        except StorageNotFoundError:
-            if not credential_message._thread or not credential_message._thread.pthid:
-                raise
-
-            # If the thread_id does not return any results, we check the
-            # parent thread id to see if this exchange is nested and is
-            # re-using information from parent. In this case, we need the parent
-            # exchange state object to retrieve and re-use the
-            # credential_request_metadata
-            credential_exchange_record = await (
-                V10CredentialExchange.retrieve_by_tag_filter(
-                    self.context,
-                    tag_filter={
-                        "thread_id": credential_message._thread.pthid,
-                        "connection_id": self.context.connection_record.connection_id,
-                    },
-                )
-            )
-
-            credential_exchange_record._id = None
-            credential_exchange_record.thread_id = credential_message._thread_id
-            credential_exchange_record.credential_id = None
-            credential_exchange_record.credential = None
+        )
 
         credential_exchange_record.raw_credential = raw_credential
         credential_exchange_record.state = (
@@ -635,6 +484,8 @@ class CredentialManager:
             credential_exchange_record.parent_thread_id,
         )
 
+        # Delete the exchange record since we're done with it
+        await credential_exchange_record.delete_record(self.context)
         return (credential_exchange_record, credential_ack_message)
 
     async def receive_credential_ack(self):
@@ -657,4 +508,5 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_ACKED
         await credential_exchange_record.save(self.context, reason="credential acked")
 
-        return credential_exchange_record
+        # We're done with the exchange so delete
+        await credential_exchange_record.delete_record(self.context)

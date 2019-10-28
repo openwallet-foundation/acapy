@@ -13,7 +13,7 @@ from aries_cloudagent.wallet.indy import IndyWallet
 import pytest
 
 from ...messaging.issue_credential.v1_0.messages.inner.credential_preview import (
-    CredentialPreview
+    CredentialPreview,
 )
 
 
@@ -73,7 +73,7 @@ class TestIndyHolder(AsyncTestCase):
             "type": IndyHolder.RECORD_TYPE_MIME_TYPES,
             "id": cred_id,
             "value": "value",
-            "tags": dummy_tags
+            "tags": dummy_tags,
         }
         mock_nonsec_get_wallet_record.return_value = json.dumps(dummy_rec)
 
@@ -88,12 +88,8 @@ class TestIndyHolder(AsyncTestCase):
             dummy_rec["type"],
             f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{dummy_rec['id']}",
             json.dumps(
-                {
-                    "retrieveType": True,
-                    "retrieveValue": True,
-                    "retrieveTags": True
-                }
-            )
+                {"retrieveType": False, "retrieveValue": True, "retrieveTags": True}
+            ),
         )
 
         assert mime_types == dummy_tags
@@ -106,7 +102,7 @@ class TestIndyHolder(AsyncTestCase):
             "type": IndyHolder.RECORD_TYPE_MIME_TYPES,
             "id": cred_id,
             "value": "value",
-            "tags": dummy_tags
+            "tags": dummy_tags,
         }
         mock_nonsec_get_wallet_record.return_value = json.dumps(dummy_rec)
 
@@ -121,12 +117,8 @@ class TestIndyHolder(AsyncTestCase):
             dummy_rec["type"],
             f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{dummy_rec['id']}",
             json.dumps(
-                {
-                    "retrieveType": True,
-                    "retrieveValue": True,
-                    "retrieveTags": True
-                }
-            )
+                {"retrieveType": False, "retrieveValue": True, "retrieveTags": True}
+            ),
         )
 
         assert a_mime_type == dummy_tags["a"]
@@ -233,7 +225,7 @@ class TestIndyHolder(AsyncTestCase):
         self,
         mock_nonsec_del_wallet_record,
         mock_nonsec_get_wallet_record,
-        mock_prover_del_cred
+        mock_prover_del_cred,
     ):
         mock_wallet = async_mock.MagicMock()
         holder = IndyHolder(mock_wallet)
@@ -242,18 +234,14 @@ class TestIndyHolder(AsyncTestCase):
                 "type": "typ",
                 "id": "ident",
                 "value": "value",
-                "tags": {
-                    "a": json.dumps("1"),
-                    "b": json.dumps("2")
-                }
+                "tags": {"a": json.dumps("1"), "b": json.dumps("2")},
             }
         )
 
         credential = await holder.delete_credential("credential_id")
 
         mock_prover_del_cred.assert_called_once_with(
-            mock_wallet.handle,
-            "credential_id"
+            mock_wallet.handle, "credential_id"
         )
 
     @async_mock.patch("indy.anoncreds.prover_create_proof")

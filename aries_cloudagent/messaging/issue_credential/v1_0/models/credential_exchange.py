@@ -18,6 +18,7 @@ class V10CredentialExchange(BaseRecord):
     RECORD_TYPE = "credential_exchange_v10"
     RECORD_ID_NAME = "credential_exchange_id"
     WEBHOOK_TOPIC = "issue_credential"
+    TAG_NAMES = {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -88,42 +89,28 @@ class V10CredentialExchange(BaseRecord):
     @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this credential exchange."""
-        result = self.tags
-        for prop in (
-            "credential_proposal_dict",
-            "credential_offer",
-            "credential_request",
-            "credential_request_metadata",
-            "error_msg",
-            "auto_offer",
-            "auto_issue",
-            "raw_credential",
-            "credential",
-            "parent_thread_id",
-        ):
-            val = getattr(self, prop)
-            if val:
-                result[prop] = val
-        return result
-
-    @property
-    def record_tags(self) -> dict:
-        """Accessor for the record tags generated for this credential exchange."""
-        result = {}
-        for prop in (
-            "connection_id",
-            "thread_id",
-            "initiator",
-            "role",
-            "state",
-            "credential_definition_id",
-            "schema_id",
-            "credential_id",
-        ):
-            val = getattr(self, prop)
-            if val:
-                result[prop] = val
-        return result
+        return {
+            prop: getattr(self, prop)
+            for prop in (
+                "connection_id",
+                "credential_proposal_dict",
+                "credential_offer",
+                "credential_request",
+                "credential_request_metadata",
+                "error_msg",
+                "auto_offer",
+                "auto_issue",
+                "raw_credential",
+                "credential",
+                "parent_thread_id",
+                "initiator",
+                "credential_definition_id",
+                "schema_id",
+                "credential_id",
+                "role",
+                "state",
+            )
+        }
 
 
 class V10CredentialExchangeSchema(BaseRecordSchema):
@@ -140,19 +127,13 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
         example=UUIDFour.EXAMPLE,
     )
     connection_id = fields.Str(
-        required=False,
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,
+        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
     )
     thread_id = fields.Str(
-        required=False,
-        description="Thread identifier",
-        example=UUIDFour.EXAMPLE,
+        required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
     )
     parent_thread_id = fields.Str(
-        required=False,
-        description="Parent thread identifier",
-        example=UUIDFour.EXAMPLE,
+        required=False, description="Parent thread identifier", example=UUIDFour.EXAMPLE
     )
     initiator = fields.Str(
         required=False,
@@ -177,39 +158,28 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
         **INDY_CRED_DEF_ID
     )
     schema_id = fields.Str(
-        required=False,
-        description="Schema identifier",
-        **INDY_SCHEMA_ID
+        required=False, description="Schema identifier", **INDY_SCHEMA_ID
     )
     credential_proposal_dict = fields.Dict(
-        required=False,
-        description="Serialized credential proposal message"
+        required=False, description="Serialized credential proposal message"
     )
     credential_offer = fields.Dict(
-        required=False,
-        description="(Indy) credential offer",
+        required=False, description="(Indy) credential offer"
     )
     credential_request = fields.Dict(
-        required=False,
-        description="(Indy) credential request",
+        required=False, description="(Indy) credential request"
     )
     credential_request_metadata = fields.Dict(
-        required=False,
-        description="(Indy) credential request metadata",
+        required=False, description="(Indy) credential request metadata"
     )
     credential_id = fields.Str(
-        required=False,
-        description="Credential identifier",
-        example=UUIDFour.EXAMPLE,
+        required=False, description="Credential identifier", example=UUIDFour.EXAMPLE
     )
     raw_credential = fields.Dict(
         required=False,
-        description="Credential as received, prior to storage in holder wallet"
+        description="Credential as received, prior to storage in holder wallet",
     )
-    credential = fields.Dict(
-        required=False,
-        description="Credential as stored",
-    )
+    credential = fields.Dict(required=False, description="Credential as stored")
     auto_offer = fields.Bool(
         required=False,
         description="Holder choice to accept offer in this credential exchange",

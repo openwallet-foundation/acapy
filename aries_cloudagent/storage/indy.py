@@ -65,13 +65,16 @@ class IndyStorage(BaseStorage):
                 raise StorageDuplicateError("Duplicate record ID: {}".format(record.id))
             raise StorageError(str(x_indy))
 
-    async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
+    async def get_record(
+        self, record_type: str, record_id: str, options: Mapping = None
+    ) -> StorageRecord:
         """
         Fetch a record from the store by type and ID.
 
         Args:
             record_type: The record type
             record_id: The record id
+            options: A dictionary of backend-specific options
 
         Returns:
             A `StorageRecord` instance
@@ -87,8 +90,14 @@ class IndyStorage(BaseStorage):
             raise StorageError("Record type not provided")
         if not record_id:
             raise StorageError("Record ID not provided")
+        if not options:
+            options = {}
         options_json = json.dumps(
-            {"retrieveType": True, "retrieveValue": True, "retrieveTags": True}
+            {
+                "retrieveType": False,
+                "retrieveValue": True,
+                "retrieveTags": options.get("retrieveTags", True),
+            }
         )
         try:
             result_json = await non_secrets.get_wallet_record(
@@ -100,7 +109,7 @@ class IndyStorage(BaseStorage):
             raise StorageError(str(x_indy))
         result = json.loads(result_json)
         return StorageRecord(
-            type=result["type"],
+            type=record_type,
             id=result["id"],
             value=result["value"],
             tags=result["tags"] or {},
@@ -197,7 +206,11 @@ class IndyStorage(BaseStorage):
             raise StorageError(str(x_indy))
 
     def search_records(
-        self, type_filter: str, tag_query: Mapping = None, page_size: int = None
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        page_size: int = None,
+        options: Mapping = None,
     ) -> "IndyStorageRecordSearch":
         """
         Search stored records.
@@ -206,12 +219,13 @@ class IndyStorage(BaseStorage):
             type_filter: Filter string
             tag_query: Tags to query
             page_size: Page size
+            options: Dictionary of backend-specific options
 
         Returns:
-            An instance of `BaseStorageRecordSearch`
+            An instance of `IndyStorageRecordSearch`
 
         """
-        return IndyStorageRecordSearch(self, type_filter, tag_query, page_size)
+        return IndyStorageRecordSearch(self, type_filter, tag_query, page_size, options)
 
 
 class IndyStorageRecordSearch(BaseStorageRecordSearch):
@@ -223,6 +237,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         type_filter: str,
         tag_query: Mapping,
         page_size: int = None,
+        options: Mapping = None,
     ):
         """
         Initialize a `IndyStorageRecordSearch` instance.
@@ -235,7 +250,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
 
         """
         super(IndyStorageRecordSearch, self).__init__(
-            store, type_filter, tag_query, page_size
+            store, type_filter, tag_query, page_size, options
         )
         self._handle = None
 
@@ -286,7 +301,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
             for row in results["records"]:
                 ret.append(
                     StorageRecord(
-                        type=row["type"],
+                        type=self._type_filter,
                         id=row["id"],
                         value=row["value"],
                         tags=row["tags"],
@@ -300,10 +315,10 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         options_json = json.dumps(
             {
                 "retrieveRecords": True,
-                "retrieveTotalCount": True,
-                "retrieveType": True,
+                "retrieveTotalCount": False,
+                "retrieveType": False,
                 "retrieveValue": True,
-                "retrieveTags": True,
+                "retrieveTags": self.option("retrieveTags", True),
             }
         )
         self._handle = await non_secrets.open_wallet_search(

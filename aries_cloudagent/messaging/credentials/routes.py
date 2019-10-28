@@ -1,6 +1,5 @@
 """Connection handling admin routes."""
 
-import asyncio
 import json
 from json.decoder import JSONDecodeError
 
@@ -264,6 +263,9 @@ async def credential_exchange_list(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     tag_filter = {}
+    if "thread_id" in request.query and request.query["thread_id"] != "":
+        tag_filter["thread_id"] = request.query["thread_id"]
+    post_filter = {}
     for param_name in (
         "connection_id",
         "initiator",
@@ -272,8 +274,8 @@ async def credential_exchange_list(request: web.BaseRequest):
         "schema_id",
     ):
         if param_name in request.query and request.query[param_name] != "":
-            tag_filter[param_name] = request.query[param_name]
-    records = await CredentialExchange.query(context, tag_filter)
+            post_filter[param_name] = request.query[param_name]
+    records = await CredentialExchange.query(context, tag_filter, post_filter)
     return web.json_response({"results": [record.serialize() for record in records]})
 
 
@@ -343,13 +345,14 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    credential_exchange_record = await credential_manager.prepare_send(
-        credential_definition_id, connection_id, credential_values
-    )
-    asyncio.ensure_future(
-        credential_manager.perform_send(credential_exchange_record, outbound_handler)
+    (
+        credential_exchange_record,
+        credential_offer_message,
+    ) = await credential_manager.create_offer(
+        credential_definition_id, connection_id, True, credential_values
     )
 
+    await outbound_handler(credential_offer_message, connection_id=connection_id)
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -388,16 +391,14 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    credential_exchange_record = await credential_manager.create_offer(
-        credential_definition_id, connection_id
-    )
-
     (
         credential_exchange_record,
         credential_offer_message,
-    ) = await credential_manager.offer_credential(credential_exchange_record)
-    await outbound_handler(credential_offer_message, connection_id=connection_id)
+    ) = await credential_manager.create_offer(
+        credential_definition_id, connection_id
+    )
 
+    await outbound_handler(credential_offer_message, connection_id=connection_id)
     return web.json_response(credential_exchange_record.serialize())
 
 

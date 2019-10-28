@@ -72,16 +72,17 @@ async def presentation_exchange_list(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     tag_filter = {}
+    if "thread_id" in request.query and request.query["thread_id"] != "":
+        tag_filter["thread_id"] = request.query["thread_id"]
+    post_filter = {}
     for param_name in (
         "connection_id",
         "initiator",
         "state",
-        "credential_definition_id",
-        "schema_id",
     ):
         if param_name in request.query and request.query[param_name] != "":
-            tag_filter[param_name] = request.query[param_name]
-    records = await PresentationExchange.query(context, tag_filter)
+            post_filter[param_name] = request.query[param_name]
+    records = await PresentationExchange.query(context, tag_filter, post_filter)
     return web.json_response({"results": [record.serialize() for record in records]})
 
 

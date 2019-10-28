@@ -224,7 +224,7 @@ class PresentationManager:
         (
             presentation_exchange_record
         ) = await PresentationExchange.retrieve_by_tag_filter(
-            self.context, tag_filter={"thread_id": thread_id, "initiator": "self"}
+            self.context, {"thread_id": thread_id}, {"initiator": "self"}
         )
 
         presentation_exchange_record.presentation = presentation

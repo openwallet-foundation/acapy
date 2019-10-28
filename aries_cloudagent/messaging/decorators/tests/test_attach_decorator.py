@@ -8,7 +8,7 @@ from time import time
 from unittest import TestCase
 
 from ....wallet.indy import IndyWallet
-from ....wallet.util import bytes_to_b64
+from ....wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..attach_decorator import AttachDecorator, AttachDecoratorData
 
@@ -222,18 +222,23 @@ class TestAttachDecoratorSignature:
         )
 
         did_info = await wallet.create_local_did(seed)
+        assert deco_indy.data.signed is None
 
-        now = int(time())
-        await deco_indy.sign(did_info.verkey, wallet, now)
-        assert deco_indy.sig is not None
-        assert await deco_indy.verify(wallet)
+        await deco_indy.data.sign(did_info.verkey, wallet)
+        assert deco_indy.data.sig is not None
+        assert deco_indy.data.sig.count(".") == 2
+        assert deco_indy.data.signed is not None
+        assert await deco_indy.data.verify(wallet)
 
-        deco_indy.sig.ts = now + 1
-        assert not await deco_indy.verify(wallet)
+        indy_cred = json.loads(deco_indy.data.signed.decode())
+        assert indy_cred == INDY_CRED
 
-        deco_indy.sig.ts = now
-        tampered_cred = deepcopy(INDY_CRED)
-        tampered_cred["schema_id"] = "LjgpST2rjsoxYegQDRm7EL:2:icon:2.0",
-        tampered_deco = AttachDecorator.from_indy_dict(indy_dict=tampered_cred)
-        deco_indy.data.base64_ = tampered_deco.data.base64_
-        assert not await deco_indy.verify(wallet)
+        jws_parts = deco_indy.data.sig_.split(".")
+        tampered = bytearray(
+            b64_to_bytes(jws_parts[2], urlsafe=True)
+        )
+        tampered[0] = (tampered[0] + 1) % 256
+        deco_indy.data.sig_ = ".".join(
+            jws_parts[0:2] + [bytes_to_b64(bytes(tampered), urlsafe=True, pad=False)]
+        )
+        assert not await deco_indy.data.verify(wallet)

@@ -17,6 +17,7 @@ class PresentationExchange(BaseRecord):
     RECORD_ID_NAME = "presentation_exchange_id"
     WEBHOOK_TOPIC = "presentations"
     LOG_STATE_FLAG = "debug.presentations"
+    TAG_NAMES = {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -60,22 +61,18 @@ class PresentationExchange(BaseRecord):
     @property
     def record_value(self) -> dict:
         """Accessor for JSON record value generated for this presentation exchange."""
-        result = self.tags
-        for prop in ("presentation_request", "presentation", "error_msg"):
-            val = getattr(self, prop)
-            if val:
-                result[prop] = val
-        return result
-
-    @property
-    def record_tags(self) -> dict:
-        """Accessor for the record tags generated for this presentation exchange."""
-        result = {}
-        for prop in ("connection_id", "thread_id", "initiator", "state", "verified"):
-            val = getattr(self, prop)
-            if val:
-                result[prop] = val
-        return result
+        return {
+            prop: getattr(self, prop)
+            for prop in (
+                "connection_id",
+                "initiator",
+                "presentation_request",
+                "presentation",
+                "error_msg",
+                "verified",
+                "state",
+            )
+        }
 
 
 class PresentationExchangeSchema(BaseRecordSchema):

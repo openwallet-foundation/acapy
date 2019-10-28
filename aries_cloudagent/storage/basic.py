@@ -47,13 +47,16 @@ class BasicStorage(BaseStorage):
             raise StorageDuplicateError("Duplicate record")
         self._records[record.id] = record
 
-    async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
+    async def get_record(
+        self, record_type: str, record_id: str, options: Mapping = None
+    ) -> StorageRecord:
         """
         Fetch a record from the store by type and ID.
 
         Args:
             record_type: The record type
             record_id: The record id
+            options: A dictionary of backend-specific options
 
         Returns:
             A `StorageRecord` instance
@@ -142,7 +145,11 @@ class BasicStorage(BaseStorage):
         del self._records[record.id]
 
     def search_records(
-        self, type_filter: str, tag_query: Mapping = None, page_size: int = None
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        page_size: int = None,
+        options: Mapping = None,
     ) -> "BasicStorageRecordSearch":
         """
         Search stored records.
@@ -151,12 +158,15 @@ class BasicStorage(BaseStorage):
             type_filter: Filter string
             tag_query: Tags to query
             page_size: Page size
+            options: Dictionary of backend-specific options
 
         Returns:
             An instance of `BaseStorageRecordSearch`
 
         """
-        return BasicStorageRecordSearch(self, type_filter, tag_query, page_size)
+        return BasicStorageRecordSearch(
+            self, type_filter, tag_query, page_size, options
+        )
 
 
 def basic_tag_value_match(value: str, match: dict) -> bool:
@@ -237,6 +247,7 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
         type_filter: str,
         tag_query: Mapping,
         page_size: int = None,
+        options: Mapping = None,
     ):
         """
         Initialize a `BasicStorageRecordSearch` instance.
@@ -246,10 +257,11 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
             type_filter: Filter string
             tag_query: Tags to search
             page_size: Size of page to return
+            options: Dictionary of backend-specific options
 
         """
         super(BasicStorageRecordSearch, self).__init__(
-            store, type_filter, tag_query, page_size
+            store, type_filter, tag_query, page_size, options
         )
         self._cache = None
         self._iter = None
