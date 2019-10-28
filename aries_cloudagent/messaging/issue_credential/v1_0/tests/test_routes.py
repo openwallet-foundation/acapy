@@ -32,6 +32,11 @@ class TestCredentialRoutes(AsyncTestCase):
                 async_mock.CoroutineMock()
             )
 
+            mock_credential_manager.return_value.create_offer.return_value = (
+                async_mock.CoroutineMock(),
+                async_mock.CoroutineMock(),
+            )
+
             mock_cred_ex_record = async_mock.MagicMock()
 
             mock_credential_manager.return_value.prepare_send.return_value = (
@@ -41,7 +46,7 @@ class TestCredentialRoutes(AsyncTestCase):
             await test_module.credential_exchange_send(mock)
 
             test_module.web.json_response.assert_called_once_with(
-                mock_cred_ex_record.serialize.return_value
+                mock_credential_manager.return_value.create_offer.return_value[0].serialize.return_value
             )
 
     async def test_credential_exchange_send_no_conn_record(self):
