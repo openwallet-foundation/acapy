@@ -5,7 +5,7 @@ from ....base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
-    RequestContext
+    RequestContext,
 )
 
 from .....holder.base import BaseHolder
@@ -34,7 +34,7 @@ class PresentationRequestHandler(BaseHandler):
 
         self._logger.info(
             "Received presentation request: %s",
-            context.message.serialize(as_string=True)
+            context.message.serialize(as_string=True),
         )
 
         if not context.connection_ready:
@@ -47,14 +47,12 @@ class PresentationRequestHandler(BaseHandler):
         # Get credential exchange record (holder initiated via proposal)
         # or create it (verifier sent request first)
         try:
-            presentation_exchange_record = (
-                await V10PresentationExchange.retrieve_by_tag_filter(
-                    context,
-                    {
-                        "thread_id": context.message._thread_id,
-                        "connection_id": context.connection_record.connection_id
-                    }
-                )
+            (
+                presentation_exchange_record
+            ) = await V10PresentationExchange.retrieve_by_tag_filter(
+                context,
+                {"thread_id": context.message._thread_id},
+                {"connection_id": context.connection_record.connection_id},
             )  # holder initiated via proposal
         except StorageNotFoundError:  # verifier sent this request free of any proposal
             presentation_exchange_record = V10PresentationExchange(
@@ -64,7 +62,7 @@ class PresentationRequestHandler(BaseHandler):
                 presentation_request=indy_proof_request,
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
-                )
+                ),
             )
 
         presentation_exchange_record.presentation_request = indy_proof_request
@@ -76,21 +74,21 @@ class PresentationRequestHandler(BaseHandler):
         if presentation_exchange_record.auto_present:
             try:
                 req_creds = await indy_proof_request2indy_requested_creds(
-                    indy_proof_request,
-                    await context.inject(BaseHolder)
+                    indy_proof_request, await context.inject(BaseHolder)
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")
                 return
 
-            (presentation_exchange_record, presentation_message) = (
-                await presentation_manager.create_presentation(
-                    presentation_exchange_record=presentation_exchange_record,
-                    requested_credentials=req_creds,
-                    comment="auto-presented for proof request nonce={}".format(
-                        indy_proof_request["nonce"]
-                    )
-                )
+            (
+                presentation_exchange_record,
+                presentation_message,
+            ) = await presentation_manager.create_presentation(
+                presentation_exchange_record=presentation_exchange_record,
+                requested_credentials=req_creds,
+                comment="auto-presented for proof request nonce={}".format(
+                    indy_proof_request["nonce"]
+                ),
             )
 
             await responder.send_reply(presentation_message)

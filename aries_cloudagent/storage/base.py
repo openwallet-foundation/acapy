@@ -24,13 +24,16 @@ class BaseStorage(ABC):
         """
 
     @abstractmethod
-    async def get_record(self, record_type: str, record_id: str) -> StorageRecord:
+    async def get_record(
+        self, record_type: str, record_id: str, options: Mapping = None
+    ) -> StorageRecord:
         """
         Fetch a record from the store by type and ID.
 
         Args:
             record_type: The record type
             record_id: The record id
+            options: A dictionary of backend-specific options
 
         Returns:
             A `StorageRecord` instance
@@ -84,7 +87,11 @@ class BaseStorage(ABC):
 
     @abstractmethod
     def search_records(
-        self, type_filter: str, tag_query: Mapping = None, page_size: int = None
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        page_size: int = None,
+        options: Mapping = None,
     ) -> "BaseStorageRecordSearch":
         """
         Create a new record query.
@@ -93,6 +100,7 @@ class BaseStorage(ABC):
             type_filter: Filter string
             tag_query: Tags to query
             page_size: Page size
+            options: Dictionary of backend-specific options
 
         Returns:
             An instance of `BaseStorageRecordSearch`
@@ -113,6 +121,7 @@ class BaseStorageRecordSearch(ABC):
         type_filter: str,
         tag_query: Mapping,
         page_size: int = None,
+        options: Mapping = None,
     ):
         """
         Initialize a `BaseStorageRecordSearch` instance.
@@ -122,6 +131,7 @@ class BaseStorageRecordSearch(ABC):
             type_filter: Filter string
             tag_query: Tags to search
             page_size: Size of page to return
+            options: Dictionary of backend-specific options
 
         """
         self._buffer = None
@@ -129,6 +139,7 @@ class BaseStorageRecordSearch(ABC):
         self._store = store
         self._tag_query = tag_query
         self._type_filter = type_filter
+        self._options = options or {}
 
     @property
     def handle(self):
@@ -148,7 +159,7 @@ class BaseStorageRecordSearch(ABC):
         return False
 
     @property
-    def page_size(self):
+    def page_size(self) -> int:
         """
         Accessor for page size.
 
@@ -170,7 +181,7 @@ class BaseStorageRecordSearch(ABC):
         return self._store
 
     @property
-    def tag_query(self):
+    def tag_query(self) -> Mapping:
         """
         Accessor for tag query.
 
@@ -181,7 +192,7 @@ class BaseStorageRecordSearch(ABC):
         return self._tag_query
 
     @property
-    def type_filter(self):
+    def type_filter(self) -> str:
         """
         Accessor for type filter.
 
@@ -190,6 +201,27 @@ class BaseStorageRecordSearch(ABC):
 
         """
         return self._type_filter
+
+    @property
+    def options(self) -> Mapping:
+        """
+        Accessor for the search options.
+
+        Returns:
+            The search options
+
+        """
+        return self._options
+
+    def option(self, name: str, default=None):
+        """
+        Fetch a named search option, if defined.
+
+        Return:
+            The option value or default
+
+        """
+        return self._options.get(name, default)
 
     @abstractmethod
     async def fetch(self, max_count: int) -> Sequence[StorageRecord]:

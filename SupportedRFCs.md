@@ -20,10 +20,9 @@
 
 - [0019-encryption-envelope](https://github.com/hyperledger/aries-rfcs/tree/master/features/0019-encryption-envelope)
 - [0160-connection-protocol](https://github.com/hyperledger/aries-rfcs/tree/master/features/0160-connection-protocol)
-  - We will soon (Fall 2019) be switching from 0160-connection-protocol to [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange). The switch will be a one time event and we will not support the two methods in parallel.
   - The agent supports Connection/DID exchange initiated from both plaintext invitations and public DIDs that enable bypassing the invitation message.
   - Note that the [did:peer DID Method](https://github.com/openssi/peer-did-method-spec) is not yet supported. We are currently exploring the specification and considering the impact of how the agent will support the specification.
-  - The [0030-sync-connection](https://github.com/hyperledger/aries-rfcs/tree/master/features/0030-sync-connection) protocol is not yet supported, meaning that a pairwise DID, once exchanged, cannot be updated.
+  - The [0030-sync-connection](https://github.com/hyperledger/aries-rfcs/tree/master/features/0030-sync-connection) protocol is also not yet supported, meaning that a pairwise DID, once exchanged, cannot be updated.
 - [0035-didcomm-transports](https://github.com/hyperledger/aries-rfcs/tree/master/features/0025-didcomm-transports)
   - The agent currently supports HTTP and WebSockets for both inbound and outbound messaging. Transports are pluggable and an agent instance can use multiple inbound and outbound transports.
 - [0031-discover-features](https://github.com/hyperledger/aries-rfcs/tree/master/features/0031-discover-features)

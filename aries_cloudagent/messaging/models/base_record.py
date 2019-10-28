@@ -11,13 +11,21 @@ from marshmallow import fields
 
 from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
-from ...storage.base import BaseStorage
+from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
 
 from .base import BaseModel, BaseModelSchema
 from ..responder import BaseResponder
 from ..util import datetime_to_str, time_now
 from ..valid import INDY_ISO8601_DATETIME
+
+
+def match_post_filter(record: dict, post_filter: dict) -> bool:
+    """Determine if a record value matches the post-filter."""
+    for k, v in post_filter.items():
+        if record.get(k) != v:
+            return False
+    return True
 
 
 class BaseRecord(BaseModel):
@@ -32,7 +40,7 @@ class BaseRecord(BaseModel):
     LOG_STATE_FLAG = None
     CACHE_TTL = 60
     CACHE_ENABLED = False
-    UNENCRYPTED_TAGS = ()
+    TAG_NAMES = {"state"}
 
     def __init__(
         self,
@@ -70,6 +78,11 @@ class BaseRecord(BaseModel):
         params[record_id_name] = record_id
         return cls(**params)
 
+    @classmethod
+    def get_tag_map(cls) -> Mapping[str, str]:
+        """Accessor for the set of defined tags."""
+        return {tag.lstrip("~"): tag for tag in cls.TAG_NAMES or ()}
+
     @property
     def storage_record(self) -> StorageRecord:
         """Accessor for a `StorageRecord` representing this record."""
@@ -93,16 +106,18 @@ class BaseRecord(BaseModel):
     @property
     def record_tags(self) -> dict:
         """Accessor to define implementation-specific tags."""
-        return {}
+        return {
+            tag: getattr(self, prop)
+            for (prop, tag) in self.get_tag_map().items()
+            if getattr(self, prop)
+            if not None
+        }
 
     @property
     def tags(self) -> dict:
         """Accessor for the record tags generated for this record."""
-        tags = {"state": self.state}
-        tags.update(self.record_tags)
-        unenc = self.UNENCRYPTED_TAGS or ()
-        # tag values must be non-empty
-        return {(f"~{k}" if k in unenc else k): v for (k, v) in tags.items() if v}
+        tags = self.record_tags
+        return tags
 
     @classmethod
     def cache_key(cls, record_id: str, record_type: str = None):
@@ -186,10 +201,10 @@ class BaseRecord(BaseModel):
 
         if not vals:
             storage: BaseStorage = await context.inject(BaseStorage)
-            result = await storage.get_record(cls.RECORD_TYPE, record_id)
+            result = await storage.get_record(
+                cls.RECORD_TYPE, record_id, {"retrieveTags": False}
+            )
             vals = json.loads(result.value)
-            if result.tags:
-                vals.update(cls.strip_tag_prefix(result.tags))
             if cls.CACHE_ENABLED:
                 await cls.set_cached_key(context, cache_key, vals)
 
@@ -197,41 +212,59 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def retrieve_by_tag_filter(
-        cls, context: InjectionContext, tag_filter: dict
+        cls, context: InjectionContext, tag_filter: dict, post_filter: dict = None
     ) -> "BaseRecord":
         """Retrieve a record by tag filter.
 
         Args:
             context: The injection context to use
             tag_filter: The filter dictionary to apply
+            post_filter: Additional value filters to apply after retrieval
         """
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
-            cls.RECORD_TYPE, cls.prefix_tag_filter(tag_filter)
-        ).fetch_single()
-        vals = json.loads(result.value)
-        vals.update(cls.strip_tag_prefix(result.tags))
-        return cls.from_storage(result.id, vals)
+        query = storage.search_records(
+            cls.RECORD_TYPE,
+            cls.prefix_tag_filter(tag_filter),
+            None,
+            {"retrieveTags": False},
+        )
+        found = None
+        async for record in query:
+            vals = json.loads(record.value)
+            if not post_filter or match_post_filter(vals, post_filter):
+                if found:
+                    raise StorageDuplicateError("Multiple records located")
+                found = cls.from_storage(record.id, vals)
+        if not found:
+            raise StorageNotFoundError("Record not found")
+        return found
 
     @classmethod
     async def query(
-        cls, context: InjectionContext, tag_filter: dict = None
+        cls,
+        context: InjectionContext,
+        tag_filter: dict = None,
+        post_filter: dict = None,
     ) -> Sequence["BaseRecord"]:
         """Query stored records.
 
         Args:
             context: The injection context to use
             tag_filter: An optional dictionary of tag filter clauses
+            post_filter: Additional value filters to apply
         """
         storage: BaseStorage = await context.inject(BaseStorage)
-        found = await storage.search_records(
-            cls.RECORD_TYPE, cls.prefix_tag_filter(tag_filter)
-        ).fetch_all()
+        query = storage.search_records(
+            cls.RECORD_TYPE,
+            cls.prefix_tag_filter(tag_filter),
+            None,
+            {"retrieveTags": False},
+        )
         result = []
-        for record in found:
+        async for record in query:
             vals = json.loads(record.value)
-            vals.update(cls.strip_tag_prefix(record.tags))
-            result.append(cls.from_storage(record.id, vals))
+            if not post_filter or match_post_filter(vals, post_filter):
+                result.append(cls.from_storage(record.id, vals))
         return result
 
     async def save(
@@ -375,17 +408,15 @@ class BaseRecord(BaseModel):
         """Prefix unencrypted tags used in the tag filter."""
         ret = None
         if tag_filter:
-            unenc = cls.UNENCRYPTED_TAGS or ()
+            tag_map = cls.get_tag_map()
             ret = {}
             for k, v in tag_filter.items():
                 if k in ("$or", "$and") and isinstance(v, list):
                     ret[k] = [cls.prefix_tag_filter(clause) for clause in v]
                 elif k == "$not" and isinstance(v, dict):
                     ret[k] = cls.prefix_tag_filter(v)
-                elif k in unenc:
-                    ret[f"~{k}"] = v
                 else:
-                    ret[k] = v
+                    ret[tag_map.get(k, k)] = v
         return ret
 
     def __eq__(self, other: Any) -> bool:
@@ -402,17 +433,13 @@ class BaseRecordSchema(BaseModelSchema):
         """BaseRecordSchema metadata."""
 
     state = fields.Str(
-        required=False,
-        description="Current record state",
-        example="active",
+        required=False, description="Current record state", example="active"
     )
     created_at = fields.Str(
-        required=False,
-        description="Time of record creation",
-        **INDY_ISO8601_DATETIME
+        required=False, description="Time of record creation", **INDY_ISO8601_DATETIME
     )
     updated_at = fields.Str(
         required=False,
         description="Time of last record update",
-        **INDY_ISO8601_DATETIME
+        **INDY_ISO8601_DATETIME,
     )

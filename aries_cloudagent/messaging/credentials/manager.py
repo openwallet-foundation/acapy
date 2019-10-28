@@ -1,21 +1,13 @@
 """Classes to manage credentials."""
 
-import asyncio
-import datetime
 import json
 import logging
-import time
-import random
-
-from ..util import str_to_datetime, datetime_now
 
 from ...config.injection_context import InjectionContext
 from ...error import BaseError
-from ...cache.base import BaseCache
 from ...holder.base import BaseHolder
 from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
-from ...storage.error import StorageNotFoundError
 
 from ..connections.models.connection_record import ConnectionRecord
 
@@ -54,137 +46,6 @@ class CredentialManager:
         """
         return self._context
 
-    async def cache_credential_exchange(
-        self, credential_exchange_record: CredentialExchange
-    ):
-        """Cache a credential exchange to avoid redundant credential requests."""
-        cache: BaseCache = await self.context.inject(BaseCache)
-        await cache.set(
-            "credential_exchange::"
-            + f"{credential_exchange_record.credential_definition_id}::"
-            + f"{credential_exchange_record.connection_id}",
-            credential_exchange_record.credential_exchange_id,
-            600,
-        )
-
-    async def prepare_send(
-        self, credential_definition_id: str, connection_id: str, credential_values: dict
-    ) -> CredentialExchange:
-        """
-        Set up a new credential exchange for an automated send.
-
-        Args:
-            credential_definition_id: Credential definition id for offer
-            connection_id: Connection to create offer for
-            credential_values: The credential values to use if auto_issue is enabled
-
-        Returns:
-            A new `CredentialExchange` record
-
-        """
-
-        cache: BaseCache = await self._context.inject(BaseCache)
-
-        # This cache is populated in credential_request_handler.py
-        # Do we have a source (parent) credential exchange for which
-        # we can re-use the credential request/offer?
-        source_credential_exchange_id = await cache.get(
-            "credential_exchange::"
-            + f"{credential_definition_id}::"
-            + f"{connection_id}"
-        )
-
-        source_credential_exchange = None
-
-        if source_credential_exchange_id:
-            # The cached credential exchange ID may not have an associated credential
-            # request yet. Wait up to 30 seconds for that to be populated, then
-            # move on and replace it as the cached credential exchange
-            lookup_start = time.perf_counter()
-            while True:
-                try:
-                    (
-                        source_credential_exchange
-                    ) = await CredentialExchange.retrieve_by_id(
-                        self._context, source_credential_exchange_id
-                    )
-                except StorageNotFoundError:
-                    # It's possible that the cached credential expired
-                    # and was deleted while we are waiting. In this case,
-                    # it is time to issue a new credential offer.
-                    self._logger.debug(
-                        "Credential exchange deleted while"
-                        + " waiting for credential request"
-                    )
-                    break
-
-                if source_credential_exchange.credential_request:
-                    break
-                if lookup_start + 30 < time.perf_counter():
-                    source_credential_exchange = None
-                    break
-                await asyncio.sleep(0.3)
-
-        if source_credential_exchange:
-
-            # Since we have the source exchange cache, we can re-use the schema_id,
-            # credential_offer, and credential_request to save a roundtrip
-            credential_exchange = CredentialExchange(
-                auto_issue=True,
-                connection_id=connection_id,
-                initiator=CredentialExchange.INITIATOR_SELF,
-                state=CredentialExchange.STATE_REQUEST_RECEIVED,
-                credential_definition_id=credential_definition_id,
-                schema_id=source_credential_exchange.schema_id,
-                credential_offer=source_credential_exchange.credential_offer,
-                credential_request=source_credential_exchange.credential_request,
-                credential_values=credential_values,
-                # We use the source credential exchange's thread id as the parent
-                # thread id. This thread is a branch of that parent so that the other
-                # agent can use the parent thread id to look up its corresponding
-                # source credential exchange object as needed
-                parent_thread_id=source_credential_exchange.thread_id,
-            )
-            await credential_exchange.save(
-                self.context,
-                reason="Create automated credential exchange from cached request",
-            )
-
-        else:
-            # If the cache is empty, we must use the normal credential flow while
-            # also instructing the agent to automatically issue the credential
-            # once it receives the credential request
-
-            credential_exchange = await self.create_offer(
-                credential_definition_id, connection_id, True, credential_values
-            )
-
-            # Mark this credential exchange as the current cached one for this cred def
-            await self.cache_credential_exchange(credential_exchange)
-
-        return credential_exchange
-
-    async def perform_send(
-        self, credential_exchange: CredentialExchange, outbound_handler
-    ):
-        """Send the first message in a credential exchange."""
-
-        if credential_exchange.credential_request:
-            (credential_exchange, credential_message) = await self.issue_credential(
-                credential_exchange
-            )
-            await outbound_handler(
-                credential_message, connection_id=credential_exchange.connection_id
-            )
-        else:
-            credential_exchange, credential_offer_message = await self.offer_credential(
-                credential_exchange
-            )
-            await outbound_handler(
-                credential_offer_message,
-                connection_id=credential_exchange.connection_id,
-            )
-
     async def create_offer(
         self,
         credential_definition_id: str,
@@ -209,6 +70,10 @@ class CredentialManager:
             credential_definition_id
         )
 
+        credential_offer_message = CredentialOffer(
+            offer_json=json.dumps(credential_offer)
+        )
+
         credential_exchange = CredentialExchange(
             auto_issue=auto_issue,
             connection_id=connection_id,
@@ -218,28 +83,9 @@ class CredentialManager:
             schema_id=credential_offer["schema_id"],
             credential_offer=credential_offer,
             credential_values=credential_values,
+            thread_id=credential_offer_message._thread_id,
         )
         await credential_exchange.save(self.context, reason="Create credential offer")
-        return credential_exchange
-
-    async def offer_credential(self, credential_exchange: CredentialExchange):
-        """
-        Offer a credential.
-
-        Args:
-            credential_exchange_record: The credential exchange we are creating
-                the credential offer for
-
-        Returns:
-            Tuple: (Updated credential exchange record, credential offer message)
-
-        """
-        credential_offer_message = CredentialOffer(
-            offer_json=json.dumps(credential_exchange.credential_offer)
-        )
-        credential_exchange.thread_id = credential_offer_message._thread_id
-        credential_exchange.state = CredentialExchange.STATE_OFFER_SENT
-        await credential_exchange.save(self.context, reason="Send credential offer")
         return credential_exchange, credential_offer_message
 
     async def receive_offer(
@@ -340,12 +186,10 @@ class CredentialManager:
 
         credential_request = json.loads(credential_request_message.request)
 
-        credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context,
-            tag_filter={
-                "thread_id": credential_request_message._thread_id,
-                "initiator": "self",
-            },
+        (
+            credential_exchange_record
+        ) = await CredentialExchange.retrieve_by_thread_and_initiator(
+            self.context, credential_request_message._thread_id, "self"
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = CredentialExchange.STATE_REQUEST_RECEIVED
@@ -398,29 +242,14 @@ class CredentialManager:
             issue=json.dumps(credential_exchange_record.credential)
         )
 
-        # If we have a thread id on the exchange object,
-        # then we not re-using a credential request and we can
-        # re-assign the thread_id to this message to continue the thread
         if credential_exchange_record.thread_id:
             credential_message.assign_thread_id(
                 thid=credential_exchange_record.thread_id
             )
-        # If we have no thread_id on the exchange object, but we DO have
-        # a parent_thread_id, then we are re-using the credential
-        # request and we need to assign the parent_thread_id to this message
-        # and also keep the generated message thread_id. We also save the
-        # message's thread_id to our exchange object so we can correlate
-        # the thread to an exchange object in `credential_stored()`
-        elif credential_exchange_record.parent_thread_id:
-            new_thread_id = credential_message._thread_id
-            credential_message.assign_thread_id(
-                thid=new_thread_id, pthid=credential_exchange_record.parent_thread_id
-            )
-            credential_exchange_record.thread_id = new_thread_id
         else:
             raise CredentialManagerError(
-                "The credential exchange object must have a parent thread id"
-                + " OR thread id in order to issue a credential."
+                "The credential exchange object must have a "
+                + "thread id in order to issue a credential."
             )
 
         await credential_exchange_record.save(self.context, reason="Issue credential")
@@ -438,44 +267,11 @@ class CredentialManager:
         """
         raw_credential = json.loads(credential_message.issue)
 
-        try:
-            (
-                credential_exchange_record
-            ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context,
-                tag_filter={
-                    "thread_id": credential_message._thread_id,
-                    "initiator": "external",
-                },
-            )
-        except StorageNotFoundError:
-
-            if not credential_message._thread or not credential_message._thread.pthid:
-                raise
-
-            # If the thread_id does not return any results, we check the
-            # parent thread id to see if this exchange is nested and is
-            # re-using information from parent. In this case, we need the parent
-            # exchange state object to retrieve and re-use the
-            # credential_request_metadata
-            (
-                credential_exchange_record
-            ) = await CredentialExchange.retrieve_by_tag_filter(
-                self.context,
-                tag_filter={
-                    "thread_id": credential_message._thread.pthid,
-                    "initiator": "external",
-                },
-            )
-
-            # Copy values from parent but create new record on save (no id)
-            credential_exchange_record._id = None
-            credential_exchange_record.thread_id = credential_message._thread_id
-            credential_exchange_record.parent_thread_id = (
-                credential_message._thread.pthid
-            )
-            credential_exchange_record.credential_id = None
-            credential_exchange_record.credential = None
+        (
+            credential_exchange_record
+        ) = await CredentialExchange.retrieve_by_thread_and_initiator(
+            self.context, credential_message._thread_id, "external"
+        )
 
         credential_exchange_record.raw_credential = raw_credential
         credential_exchange_record.state = CredentialExchange.STATE_CREDENTIAL_RECEIVED
@@ -521,53 +317,10 @@ class CredentialManager:
         await credential_exchange_record.save(self.context, reason="Store credential")
 
         credential_stored_message = CredentialStored()
-        credential_stored_message.assign_thread_id(
-            credential_exchange_record.thread_id,
-            credential_exchange_record.parent_thread_id,
-        )
+        credential_stored_message.assign_thread_id(credential_exchange_record.thread_id)
 
-        # Always delete this record if it's a child
-
-        # Get parent exchange record if parent id exists
-        parent_thread_id = credential_exchange_record.parent_thread_id
-        if parent_thread_id:
-            # We delete the current record but only if it has a parent_id
-            # because we don't want to delete any new parents
-            try:
-                await credential_exchange_record.delete_record(self.context)
-            except StorageNotFoundError:
-                # It's possible for another thread to have already deleted
-                # this record
-                self._logger.debug("Failed to delete credential exchange record")
-
-        # Delete old records if they are no longer used
-
-        # Run approx every 100 runs
-        if random.randint(1, 100) == 1:
-            # Query undeleted stored exchange records for possible expired parents
-            old_credential_exchange_records = await CredentialExchange.query(
-                self.context,
-                tag_filter={
-                    "state": CredentialExchange.STATE_STORED,
-                    "initiator": CredentialExchange.INITIATOR_EXTERNAL,
-                },
-            )
-
-            for old_credential_exchange_record in old_credential_exchange_records:
-                last_updated_string = old_credential_exchange_record.updated_at
-                last_updated = str_to_datetime(last_updated_string)
-                one_hour_ago = datetime_now() - datetime.timedelta(hours=1)
-
-                # delete parent exchange records more than 1 hour old
-                if last_updated < one_hour_ago:
-                    try:
-                        await old_credential_exchange_record.delete_record(self.context)
-                    except StorageNotFoundError:
-                        # It's possible for another thread to have already deleted
-                        # this record
-                        self._logger.debug(
-                            "Failed to delete credential exchange record"
-                        )
+        # We're done so delete the exchange record
+        await credential_exchange_record.delete_record(self.context)
 
         return credential_exchange_record, credential_stored_message
 
@@ -581,84 +334,14 @@ class CredentialManager:
         """
 
         # Get current exchange record by thread id
-        credential_exchange_record = await CredentialExchange.retrieve_by_tag_filter(
-            self.context,
-            tag_filter={
-                "thread_id": credential_stored_message._thread_id,
-                "initiator": "self",
-            },
+        (
+            credential_exchange_record
+        ) = await CredentialExchange.retrieve_by_thread_and_initiator(
+            self.context, credential_stored_message._thread_id, "self"
         )
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         await credential_exchange_record.save(self.context, reason="Credential stored")
 
-        # Always delete this record if it's a child
-
-        # Get parent exchange record if parent id exists
-        parent_thread_id = credential_exchange_record.parent_thread_id
-        if parent_thread_id:
-            # We delete the current record but only if it has a parent_id
-            # because we don't want to delete any new parents
-            try:
-                await credential_exchange_record.delete_record(self.context)
-            except StorageNotFoundError:
-                # It's possible for another thread to have already deleted
-                # this record
-                self._logger.debug("Failed to delete credential exchange record")
-
-        # Delete old records if they are no longer used
-
-        # Run approx every 100 runs
-        if random.randint(1, 100) == 1:
-            # Query undeleted stored exchange records for possible expired parents
-            old_credential_exchange_records = await CredentialExchange.query(
-                self.context,
-                tag_filter={
-                    "state": CredentialExchange.STATE_STORED,
-                    "initiator": CredentialExchange.INITIATOR_SELF,
-                },
-            )
-
-            for old_credential_exchange_record in old_credential_exchange_records:
-                cache: BaseCache = await self._context.inject(BaseCache)
-
-                cached_credential_ex_id = await cache.get(
-                    "credential_exchange::"
-                    + f"{old_credential_exchange_record.credential_definition_id}::"
-                    + f"{old_credential_exchange_record.connection_id}"
-                )
-
-                # If this old credential is still in the cache, then it's definitely
-                # an active parent record
-                if (
-                    old_credential_exchange_record.credential_exchange_id
-                    != cached_credential_ex_id
-                ):
-                    # We check if any child threads are still relying on
-                    # information from this record. If not, we can delete.
-                    child_records = await CredentialExchange.query(
-                        self.context,
-                        tag_filter={
-                            "parent_thread_id": (
-                                old_credential_exchange_record.thread_id
-                            ),
-                            "initiator": CredentialExchange.INITIATOR_SELF,
-                        },
-                    )
-
-                    # If this credential isn't in the cache and there are no child
-                    # records which reference this as parent, we can delete
-                    if len(child_records) == 0:
-                        try:
-                            await old_credential_exchange_record.delete_record(
-                                self.context
-                            )
-                            self._logger.debug(
-                                "Parent credential exchange record successfully deleted"
-                            )
-                        except StorageNotFoundError:
-                            # It's possible for another thread to have already deleted
-                            # this record
-                            self._logger.debug(
-                                "Failed to delete parent credential exchange record"
-                            )
+        # We're done so delete the exchange record
+        await credential_exchange_record.delete_record(self.context)

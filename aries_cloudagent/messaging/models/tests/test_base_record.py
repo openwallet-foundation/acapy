@@ -26,7 +26,7 @@ class BaseRecordImplSchema(BaseRecordSchema):
 
 
 class UnencTestImpl(BaseRecord):
-    UNENCRYPTED_TAGS = {"a", "b"}
+    TAG_NAMES = {"~a", "~b", "c"}
 
 
 class TestBaseRecord(AsyncTestCase):
@@ -126,7 +126,7 @@ class TestBaseRecord(AsyncTestCase):
             mock_storage.get_record.return_value = stored
             result = await BaseRecordImpl.retrieve_by_id(context, record_id, False)
             mock_storage.get_record.assert_awaited_once_with(
-                BaseRecordImpl.RECORD_TYPE, record_id
+                BaseRecordImpl.RECORD_TYPE, record_id, {"retrieveTags": False}
             )
             set_cached_key.assert_awaited_once_with(
                 context, cache_key.return_value, record_value
@@ -146,12 +146,10 @@ class TestBaseRecord(AsyncTestCase):
             BaseRecordImpl.RECORD_TYPE, json.dumps(record_value), {}, record_id
         )
 
-        mock_storage.search_records.return_value.fetch_all = async_mock.CoroutineMock(
-            return_value=[stored]
-        )
+        mock_storage.search_records.return_value.__aiter__.return_value = [stored]
         result = await BaseRecordImpl.query(context, tag_filter)
         mock_storage.search_records.assert_called_once_with(
-            BaseRecordImpl.RECORD_TYPE, tag_filter
+            BaseRecordImpl.RECORD_TYPE, tag_filter, None, {"retrieveTags": False}
         )
         assert result and isinstance(result[0], BaseRecordImpl)
         assert result[0]._id == record_id

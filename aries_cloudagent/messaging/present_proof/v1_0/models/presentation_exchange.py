@@ -18,12 +18,13 @@ class V10PresentationExchange(BaseRecord):
     RECORD_TYPE = "presentation_exchange_v10"
     RECORD_ID_NAME = "presentation_exchange_id"
     WEBHOOK_TOPIC = "present_proof"
+    TAG_NAMES = {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
 
-    ROLE_PROVER = 'prover'
-    ROLE_VERIFIER = 'verifier'
+    ROLE_PROVER = "prover"
+    ROLE_VERIFIER = "verifier"
 
     STATE_PROPOSAL_SENT = "proposal_sent"
     STATE_PROPOSAL_RECEIVED = "proposal_received"
@@ -72,34 +73,21 @@ class V10PresentationExchange(BaseRecord):
     @property
     def record_value(self) -> dict:
         """Accessor for JSON record value generated for this presentation exchange."""
-        result = self.tags
-        for prop in (
-            "presentation_proposal_dict",
-            "presentation_request",
-            "presentation",
-            "auto_present",
-            "error_msg",
-        ):
-            val = getattr(self, prop)
-            if val:
-                result[prop] = val
-        return result
-
-    @property
-    def record_tags(self) -> dict:
-        """Accessor for the record tags generated for this presentation exchange."""
-        result = {}
-        for prop in (
+        return {
+            prop: getattr(self, prop)
+            for prop in (
                 "connection_id",
-                "thread_id",
                 "initiator",
+                "presentation_proposal_dict",
+                "presentation_request",
+                "presentation",
                 "role",
                 "state",
-                "verified"):
-            val = getattr(self, prop)
-            if val:
-                result[prop] = val
-        return result
+                "auto_present",
+                "error_msg",
+                "verified",
+            )
+        }
 
 
 class V10PresentationExchangeSchema(BaseRecordSchema):
@@ -143,16 +131,14 @@ class V10PresentationExchangeSchema(BaseRecordSchema):
         example=V10PresentationExchange.STATE_VERIFIED,
     )
     presentation_proposal_dict = fields.Dict(
-        required=False,
-        description="Serialized presentation proposal message",
+        required=False, description="Serialized presentation proposal message"
     )
     presentation_request = fields.Dict(
         required=False,
         description="(Indy) presentation request (also known as proof request)",
     )
     presentation = fields.Dict(
-        required=False,
-        description="(Indy) presentation (also known as proof)"
+        required=False, description="(Indy) presentation (also known as proof)"
     )
     verified = fields.Str(  # tag: must be a string
         required=False,
@@ -166,7 +152,5 @@ class V10PresentationExchangeSchema(BaseRecordSchema):
         example=False,
     )
     error_msg = fields.Str(
-        required=False,
-        description="Error message",
-        example="Invalid structure"
+        required=False, description="Error message", example="Invalid structure"
     )

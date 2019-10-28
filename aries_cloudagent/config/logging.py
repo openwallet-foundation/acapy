@@ -60,7 +60,8 @@ class LoggingConfigurator:
 
         log_config = load_resource(config_path, "utf-8")
         if log_config:
-            fileConfig(log_config, disable_existing_loggers=False)
+            with log_config:
+                fileConfig(log_config, disable_existing_loggers=False)
         else:
             logging.basicConfig(level=logging.WARNING)
             logging.root.warning(f"Logging config file not found: {config_path}")
