@@ -1,7 +1,5 @@
 """Credential exchange admin routes."""
 
-import asyncio
-
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
