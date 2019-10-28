@@ -1,6 +1,5 @@
 """Connection handling admin routes."""
 
-import asyncio
 import json
 from json.decoder import JSONDecodeError
 
