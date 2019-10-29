@@ -26,6 +26,8 @@ class BaseAgent(DemoAgent):
         super().__init__(ident, port, port + 1, prefix=prefix, **kwargs)
         self._connection_id = None
         self._connection_ready = None
+        self.credential_state = {}
+        self.credential_event = asyncio.Event()
 
     @property
     def connection_id(self) -> str:
@@ -69,30 +71,31 @@ class BaseAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-
-class AliceAgent(BaseAgent):
-    def __init__(self, port: int, **kwargs):
-        super().__init__("Alice", port, seed=None, **kwargs)
-        self.credential_state = {}
-        self.credential_event = asyncio.Event()
-        self.extra_args = ["--auto-respond-credential-offer", "--auto-store-credential"]
-
     async def handle_credentials(self, payload):
         cred_id = payload["credential_exchange_id"]
         self.credential_state[cred_id] = payload["state"]
         self.credential_event.set()
 
-    def check_received_creds(self) -> (int, int):
-        self.credential_event.clear()
-        pending = 0
-        total = len(self.credential_state)
-        for result in self.credential_state.values():
-            if result != "stored":
-                pending += 1
-        return pending, total
+    async def check_received_creds(self) -> (int, int):
+        while True:
+            self.credential_event.clear()
+            pending = 0
+            total = len(self.credential_state)
+            for result in self.credential_state.values():
+                if result != "stored":
+                    pending += 1
+            if self.credential_event.is_set():
+                continue
+            return pending, total
 
     async def update_creds(self):
         await self.credential_event.wait()
+
+
+class AliceAgent(BaseAgent):
+    def __init__(self, port: int, **kwargs):
+        super().__init__("Alice", port, seed=None, **kwargs)
+        self.extra_args = ["--auto-respond-credential-offer", "--auto-store-credential"]
 
     async def set_tag_policy(self, cred_def_id, taggables):
         req_body = {"taggables": taggables}
@@ -102,27 +105,8 @@ class AliceAgent(BaseAgent):
 class FaberAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
         super().__init__("Faber", port, **kwargs)
-        self.credential_state = {}
-        self.credential_event = asyncio.Event()
         self.schema_id = None
         self.credential_definition_id = None
-
-    async def handle_credentials(self, payload):
-        cred_id = payload["credential_exchange_id"]
-        self.credential_state[cred_id] = payload["state"]
-        self.credential_event.set()
-
-    def check_received_creds(self) -> (int, int):
-        self.credential_event.clear()
-        pending = 0
-        total = len(self.credential_state)
-        for result in self.credential_state.values():
-            if result != "stored":
-                pending += 1
-        return pending, total
-
-    async def update_creds(self):
-        await self.credential_event.wait()
 
     async def publish_defs(self):
         # create a schema
@@ -173,7 +157,12 @@ class RoutingAgent(BaseAgent):
         super().__init__("Router", port, **kwargs)
 
 
-async def main(start_port: int, show_timing: bool = False, routing: bool = False):
+async def main(
+    start_port: int,
+    show_timing: bool = False,
+    routing: bool = False,
+    issue_count: int = 300,
+):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -235,7 +224,6 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
             if routing:
                 await alice_router.reset_timing()
 
-        issue_count = 300
         batch_size = 100
 
         semaphore = asyncio.Semaphore(10)
@@ -254,18 +242,23 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
         async def check_received(agent, issue_count, pb):
             reported = 0
             iter_pb = iter(pb) if pb else None
+            prev = -1
             while True:
-                pending, total = agent.check_received_creds()
-                if iter_pb and total > reported:
+                pending, total = await agent.check_received_creds()
+                complete = total - pending
+                if prev == complete:
+                    await asyncio.wait_for(agent.update_creds(), 30)
+                    continue
+                prev = complete
+                if iter_pb and complete > reported:
                     try:
-                        while next(iter_pb) < total:
+                        while next(iter_pb) < complete:
                             pass
                     except StopIteration:
                         iter_pb = None
-                reported = total
-                if total == issue_count and not pending:
+                reported = complete
+                if reported == issue_count:
                     break
-                await asyncio.wait_for(agent.update_creds(), 30)
 
         with progress() as pb:
             receive_task = None
@@ -298,11 +291,11 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
         alice.log(f"Average time per credential: {avg:.2f}s ({1/avg:.2f}/s)")
 
         if alice.postgres:
-            await alice.collect_postgres_stats(str(issue_count) + " creds")
+            await alice.collect_postgres_stats(f"{issue_count} creds")
             for line in alice.format_postgres_stats():
                 alice.log(line)
         if faber.postgres:
-            await faber.collect_postgres_stats(str(issue_count) + " creds")
+            await faber.collect_postgres_stats(f"{issue_count} creds")
             for line in faber.format_postgres_stats():
                 faber.log(line)
 
@@ -357,6 +350,13 @@ if __name__ == "__main__":
         description="Runs an automated credential issuance performance demo."
     )
     parser.add_argument(
+        "-c",
+        "--count",
+        type=int,
+        default=300,
+        help="Set the number of credentials to issue",
+    )
+    parser.add_argument(
         "-p",
         "--port",
         type=int,
@@ -376,7 +376,7 @@ if __name__ == "__main__":
 
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, args.timing, args.routing)
+            main(args.port, args.timing, args.routing, args.count)
         )
     except KeyboardInterrupt:
         os._exit(1)
