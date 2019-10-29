@@ -47,9 +47,10 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
             asyncio.TimeoutError if the timeout is reached
 
         """
-        if not self.stop_event.is_set():
-            stopped = asyncio.ensure_future(self.stop_event.wait())
-            dequeued = asyncio.ensure_future(self.queue.get())
+        stop_event, queue = self.stop_event, self.queue
+        if not stop_event.is_set():
+            stopped = asyncio.ensure_future(stop_event.wait())
+            dequeued = asyncio.ensure_future(queue.get())
             done, pending = await asyncio.wait(
                 (stopped, dequeued),
                 timeout=timeout,
@@ -67,7 +68,7 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
             elif not stopped.done():
                 raise asyncio.TimeoutError
 
-        if self.stop_event.is_set():
+        if stop_event.is_set():
             raise asyncio.CancelledError
 
         return None
@@ -88,4 +89,4 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
         """Empty the queue and reset the stop event."""
         self.stop()
         self.queue = self.make_queue()
-        self.stop_event.clear()
+        self.stop_event = asyncio.Event()
