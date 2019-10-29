@@ -8,7 +8,7 @@ An attach decorator embeds content or specifies appended content.
 import json
 import uuid
 
-from typing import Union
+from typing import Mapping, Union
 
 from marshmallow import fields
 
@@ -21,6 +21,7 @@ from ...wallet.util import (
     bytes_to_b64,
     set_urlsafe_b64,
     str_to_b64,
+    unpad,
 )
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import (
@@ -93,7 +94,14 @@ class AttachDecoratorData(BaseModel):
     def signed(self) -> bytes:
         """Accessor for signed content, None for unsigned."""
         if getattr(self, "sig_", None):
-            return b64_to_bytes(self.sig_.split(".")[1])
+            return b64_to_bytes(self.sig_.split(".")[1], urlsafe=True)
+        return None
+
+    @property
+    def header(self) -> Mapping:
+        """Accessor for signed header, None for unsigned."""
+        if getattr(self, "sig_", None):
+            return json.loads(b64_to_str(self.sig_.split(".")[0], urlsafe=True))
         return None
 
     @property
@@ -111,13 +119,14 @@ class AttachDecoratorData(BaseModel):
         """Accessor for sha256 decorator data, or None."""
         return getattr(self, "sha256_", None)
 
-    async def sign(self, from_verkey: str, wallet: BaseWallet):
+    async def sign(self, from_verkey: str, wallet: BaseWallet, kid: str = None):
         """
         Sign and replace base64 data value of attachment.
 
         Args:
             from_verkey: Verkey of the signing party
             wallet: The wallet to use for the signature
+            kid: optional key identifier
 
         """
         assert self.base64_
@@ -125,6 +134,7 @@ class AttachDecoratorData(BaseModel):
         b64_header = str_to_b64(
             json.dumps({
                 "alg": "EdDSA",
+                **{"kid": k for k in [kid] if kid},
                 "jwk": {
                     "kty": "OKP",
                     "crv": "Ed25519",
@@ -133,12 +143,13 @@ class AttachDecoratorData(BaseModel):
                         urlsafe=True,
                         pad=False
                     ),
+                    **{"kid": k for k in [kid] if kid},
                 },
             }),
             urlsafe=True,
             pad=False
         )
-        b64_payload = set_urlsafe_b64(self.base64_, True)
+        b64_payload = unpad(set_urlsafe_b64(self.base64_, True))
         sign_input = (b64_header + "." + b64_payload).encode("ascii")
 
         b64_sig = bytes_to_b64(

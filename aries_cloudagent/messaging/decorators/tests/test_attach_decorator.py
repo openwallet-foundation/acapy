@@ -222,17 +222,25 @@ class TestAttachDecoratorSignature:
         )
 
         did_info = await wallet.create_local_did(seed)
-        assert deco_indy.data.signed is None
 
+        assert deco_indy.data.signed is None
+        assert deco_indy.data.header is None
         await deco_indy.data.sign(did_info.verkey, wallet)
         assert deco_indy.data.sig is not None
         assert deco_indy.data.sig.count(".") == 2
+        assert deco_indy.data.header is not None
+        assert "kid" not in deco_indy.data.header
+        assert (
+            "jwk" in deco_indy.data.header and
+            "kid" not in deco_indy.data.header["jwk"]
+        )
         assert deco_indy.data.signed is not None
         assert await deco_indy.data.verify(wallet)
 
         indy_cred = json.loads(deco_indy.data.signed.decode())
         assert indy_cred == INDY_CRED
 
+        # Test tamper evidence
         jws_parts = deco_indy.data.sig_.split(".")
         tampered = bytearray(
             b64_to_bytes(jws_parts[2], urlsafe=True)
@@ -242,3 +250,32 @@ class TestAttachDecoratorSignature:
             jws_parts[0:2] + [bytes_to_b64(bytes(tampered), urlsafe=True, pad=False)]
         )
         assert not await deco_indy.data.verify(wallet)
+
+        # Specify "kid"
+        deco_indy = AttachDecorator.from_indy_dict(
+            indy_dict=INDY_CRED,
+            ident=IDENT,
+            description=DESCRIPTION,
+            filename=FILENAME,
+            lastmod_time=LASTMOD_TIME,
+            byte_count=BYTE_COUNT,
+        )
+
+        assert deco_indy.data.signed is None
+        assert deco_indy.data.header is None
+        await deco_indy.data.sign(did_info.verkey, wallet, kid=did_info.did)
+        assert deco_indy.data.sig is not None
+        assert deco_indy.data.sig.count(".") == 2
+        assert deco_indy.data.header is not None
+        assert "kid" in deco_indy.data.header
+        assert (
+            "jwk" in deco_indy.data.header and
+            "kid" in deco_indy.data.header["jwk"] and
+            deco_indy.data.header["kid"] == did_info.did and
+            deco_indy.data.header["jwk"]["kid"] == did_info.did
+        )
+        assert deco_indy.data.signed is not None
+        assert await deco_indy.data.verify(wallet)
+
+        indy_cred = json.loads(deco_indy.data.signed.decode())
+        assert indy_cred == INDY_CRED
