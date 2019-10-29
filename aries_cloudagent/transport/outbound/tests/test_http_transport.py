@@ -4,6 +4,7 @@ from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from aiohttp import web
 
 from ....messaging.outbound_message import OutboundMessage
+from ....stats import Collector
 
 from ..http import HttpTransport
 
@@ -37,3 +38,23 @@ class TestHttpTransport(AioHTTPTestCase):
         message = OutboundMessage("{}", endpoint=server_addr)
         await asyncio.wait_for(send_message(transport, message), 5.0)
         assert self.message_results == [{}]
+
+    @unittest_run_loop
+    async def test_stats(self):
+        server_addr = f"http://localhost:{self.server.port}"
+
+        async def send_message(transport, message):
+            async with transport:
+                await transport.handle_message(message)
+
+        transport = HttpTransport()
+        transport.collector = Collector()
+        message = OutboundMessage(b"{}", endpoint=server_addr)
+        await asyncio.wait_for(send_message(transport, message), 5.0)
+
+        results = transport.collector.extract()
+        assert results["count"] == {
+            "outbound-http:dns_resolve": 1,
+            "outbound-http:connect": 1,
+            "outbound-http:POST": 1,
+        }
