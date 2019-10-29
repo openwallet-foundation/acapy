@@ -229,6 +229,7 @@ class TestValid(TestCase):
 
         JWT["validate"]("abcdef.abcdef.abcdef")
         JWT["validate"]("abcde-.abcde_.abcdef")
+        JWT["validate"]("abcde-.abcde_.")  # null signature algorithm
 
     def test_sha256(self):
         non_sha256s = [

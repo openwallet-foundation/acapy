@@ -14,8 +14,10 @@ from marshmallow import fields
 
 from ...wallet.base import BaseWallet
 from ...wallet.util import (
+    b58_to_bytes,
     b64_to_bytes,
     b64_to_str,
+    bytes_to_b58,
     bytes_to_b64,
     set_urlsafe_b64,
     str_to_b64,
@@ -121,7 +123,18 @@ class AttachDecoratorData(BaseModel):
         assert self.base64_
 
         b64_header = str_to_b64(
-            json.dumps({"alg": "EdDSA", "kid": from_verkey}),
+            json.dumps({
+                "alg": "EdDSA",
+                "jwk": {
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "x": bytes_to_b64(
+                        b58_to_bytes(from_verkey),
+                        urlsafe=True,
+                        pad=False
+                    ),
+                },
+            }),
             urlsafe=True,
             pad=False
         )
@@ -152,12 +165,13 @@ class AttachDecoratorData(BaseModel):
 
         (b64_header, b64_payload, b64_sig) = self.sig_.split(".")
         header = json.loads(b64_to_str(b64_header, urlsafe=True))
-        assert "kid" in header
+        assert "jwk" in header and header["jwk"].get("kty") == "OKP"
 
         sign_input = (b64_header + "." + b64_payload).encode("ascii")
         sig = b64_to_bytes(b64_sig, urlsafe=True)
 
-        return await wallet.verify_message(sign_input, sig, header["kid"])
+        verkey = bytes_to_b58(b64_to_bytes(header["jwk"]["x"], urlsafe=True))
+        return await wallet.verify_message(sign_input, sig, verkey)
 
     def __eq__(self, other):
         """Equality comparator."""
