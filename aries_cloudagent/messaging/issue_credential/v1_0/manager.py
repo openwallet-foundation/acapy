@@ -304,7 +304,7 @@ class CredentialManager:
 
     async def create_request(
         self, credential_exchange_record: V10CredentialExchange, holder_did: str
-    ):
+    ) -> Tuple[V10CredentialExchange, CredentialRequest]:
         """
         Create a credential request.
 
@@ -326,6 +326,8 @@ class CredentialManager:
                 credential_exchange_record.credential_exchange_id,
             )
         else:
+            if "nonce" not in credential_offer:
+                raise CredentialManagerError("Missing nonce in credential offer")
             nonce = credential_offer["nonce"]
             cache_key = (
                 f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
