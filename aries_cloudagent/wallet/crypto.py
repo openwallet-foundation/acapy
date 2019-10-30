@@ -77,13 +77,13 @@ def random_seed() -> bytes:
 
 def seed_to_did(seed: str) -> str:
     """
-    Derive a did from a seed value.
+    Derive a DID from a seed value.
 
     Args:
         seed: The seed to derive
 
     Returns:
-        The did derived from the seed
+        The DID derived from the seed
 
     """
     seed = validate_seed(seed)
