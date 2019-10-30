@@ -419,7 +419,7 @@ class CredentialManager:
         *,
         comment: str = None,
         credential_values: dict,
-    ):
+    ) -> Tuple[V10CredentialExchange, CredentialIssue]:
         """
         Issue a credential.
 
