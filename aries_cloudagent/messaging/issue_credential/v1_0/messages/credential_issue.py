@@ -7,7 +7,7 @@ from marshmallow import fields
 
 from ....agent_message import AgentMessage, AgentMessageSchema
 from ....decorators.attach_decorator import AttachDecorator, AttachDecoratorSchema
-from ..message_types import CREDENTIAL_ISSUE
+from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE
 
 
 HANDLER_CLASS = (
@@ -57,6 +57,13 @@ class CredentialIssue(AgentMessage):
         """
         return self.credentials_attach[index].indy_dict
 
+    @classmethod
+    def wrap_indy_credential(cls, indy_cred: dict) -> AttachDecorator:
+        """Convert an indy credential offer to an attachment decorator."""
+        return AttachDecorator.from_indy_dict(
+            indy_dict=indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE]
+        )
+
 
 class CredentialIssueSchema(AgentMessageSchema):
     """Credential schema."""
@@ -68,8 +75,5 @@ class CredentialIssueSchema(AgentMessageSchema):
 
     comment = fields.Str(comment="Human-readable comment", required=False)
     credentials_attach = fields.Nested(
-        AttachDecoratorSchema,
-        required=True,
-        many=True,
-        data_key="credentials~attach"
+        AttachDecoratorSchema, required=True, many=True, data_key="credentials~attach"
     )
