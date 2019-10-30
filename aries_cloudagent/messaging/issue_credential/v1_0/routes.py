@@ -223,7 +223,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         raise web.HTTPForbidden()
 
     credential_exchange_record = await credential_manager.prepare_send(
-        credential_definition_id, connection_id, credential_proposal=credential_proposal
+        connection_id, credential_proposal=credential_proposal
     )
 
     (
@@ -264,19 +264,12 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     credential_definition_id = body.get("credential_definition_id")
     comment = body.get("comment")
-    credential_preview = CredentialPreview(
-        attributes=[
-            CredAttrSpec(
-                name=attr_preview["name"],
-                mime_type=attr_preview.get("mime-type", None),
-                value=attr_preview["value"],
-            )
-            for attr_preview in body.get("credential_proposal")["attributes"]
-        ]
-    )
+    proposal_spec = body.get("credential_proposal")
 
-    if not credential_preview:
+    if not proposal_spec:
         raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
+
+    credential_preview = CredentialPreview.deserialize(proposal_spec)
 
     credential_manager = CredentialManager(context)
 
@@ -338,28 +331,17 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    comment = body.get("comment", None)
-    credential_preview = CredentialPreview(
-        attributes=[
-            CredAttrSpec(
-                name=attr_preview["name"],
-                value=attr_preview["value"],
-                mime_type=attr_preview.get("mime_type", None),
-            )
-            for attr_preview in body.get("credential_preview")["attributes"]
-        ]
-    )
+    comment = body.get("comment")
+    proposal_spec = body.get("credential_proposal")
 
-    if auto_issue and not credential_preview:
+    if not credential_definition_id:
+        raise web.HTTPBadRequest(reason="credential_definition_id is required")
+
+    if auto_issue and not proposal_spec:
         raise web.HTTPBadRequest(
             reason="If auto_issue is set to"
             + " true then credential_preview must also be provided."
         )
-    credential_proposal = CredentialProposal(
-        comment=comment,
-        credential_proposal=credential_preview,
-        cred_def_id=credential_definition_id,
-    )
 
     credential_manager = CredentialManager(context)
 
@@ -373,11 +355,22 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
+    if proposal_spec:
+        credential_preview = CredentialPreview.deserialize(proposal_spec)
+        credential_proposal = CredentialProposal(
+            comment=comment,
+            credential_proposal=credential_preview,
+            cred_def_id=credential_definition_id,
+        )
+        credential_proposal_dict = credential_proposal.serialize()
+    else:
+        credential_proposal_dict = None
+
     credential_exchange_record = V10CredentialExchange(
         connection_id=connection_id,
         initiator=V10CredentialExchange.INITIATOR_SELF,
         credential_definition_id=credential_definition_id,
-        credential_proposal_dict=credential_proposal.serialize(),
+        credential_proposal_dict=credential_proposal_dict,
         auto_issue=auto_issue,
     )
 

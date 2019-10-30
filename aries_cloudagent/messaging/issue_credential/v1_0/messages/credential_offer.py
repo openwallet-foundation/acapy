@@ -7,13 +7,13 @@ from marshmallow import fields
 
 from ....agent_message import AgentMessage, AgentMessageSchema
 from ....decorators.attach_decorator import AttachDecorator, AttachDecoratorSchema
-from ..message_types import CREDENTIAL_OFFER
+from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 
 HANDLER_CLASS = (
     "aries_cloudagent.messaging.issue_credential.v1_0.handlers."
-    + "credential_offer_handler.CredentialOfferHandler"
+    "credential_offer_handler.CredentialOfferHandler"
 )
 
 
@@ -52,7 +52,7 @@ class CredentialOffer(AgentMessage):
         )
         self.offers_attach = list(offers_attach) if offers_attach else []
 
-    def indy_offer(self, index: int = 0):
+    def indy_offer(self, index: int = 0) -> dict:
         """
         Retrieve and decode indy offer from attachment.
 
@@ -62,6 +62,13 @@ class CredentialOffer(AgentMessage):
 
         """
         return self.offers_attach[index].indy_dict
+
+    @classmethod
+    def wrap_indy_offer(cls, indy_offer: dict) -> AttachDecorator:
+        """Convert an indy credential offer to an attachment decorator."""
+        return AttachDecorator.from_indy_dict(
+            indy_dict=indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER]
+        )
 
 
 class CredentialOfferSchema(AgentMessageSchema):
@@ -75,8 +82,5 @@ class CredentialOfferSchema(AgentMessageSchema):
     comment = fields.Str(required=False, allow_none=False)
     credential_preview = fields.Nested(CredentialPreviewSchema, required=False)
     offers_attach = fields.Nested(
-        AttachDecoratorSchema,
-        required=True,
-        many=True,
-        data_key="offers~attach"
+        AttachDecoratorSchema, required=True, many=True, data_key="offers~attach"
     )
