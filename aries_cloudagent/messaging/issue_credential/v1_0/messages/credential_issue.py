@@ -58,7 +58,7 @@ class CredentialIssue(AgentMessage):
         return self.credentials_attach[index].indy_dict
 
     @classmethod
-    def wrap_indy_credential(clss, indy_cred: dict) -> AttachDecorator:
+    def wrap_indy_credential(cls, indy_cred: dict) -> AttachDecorator:
         """Convert an indy credential offer to an attachment decorator."""
         return AttachDecorator.from_indy_dict(
             indy_dict=indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE]
