@@ -21,7 +21,9 @@ class TestCredentialRoutes(AsyncTestCase):
             test_module, "ConnectionRecord", autospec=True
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
-        ) as mock_credential_manager:
+        ) as mock_credential_manager, async_mock.patch.object(
+            test_module.CredentialPreview, "deserialize", autospec=True
+        ):
             test_module.web.json_response = async_mock.CoroutineMock()
 
             mock_credential_manager.return_value.create_offer = (
@@ -34,17 +36,16 @@ class TestCredentialRoutes(AsyncTestCase):
             )
 
             mock_cred_ex_record = async_mock.MagicMock()
+            mock_cred_offer = async_mock.MagicMock()
 
             mock_credential_manager.return_value.prepare_send.return_value = (
-                mock_cred_ex_record
+                (mock_cred_ex_record, mock_cred_offer)
             )
 
             await test_module.credential_exchange_send(mock)
 
             test_module.web.json_response.assert_called_once_with(
-                mock_credential_manager.return_value.create_offer.return_value[
-                    0
-                ].serialize.return_value
+                mock_cred_ex_record.serialize.return_value
             )
 
     async def test_credential_exchange_send_no_conn_record(self):
@@ -65,13 +66,8 @@ class TestCredentialRoutes(AsyncTestCase):
             test_module.web.json_response = async_mock.CoroutineMock()
 
             # Emulate storage not found (bad connection id)
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
-                side_effect=StorageNotFoundError
-            )
+            mock_connection_record.retrieve_by_id.side_effect = StorageNotFoundError
 
-            mock_credential_manager.return_value.create_offer = (
-                async_mock.CoroutineMock()
-            )
             mock_credential_manager.return_value.create_offer.return_value = (
                 async_mock.MagicMock(),
                 async_mock.MagicMock(),
@@ -98,12 +94,8 @@ class TestCredentialRoutes(AsyncTestCase):
             test_module.web.json_response = async_mock.CoroutineMock()
 
             # Emulate connection not ready
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_connection_record.retrieve_by_id.return_value.is_ready = False
 
-            mock_credential_manager.return_value.create_offer = (
-                async_mock.CoroutineMock()
-            )
             mock_credential_manager.return_value.create_offer.return_value = (
                 async_mock.MagicMock(),
                 async_mock.MagicMock(),
@@ -114,14 +106,11 @@ class TestCredentialRoutes(AsyncTestCase):
 
     async def test_credential_exchange_send_proposal(self):
         conn_id = "connection-id"
-        proposal_spec = {"attributes": [{"name": "attr", "value": "value"}]}
+        preview_spec = {"attributes": [{"name": "attr", "value": "value"}]}
 
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock(
-            return_value={
-                "connection_id": conn_id,
-                "credential_proposal": proposal_spec,
-            }
+            return_value={"connection_id": conn_id, "credential_preview": preview_spec}
         )
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -218,7 +207,10 @@ class TestCredentialRoutes(AsyncTestCase):
     async def test_credential_exchange_send_free_offer(self):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock(
-            return_value={"auto_issue": False, "credential_definition_id": "cred-def-id"}
+            return_value={
+                "auto_issue": False,
+                "credential_definition_id": "cred-def-id",
+            }
         )
 
         mock.app = {
@@ -257,7 +249,10 @@ class TestCredentialRoutes(AsyncTestCase):
     async def test_credential_exchange_send_free_offer_no_conn_record(self):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock(
-            return_value={"auto_issue": False, "credential_definition_id": "cred-def-id"}
+            return_value={
+                "auto_issue": False,
+                "credential_definition_id": "cred-def-id",
+            }
         )
 
         mock.app = {
