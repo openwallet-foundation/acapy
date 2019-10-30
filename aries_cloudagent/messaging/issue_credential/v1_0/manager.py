@@ -91,7 +91,7 @@ class CredentialManager:
         comment: str = None,
         credential_preview: CredentialPreview = None,
         credential_definition_id: str,
-    ):
+    ) -> V10CredentialExchange:
         """
         Create a credential proposal.
 
@@ -146,7 +146,7 @@ class CredentialManager:
         )
         return credential_exchange_record
 
-    async def receive_proposal(self,):
+    async def receive_proposal(self) -> V10CredentialExchange:
         """
         Receive a credential proposal from message in context on manager creation.
 
@@ -247,7 +247,7 @@ class CredentialManager:
 
         return (credential_exchange_record, credential_offer_message)
 
-    async def receive_offer(self):
+    async def receive_offer(self) -> V10CredentialExchange:
         """
         Receive a credential offer.
 
@@ -472,7 +472,7 @@ class CredentialManager:
 
         return (credential_exchange_record, credential_message)
 
-    async def receive_credential(self):
+    async def receive_credential(self) -> V10CredentialExchange:
         """
         Receive a credential from an issuer.
 
@@ -502,7 +502,9 @@ class CredentialManager:
         await credential_exchange_record.save(self.context, reason="receive credential")
         return credential_exchange_record
 
-    async def store_credential(self, credential_exchange_record: V10CredentialExchange):
+    async def store_credential(
+        self, credential_exchange_record: V10CredentialExchange
+    ) -> Tuple[V10CredentialExchange, CredentialStored]:
         """
         Store a credential in the wallet.
 
@@ -549,7 +551,7 @@ class CredentialManager:
 
         return credential_exchange_record, credential_stored_message
 
-    async def credential_stored(self):
+    async def credential_stored(self) -> V10CredentialExchange:
         """
         Receive confirmation that holder stored credential.
 
@@ -571,3 +573,5 @@ class CredentialManager:
 
         # We're done with the exchange so delete
         await credential_exchange_record.delete_record(self.context)
+
+        return credential_exchange_record

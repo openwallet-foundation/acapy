@@ -13,6 +13,7 @@ from ..messages.credential_issue import CredentialIssue
 from ..messages.credential_offer import CredentialOffer
 from ..messages.credential_proposal import CredentialProposal
 from ..messages.credential_request import CredentialRequest
+from ..messages.credential_stored import CredentialStored
 from ..messages.inner.credential_preview import CredentialPreview, CredAttrSpec
 from ..models.credential_exchange import V10CredentialExchange
 
@@ -501,3 +502,94 @@ class TestCredentialManager(AsyncTestCase):
 
             assert exchange.raw_credential == indy_cred
             assert exchange.state == V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
+
+    async def test_store_credential(self):
+        schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
+        cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
+        connection_id = "test_conn_id"
+        cred = {"cred_def_id": cred_def_id}
+        cred_req_meta = {"req": "meta"}
+        thread_id = "thread-id"
+
+        stored_exchange = V10CredentialExchange(
+            connection_id=connection_id,
+            credential_definition_id=cred_def_id,
+            credential_request_metadata=cred_req_meta,
+            credential_proposal_dict={"credential_proposal": {}},
+            raw_credential=cred,
+            initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
+            role=V10CredentialExchange.ROLE_HOLDER,
+            thread_id=thread_id,
+        )
+
+        cred_def = object()
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value=cred_def
+        )
+
+        cred_id = "cred-id"
+        holder = async_mock.MagicMock()
+        holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
+        stored_cred = {"stored": "cred"}
+        holder.get_credential = async_mock.CoroutineMock(return_value=stored_cred)
+        self.context.injector.bind_instance(BaseHolder, holder)
+
+        with async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            CredentialPreview, "deserialize", autospec=True
+        ) as mock_preview_deserialize:
+
+            ret_exchange, ret_cred_stored = await self.manager.store_credential(
+                stored_exchange
+            )
+
+            save_ex.assert_called_once()
+
+            self.ledger.get_credential_definition.assert_called_once_with(cred_def_id)
+
+            holder.store_credential.assert_called_once_with(
+                cred_def,
+                cred,
+                cred_req_meta,
+                mock_preview_deserialize.return_value.mime_types.return_value,
+            )
+
+            holder.get_credential.assert_called_once_with(cred_id)
+
+            assert ret_exchange.credential_id == cred_id
+            assert ret_exchange.credential == stored_cred
+            assert ret_exchange.state == V10CredentialExchange.STATE_STORED
+            assert ret_cred_stored._thread_id == thread_id
+
+    async def test_credential_stored(self):
+        connection_id = "connection-id"
+        stored_exchange = V10CredentialExchange(
+            connection_id=connection_id,
+            initiator=V10CredentialExchange.INITIATOR_SELF,
+            role=V10CredentialExchange.ROLE_ISSUER,
+        )
+
+        stored = CredentialStored()
+        self.context.message = stored
+        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record.connection_id = connection_id
+
+        with async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V10CredentialExchange, "delete_record", autospec=True
+        ) as delete_ex, async_mock.patch.object(
+            V10CredentialExchange,
+            "retrieve_by_connection_and_thread",
+            async_mock.CoroutineMock(return_value=stored_exchange),
+        ) as retrieve_ex:
+            ret_exchange = await self.manager.credential_stored()
+
+            retrieve_ex.assert_called_once_with(
+                self.context, connection_id, stored._thread_id
+            )
+            save_ex.assert_called_once()
+
+            assert ret_exchange.state == V10CredentialExchange.STATE_STORED
+            delete_ex.assert_called_once()
