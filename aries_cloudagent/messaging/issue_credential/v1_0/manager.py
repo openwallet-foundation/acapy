@@ -49,7 +49,7 @@ class CredentialManager:
 
     async def prepare_send(
         self, connection_id: str, credential_proposal: CredentialProposal
-    ) -> V10CredentialExchange:
+    ) -> Tuple[V10CredentialExchange, CredentialOffer]:
         """
         Set up a new credential exchange for an automated send.
 
@@ -59,7 +59,7 @@ class CredentialManager:
                 attribute values to use if auto_issue is enabled
 
         Returns:
-            A new credential exchange record
+            A tuple of the new credential exchange record and credential offer message
 
         """
 
@@ -77,11 +77,11 @@ class CredentialManager:
             credential_definition_id=credential_definition_id,
             credential_proposal_dict=credential_proposal.serialize(),
         )
-        (credential_exchange, _) = await self.create_offer(
+        (credential_exchange, credential_offer) = await self.create_offer(
             credential_exchange_record=credential_exchange,
             comment="create automated credential exchange",
         )
-        return credential_exchange
+        return credential_exchange, credential_offer
 
     async def create_proposal(
         self,

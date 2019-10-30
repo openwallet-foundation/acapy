@@ -41,13 +41,11 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             self.manager, "create_offer", autospec=True
         ) as create_offer:
-            create_offer.return_value = (object(), None)
-            ret_exchange = await self.manager.prepare_send(connection_id, proposal)
+            create_offer.return_value = (async_mock.MagicMock(), async_mock.MagicMock())
+            ret_exchange, ret_cred_offer = await self.manager.prepare_send(connection_id, proposal)
             create_offer.assert_called_once()
             assert ret_exchange is create_offer.return_value[0]
-            exchange: V10CredentialExchange = create_offer.call_args[1][
-                "credential_exchange_record"
-            ]
+            exchange = create_offer.call_args[1]["credential_exchange_record"]
             assert exchange.auto_issue
             assert exchange.connection_id == connection_id
             assert exchange.credential_definition_id == cred_def_id

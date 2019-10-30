@@ -14,7 +14,6 @@ from ...valid import INDY_CRED_DEF_ID, UUIDFour
 from .manager import CredentialManager
 from .messages.credential_proposal import CredentialProposal
 from .messages.inner.credential_preview import (
-    CredAttrSpec,
     CredentialPreview,
     CredentialPreviewSchema,
 )
@@ -51,7 +50,7 @@ class V10CredentialProposalRequestSchema(Schema):
         **INDY_CRED_DEF_ID,
     )
     comment = fields.Str(description="Human-readable comment", required=False)
-    credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
+    credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
 class V10CredentialOfferRequestSchema(Schema):
@@ -190,27 +189,12 @@ async def credential_exchange_send(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     credential_definition_id = body.get("credential_definition_id")
     comment = body.get("comment")
-    credential_proposal = CredentialProposal(
-        comment=comment,
-        credential_proposal=CredentialPreview(
-            attributes=[
-                CredAttrSpec(
-                    name=attr_preview["name"],
-                    mime_type=attr_preview.get("mime-type", None),
-                    value=attr_preview["value"],
-                )
-                for attr_preview in body.get("credential_proposal")["attributes"]
-            ]
-        ),
-        cred_def_id=credential_definition_id,
-    )
+    preview_spec = body.get("credential_preview")
 
-    if not credential_proposal:
-        raise web.HTTPBadRequest(
-            reason="credential_proposal must be provided with attribute values."
-        )
-
-    credential_manager = CredentialManager(context)
+    if not credential_definition_id:
+        raise web.HTTPBadRequest(reason="credential_definition_id must be provided.")
+    if not preview_spec:
+        raise web.HTTPBadRequest(reason="credential_preview must be provided.")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -222,18 +206,19 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    credential_exchange_record = await credential_manager.prepare_send(
-        connection_id, credential_proposal=credential_proposal
+    credential_proposal = CredentialProposal(
+        comment=comment,
+        credential_proposal=CredentialPreview.deserialize(preview_spec),
+        cred_def_id=credential_definition_id,
     )
+
+    credential_manager = CredentialManager(context)
 
     (
         credential_exchange_record,
         credential_offer_message,
-    ) = await credential_manager.create_offer(
-        credential_exchange_record,
-        comment="Automated offer creation on cred def id "
-        f"{credential_exchange_record.credential_definition_id}, "
-        f"parent thread {credential_exchange_record.parent_thread_id}",
+    ) = await credential_manager.prepare_send(
+        connection_id, credential_proposal=credential_proposal
     )
     await outbound_handler(
         credential_offer_message, connection_id=credential_exchange_record.connection_id
@@ -264,14 +249,10 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     credential_definition_id = body.get("credential_definition_id")
     comment = body.get("comment")
-    proposal_spec = body.get("credential_proposal")
+    preview_spec = body.get("credential_preview")
 
-    if not proposal_spec:
-        raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
-
-    credential_preview = CredentialPreview.deserialize(proposal_spec)
-
-    credential_manager = CredentialManager(context)
+    if not preview_spec:
+        raise web.HTTPBadRequest(reason="credential_preview must be provided.")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -282,6 +263,10 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
+
+    credential_preview = CredentialPreview.deserialize(preview_spec)
+
+    credential_manager = CredentialManager(context)
 
     credential_exchange_record = await credential_manager.create_proposal(
         connection_id,
@@ -332,18 +317,16 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
     comment = body.get("comment")
-    proposal_spec = body.get("credential_proposal")
+    preview_spec = body.get("credential_preview")
 
     if not credential_definition_id:
         raise web.HTTPBadRequest(reason="credential_definition_id is required")
 
-    if auto_issue and not proposal_spec:
+    if auto_issue and not preview_spec:
         raise web.HTTPBadRequest(
             reason="If auto_issue is set to"
             + " true then credential_preview must also be provided."
         )
-
-    credential_manager = CredentialManager(context)
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -355,8 +338,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    if proposal_spec:
-        credential_preview = CredentialPreview.deserialize(proposal_spec)
+    if preview_spec:
+        credential_preview = CredentialPreview.deserialize(preview_spec)
         credential_proposal = CredentialProposal(
             comment=comment,
             credential_proposal=credential_preview,
@@ -373,6 +356,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         credential_proposal_dict=credential_proposal_dict,
         auto_issue=auto_issue,
     )
+
+    credential_manager = CredentialManager(context)
 
     (
         credential_exchange_record,
@@ -466,8 +451,6 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         V10CredentialExchange.STATE_OFFER_RECEIVED
     )
 
-    credential_manager = CredentialManager(context)
-
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
@@ -477,6 +460,8 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
+
+    credential_manager = CredentialManager(context)
 
     (
         credential_exchange_record,
@@ -508,7 +493,10 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     body = await request.json()
     comment = body.get("comment")
-    credential_preview = CredentialPreview.deserialize(body["credential_preview"])
+    preview_spec = body.get("credential_preview")
+
+    if not preview_spec:
+        raise web.HTTPBadRequest(reason="credential_preview must be provided.")
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_exch_record = await V10CredentialExchange.retrieve_by_id(
@@ -517,8 +505,6 @@ async def credential_exchange_issue(request: web.BaseRequest):
     connection_id = cred_exch_record.connection_id
 
     assert cred_exch_record.state == V10CredentialExchange.STATE_REQUEST_RECEIVED
-
-    credential_manager = CredentialManager(context)
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -529,6 +515,10 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
+
+    credential_preview = CredentialPreview.deserialize(preview_spec)
+
+    credential_manager = CredentialManager(context)
 
     (
         cred_exch_record,
@@ -569,8 +559,6 @@ async def credential_exchange_store(request: web.BaseRequest):
         V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
     )
 
-    credential_manager = CredentialManager(context)
-
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
@@ -580,6 +568,8 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
+
+    credential_manager = CredentialManager(context)
 
     (
         credential_exchange_record,

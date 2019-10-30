@@ -71,7 +71,7 @@ class BaseAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_credentials(self, payload):
+    async def handle_issue_credential(self, payload):
         cred_id = payload["credential_exchange_id"]
         self.credential_state[cred_id] = payload["state"]
         self.credential_event.set()
@@ -90,6 +90,15 @@ class BaseAgent(DemoAgent):
 
     async def update_creds(self):
         await self.credential_event.wait()
+
+    def check_task_exception(self, fut: asyncio.Task):
+        if fut.done():
+            try:
+                exc = fut.exception()
+            except asyncio.CancelledError as e:
+                exc = e
+            if exc:
+                self.log(f"Task raised exception: {str(exc)}")
 
 
 class AliceAgent(BaseAgent):
@@ -135,19 +144,17 @@ class FaberAgent(BaseAgent):
         ]
         self.log(f"Credential Definition ID: {self.credential_definition_id}")
 
-    async def send_credential(self):
-        cred_attrs = {
-            "name": "Alice Smith",
-            "date": "2018-05-28",
-            "degree": "Maths",
-            "age": "24",
+    async def send_credential(self, cred_attrs: dict, comment: str = None):
+        cred_preview = {
+            "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()]
         }
         await self.admin_POST(
-            "/credential_exchange/send",
+            "/issue-credential/send",
             {
-                "credential_values": cred_attrs,
                 "connection_id": self.connection_id,
                 "credential_definition_id": self.credential_definition_id,
+                "credential_preview": cred_preview,
+                "comment": comment,
             },
         )
 
@@ -228,11 +235,22 @@ async def main(
 
         semaphore = asyncio.Semaphore(10)
 
-        async def send():
+        def done_send(fut: asyncio.Task):
+            semaphore.release()
+            faber.check_task_exception(fut)
+
+        async def send(index: int):
             await semaphore.acquire()
-            asyncio.ensure_future(faber.send_credential()).add_done_callback(
-                lambda fut: semaphore.release()
-            )
+            comment = f"issue test credential {index}"
+            attributes = {
+                "name": "Alice Smith",
+                "date": "2018-05-28",
+                "degree": "Maths",
+                "age": "24",
+            }
+            asyncio.ensure_future(
+                faber.send_credential(attributes, comment)
+            ).add_done_callback(done_send)
 
         recv_timer = alice.log_timer(f"Received {issue_count} credentials in ")
         recv_timer.start()
@@ -268,14 +286,16 @@ async def main(
                 issue_task = asyncio.ensure_future(
                     check_received(faber, issue_count, issue_pg)
                 )
+                issue_task.add_done_callback(faber.check_task_exception)
                 receive_task = asyncio.ensure_future(
                     check_received(alice, issue_count, receive_pg)
                 )
+                receive_task.add_done_callback(alice.check_task_exception)
                 with faber.log_timer(
                     f"Done starting {issue_count} credential exchanges in "
                 ):
                     for idx in range(0, issue_count):
-                        await send()
+                        await send(idx + 1)
                         if not (idx + 1) % batch_size and idx < issue_count - 1:
                             batch_timer.reset()
 
