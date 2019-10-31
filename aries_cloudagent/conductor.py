@@ -10,6 +10,7 @@ wallet.
 
 import asyncio
 from collections import OrderedDict
+import hashlib
 import logging
 from typing import Coroutine, Union
 
@@ -187,6 +188,23 @@ class Conductor:
             public_did,
             self.admin_server,
         )
+
+        # Create a static connection for use by the test-suite
+        if context.settings.get("debug.test_suite_endpoint"):
+            mgr = ConnectionManager(self.context)
+            their_endpoint = context.settings["debug.test_suite_endpoint"]
+            test_conn = await mgr.create_static_connection(
+                my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
+                their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
+                their_endpoint=their_endpoint,
+                their_role="tester",
+                alias="test-suite",
+            )
+            print("Created static connection for test suite")
+            print(" - My DID:", test_conn.my_did)
+            print(" - Their DID:", test_conn.their_did)
+            print(" - Their endpoint:", their_endpoint)
+            print()
 
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):

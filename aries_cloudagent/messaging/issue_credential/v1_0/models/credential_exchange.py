@@ -3,6 +3,8 @@
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
+from .....config.injection_context import InjectionContext
+
 from ....models.base_record import BaseRecord, BaseRecordSchema
 from ....valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 
@@ -57,7 +59,7 @@ class V10CredentialExchange(BaseRecord):
         auto_offer: bool = False,
         auto_issue: bool = False,
         error_msg: str = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize a new V10CredentialExchange."""
         super().__init__(credential_exchange_id, state, **kwargs)
@@ -112,6 +114,22 @@ class V10CredentialExchange(BaseRecord):
             )
         }
 
+    @classmethod
+    async def retrieve_by_connection_and_thread(
+        cls, context: InjectionContext, connection_id: str, thread_id: str
+    ) -> "V10CredentialExchange":
+        """Retrieve a credential exchange record by connection and thread ID."""
+        cache_key = f"credential_exchange_ctidx::{connection_id}::{thread_id}"
+        record_id = await cls.get_cached_key(context, cache_key)
+        if record_id:
+            record = await cls.retrieve_by_id(context, record_id)
+        else:
+            record = await cls.retrieve_by_tag_filter(
+                context, {"thread_id": thread_id}, {"connection_id": connection_id}
+            )
+            await cls.set_cached_key(context, cache_key, record.credential_exchange_id)
+        return record
+
 
 class V10CredentialExchangeSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of credential exchange records."""
@@ -155,7 +173,7 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
     credential_definition_id = fields.Str(
         required=False,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID
+        **INDY_CRED_DEF_ID,
     )
     schema_id = fields.Str(
         required=False, description="Schema identifier", **INDY_SCHEMA_ID

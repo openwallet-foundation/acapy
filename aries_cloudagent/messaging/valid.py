@@ -272,10 +272,6 @@ BASE64URL = {
     "validate": Base64URL(),
     "example": Base64.EXAMPLE
 }
-JWT = {
-    "validate": JSONWebToken(),
-    "example": JSONWebToken.EXAMPLE
-}
 SHA256 = {
     "validate": SHA256Hash(),
     "example": SHA256Hash.EXAMPLE

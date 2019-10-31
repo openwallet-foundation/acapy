@@ -62,7 +62,7 @@ DATA_LINKS = AttachDecoratorData(
 
 @pytest.fixture()
 def seed():
-    return "TestWalletSignVerifyAttachDeco00"
+    return [f"TestWalletSignVerifyAttachDeco0{i}" for i in [0, 1]]
 
 
 @pytest.fixture()
@@ -220,19 +220,21 @@ class TestAttachDecoratorSignature:
             lastmod_time=LASTMOD_TIME,
             byte_count=BYTE_COUNT,
         )
-
-        did_info = await wallet.create_local_did(seed)
+        deco_indy_master = deepcopy(deco_indy)
+        did_info = [await wallet.create_local_did(seed[i]) for i in [0, 1]]
 
         assert deco_indy.data.signed is None
-        assert deco_indy.data.header is None
-        await deco_indy.data.sign(did_info.verkey, wallet)
+        assert deco_indy.data.signatures == 0
+        assert deco_indy.data.header() is None
+        await deco_indy.data.sign(did_info[0].verkey, wallet)
         assert deco_indy.data.sig is not None
+        assert deco_indy.data.signatures == 1
         assert deco_indy.data.sig.count(".") == 2
-        assert deco_indy.data.header is not None
-        assert "kid" not in deco_indy.data.header
+        assert deco_indy.data.header() is not None
+        assert "kid" not in deco_indy.data.header()
         assert (
-            "jwk" in deco_indy.data.header and
-            "kid" not in deco_indy.data.header["jwk"]
+            "jwk" in deco_indy.data.header() and
+            "kid" not in deco_indy.data.header()["jwk"]
         )
         assert deco_indy.data.signed is not None
         assert await deco_indy.data.verify(wallet)
@@ -252,28 +254,72 @@ class TestAttachDecoratorSignature:
         assert not await deco_indy.data.verify(wallet)
 
         # Specify "kid"
-        deco_indy = AttachDecorator.from_indy_dict(
-            indy_dict=INDY_CRED,
-            ident=IDENT,
-            description=DESCRIPTION,
-            filename=FILENAME,
-            lastmod_time=LASTMOD_TIME,
-            byte_count=BYTE_COUNT,
-        )
-
+        deco_indy = deepcopy(deco_indy_master)
         assert deco_indy.data.signed is None
-        assert deco_indy.data.header is None
-        await deco_indy.data.sign(did_info.verkey, wallet, kid=did_info.did)
+        assert deco_indy.data.signatures == 0
+        assert deco_indy.data.header() is None
+        await deco_indy.data.sign({did_info[0].did: did_info[0].verkey}, wallet)
         assert deco_indy.data.sig is not None
+        assert deco_indy.data.signatures == 1
         assert deco_indy.data.sig.count(".") == 2
-        assert deco_indy.data.header is not None
-        assert "kid" in deco_indy.data.header
+        assert deco_indy.data.header() is not None
+        assert "kid" in deco_indy.data.header()
         assert (
-            "jwk" in deco_indy.data.header and
-            "kid" in deco_indy.data.header["jwk"] and
-            deco_indy.data.header["kid"] == did_info.did and
-            deco_indy.data.header["jwk"]["kid"] == did_info.did
+            "jwk" in deco_indy.data.header() and
+            "kid" in deco_indy.data.header()["jwk"] and
+            deco_indy.data.header()["kid"] == did_info[0].did and
+            deco_indy.data.header()["jwk"]["kid"] == did_info[0].did
         )
+        assert deco_indy.data.signed is not None
+        assert await deco_indy.data.verify(wallet)
+
+        indy_cred = json.loads(deco_indy.data.signed.decode())
+        assert indy_cred == INDY_CRED
+
+        # Degenerate case: one key, kid=None explicitly
+        deco_indy = deepcopy(deco_indy_master)
+        assert deco_indy.data.signed is None
+        assert deco_indy.data.signatures == 0
+        assert deco_indy.data.header() is None
+        await deco_indy.data.sign({None: did_info[0].verkey}, wallet)
+        assert deco_indy.data.sig is not None
+        assert deco_indy.data.signatures == 1
+        assert deco_indy.data.sig.count(".") == 2
+        assert deco_indy.data.header() is not None
+        assert "kid" not in deco_indy.data.header()
+        assert (
+            "jwk" in deco_indy.data.header() and
+            "kid" not in deco_indy.data.header()["jwk"]
+        )
+        assert deco_indy.data.signed is not None
+        assert await deco_indy.data.verify(wallet)
+
+        indy_cred = json.loads(deco_indy.data.signed.decode())
+        assert indy_cred == INDY_CRED
+
+        # Multi-signature
+        deco_indy = deepcopy(deco_indy_master)
+        assert deco_indy.data.signed is None
+        assert deco_indy.data.signatures == 0
+        assert deco_indy.data.header() is None
+        await deco_indy.data.sign(
+            {did_info[i].did: did_info[i].verkey for i in range(len(did_info))},
+            wallet
+        )
+        assert deco_indy.data.sig is not None
+        assert deco_indy.data.signatures == 2
+        assert "payload" in deco_indy.data.sig
+        assert "signatures" in deco_indy.data.sig
+        for i in range(len(did_info)):
+            assert deco_indy.data.header(i) is not None
+            assert "kid" not in deco_indy.data.header(i, jose=False)
+            assert "kid" in deco_indy.data.header(i)
+            assert (
+                "jwk" in deco_indy.data.header(i) and
+                "kid" in deco_indy.data.header(i)["jwk"] and
+                deco_indy.data.header(i)["kid"] == did_info[i].did and
+                deco_indy.data.header(i)["jwk"]["kid"] == did_info[i].did
+            )
         assert deco_indy.data.signed is not None
         assert await deco_indy.data.verify(wallet)
 

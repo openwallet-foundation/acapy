@@ -26,6 +26,8 @@ class BaseAgent(DemoAgent):
         super().__init__(ident, port, port + 1, prefix=prefix, **kwargs)
         self._connection_id = None
         self._connection_ready = None
+        self.credential_state = {}
+        self.credential_event = asyncio.Event()
 
     @property
     def connection_id(self) -> str:
@@ -69,30 +71,40 @@ class BaseAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-
-class AliceAgent(BaseAgent):
-    def __init__(self, port: int, **kwargs):
-        super().__init__("Alice", port, seed=None, **kwargs)
-        self.credential_state = {}
-        self.credential_event = asyncio.Event()
-        self.extra_args = ["--auto-respond-credential-offer", "--auto-store-credential"]
-
-    async def handle_credentials(self, payload):
+    async def handle_issue_credential(self, payload):
         cred_id = payload["credential_exchange_id"]
         self.credential_state[cred_id] = payload["state"]
         self.credential_event.set()
 
-    def check_received_creds(self) -> (int, int):
-        self.credential_event.clear()
-        pending = 0
-        total = len(self.credential_state)
-        for result in self.credential_state.values():
-            if result != "acked":
-                pending += 1
-        return pending, total
+    async def check_received_creds(self) -> (int, int):
+        while True:
+            self.credential_event.clear()
+            pending = 0
+            total = len(self.credential_state)
+            for result in self.credential_state.values():
+                if result != "stored":
+                    pending += 1
+            if self.credential_event.is_set():
+                continue
+            return pending, total
 
     async def update_creds(self):
         await self.credential_event.wait()
+
+    def check_task_exception(self, fut: asyncio.Task):
+        if fut.done():
+            try:
+                exc = fut.exception()
+            except asyncio.CancelledError as e:
+                exc = e
+            if exc:
+                self.log(f"Task raised exception: {str(exc)}")
+
+
+class AliceAgent(BaseAgent):
+    def __init__(self, port: int, **kwargs):
+        super().__init__("Alice", port, seed=None, **kwargs)
+        self.extra_args = ["--auto-respond-credential-offer", "--auto-store-credential"]
 
     async def set_tag_policy(self, cred_def_id, taggables):
         req_body = {"taggables": taggables}
@@ -102,27 +114,8 @@ class AliceAgent(BaseAgent):
 class FaberAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
         super().__init__("Faber", port, **kwargs)
-        self.credential_state = {}
-        self.credential_event = asyncio.Event()
         self.schema_id = None
         self.credential_definition_id = None
-
-    async def handle_credentials(self, payload):
-        cred_id = payload["credential_exchange_id"]
-        self.credential_state[cred_id] = payload["state"]
-        self.credential_event.set()
-
-    def check_received_creds(self) -> (int, int):
-        self.credential_event.clear()
-        pending = 0
-        total = len(self.credential_state)
-        for result in self.credential_state.values():
-            if result != "acked":
-                pending += 1
-        return pending, total
-
-    async def update_creds(self):
-        await self.credential_event.wait()
 
     async def publish_defs(self):
         # create a schema
@@ -151,19 +144,17 @@ class FaberAgent(BaseAgent):
         ]
         self.log(f"Credential Definition ID: {self.credential_definition_id}")
 
-    async def send_credential(self):
-        cred_attrs = {
-            "name": "Alice Smith",
-            "date": "2018-05-28",
-            "degree": "Maths",
-            "age": "24",
+    async def send_credential(self, cred_attrs: dict, comment: str = None):
+        cred_preview = {
+            "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()]
         }
         await self.admin_POST(
-            "/credential_exchange/send",
+            "/issue-credential/send",
             {
-                "credential_values": cred_attrs,
                 "connection_id": self.connection_id,
                 "credential_definition_id": self.credential_definition_id,
+                "credential_preview": cred_preview,
+                "comment": comment,
             },
         )
 
@@ -173,7 +164,12 @@ class RoutingAgent(BaseAgent):
         super().__init__("Router", port, **kwargs)
 
 
-async def main(start_port: int, show_timing: bool = False, routing: bool = False):
+async def main(
+    start_port: int,
+    show_timing: bool = False,
+    routing: bool = False,
+    issue_count: int = 300,
+):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -235,16 +231,26 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
             if routing:
                 await alice_router.reset_timing()
 
-        issue_count = 300
         batch_size = 100
 
         semaphore = asyncio.Semaphore(10)
 
-        async def send():
+        def done_send(fut: asyncio.Task):
+            semaphore.release()
+            faber.check_task_exception(fut)
+
+        async def send(index: int):
             await semaphore.acquire()
-            asyncio.ensure_future(faber.send_credential()).add_done_callback(
-                lambda fut: semaphore.release()
-            )
+            comment = f"issue test credential {index}"
+            attributes = {
+                "name": "Alice Smith",
+                "date": "2018-05-28",
+                "degree": "Maths",
+                "age": "24",
+            }
+            asyncio.ensure_future(
+                faber.send_credential(attributes, comment)
+            ).add_done_callback(done_send)
 
         recv_timer = alice.log_timer(f"Received {issue_count} credentials in ")
         recv_timer.start()
@@ -254,18 +260,23 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
         async def check_received(agent, issue_count, pb):
             reported = 0
             iter_pb = iter(pb) if pb else None
+            prev = -1
             while True:
-                pending, total = agent.check_received_creds()
-                if iter_pb and total > reported:
+                pending, total = await agent.check_received_creds()
+                complete = total - pending
+                if prev == complete:
+                    await asyncio.wait_for(agent.update_creds(), 30)
+                    continue
+                prev = complete
+                if iter_pb and complete > reported:
                     try:
-                        while next(iter_pb) < total:
+                        while next(iter_pb) < complete:
                             pass
                     except StopIteration:
                         iter_pb = None
-                reported = total
-                if total == issue_count and not pending:
+                reported = complete
+                if reported == issue_count:
                     break
-                await asyncio.wait_for(agent.update_creds(), 30)
 
         with progress() as pb:
             receive_task = None
@@ -275,14 +286,16 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
                 issue_task = asyncio.ensure_future(
                     check_received(faber, issue_count, issue_pg)
                 )
+                issue_task.add_done_callback(faber.check_task_exception)
                 receive_task = asyncio.ensure_future(
                     check_received(alice, issue_count, receive_pg)
                 )
+                receive_task.add_done_callback(alice.check_task_exception)
                 with faber.log_timer(
                     f"Done starting {issue_count} credential exchanges in "
                 ):
                     for idx in range(0, issue_count):
-                        await send()
+                        await send(idx + 1)
                         if not (idx + 1) % batch_size and idx < issue_count - 1:
                             batch_timer.reset()
 
@@ -298,11 +311,11 @@ async def main(start_port: int, show_timing: bool = False, routing: bool = False
         alice.log(f"Average time per credential: {avg:.2f}s ({1/avg:.2f}/s)")
 
         if alice.postgres:
-            await alice.collect_postgres_stats(str(issue_count) + " creds")
+            await alice.collect_postgres_stats(f"{issue_count} creds")
             for line in alice.format_postgres_stats():
                 alice.log(line)
         if faber.postgres:
-            await faber.collect_postgres_stats(str(issue_count) + " creds")
+            await faber.collect_postgres_stats(f"{issue_count} creds")
             for line in faber.format_postgres_stats():
                 faber.log(line)
 
@@ -357,6 +370,13 @@ if __name__ == "__main__":
         description="Runs an automated credential issuance performance demo."
     )
     parser.add_argument(
+        "-c",
+        "--count",
+        type=int,
+        default=300,
+        help="Set the number of credentials to issue",
+    )
+    parser.add_argument(
         "-p",
         "--port",
         type=int,
@@ -376,7 +396,7 @@ if __name__ == "__main__":
 
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, args.timing, args.routing)
+            main(args.port, args.timing, args.routing, args.count)
         )
     except KeyboardInterrupt:
         os._exit(1)

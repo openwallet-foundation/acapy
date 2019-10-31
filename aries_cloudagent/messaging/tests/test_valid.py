@@ -13,7 +13,6 @@ from ..valid import (
     INDY_SCHEMA_ID,
     INDY_VERSION,
     INT_EPOCH,
-    JWT,
     SHA256,
     UUID4
 )
@@ -214,22 +213,6 @@ class TestValid(TestCase):
         BASE64URL["validate"]("UG90YX==")
         with self.assertRaises(ValidationError):
             BASE64URL["validate"]("UG90YX+v")
-
-    def test_jwt(self):
-        non_jwts = [
-            "abcde",
-            "abcde+.abcde/.abcdef",
-            "abcdef==.abcdef==.abcdef",
-            "abcdef==..",
-        ]
-
-        for non_jwt in non_jwts:
-            with self.assertRaises(ValidationError):
-                JWT["validate"](non_jwt)
-
-        JWT["validate"]("abcdef.abcdef.abcdef")
-        JWT["validate"]("abcde-.abcde_.abcdef")
-        JWT["validate"]("abcde-.abcde_.")  # null signature algorithm
 
     def test_sha256(self):
         non_sha256s = [

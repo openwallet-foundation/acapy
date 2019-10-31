@@ -8,7 +8,14 @@ import random
 import subprocess
 from timeit import default_timer
 
-from aiohttp import web, ClientSession, ClientRequest, ClientError, ClientTimeout
+from aiohttp import (
+    web,
+    ClientSession,
+    ClientRequest,
+    ClientResponse,
+    ClientError,
+    ClientTimeout,
+)
 
 from .utils import flatten, log_json, log_msg, log_timer, output_reader
 
@@ -323,13 +330,14 @@ class DemoAgent:
                     f"to handle webhook on topic {topic}"
                 )
 
-    async def admin_request(self, method, path, data=None, text=False, params=None):
+    async def admin_request(
+        self, method, path, data=None, text=False, params=None
+    ) -> ClientResponse:
         params = {k: v for (k, v) in (params or {}).items() if v is not None}
         async with self.client_session.request(
             method, self.admin_url + path, json=data, params=params
         ) as resp:
-            if resp.status < 200 or resp.status > 299:
-                raise Exception(f"Unexpected HTTP response: {resp.status}")
+            resp.raise_for_status()
             resp_text = await resp.text()
             if not resp_text and not text:
                 return None
@@ -340,11 +348,21 @@ class DemoAgent:
                     raise Exception(f"Error decoding JSON: {resp_text}") from e
             return resp_text
 
-    async def admin_GET(self, path, text=False, params=None):
-        return await self.admin_request("GET", path, None, text, params)
+    async def admin_GET(self, path, text=False, params=None) -> ClientResponse:
+        try:
+            return await self.admin_request("GET", path, None, text, params)
+        except ClientError as e:
+            self.log(f"Error during GET {path}: {str(e)}")
+            raise
 
-    async def admin_POST(self, path, data=None, text=False, params=None):
-        return await self.admin_request("POST", path, data, text, params)
+    async def admin_POST(
+        self, path, data=None, text=False, params=None
+    ) -> ClientResponse:
+        try:
+            return await self.admin_request("POST", path, data, text, params)
+        except ClientError as e:
+            self.log(f"Error during POST {path}: {str(e)}")
+            raise
 
     async def detect_process(self):
         text = None

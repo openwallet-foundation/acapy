@@ -6,6 +6,7 @@ An attach decorator embeds content or specifies appended content.
 
 
 import json
+import re
 import uuid
 
 from typing import Mapping, Union
@@ -27,7 +28,6 @@ from ..models.base import BaseModel, BaseModelSchema
 from ..valid import (
     BASE64,
     INDY_ISO8601_DATETIME,
-    JWT,
     SHA256,
     UUIDFour,
 )
@@ -91,17 +91,46 @@ class AttachDecoratorData(BaseModel):
         return getattr(self, "sig_", None)
 
     @property
-    def signed(self) -> bytes:
-        """Accessor for signed content, None for unsigned."""
-        if getattr(self, "sig_", None):
-            return b64_to_bytes(self.sig_.split(".")[1], urlsafe=True)
-        return None
+    def signatures(self) -> int:
+        """Accessor for number of signatures."""
+        if self.sig:
+            if isinstance(self.sig, str):
+                assert re.match(
+                    r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$",
+                    self.sig
+                )
+                return 1
+            return len(self.sig["signatures"])
+        return 0
 
     @property
-    def header(self) -> Mapping:
-        """Accessor for signed header, None for unsigned."""
-        if getattr(self, "sig_", None):
-            return json.loads(b64_to_str(self.sig_.split(".")[0], urlsafe=True))
+    def signed(self) -> bytes:
+        """Accessor for signed content (payload), None for unsigned."""
+        if self.sig:
+            if self.signatures == 1:
+                return b64_to_bytes(self.sig.split(".")[1], urlsafe=True)
+            return b64_to_bytes(self.sig["payload"], urlsafe=True)
+        return None
+
+    def header(self, idx: int = 0, jose: bool = True) -> Mapping:
+        """
+        Accessor for header info at input index, default 0 or unique for singly-signed.
+
+        Args:
+            idx: index of interest, zero-based (default 0)
+            jose: True to return unprotected header attributes, False for protected only
+
+        """
+        if self.signatures == 1:
+            return json.loads(b64_to_str(self.sig.split(".")[0], urlsafe=True))
+        if self.signatures > 1:
+            headers = json.loads(b64_to_str(
+                self.sig["signatures"][idx]["protected"],
+                urlsafe=True,
+            ))
+            if jose:
+                headers.update(self.sig["signatures"][idx]["header"])
+            return headers
         return None
 
     @property
@@ -119,51 +148,90 @@ class AttachDecoratorData(BaseModel):
         """Accessor for sha256 decorator data, or None."""
         return getattr(self, "sha256_", None)
 
-    async def sign(self, from_verkey: str, wallet: BaseWallet, kid: str = None):
+    async def sign(
+        self,
+        verkeys: Union[str, Mapping[str, str]],
+        wallet: BaseWallet,
+    ):
         """
         Sign and replace base64 data value of attachment.
 
         Args:
-            from_verkey: Verkey of the signing party
+            verkeys: Verkey(s) of the signing party; specify:
+                - single verkey alone for single signature with no key identifier (kid)
+                - dict mapping single key identifier to verkey for single signature
+                - dict mapping key identifiers to verkeys for multi-signature
             wallet: The wallet to use for the signature
-            kid: optional key identifier
 
         """
+        def build_protected(verkey: str, kid: str, protect_kid: bool):
+            """Build protected header."""
+            return str_to_b64(
+                json.dumps({
+                    "alg": "EdDSA",
+                    **{"kid": k for k in [kid] if kid and protect_kid},
+                    "jwk": {
+                        "kty": "OKP",
+                        "crv": "Ed25519",
+                        "x": bytes_to_b64(
+                            b58_to_bytes(verkey),
+                            urlsafe=True,
+                            pad=False
+                        ),
+                        **{"kid": k for k in [kid] if kid},
+                    },
+                }),
+                urlsafe=True,
+                pad=False
+            )
+
         assert self.base64_
 
-        b64_header = str_to_b64(
-            json.dumps({
-                "alg": "EdDSA",
-                **{"kid": k for k in [kid] if kid},
-                "jwk": {
-                    "kty": "OKP",
-                    "crv": "Ed25519",
-                    "x": bytes_to_b64(
-                        b58_to_bytes(from_verkey),
-                        urlsafe=True,
-                        pad=False
-                    ),
-                    **{"kid": k for k in [kid] if kid},
-                },
-            }),
-            urlsafe=True,
-            pad=False
-        )
         b64_payload = unpad(set_urlsafe_b64(self.base64_, True))
-        sign_input = (b64_header + "." + b64_payload).encode("ascii")
 
-        b64_sig = bytes_to_b64(
-            await wallet.sign_message(sign_input, from_verkey=from_verkey),
-            urlsafe=True,
-            pad=False,
-        )
+        if (
+            isinstance(verkeys, str) or
+            (isinstance(verkeys, Mapping) and len(verkeys) == 1)
+        ):
+            kid = list(verkeys)[0] if isinstance(verkeys, Mapping) else None
+            verkey = verkeys[kid] if isinstance(verkeys, Mapping) else verkeys
+            b64_protected = build_protected(verkey, kid, protect_kid=True)
+            b64_sig = bytes_to_b64(
+                await wallet.sign_message(
+                    message=(b64_protected + "." + b64_payload).encode("ascii"),
+                    from_verkey=verkey
+                ),
+                urlsafe=True,
+                pad=False,
+            )
+            self.sig_ = ".".join([b64_protected, b64_payload, b64_sig])
+        else:
+            sig = {"payload": b64_payload, "signatures": []}
+            for (kid, verkey) in verkeys.items():
+                assert kid is not None
+                b64_protected = build_protected(verkey, kid, protect_kid=False)
+                b64_sig = bytes_to_b64(
+                    await wallet.sign_message(
+                        message=(b64_protected + "." + b64_payload).encode("ascii"),
+                        from_verkey=verkey
+                    ),
+                    urlsafe=True,
+                    pad=False,
+                )
+                sig["signatures"].append(
+                    {
+                        "protected": b64_protected,
+                        "header": {"kid": kid},
+                        "signature": b64_sig
+                    }
+                )
+            self.sig_ = sig
 
-        self.sig_ = ".".join([b64_header, b64_payload, b64_sig])
         self.base64_ = None
 
     async def verify(self, wallet: BaseWallet) -> bool:
         """
-        Verify the signature.
+        Verify the signature(s).
 
         Args:
             wallet: Wallet to use to verify signature
@@ -172,17 +240,32 @@ class AttachDecoratorData(BaseModel):
             True if verification succeeds else False
 
         """
-        assert self.sig_
+        assert self.sig
 
-        (b64_header, b64_payload, b64_sig) = self.sig_.split(".")
-        header = json.loads(b64_to_str(b64_header, urlsafe=True))
-        assert "jwk" in header and header["jwk"].get("kty") == "OKP"
+        if self.signatures == 1:
+            (b64_protected, b64_payload, b64_sig) = self.sig.split(".")
+            protected = json.loads(b64_to_str(b64_protected, urlsafe=True))
+            assert "jwk" in protected and protected["jwk"].get("kty") == "OKP"
 
-        sign_input = (b64_header + "." + b64_payload).encode("ascii")
-        sig = b64_to_bytes(b64_sig, urlsafe=True)
+            sign_input = (b64_protected + "." + b64_payload).encode("ascii")
+            b_sig = b64_to_bytes(b64_sig, urlsafe=True)
+            verkey = bytes_to_b58(b64_to_bytes(protected["jwk"]["x"], urlsafe=True))
 
-        verkey = bytes_to_b58(b64_to_bytes(header["jwk"]["x"], urlsafe=True))
-        return await wallet.verify_message(sign_input, sig, verkey)
+            return await wallet.verify_message(sign_input, b_sig, verkey)
+        else:
+            b64_payload = self.sig["payload"]
+            for signature in self.sig["signatures"]:
+                b64_protected = signature["protected"]
+                b64_sig = signature["signature"]
+                protected = json.loads(b64_to_str(b64_protected, urlsafe=True))
+                assert "jwk" in protected and protected["jwk"].get("kty") == "OKP"
+
+                sign_input = (b64_protected + "." + b64_payload).encode("ascii")
+                b_sig = b64_to_bytes(b64_sig, urlsafe=True)
+                verkey = bytes_to_b58(b64_to_bytes(protected["jwk"]["x"], urlsafe=True))
+                if not await wallet.verify_message(sign_input, b_sig, verkey):
+                    return False
+            return True
 
     def __eq__(self, other):
         """Equality comparator."""
@@ -212,7 +295,11 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         description="Signed content, replacing base64-encoded data",
         required=False,
         data_key="sig",
-        **JWT
+        example=(
+            "eyJhbGciOiJFZERTQSJ9."
+            "eyJhIjogIjAifQ."
+            "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+        ),
     )
     json_ = fields.Str(
         description="JSON-serialized data",
