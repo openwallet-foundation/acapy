@@ -8,8 +8,9 @@ from aiohttp_apispec import docs, request_schema
 from marshmallow import fields, Schema
 
 from ...connections.models.connection_record import ConnectionRecord
+from ...messaging.valid import UUIDFour
 from ...storage.error import StorageNotFoundError
-from ..valid import UUIDFour
+
 from .messages.menu import Menu
 from .messages.menu_request import MenuRequest
 from .messages.perform import Perform

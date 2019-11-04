@@ -1,12 +1,10 @@
 """Represents a request for an action menu."""
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import MENU_REQUEST
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.actionmenu.handlers.menu_request_handler"
-    + ".MenuRequestHandler"
-)
+from ..message_types import MENU_REQUEST, PROTOCOL_PACKAGE
+
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.menu_request_handler.MenuRequestHandler"
 
 
 class MenuRequest(AgentMessage):

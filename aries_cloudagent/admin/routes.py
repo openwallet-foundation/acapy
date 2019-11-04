@@ -4,7 +4,6 @@ from aiohttp import web
 
 from ..classloader import ClassLoader, ModuleLoadError
 
-from ..messaging.actionmenu.routes import register as register_actionmenu
 from ..messaging.credentials.routes import register as register_credentials
 from ..messaging.introduction.routes import register as register_introduction
 from ..messaging.issue_credential.v1_0.routes import (
@@ -18,8 +17,8 @@ from ..messaging.credential_definitions.routes import (
 )
 from ..messaging.basicmessage.routes import register as register_basicmessages
 from ..messaging.discovery.routes import register as register_discovery
-from ..wallet.routes import register as register_wallet
 from ..ledger.routes import register as register_ledger
+from ..wallet.routes import register as register_wallet
 
 
 async def register_module_routes(app: web.Application):
@@ -29,7 +28,6 @@ async def register_module_routes(app: web.Application):
     Eventually this should use dynamic registration based on the
     currently-selected message families.
     """
-    await register_actionmenu(app)
     await register_credentials(app)
     await register_introduction(app)
     await register_presentations(app)

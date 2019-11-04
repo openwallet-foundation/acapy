@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ...models.base import BaseModel, BaseModelSchema
+from ....messaging.models.base import BaseModel, BaseModelSchema
 
 from .menu_form_param import MenuFormParam, MenuFormParamSchema
 
@@ -49,9 +49,7 @@ class MenuFormSchema(BaseModelSchema):
         model_class = MenuForm
 
     title = fields.Str(
-        required=False,
-        description="Menu form title",
-        example="Preferences",
+        required=False, description="Menu form title", example="Preferences",
     )
     description = fields.Str(
         required=False,

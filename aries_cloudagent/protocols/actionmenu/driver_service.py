@@ -3,9 +3,8 @@
 import logging
 
 from ...connections.models.connection_record import ConnectionRecord
-
-from ..agent_message import AgentMessage
-from ..responder import BaseResponder
+from ...messaging.agent_message import AgentMessage
+from ...messaging.responder import BaseResponder
 
 from .base_service import BaseMenuService
 from .messages.menu import Menu

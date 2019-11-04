@@ -14,8 +14,8 @@ from ..ledger.provider import LedgerProvider
 from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
-from ..messaging.actionmenu.base_service import BaseMenuService
-from ..messaging.actionmenu.driver_service import DriverMenuService
+from ..protocols.actionmenu.base_service import BaseMenuService
+from ..protocols.actionmenu.driver_service import DriverMenuService
 from ..messaging.introduction.base_service import BaseIntroductionService
 from ..messaging.introduction.demo_service import DemoIntroductionService
 from ..messaging.protocol_registry import ProtocolRegistry

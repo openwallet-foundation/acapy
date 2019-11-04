@@ -4,12 +4,11 @@ from typing import Mapping
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import PERFORM
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.actionmenu.handlers.perform_handler.PerformHandler"
-)
+from ..message_types import PERFORM, PROTOCOL_PACKAGE
+
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.perform_handler.PerformHandler"
 
 
 class Perform(AgentMessage):
@@ -43,11 +42,7 @@ class PerformSchema(AgentMessageSchema):
 
         model_class = Perform
 
-    name = fields.Str(
-        required=True,
-        description="Menu option name",
-        example="Query",
-    )
+    name = fields.Str(required=True, description="Menu option name", example="Query",)
     params = fields.Dict(
         required=False,
         keys=fields.Str(example="parameter"),  # marshmallow/apispec v3.0 ignores

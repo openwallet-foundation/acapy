@@ -1,7 +1,7 @@
 from unittest import mock, TestCase
 
 from ..menu_request import MenuRequest, MenuRequestSchema
-from ...message_types import MENU_REQUEST
+from ...message_types import MENU_REQUEST, PROTOCOL_PACKAGE
 
 
 class TestMenuRequest(TestCase):
@@ -16,9 +16,7 @@ class TestMenuRequest(TestCase):
         """Test type."""
         assert self.menu_request._type == MENU_REQUEST
 
-    @mock.patch(
-        "aries_cloudagent.messaging.actionmenu.messages.menu_request.MenuRequestSchema.load"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.menu_request.MenuRequestSchema.load")
     def test_deserialize(self, mock_menu_request_schema_load):
         """
         Test deserialization.
@@ -30,9 +28,7 @@ class TestMenuRequest(TestCase):
 
         assert request is mock_menu_request_schema_load.return_value
 
-    @mock.patch(
-        "aries_cloudagent.messaging.actionmenu.messages.menu_request.MenuRequestSchema.dump"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.menu_request.MenuRequestSchema.dump")
     def test_serialize(self, mock_menu_request_schema_dump):
         """
         Test serialization.

@@ -1,9 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .. import routes as test_module
-
 from ....storage.error import StorageNotFoundError
+
+from .. import routes as test_module
 
 
 class TestActionMenuRoutes(AsyncTestCase):
@@ -177,7 +177,8 @@ class TestActionMenuRoutes(AsyncTestCase):
             res = await test_module.actionmenu_send(mock_request)
             test_module.web.json_response.assert_called_once_with({})
             mock_request.app["outbound_message_router"].assert_called_once_with(
-                mock_menu.deserialize.return_value, connection_id=mock_request.match_info["id"]
+                mock_menu.deserialize.return_value,
+                connection_id=mock_request.match_info["id"],
             )
 
     async def test_actionmenu_send_no_conn_record(self):

@@ -2,7 +2,7 @@
 
 from marshmallow import fields
 
-from ...models.base import BaseModel, BaseModelSchema
+from ....messaging.models.base import BaseModel, BaseModelSchema
 
 from .menu_form import MenuForm, MenuFormSchema
 
@@ -55,9 +55,7 @@ class MenuOptionSchema(BaseModelSchema):
         example="window_prefs",
     )
     title = fields.Str(
-        required=True,
-        description="Menu option title",
-        example="Window Preferences",
+        required=True, description="Menu option title", example="Window Preferences",
     )
     description = fields.Str(
         required=False,
@@ -69,7 +67,4 @@ class MenuOptionSchema(BaseModelSchema):
         description="Whether to show option as disabled",
         example="False",
     )
-    form = fields.Nested(
-        MenuFormSchema(),
-        required=False,
-    )
+    form = fields.Nested(MenuFormSchema(), required=False,)

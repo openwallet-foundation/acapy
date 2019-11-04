@@ -1,7 +1,7 @@
 from unittest import mock, TestCase
 
 from ..perform import Perform, PerformSchema
-from ...message_types import PERFORM
+from ...message_types import PERFORM, PROTOCOL_PACKAGE
 
 
 class TestPerform(TestCase):
@@ -20,9 +20,7 @@ class TestPerform(TestCase):
         """Test type."""
         assert self.perform._type == PERFORM
 
-    @mock.patch(
-        "aries_cloudagent.messaging.actionmenu.messages.perform.PerformSchema.load"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.perform.PerformSchema.load")
     def test_deserialize(self, mock_perform_schema_load):
         """
         Test deserialization.
@@ -34,9 +32,7 @@ class TestPerform(TestCase):
 
         assert request is mock_perform_schema_load.return_value
 
-    @mock.patch(
-        "aries_cloudagent.messaging.actionmenu.messages.perform.PerformSchema.dump"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.perform.PerformSchema.dump")
     def test_serialize(self, mock_perform_schema_dump):
         """
         Test serialization.

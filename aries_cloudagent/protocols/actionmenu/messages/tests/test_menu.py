@@ -4,7 +4,7 @@ from ..menu import Menu, MenuSchema
 from ...models.menu_form import MenuForm
 from ...models.menu_form_param import MenuFormParam
 from ...models.menu_option import MenuOption
-from ...message_types import MENU
+from ...message_types import MENU, PROTOCOL_PACKAGE
 
 
 class TestConfig:
@@ -57,7 +57,7 @@ class TestMenu(TestCase, TestConfig):
         """Test type."""
         assert self.menu._type == MENU
 
-    @mock.patch("aries_cloudagent.messaging.actionmenu.messages.menu.MenuSchema.load")
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.menu.MenuSchema.load")
     def test_deserialize(self, mock_menu_schema_load):
         """
         Test deserialization.
@@ -69,7 +69,7 @@ class TestMenu(TestCase, TestConfig):
 
         assert menu is mock_menu_schema_load.return_value
 
-    @mock.patch("aries_cloudagent.messaging.actionmenu.messages.menu.MenuSchema.dump")
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.menu.MenuSchema.dump")
     def test_serialize(self, mock_menu_schema_dump):
         """
         Test serialization.

@@ -4,13 +4,12 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import MENU
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+
+from ..message_types import MENU, PROTOCOL_PACKAGE
 from ..models.menu_option import MenuOption, MenuOptionSchema
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.actionmenu.handlers.menu_handler.MenuHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.menu_handler.MenuHandler"
 
 
 class Menu(AgentMessage):
@@ -55,11 +54,7 @@ class MenuSchema(AgentMessageSchema):
 
         model_class = Menu
 
-    title = fields.Str(
-        required=False,
-        description="Menu title",
-        example="My Menu",
-    )
+    title = fields.Str(required=False, description="Menu title", example="My Menu",)
     description = fields.Str(
         required=False,
         description="Introductory text for the menu",

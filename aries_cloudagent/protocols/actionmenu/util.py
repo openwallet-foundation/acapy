@@ -1,8 +1,9 @@
 """Action menu utility methods."""
 
 from ...config.injection_context import InjectionContext
+from ...messaging.responder import BaseResponder
 from ...storage.base import BaseStorage, StorageRecord, StorageNotFoundError
-from ..responder import BaseResponder
+
 from .messages.menu import Menu
 
 MENU_RECORD_TYPE = "connection-action-menu"
