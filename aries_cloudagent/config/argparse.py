@@ -497,6 +497,16 @@ class ProtocolGroup(ArgumentGroup):
             instances of this parameter can be specified.",
         )
         parser.add_argument(
+            "--plugin",
+            dest="external_plugins",
+            type=str,
+            action="append",
+            required=False,
+            metavar="<module>",
+            help="Load <module> as a plugin. Multiple instances of this\
+            parameter can be specified.",
+        )
+        parser.add_argument(
             "--auto-ping-connection",
             action="store_true",
             help="Automatically send a trust ping immediately after a\
@@ -526,6 +536,8 @@ class ProtocolGroup(ArgumentGroup):
         settings = {}
         if args.external_protocols:
             settings["external_protocols"] = args.external_protocols
+        if args.external_plugins:
+            settings["external_plugins"] = args.external_plugins
         if args.auto_ping_connection:
             settings["auto_ping_connection"] = True
         if args.invite_base_url:

@@ -160,3 +160,16 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_instance(
             BaseIntroductionService, DemoIntroductionService(context)
         )
+
+        # Load Plugins
+        for plugin_path in self.settings.get('external_plugins', []):
+            try:
+                external_plugin = ClassLoader.load_module(
+                    plugin_path
+                )
+                await external_plugin.setup(context)
+            except Exception as e:
+                raise ConfigError(
+                    "Failed to load external protocol module "
+                    + f"'{plugin_path}'"
+                ) from e
