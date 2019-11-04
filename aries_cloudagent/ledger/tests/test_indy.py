@@ -15,6 +15,7 @@ from aries_cloudagent.ledger.indy import (
     ClosedPoolError,
     LedgerTransactionError,
 )
+from aries_cloudagent.storage.indy import IndyStorage
 
 
 @pytest.mark.indy
@@ -202,12 +203,14 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_id")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_seq_no")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.add_record")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
     async def test_send_schema(
         self,
         mock_build_schema_req,
         mock_create_schema,
+        mock_add_record,
         mock_fetch_schema_by_seq_no,
         mock_fetch_schema_by_id,
         mock_submit,
@@ -219,7 +222,7 @@ class TestIndyLedger(AsyncTestCase):
 
         ledger = IndyLedger("name", mock_wallet)
 
-        mock_create_schema.return_value = ("schema_id", "{}")
+        mock_create_schema.return_value = ("schema_issuer_did:name:1.0", "{}")
         mock_fetch_schema_by_id.return_value = None
         mock_fetch_schema_by_seq_no.return_value = None
 
@@ -260,12 +263,14 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("indy.pool.open_pool_ledger")
     @async_mock.patch("indy.pool.close_pool_ledger")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.check_existing_schema")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.add_record")
     @async_mock.patch("indy.anoncreds.issuer_create_schema")
     @async_mock.patch("indy.ledger.build_schema_request")
     async def test_send_schema_already_exists(
         self,
         mock_build_schema_req,
         mock_create_schema,
+        mock_add_record,
         mock_check_existing,
         mock_close_pool,
         mock_open_ledger,
@@ -336,12 +341,14 @@ class TestIndyLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.add_record")
     @async_mock.patch("indy.anoncreds.issuer_create_and_store_credential_def")
     @async_mock.patch("indy.ledger.build_cred_def_request")
     async def test_send_credential_definition(
         self,
         mock_build_cred_def,
         mock_create_store_cred_def,
+        mock_add_record,
         mock_submit,
         mock_fetch_cred_def,
         mock_close,
@@ -360,7 +367,7 @@ class TestIndyLedger(AsyncTestCase):
 
         ledger = IndyLedger("name", mock_wallet)
 
-        schema_id = "schema_id"
+        schema_id = "schema_issuer_did:name:1.0"
         tag = "tag"
 
         async with ledger:
