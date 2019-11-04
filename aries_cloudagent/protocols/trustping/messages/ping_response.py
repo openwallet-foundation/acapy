@@ -4,12 +4,9 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import PING_RESPONSE
+from ..message_types import PING_RESPONSE, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = (
-    "aries_cloudagent.protocols.trustping."
-    "handlers.ping_response_handler.PingResponseHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.ping_response_handler.PingResponseHandler"
 
 
 class PingResponse(AgentMessage):

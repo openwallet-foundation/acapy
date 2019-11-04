@@ -15,7 +15,6 @@ from .messaging.presentations.message_types import (
     MESSAGE_TYPES as PRESENTATION_MESSAGES,
 )
 from .messaging.credentials.message_types import MESSAGE_TYPES as CREDENTIAL_MESSAGES
-from .messaging.routing.message_types import MESSAGE_TYPES as ROUTING_MESSAGES
 from .messaging.issue_credential.v1_0.message_types import (
     MESSAGE_TYPES as V10_ISSUE_CREDENTIAL_MESSAGES,
 )
@@ -42,7 +41,6 @@ def default_protocol_registry() -> ProtocolRegistry:
         V10_PRESENT_PROOF_MESSAGES,
         CREDENTIAL_MESSAGES,
         V10_ISSUE_CREDENTIAL_MESSAGES,
-        ROUTING_MESSAGES,
         {PROBLEM_REPORT: ProblemReport},
     )
 

@@ -3,11 +3,11 @@
 from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import CONNECTION_REQUEST
+from ..message_types import CONNECTION_REQUEST, PROTOCOL_PACKAGE
 from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
-    "aries_cloudagent.protocols.connections.handlers"
+    f"{PROTOCOL_PACKAGE}.handlers"
     ".connection_request_handler.ConnectionRequestHandler"
 )
 
@@ -28,7 +28,7 @@ class ConnectionRequest(AgentMessage):
         connection: ConnectionDetail = None,
         label: str = None,
         image_url: str = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize connection request object.

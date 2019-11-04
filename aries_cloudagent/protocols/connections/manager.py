@@ -14,7 +14,6 @@ from ...error import BaseError
 from ...ledger.base import BaseLedger
 from ...messaging.message_delivery import MessageDelivery
 from ...messaging.responder import BaseResponder
-from ...messaging.routing.manager import RoutingManager
 from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageNotFoundError
 from ...storage.record import StorageRecord
@@ -22,6 +21,8 @@ from ...wallet.base import BaseWallet, DIDInfo
 from ...wallet.crypto import create_keypair, seed_to_did
 from ...wallet.error import WalletNotFoundError
 from ...wallet.util import bytes_to_b58
+
+from ..routing.manager import RoutingManager
 
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest

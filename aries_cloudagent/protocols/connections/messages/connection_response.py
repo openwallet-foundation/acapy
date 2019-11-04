@@ -3,11 +3,11 @@
 from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import CONNECTION_RESPONSE
+from ..message_types import CONNECTION_RESPONSE, PROTOCOL_PACKAGE
 from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
-    "aries_cloudagent.protocols.connections.handlers."
+    f"{PROTOCOL_PACKAGE}.handlers."
     "connection_response_handler.ConnectionResponseHandler"
 )
 

@@ -9,11 +9,11 @@ from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 
-from ..message_types import CONNECTION_INVITATION
+from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    "aries_cloudagent.protocols.connections.handlers."
-    "connection_invitation_handler.ConnectionInvitationHandler"
+    f"{PROTOCOL_PACKAGE}.handlers"
+    ".connection_invitation_handler.ConnectionInvitationHandler"
 )
 
 

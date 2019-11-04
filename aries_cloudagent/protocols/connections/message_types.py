@@ -1,27 +1,23 @@
 """Message type identifiers for Connections."""
 
-MESSAGE_FAMILY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0"
+PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0"
 
-CONNECTION_INVITATION = f"{MESSAGE_FAMILY}/invitation"
-CONNECTION_REQUEST = f"{MESSAGE_FAMILY}/request"
-CONNECTION_RESPONSE = f"{MESSAGE_FAMILY}/response"
-PROBLEM_REPORT = f"{MESSAGE_FAMILY}/problem_report"
+CONNECTION_INVITATION = f"{PROTOCOL_URI}/invitation"
+CONNECTION_REQUEST = f"{PROTOCOL_URI}/request"
+CONNECTION_RESPONSE = f"{PROTOCOL_URI}/response"
+PROBLEM_REPORT = f"{PROTOCOL_URI}/problem_report"
+
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.connections"
 
 MESSAGE_TYPES = {
     CONNECTION_INVITATION: (
-        "aries_cloudagent.protocols.connections.messages."
-        + "connection_invitation.ConnectionInvitation"
+        f"{PROTOCOL_PACKAGE}.messages.connection_invitation.ConnectionInvitation"
     ),
     CONNECTION_REQUEST: (
-        "aries_cloudagent.protocols.connections.messages."
-        + "connection_request.ConnectionRequest"
+        f"{PROTOCOL_PACKAGE}.messages.connection_request.ConnectionRequest"
     ),
     CONNECTION_RESPONSE: (
-        "aries_cloudagent.protocols.connections.messages."
-        + "connection_response.ConnectionResponse"
+        f"{PROTOCOL_PACKAGE}.messages.connection_response.ConnectionResponse"
     ),
-    PROBLEM_REPORT: (
-        "aries_cloudagent.protocols.connections.messages."
-        + "problem_report.ProblemReport"
-    ),
+    PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
 }
