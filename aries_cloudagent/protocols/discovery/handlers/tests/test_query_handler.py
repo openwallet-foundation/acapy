@@ -1,9 +1,9 @@
 import pytest
 
-from ....base_handler import HandlerException
-from ....protocol_registry import ProtocolRegistry
-from ....request_context import RequestContext
-from ....responder import MockResponder
+from .....messaging.base_handler import HandlerException
+from .....messaging.protocol_registry import ProtocolRegistry
+from .....messaging.request_context import RequestContext
+from .....messaging.responder import MockResponder
 
 from ...handlers.query_handler import QueryHandler
 from ...messages.disclose import Disclose

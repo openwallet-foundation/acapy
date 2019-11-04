@@ -2,12 +2,11 @@
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import QUERY
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.discovery.handlers.query_handler.QueryHandler"
-)
+from ..message_types import QUERY, PROTOCOL_PACKAGE
+
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.query_handler.QueryHandler"
 
 
 class Query(AgentMessage):

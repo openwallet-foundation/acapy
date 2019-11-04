@@ -1,6 +1,7 @@
 """Basic message handler."""
 
-from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
+
 from ...connections.manager import ConnectionManager
 
 from ..messages.basicmessage import BasicMessage
@@ -43,7 +44,7 @@ class BasicMessageHandler(BaseHandler):
                 "connection_id": context.connection_record.connection_id,
                 "message_id": context.message._id,
                 "content": body,
-                "state": "received"
+                "state": "received",
             },
         )
 

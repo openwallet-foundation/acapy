@@ -1,6 +1,7 @@
 """Handler for incoming disclose messages."""
 
-from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
+
 from ..messages.disclose import Disclose
 
 

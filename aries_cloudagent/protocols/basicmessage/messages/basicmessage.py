@@ -5,16 +5,13 @@ from typing import Union
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ...util import datetime_now, datetime_to_str
-from ...valid import INDY_ISO8601_DATETIME
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from ....messaging.util import datetime_now, datetime_to_str
+from ....messaging.valid import INDY_ISO8601_DATETIME
 
-from ..message_types import BASIC_MESSAGE
+from ..message_types import BASIC_MESSAGE, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.basicmessage."
-    + "handlers.basicmessage_handler.BasicMessageHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.basicmessage_handler.BasicMessageHandler"
 
 
 class BasicMessage(AgentMessage):
@@ -33,7 +30,7 @@ class BasicMessage(AgentMessage):
         sent_time: Union[str, datetime] = None,
         content: str = None,
         localization: str = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize basic message object.
@@ -61,18 +58,11 @@ class BasicMessageSchema(AgentMessageSchema):
         model_class = BasicMessage
 
     localization = fields.Str(
-        required=False,
-        description="Localization",
-        example="en-CA",
-        data_key="l10n",
+        required=False, description="Localization", example="en-CA", data_key="l10n",
     )
     sent_time = fields.Str(
         required=False,
         description="Time message was sent, ISO8601 with space date/time separator",
-        **INDY_ISO8601_DATETIME
+        **INDY_ISO8601_DATETIME,
     )
-    content = fields.Str(
-        required=True,
-        description="Message content",
-        example="Hello",
-    )
+    content = fields.Str(required=True, description="Message content", example="Hello",)

@@ -5,12 +5,11 @@ from typing import Mapping
 from marshmallow import fields, Schema
 from marshmallow.validate import OneOf
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import DISCLOSE
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.discovery.handlers.disclose_handler.DiscloseHandler"
-)
+from ..message_types import DISCLOSE, PROTOCOL_PACKAGE
+
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.disclose_handler.DiscloseHandler"
 
 
 class Disclose(AgentMessage):

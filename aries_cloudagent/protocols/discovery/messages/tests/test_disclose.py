@@ -1,5 +1,5 @@
 from ..disclose import Disclose
-from ...message_types import DISCLOSE
+from ...message_types import DISCLOSE, PROTOCOL_PACKAGE
 
 from unittest import mock, TestCase
 
@@ -20,9 +20,7 @@ class TestDisclose(TestCase):
         disclose = Disclose(protocols=self.test_protocols)
         assert disclose._type == DISCLOSE
 
-    @mock.patch(
-        "aries_cloudagent.messaging.discovery.messages.disclose.DiscloseSchema.load"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.disclose.DiscloseSchema.load")
     def test_deserialize(self, mock_disclose_schema_load):
         obj = {"obj": "obj"}
 
@@ -31,9 +29,7 @@ class TestDisclose(TestCase):
 
         assert disclose is mock_disclose_schema_load.return_value
 
-    @mock.patch(
-        "aries_cloudagent.messaging.discovery.messages.disclose.DiscloseSchema.dump"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.disclose.DiscloseSchema.dump")
     def test_serialize(self, mock_disclose_schema_dump):
         disclose = Disclose(protocols=self.test_protocols)
 

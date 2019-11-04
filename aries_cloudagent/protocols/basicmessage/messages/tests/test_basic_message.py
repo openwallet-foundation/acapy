@@ -3,7 +3,7 @@ from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
 from ..basicmessage import BasicMessage
-from ...message_types import BASIC_MESSAGE
+from ...message_types import BASIC_MESSAGE, PROTOCOL_PACKAGE
 
 
 class TestBasicMessage(TestCase):
@@ -20,10 +20,7 @@ class TestBasicMessage(TestCase):
         """Test type."""
         assert self.test_message._type == BASIC_MESSAGE
 
-    @mock.patch(
-        "aries_cloudagent.messaging.basicmessage.messages."
-        + "basicmessage.BasicMessageSchema.load"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.basicmessage.BasicMessageSchema.load")
     def test_deserialize(self, mock_basic_message_schema_load):
         """
         Test deserialization.
@@ -35,10 +32,7 @@ class TestBasicMessage(TestCase):
 
         assert msg is mock_basic_message_schema_load.return_value
 
-    @mock.patch(
-        "aries_cloudagent.messaging.basicmessage.messages."
-        + "basicmessage.BasicMessageSchema.dump"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.basicmessage.BasicMessageSchema.dump")
     def test_serialize(self, mock_basic_message_schema_load):
         """
         Test serialization.

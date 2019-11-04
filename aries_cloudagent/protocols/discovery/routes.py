@@ -5,7 +5,7 @@ from aiohttp_apispec import docs, response_schema
 
 from marshmallow import fields, Schema
 
-from ..protocol_registry import ProtocolRegistry
+from ...messaging.protocol_registry import ProtocolRegistry
 
 
 class QueryResultSchema(Schema):
