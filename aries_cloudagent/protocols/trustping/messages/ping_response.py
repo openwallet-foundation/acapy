@@ -2,12 +2,13 @@
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+
 from ..message_types import PING_RESPONSE
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.trustping."
-    + "handlers.ping_response_handler.PingResponseHandler"
+    "aries_cloudagent.protocols.trustping."
+    "handlers.ping_response_handler.PingResponseHandler"
 )
 
 

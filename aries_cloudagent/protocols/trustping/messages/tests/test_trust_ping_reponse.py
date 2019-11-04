@@ -2,40 +2,41 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from ..ping import Ping
-from ...message_types import PING
+from ..ping_response import PingResponse
+from ...message_types import PING_RESPONSE
 
 
-class TestPing(TestCase):
+class TestPingResponse(TestCase):
     def setUp(self):
         self.test_comment = "hello"
-        self.test_response_requested = True
-        self.test_ping = Ping(
-            comment=self.test_comment, response_requested=self.test_response_requested
-        )
+
+        self.test_ping = PingResponse(comment=self.test_comment)
 
     def test_init(self):
         """Test initialization."""
         assert self.test_ping.comment == self.test_comment
-        assert self.test_ping.response_requested == self.test_response_requested
 
     def test_type(self):
         """Test type."""
-        assert self.test_ping._type == PING
+        assert self.test_ping._type == PING_RESPONSE
 
-    @mock.patch("aries_cloudagent.messaging.trustping.messages.ping.PingSchema.load")
+    @mock.patch(
+        "aries_cloudagent.protocols.trustping.messages.ping_response.PingResponseSchema.load"
+    )
     def test_deserialize(self, mock_ping_schema_load):
         """
         Test deserialization.
         """
         obj = {"obj": "obj"}
 
-        msg = Ping.deserialize(obj)
+        msg = PingResponse.deserialize(obj)
         mock_ping_schema_load.assert_called_once_with(obj)
 
         assert msg is mock_ping_schema_load.return_value
 
-    @mock.patch("aries_cloudagent.messaging.trustping.messages.ping.PingSchema.dump")
+    @mock.patch(
+        "aries_cloudagent.protocols.trustping.messages.ping_response.PingResponseSchema.dump"
+    )
     def test_serialize(self, mock_ping_schema_load):
         """
         Test serialization.
@@ -46,11 +47,11 @@ class TestPing(TestCase):
         assert msg_dict is mock_ping_schema_load.return_value
 
 
-class TestPingSchema(AsyncTestCase):
-    """Test ping schema."""
+class TestPingResponseSchema(AsyncTestCase):
+    """Test ping response schema."""
 
     async def test_make_model(self):
-        ping = Ping(comment="hello", response_requested=True)
+        ping = PingResponse(comment="hello")
         data = ping.serialize()
-        model_instance = Ping.deserialize(data)
+        model_instance = PingResponse.deserialize(data)
         assert type(model_instance) is type(ping)

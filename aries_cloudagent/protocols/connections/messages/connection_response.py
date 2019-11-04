@@ -7,7 +7,7 @@ from ..message_types import CONNECTION_RESPONSE
 from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.connections.handlers."
+    "aries_cloudagent.protocols.connections.handlers."
     "connection_response_handler.ConnectionResponseHandler"
 )
 

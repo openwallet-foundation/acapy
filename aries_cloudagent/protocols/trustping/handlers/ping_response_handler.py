@@ -1,6 +1,7 @@
 """Ping response handler."""
 
-from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
+
 from ...connections.manager import ConnectionManager
 
 from ..messages.ping_response import PingResponse

@@ -6,7 +6,7 @@ PING = f"{MESSAGE_FAMILY}/ping"
 PING_RESPONSE = f"{MESSAGE_FAMILY}/ping_response"
 
 MESSAGE_TYPES = {
-    PING: "aries_cloudagent.messaging.trustping." + "messages.ping.Ping",
-    PING_RESPONSE: "aries_cloudagent.messaging.trustping."
-    + "messages.ping_response.PingResponse",
+    PING: "aries_cloudagent.protocols.trustping.messages.ping.Ping",
+    PING_RESPONSE: "aries_cloudagent.protocols.trustping."
+    "messages.ping_response.PingResponse",
 }

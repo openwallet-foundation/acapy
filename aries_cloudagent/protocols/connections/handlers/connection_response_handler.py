@@ -1,7 +1,7 @@
 """Connection response handler."""
 
 from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
-from ....messaging.trustping.messages.ping import Ping
+from ....protocols.trustping.messages.ping import Ping
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_response import ConnectionResponse
