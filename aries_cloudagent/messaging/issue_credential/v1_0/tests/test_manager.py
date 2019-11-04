@@ -9,11 +9,11 @@ from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 
 from ..manager import CredentialManager, CredentialManagerError
+from ..messages.credential_ack import CredentialAck
 from ..messages.credential_issue import CredentialIssue
 from ..messages.credential_offer import CredentialOffer
 from ..messages.credential_proposal import CredentialProposal
 from ..messages.credential_request import CredentialRequest
-from ..messages.credential_stored import CredentialStored
 from ..messages.inner.credential_preview import CredentialPreview, CredAttrSpec
 from ..models.credential_exchange import V10CredentialExchange
 
@@ -538,7 +538,7 @@ class TestCredentialManager(AsyncTestCase):
             CredentialPreview, "deserialize", autospec=True
         ) as mock_preview_deserialize:
 
-            ret_exchange, ret_cred_stored = await self.manager.store_credential(
+            ret_exchange, ret_cred_ack = await self.manager.store_credential(
                 stored_exchange
             )
 
@@ -557,10 +557,10 @@ class TestCredentialManager(AsyncTestCase):
 
             assert ret_exchange.credential_id == cred_id
             assert ret_exchange.credential == stored_cred
-            assert ret_exchange.state == V10CredentialExchange.STATE_STORED
-            assert ret_cred_stored._thread_id == thread_id
+            assert ret_exchange.state == V10CredentialExchange.STATE_ACKED
+            assert ret_cred_ack._thread_id == thread_id
 
-    async def test_credential_stored(self):
+    async def test_credential_ack(self):
         connection_id = "connection-id"
         stored_exchange = V10CredentialExchange(
             connection_id=connection_id,
@@ -568,8 +568,8 @@ class TestCredentialManager(AsyncTestCase):
             role=V10CredentialExchange.ROLE_ISSUER,
         )
 
-        stored = CredentialStored()
-        self.context.message = stored
+        ack = CredentialAck()
+        self.context.message = ack
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = connection_id
 
@@ -582,12 +582,12 @@ class TestCredentialManager(AsyncTestCase):
             "retrieve_by_connection_and_thread",
             async_mock.CoroutineMock(return_value=stored_exchange),
         ) as retrieve_ex:
-            ret_exchange = await self.manager.credential_stored()
+            ret_exchange = await self.manager.receive_credential_ack()
 
             retrieve_ex.assert_called_once_with(
-                self.context, connection_id, stored._thread_id
+                self.context, connection_id, ack._thread_id
             )
             save_ex.assert_called_once()
 
-            assert ret_exchange.state == V10CredentialExchange.STATE_STORED
+            assert ret_exchange.state == V10CredentialExchange.STATE_ACKED
             delete_ex.assert_called_once()

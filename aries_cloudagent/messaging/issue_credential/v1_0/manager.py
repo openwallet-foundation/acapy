@@ -504,7 +504,7 @@ class CredentialManager:
 
     async def store_credential(
         self, credential_exchange_record: V10CredentialExchange
-    ) -> Tuple[V10CredentialExchange, CredentialStored]:
+    ) -> Tuple[V10CredentialExchange, CredentialAck]:
         """
         Store a credential in holder wallet; send ack to issuer.
 
@@ -553,7 +553,7 @@ class CredentialManager:
         await credential_exchange_record.delete_record(self.context)
         return (credential_exchange_record, credential_ack_message)
 
-    async def receive_credential_ack(self):
+    async def receive_credential_ack(self) -> V10CredentialExchange:
         """
         Receive credential ack from holder.
 
@@ -567,7 +567,7 @@ class CredentialManager:
         ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
             self.context,
             self.context.connection_record.connection_id,
-            credential_stored_message._thread_id,
+            credential_ack_message._thread_id,
         )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ACKED
