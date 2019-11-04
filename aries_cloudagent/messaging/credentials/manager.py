@@ -4,12 +4,11 @@ import json
 import logging
 
 from ...config.injection_context import InjectionContext
+from ...connections.models.connection_record import ConnectionRecord
 from ...error import BaseError
 from ...holder.base import BaseHolder
 from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
-
-from ..connections.models.connection_record import ConnectionRecord
 
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_stored import CredentialStored

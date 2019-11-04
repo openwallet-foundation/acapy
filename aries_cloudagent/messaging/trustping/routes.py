@@ -3,9 +3,10 @@
 from aiohttp import web
 from aiohttp_apispec import docs
 
-from ..connections.models.connection_record import ConnectionRecord
-from .messages.ping import Ping
+from ...connections.models.connection_record import ConnectionRecord
 from ...storage.error import StorageNotFoundError
+
+from .messages.ping import Ping
 
 
 @docs(tags=["trustping"], summary="Send a trust ping to a connection")

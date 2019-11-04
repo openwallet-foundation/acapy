@@ -3,8 +3,10 @@
 from abc import ABC, abstractmethod
 
 from ...config.injection_context import InjectionContext
+from ...connections.models.connection_record import ConnectionRecord
+
 from ..agent_message import AgentMessage
-from ..connections.models.connection_record import ConnectionRecord
+
 from .messages.menu import Menu
 
 

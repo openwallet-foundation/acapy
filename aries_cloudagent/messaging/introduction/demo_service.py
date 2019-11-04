@@ -3,12 +3,13 @@
 import json
 import logging
 
+from ...connections.models.connection_record import ConnectionRecord
+from ...storage.base import BaseStorage, StorageRecord, StorageNotFoundError
+
 from .base_service import BaseIntroductionService, IntroductionError
-from ..connections.models.connection_record import ConnectionRecord
 from .messages.forward_invitation import ForwardInvitation
 from .messages.invitation import Invitation
 from .messages.invitation_request import InvitationRequest
-from ...storage.base import BaseStorage, StorageRecord, StorageNotFoundError
 
 LOGGER = logging.getLogger(__name__)
 

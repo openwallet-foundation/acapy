@@ -7,7 +7,7 @@ from .messaging.actionmenu.message_types import (
     MESSAGE_TYPES as ACTIONMENU_MESSAGES,
 )
 from .messaging.basicmessage.message_types import MESSAGE_TYPES as BASICMESSAGE_MESSAGES
-from .messaging.connections.message_types import MESSAGE_TYPES as CONNECTION_MESSAGES
+from .protocols.connections.message_types import MESSAGE_TYPES as CONNECTION_MESSAGES
 from .messaging.discovery.message_types import MESSAGE_TYPES as DISCOVERY_MESSAGES
 from .messaging.introduction.message_types import MESSAGE_TYPES as INTRODUCTION_MESSAGES
 from .messaging.presentations.message_types import (

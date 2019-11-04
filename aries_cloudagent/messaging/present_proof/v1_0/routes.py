@@ -7,12 +7,14 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import Schema, fields
 
+from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
 from ....storage.error import StorageNotFoundError
-from ...connections.models.connection_record import ConnectionRecord
+
 from ...decorators.attach_decorator import AttachDecorator
 from ...valid import (INDY_CRED_DEF_ID, INDY_DID, INDY_PREDICATE,
                       INDY_SCHEMA_ID, INDY_VERSION, INT_EPOCH, UUIDFour)
+
 from .manager import PresentationManager
 from .messages.inner.presentation_preview import (PresentationPreview,
                                                   PresentationPreviewSchema)

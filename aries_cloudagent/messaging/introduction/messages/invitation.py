@@ -2,12 +2,15 @@
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ...connections.messages.connection_invitation import (
+from ....protocols.connections.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
+
+from ...agent_message import AgentMessage, AgentMessageSchema
+
 from ..message_types import INVITATION
+
 
 HANDLER_CLASS = (
     "aries_cloudagent.messaging.introduction.handlers."
@@ -48,10 +51,7 @@ class InvitationSchema(AgentMessageSchema):
 
         model_class = Invitation
 
-    invitation = fields.Nested(
-        ConnectionInvitationSchema(),
-        required=True,
-    )
+    invitation = fields.Nested(ConnectionInvitationSchema(), required=True,)
     message = fields.Str(
         required=False,
         description="Comments on the introduction",

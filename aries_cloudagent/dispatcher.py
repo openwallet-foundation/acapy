@@ -12,7 +12,7 @@ from typing import Coroutine, Union
 from .admin.base_server import BaseAdminServer
 from .config.injection_context import InjectionContext
 from .messaging.agent_message import AgentMessage
-from .messaging.connections.models.connection_record import ConnectionRecord
+from .connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
 from .messaging.models.base import BaseModelError

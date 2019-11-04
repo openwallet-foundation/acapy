@@ -6,13 +6,13 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from .. import dispatcher as test_module
 from ..config.injection_context import InjectionContext
 from ..messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..messaging.connections.models.connection_record import ConnectionRecord
 from ..messaging.error import MessageParseError
 from ..messaging.message_delivery import MessageDelivery
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.problem_report.message import ProblemReport
 from ..messaging.protocol_registry import ProtocolRegistry
 from ..messaging.serializer import MessageSerializer
+from ..connections.models.connection_record import ConnectionRecord
 
 
 def make_context() -> InjectionContext:

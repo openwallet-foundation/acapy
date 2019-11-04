@@ -7,8 +7,8 @@ from aiohttp_apispec import docs, request_schema
 
 from marshmallow import fields, Schema
 
+from ...connections.models.connection_record import ConnectionRecord
 from ...storage.error import StorageNotFoundError
-from ..connections.models.connection_record import ConnectionRecord
 from ..valid import UUIDFour
 from .messages.menu import Menu
 from .messages.menu_request import MenuRequest
@@ -34,11 +34,7 @@ class PerformRequestSchema(Schema):
 class MenuJsonSchema(Schema):
     """Matches MenuSchema but without the inherited AgentMessage properties."""
 
-    title = fields.Str(
-        required=False,
-        description="Menu title",
-        example="My Menu",
-    )
+    title = fields.Str(required=False, description="Menu title", example="My Menu",)
     description = fields.Str(
         required=False,
         description="Introductory text for the menu",
@@ -60,9 +56,7 @@ class SendMenuSchema(Schema):
     """Request schema for sending a menu to a connection."""
 
     menu = fields.Nested(
-        MenuJsonSchema(),
-        required=True,
-        description="Menu to send to connection",
+        MenuJsonSchema(), required=True, description="Menu to send to connection",
     )
 
 

@@ -2,12 +2,15 @@
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ...connections.messages.connection_invitation import (
+from ....protocols.connections.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
+
+from ...agent_message import AgentMessage, AgentMessageSchema
+
 from ..message_types import FORWARD_INVITATION
+
 
 HANDLER_CLASS = (
     "aries_cloudagent.messaging.introduction.handlers."
@@ -48,10 +51,7 @@ class ForwardInvitationSchema(AgentMessageSchema):
 
         model_class = ForwardInvitation
 
-    invitation = fields.Nested(
-        ConnectionInvitationSchema(),
-        required=True,
-    )
+    invitation = fields.Nested(ConnectionInvitationSchema(), required=True,)
     message = fields.Str(
         required=False,
         allow_none=True,

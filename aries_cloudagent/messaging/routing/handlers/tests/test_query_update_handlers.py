@@ -1,10 +1,10 @@
 import pytest
 
+from .....connections.models.connection_record import ConnectionRecord
 from .....storage.base import BaseStorage
 from .....storage.basic import BasicStorage
 
 from ....base_handler import HandlerException
-from ....connections.models.connection_record import ConnectionRecord
 from ....message_delivery import MessageDelivery
 from ....request_context import RequestContext
 from ....responder import MockResponder

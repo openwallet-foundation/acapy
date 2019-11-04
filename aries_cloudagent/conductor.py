@@ -23,8 +23,8 @@ from .config.ledger import ledger_config
 from .config.logging import LoggingConfigurator
 from .config.wallet import wallet_config
 from .dispatcher import Dispatcher
-from .messaging.connections.manager import ConnectionManager, ConnectionManagerError
-from .messaging.connections.models.connection_record import ConnectionRecord
+from .protocols.connections.manager import ConnectionManager, ConnectionManagerError
+from .connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError, MessagePrepareError
 from .messaging.outbound_message import OutboundMessage
 from .messaging.responder import BaseResponder

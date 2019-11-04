@@ -1,7 +1,10 @@
 from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
-from ....connections.messages.connection_invitation import ConnectionInvitation
+from .....protocols.connections.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+
 from ..invitation import Invitation
 from ...message_types import INVITATION
 

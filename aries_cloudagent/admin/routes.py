@@ -3,7 +3,7 @@
 from aiohttp import web
 
 from ..messaging.actionmenu.routes import register as register_actionmenu
-from ..messaging.connections.routes import register as register_connections
+from ..protocols.connections.routes import register as register_connections
 from ..messaging.credentials.routes import register as register_credentials
 from ..messaging.introduction.routes import register as register_introduction
 from ..messaging.issue_credential.v1_0.routes import (

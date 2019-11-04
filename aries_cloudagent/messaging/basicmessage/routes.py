@@ -5,10 +5,9 @@ from aiohttp_apispec import docs, request_schema
 
 from marshmallow import fields, Schema
 
+from ...connections.models.connection_record import ConnectionRecord
+from ...protocols.connections.manager import ConnectionManager
 from ...storage.error import StorageNotFoundError
-
-from ..connections.manager import ConnectionManager
-from ..connections.models.connection_record import ConnectionRecord
 
 from .messages.basicmessage import BasicMessage
 
@@ -16,10 +15,7 @@ from .messages.basicmessage import BasicMessage
 class SendMessageSchema(Schema):
     """Request schema for sending a message."""
 
-    content = fields.Str(
-        description="Message content",
-        example="Hello"
-    )
+    content = fields.Str(description="Message content", example="Hello")
 
 
 @docs(tags=["basicmessage"], summary="Send a basic message to a connection")

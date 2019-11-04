@@ -2,8 +2,9 @@
 
 import logging
 
+from ...connections.models.connection_record import ConnectionRecord
+
 from ..agent_message import AgentMessage
-from ..connections.models.connection_record import ConnectionRecord
 from ..responder import BaseResponder
 
 from .base_service import BaseMenuService

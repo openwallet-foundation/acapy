@@ -1,9 +1,13 @@
 from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
-from ....connections.messages.connection_invitation import ConnectionInvitation
-from ..forward_invitation import ForwardInvitation
+from .....protocols.connections.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+
 from ...message_types import FORWARD_INVITATION
+
+from ..forward_invitation import ForwardInvitation
 
 
 class TestConfig:
