@@ -228,8 +228,10 @@ class Conductor:
         tasks = []
         if self.admin_server:
             tasks.append(self.admin_server.stop())
-        tasks.append(self.inbound_transport_manager.stop())
-        tasks.append(self.outbound_transport_manager.stop())
+        if self.inbound_transport_manager:
+            tasks.append(self.inbound_transport_manager.stop())
+        if self.outbound_transport_manager:
+            tasks.append(self.outbound_transport_manager.stop())
         await asyncio.wait_for(asyncio.gather(*tasks), timeout)
 
     async def register_socket(
