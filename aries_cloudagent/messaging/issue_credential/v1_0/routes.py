@@ -7,7 +7,7 @@ from marshmallow import fields, Schema
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
 from ....storage.error import StorageNotFoundError
-from ....messaging.problem_report.message import ProblemReport
+from ....protocols.problem_report.message import ProblemReport
 
 from ...valid import INDY_CRED_DEF_ID, UUIDFour
 

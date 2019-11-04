@@ -17,7 +17,7 @@ from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
 from .messaging.models.base import BaseModelError
 from .messaging.outbound_message import OutboundMessage
-from .messaging.problem_report.message import ProblemReport
+from .protocols.problem_report.message import ProblemReport
 from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder

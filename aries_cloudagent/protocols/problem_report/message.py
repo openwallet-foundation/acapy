@@ -4,11 +4,11 @@ from typing import Mapping, Sequence
 
 from marshmallow import fields, validate
 
-from ..agent_message import AgentMessage, AgentMessageSchema
+from ...messaging.agent_message import AgentMessage, AgentMessageSchema
 
+from .message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
-MESSAGE_TYPE = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/notification/1.0/problem-report"
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handler.ProblemReportHandler"
 
 
 class ProblemReport(AgentMessage):
@@ -18,7 +18,7 @@ class ProblemReport(AgentMessage):
         """Problem report metadata."""
 
         handler_class = HANDLER_CLASS
-        message_type = MESSAGE_TYPE
+        message_type = PROBLEM_REPORT
         schema_class = "ProblemReportSchema"
 
     def __init__(
@@ -36,7 +36,7 @@ class ProblemReport(AgentMessage):
         time_noticed: str = None,
         tracking_uri: str = None,
         escalation_uri: str = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize a ProblemReport message instance.
@@ -85,10 +85,7 @@ class ProblemReportSchema(AgentMessageSchema):
         example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/error-codes",
     )
     locale = fields.Str(
-        data_key="@locale",
-        required=False,
-        description="Locale",
-        example="en-US",
+        data_key="@locale", required=False, description="Locale", example="en-US",
     )
     explain_ltxt = fields.Str(
         data_key="explain-ltxt",
@@ -122,12 +119,11 @@ class ProblemReportSchema(AgentMessageSchema):
     fix_hint_ltxt = fields.Dict(
         keys=fields.Str(description="Locale", example="en-US"),
         values=fields.Str(
-            description="Localized message",
-            example="Synchronize time to NTP"
+            description="Localized message", example="Synchronize time to NTP"
         ),
         data_key="fix-hint-ltxt",
         required=False,
-        description="Human-readable localized suggestions how to fix problem"
+        description="Human-readable localized suggestions how to fix problem",
     )
     impact = fields.Str(
         required=False,
@@ -139,9 +135,7 @@ class ProblemReportSchema(AgentMessageSchema):
         required=False,
         description="Where the error occurred, from reporter perspective",
         example="you - agency",
-        validate=validate.Regexp(
-            r"(you)|(me)|(other) - .+"
-        ),
+        validate=validate.Regexp(r"(you)|(me)|(other) - .+"),
     )
     time_noticed = fields.Str(
         data_key="time-noticed",

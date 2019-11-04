@@ -11,7 +11,7 @@ from ...connections.models.connection_record import ConnectionRecord
 from ...holder.base import BaseHolder
 from ...storage.error import StorageNotFoundError
 from ...wallet.error import WalletNotFoundError
-from ...messaging.problem_report.message import ProblemReport
+from ...protocols.problem_report.message import ProblemReport
 
 from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID, INDY_SCHEMA_ID
 

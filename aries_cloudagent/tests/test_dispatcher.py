@@ -10,7 +10,7 @@ from ..messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..messaging.error import MessageParseError
 from ..messaging.message_delivery import MessageDelivery
 from ..messaging.outbound_message import OutboundMessage
-from ..messaging.problem_report.message import ProblemReport
+from ..protocols.problem_report.message import ProblemReport
 from ..messaging.protocol_registry import ProtocolRegistry
 from ..messaging.serializer import MessageSerializer
 

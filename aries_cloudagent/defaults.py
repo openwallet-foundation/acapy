@@ -22,11 +22,6 @@ from .messaging.present_proof.v1_0.message_types import (
     MESSAGE_TYPES as V10_PRESENT_PROOF_MESSAGES,
 )
 
-from .messaging.problem_report.message import (
-    MESSAGE_TYPE as PROBLEM_REPORT,
-    ProblemReport,
-)
-
 
 def default_protocol_registry() -> ProtocolRegistry:
     """Protocol registry for default message types."""
@@ -41,7 +36,6 @@ def default_protocol_registry() -> ProtocolRegistry:
         V10_PRESENT_PROOF_MESSAGES,
         CREDENTIAL_MESSAGES,
         V10_ISSUE_CREDENTIAL_MESSAGES,
-        {PROBLEM_REPORT: ProblemReport},
     )
 
     registry.register_controllers(ACTIONMENU_CONTROLLERS)
