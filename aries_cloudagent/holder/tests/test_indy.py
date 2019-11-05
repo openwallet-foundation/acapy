@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -10,9 +12,7 @@ from aries_cloudagent.storage.error import StorageError
 from aries_cloudagent.storage.record import StorageRecord
 from aries_cloudagent.wallet.indy import IndyWallet
 
-import pytest
-
-from ...messaging.issue_credential.v1_0.messages.inner.credential_preview import (
+from ...protocols.issue_credential.v1_0.messages.inner.credential_preview import (
     CredentialPreview,
 )
 
