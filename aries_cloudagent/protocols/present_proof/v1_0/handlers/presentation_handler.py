@@ -1,11 +1,11 @@
 """Aries#0037 v1.0 presentation handler."""
 
 
-from ....base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
-    RequestContext
+    RequestContext,
 )
 
 from ..manager import PresentationManager
@@ -25,9 +25,7 @@ class PresentationHandler(BaseHandler):
         """
         self._logger.debug(f"PresentationHandler called with context {context}")
         assert isinstance(context.message, Presentation)
-        self._logger.info(
-            f"Received presentation: {context.message.indy_proof(0)}"
-        )
+        self._logger.info(f"Received presentation: {context.message.indy_proof(0)}")
 
         if not context.connection_ready:
             raise HandlerException("No connection established for presentation request")

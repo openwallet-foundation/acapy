@@ -1,15 +1,17 @@
+import json
 from datetime import datetime, timezone
 from unittest import TestCase
 
-import json
-
-from ......messaging.util import str_to_datetime, str_to_epoch
 from ......messaging.decorators.attach_decorator import AttachDecorator
+from ......messaging.util import str_to_datetime, str_to_epoch
+
 from ...message_types import ATTACH_DECO_IDS, PRESENTATION_PREVIEW, PRESENTATION
+
 from ..presentation import Presentation, PresentationSchema
 
 
-INDY_PROOF = json.loads("""{
+INDY_PROOF = json.loads(
+    """{
     "proof": {
         "proofs": [
             {
@@ -1652,17 +1654,18 @@ INDY_PROOF = json.loads("""{
             "timestamp": null
         }
     ]
-}""")
+}"""
+)
 
 PRES = Presentation(
     comment="Test",
     presentations_attach=[
         AttachDecorator.from_indy_dict(
-            indy_dict=INDY_PROOF,
-            ident=ATTACH_DECO_IDS[PRESENTATION],
+            indy_dict=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION],
         )
-    ]
+    ],
 )
+
 
 class TestPresentation(TestCase):
     """Presentation tests."""
@@ -1678,16 +1681,17 @@ class TestPresentation(TestCase):
 
     def test_deserialize(self):
         """Test deserialization."""
-        dump = json.dumps({
-            "@type": PRESENTATION,
-            "comment": "Hello World",
-            "presentations~attach": [
-                AttachDecorator.from_indy_dict(
-                    indy_dict=INDY_PROOF,
-                    ident=ATTACH_DECO_IDS[PRESENTATION],
-                ).serialize()
-            ]
-        })
+        dump = json.dumps(
+            {
+                "@type": PRESENTATION,
+                "comment": "Hello World",
+                "presentations~attach": [
+                    AttachDecorator.from_indy_dict(
+                        indy_dict=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION],
+                    ).serialize()
+                ],
+            }
+        )
 
         presentation = Presentation.deserialize(dump)
         assert type(presentation) == Presentation
@@ -1701,11 +1705,10 @@ class TestPresentation(TestCase):
             "@type": PRESENTATION,
             "presentations~attach": [
                 AttachDecorator.from_indy_dict(
-                    indy_dict=INDY_PROOF,
-                    ident=ATTACH_DECO_IDS[PRESENTATION],
+                    indy_dict=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION],
                 ).serialize()
             ],
-            "comment": "Test"
+            "comment": "Test",
         }
 
 
@@ -1715,7 +1718,7 @@ class TestPresentationSchema(TestCase):
     def test_make_model(self):
         """Test making model."""
         pres_dict = PRES.serialize()
-        '''
+        """
         Looks like: {
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/presentation",
             "@id": "f49773e3-bd56-4868-a5f1-456d1e6d1a16",
@@ -1729,7 +1732,7 @@ class TestPresentationSchema(TestCase):
                 }
             ]
         }
-        '''
+        """
 
         model_instance = PRES.deserialize(pres_dict)
         assert isinstance(model_instance, Presentation)

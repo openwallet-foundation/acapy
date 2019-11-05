@@ -10,10 +10,11 @@ from asynctest import mock as async_mock
 import pytest
 
 from .......holder.indy import IndyHolder
-from .......messaging.util import str_to_datetime, str_to_epoch
-from ......util import canon
+from .......messaging.util import canon, str_to_datetime, str_to_epoch
+
 from ....message_types import PRESENTATION_PREVIEW
 from ....util.indy import Predicate
+
 from ..presentation_preview import (
     PresAttrSpec,
     PresPredSpec,

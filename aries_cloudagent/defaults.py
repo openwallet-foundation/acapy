@@ -1,19 +1,12 @@
 """Sane defaults for known message definitions."""
 
 from .classloader import ClassLoader, ModuleLoadError
-
 from .messaging.protocol_registry import ProtocolRegistry
-
-from .messaging.present_proof.v1_0.message_types import (
-    MESSAGE_TYPES as V10_PRESENT_PROOF_MESSAGES,
-)
 
 
 def default_protocol_registry() -> ProtocolRegistry:
     """Protocol registry for default message types."""
     registry = ProtocolRegistry()
-
-    registry.register_message_types(V10_PRESENT_PROOF_MESSAGES,)
 
     packages = ClassLoader.scan_subpackages("aries_cloudagent.protocols")
     for pkg in packages:

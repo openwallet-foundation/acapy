@@ -9,10 +9,11 @@ from typing import Mapping, Sequence
 from marshmallow import fields, validate
 
 from ......ledger.indy import IndyLedger
+from ......messaging.models.base import BaseModel, BaseModelSchema
+from ......messaging.util import canon
+from ......messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
 from ......wallet.util import b64_to_str
-from .....models.base import BaseModel, BaseModelSchema
-from .....util import canon
-from .....valid import INDY_CRED_DEF_ID, INDY_PREDICATE
+
 from ...message_types import PRESENTATION_PREVIEW
 from ...util.indy import Predicate
 
@@ -26,13 +27,7 @@ class PresPredSpec(BaseModel):
         schema_class = "PresPredSpecSchema"
 
     def __init__(
-        self,
-        name: str,
-        *,
-        cred_def_id: str,
-        predicate: str,
-        threshold: int,
-        **kwargs
+        self, name: str, *, cred_def_id: str, predicate: str, threshold: int, **kwargs
     ):
         """
         Initialize  preview object.
@@ -67,25 +62,18 @@ class PresPredSpecSchema(BaseModelSchema):
 
         model_class = PresPredSpec
 
-    name = fields.Str(
-        description="Attribute name",
-        required=True,
-        example="high_score"
-    )
+    name = fields.Str(description="Attribute name", required=True, example="high_score")
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID
+        **INDY_CRED_DEF_ID,
     )
     predicate = fields.Str(
         description="Predicate (currently, indy supports >=)",
         required=True,
-        **INDY_PREDICATE
+        **INDY_PREDICATE,
     )
-    threshold = fields.Int(
-        description="Threshold value",
-        required=True
-    )
+    threshold = fields.Int(description="Threshold value", required=True)
 
 
 class PresAttrSpec(BaseModel):
@@ -110,7 +98,7 @@ class PresAttrSpec(BaseModel):
         cred_def_id: str = None,
         mime_type: str = None,
         value: str = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize attribute specification object.
@@ -127,10 +115,7 @@ class PresAttrSpec(BaseModel):
         super().__init__(**kwargs)
         self.name = canon(name)
         self.cred_def_id = cred_def_id
-        self.mime_type = (
-            mime_type.lower()
-            if mime_type else None
-        )
+        self.mime_type = mime_type.lower() if mime_type else None
         self.value = value
 
     @staticmethod
@@ -147,11 +132,7 @@ class PresAttrSpec(BaseModel):
 
         """
         return [
-            PresAttrSpec(
-                name=k,
-                cred_def_id=cred_def_id,
-                value=plain[k]
-            ) for k in plain
+            PresAttrSpec(name=k, cred_def_id=cred_def_id, value=plain[k]) for k in plain
         ]
 
     @property
@@ -176,13 +157,12 @@ class PresAttrSpec(BaseModel):
         """Whether current specified attribute satisfied input specified predicate."""
 
         return bool(
-            self.value and
-            not self.mime_type and
-            self.name == pred_spec.name and
-            self.cred_def_id == pred_spec.cred_def_id and
-            Predicate.get(pred_spec.predicate).value.yes(
-                self.value,
-                pred_spec.threshold
+            self.value
+            and not self.mime_type
+            and self.name == pred_spec.name
+            and self.cred_def_id == pred_spec.cred_def_id
+            and Predicate.get(pred_spec.predicate).value.yes(
+                self.value, pred_spec.threshold
             )
         )
 
@@ -210,25 +190,16 @@ class PresAttrSpecSchema(BaseModelSchema):
         model_class = PresAttrSpec
 
     name = fields.Str(
-        description="Attribute name",
-        required=True,
-        example="favourite_drink"
+        description="Attribute name", required=True, example="favourite_drink"
     )
-    cred_def_id = fields.Str(
-        required=False,
-        **INDY_CRED_DEF_ID
-    )
+    cred_def_id = fields.Str(required=False, **INDY_CRED_DEF_ID)
     mime_type = fields.Str(
         description="MIME type (default null)",
         required=False,
         data_key="mime-type",
-        example="image/jpeg"
+        example="image/jpeg",
     )
-    value = fields.Str(
-        description="Attribute value",
-        required=False,
-        example="martini"
-    )
+    value = fields.Str(description="Attribute value", required=False, example="martini")
 
 
 class PresentationPreview(BaseModel):
@@ -246,7 +217,7 @@ class PresentationPreview(BaseModel):
         _type: str = None,
         attributes: Sequence[PresAttrSpec] = None,
         predicates: Sequence[PresPredSpec] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize presentation preview object.
@@ -273,7 +244,7 @@ class PresentationPreview(BaseModel):
         version: str = None,
         nonce: str = None,
         ledger: IndyLedger = None,
-        timestamps: Mapping[str, int] = None
+        timestamps: Mapping[str, int] = None,
     ) -> dict:
         """
         Return indy proof request corresponding to presentation preview.
@@ -292,6 +263,7 @@ class PresentationPreview(BaseModel):
             Indy proof request dict.
 
         """
+
         def non_revo(cred_def_id: str):
             """Non-revocation timestamp to use for input cred def id."""
 
@@ -318,7 +290,7 @@ class PresentationPreview(BaseModel):
             "version": version or "1.0",
             "nonce": nonce or str(uuid4().int),
             "requested_attributes": {},
-            "requested_predicates": {}
+            "requested_predicates": {},
         }
 
         for attr_spec in self.attributes:
@@ -328,55 +300,50 @@ class PresentationPreview(BaseModel):
                 }
             else:
                 cd_id = attr_spec.cred_def_id
-                revo_support = bool(ledger and await ledger.get_credential_definition(
-                    cd_id
-                )["value"]["revocation"])
+                revo_support = bool(
+                    ledger
+                    and await ledger.get_credential_definition(cd_id)["value"][
+                        "revocation"
+                    ]
+                )
 
                 timestamp = non_revo(attr_spec.cred_def_id)
                 proof_req["requested_attributes"][
-                    "{}_{}_uuid".format(
-                        ord_cred_def_id(cd_id),
-                        canon(attr_spec.name)
-                    )
+                    "{}_{}_uuid".format(ord_cred_def_id(cd_id), canon(attr_spec.name))
                 ] = {
                     "name": canon(attr_spec.name),
                     "restrictions": [{"cred_def_id": cd_id}],
                     **{
-                        "non_revoked": {
-                            "from": timestamp,
-                            "to": timestamp
-                        } for _ in [""] if revo_support
-                    }
+                        "non_revoked": {"from": timestamp, "to": timestamp}
+                        for _ in [""]
+                        if revo_support
+                    },
                 }
 
         for pred_spec in self.predicates:
             cd_id = pred_spec.cred_def_id
-            revo_support = bool(ledger and await ledger.get_credential_definition(
-                cd_id
-            )["value"]["revocation"])
+            revo_support = bool(
+                ledger
+                and await ledger.get_credential_definition(cd_id)["value"]["revocation"]
+            )
 
             timestamp = non_revo(attr_spec.cred_def_id)
             proof_req["requested_predicates"][
                 "{}_{}_{}_uuid".format(
                     ord_cred_def_id(cd_id),
                     canon(pred_spec.name),
-                    Predicate.get(pred_spec.predicate).value.fortran
+                    Predicate.get(pred_spec.predicate).value.fortran,
                 )
             ] = {
                 "name": canon(pred_spec.name),
                 "p_type": pred_spec.predicate,
                 "p_value": pred_spec.threshold,
-                "restrictions": [
-                    {
-                        "cred_def_id": cd_id
-                    }
-                ],
+                "restrictions": [{"cred_def_id": cd_id}],
                 **{
-                    "non_revoked": {
-                        "from": timestamp,
-                        "to": timestamp
-                    } for _ in [""] if revo_support
-                }
+                    "non_revoked": {"from": timestamp, "to": timestamp}
+                    for _ in [""]
+                    if revo_support
+                },
             }
 
         return proof_req
@@ -404,17 +371,8 @@ class PresentationPreviewSchema(BaseModelSchema):
         example=PRESENTATION_PREVIEW,
         data_key="@type",
         validate=validate.Equal(
-            PRESENTATION_PREVIEW,
-            error="Must be absent or equal to {other}"
-        )
+            PRESENTATION_PREVIEW, error="Must be absent or equal to {other}"
+        ),
     )
-    attributes = fields.Nested(
-        PresAttrSpecSchema,
-        required=True,
-        many=True
-    )
-    predicates = fields.Nested(
-        PresPredSpecSchema,
-        required=True,
-        many=True
-    )
+    attributes = fields.Nested(PresAttrSpecSchema, required=True, many=True)
+    predicates = fields.Nested(PresPredSpecSchema, required=True, many=True)

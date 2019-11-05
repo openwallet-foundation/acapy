@@ -5,17 +5,18 @@ from typing import Sequence
 
 from marshmallow import fields
 
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
-    AttachDecoratorSchema
+    AttachDecoratorSchema,
 )
-from ....agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import PRESENTATION_REQUEST
+
+from ..message_types import PRESENTATION_REQUEST, PROTOCOL_PACKAGE
 
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.present_proof.v1_0.handlers."
-    + "presentation_request_handler.PresentationRequestHandler"
+    f"{PROTOCOL_PACKAGE}.handlers."
+    "presentation_request_handler.PresentationRequestHandler"
 )
 
 
@@ -35,7 +36,7 @@ class PresentationRequest(AgentMessage):
         *,
         comment: str = None,
         request_presentations_attach: Sequence[AttachDecorator] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize presentation request object.
@@ -76,5 +77,5 @@ class PresentationRequestSchema(AgentMessageSchema):
         AttachDecoratorSchema,
         required=True,
         many=True,
-        data_key="request_presentations~attach"
+        data_key="request_presentations~attach",
     )

@@ -2,14 +2,16 @@
 
 from marshmallow import fields
 
-from ....agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import PRESENTATION_PROPOSAL
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+
+from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
+
 from .inner.presentation_preview import PresentationPreview, PresentationPreviewSchema
 
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.present_proof.v1_0.handlers."
-    + "presentation_proposal_handler.PresentationProposalHandler"
+    f"{PROTOCOL_PACKAGE}.handlers."
+    "presentation_proposal_handler.PresentationProposalHandler"
 )
 
 
@@ -29,7 +31,7 @@ class PresentationProposal(AgentMessage):
         *,
         comment: str = None,
         presentation_proposal: PresentationPreview = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize presentation proposal object.

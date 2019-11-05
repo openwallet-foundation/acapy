@@ -1,34 +1,28 @@
-from ..presentation_proposal import PresentationProposal
-from ..inner.presentation_preview import PresAttrSpec, PresPredSpec, PresentationPreview
+from unittest import TestCase
+
 from ...message_types import PRESENTATION_PREVIEW, PRESENTATION_PROPOSAL
 
-from unittest import TestCase
+from ..presentation_proposal import PresentationProposal
+from ..inner.presentation_preview import PresAttrSpec, PresPredSpec, PresentationPreview
 
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
 CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
 PRES_PREVIEW = PresentationPreview(
     attributes=[
-        PresAttrSpec(
-            name="player",
-            cred_def_id=CD_ID,
-            value="Richie Knucklez"
-        ),
+        PresAttrSpec(name="player", cred_def_id=CD_ID, value="Richie Knucklez"),
         PresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID,
             mime_type="image/png",
-            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl"
-        )
+            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+        ),
     ],
     predicates=[
         PresPredSpec(
-            name="highScore",
-            cred_def_id=CD_ID,
-            predicate=">=",
-            threshold=1000000
+            name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
         )
-    ]
+    ],
 )
 
 
@@ -38,16 +32,14 @@ class TestPresentationProposal(TestCase):
     def test_init(self):
         """Test initializer."""
         presentation_proposal = PresentationProposal(
-            comment="Hello World",
-            presentation_proposal=PRES_PREVIEW
+            comment="Hello World", presentation_proposal=PRES_PREVIEW
         )
         assert presentation_proposal.presentation_proposal == PRES_PREVIEW
 
     def test_type(self):
         """Test type."""
         presentation_proposal = PresentationProposal(
-            comment="Hello World",
-            presentation_proposal=PRES_PREVIEW
+            comment="Hello World", presentation_proposal=PRES_PREVIEW
         )
         assert presentation_proposal._type == PRESENTATION_PROPOSAL
 
@@ -56,7 +48,7 @@ class TestPresentationProposal(TestCase):
         obj = {
             "@type": PRESENTATION_PROPOSAL,
             "comment": "Hello World",
-            "presentation_proposal": PRES_PREVIEW.serialize()
+            "presentation_proposal": PRES_PREVIEW.serialize(),
         }
 
         pres_proposal = PresentationProposal.deserialize(obj)
@@ -66,8 +58,7 @@ class TestPresentationProposal(TestCase):
         """Test serialization."""
 
         pres_proposal = PresentationProposal(
-            comment="Hello World",
-            presentation_proposal=PRES_PREVIEW
+            comment="Hello World", presentation_proposal=PRES_PREVIEW
         )
 
         pres_proposal_dict = pres_proposal.serialize()
@@ -76,15 +67,15 @@ class TestPresentationProposal(TestCase):
         assert pres_proposal_dict == {
             "@type": PRESENTATION_PROPOSAL,
             "comment": "Hello World",
-            "presentation_proposal": PRES_PREVIEW.serialize()
+            "presentation_proposal": PRES_PREVIEW.serialize(),
         }
+
 
 class TestPresentationProposalSchema(TestCase):
     """Test presentation cred proposal schema."""
 
     presentation_proposal = PresentationProposal(
-        comment="Hello World",
-        presentation_proposal=PRES_PREVIEW
+        comment="Hello World", presentation_proposal=PRES_PREVIEW
     )
 
     def test_make_model(self):

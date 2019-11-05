@@ -1,10 +1,10 @@
 """Aries0037 v1.0 presentation proposal handler."""
 
-from ....base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
-    RequestContext
+    RequestContext,
 )
 
 from ..manager import PresentationManager
@@ -28,7 +28,7 @@ class PresentationProposalHandler(BaseHandler):
 
         self._logger.info(
             "Received presentation proposal: %s",
-            context.message.serialize(as_string=True)
+            context.message.serialize(as_string=True),
         )
 
         if not context.connection_ready:
@@ -46,7 +46,7 @@ class PresentationProposalHandler(BaseHandler):
                 presentation_request_message,
             ) = await presentation_manager.create_bound_request(
                 presentation_exchange_record=presentation_exchange_record,
-                comment=context.message.comment
+                comment=context.message.comment,
             )
 
             await responder.send_reply(presentation_request_message)

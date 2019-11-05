@@ -1,13 +1,12 @@
 """Aries#0037 v1.0 Presentation request handler."""
 
 
-from ....base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
     RequestContext,
 )
-
 from .....holder.base import BaseHolder
 from .....storage.error import StorageNotFoundError
 

@@ -9,19 +9,29 @@ from marshmallow import Schema, fields
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
+from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.valid import (
+    INDY_CRED_DEF_ID,
+    INDY_DID,
+    INDY_PREDICATE,
+    INDY_SCHEMA_ID,
+    INDY_VERSION,
+    INT_EPOCH,
+    UUIDFour,
+)
 from ....storage.error import StorageNotFoundError
 
-from ...decorators.attach_decorator import AttachDecorator
-from ...valid import (INDY_CRED_DEF_ID, INDY_DID, INDY_PREDICATE,
-                      INDY_SCHEMA_ID, INDY_VERSION, INT_EPOCH, UUIDFour)
-
 from .manager import PresentationManager
-from .messages.inner.presentation_preview import (PresentationPreview,
-                                                  PresentationPreviewSchema)
+from .messages.inner.presentation_preview import (
+    PresentationPreview,
+    PresentationPreviewSchema,
+)
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
-from .models.presentation_exchange import (V10PresentationExchange,
-                                           V10PresentationExchangeSchema)
+from .models.presentation_exchange import (
+    V10PresentationExchange,
+    V10PresentationExchangeSchema,
+)
 
 
 class V10PresentationExchangeListSchema(Schema):
@@ -29,7 +39,7 @@ class V10PresentationExchangeListSchema(Schema):
 
     results = fields.List(
         fields.Nested(V10PresentationExchangeSchema()),
-        description="Aries#0037 v1.0 presentation exchange records"
+        description="Aries#0037 v1.0 presentation exchange records",
     )
 
 
@@ -37,14 +47,11 @@ class V10PresentationProposalRequestSchema(Schema):
     """Request schema for sending a presentation proposal admin message."""
 
     connection_id = fields.UUID(
-        description="Connection identifier",
-        required=True,
-        example=UUIDFour.EXAMPLE,
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE,
     )
     comment = fields.Str(
-        description="Human-readable comment",
-        required=False,
-        default="")
+        description="Human-readable comment", required=False, default=""
+    )
     presentation_proposal = fields.Nested(PresentationPreviewSchema(), required=True)
     auto_present = fields.Boolean(
         description=(
@@ -52,7 +59,7 @@ class V10PresentationProposalRequestSchema(Schema):
             "and presenting requested proof"
         ),
         required=False,
-        default=False
+        default=False,
     )
 
 
@@ -65,29 +72,19 @@ class IndyProofReqSpecRestrictionsSchema(Schema):
         **INDY_CRED_DEF_ID
     )
     schema_id = fields.String(
-        description="Schema identifier",
-        required=False,
-        **INDY_SCHEMA_ID
+        description="Schema identifier", required=False, **INDY_SCHEMA_ID
     )
     schema_issuer_did = fields.String(
-        description="Schema issuer (origin) DID",
-        required=False,
-        **INDY_DID
+        description="Schema issuer (origin) DID", required=False, **INDY_DID
     )
     schema_name = fields.String(
-        example="transcript",
-        description="Schema name",
-        required=False
+        example="transcript", description="Schema name", required=False
     )
     schema_version = fields.String(
-        description="Schema version",
-        required=False,
-        **INDY_VERSION
+        description="Schema version", required=False, **INDY_VERSION
     )
     issuer_did = fields.String(
-        description="Credential issuer DID",
-        required=False,
-        **INDY_DID
+        description="Credential issuer DID", required=False, **INDY_DID
     )
     cred_def_id = fields.String(
         description="Credential definition identifier",
@@ -115,60 +112,45 @@ class IndyProofReqAttrSpecSchema(Schema):
     """Schema for attribute specification in indy proof request."""
 
     name = fields.String(
-        example="favouriteDrink",
-        description="Attribute name",
-        required=True)
+        example="favouriteDrink", description="Attribute name", required=True
+    )
     restrictions = fields.List(
         fields.Nested(IndyProofReqSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
-        required=False
+        required=False,
     )
-    non_revoked = fields.Nested(
-        IndyProofReqNonRevoked(),
-        required=False
-    )
+    non_revoked = fields.Nested(IndyProofReqNonRevoked(), required=False)
 
 
 class IndyProofReqPredSpecSchema(Schema):
     """Schema for predicate specification in indy proof request."""
 
-    name = fields.String(
-        example="index",
-        description="Attribute name",
-        required=True)
+    name = fields.String(example="index", description="Attribute name", required=True)
     p_type: fields.String(
         description="Predicate type (indy currently supports only '>=')",
         required=True,
         **INDY_PREDICATE
     )
     p_value: fields.Integer(
-        description="Threshold value",
-        required=True,
+        description="Threshold value", required=True,
     )
     restrictions = fields.List(
         fields.Nested(IndyProofReqSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
-        required=False
+        required=False,
     )
-    non_revoked = fields.Nested(
-        IndyProofReqNonRevoked(),
-        required=False
-    )
+    non_revoked = fields.Nested(IndyProofReqNonRevoked(), required=False)
 
 
 class IndyProofRequestSchema(Schema):
     """Schema for indy proof request."""
 
-    nonce = fields.String(
-        description="Nonce",
-        required=False,
-        example="1234567890"
-    )
+    nonce = fields.String(description="Nonce", required=False, example="1234567890")
     name = fields.String(
         description="Proof request name",
         required=False,
         example="Proof request",
-        default="Proof request"
+        default="Proof request",
     )
     version = fields.String(
         description="Proof request version",
@@ -180,13 +162,13 @@ class IndyProofRequestSchema(Schema):
         description=("Requested attribute specifications of proof request"),
         required=True,
         keys=fields.Str(example="0_attr_uuid"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Nested(IndyProofReqAttrSpecSchema())
+        values=fields.Nested(IndyProofReqAttrSpecSchema()),
     )
     requested_predicates = fields.Dict(
         description=("Requested predicate specifications of proof request"),
         required=True,
         keys=fields.Str(example="0_age_GE_uuid"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Nested(IndyProofReqPredSpecSchema())
+        values=fields.Nested(IndyProofReqPredSpecSchema()),
     )
 
 
@@ -194,9 +176,7 @@ class V10PresentationRequestRequestSchema(Schema):
     """Request schema for sending a proof request."""
 
     connection_id = fields.UUID(
-        description="Connection identifier",
-        required=True,
-        example=UUIDFour.EXAMPLE,
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE,
     )
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
     comment = fields.Str(required=False)
@@ -209,11 +189,10 @@ class IndyRequestedCredsRequestedAttrSchema(Schema):
         example="3fa85f64-5717-4562-b3fc-2c963f66afa6",
         description=(
             "Wallet credential identifier (typically but not necessarily a UUID)"
-        )
+        ),
     )
     revealed = fields.Bool(
-        description="Whether to reveal attribute in proof",
-        default=True
+        description="Whether to reveal attribute in proof", default=True
     )
 
 
@@ -224,7 +203,7 @@ class IndyRequestedCredsRequestedPredSchema(Schema):
         example="3fa85f64-5717-4562-b3fc-2c963f66afa6",
         description=(
             "Wallet credential identifier (typically but not necessarily a UUID)"
-        )
+        ),
     )
 
 
@@ -240,8 +219,8 @@ class V10PresentationRequestSchema(Schema):
             description=(
                 "Self-attested attribute values to use in requested-credentials "
                 "structure for proof construction"
-            )
-        )
+            ),
+        ),
     )
     requested_attributes = fields.Dict(
         description=(
@@ -250,7 +229,7 @@ class V10PresentationRequestSchema(Schema):
         ),
         required=True,
         keys=fields.Str(example="attr_referent"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Nested(IndyRequestedCredsRequestedAttrSchema())
+        values=fields.Nested(IndyRequestedCredsRequestedAttrSchema()),
     )
     requested_predicates = fields.Dict(
         description=(
@@ -259,14 +238,11 @@ class V10PresentationRequestSchema(Schema):
         ),
         required=True,
         keys=fields.Str(example="pred_referent"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Nested(IndyRequestedCredsRequestedPredSchema())
+        values=fields.Nested(IndyRequestedCredsRequestedPredSchema()),
     )
 
 
-@docs(
-    tags=["present-proof"],
-    summary="Fetch all present-proof exchange records"
-)
+@docs(tags=["present-proof"], summary="Fetch all present-proof exchange records")
 @response_schema(V10PresentationExchangeListSchema(), 200)
 async def presentation_exchange_list(request: web.BaseRequest):
     """
@@ -295,10 +271,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
     return web.json_response({"results": [record.serialize() for record in records]})
 
 
-@docs(
-    tags=["present-proof"],
-    summary="Fetch a single presentation exchange record"
-)
+@docs(tags=["present-proof"], summary="Fetch a single presentation exchange record")
 @response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_retrieve(request: web.BaseRequest):
     """
@@ -315,8 +288,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
     presentation_exchange_id = request.match_info["pres_ex_id"]
     try:
         record = await V10PresentationExchange.retrieve_by_id(
-            context,
-            presentation_exchange_id
+            context, presentation_exchange_id
         )
     except StorageNotFoundError:
         raise web.HTTPNotFound()
@@ -345,7 +317,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
             "schema": {"type": "string"},
             "required": False,
         },
-    ]
+    ],
 )
 async def presentation_exchange_credentials_list(request: web.BaseRequest):
     """
@@ -366,8 +338,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
 
     try:
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
-            context,
-            presentation_exchange_id
+            context, presentation_exchange_id
         )
     except StorageNotFoundError:
         raise web.HTTPNotFound()
@@ -389,7 +360,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         presentation_referents,
         start,
         count,
-        extra_query
+        extra_query,
     )
 
     presentation_exchange_record.log_state(
@@ -399,16 +370,13 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             "presentation_exchange_id": presentation_exchange_id,
             "referents": presentation_referents,
             "extra_query": extra_query,
-            "credentials": credentials
-        }
+            "credentials": credentials,
+        },
     )
     return web.json_response(credentials)
 
 
-@docs(
-    tags=["present-proof"],
-    summary="Sends a presentation proposal"
-)
+@docs(tags=["present-proof"], summary="Sends a presentation proposal")
 @request_schema(V10PresentationProposalRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_send_proposal(request: web.BaseRequest):
@@ -430,8 +398,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
-            context,
-            connection_id
+            context, connection_id
         )
     except StorageNotFoundError:
         raise web.HTTPBadRequest()
@@ -444,21 +411,20 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     presentation_preview = body.get("presentation_proposal")
     presentation_proposal_message = PresentationProposal(
         comment=comment,
-        presentation_proposal=PresentationPreview.deserialize(presentation_preview)
+        presentation_proposal=PresentationPreview.deserialize(presentation_preview),
     )
     auto_present = body.get(
-        "auto_present",
-        context.settings.get("debug.auto_respond_presentation_request")
+        "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
 
     presentation_manager = PresentationManager(context)
 
-    presentation_exchange_record = (
-        await presentation_manager.create_exchange_for_proposal(
-            connection_id=connection_id,
-            presentation_proposal_message=presentation_proposal_message,
-            auto_present=auto_present
-        )
+    (
+        presentation_exchange_record
+    ) = await presentation_manager.create_exchange_for_proposal(
+        connection_id=connection_id,
+        presentation_proposal_message=presentation_proposal_message,
+        auto_present=auto_present,
     )
     await outbound_handler(presentation_proposal_message, connection_id=connection_id)
 
@@ -467,7 +433,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 
 @docs(
     tags=["present-proof"],
-    summary="Sends a free presentation request not bound to any proposal"
+    summary="Sends a free presentation request not bound to any proposal",
 )
 @request_schema(V10PresentationRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200)
@@ -490,8 +456,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
-            context,
-            connection_id
+            context, connection_id
         )
     except StorageNotFoundError:
         raise web.HTTPBadRequest()
@@ -508,16 +473,16 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         comment=comment,
         request_presentations_attach=[
             AttachDecorator.from_indy_dict(indy_proof_request)
-        ]
+        ],
     )
 
     presentation_manager = PresentationManager(context)
 
-    presentation_exchange_record = (
-        await presentation_manager.create_exchange_for_request(
-            connection_id=connection_id,
-            presentation_request_message=presentation_request_message
-        )
+    (
+        presentation_exchange_record
+    ) = await presentation_manager.create_exchange_for_request(
+        connection_id=connection_id,
+        presentation_request_message=presentation_request_message,
     )
 
     await outbound_handler(presentation_request_message, connection_id=connection_id)
@@ -527,7 +492,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 
 @docs(
     tags=["present-proof"],
-    summary="Sends a presentation request in reference to a proposal"
+    summary="Sends a presentation request in reference to a proposal",
 )
 @request_schema(V10PresentationRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200)
@@ -547,8 +512,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
     presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
-        context,
-        presentation_exchange_id
+        context, presentation_exchange_id
     )
     assert presentation_exchange_record.state == (
         V10PresentationExchange.STATE_PROPOSAL_RECEIVED
@@ -558,8 +522,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
-            context,
-            connection_id
+            context, connection_id
         )
     except StorageNotFoundError:
         raise web.HTTPBadRequest()
@@ -571,20 +534,15 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
     (
         presentation_exchange_record,
-        presentation_request_message
-    ) = await presentation_manager.create_bound_request(
-        presentation_exchange_record
-    )
+        presentation_request_message,
+    ) = await presentation_manager.create_bound_request(presentation_exchange_record)
 
     await outbound_handler(presentation_request_message, connection_id=connection_id)
 
     return web.json_response(presentation_exchange_record.serialize())
 
 
-@docs(
-    tags=["present-proof"],
-    summary="Sends a proof presentation"
-)
+@docs(tags=["present-proof"], summary="Sends a proof presentation")
 @request_schema(V10PresentationRequestSchema())
 @response_schema(V10PresentationExchangeSchema())
 async def presentation_exchange_send_presentation(request: web.BaseRequest):
@@ -611,8 +569,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
     connection_id = presentation_exchange_record.connection_id
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
-            context,
-            connection_id
+            context, connection_id
         )
     except StorageNotFoundError:
         raise web.HTTPBadRequest()
@@ -634,23 +591,18 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         {
             "self_attested_attributes": body.get("self_attested_attributes"),
             "requested_attributes": body.get("requested_attributes"),
-            "requested_predicates": body.get("requested_predicates")
+            "requested_predicates": body.get("requested_predicates"),
         },
-        comment=body.get("comment")
+        comment=body.get("comment"),
     )
 
     await outbound_handler(presentation_message, connection_id=connection_id)
     return web.json_response(presentation_exchange_record.serialize())
 
 
-@docs(
-    tags=["present-proof"],
-    summary="Verify a received presentation"
-)
+@docs(tags=["present-proof"], summary="Verify a received presentation")
 @response_schema(V10PresentationExchangeSchema())
-async def presentation_exchange_verify_presentation(
-    request: web.BaseRequest
-):
+async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     """
     Request handler for verifying a presentation request.
 
@@ -665,15 +617,13 @@ async def presentation_exchange_verify_presentation(
     presentation_exchange_id = request.match_info["pres_ex_id"]
 
     presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
-        context,
-        presentation_exchange_id
+        context, presentation_exchange_id
     )
     connection_id = presentation_exchange_record.connection_id
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
-            context,
-            connection_id
+            context, connection_id
         )
     except StorageNotFoundError:
         raise web.HTTPBadRequest()
@@ -695,8 +645,7 @@ async def presentation_exchange_verify_presentation(
 
 
 @docs(
-    tags=["present-proof"],
-    summary="Remove an existing presentation exchange record",
+    tags=["present-proof"], summary="Remove an existing presentation exchange record",
 )
 async def presentation_exchange_remove(request: web.BaseRequest):
     """
@@ -710,8 +659,7 @@ async def presentation_exchange_remove(request: web.BaseRequest):
     presentation_exchange_id = request.match_info["pres_ex_id"]
     try:
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
-            context,
-            presentation_exchange_id
+            context, presentation_exchange_id
         )
     except StorageNotFoundError:
         raise web.HTTPNotFound()
@@ -725,13 +673,9 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
+            web.get("/present-proof/records", presentation_exchange_list),
             web.get(
-                "/present-proof/records",
-                presentation_exchange_list
-            ),
-            web.get(
-                "/present-proof/records/{pres_ex_id}",
-                presentation_exchange_retrieve
+                "/present-proof/records/{pres_ex_id}", presentation_exchange_retrieve
             ),
             web.get(
                 "/present-proof/records/{pres_ex_id}/credentials",
@@ -742,12 +686,10 @@ async def register(app: web.Application):
                 presentation_exchange_credentials_list,
             ),
             web.post(
-                "/present-proof/send-proposal",
-                presentation_exchange_send_proposal,
+                "/present-proof/send-proposal", presentation_exchange_send_proposal,
             ),
             web.post(
-                "/present-proof/send-request",
-                presentation_exchange_send_free_request,
+                "/present-proof/send-request", presentation_exchange_send_free_request,
             ),
             web.post(
                 "/present-proof/records/{pres_ex_id}/send-request",
@@ -763,7 +705,7 @@ async def register(app: web.Application):
             ),
             web.post(
                 "/present-proof/records/{pres_ex_id}/remove",
-                presentation_exchange_remove
+                presentation_exchange_remove,
             ),
         ]
     )

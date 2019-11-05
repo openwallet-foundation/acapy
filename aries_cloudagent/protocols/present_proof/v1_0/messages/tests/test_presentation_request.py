@@ -1,18 +1,20 @@
+import json
 from datetime import datetime, timezone
 from unittest import TestCase
 
-import json
-
-from ......messaging.util import str_to_datetime, str_to_epoch
 from ......messaging.decorators.attach_decorator import AttachDecorator
+from ......messaging.util import str_to_datetime, str_to_epoch
+
 from ...message_types import ATTACH_DECO_IDS, PRESENTATION_PREVIEW, PRESENTATION_REQUEST
+
 from ..presentation_request import PresentationRequest, PresentationRequestSchema
 
 
 NOW_8601 = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
 NOW_EPOCH = str_to_epoch(NOW_8601)
 CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
-INDY_PROOF_REQ = json.loads(f"""{{
+INDY_PROOF_REQ = json.loads(
+    f"""{{
     "name": "proof-req",
     "version": "1.0",
     "nonce": "12345",
@@ -58,17 +60,18 @@ INDY_PROOF_REQ = json.loads(f"""{{
             }}
         }}
     }}
-}}""")
+}}"""
+)
 
 PRES_REQ = PresentationRequest(
     comment="Test",
     request_presentations_attach=[
         AttachDecorator.from_indy_dict(
-            indy_dict=INDY_PROOF_REQ,
-            ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+            indy_dict=INDY_PROOF_REQ, ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
         )
-    ]
+    ],
 )
+
 
 class TestPresentationRequest(TestCase):
     """Presentation request tests."""
@@ -84,16 +87,18 @@ class TestPresentationRequest(TestCase):
 
     def test_deserialize(self):
         """Test deserialization."""
-        dump = json.dumps({
-            "@type": PRESENTATION_REQUEST,
-            "comment": "Hello World",
-            "request_presentations~attach": [
-                AttachDecorator.from_indy_dict(
-                    indy_dict=INDY_PROOF_REQ,
-                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
-                ).serialize()
-            ]
-        })
+        dump = json.dumps(
+            {
+                "@type": PRESENTATION_REQUEST,
+                "comment": "Hello World",
+                "request_presentations~attach": [
+                    AttachDecorator.from_indy_dict(
+                        indy_dict=INDY_PROOF_REQ,
+                        ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                    ).serialize()
+                ],
+            }
+        )
 
         presentation_request = PresentationRequest.deserialize(dump)
         assert type(presentation_request) == PresentationRequest
@@ -111,7 +116,7 @@ class TestPresentationRequest(TestCase):
                     ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
                 ).serialize()
             ],
-            "comment": "Test"
+            "comment": "Test",
         }
 
 
@@ -121,7 +126,7 @@ class TestPresentationRequestSchema(TestCase):
     def test_make_model(self):
         """Test making model."""
         pres_req_dict = PRES_REQ.serialize()
-        '''
+        """
         Looks like: {
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/request-presentation",
             "@id": "f49773e3-bd56-4868-a5f1-456d1e6d1a16",
@@ -135,7 +140,7 @@ class TestPresentationRequestSchema(TestCase):
                 }
             ]
         }
-        '''
+        """
 
         model_instance = PRES_REQ.deserialize(pres_req_dict)
         assert isinstance(model_instance, PresentationRequest)

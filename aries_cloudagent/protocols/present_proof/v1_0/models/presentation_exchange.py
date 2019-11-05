@@ -3,8 +3,8 @@
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
-from ....models.base_record import BaseRecord, BaseRecordSchema
-from ....valid import UUIDFour
+from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
+from .....messaging.valid import UUIDFour
 
 
 class V10PresentationExchange(BaseRecord):

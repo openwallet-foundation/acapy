@@ -5,18 +5,16 @@ from typing import Sequence
 
 from marshmallow import fields
 
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
-    AttachDecoratorSchema
+    AttachDecoratorSchema,
 )
-from ....agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import PRESENTATION
+
+from ..message_types import PRESENTATION, PROTOCOL_PACKAGE
 
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.present_proof.v1_0.handlers."
-    + "presentation_handler.PresentationHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.presentation_handler.PresentationHandler"
 
 
 class Presentation(AgentMessage):
@@ -35,7 +33,7 @@ class Presentation(AgentMessage):
         *,
         comment: str = None,
         presentations_attach: Sequence[AttachDecorator] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize presentation object.
@@ -73,8 +71,5 @@ class PresentationSchema(AgentMessageSchema):
 
     comment = fields.Str(description="Human-readable comment", required=False)
     presentations_attach = fields.Nested(
-        AttachDecoratorSchema,
-        required=True,
-        many=True,
-        data_key="presentations~attach"
+        AttachDecoratorSchema, required=True, many=True, data_key="presentations~attach"
     )
