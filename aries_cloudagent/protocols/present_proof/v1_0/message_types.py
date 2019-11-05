@@ -8,6 +8,14 @@ PRESENTATION_PROPOSAL = f"{PROTOCOL_URI}/propose-presentation"
 PRESENTATION_REQUEST = f"{PROTOCOL_URI}/request-presentation"
 PRESENTATION = f"{PROTOCOL_URI}/presentation"
 
+NEW_PROTOCOL_URI = "https://didcomm.org/present-proof/1.0"
+
+# New Message types
+
+NEW_PRESENTATION_PROPOSAL = f"{NEW_PROTOCOL_URI}/propose-presentation"
+NEW_PRESENTATION_REQUEST = f"{NEW_PROTOCOL_URI}/request-presentation"
+NEW_PRESENTATION = f"{NEW_PROTOCOL_URI}/presentation"
+
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.present_proof.v1_0"
 
 MESSAGE_TYPES = {
@@ -18,6 +26,13 @@ MESSAGE_TYPES = {
         f"{PROTOCOL_PACKAGE}.messages.presentation_request.PresentationRequest"
     ),
     PRESENTATION: f"{PROTOCOL_PACKAGE}.messages.presentation.Presentation",
+    NEW_PRESENTATION_PROPOSAL: (
+        f"{PROTOCOL_PACKAGE}.messages.presentation_proposal.PresentationProposal"
+    ),
+    NEW_PRESENTATION_REQUEST: (
+        f"{PROTOCOL_PACKAGE}.messages.presentation_request.PresentationRequest"
+    ),
+    NEW_PRESENTATION: f"{PROTOCOL_PACKAGE}.messages.presentation.Presentation",
 }
 
 # Inner object types
