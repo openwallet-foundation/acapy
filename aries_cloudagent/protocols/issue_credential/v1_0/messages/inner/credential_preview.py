@@ -5,9 +5,10 @@ from typing import Sequence
 
 from marshmallow import fields, validate
 
+from ......messaging.models.base import BaseModel, BaseModelSchema
+from ......messaging.util import canon
 from ......wallet.util import b64_to_str
-from .....models.base import BaseModel, BaseModelSchema
-from .....util import canon
+
 from ...message_types import CREDENTIAL_PREVIEW
 
 
@@ -19,14 +20,7 @@ class CredAttrSpec(BaseModel):
 
         schema_class = "CredAttrSpecSchema"
 
-    def __init__(
-        self,
-        *,
-        name: str,
-        value: str,
-        mime_type: str = None,
-        **kwargs
-    ):
+    def __init__(self, *, name: str, value: str, mime_type: str = None, **kwargs):
         """
         Initialize attribute preview object.
 
@@ -68,7 +62,7 @@ class CredAttrSpec(BaseModel):
         if self.name != other.name:
             return False  # distinct attribute names
 
-        if (self.mime_type != other.mime_type):
+        if self.mime_type != other.mime_type:
             return False  # distinct MIME types
 
         return self.b64_decoded_value() == other.b64_decoded_value()
@@ -83,19 +77,18 @@ class CredAttrSpecSchema(BaseModelSchema):
         model_class = CredAttrSpec
 
     name = fields.Str(
-        description="Attribute name",
-        required=True,
-        example="favourite_drink")
+        description="Attribute name", required=True, example="favourite_drink"
+    )
     mime_type = fields.Str(
-        description='MIME type: omit for (null) default',
+        description="MIME type: omit for (null) default",
         required=False,
         data_key="mime-type",
-        example="image/jpeg"
+        example="image/jpeg",
     )
     value = fields.Str(
         description="Attribute value: base64-encode if MIME type is present",
         required=True,
-        example="martini"
+        example="martini",
     )
 
 
@@ -109,11 +102,7 @@ class CredentialPreview(BaseModel):
         message_type = CREDENTIAL_PREVIEW
 
     def __init__(
-        self,
-        *,
-        _type: str = None,
-        attributes: Sequence[CredAttrSpec] = None,
-        **kwargs
+        self, *, _type: str = None, attributes: Sequence[CredAttrSpec] = None, **kwargs
     ):
         """
         Initialize credential preview object.
@@ -151,9 +140,10 @@ class CredentialPreview(BaseModel):
         """
 
         return {
-            attr.name: b64_to_str(
-                attr.value
-            ) if attr.mime_type and decode else attr.value for attr in self.attributes
+            attr.name: b64_to_str(attr.value)
+            if attr.mime_type and decode
+            else attr.value
+            for attr in self.attributes
         }
 
     def mime_types(self):
@@ -163,9 +153,7 @@ class CredentialPreview(BaseModel):
         Return empty dict if no attribute has MIME type.
 
         """
-        return {
-            attr.name: attr.mime_type for attr in self.attributes if attr.mime_type
-        }
+        return {attr.name: attr.mime_type for attr in self.attributes if attr.mime_type}
 
 
 class CredentialPreviewSchema(BaseModelSchema):
@@ -182,13 +170,9 @@ class CredentialPreviewSchema(BaseModelSchema):
         example=CREDENTIAL_PREVIEW,
         data_key="@type",
         validate=validate.Equal(
-            CREDENTIAL_PREVIEW,
-            error="Must be absent or equal to {other}"
-        )
+            CREDENTIAL_PREVIEW, error="Must be absent or equal to {other}"
+        ),
     )
     attributes = fields.Nested(
-        CredAttrSpecSchema,
-        many=True,
-        required=True,
-        data_key="attributes"
+        CredAttrSpecSchema, many=True, required=True, data_key="attributes"
     )

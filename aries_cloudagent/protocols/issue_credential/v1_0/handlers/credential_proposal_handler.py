@@ -1,11 +1,11 @@
 """Credential proposal handler."""
 
 
-from ....base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
-    RequestContext
+    RequestContext,
 )
 
 from ..manager import CredentialManager
@@ -29,7 +29,7 @@ class CredentialProposalHandler(BaseHandler):
 
         self._logger.info(
             "Received credential proposal: %s",
-            context.message.serialize(as_string=True)
+            context.message.serialize(as_string=True),
         )
 
         if not context.connection_ready:
@@ -44,8 +44,7 @@ class CredentialProposalHandler(BaseHandler):
                 credential_exchange_record,
                 credential_offer_message,
             ) = await credential_manager.create_offer(
-                credential_exchange_record,
-                comment=context.message.comment
+                credential_exchange_record, comment=context.message.comment
             )
 
             await responder.send_reply(credential_offer_message)

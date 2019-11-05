@@ -5,15 +5,18 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....agent_message import AgentMessage, AgentMessageSchema
-from ....decorators.attach_decorator import AttachDecorator, AttachDecoratorSchema
-from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.decorators.attach_decorator import (
+    AttachDecorator,
+    AttachDecoratorSchema,
+)
+
+from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER, PROTOCOL_PACKAGE
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.issue_credential.v1_0.handlers."
-    "credential_offer_handler.CredentialOfferHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_offer_handler.CredentialOfferHandler"
 )
 
 
@@ -34,7 +37,7 @@ class CredentialOffer(AgentMessage):
         comment: str = None,
         credential_preview: CredentialPreview = None,
         offers_attach: Sequence[AttachDecorator] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize credential offer object.

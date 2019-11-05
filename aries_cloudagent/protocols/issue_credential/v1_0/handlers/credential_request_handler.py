@@ -1,11 +1,11 @@
 """Credential request handler."""
 
 
-from ....base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
-    RequestContext
+    RequestContext,
 )
 
 from ..manager import CredentialManager
@@ -48,7 +48,7 @@ class CredentialRequestHandler(BaseHandler):
                 comment=context.message.comment,
                 credential_values=CredentialProposal.deserialize(
                     cred_exchange_rec.credential_proposal_dict
-                ).credential_proposal.attr_dict()
+                ).credential_proposal.attr_dict(),
             )
 
             await responder.send_reply(credential_issue_message)

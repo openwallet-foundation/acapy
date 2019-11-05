@@ -1,11 +1,12 @@
 """Basic message handler."""
 
-from ....base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
     RequestContext,
 )
+
 from ..manager import CredentialManager
 from ..messages.credential_offer import CredentialOffer
 

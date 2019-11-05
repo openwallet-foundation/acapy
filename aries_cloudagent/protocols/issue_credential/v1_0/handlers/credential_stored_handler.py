@@ -1,10 +1,10 @@
 """Credential stored message handler."""
 
-from ....base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
-    RequestContext
+    RequestContext,
 )
 
 from ..manager import CredentialManager

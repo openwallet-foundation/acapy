@@ -4,9 +4,8 @@ from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from .....config.injection_context import InjectionContext
-
-from ....models.base_record import BaseRecord, BaseRecordSchema
-from ....valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
+from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
+from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 
 
 class V10CredentialExchange(BaseRecord):

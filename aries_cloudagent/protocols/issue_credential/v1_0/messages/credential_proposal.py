@@ -2,14 +2,16 @@
 
 from marshmallow import fields
 
-from ....agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import CREDENTIAL_PROPOSAL
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+
+from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
+
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.issue_credential.v1_0.handlers."
-    + "credential_proposal_handler.CredentialProposalHandler"
+    f"{PROTOCOL_PACKAGE}.handlers."
+    "credential_proposal_handler.CredentialProposalHandler"
 )
 
 
@@ -31,7 +33,7 @@ class CredentialProposal(AgentMessage):
         credential_proposal: CredentialPreview = None,
         schema_id: str = None,
         cred_def_id: str = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize credential proposal object.

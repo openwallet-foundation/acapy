@@ -6,10 +6,10 @@ from marshmallow import fields, Schema
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
+from ....messaging.valid import INDY_CRED_DEF_ID, UUIDFour
 from ....storage.error import StorageNotFoundError
-from ....protocols.problem_report.message import ProblemReport
 
-from ...valid import INDY_CRED_DEF_ID, UUIDFour
+from ...problem_report.message import ProblemReport
 
 from .manager import CredentialManager
 from .messages.credential_proposal import CredentialProposal

@@ -1,23 +1,18 @@
 from unittest import TestCase
 
 from ....message_types import CREDENTIAL_PREVIEW
+
 from ..credential_preview import (
     CredAttrSpec,
     CredentialPreview,
-    CredentialPreviewSchema
+    CredentialPreviewSchema,
 )
 
 
 CRED_PREVIEW = CredentialPreview(
     attributes=(
-        CredAttrSpec.list_plain({'test': '123', 'hello': 'world'}) +
-        [
-            CredAttrSpec(
-                name='icon',
-                value='cG90YXRv',
-                mime_type='image/PNG'
-            )
-        ]
+        CredAttrSpec.list_plain({"test": "123", "hello": "world"})
+        + [CredAttrSpec(name="icon", value="cG90YXRv", mime_type="image/PNG")]
     )
 )
 
@@ -27,31 +22,13 @@ class TestCredAttrSpec(TestCase):
 
     def test_eq(self):
         attr_previews_none_plain = [
-            CredAttrSpec(
-                name="item",
-                value="value"
-            ),
-            CredAttrSpec(
-                name="item",
-                value="value",
-                mime_type=None
-            )
+            CredAttrSpec(name="item", value="value"),
+            CredAttrSpec(name="item", value="value", mime_type=None),
         ]
         attr_previews_different = [
-            CredAttrSpec(
-                name="item",
-                value="dmFsdWU=",
-                mime_type="image/png"
-            ),
-            CredAttrSpec(
-                name="item",
-                value="distinct value"
-            ),
-            CredAttrSpec(
-                name="distinct_name",
-                value="distinct value",
-                mime_type=None
-            )
+            CredAttrSpec(name="item", value="dmFsdWU=", mime_type="image/png"),
+            CredAttrSpec(name="item", value="distinct value"),
+            CredAttrSpec(name="distinct_name", value="distinct value", mime_type=None),
         ]
 
         for lhs in attr_previews_none_plain:
@@ -81,34 +58,27 @@ class TestCredentialPreview(TestCase):
     def test_preview(self):
         """Test preview for attr-dict and metadata utilities."""
         assert CRED_PREVIEW.attr_dict(decode=False) == {
-            'test': '123',
-            'hello': 'world',
-            'icon': 'cG90YXRv'
+            "test": "123",
+            "hello": "world",
+            "icon": "cG90YXRv",
         }
         assert CRED_PREVIEW.attr_dict(decode=True) == {
-            'test': '123',
-            'hello': 'world',
-            'icon': 'potato'
+            "test": "123",
+            "hello": "world",
+            "icon": "potato",
         }
         assert CRED_PREVIEW.mime_types() == {
-            'icon': 'image/png'  # canonicalize to lower case
+            "icon": "image/png"  # canonicalize to lower case
         }
 
     def test_deserialize(self):
         """Test deserialize."""
         obj = {
-            '@type': CREDENTIAL_PREVIEW,
-            'attributes': [
-                {
-                    'name': 'name',
-                    'value': 'Alexander Delarge'
-                },
-                {
-                    'name': 'pic',
-                    'mime-type': 'image/png',
-                    'value': 'Abcd0123...'
-                }
-            ]
+            "@type": CREDENTIAL_PREVIEW,
+            "attributes": [
+                {"name": "name", "value": "Alexander Delarge"},
+                {"name": "pic", "mime-type": "image/png", "value": "Abcd0123..."},
+            ],
         }
 
         cred_preview = CredentialPreview.deserialize(obj)
@@ -121,20 +91,10 @@ class TestCredentialPreview(TestCase):
         assert cred_preview_dict == {
             "@type": CREDENTIAL_PREVIEW,
             "attributes": [
-                {
-                    "name": "test",
-                    "value": "123"
-                },
-                {
-                    "name": "hello",
-                    "value": "world"
-                },
-                {
-                    "name": "icon",
-                    "mime-type": "image/png",
-                    "value": "cG90YXRv"
-                }
-            ]
+                {"name": "test", "value": "123"},
+                {"name": "hello", "value": "world"},
+                {"name": "icon", "mime-type": "image/png", "value": "cG90YXRv"},
+            ],
         }
 
 

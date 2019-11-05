@@ -1,7 +1,8 @@
-from ...message_types import CREDENTIAL_STORED
-from ..credential_stored import CredentialStored
-
 from unittest import mock, TestCase
+
+from ...message_types import CREDENTIAL_STORED, PROTOCOL_PACKAGE
+
+from ..credential_stored import CredentialStored
 
 
 class TestCredentialStored(TestCase):
@@ -18,8 +19,7 @@ class TestCredentialStored(TestCase):
         assert credential_stored._type == CREDENTIAL_STORED
 
     @mock.patch(
-        "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        "credential_stored.CredentialStoredSchema.load"
+        f"{PROTOCOL_PACKAGE}.messages.credential_stored.CredentialStoredSchema.load"
     )
     def test_deserialize(self, mock_credential_stored_schema_load):
         """
@@ -33,8 +33,7 @@ class TestCredentialStored(TestCase):
         assert credential_stored is mock_credential_stored_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.messaging.issue_credential.v1_0.messages."
-        "credential_stored.CredentialStoredSchema.dump"
+        f"{PROTOCOL_PACKAGE}.messages.credential_stored.CredentialStoredSchema.dump"
     )
     def test_serialize(self, mock_credential_stored_schema_dump):
         """
