@@ -4,12 +4,10 @@ from aiohttp import web
 
 from ..classloader import ClassLoader, ModuleLoadError
 
-from ..messaging.credentials.routes import register as register_credentials
 from ..messaging.issue_credential.v1_0.routes import (
     register as register_v10_issue_credential,
 )
 from ..messaging.present_proof.v1_0.routes import register as register_v10_present_proof
-from ..messaging.presentations.routes import register as register_presentations
 from ..messaging.schemas.routes import register as register_schemas
 from ..messaging.credential_definitions.routes import (
     register as register_credential_definitions,
@@ -25,8 +23,6 @@ async def register_module_routes(app: web.Application):
     Eventually this should use dynamic registration based on the
     currently-selected message families.
     """
-    await register_credentials(app)
-    await register_presentations(app)
     await register_schemas(app)
     await register_credential_definitions(app)
     await register_v10_issue_credential(app)

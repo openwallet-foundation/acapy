@@ -3,8 +3,7 @@
 from marshmallow import fields
 
 from ....config.injection_context import InjectionContext
-
-from ...models.base_record import BaseRecord, BaseRecordSchema
+from ....messaging.models.base_record import BaseRecord, BaseRecordSchema
 
 
 class CredentialExchange(BaseRecord):

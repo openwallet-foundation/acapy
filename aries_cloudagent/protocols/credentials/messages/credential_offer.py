@@ -2,13 +2,13 @@
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import CREDENTIAL_OFFER
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+
+from ..message_types import CREDENTIAL_OFFER, PROTOCOL_PACKAGE
 
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.credentials.handlers."
-    + "credential_offer_handler.CredentialOfferHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_offer_handler.CredentialOfferHandler"
 )
 
 
@@ -28,7 +28,7 @@ class CredentialOffer(AgentMessage):
         offer_json: str = None,
         credential_preview: dict = None,
         comment: str = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize credential offer object.

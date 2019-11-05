@@ -1,4 +1,4 @@
-"""Connection handling admin routes."""
+"""Credential handling admin routes."""
 
 import json
 from json.decoder import JSONDecodeError
@@ -9,11 +9,11 @@ from marshmallow import fields, Schema
 
 from ...connections.models.connection_record import ConnectionRecord
 from ...holder.base import BaseHolder
+from ...messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID, INDY_SCHEMA_ID
 from ...storage.error import StorageNotFoundError
 from ...wallet.error import WalletNotFoundError
-from ...protocols.problem_report.message import ProblemReport
 
-from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID, INDY_SCHEMA_ID
+from ..problem_report.message import ProblemReport
 
 from .manager import CredentialManager
 from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema

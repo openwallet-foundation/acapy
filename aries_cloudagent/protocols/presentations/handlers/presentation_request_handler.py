@@ -2,12 +2,11 @@
 
 import json
 
-from ...base_handler import BaseHandler, BaseResponder, RequestContext
+from ....holder.base import BaseHolder
+from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..manager import PresentationManager
 from ..messages.presentation_request import PresentationRequest
-
-from ....holder.base import BaseHolder
 
 
 class PresentationRequestHandler(BaseHandler):

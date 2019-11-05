@@ -1,13 +1,11 @@
 """A credential stored message."""
 
-# from marshmallow import fields
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import CREDENTIAL_STORED
+from ..message_types import CREDENTIAL_STORED, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.credentials.handlers."
-    + "credential_stored_handler.CredentialStoredHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_stored_handler.CredentialStoredHandler"
 )
 
 

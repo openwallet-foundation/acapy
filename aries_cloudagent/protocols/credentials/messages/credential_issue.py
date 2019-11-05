@@ -2,12 +2,12 @@
 
 from marshmallow import fields
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import CREDENTIAL_ISSUE
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+
+from ..message_types import CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    "aries_cloudagent.messaging.credentials.handlers."
-    + "credential_issue_handler.CredentialIssueHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_issue_handler.CredentialIssueHandler"
 )
 
 
