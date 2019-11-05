@@ -21,7 +21,9 @@ MESSAGE_TYPES = {
         f"{PROTOCOL_PACKAGE}.messages.credential_request.CredentialRequest"
     ),
     CREDENTIAL_ISSUE: f"{PROTOCOL_PACKAGE}.messages.credential_issue.CredentialIssue",
-    CREDENTIAL_STORED: f"{PROTOCOL_PACKAGE}.messages.credential_issue.CredentialStored",
+    CREDENTIAL_STORED: (
+        f"{PROTOCOL_PACKAGE}.messages.credential_stored.CredentialStored"
+    ),
 }
 
 # Inner object types
