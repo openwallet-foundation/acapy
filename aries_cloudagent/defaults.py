@@ -4,7 +4,6 @@ from .classloader import ClassLoader, ModuleLoadError
 
 from .messaging.protocol_registry import ProtocolRegistry
 
-from .messaging.introduction.message_types import MESSAGE_TYPES as INTRODUCTION_MESSAGES
 from .messaging.presentations.message_types import (
     MESSAGE_TYPES as PRESENTATION_MESSAGES,
 )
@@ -22,7 +21,6 @@ def default_protocol_registry() -> ProtocolRegistry:
     registry = ProtocolRegistry()
 
     registry.register_message_types(
-        INTRODUCTION_MESSAGES,
         PRESENTATION_MESSAGES,
         V10_PRESENT_PROOF_MESSAGES,
         CREDENTIAL_MESSAGES,

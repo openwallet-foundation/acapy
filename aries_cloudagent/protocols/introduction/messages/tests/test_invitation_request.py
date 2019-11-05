@@ -2,7 +2,7 @@ from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
 from ..invitation_request import InvitationRequest
-from ...message_types import INVITATION_REQUEST
+from ...message_types import INVITATION_REQUEST, PROTOCOL_PACKAGE
 
 
 class TestConfig:
@@ -26,8 +26,8 @@ class TestInvitationRequest(TestCase, TestConfig):
         assert self.request._type == INVITATION_REQUEST
 
     @mock.patch(
-        "aries_cloudagent.messaging.introduction.messages."
-        + "invitation_request.InvitationRequestSchema.load"
+        f"{PROTOCOL_PACKAGE}.messages."
+        "invitation_request.InvitationRequestSchema.load"
     )
     def test_deserialize(self, mock_invitation_schema_load):
         """
@@ -41,8 +41,8 @@ class TestInvitationRequest(TestCase, TestConfig):
         assert request is mock_invitation_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.messaging.introduction.messages."
-        + "invitation_request.InvitationRequestSchema.dump"
+        f"{PROTOCOL_PACKAGE}.messages."
+        "invitation_request.InvitationRequestSchema.dump"
     )
     def test_serialize(self, mock_invitation_schema_dump):
         """

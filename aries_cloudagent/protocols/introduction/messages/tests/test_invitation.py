@@ -1,13 +1,10 @@
 from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
-from .....protocols.connections.messages.connection_invitation import (
-    ConnectionInvitation,
-)
+from ....connections.messages.connection_invitation import ConnectionInvitation
 
-from ...message_types import FORWARD_INVITATION
-
-from ..forward_invitation import ForwardInvitation
+from ..invitation import Invitation
+from ...message_types import INVITATION, PROTOCOL_PACKAGE
 
 
 class TestConfig:
@@ -19,12 +16,12 @@ class TestConfig:
     test_message = "test message"
 
 
-class TestForwardInvitation(TestCase, TestConfig):
+class TestInvitation(TestCase, TestConfig):
     def setUp(self):
         self.connection_invitation = ConnectionInvitation(
             label=self.label, recipient_keys=[self.key], endpoint=self.endpoint_url
         )
-        self.invitation = ForwardInvitation(
+        self.invitation = Invitation(
             invitation=self.connection_invitation, message=self.test_message
         )
 
@@ -35,27 +32,21 @@ class TestForwardInvitation(TestCase, TestConfig):
 
     def test_type(self):
         """Test type."""
-        assert self.invitation._type == FORWARD_INVITATION
+        assert self.invitation._type == INVITATION
 
-    @mock.patch(
-        "aries_cloudagent.messaging.introduction.messages."
-        + "forward_invitation.ForwardInvitationSchema.load"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.invitation.InvitationSchema.load")
     def test_deserialize(self, mock_invitation_schema_load):
         """
         Test deserialization.
         """
         obj = {"obj": "obj"}
 
-        invitation = ForwardInvitation.deserialize(obj)
+        invitation = Invitation.deserialize(obj)
         mock_invitation_schema_load.assert_called_once_with(obj)
 
         assert invitation is mock_invitation_schema_load.return_value
 
-    @mock.patch(
-        "aries_cloudagent.messaging.introduction.messages."
-        + "forward_invitation.ForwardInvitationSchema.dump"
-    )
+    @mock.patch(f"{PROTOCOL_PACKAGE}.messages.invitation.InvitationSchema.dump")
     def test_serialize(self, mock_invitation_schema_dump):
         """
         Test serialization.
@@ -66,16 +57,16 @@ class TestForwardInvitation(TestCase, TestConfig):
         assert invitation_dict is mock_invitation_schema_dump.return_value
 
 
-class TestForwardInvitationSchema(AsyncTestCase, TestConfig):
-    """Test forward invitation schema."""
+class TestInvitationSchema(AsyncTestCase, TestConfig):
+    """Test invitation schema."""
 
     async def test_make_model(self):
-        invitation = ForwardInvitation(
+        invitation = Invitation(
             invitation=ConnectionInvitation(
                 label=self.label, recipient_keys=[self.key], endpoint=self.endpoint_url
             ),
             message=self.test_message,
         )
         data = invitation.serialize()
-        model_instance = ForwardInvitation.deserialize(data)
+        model_instance = Invitation.deserialize(data)
         assert type(model_instance) is type(invitation)

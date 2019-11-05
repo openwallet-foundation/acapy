@@ -1,6 +1,12 @@
 """Handler for incoming invitation messages."""
 
-from ...base_handler import BaseHandler, BaseResponder, HandlerException, RequestContext
+from ....messaging.base_handler import (
+    BaseHandler,
+    BaseResponder,
+    HandlerException,
+    RequestContext,
+)
+
 from ..base_service import BaseIntroductionService
 from ..messages.invitation import Invitation
 

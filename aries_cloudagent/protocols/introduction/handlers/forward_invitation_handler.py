@@ -1,7 +1,14 @@
 """Handler for incoming forward invitation messages."""
 
-from ...base_handler import BaseHandler, BaseResponder, HandlerException, RequestContext
+from ....messaging.base_handler import (
+    BaseHandler,
+    BaseResponder,
+    HandlerException,
+    RequestContext,
+)
+
 from ...connections.manager import ConnectionManager
+
 from ..messages.forward_invitation import ForwardInvitation
 
 

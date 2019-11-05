@@ -2,20 +2,17 @@
 
 from marshmallow import fields
 
-from ....protocols.connections.messages.connection_invitation import (
+from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+
+from ...connections.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
 
-from ...agent_message import AgentMessage, AgentMessageSchema
-
-from ..message_types import INVITATION
+from ..message_types import INVITATION, PROTOCOL_PACKAGE
 
 
-HANDLER_CLASS = (
-    "aries_cloudagent.messaging.introduction.handlers."
-    + "invitation_handler.InvitationHandler"
-)
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.invitation_handler.InvitationHandler"
 
 
 class Invitation(AgentMessage):

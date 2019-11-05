@@ -3,8 +3,7 @@
 from abc import ABC, abstractmethod
 
 from ...error import BaseError
-
-from ..base_context import BaseRequestContext
+from ...messaging.base_context import BaseRequestContext
 
 from .messages.invitation import Invitation
 
