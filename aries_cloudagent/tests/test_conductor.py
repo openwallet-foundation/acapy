@@ -1,16 +1,8 @@
 import asyncio
 from io import StringIO
-from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent import messaging
-from aries_cloudagent.connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
 from .. import conductor as test_module
 from ..admin.base_server import BaseAdminServer
 from ..config.base_context import ContextBuilder
@@ -18,6 +10,12 @@ from ..config.injection_context import InjectionContext
 from ..protocols.connections.manager import ConnectionManager
 from ..connections.models.connection_record import ConnectionRecord
 from ..connections.models.connection_target import ConnectionTarget
+from ..connections.models.diddoc import (
+    DIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
 from ..messaging.message_delivery import MessageDelivery
 from ..messaging.serializer import MessageSerializer
 from ..messaging.outbound_message import OutboundMessage
@@ -295,8 +293,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 parsed_msg = {}
                 mock_serializer = builder.message_serializer
                 mock_serializer.extract_message_type.return_value = (
-                    "message_type"
-                )  # messaging.trustping.message_types.PING
+                    "message_type"  # messaging.trustping.message_types.PING
+                )
                 mock_serializer.parse_message.return_value = (parsed_msg, delivery)
 
                 message_body = "{}"
@@ -376,7 +374,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         )
         conductor = test_module.Conductor(builder)
 
-        with mock.patch("sys.stdout", new=StringIO()) as captured:
+        with async_mock.patch("sys.stdout", new=StringIO()) as captured:
             await conductor.setup()
 
             await conductor.start()
