@@ -7,7 +7,7 @@ from marshmallow.validate import OneOf
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import DISCLOSE, PROTOCOL_PACKAGE
+from ..message_types import DISCLOSE, NEW_DISCLOSE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.disclose_handler.DiscloseHandler"
 
@@ -20,6 +20,7 @@ class Disclose(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = DISCLOSE
+        new_message_type = NEW_DISCLOSE
         schema_class = "DiscloseSchema"
 
     def __init__(self, *, protocols: Mapping[str, Mapping] = None, **kwargs):

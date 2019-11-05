@@ -9,7 +9,7 @@ from ...connections.messages.connection_invitation import (
     ConnectionInvitationSchema,
 )
 
-from ..message_types import INVITATION, PROTOCOL_PACKAGE
+from ..message_types import INVITATION, NEW_INVITATION, PROTOCOL_PACKAGE
 
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.invitation_handler.InvitationHandler"
@@ -23,6 +23,7 @@ class Invitation(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = INVITATION
+        new_message_type = NEW_INVITATION
         schema_class = "InvitationSchema"
 
     def __init__(
@@ -48,7 +49,7 @@ class InvitationSchema(AgentMessageSchema):
 
         model_class = Invitation
 
-    invitation = fields.Nested(ConnectionInvitationSchema(), required=True,)
+    invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
     message = fields.Str(
         required=False,
         description="Comments on the introduction",

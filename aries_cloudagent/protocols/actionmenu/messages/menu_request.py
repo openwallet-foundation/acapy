@@ -2,7 +2,7 @@
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import MENU_REQUEST, PROTOCOL_PACKAGE
+from ..message_types import MENU_REQUEST, NEW_MENU_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.menu_request_handler.MenuRequestHandler"
 
@@ -15,6 +15,7 @@ class MenuRequest(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = MENU_REQUEST
+        new_message_type = NEW_MENU_REQUEST
         schema_class = "MenuRequestSchema"
 
     def __init__(self, **kwargs):

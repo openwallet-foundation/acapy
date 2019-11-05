@@ -4,7 +4,11 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_REQUEST
+from ..message_types import (
+    PROTOCOL_PACKAGE,
+    ROUTE_QUERY_REQUEST,
+    NEW_ROUTE_QUERY_REQUEST,
+)
 from ..models.paginate import Paginate, PaginateSchema
 
 HANDLER_CLASS = (
@@ -20,6 +24,7 @@ class RouteQueryRequest(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = ROUTE_QUERY_REQUEST
+        new_message_type = NEW_ROUTE_QUERY_REQUEST
         schema_class = "RouteQueryRequestSchema"
 
     def __init__(self, *, filter: dict = None, paginate: Paginate = None, **kwargs):
@@ -46,7 +51,7 @@ class RouteQueryRequestSchema(AgentMessageSchema):
     filter = fields.Dict(
         keys=fields.Str(description="field"),
         values=fields.List(
-            fields.Str(description="value"), description="List of values",
+            fields.Str(description="value"), description="List of values"
         ),
         required=False,
         allow_none=True,

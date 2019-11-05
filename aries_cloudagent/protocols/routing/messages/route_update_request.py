@@ -6,7 +6,11 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import PROTOCOL_PACKAGE, ROUTE_UPDATE_REQUEST
+from ..message_types import (
+    PROTOCOL_PACKAGE,
+    ROUTE_UPDATE_REQUEST,
+    NEW_ROUTE_UPDATE_REQUEST,
+)
 from ..models.route_update import RouteUpdate, RouteUpdateSchema
 
 HANDLER_CLASS = (
@@ -23,6 +27,7 @@ class RouteUpdateRequest(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = ROUTE_UPDATE_REQUEST
+        new_message_type = NEW_ROUTE_UPDATE_REQUEST
         schema_class = "RouteUpdateRequestSchema"
 
     def __init__(self, *, updates: Sequence[RouteUpdate] = None, **kwargs):

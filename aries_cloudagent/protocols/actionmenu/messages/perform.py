@@ -6,7 +6,7 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import PERFORM, PROTOCOL_PACKAGE
+from ..message_types import PERFORM, NEW_PERFORM, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.perform_handler.PerformHandler"
 
@@ -19,6 +19,7 @@ class Perform(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = PERFORM
+        new_message_type = NEW_PERFORM
         schema_class = "PerformSchema"
 
     def __init__(self, *, name: str = None, params: Mapping[str, str] = None, **kwargs):

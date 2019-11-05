@@ -4,7 +4,7 @@ from enum import Enum
 from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import PROBLEM_REPORT
+from ..message_types import PROBLEM_REPORT, NEW_PROBLEM_REPORT
 
 HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
 
@@ -27,6 +27,7 @@ class ProblemReport(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = PROBLEM_REPORT
+        new_message_type = NEW_PROBLEM_REPORT
         schema_class = "ProblemReportSchema"
 
     def __init__(self, *, problem_code: str = None, explain: str = None, **kwargs):

@@ -9,7 +9,11 @@ from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 
-from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
+from ..message_types import (
+    CONNECTION_INVITATION,
+    NEW_CONNECTION_INVITATION,
+    PROTOCOL_PACKAGE,
+)
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
@@ -25,6 +29,7 @@ class ConnectionInvitation(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = CONNECTION_INVITATION
+        new_message_type = NEW_CONNECTION_INVITATION
         schema_class = "ConnectionInvitationSchema"
 
     def __init__(
@@ -98,7 +103,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         model_class = ConnectionInvitation
 
     label = fields.Str(
-        required=False, description="Optional label for connection", example="Bob",
+        required=False, description="Optional label for connection", example="Bob"
     )
     did = fields.Str(
         required=False, description="DID for connection invitation", **INDY_DID

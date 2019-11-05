@@ -11,7 +11,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecoratorSchema,
 )
 
-from ..message_types import PRESENTATION, PROTOCOL_PACKAGE
+from ..message_types import PRESENTATION, NEW_PRESENTATION, PROTOCOL_PACKAGE
 
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.presentation_handler.PresentationHandler"
@@ -26,6 +26,7 @@ class Presentation(AgentMessage):
         handler_class = HANDLER_CLASS
         schema_class = "PresentationSchema"
         message_type = PRESENTATION
+        new_message_type = NEW_PRESENTATION
 
     def __init__(
         self,

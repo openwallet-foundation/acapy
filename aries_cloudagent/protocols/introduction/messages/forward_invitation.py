@@ -9,7 +9,7 @@ from ...connections.messages.connection_invitation import (
     ConnectionInvitationSchema,
 )
 
-from ..message_types import FORWARD_INVITATION, PROTOCOL_PACKAGE
+from ..message_types import FORWARD_INVITATION, NEW_FORWARD_INVITATION, PROTOCOL_PACKAGE
 
 
 HANDLER_CLASS = (
@@ -25,6 +25,7 @@ class ForwardInvitation(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = FORWARD_INVITATION
+        new_message_type = NEW_FORWARD_INVITATION
         schema_class = "ForwardInvitationSchema"
 
     def __init__(
@@ -50,7 +51,7 @@ class ForwardInvitationSchema(AgentMessageSchema):
 
         model_class = ForwardInvitation
 
-    invitation = fields.Nested(ConnectionInvitationSchema(), required=True,)
+    invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
     message = fields.Str(
         required=False,
         allow_none=True,

@@ -4,7 +4,7 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import CREDENTIAL_REQUEST, PROTOCOL_PACKAGE
+from ..message_types import CREDENTIAL_REQUEST, NEW_CREDENTIAL_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers."
@@ -21,6 +21,7 @@ class CredentialRequest(AgentMessage):
         handler_class = HANDLER_CLASS
         schema_class = "CredentialRequestSchema"
         message_type = CREDENTIAL_REQUEST
+        new_message_type = NEW_CREDENTIAL_REQUEST
 
     def __init__(self, *, request: str = None, comment: str = None, **kwargs):
         """

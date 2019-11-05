@@ -11,7 +11,12 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecoratorSchema,
 )
 
-from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_REQUEST, PROTOCOL_PACKAGE
+from ..message_types import (
+    ATTACH_DECO_IDS,
+    CREDENTIAL_REQUEST,
+    NEW_CREDENTIAL_REQUEST,
+    PROTOCOL_PACKAGE,
+)
 
 
 HANDLER_CLASS = (
@@ -29,6 +34,7 @@ class CredentialRequest(AgentMessage):
         handler_class = HANDLER_CLASS
         schema_class = "CredentialRequestSchema"
         message_type = CREDENTIAL_REQUEST
+        new_message_type = NEW_CREDENTIAL_REQUEST
 
     def __init__(
         self,

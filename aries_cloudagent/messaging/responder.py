@@ -53,6 +53,7 @@ class BaseResponder(ABC):
         else:
             payload = message
             encoded = True
+
         return OutboundMessage(
             payload,
             connection_id=connection_id,

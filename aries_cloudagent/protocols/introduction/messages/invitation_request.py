@@ -4,7 +4,7 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import INVITATION_REQUEST, PROTOCOL_PACKAGE
+from ..message_types import INVITATION_REQUEST, NEW_INVITATION_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.invitation_request_handler.InvitationRequestHandler"
@@ -19,6 +19,7 @@ class InvitationRequest(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = INVITATION_REQUEST
+        new_message_type = NEW_INVITATION_REQUEST
         schema_class = "InvitationRequestSchema"
 
     def __init__(self, *, responder: str = None, message: str = None, **kwargs):

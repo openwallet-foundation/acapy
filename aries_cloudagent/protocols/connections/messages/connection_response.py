@@ -3,7 +3,11 @@
 from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import CONNECTION_RESPONSE, PROTOCOL_PACKAGE
+from ..message_types import (
+    CONNECTION_RESPONSE,
+    NEW_CONNECTION_RESPONSE,
+    PROTOCOL_PACKAGE,
+)
 from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
@@ -21,6 +25,7 @@ class ConnectionResponse(AgentMessage):
         handler_class = HANDLER_CLASS
         schema_class = "ConnectionResponseSchema"
         message_type = CONNECTION_RESPONSE
+        new_message_type = NEW_CONNECTION_RESPONSE
 
     def __init__(self, *, connection: ConnectionDetail = None, **kwargs):
         """

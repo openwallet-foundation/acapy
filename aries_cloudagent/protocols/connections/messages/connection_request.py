@@ -3,7 +3,7 @@
 from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import CONNECTION_REQUEST, PROTOCOL_PACKAGE
+from ..message_types import CONNECTION_REQUEST, NEW_CONNECTION_REQUEST, PROTOCOL_PACKAGE
 from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
@@ -20,6 +20,7 @@ class ConnectionRequest(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = CONNECTION_REQUEST
+        new_message_type = NEW_CONNECTION_REQUEST
         schema_class = "ConnectionRequestSchema"
 
     def __init__(
@@ -51,7 +52,7 @@ class ConnectionRequestSchema(AgentMessageSchema):
 
         model_class = ConnectionRequest
 
-    connection = fields.Nested(ConnectionDetailSchema, required=True,)
+    connection = fields.Nested(ConnectionDetailSchema, required=True)
     label = fields.Str(
         required=True,
         description="Label for connection request",

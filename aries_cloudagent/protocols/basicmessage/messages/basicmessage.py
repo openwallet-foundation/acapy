@@ -9,7 +9,7 @@ from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ....messaging.util import datetime_now, datetime_to_str
 from ....messaging.valid import INDY_ISO8601_DATETIME
 
-from ..message_types import BASIC_MESSAGE, PROTOCOL_PACKAGE
+from ..message_types import BASIC_MESSAGE, NEW_BASIC_MESSAGE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.basicmessage_handler.BasicMessageHandler"
 
@@ -22,6 +22,7 @@ class BasicMessage(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = BASIC_MESSAGE
+        new_message_type = NEW_BASIC_MESSAGE
         schema_class = "BasicMessageSchema"
 
     def __init__(
