@@ -3,7 +3,7 @@
 import functools
 import inspect
 import time
-from typing import Sequence, Union
+from typing import Sequence, TextIO, Union
 
 
 class Stats:
@@ -97,15 +97,22 @@ class Timer:
 class Collector:
     """Collector for a set of statistics."""
 
-    def __init__(self, enabled: bool = True):
+    def __init__(self, *, enabled: bool = True, log_path: str = None):
         """Initialize the Collector instance."""
         self._enabled = enabled
+        self._log_file: TextIO = None
+        self._log_path = log_path
         self._stats = None
         self.reset()
 
     def reset(self):
         """Reset the collector's statistics."""
         self._stats = Stats()
+        if self._log_file:
+            self._log_file.close()
+            self._log_file = None
+        if self._log_path:
+            self._log_file = open(self._log_path, "w")
 
     @property
     def enabled(self) -> bool:
@@ -121,6 +128,9 @@ class Collector:
         """Log an entry in the statistics if the collector is enabled."""
         if self._enabled:
             self._stats.log(name, duration)
+            if self._log_file:
+                start = time.perf_counter() - duration
+                self._log_file.write(f"{name} {start:.5f} {duration:.5f}\n")
 
     def mark(self, *names):
         """Make a custom decorator function for adding to the set of groups."""

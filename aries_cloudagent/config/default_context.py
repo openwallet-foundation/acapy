@@ -35,7 +35,8 @@ class DefaultContextBuilder(ContextBuilder):
         context.settings.set_default("default_label", "Aries Cloud Agent")
 
         if context.settings.get("timing.enabled"):
-            collector = Collector()
+            timing_log = context.settings.get("timing.log_file")
+            collector = Collector(log_path=timing_log)
             context.injector.bind_instance(Collector, collector)
 
         # Shared in-memory cache
