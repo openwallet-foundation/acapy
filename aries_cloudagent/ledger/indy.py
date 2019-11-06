@@ -353,7 +353,7 @@ class IndyLedger(BaseLedger):
             "schema_issuer_did": public_info.did,
             "schema_name": schema_id_parts[-2],
             "schema_version": schema_id_parts[-1],
-            "epoch": int(time()),
+            "epoch": str(int(time())),
         }
         record = StorageRecord(
             SCHEMA_SENT_RECORD_TYPE,
@@ -559,7 +559,7 @@ class IndyLedger(BaseLedger):
             "schema_version": schema_id_parts[-1],
             "issuer_did": public_info.did,
             "cred_def_id": credential_definition_id,
-            "epoch": int(time()),
+            "epoch": str(int(time())),
         }
         record = StorageRecord(
             CRED_DEF_SENT_RECORD_TYPE,

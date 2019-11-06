@@ -82,7 +82,7 @@ class BaseAgent(DemoAgent):
             pending = 0
             total = len(self.credential_state)
             for result in self.credential_state.values():
-                if result != "stored":
+                if result != "credential_acked":
                     pending += 1
             if self.credential_event.is_set():
                 continue

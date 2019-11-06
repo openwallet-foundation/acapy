@@ -12,12 +12,12 @@ from typing import Coroutine, Union
 from .admin.base_server import BaseAdminServer
 from .config.injection_context import InjectionContext
 from .messaging.agent_message import AgentMessage
-from .messaging.connections.models.connection_record import ConnectionRecord
+from .connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
 from .messaging.models.base import BaseModelError
 from .messaging.outbound_message import OutboundMessage
-from .messaging.problem_report.message import ProblemReport
+from .protocols.problem_report.message import ProblemReport
 from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder

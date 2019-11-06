@@ -9,9 +9,9 @@ from abc import ABC, abstractmethod
 from typing import Union
 
 from ..error import BaseError
+from ..connections.models.connection_target import ConnectionTarget
 
 from .agent_message import AgentMessage
-from .connections.models.connection_target import ConnectionTarget
 from .outbound_message import OutboundMessage
 
 
