@@ -16,6 +16,7 @@ ADD setup.py ./
 RUN pip3 install --no-cache-dir -e .
 
 RUN mkdir demo
+RUN mkdir logs
 
 # Add and install demo code
 ADD demo/requirements.txt ./demo/requirements.txt

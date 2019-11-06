@@ -105,6 +105,7 @@ class AliceAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
         super().__init__("Alice", port, seed=None, **kwargs)
         self.extra_args = ["--auto-respond-credential-offer", "--auto-store-credential"]
+        self.timing_log = "logs/alice_perf.log"
 
     async def set_tag_policy(self, cred_def_id, taggables):
         req_body = {"taggables": taggables}
@@ -116,6 +117,7 @@ class FaberAgent(BaseAgent):
         super().__init__("Faber", port, **kwargs)
         self.schema_id = None
         self.credential_definition_id = None
+        self.timing_log = "logs/faber_perf.log"
 
     async def publish_defs(self):
         # create a schema
