@@ -6,12 +6,12 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from aries_cloudagent import messaging
-from aries_cloudagent.messaging.connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from aries_cloudagent.connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .. import conductor as test_module
 from ..admin.base_server import BaseAdminServer
 from ..config.base_context import ContextBuilder
 from ..config.injection_context import InjectionContext
-from ..messaging.connections.models.connection_target import ConnectionTarget
+from ..connections.models.connection_target import ConnectionTarget
 from ..messaging.message_delivery import MessageDelivery
 from ..messaging.serializer import MessageSerializer
 from ..messaging.outbound_message import OutboundMessage
