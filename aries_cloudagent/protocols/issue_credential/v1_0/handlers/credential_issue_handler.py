@@ -1,4 +1,4 @@
-"""Basic message handler."""
+"""Credential issue message handler."""
 
 
 from .....messaging.base_handler import (
@@ -22,10 +22,14 @@ class CredentialIssueHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
-        self._logger.debug(f"CredentialHandler called with context {context}")
+        self._logger.debug("CredentialHandler called with context %s", context)
         assert isinstance(context.message, CredentialIssue)
-        self._logger.info(f"Received credential: {context.message.indy_credential(0)}")
+        self._logger.info(
+            "Received credential message: %s",
+            context.message.serialize(as_string=True)
+        )
 
         if not context.connection_ready:
             raise HandlerException("No connection established for credential request")
@@ -38,8 +42,8 @@ class CredentialIssueHandler(BaseHandler):
         if context.settings.get("debug.auto_store_credential"):
             (
                 credential_exchange_record,
-                credential_stored_message,
+                credential_ack_message,
             ) = await credential_manager.store_credential(credential_exchange_record)
 
-            # Notify issuer that credential was stored
-            await responder.send_reply(credential_stored_message)
+            # Ack issuer that holder stored credential
+            await responder.send_reply(credential_ack_message)

@@ -1,4 +1,4 @@
-"""Credential proposal handler."""
+"""Credential proposal message handler."""
 
 
 from .....messaging.base_handler import (
@@ -22,13 +22,12 @@ class CredentialProposalHandler(BaseHandler):
         Args:
             context: proposal context
             responder: responder callback
+
         """
-        self._logger.debug(f"CredentialProposalHandler called with context {context}")
-
+        self._logger.debug("CredentialProposalHandler called with context %s", context)
         assert isinstance(context.message, CredentialProposal)
-
         self._logger.info(
-            "Received credential proposal: %s",
+            "Received credential proposal message: %s",
             context.message.serialize(as_string=True),
         )
 

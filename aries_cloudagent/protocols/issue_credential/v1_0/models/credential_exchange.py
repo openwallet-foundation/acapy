@@ -32,9 +32,9 @@ class V10CredentialExchange(BaseRecord):
     STATE_OFFER_RECEIVED = "offer_received"
     STATE_REQUEST_SENT = "request_sent"
     STATE_REQUEST_RECEIVED = "request_received"
-    STATE_ISSUED = "issued"
+    STATE_ISSUED = "credential_issued"
     STATE_CREDENTIAL_RECEIVED = "credential_received"
-    STATE_STORED = "stored"
+    STATE_ACKED = "credential_acked"
 
     def __init__(
         self,
@@ -167,7 +167,7 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
     state = fields.Str(
         required=False,
         description="Issue-credential exchange state",
-        example=V10CredentialExchange.STATE_STORED,
+        example=V10CredentialExchange.STATE_ACKED,
     )
     credential_definition_id = fields.Str(
         required=False,

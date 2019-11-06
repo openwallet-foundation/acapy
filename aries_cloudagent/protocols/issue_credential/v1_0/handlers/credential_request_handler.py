@@ -1,4 +1,4 @@
-"""Credential request handler."""
+"""Credential request message handler."""
 
 
 from .....messaging.base_handler import (
@@ -23,13 +23,13 @@ class CredentialRequestHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
-        self._logger.debug(f"CredentialRequestHandler called with context {context}")
-
+        self._logger.debug("CredentialRequestHandler called with context %s", context)
         assert isinstance(context.message, CredentialRequest)
-
         self._logger.info(
-            "Received credential request: %s", context.message.serialize(as_string=True)
+            "Received credential request message: %s",
+            context.message.serialize(as_string=True)
         )
 
         if not context.connection_ready:

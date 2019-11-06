@@ -77,9 +77,8 @@ class AliceAgent(DemoAgent):
                 "/issue-credential/records/" f"{credential_exchange_id}/send-request"
             )
 
-        elif state == "stored":
-            # elif state == "credential_received": ??
-            self.log("Storing credential in wallet")
+        elif state == "credential_acked":
+            self.log("Stored credential {cred_id} in wallet")
             cred_id = message["credential_id"]
             log_status(f"#18.1 Stored credential {cred_id} in wallet")
             resp = await self.admin_GET(f"/credential/{cred_id}")

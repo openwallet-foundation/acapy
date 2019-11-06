@@ -7,7 +7,7 @@ CREDENTIAL_REQUEST = f"{PROTOCOL_URI}/credential-request"
 CREDENTIAL_ISSUE = f"{PROTOCOL_URI}/credential-issue"
 CREDENTIAL_STORED = f"{PROTOCOL_URI}/credential-stored"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.messaging.credentials"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.credentials"
 
 MESSAGE_TYPES = {
     CREDENTIAL_OFFER: f"{PROTOCOL_PACKAGE}.messages.credential_offer.CredentialOffer",

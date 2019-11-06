@@ -8,9 +8,11 @@ from ....error import BaseError
 from ....holder.base import BaseHolder
 from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.responder import BaseResponder
 from ....verifier.base import BaseVerifier
 
 from .models.presentation_exchange import V10PresentationExchange
+from .messages.presentation_ack import PresentationAck
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
@@ -404,6 +406,63 @@ class PresentationManager:
 
         await presentation_exchange_record.save(
             self.context, reason="verify presentation"
+        )
+
+        await self.send_presentation_ack(presentation_exchange_record)
+        return presentation_exchange_record
+
+    async def send_presentation_ack(
+        self, presentation_exchange_record: V10PresentationExchange
+    ):
+        """
+        Send acknowledgement of presentation receipt.
+
+        Args:
+            presentation_exchange_record: presentation exchange record with thread id
+
+        """
+        responder = await self.context.inject(BaseResponder, required=False)
+
+        if responder:
+            print(f'\n\nOK THERE IS A RESPONDER: {type(responder)}: {responder}')
+            presentation_ack_message = PresentationAck()
+            presentation_ack_message._thread = {
+                "thid": presentation_exchange_record.thread_id
+            }
+
+            await responder.send_reply(presentation_ack_message)
+        else:
+            print('\n\nUH OH NO RESPONDER')
+            self._logger.warning(
+                "Configuration has no BaseResponder: cannot ack presentation on %s",
+                presentation_exchange_record.thread_id
+            )
+
+    async def receive_presentation_ack(self):
+        """
+        Receive a presentation ack, from message in context on manager creation.
+
+        Returns:
+            presentation exchange record, retrieved and updated
+
+        """
+        (
+            presentation_exchange_record
+        ) = await V10PresentationExchange.retrieve_by_tag_filter(
+            self.context,
+            tag_filter={
+                "thread_id": self.context.message._thread_id,
+                "connection_id": self.context.connection_record.connection_id,
+            },
+        )
+
+        presentation_exchange_record.state = (
+            V10PresentationExchange.STATE_PRESENTATION_ACKED
+        )
+
+        await presentation_exchange_record.save(
+            self.context,
+            reason="receive presentation ack",
         )
 
         return presentation_exchange_record

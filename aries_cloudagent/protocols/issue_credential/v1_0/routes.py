@@ -533,7 +533,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     return web.json_response(cred_exch_record.serialize())
 
 
-@docs(tags=["issue-credential"], summary="Stored a received credential")
+@docs(tags=["issue-credential"], summary="Store a received credential")
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_store(request: web.BaseRequest):
     """
