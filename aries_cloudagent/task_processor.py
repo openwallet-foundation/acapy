@@ -65,6 +65,7 @@ class TaskProcessor:
         """Instantiate the dispatcher."""
         self.done_event = asyncio.Event()
         self.done_event.set()
+        self.loop = asyncio.get_event_loop()
         self.max_pending = max_pending
         self.pending = set()
         self.pending_lock = asyncio.Lock()
@@ -97,11 +98,11 @@ class TaskProcessor:
                 task.attempts += 1
                 task.running = asyncio.ensure_future(awaitable)
                 task.running.add_done_callback(
-                    lambda fut: asyncio.ensure_future(self._check_task(task))
+                    lambda fut: self.loop.create_task(self._check_task(task))
                 )
             else:
                 task.future.set_result(None)
-                asyncio.ensure_future(self._check_task(task))
+                self.loop.create_task(self._check_task(task))
 
     async def _check_task(self, task: PendingTask):
         """Complete a task."""
