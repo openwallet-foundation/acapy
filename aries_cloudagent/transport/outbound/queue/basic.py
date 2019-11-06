@@ -49,8 +49,9 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
         """
         stop_event, queue = self.stop_event, self.queue
         if not stop_event.is_set():
-            stopped = asyncio.ensure_future(stop_event.wait())
-            dequeued = asyncio.ensure_future(queue.get())
+            loop = asyncio.get_event_loop()
+            stopped = loop.create_task(stop_event.wait())
+            dequeued = loop.create_task(queue.get())
             done, pending = await asyncio.wait(
                 (stopped, dequeued),
                 timeout=timeout,

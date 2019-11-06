@@ -87,7 +87,9 @@ class Dispatcher:
         )
 
         if error_result:
-            return asyncio.ensure_future(responder.send_reply(error_result))
+            return asyncio.get_event_loop().create_task(
+                responder.send_reply(error_result)
+            )
 
         context.injector.bind_instance(BaseResponder, responder)
 
@@ -96,7 +98,9 @@ class Dispatcher:
         collector: Collector = await context.inject(Collector, required=False)
         if collector:
             collector.wrap(handler_obj, "handle", ["any-message-handler"])
-        handler = asyncio.ensure_future(handler_obj.handle(context, responder))
+        handler = asyncio.get_event_loop().create_task(
+            handler_obj.handle(context, responder)
+        )
         return handler
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:
@@ -190,7 +194,7 @@ class DispatcherResponder(BaseResponder):
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        asyncio.ensure_future(self._dispatch_webhook(topic, payload))
+        asyncio.get_event_loop().create_task(self._dispatch_webhook(topic, payload))
 
     async def _dispatch_webhook(self, topic: str, payload: dict):
         """Perform dispatch of a webhook."""

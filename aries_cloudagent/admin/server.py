@@ -32,8 +32,7 @@ class AdminModulesSchema(Schema):
     """Schema for the modules endpoint."""
 
     result = fields.List(
-        fields.Str(description="admin module"),
-        description="List of admin modules",
+        fields.Str(description="admin module"), description="List of admin modules",
     )
 
 
@@ -382,7 +381,9 @@ class AdminServer(BaseAdminServer):
         """Add a webhook to the queue, to send to all registered targets."""
         if not self.webhook_queue:
             self.webhook_queue = await self.context.inject(BaseOutboundMessageQueue)
-            self.webhook_task = asyncio.ensure_future(self._process_webhooks())
+            self.webhook_task = asyncio.get_event_loop().create_task(
+                self._process_webhooks()
+            )
         await self.webhook_queue.enqueue((topic, payload))
 
     async def _process_webhooks(self):
@@ -392,16 +393,16 @@ class AdminServer(BaseAdminServer):
         if collector:
             session_args["trace_configs"] = [StatsTracer(collector, "webhook-http:")]
         self.webhook_session = ClientSession(**session_args)
-        self.webhook_processor = TaskProcessor(max_pending=5)
+        self.webhook_processor = TaskProcessor(max_pending=20)
         async for topic, payload in self.webhook_queue:
             for queue in self.websocket_queues.values():
                 await queue.enqueue({"topic": topic, "payload": payload})
             if self.webhook_targets:
+                if topic == "connections_activity":
+                    # filter connections activity by default (only sent to sockets)
+                    continue
                 targets = self.webhook_targets.copy()
                 for idx, target in targets.items():
-                    if topic == "connections_activity":
-                        # filter connections activity by default (only sent to sockets)
-                        continue
                     if not target.topic_filter or topic in target.topic_filter:
                         retries = (
                             self.webhook_retries
