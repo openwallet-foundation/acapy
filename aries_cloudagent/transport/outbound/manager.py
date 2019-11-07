@@ -115,13 +115,14 @@ class OutboundTransportManager:
     async def start(self):
         """Start all transports and feed messages from the queue."""
         startup = []
+        loop = asyncio.get_event_loop()
         for schemes, transport_class in self.registered_transports.items():
             # Don't block the loop
             startup.append(
-                asyncio.ensure_future(self.start_transport(schemes, transport_class))
+                loop.create_task(self.start_transport(schemes, transport_class))
             )
         self.startup_tasks = startup
-        self.polling_task = asyncio.ensure_future(self.poll())
+        self.polling_task = loop.create_task(self.poll())
 
     async def stop(self, wait: bool = True):
         """Stop all transports."""

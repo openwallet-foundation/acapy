@@ -6,12 +6,12 @@ from typing import Sequence, Tuple, Union
 
 from ..config.base import InjectorError
 from ..config.injection_context import InjectionContext
-from ..messaging.routing.messages.forward import Forward
+from ..protocols.routing.messages.forward import Forward
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 
-from .message_delivery import MessageDelivery
 from .error import MessageParseError
+from .message_delivery import MessageDelivery
 from .util import time_now
 
 LOGGER = logging.getLogger(__name__)
@@ -73,9 +73,11 @@ class MessageSerializer:
 
             try:
                 unpacked = await wallet.unpack_message(message_body)
-                message_json, delivery.sender_verkey, delivery.recipient_verkey = (
-                    unpacked
-                )
+                (
+                    message_json,
+                    delivery.sender_verkey,
+                    delivery.recipient_verkey,
+                ) = unpacked
             except WalletError:
                 LOGGER.debug("Message unpack failed, falling back to JSON")
             else:

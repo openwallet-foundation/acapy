@@ -13,12 +13,12 @@ from typing import Coroutine, Union
 from .admin.base_server import BaseAdminServer
 from .config.injection_context import InjectionContext
 from .messaging.agent_message import AgentMessage
-from .messaging.connections.models.connection_record import ConnectionRecord
+from .connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError
 from .messaging.message_delivery import MessageDelivery
 from .messaging.models.base import BaseModelError
 from .messaging.outbound_message import OutboundMessage
-from .messaging.problem_report.message import ProblemReport
+from .protocols.problem_report.message import ProblemReport
 from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
@@ -88,7 +88,9 @@ class Dispatcher:
         )
 
         if error_result:
-            return asyncio.ensure_future(responder.send_reply(error_result))
+            return asyncio.get_event_loop().create_task(
+                responder.send_reply(error_result)
+            )
 
         context.injector.bind_instance(BaseResponder, responder)
 
@@ -97,7 +99,9 @@ class Dispatcher:
         collector: Collector = await context.inject(Collector, required=False)
         if collector:
             collector.wrap(handler_obj, "handle", ["any-message-handler"])
-        handler = asyncio.ensure_future(handler_obj.handle(context, responder))
+        handler = asyncio.get_event_loop().create_task(
+            handler_obj.handle(context, responder)
+        )
         return handler
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:
@@ -191,7 +195,7 @@ class DispatcherResponder(BaseResponder):
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        asyncio.ensure_future(self._dispatch_webhook(topic, payload))
+        asyncio.get_event_loop().create_task(self._dispatch_webhook(topic, payload))
 
     async def _dispatch_webhook(self, topic: str, payload: dict):
         """Perform dispatch of a webhook."""

@@ -30,7 +30,10 @@ if __name__ == "__main__":
         package_data={"aries_cloudagent": ["requirements.txt"]},
         install_requires=parse_requirements("requirements.txt"),
         tests_require=parse_requirements("requirements.dev.txt"),
-        extras_require={"indy": parse_requirements("requirements.indy.txt")},
+        extras_require={
+            "indy": parse_requirements("requirements.indy.txt"),
+            "uvloop": {"uvloop": "^=0.14.0"},
+        },
         python_requires=">=3.6.3",
         scripts=["bin/aca-py"],
     )

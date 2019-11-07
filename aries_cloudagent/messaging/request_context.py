@@ -8,9 +8,9 @@ of the system to process a message.
 from typing import Mapping
 
 from ..config.injection_context import InjectionContext
+from ..connections.models.connection_record import ConnectionRecord
 
 from .agent_message import AgentMessage
-from .connections.models.connection_record import ConnectionRecord
 from .message_delivery import MessageDelivery
 
 

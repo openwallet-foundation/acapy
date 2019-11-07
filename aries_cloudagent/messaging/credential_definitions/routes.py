@@ -8,8 +8,19 @@ from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
 
 from ...ledger.base import BaseLedger
-
+from ...storage.base import BaseStorage
 from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
+from .util import CRED_DEF_SENT_RECORD_TYPE
+
+
+CRED_DEF_SENT_PARMS = [
+    "schema_id",
+    "schema_issuer_did",
+    "schema_name",
+    "schema_version",
+    "issuer_did",
+    "cred_def_id",
+]
 
 
 class CredentialDefinitionSendRequestSchema(Schema):
@@ -73,6 +84,17 @@ class CredentialDefinitionGetResultsSchema(Schema):
     credential_definition = fields.Nested(CredentialDefinitionSchema)
 
 
+class CredentialDefinitionsCreatedResultsSchema(Schema):
+    """Results schema for cred-defs-created request."""
+
+    credential_definition_ids = fields.List(
+        fields.Str(
+            description="Credential definition identifiers",
+            **INDY_CRED_DEF_ID
+        )
+    )
+
+
 @docs(
     tags=["credential-definition"],
     summary="Sends a credential definition to the ledger",
@@ -87,10 +109,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         request: aiohttp request object
 
     Returns:
-        The credential offer details.
+        The credential definition identifier
 
     """
-
     context = request.app["request_context"]
 
     body = await request.json()
@@ -109,6 +130,45 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
 @docs(
     tags=["credential-definition"],
+    parameters=[
+        {
+            "name": p,
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        } for p in CRED_DEF_SENT_PARMS
+    ],
+    summary="Search for matching credential definitions that agent originated",
+)
+@response_schema(CredentialDefinitionsCreatedResultsSchema(), 200)
+async def credential_definitions_created(request: web.BaseRequest):
+    """
+    Request handler for retrieving credential definitions that current agent created.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The identifiers of matching credential definitions.
+
+    """
+    context = request.app["request_context"]
+
+    storage = await context.inject(BaseStorage)
+    found = await storage.search_records(
+        type_filter=CRED_DEF_SENT_RECORD_TYPE,
+        tag_query={
+            p: request.query[p] for p in CRED_DEF_SENT_PARMS if p in request.query
+        }
+    ).fetch_all()
+
+    return web.json_response(
+        {"credential_definition_ids": [record.value for record in found]}
+    )
+
+
+@docs(
+    tags=["credential-definition"],
     summary="Gets a credential definition from the ledger",
 )
 @response_schema(CredentialDefinitionGetResultsSchema(), 200)
@@ -120,10 +180,9 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
         request: aiohttp request object
 
     Returns:
-        The credential offer details.
+        The credential definition details.
 
     """
-
     context = request.app["request_context"]
 
     credential_definition_id = request.match_info["id"]
@@ -144,6 +203,14 @@ async def register(app: web.Application):
             web.post(
                 "/credential-definitions",
                 credential_definitions_send_credential_definition,
+            )
+        ]
+    )
+    app.add_routes(
+        [
+            web.get(
+                "/credential-definitions/created",
+                credential_definitions_created,
             )
         ]
     )

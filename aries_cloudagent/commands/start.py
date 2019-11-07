@@ -8,6 +8,11 @@ import signal
 from argparse import ArgumentParser
 from typing import Coroutine, Sequence
 
+try:
+    import uvloop
+except ImportError:
+    uvloop = None
+
 from ..conductor import Conductor
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
@@ -54,6 +59,9 @@ def execute(argv: Sequence[str] = None):
     conductor = Conductor(context_builder)
 
     # Run the application
+    if uvloop:
+        uvloop.install()
+        print("uvloop installed")
     run_loop(start_app(conductor), shutdown_app(conductor))
 
 

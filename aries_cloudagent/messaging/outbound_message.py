@@ -2,7 +2,7 @@
 
 from typing import Union
 
-from .connections.models.connection_target import ConnectionTarget
+from ..connections.models.connection_target import ConnectionTarget
 
 
 class OutboundMessage:

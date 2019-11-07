@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from ..valid import (
     BASE64,
+    BASE64URL,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_ISO8601_DATETIME,
@@ -183,21 +184,35 @@ class TestValid(TestCase):
     def test_base64(self):
         non_base64s = [
             "####",
-            "abcd123",
             "abcde===",
             "abcd====",
             "=abcd123",
             "=abcd123=",
-            None
         ]
+
         for non_base64 in non_base64s:
             with self.assertRaises(ValidationError):
                 BASE64["validate"](non_base64)
+            with self.assertRaises(ValidationError):
+                BASE64URL["validate"](non_base64)
 
         BASE64["validate"]("")
-        BASE64["validate"]("UG90YXRv")
-        BASE64["validate"]("UG90YXR=")
+        BASE64["validate"]("abcd123")  # some specs like JWT insist on no padding
+        BASE64["validate"]("abcde")
+        BASE64["validate"]("UG90YX+v")
+        BASE64["validate"]("UG90Y+/=")
         BASE64["validate"]("UG90YX==")
+        with self.assertRaises(ValidationError):
+            BASE64["validate"]("UG90YX-v")
+
+        BASE64URL["validate"]("")
+        BASE64URL["validate"]("abcd123")  # some specs like JWT insist on no padding
+        BASE64URL["validate"]("abcde")
+        BASE64URL["validate"]("UG90YX-v")
+        BASE64URL["validate"]("UG90Y-_=")
+        BASE64URL["validate"]("UG90YX==")
+        with self.assertRaises(ValidationError):
+            BASE64URL["validate"]("UG90YX+v")
 
     def test_sha256(self):
         non_sha256s = [
