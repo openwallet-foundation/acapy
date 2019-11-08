@@ -59,6 +59,7 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
 
     INVITATION_MODE_ONCE = "once"
     INVITATION_MODE_MULTI = "multi"
+    INVITATION_MODE_STATIC = "static"
 
     ROUTING_STATE_NONE = "none"
     ROUTING_STATE_REQUEST = "request"
@@ -430,9 +431,9 @@ class ConnectionRecordSchema(BaseRecordSchema):
     )
     invitation_mode = fields.Str(
         required=False,
-        description="Invitation mode: once or multi",
+        description="Invitation mode: once, multi, or static",
         example=ConnectionRecord.INVITATION_MODE_ONCE,
-        validate=OneOf(["once", "multi"]),
+        validate=OneOf(["once", "multi", "static"]),
     )
     alias = fields.Str(
         required=False,
