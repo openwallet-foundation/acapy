@@ -5,7 +5,7 @@ import logging
 from typing import Coroutine, Sequence, Set
 import uuid
 
-from aiohttp import web, ClientSession
+from aiohttp import web, ClientSession, DummyCookieJar
 from aiohttp_apispec import docs, response_schema, setup_aiohttp_apispec
 import aiohttp_cors
 
@@ -382,6 +382,7 @@ class AdminServer(BaseAdminServer):
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             session_args["trace_configs"] = [StatsTracer(collector, "webhook-http:")]
+        session_args["cookie_jar"] = DummyCookieJar()
         self.webhook_session = ClientSession(**session_args)
         self.webhook_processor = TaskProcessor(max_pending=20)
         async for topic, payload in self.webhook_queue:
