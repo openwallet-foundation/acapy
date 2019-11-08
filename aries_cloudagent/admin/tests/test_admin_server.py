@@ -5,9 +5,11 @@ from aiohttp import web
 from asynctest import TestCase as AsyncTestCase
 from asynctest.mock import patch
 
+from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 from ...messaging.outbound_message import OutboundMessage
+from ...messaging.protocol_registry import ProtocolRegistry
 from ...transport.outbound.queue.base import BaseOutboundMessageQueue
 from ...transport.outbound.queue.basic import BasicOutboundMessageQueue
 
@@ -18,8 +20,11 @@ class TestAdminServerBasic(AsyncTestCase):
     async def setUp(self):
         self.message_results = []
 
-    def get_admin_server(self, settings: dict = None) -> AdminServer:
-        context = InjectionContext()
+    def get_admin_server(
+        self, settings: dict = None, context: InjectionContext = None
+    ) -> AdminServer:
+        if not context:
+            context = InjectionContext()
         context.injector.bind_provider(
             BaseOutboundMessageQueue, ClassProvider(BasicOutboundMessageQueue)
         )
@@ -69,6 +74,15 @@ class TestAdminServerBasic(AsyncTestCase):
             test_payload = {"test": "TEST"}
             await admin_server.responder.send_webhook(test_topic, test_payload)
             sender.assert_awaited_once_with(admin_server, test_topic, test_payload)
+
+    async def test_import_routes(self):
+        # this test just imports all default admin routes
+        # for routes with associated tests, this shouldn't make a difference in coverage
+        context = InjectionContext()
+        context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+        await DefaultContextBuilder().load_plugins(context)
+        server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
+        app = await server.make_application()
 
 
 class TestAdminServerClient(AioHTTPTestCase):
