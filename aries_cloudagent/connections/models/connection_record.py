@@ -59,6 +59,7 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
 
     INVITATION_MODE_ONCE = "once"
     INVITATION_MODE_MULTI = "multi"
+    INVITATION_MODE_STATIC = "static"
 
     ROUTING_STATE_NONE = "none"
     ROUTING_STATE_REQUEST = "request"
