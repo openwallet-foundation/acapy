@@ -704,6 +704,56 @@ class ConnectionManager:
 
         """
 
+        cache_key = None
+        connection = None
+        resolved = False
+
+        if delivery.sender_verkey and delivery.recipient_verkey:
+            cache_key = (
+                f"connection_by_verkey::{delivery.sender_verkey}"
+                f"::{delivery.recipient_verkey}"
+            )
+            cache: BaseCache = await self.context.inject(BaseCache, required=False)
+            if cache:
+                async with cache.acquire(cache_key) as entry:
+                    if entry.result:
+                        cached = entry.result
+                        delivery.sender_did = cached["sender_did"]
+                        delivery.recipient_did_public = cached["recipient_did_public"]
+                        delivery.recipient_did = cached["recipient_did"]
+                        connection = await ConnectionRecord.retrieve_by_id(
+                            self.context, cached["id"]
+                        )
+                    else:
+                        connection = await self.resolve_message_connection(delivery)
+                        if connection:
+                            cache_val = {
+                                "id": connection.connection_id,
+                                "sender_did": delivery.sender_did,
+                                "recipient_did": delivery.recipient_did,
+                                "recipient_did_public": delivery.recipient_did_public,
+                            }
+                            await entry.set_result(cache_val, 3600)
+                        resolved = True
+
+        if not connection and not resolved:
+            connection = await self.resolve_message_connection(delivery)
+        return connection
+
+    async def resolve_message_connection(
+        self, delivery: MessageDelivery
+    ) -> ConnectionRecord:
+        """
+        Populate the delivery DID information and find the related `ConnectionRecord`.
+
+        Args:
+            delivery: The message delivery details
+
+        Returns:
+            The `ConnectionRecord` associated with the expanded message, if any
+
+        """
+
         if delivery.sender_verkey:
             try:
                 delivery.sender_did = await self.find_did_for_key(
@@ -722,11 +772,15 @@ class ConnectionManager:
                     delivery.recipient_verkey
                 )
                 delivery.recipient_did = my_info.did
-                if "public" in my_info.metadata and my_info.metadata["public"] is True:
+                if (
+                    "public" in my_info.metadata
+                    and my_info.metadata["public"] is True
+                ):
                     delivery.recipient_did_public = True
             except InjectorError:
                 self._logger.warning(
-                    "Cannot resolve recipient verkey, no wallet defined by context: %s",
+                    "Cannot resolve recipient verkey, no wallet defined by "
+                    "context: %s",
                     delivery.recipient_verkey,
                 )
             except WalletNotFoundError:
@@ -735,13 +789,12 @@ class ConnectionManager:
                     delivery.recipient_verkey,
                 )
 
-        connection = await self.find_connection(
-            delivery.sender_did, delivery.recipient_did, delivery.recipient_verkey, True
+        return await self.find_connection(
+            delivery.sender_did,
+            delivery.recipient_did,
+            delivery.recipient_verkey,
+            True,
         )
-        # if connection:
-        #     self._log_state("Found connection", {"connection": connection})
-
-        return connection
 
     async def create_did_document(
         self,
@@ -902,9 +955,25 @@ class ConnectionManager:
         cache: BaseCache = await self.context.inject(BaseCache, required=False)
         cache_key = f"connection_target::{connection.connection_id}"
         if cache:
-            target_json = await cache.get(cache_key)
-            if target_json:
-                return ConnectionTarget.deserialize(target_json)
+            async with cache.acquire(cache_key) as entry:
+                if entry.result:
+                    return ConnectionTarget.deserialize(entry.result)
+                else:
+                    target = await self.fetch_connection_target(connection)
+                    await entry.set_result(target.serialize(), 60)
+        else:
+            target = await self.fetch_connection_target(connection)
+        return target
+
+    async def fetch_connection_target(
+        self, connection: ConnectionRecord
+    ) -> ConnectionTarget:
+        """Create a connection target from a `ConnectionRecord`.
+
+        Args:
+            connection: The connection record (with associated `DIDDoc`)
+                used to generate the connection target
+        """
 
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
@@ -953,9 +1022,6 @@ class ConnectionManager:
             result = self.diddoc_connection_target(
                 doc, my_info.verkey, connection.their_label
             )
-
-        if cache:
-            await cache.set(cache_key, result.serialize(), 60)
 
         return result
 

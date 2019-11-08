@@ -3,6 +3,7 @@
 import logging
 from typing import Tuple
 
+from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....error import BaseError
 from ....holder.base import BaseHolder
@@ -211,18 +212,24 @@ class CredentialManager:
         else:
             cred_preview = None
 
-        cache_key = f"credential_offer::{credential_definition_id}"
-        cached = await V10CredentialExchange.get_cached_key(self.context, cache_key)
-        if cached:
-            credential_offer = cached["offer"]
-        else:
+        async def _create():
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-            credential_offer = await issuer.create_credential_offer(
+            return await issuer.create_credential_offer(
                 credential_definition_id
             )
-            await V10CredentialExchange.set_cached_key(
-                self.context, cache_key, {"offer": credential_offer}, 3600
-            )
+
+        credential_offer = None
+        cache_key = f"credential_offer::{credential_definition_id}"
+        cache: BaseCache = await self.context.inject(BaseCache, required=False)
+        if cache:
+            async with cache.acquire(cache_key) as entry:
+                if entry.result:
+                    credential_offer = entry.result
+                else:
+                    credential_offer = await _create()
+                    await entry.set_result(credential_offer, 3600)
+        if not credential_offer:
+            credential_offer = await _create()
 
         credential_offer_message = CredentialOffer(
             comment=comment,
@@ -320,6 +327,19 @@ class CredentialManager:
         credential_definition_id = credential_exchange_record.credential_definition_id
         credential_offer = credential_exchange_record.credential_offer
 
+        async def _create():
+            ledger: BaseLedger = await self.context.inject(BaseLedger)
+            async with ledger:
+                credential_definition = await ledger.get_credential_definition(
+                    credential_definition_id
+                )
+
+            holder: BaseHolder = await self.context.inject(BaseHolder)
+            request, metadata = await holder.create_credential_request(
+                credential_offer, credential_definition, holder_did
+            )
+            return {"request": request, "metadata": metadata}
+
         if credential_exchange_record.credential_request:
             self._logger.warning(
                 "create_request called multiple times for v1.0 credential exchange: %s",
@@ -332,38 +352,22 @@ class CredentialManager:
             cache_key = (
                 f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
             )
-            cached = await V10CredentialExchange.get_cached_key(self.context, cache_key)
-            if cached:
-                (
-                    credential_exchange_record.credential_request,
-                    credential_exchange_record.credential_request_metadata,
-                ) = (cached["request"], cached["metadata"])
-            else:
-                ledger: BaseLedger = await self.context.inject(BaseLedger)
-                async with ledger:
-                    credential_definition = await ledger.get_credential_definition(
-                        credential_definition_id
-                    )
+            cred_req_result = None
+            cache: BaseCache = await self.context.inject(BaseCache, required=False)
+            if cache:
+                async with cache.acquire(cache_key) as entry:
+                    if entry.result:
+                        cred_req_result = entry.result
+                    else:
+                        cred_req_result = await _create()
+                        await entry.set_result(cred_req_result, 3600)
+            if not cred_req_result:
+                cred_req_result = await _create()
 
-                holder: BaseHolder = await self.context.inject(BaseHolder)
-                (
-                    credential_exchange_record.credential_request,
-                    credential_exchange_record.credential_request_metadata,
-                ) = await holder.create_credential_request(
-                    credential_offer, credential_definition, holder_did
-                )
-
-                await V10CredentialExchange.set_cached_key(
-                    self.context,
-                    cache_key,
-                    {
-                        "request": credential_exchange_record.credential_request,
-                        "metadata": (
-                            credential_exchange_record.credential_request_metadata
-                        ),
-                    },
-                    7200,
-                )
+            (
+                credential_exchange_record.credential_request,
+                credential_exchange_record.credential_request_metadata,
+            ) = (cred_req_result["request"], cred_req_result["metadata"])
 
         credential_request_message = CredentialRequest(
             requests_attach=[
