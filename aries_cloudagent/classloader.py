@@ -1,11 +1,12 @@
 """The classloader provides utilties to dynamically load classes and modules."""
 
 import inspect
-import logging
 import pkg_resources
+import sys
 
 from importlib import import_module
-from typing import Sequence
+from types import ModuleType
+from typing import Sequence, Type
 
 from .error import BaseError
 
@@ -21,91 +22,50 @@ class ClassNotFoundError(BaseError):
 class ClassLoader:
     """Class used to load classes from modules dynamically."""
 
-    def __init__(self, base_path, super_class):
-        """
-        Initialize a ClassLoader instance.
-
-        Args:
-            base_path: The base dotted path to look for a relative import
-            super_class: Look for a class that inherits from this class
-        """
-        self.logger = logging.getLogger(__name__)
-        self.base_path = base_path
-        self.super_class = super_class
-
-    def load(self, module_path, load_relative=False):
-        """
-        Load module by module path.
-
-        Args:
-            module_path: Dotted path to module
-            load_relative: Should the method check in the
-            configured base path for relative import
-
-        Return:
-            The loaded class
-
-        Raises:
-            ModuleLoadError: If there is an error loading the class
-            ClassNotFoundError: If there is no class to load at specified path
-
-        """
-        # We can try to load the module relative to a given base path
-        if load_relative:
-            relative_module_path = ".".join([self.base_path, module_path])
-            try:
-                return self.load(relative_module_path)
-            except ModuleLoadError:
-                pass
-
-        try:
-            imported_module = import_module(module_path)
-        except ModuleNotFoundError:
-            error_message = f"Unable to import module {module_path}"
-            self.logger.debug(error_message)
-            raise ModuleLoadError(error_message)
-
-        # Find an the first declared class that inherits from
-        try:
-            imported_class = next(
-                obj
-                for name, obj in inspect.getmembers(imported_module, inspect.isclass)
-                if issubclass(obj, self.super_class) and obj is not self.super_class
-            )
-        except StopIteration:
-            error_message = (
-                f"Could not resolve a class that inherits from {self.super_class}"
-            )
-            self.logger.debug(error_message)
-            raise ClassNotFoundError(error_message)
-
-        return imported_class
-
-    # TODO: dedupe logic in these functions
     @classmethod
-    def load_module(cls, mod_path: str, default_module: str = None):
+    def load_module(cls, mod_path: str) -> ModuleType:
         """
-        Resolve a complete class path (ie. typing.Dict) to the class itself.
+        Load a module by its absolute path.
 
         Args:
-            class_name: Class name
-            default_module:  (Default value = None)
+            mod_path: the absolute module path
 
         Returns:
-            The resolved class
+            The resolved module or `None` if the module cannot be found
 
         Raises:
-            ClassNotFoundError: If the class could not be resolved at path
             ModuleLoadError: If there was an error loading the module
 
         """
+        if mod_path in sys.modules:
+            return sys.modules[mod_path]
+
+        if "." in mod_path:
+            parent_mod_path, mod_name = mod_path.rsplit(".", 1)
+            parent_mod = cls.load_module(parent_mod_path)
+            if not parent_mod:
+                return None
+            parent_path = parent_mod.__path__
+        else:
+            parent_path = None
+
+        # Load the module spec first
+        # this means that a later ModuleNotFoundError indicates a code issue
+        spec = None
+        for finder in sys.meta_path:
+            if hasattr(finder, "find_spec"):
+                spec = finder.find_spec(mod_path, parent_path)
+                if spec is not None:
+                    break
+        if not spec:
+            return None
 
         try:
-            mod = import_module(mod_path)
-        except ModuleNotFoundError:
-            raise ModuleLoadError(f"Unable to import module: {mod_path}")
-
-        return mod
+            return import_module(mod_path)
+        except ModuleNotFoundError as e:
+            raise ModuleLoadError(
+                f"Unable to import module {mod_path}: {str(e)}"
+            ) from e
 
     @classmethod
     def load_class(cls, class_name: str, default_module: str = None):
@@ -125,20 +85,19 @@ class ClassLoader:
 
         """
 
-        # TODO: Add option to enforce inheritance of specified base class
-
         if "." in class_name:
             # import module and find class
             mod_path, class_name = class_name.rsplit(".", 1)
         elif default_module:
             mod_path = default_module
         else:
-            raise ClassNotFoundError(f"Cannot resolve class name: {class_name}")
+            raise ClassNotFoundError(
+                f"Cannot resolve class name with no default module: {class_name}"
+            )
 
-        try:
-            mod = import_module(mod_path)
-        except ModuleNotFoundError:
-            raise ModuleLoadError(f"Unable to import module: {mod_path}")
+        mod = cls.load_module(mod_path)
+        if not mod:
+            raise ClassNotFoundError(f"Module '{mod_path}' not found")
 
         resolved = getattr(mod, class_name, None)
         if not resolved:
@@ -150,6 +109,41 @@ class ClassLoader:
                 f"Resolved value is not a class: {mod_path}.{class_name}"
             )
         return resolved
+
+    @classmethod
+    def load_subclass_of(cls, base_class: Type, mod_path: str):
+        """
+        Resolve an implementation of a base path within a module.
+
+        Args:
+            base_class: the base class being implemented
+            mod_path: the absolute module path
+
+        Returns:
+            The resolved class
+
+        Raises:
+            ClassNotFoundError: If the module or class implementation could not be found
+            ModuleLoadError: If there was an error loading the module
+
+        """
+
+        mod = cls.load_module(mod_path)
+        if not mod:
+            raise ClassNotFoundError(f"Module '{mod_path}' not found")
+
+        # Find an the first declared class that inherits from
+        try:
+            imported_class = next(
+                obj
+                for name, obj in inspect.getmembers(mod, inspect.isclass)
+                if issubclass(obj, base_class) and obj is not base_class
+            )
+        except StopIteration:
+            raise ClassNotFoundError(
+                f"Could not resolve a class that inherits from {base_class}"
+            ) from None
+        return imported_class
 
     @classmethod
     def scan_subpackages(cls, package: str) -> Sequence[str]:

@@ -43,15 +43,14 @@ class OutboundTransportManager:
         self.registered_transports = {}
         self.running_transports = {}
         self.startup_tasks = []
-        self.class_loader = ClassLoader(MODULE_BASE_PATH, BaseOutboundTransport)
         self.collector = collector
 
-    def register(self, module_path):
+    def register(self, module: str):
         """
         Register a new outbound transport by module path.
 
         Args:
-            module_path: Module path to register
+            module: Module name to register
 
         Raises:
             OutboundTransportRegistrationError: If the imported class cannot
@@ -63,7 +62,10 @@ class OutboundTransportManager:
 
         """
         try:
-            imported_class = self.class_loader.load(module_path, True)
+            module_path = f"{MODULE_BASE_PATH}.{module}"
+            imported_class = ClassLoader.load_subclass_of(
+                BaseOutboundTransport, module_path
+            )
         except (ModuleLoadError, ClassNotFoundError):
             raise OutboundTransportRegistrationError(
                 f"Outbound transport module {module_path} could not be resolved."
