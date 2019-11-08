@@ -6,7 +6,14 @@ from marshmallow import fields, Schema
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
-from ....messaging.valid import INDY_CRED_DEF_ID, UUIDFour
+from ....messaging.credential_definitions.util import CRED_DEF_TAGS
+from ....messaging.valid import (
+    INDY_CRED_DEF_ID,
+    INDY_DID,
+    INDY_SCHEMA_ID,
+    INDY_VERSION,
+    UUIDFour,
+)
 from ....storage.error import StorageNotFoundError
 
 from ...problem_report.message import ProblemReport
@@ -44,13 +51,38 @@ class V10CredentialProposalRequestSchema(Schema):
         required=True,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
     )
-    credential_definition_id = fields.Str(
+    cred_def_id = fields.Str(
         description="Credential definition identifier",
-        required=True,
+        required=False,
         **INDY_CRED_DEF_ID,
     )
+    schema_id = fields.Str(
+        description="Schema identifier",
+        required=False,
+        **INDY_SCHEMA_ID,
+    )
+    schema_issuer_did = fields.Str(
+        description="Schema issuer DID",
+        required=False,
+        **INDY_DID,
+    )
+    schema_name = fields.Str(
+        description="Schema name",
+        required=False,
+        example="preferences",
+    )
+    schema_version = fields.Str(
+        description="Schema version",
+        required=False,
+        **INDY_VERSION,
+    )
+    issuer_did = fields.Str(
+        description="Credential issuer DID",
+        required=False,
+        **INDY_DID,
+    )
     comment = fields.Str(description="Human-readable comment", required=False)
-    credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
+    credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
 
 class V10CredentialOfferRequestSchema(Schema):
@@ -61,7 +93,7 @@ class V10CredentialOfferRequestSchema(Schema):
         required=True,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
     )
-    credential_definition_id = fields.Str(
+    cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=True,
         **INDY_CRED_DEF_ID,
@@ -136,10 +168,7 @@ async def credential_exchange_list(request: web.BaseRequest):
     return web.json_response({"results": [record.serialize() for record in records]})
 
 
-@docs(
-    tags=["issue-credential exchange"],
-    summary="Fetch a single credential exchange record",
-)
+@docs(tags=["issue-credential"], summary="Fetch a single credential exchange record")
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
@@ -186,15 +215,11 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     body = await request.json()
 
-    connection_id = body.get("connection_id")
-    credential_definition_id = body.get("credential_definition_id")
     comment = body.get("comment")
-    preview_spec = body.get("credential_preview")
-
-    if not credential_definition_id:
-        raise web.HTTPBadRequest(reason="credential_definition_id must be provided.")
+    connection_id = body.get("connection_id")
+    preview_spec = body.get("credential_proposal")
     if not preview_spec:
-        raise web.HTTPBadRequest(reason="credential_preview must be provided.")
+        raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -209,7 +234,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     credential_proposal = CredentialProposal(
         comment=comment,
         credential_proposal=CredentialPreview.deserialize(preview_spec),
-        cred_def_id=credential_definition_id,
+        **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
     credential_manager = CredentialManager(context)
@@ -247,12 +272,10 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     body = await request.json()
 
     connection_id = body.get("connection_id")
-    credential_definition_id = body.get("credential_definition_id")
     comment = body.get("comment")
-    preview_spec = body.get("credential_preview")
-
+    preview_spec = body.get("credential_proposal")
     if not preview_spec:
-        raise web.HTTPBadRequest(reason="credential_preview must be provided.")
+        raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -272,7 +295,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         connection_id,
         comment=comment,
         credential_preview=credential_preview,
-        credential_definition_id=credential_definition_id,
+        **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
     await outbound_handler(
@@ -312,15 +335,15 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     body = await request.json()
 
     connection_id = body.get("connection_id")
-    credential_definition_id = body.get("credential_definition_id")
+    cred_def_id = body.get("cred_def_id")
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
 
-    if not credential_definition_id:
-        raise web.HTTPBadRequest(reason="credential_definition_id is required")
+    if not cred_def_id:
+        raise web.HTTPBadRequest(reason="cred_def_id is required")
 
     if auto_issue and not preview_spec:
         raise web.HTTPBadRequest(
@@ -343,7 +366,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         credential_proposal = CredentialProposal(
             comment=comment,
             credential_proposal=credential_preview,
-            cred_def_id=credential_definition_id,
+            cred_def_id=cred_def_id,
         )
         credential_proposal_dict = credential_proposal.serialize()
     else:
@@ -352,7 +375,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     credential_exchange_record = V10CredentialExchange(
         connection_id=connection_id,
         initiator=V10CredentialExchange.INITIATOR_SELF,
-        credential_definition_id=credential_definition_id,
+        credential_definition_id=cred_def_id,
         credential_proposal_dict=credential_proposal_dict,
         auto_issue=auto_issue,
     )
