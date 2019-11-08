@@ -11,10 +11,9 @@ import aiohttp_cors
 
 from marshmallow import fields, Schema
 
-from ..classloader import ClassLoader
-from ..config.base import ConfigError
 from ..config.injection_context import InjectionContext
 from ..messaging.outbound_message import OutboundMessage
+from ..messaging.plugin_registry import PluginRegistry
 from ..messaging.responder import BaseResponder
 from ..stats import Collector
 from ..task_processor import TaskProcessor
@@ -23,7 +22,6 @@ from ..transport.stats import StatsTracer
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
-from .routes import register_module_routes
 
 LOGGER = logging.getLogger(__name__)
 
@@ -193,18 +191,10 @@ class AdminServer(BaseAdminServer):
                 web.get("/ws", self.websocket_handler),
             ]
         )
-        await register_module_routes(app)
 
-        for protocol_module_path in self.context.settings.get("external_protocols", []):
-            try:
-                routes_module = ClassLoader.load_module(
-                    f"{protocol_module_path}.routes"
-                )
-                await routes_module.register(app)
-            except Exception as e:
-                raise ConfigError(
-                    f"Failed to load external protocol module '{protocol_module_path}'."
-                ) from e
+        plugin_registry = await self.context.inject(PluginRegistry, required=False)
+        if plugin_registry:
+            await plugin_registry.register_admin_routes(app)
 
         cors = aiohttp_cors.setup(
             app,

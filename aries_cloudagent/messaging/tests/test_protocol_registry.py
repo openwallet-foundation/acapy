@@ -14,6 +14,7 @@ class TestProtocolRegistry(AsyncTestCase):
     test_protocol_queries = ["*", "PROTOCOL", "PROTO*"]
     test_protocol_queries_fail = ["", "nomatch", "nomatch*"]
     test_message_handler = "fake_handler"
+    test_controller = "fake_controller"
 
     def setUp(self):
         self.registry = ProtocolRegistry()
@@ -22,8 +23,15 @@ class TestProtocolRegistry(AsyncTestCase):
         self.registry.register_message_types(
             {self.test_message_type: self.test_message_handler}
         )
-        protocols = self.registry.protocols
-        assert tuple(protocols) == (self.test_protocol,)
+        self.registry.register_controllers(
+            {self.test_message_type: self.test_controller}
+        )
+
+        assert list(self.registry.message_types) == [self.test_message_type]
+        assert list(self.registry.protocols) == [self.test_protocol]
+        assert self.registry.controllers == {
+            self.test_message_type: self.test_controller
+        }
 
     def test_message_type_query(self):
         self.registry.register_message_types(
@@ -54,3 +62,6 @@ class TestProtocolRegistry(AsyncTestCase):
         assert len(published) == 1
         assert published[0]["pid"] == self.test_protocol
         assert published[0]["roles"] == ["ROLE"]
+
+    def test_repr(self):
+        assert type(repr(self.registry)) is str

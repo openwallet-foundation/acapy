@@ -1,4 +1,4 @@
-"""Handle registration and publication of supported message families."""
+"""Handle registration and publication of supported protocols."""
 
 from typing import Mapping, Sequence
 
