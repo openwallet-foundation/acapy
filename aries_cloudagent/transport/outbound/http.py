@@ -2,7 +2,7 @@
 
 import logging
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, DummyCookieJar
 
 from ...messaging.outbound_message import OutboundMessage
 from ..stats import StatsTracer
@@ -27,6 +27,7 @@ class HttpTransport(BaseOutboundTransport):
             session_args["trace_configs"] = [
                 StatsTracer(self.collector, "outbound-http:")
             ]
+        session_args["cookie_jar"] = DummyCookieJar()
         self.client_session = ClientSession(**session_args)
         return self
 
