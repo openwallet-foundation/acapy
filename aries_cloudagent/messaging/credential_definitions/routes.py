@@ -10,17 +10,7 @@ from marshmallow import fields, Schema
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
-from .util import CRED_DEF_SENT_RECORD_TYPE
-
-
-CRED_DEF_SENT_PARMS = [
-    "schema_id",
-    "schema_issuer_did",
-    "schema_name",
-    "schema_version",
-    "issuer_did",
-    "cred_def_id",
-]
+from .util import CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
 
 class CredentialDefinitionSendRequestSchema(Schema):
@@ -136,7 +126,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             "in": "query",
             "schema": {"type": "string"},
             "required": False,
-        } for p in CRED_DEF_SENT_PARMS
+        } for p in CRED_DEF_TAGS
     ],
     summary="Search for matching credential definitions that agent originated",
 )
@@ -158,7 +148,7 @@ async def credential_definitions_created(request: web.BaseRequest):
     found = await storage.search_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
         tag_query={
-            p: request.query[p] for p in CRED_DEF_SENT_PARMS if p in request.query
+            p: request.query[p] for p in CRED_DEF_TAGS if p in request.query
         }
     ).fetch_all()
 
