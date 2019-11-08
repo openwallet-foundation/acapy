@@ -359,6 +359,16 @@ class GeneralGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add general command line arguments to the parser."""
         parser.add_argument(
+            "--plugin",
+            dest="external_plugins",
+            type=str,
+            action="append",
+            required=False,
+            metavar="<module>",
+            help="Load <module> as external plugin module. Multiple\
+            instances of this parameter can be specified.",
+        )
+        parser.add_argument(
             "--storage-type",
             type=str,
             metavar="<storage-type>",
@@ -370,6 +380,8 @@ class GeneralGroup(ArgumentGroup):
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
         settings = {}
+        if args.external_plugins:
+            settings["external_plugins"] = args.external_plugins
         if args.storage_type:
             settings["storage.type"] = args.storage_type
         return settings
@@ -487,16 +499,6 @@ class ProtocolGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add protocol-specific command line arguments to the parser."""
         parser.add_argument(
-            "--protocol",
-            dest="external_protocols",
-            type=str,
-            action="append",
-            required=False,
-            metavar="<module>",
-            help="Load <module> as external protocol module. Multiple\
-            instances of this parameter can be specified.",
-        )
-        parser.add_argument(
             "--auto-ping-connection",
             action="store_true",
             help="Automatically send a trust ping immediately after a\
@@ -524,8 +526,6 @@ class ProtocolGroup(ArgumentGroup):
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
         settings = {}
-        if args.external_protocols:
-            settings["external_protocols"] = args.external_protocols
         if args.auto_ping_connection:
             settings["auto_ping_connection"] = True
         if args.invite_base_url:
