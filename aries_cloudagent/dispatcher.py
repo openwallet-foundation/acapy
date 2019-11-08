@@ -128,7 +128,7 @@ class Dispatcher:
         # If this message used the new @type format, outoing
         # messages should be the same
         if "https://didcomm.org" in message_type:
-            self.context.use_new_type_prefix = True
+            self.context.settings.set_value("use_new_type_prefix", True)
 
         message_cls = registry.resolve_message_class(message_type)
 
@@ -178,7 +178,7 @@ class DispatcherResponder(BaseResponder):
                 }
 
         # Use new message @type prefix if incoming message contained it
-        if self.context.use_new_type_prefix:
+        if self._context.settings.get_value("use_new_type_prefix"):
             message.Meta.message_type = message.Meta.new_message_type
 
         return await super().create_outbound(message, **kwargs)
