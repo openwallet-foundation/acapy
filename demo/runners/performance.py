@@ -153,7 +153,7 @@ class FaberAgent(BaseAgent):
             {
                 "connection_id": self.connection_id,
                 "credential_definition_id": self.credential_definition_id,
-                "credential_preview": cred_preview,
+                "credential_proposal": cred_preview,
                 "comment": comment,
             },
         )

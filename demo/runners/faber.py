@@ -199,7 +199,7 @@ async def main(start_port: int, show_timing: bool = False):
                 }
                 offer_request = {
                     "connection_id": agent.connection_id,
-                    "credential_definition_id": credential_definition_id,
+                    "cred_def_id": credential_definition_id,
                     "comment": f"Offer on cred def id {credential_definition_id}",
                     "credential_preview": cred_preview,
                 }

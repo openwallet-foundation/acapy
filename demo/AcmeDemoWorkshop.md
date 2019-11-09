@@ -213,7 +213,7 @@ with the following code:
                 }
                 offer_request = {
                     "connection_id": agent.connection_id,
-                    "credential_definition_id": credential_definition_id,
+                    "cred_def_id": credential_definition_id,
                     "comment": f"Offer on cred def id {credential_definition_id}",
                     "credential_preview": CredentialPreview(
                         attributes=CredAttrSpec.list_plain(
