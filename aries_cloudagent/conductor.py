@@ -100,13 +100,14 @@ class Conductor:
         # Register all outbound transports
 
         outbound_queue = await context.inject(BaseOutboundMessageQueue)
-        collector.wrap(
-            outbound_queue,
-            (
-                "enqueue",
-                "dequeue"
-            ),
-        )
+        if collector:
+            collector.wrap(
+                outbound_queue,
+                (
+                    "enqueue",
+                    "dequeue"
+                ),
+            )
         self.outbound_transport_manager = OutboundTransportManager(
             outbound_queue, collector
         )
