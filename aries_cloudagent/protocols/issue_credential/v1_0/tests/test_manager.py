@@ -45,12 +45,13 @@ class TestCredentialManager(AsyncTestCase):
             ret_exchange, ret_cred_offer = await self.manager.prepare_send(connection_id, proposal)
             create_offer.assert_called_once()
             assert ret_exchange is create_offer.return_value[0]
-            exchange = create_offer.call_args[1]["credential_exchange_record"]
-            assert exchange.auto_issue
-            assert exchange.connection_id == connection_id
-            assert exchange.credential_definition_id == cred_def_id
-            assert exchange.role == exchange.ROLE_ISSUER
-            assert exchange.credential_proposal_dict == proposal.serialize()
+            arg_exchange = create_offer.call_args[1]["credential_exchange_record"]
+            assert arg_exchange.auto_issue
+            assert arg_exchange.connection_id == connection_id
+            assert arg_exchange.schema_id == None
+            assert arg_exchange.credential_definition_id == None
+            assert arg_exchange.role == V10CredentialExchange.ROLE_ISSUER
+            assert arg_exchange.credential_proposal_dict == proposal.serialize()
 
     async def test_create_proposal(self):
         schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
@@ -70,17 +71,8 @@ class TestCredentialManager(AsyncTestCase):
                 connection_id,
                 auto_offer=True,
                 comment=comment,
-                credential_preview=preview,
-                credential_definition_id=None,
-            )
-
-        with self.assertRaises(CredentialManagerError):
-            await self.manager.create_proposal(
-                connection_id,
-                auto_offer=True,
-                comment=comment,
                 credential_preview=None,
-                credential_definition_id=cred_def_id,
+                cred_def_id=cred_def_id,
             )
 
         with async_mock.patch.object(
@@ -91,15 +83,24 @@ class TestCredentialManager(AsyncTestCase):
                 auto_offer=True,
                 comment=comment,
                 credential_preview=preview,
-                credential_definition_id=cred_def_id,
+                cred_def_id=cred_def_id,
             )
             save_ex.assert_called_once()
+
+            await self.manager.create_proposal(
+                connection_id,
+                auto_offer=True,
+                comment=comment,
+                credential_preview=preview,
+                cred_def_id=None,
+            )  # OK to leave open until offer
+
         proposal = CredentialProposal.deserialize(exchange.credential_proposal_dict)
 
         assert exchange.auto_offer
         assert exchange.connection_id == connection_id
-        assert exchange.credential_definition_id == cred_def_id
-        assert exchange.schema_id == schema_id
+        assert not exchange.credential_definition_id  # leave open until offer
+        assert not exchange.schema_id  # leave open until offer
         assert exchange.thread_id == proposal._thread_id
         assert exchange.role == exchange.ROLE_HOLDER
         assert exchange.state == V10CredentialExchange.STATE_PROPOSAL_SENT
@@ -120,12 +121,6 @@ class TestCredentialManager(AsyncTestCase):
             return_value=schema_id
         )
 
-        with self.assertRaises(CredentialManagerError):
-            self.context.message = CredentialProposal(
-                credential_proposal=preview, cred_def_id=None, schema_id=None
-            )
-            await self.manager.receive_proposal()
-
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
@@ -138,10 +133,10 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             assert exchange.connection_id == connection_id
-            assert exchange.credential_definition_id == cred_def_id
+            assert exchange.credential_definition_id == None
             assert exchange.role == V10CredentialExchange.ROLE_ISSUER
             assert exchange.state == V10CredentialExchange.STATE_PROPOSAL_RECEIVED
-            assert exchange.schema_id == schema_id
+            assert exchange.schema_id == None
             assert exchange.thread_id == proposal._thread_id
 
             ret_proposal: CredentialProposal = CredentialProposal.deserialize(
@@ -149,6 +144,11 @@ class TestCredentialManager(AsyncTestCase):
             )
             attrs = ret_proposal.credential_proposal.attributes
             assert attrs == preview.attributes
+
+            self.context.message = CredentialProposal(
+                credential_proposal=preview, cred_def_id=None, schema_id=None
+            )
+            await self.manager.receive_proposal()  # OK to leave open until offer
 
     async def test_create_free_offer(self):
         schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
@@ -201,7 +201,6 @@ class TestCredentialManager(AsyncTestCase):
         )
         proposal = CredentialProposal(credential_proposal=preview)
         exchange = V10CredentialExchange(
-            credential_definition_id=cred_def_id,
             credential_proposal_dict=proposal.serialize(),
             role=V10CredentialExchange.ROLE_ISSUER,
         )
@@ -212,7 +211,9 @@ class TestCredentialManager(AsyncTestCase):
             V10CredentialExchange, "get_cached_key", autospec=True
         ) as get_cached_key, async_mock.patch.object(
             V10CredentialExchange, "set_cached_key", autospec=True
-        ) as set_cached_key:
+        ) as set_cached_key, async_mock.patch.object(
+            CredentialManager, "_match_sent_cred_def_id", autospec=True
+        ) as match_cred_def_id:
             get_cached_key.return_value = None
             cred_offer = {"cred_def_id": cred_def_id, "schema_id": schema_id}
             issuer = async_mock.MagicMock()
@@ -220,6 +221,7 @@ class TestCredentialManager(AsyncTestCase):
                 return_value=cred_offer
             )
             self.context.injector.bind_instance(BaseIssuer, issuer)
+            match_cred_def_id.return_value=cred_def_id
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
                 credential_exchange_record=exchange, comment=comment

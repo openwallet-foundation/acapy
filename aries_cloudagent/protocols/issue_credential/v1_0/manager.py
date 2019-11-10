@@ -1,7 +1,7 @@
 """Classes to manage credentials."""
 
 import logging
-from typing import Tuple
+from typing import Mapping, Tuple
 
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
@@ -9,6 +9,11 @@ from ....error import BaseError
 from ....holder.base import BaseHolder
 from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger
+from ....messaging.credential_definitions.util import (
+    CRED_DEF_TAGS,
+    CRED_DEF_SENT_RECORD_TYPE
+)
+from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
 from .messages.credential_issue import CredentialIssue
@@ -48,6 +53,20 @@ class CredentialManager:
         """
         return self._context
 
+    async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
+        """Return most recent matching id of cred def that agent sent to ledger."""
+
+        storage: BaseStorage = await self.context.inject(BaseStorage)
+        found = await storage.search_records(
+            type_filter=CRED_DEF_SENT_RECORD_TYPE,
+            tag_query=tag_query,
+        ).fetch_all()
+        if not found:
+            raise CredentialManagerError(
+                f"Issuer has no operable cred def for proposal spec {tag_query}"
+            )
+        return max(found, key=lambda r: int(r.tags["epoch"])).tags["cred_def_id"]
+
     async def prepare_send(
         self, connection_id: str, credential_proposal: CredentialProposal
     ) -> Tuple[V10CredentialExchange, CredentialOffer]:
@@ -63,19 +82,11 @@ class CredentialManager:
             A tuple of the new credential exchange record and credential offer message
 
         """
-
-        credential_definition_id = credential_proposal.cred_def_id
-        if not credential_definition_id:
-            raise CredentialManagerError(
-                "Proposal credential definition ID is required"
-            )
-
         credential_exchange = V10CredentialExchange(
             auto_issue=True,
             connection_id=connection_id,
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
-            credential_definition_id=credential_definition_id,
             credential_proposal_dict=credential_proposal.serialize(),
         )
         (credential_exchange, credential_offer) = await self.create_offer(
@@ -91,7 +102,12 @@ class CredentialManager:
         auto_offer: bool = None,
         comment: str = None,
         credential_preview: CredentialPreview = None,
-        credential_definition_id: str,
+        schema_id: str = None,
+        schema_issuer_did: str = None,
+        schema_name: str = None,
+        schema_version: str = None,
+        cred_def_id: str = None,
+        issuer_did: str = None,
     ) -> V10CredentialExchange:
         """
         Create a credential proposal.
@@ -103,32 +119,30 @@ class CredentialManager:
             comment: Optional human-readable comment to include in proposal
             credential_preview: The credential preview to use to create
                 the credential proposal
-            credential_definition_id: Credential definition id for the
-                credential proposal
+            schema_id: Schema id for credential proposal
+            schema_issuer_did: Schema issuer DID for credential proposal
+            schema_name: Schema name for credential proposal
+            schema_version: Schema version for credential proposal
+            cred_def_id: Credential definition id for credential proposal
+            issuer_did: Issuer DID for credential proposal
 
         Returns:
             Resulting credential exchange record including credential proposal
 
         """
-        # Credential definition id must be present
-        if not credential_definition_id:
-            raise CredentialManagerError("credential_definition_id is not set")
-
         # Credential preview must be present
         if not credential_preview:
             raise CredentialManagerError("credential_preview is not set")
-
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
-        async with ledger:
-            schema_id = await ledger.credential_definition_id2schema_id(
-                credential_definition_id
-            )
 
         credential_proposal_message = CredentialProposal(
             comment=comment,
             credential_proposal=credential_preview,
             schema_id=schema_id,
-            cred_def_id=credential_definition_id,
+            schema_issuer_did=schema_issuer_did,
+            schema_name=schema_name,
+            schema_version=schema_version,
+            cred_def_id=cred_def_id,
+            issuer_did=issuer_did
         )
 
         credential_exchange_record = V10CredentialExchange(
@@ -137,8 +151,6 @@ class CredentialManager:
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_HOLDER,
             state=V10CredentialExchange.STATE_PROPOSAL_SENT,
-            credential_definition_id=credential_definition_id,
-            schema_id=schema_id,
             credential_proposal_dict=credential_proposal_message.serialize(),
             auto_offer=auto_offer,
         )
@@ -158,24 +170,14 @@ class CredentialManager:
         # go to cred def via ledger to get authoritative schema id
         credential_proposal_message = self.context.message
         connection_id = self.context.connection_record.connection_id
-        cred_def_id = credential_proposal_message.cred_def_id
-        if cred_def_id:
-            ledger: BaseLedger = await self.context.inject(BaseLedger)
-            async with ledger:
-                schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
-        else:
-            raise CredentialManagerError(
-                "credential definition identifier is not set in proposal"
-            )
 
+        # at this point, cred def and schema still open to potential negotiation
         credential_exchange_record = V10CredentialExchange(
             connection_id=connection_id,
             thread_id=credential_proposal_message._thread_id,
             initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_PROPOSAL_RECEIVED,
-            credential_definition_id=cred_def_id,
-            schema_id=schema_id,
             credential_proposal_dict=credential_proposal_message.serialize(),
             auto_offer=self.context.settings.get(
                 "debug.auto_respond_credential_proposal"
@@ -204,32 +206,38 @@ class CredentialManager:
             A tuple (credential exchange record, credential offer message)
 
         """
-        credential_definition_id = credential_exchange_record.credential_definition_id
         if credential_exchange_record.credential_proposal_dict:
-            cred_preview = CredentialProposal.deserialize(
+            credential_proposal_message = CredentialProposal.deserialize(
                 credential_exchange_record.credential_proposal_dict
-            ).credential_proposal
-        else:
-            cred_preview = None
-
-        async def _create():
-            issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-            return await issuer.create_credential_offer(
-                credential_definition_id
+            )
+            cred_def_id = await self._match_sent_cred_def_id(
+                {
+                    t: getattr(credential_proposal_message, t)
+                    for t in CRED_DEF_TAGS if getattr(credential_proposal_message, t)
+                }
             )
 
+            cred_preview = credential_proposal_message.credential_proposal
+        else:
+            cred_def_id = credential_exchange_record.credential_definition_id
+            cred_preview = None
+
+        async def _create(cred_def_id):
+            issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+            return await issuer.create_credential_offer(cred_def_id)
+
         credential_offer = None
-        cache_key = f"credential_offer::{credential_definition_id}"
+        cache_key = f"credential_offer::{cred_def_id}"
         cache: BaseCache = await self.context.inject(BaseCache, required=False)
         if cache:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:
                     credential_offer = entry.result
                 else:
-                    credential_offer = await _create()
+                    credential_offer = await _create(cred_def_id)
                     await entry.set_result(credential_offer, 3600)
         if not credential_offer:
-            credential_offer = await _create()
+            credential_offer = await _create(cred_def_id)
 
         credential_offer_message = CredentialOffer(
             comment=comment,
@@ -267,13 +275,15 @@ class CredentialManager:
 
         credential_preview = credential_offer_message.credential_preview
         indy_offer = credential_offer_message.indy_offer(0)
+        schema_id = indy_offer["schema_id"]
+        cred_def_id = indy_offer["cred_def_id"]
 
         if credential_preview:
             credential_proposal_dict = CredentialProposal(
                 comment=credential_offer_message.comment,
                 credential_proposal=credential_preview,
-                cred_def_id=indy_offer["cred_def_id"],
-                schema_id=indy_offer["schema_id"],
+                schema_id=schema_id,
+                cred_def_id=cred_def_id,
             ).serialize()
         else:
             credential_proposal_dict = None
@@ -295,13 +305,13 @@ class CredentialManager:
                 thread_id=credential_offer_message._thread_id,
                 initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
                 role=V10CredentialExchange.ROLE_HOLDER,
-                credential_definition_id=indy_offer["cred_def_id"],
-                schema_id=indy_offer["schema_id"],
                 credential_proposal_dict=credential_proposal_dict,
             )
 
         credential_exchange_record.credential_offer = indy_offer
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
+        credential_exchange_record.schema_id = schema_id
+        credential_exchange_record.credential_definition_id = cred_def_id
 
         await credential_exchange_record.save(
             self.context, reason="receive credential offer"
@@ -462,7 +472,7 @@ class CredentialManager:
             )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
-        await credential_exchange_record.save(self.context, reason="receive credential")
+        await credential_exchange_record.save(self.context, reason="issue credential")
 
         credential_message = CredentialIssue(
             comment=comment,

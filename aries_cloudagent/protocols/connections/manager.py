@@ -621,6 +621,7 @@ class ConnectionManager:
         # Create connection record
         connection = ConnectionRecord(
             initiator=ConnectionRecord.INITIATOR_SELF,
+            invitation_mode=ConnectionRecord.INVITATION_MODE_STATIC,
             my_did=my_info.did,
             their_did=their_info.did,
             their_role=their_role,

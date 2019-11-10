@@ -88,15 +88,37 @@ class TestCredentialProposal(TestCase):
 class TestCredentialProposalSchema(TestCase):
     """Test credential cred proposal schema."""
 
-    credential_proposal = CredentialProposal(
-        comment="Hello World",
-        credential_proposal=CRED_PREVIEW,
-        schema_id="GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1560364003.0",
-        cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag",
-    )
+    credential_proposals = [
+        CredentialProposal(
+            credential_proposal=CRED_PREVIEW,
+        ),
+        CredentialProposal(
+            comment="Hello World",
+            credential_proposal=CRED_PREVIEW,
+            cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
+        ),
+        CredentialProposal(
+            comment="Hello World",
+            credential_proposal=CRED_PREVIEW,
+            schema_id="GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1.0",
+        ),
+        CredentialProposal(
+            comment="Hello World",
+            credential_proposal=CRED_PREVIEW,
+            schema_issuer_did="GMm4vMw8LLrLJjp81kRRLp",
+        ),
+        CredentialProposal(
+            comment="Hello World",
+            credential_proposal=CRED_PREVIEW,
+            schema_name="ahoy",
+            schema_version="1.0",
+            issuer_did="GMm4vMw8LLrLJjp81kRRLp",
+        ),
+    ]
 
     def test_make_model(self):
         """Test making model."""
-        data = self.credential_proposal.serialize()
-        model_instance = CredentialProposal.deserialize(data)
-        assert isinstance(model_instance, CredentialProposal)
+        for credential_proposal in self.credential_proposals:
+            data = credential_proposal.serialize()
+            model_instance = CredentialProposal.deserialize(data)
+            assert isinstance(model_instance, CredentialProposal)

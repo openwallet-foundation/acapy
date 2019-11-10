@@ -110,7 +110,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock(
-            return_value={"connection_id": conn_id, "credential_preview": preview_spec}
+            return_value={"connection_id": conn_id, "credential_proposal": preview_spec}
         )
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -209,7 +209,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.json = async_mock.CoroutineMock(
             return_value={
                 "auto_issue": False,
-                "credential_definition_id": "cred-def-id",
+                "cred_def_id": "cred-def-id",
             }
         )
 
@@ -251,7 +251,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.json = async_mock.CoroutineMock(
             return_value={
                 "auto_issue": False,
-                "credential_definition_id": "cred-def-id",
+                "cred_def_id": "cred-def-id",
             }
         )
 
