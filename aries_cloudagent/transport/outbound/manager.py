@@ -62,13 +62,12 @@ class OutboundTransportManager:
 
         """
         try:
-            module_path = f"{MODULE_BASE_PATH}.{module}"
             imported_class = ClassLoader.load_subclass_of(
-                BaseOutboundTransport, module_path
+                BaseOutboundTransport, module, MODULE_BASE_PATH
             )
         except (ModuleLoadError, ClassNotFoundError):
             raise OutboundTransportRegistrationError(
-                f"Outbound transport module {module_path} could not be resolved."
+                f"Outbound transport module {module} could not be resolved."
             )
 
         self.register_class(imported_class)

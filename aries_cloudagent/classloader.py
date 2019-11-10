@@ -5,6 +5,7 @@ import pkg_resources
 import sys
 
 from importlib import import_module
+from importlib.util import find_spec, resolve_name
 from types import ModuleType
 from typing import Sequence, Type
 
@@ -23,12 +24,13 @@ class ClassLoader:
     """Class used to load classes from modules dynamically."""
 
     @classmethod
-    def load_module(cls, mod_path: str) -> ModuleType:
+    def load_module(cls, mod_path: str, package: str = None) -> ModuleType:
         """
         Load a module by its absolute path.
 
         Args:
-            mod_path: the absolute module path
+            mod_path: the absolute or relative module path
+            package: the parent package to search for the module
 
         Returns:
             The resolved module or `None` if the module cannot be found
@@ -37,44 +39,54 @@ class ClassLoader:
             ModuleLoadError: If there was an error loading the module
 
         """
-        if mod_path in sys.modules:
-            return sys.modules[mod_path]
+        if package:
+            # preload parent package
+            if not cls.load_module(package):
+                print("no parent")
+                return None
+            # must treat as a relative import
+            if not mod_path.startswith("."):
+                mod_path = f".{mod_path}"
+
+        full_path = resolve_name(mod_path, package)
+        if full_path in sys.modules:
+            return sys.modules[full_path]
 
         if "." in mod_path:
             parent_mod_path, mod_name = mod_path.rsplit(".", 1)
-            parent_mod = cls.load_module(parent_mod_path)
-            if not parent_mod:
-                return None
-            parent_path = parent_mod.__path__
-        else:
-            parent_path = None
+            if parent_mod_path and parent_mod_path[-1] != ".":
+                parent_mod = cls.load_module(parent_mod_path, package)
+                if not parent_mod:
+                    print("no parent 2")
+                    return None
+                package = parent_mod.__name__
+                mod_path = f".{mod_name}"
 
         # Load the module spec first
         # this means that a later ModuleNotFoundError indicates a code issue
-        spec = None
-        for finder in sys.meta_path:
-            if hasattr(finder, "find_spec"):
-                spec = finder.find_spec(mod_path, parent_path)
-                if spec is not None:
-                    break
+        spec = find_spec(mod_path, package)
         if not spec:
+            print("no spec", mod_path, package)
             return None
 
         try:
-            return import_module(mod_path)
+            return import_module(mod_path, package)
         except ModuleNotFoundError as e:
             raise ModuleLoadError(
                 f"Unable to import module {mod_path}: {str(e)}"
             ) from e
 
     @classmethod
-    def load_class(cls, class_name: str, default_module: str = None):
+    def load_class(
+        cls, class_name: str, default_module: str = None, package: str = None
+    ):
         """
         Resolve a complete class path (ie. typing.Dict) to the class itself.
 
         Args:
-            class_name: Class name
-            default_module:  (Default value = None)
+            class_name: the class name
+            default_module: the default module to load, if not part of in the class name
+            package: the parent package to search for the module
 
         Returns:
             The resolved class
@@ -95,7 +107,7 @@ class ClassLoader:
                 f"Cannot resolve class name with no default module: {class_name}"
             )
 
-        mod = cls.load_module(mod_path)
+        mod = cls.load_module(mod_path, package)
         if not mod:
             raise ClassNotFoundError(f"Module '{mod_path}' not found")
 
@@ -111,13 +123,14 @@ class ClassLoader:
         return resolved
 
     @classmethod
-    def load_subclass_of(cls, base_class: Type, mod_path: str):
+    def load_subclass_of(cls, base_class: Type, mod_path: str, package: str = None):
         """
         Resolve an implementation of a base path within a module.
 
         Args:
             base_class: the base class being implemented
             mod_path: the absolute module path
+            package: the parent package to search for the module
 
         Returns:
             The resolved class
@@ -128,7 +141,7 @@ class ClassLoader:
 
         """
 
-        mod = cls.load_module(mod_path)
+        mod = cls.load_module(mod_path, package)
         if not mod:
             raise ClassNotFoundError(f"Module '{mod_path}' not found")
 

@@ -35,9 +35,8 @@ class InboundTransportManager:
 
         """
         try:
-            module_path = f"{MODULE_BASE_PATH}.{config.module}"
             imported_class = ClassLoader.load_subclass_of(
-                BaseInboundTransport, module_path
+                BaseInboundTransport, config.module, MODULE_BASE_PATH
             )
         except (ModuleLoadError, ClassNotFoundError) as e:
             raise InboundTransportRegistrationError(
