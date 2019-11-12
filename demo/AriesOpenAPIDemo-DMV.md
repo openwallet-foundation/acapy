@@ -182,7 +182,7 @@ Issuing a credential from the DMV agent to Alice’s agent is easy. In the DMV b
 
 First, scroll back up to the **`GET /connections`** API endpoint and execute it. From the result, find the the `connection_id` and copy the value. Go back to the **`POST /issue-credential/send`** section and paste it as the value for the `connection_id`.
 
-Next, scroll down to the **`POST /credential-definitions`** section that you executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the **`POST /issue-credential/send`** section and paste it as the value for the `credential_defintion_id`.
+Next, scroll down to the **`POST /credential-definitions`** section that you executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the **`POST /issue-credential/send`** section and paste it as the value for the `cred_def_id`.
 
 Finally, for the credential values, put the following between the `attributes` square brackets:
 
