@@ -20,10 +20,8 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
         """Create the queue instance."""
         queue_size = os.environ.get("QUEUE_SIZE")
         if queue_size:
-            self.logger.debug(f"Creating Queuing with max size: {queue_size}")
             return asyncio.Queue(maxsize=int(queue_size))
         else:
-            self.logger.debug(f"Creating Queuing with unlimited max size")
             return asyncio.Queue()
 
     async def enqueue(self, message):
