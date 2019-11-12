@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 
 from .base import BaseOutboundMessageQueue
 
@@ -17,7 +18,11 @@ class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
 
     def make_queue(self):
         """Create the queue instance."""
-        return asyncio.Queue()
+        queue_size = os.environ.get("QUEUE_SIZE")
+        if queue_size:
+            return asyncio.Queue(maxsize=int(queue_size))
+        else:
+            return asyncio.Queue()
 
     async def enqueue(self, message):
         """
