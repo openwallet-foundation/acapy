@@ -18,7 +18,6 @@ class InboundTransportManager:
     def __init__(self):
         """Initialize an `InboundTransportManager` instance."""
         self.logger = logging.getLogger(__name__)
-        self.class_loader = ClassLoader(MODULE_BASE_PATH, BaseInboundTransport)
         self.registered_transports = []
 
     def register(
@@ -36,11 +35,13 @@ class InboundTransportManager:
 
         """
         try:
-            imported_class = self.class_loader.load(config.module, True)
-        except (ModuleLoadError, ClassNotFoundError):
-            raise InboundTransportRegistrationError(
-                f"Failed to load module {config.module}"
+            imported_class = ClassLoader.load_subclass_of(
+                BaseInboundTransport, config.module, MODULE_BASE_PATH
             )
+        except (ModuleLoadError, ClassNotFoundError) as e:
+            raise InboundTransportRegistrationError(
+                f"Failed to load inbound transport {config.module}"
+            ) from e
 
         instance = imported_class(
             config.host, config.port, message_handler, register_socket

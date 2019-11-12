@@ -2,7 +2,7 @@
 
 import logging
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, DummyCookieJar
 
 from ...messaging.outbound_message import OutboundMessage
 
@@ -21,7 +21,7 @@ class WsTransport(BaseOutboundTransport):
 
     async def start(self):
         """Start the outbound transport."""
-        self.client_session = ClientSession()
+        self.client_session = ClientSession(cookie_jar=DummyCookieJar())
         return self
 
     async def stop(self):
