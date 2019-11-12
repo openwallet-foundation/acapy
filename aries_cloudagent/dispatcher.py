@@ -7,7 +7,6 @@ lifecycle hook callbacks storing state for message threads, etc.
 
 import asyncio
 import logging
-import json
 from typing import Coroutine, Union
 
 from .admin.base_server import BaseAdminServer
