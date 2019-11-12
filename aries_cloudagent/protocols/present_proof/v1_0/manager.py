@@ -424,7 +424,6 @@ class PresentationManager:
         responder = await self.context.inject(BaseResponder, required=False)
 
         if responder:
-            print(f'\n\nOK THERE IS A RESPONDER: {type(responder)}: {responder}')
             presentation_ack_message = PresentationAck()
             presentation_ack_message._thread = {
                 "thid": presentation_exchange_record.thread_id
@@ -432,7 +431,6 @@ class PresentationManager:
 
             await responder.send_reply(presentation_ack_message)
         else:
-            print('\n\nUH OH NO RESPONDER')
             self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
                 presentation_exchange_record.thread_id
