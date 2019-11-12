@@ -13,6 +13,6 @@ ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-RUN mkdir logs
+RUN mkdir logs && chown -R indy:indy logs
 
 ENTRYPOINT ["/bin/bash", "-c", "aca-py \"$@\"", "--"]
