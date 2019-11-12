@@ -154,7 +154,7 @@ class FaberAgent(BaseAgent):
             "/issue-credential/send",
             {
                 "connection_id": self.connection_id,
-                "credential_definition_id": self.credential_definition_id,
+                "cred_def_id": self.credential_definition_id,
                 "credential_proposal": cred_preview,
                 "comment": comment,
             },
