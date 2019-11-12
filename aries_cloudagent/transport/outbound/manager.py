@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import uuid
 
 from typing import Type
 from urllib.parse import urlparse
@@ -151,6 +152,8 @@ class OutboundTransportManager:
         """Send messages from the queue to the transports."""
         self.processor = TaskProcessor(max_pending=10)
         async for message in self.queue:
+            unique = str(uuid.uuid4)
+            self.logger.debug(f"Processing message from queue. id: {unique}")
             await self.processor.run_retry(
                 lambda pending, msg=message: self.dispatch_message(
                     msg, pending.attempts + 1
@@ -158,6 +161,7 @@ class OutboundTransportManager:
                 retries=5,
                 retry_delay=10.0,
             )
+            self.logger.debug(f"Done processing message from queue id: {unique}")
             self.queue.task_done()
 
         await self.processor.wait_done()
