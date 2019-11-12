@@ -31,14 +31,34 @@ class PluginRegistry:
 
     def register_plugin(self, module_name) -> ModuleType:
         """Register a plugin module."""
-        if module_name not in self._plugins:
-            self._plugins[module_name] = ClassLoader.load_module(module_name)
-        return self._plugins[module_name]
+        if module_name in self._plugins:
+            mod = self._plugins[module_name]
+        else:
+            try:
+                mod = ClassLoader.load_module(module_name)
+            except ModuleLoadError as e:
+                LOGGER.error("Error loading plugin module: %s", e)
+                mod = None
+            else:
+                if mod:
+                    self._plugins[module_name] = mod
+                else:
+                    LOGGER.warning("Plugin module not found: %s", module_name)
+        return mod
 
     def register_package(self, package_name: str) -> Sequence[ModuleType]:
         """Register all modules (sub-packages) under a given package name."""
-        module_names = ClassLoader.scan_subpackages(package_name)
-        return [self.register_plugin(module_name) for module_name in module_names]
+        try:
+            module_names = ClassLoader.scan_subpackages(package_name)
+        except ModuleLoadError:
+            LOGGER.error(f"Plugin module package not found: {package_name}")
+            module_names = []
+        return list(
+            filter(
+                None,
+                (self.register_plugin(module_name) for module_name in module_names),
+            )
+        )
 
     async def init_context(self, context: InjectionContext):
         """Call plugin setup methods on the current context."""
@@ -53,24 +73,24 @@ class PluginRegistry:
         registry = await context.inject(ProtocolRegistry)
         try:
             mod = ClassLoader.load_module(plugin.__name__ + ".message_types")
-        except ModuleLoadError:
-            LOGGER.info(
-                "No message types defined for plugin module: %s", plugin.__name__
-            )
+        except ModuleLoadError as e:
+            LOGGER.error("Error loading plugin module message types: %s", e)
             return
-        if hasattr(mod, "MESSAGE_TYPES"):
-            registry.register_message_types(mod.MESSAGE_TYPES)
-        if hasattr(mod, "CONTROLLERS"):
-            registry.register_controllers(mod.CONTROLLERS)
+        if mod:
+            if hasattr(mod, "MESSAGE_TYPES"):
+                registry.register_message_types(mod.MESSAGE_TYPES)
+            if hasattr(mod, "CONTROLLERS"):
+                registry.register_controllers(mod.CONTROLLERS)
 
     async def register_admin_routes(self, app):
         """Call route registration methods on the current context."""
         for plugin in self._plugins.values():
             try:
                 mod = ClassLoader.load_module(plugin.__name__ + ".routes")
-            except ModuleLoadError:
+            except ModuleLoadError as e:
+                LOGGER.error("Error loading admin routes: %s", e)
                 continue
-            if hasattr(mod, "register"):
+            if mod and hasattr(mod, "register"):
                 await mod.register(app)
 
     def __repr__(self) -> str:

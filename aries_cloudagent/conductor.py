@@ -98,7 +98,6 @@ class Conductor:
         collector = await context.inject(Collector, required=False)
 
         # Register all outbound transports
-
         outbound_queue = await context.inject(BaseOutboundMessageQueue)
         if collector:
             collector.wrap(
@@ -159,7 +158,6 @@ class Conductor:
                     "find_message_connection",
                 ),
             )
-
 
     async def start(self) -> None:
         """Start the agent."""

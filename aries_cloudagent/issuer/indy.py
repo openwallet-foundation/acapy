@@ -74,7 +74,7 @@ class IndyIssuer(BaseIssuer):
                 credential_value = credential_values[attribute]
             except KeyError:
                 raise IssuerError(
-                    "Provided credential values is missed a value "
+                    "Provided credential values are missing a value "
                     + f"for the schema attribute '{attribute}'"
                 )
 
