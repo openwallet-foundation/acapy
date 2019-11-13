@@ -16,7 +16,6 @@ from ..connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ..messaging.message_delivery import MessageDelivery
 from ..messaging.serializer import MessageSerializer
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.protocol_registry import ProtocolRegistry
@@ -24,6 +23,7 @@ from ..stats import Collector
 from ..storage.base import BaseStorage
 from ..storage.basic import BasicStorage
 from ..transport.inbound.base import InboundTransportConfiguration
+from ..transport.inbound.receipt import MessageReceipt
 from ..transport.outbound.queue.base import BaseOutboundMessageQueue
 from ..transport.outbound.queue.basic import BasicOutboundMessageQueue
 from ..wallet.base import BaseWallet
@@ -139,7 +139,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             conductor.dispatcher, "dispatch", new_callable=async_mock.CoroutineMock
         ) as mock_dispatch:
 
-            delivery = MessageDelivery()
+            delivery = MessageReceipt()
             parsed_msg = {}
             mock_serializer = builder.message_serializer
             mock_serializer.extract_message_type.return_value = "message_type"
@@ -184,7 +184,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         with async_mock.patch.object(conductor.dispatcher, "dispatch", mock_dispatch):
 
-            delivery = MessageDelivery()
+            delivery = MessageReceipt()
             parsed_msg = {}
             mock_serializer = builder.message_serializer
             mock_serializer.extract_message_type.return_value = "message_type"
@@ -287,7 +287,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 # we don't need the connection, so avoid looking for one.
                 mock_connection_manager.find_message_connection.return_value = None
 
-                delivery = MessageDelivery()
+                delivery = MessageReceipt()
                 delivery.sender_verkey = sender_pk
                 delivery.direct_response_requested = "all"
                 parsed_msg = {}

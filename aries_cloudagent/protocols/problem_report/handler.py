@@ -22,7 +22,7 @@ class ProblemReportHandler(BaseHandler):
 
         self._logger.info(
             "Received problem report from: %s, %r",
-            context.message_delivery.sender_did,
+            context.message_receipt.sender_did,
             context.message,
         )
 

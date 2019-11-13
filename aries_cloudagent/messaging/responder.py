@@ -6,13 +6,13 @@ in response to the message being handled.
 """
 
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Sequence, Union
 
 from ..error import BaseError
 from ..connections.models.connection_target import ConnectionTarget
+from ..transport.outbound.message import OutboundMessage
 
 from .agent_message import AgentMessage
-from .outbound_message import OutboundMessage
 
 
 class ResponderError(BaseError):
@@ -26,12 +26,12 @@ class BaseResponder(ABC):
         self,
         *,
         connection_id: str = None,
-        reply_socket_id: str = None,
+        reply_session_id: str = None,
         reply_to_verkey: str = None,
     ):
         """Initialize a base responder."""
         self.connection_id = connection_id
-        self.reply_socket_id = reply_socket_id
+        self.reply_session_id = reply_session_id
         self.reply_to_verkey = reply_to_verkey
 
     async def create_outbound(
@@ -39,28 +39,30 @@ class BaseResponder(ABC):
         message: Union[AgentMessage, str, bytes],
         *,
         connection_id: str = None,
-        reply_socket_id: str = None,
+        reply_session_id: str = None,
         reply_thread_id: str = None,
         reply_to_verkey: str = None,
         target: ConnectionTarget = None,
+        target_list: Sequence[ConnectionTarget] = None,
     ) -> OutboundMessage:
         """Create an OutboundMessage from a message payload."""
         if isinstance(message, AgentMessage):
             payload = message.to_json()
-            encoded = False
+            enc_payload = None
             if not reply_thread_id:
                 reply_thread_id = message._thread_id
         else:
-            payload = message
-            encoded = True
+            payload = None
+            enc_payload = message
         return OutboundMessage(
-            payload,
             connection_id=connection_id,
-            encoded=encoded,
-            reply_socket_id=reply_socket_id,
+            enc_payload=enc_payload,
+            payload=payload,
+            reply_session_id=reply_session_id,
             reply_thread_id=reply_thread_id,
             reply_to_verkey=reply_to_verkey,
             target=target,
+            target_list=target_list,
         )
 
     async def send(self, message: Union[AgentMessage, str, bytes], **kwargs):
@@ -74,6 +76,7 @@ class BaseResponder(ABC):
         *,
         connection_id: str = None,
         target: ConnectionTarget = None,
+        target_list: Sequence[ConnectionTarget] = None,
     ):
         """
         Send a reply to an incoming message.
@@ -90,9 +93,10 @@ class BaseResponder(ABC):
         outbound = await self.create_outbound(
             message,
             connection_id=connection_id or self.connection_id,
-            reply_socket_id=self.reply_socket_id,
+            reply_session_id=self.reply_session_id,
             reply_to_verkey=self.reply_to_verkey,
             target=target,
+            target_list=target_list,
         )
         await self.send_outbound(outbound)
 

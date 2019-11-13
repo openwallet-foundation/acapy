@@ -1,4 +1,4 @@
-"""Standard message serializer classes."""
+"""Standard packed message format classes."""
 
 import json
 import logging
@@ -7,21 +7,19 @@ from typing import Sequence, Tuple, Union
 from ..config.base import InjectorError
 from ..config.injection_context import InjectionContext
 from ..protocols.routing.messages.forward import Forward
-from ..transport.inbound.receipt import MessageReceipt
+from ..messaging.util import time_now
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 
-from .error import MessageParseError
-from .util import time_now
+from .base import BaseWireFormat
+from .error import MessageParseError, MessageEncodeError
+from .inbound.receipt import MessageReceipt
 
 LOGGER = logging.getLogger(__name__)
 
 
-class MessageSerializer:
+class PackWireFormat(BaseWireFormat):
     """Standard DIDComm message parser and serializer."""
-
-    def __init__(self):
-        """Initialize the message serializer instance."""
 
     async def parse_message(
         self, context: InjectionContext, message_body: Union[str, bytes],
@@ -99,20 +97,6 @@ class MessageSerializer:
 
         return message_dict, receipt
 
-    def extract_message_type(self, parsed_msg: dict) -> str:
-        """
-        Extract the message type identifier from a parsed message.
-
-        Raises:
-            MessageParseError: If the message doesn't specify a type
-
-        """
-
-        msg_type = parsed_msg.get("@type")
-        if not msg_type:
-            raise MessageParseError("Message does not contain '@type' parameter")
-        return msg_type
-
     async def encode_message(
         self,
         context: InjectionContext,
@@ -134,36 +118,34 @@ class MessageSerializer:
         Returns:
             The encoded message
 
+        Raises:
+            MessageEncodeError: If the message could not be encoded
+
         """
 
-        wallet: BaseWallet = await context.inject(BaseWallet)
+        wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+        if not wallet:
+            raise MessageEncodeError("No wallet instance")
 
         if sender_key and recipient_keys:
-            message = await wallet.pack_message(
-                message_json, recipient_keys, sender_key
-            )
+            try:
+                message = await wallet.pack_message(
+                    message_json, recipient_keys, sender_key
+                )
+            except WalletError as e:
+                raise MessageEncodeError("Message pack failed") from e
             if routing_keys:
                 recip_keys = recipient_keys
                 for router_key in routing_keys:
                     fwd_msg = Forward(to=recip_keys[0], msg=message)
                     # Forwards are anon packed
                     recip_keys = [router_key]
-                    message = await wallet.pack_message(fwd_msg.to_json(), recip_keys)
+                    try:
+                        message = await wallet.pack_message(
+                            fwd_msg.to_json(), recip_keys
+                        )
+                    except WalletError as e:
+                        raise MessageEncodeError("Forward message pack failed") from e
         else:
             message = message_json
         return message
-
-    # async def encode_direct_response(self, message: OutboundMessage):
-    #     if message.connection_id and not message.target:
-    #         message.target = await self.get_connection_target(message.connection_id)
-
-    #     if not message.encoded and message.target:
-    #         target = message.target
-    #         message.payload = await self.message_serializer.encode_message(
-    #             context,
-    #             message.payload,
-    #             target.recipient_keys or [],
-    #             (not direct_response) and target.routing_keys or [],
-    #             target.sender_key,
-    #         )
-    #         message.encoded = True

@@ -3,9 +3,9 @@ from asynctest import TestCase as AsyncTestCase
 from ....config.injection_context import InjectionContext
 from ....connections.models.connection_record import ConnectionRecord
 from ....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from ....messaging.message_delivery import MessageDelivery
 from ....storage.base import BaseStorage
 from ....storage.basic import BasicStorage
+from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.basic import BasicWallet
 
@@ -65,7 +65,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             my_endpoint="testendpoint"
         )
 
-        delivery = MessageDelivery(recipient_verkey=connect_record.invitation_key)
+        receipt = MessageReceipt(recipient_verkey=connect_record.invitation_key)
 
         requestA = ConnectionRequest(
             connection=ConnectionDetail(
@@ -77,7 +77,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             label="SameInviteRequestA",
         )
 
-        await self.manager.receive_request(requestA, delivery)
+        await self.manager.receive_request(requestA, receipt)
 
         requestB = ConnectionRequest(
             connection=ConnectionDetail(
@@ -88,7 +88,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         )
 
         # requestB fails because the invitation was not set to multi-use
-        rr_awaitable = self.manager.receive_request(requestB, delivery)
+        rr_awaitable = self.manager.receive_request(requestB, receipt)
         await self.assertAsyncRaises(ConnectionManagerError, rr_awaitable)
 
     async def test_multi_use_invitation(self):
@@ -96,7 +96,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             my_endpoint="testendpoint", multi_use=True
         )
 
-        delivery = MessageDelivery(recipient_verkey=connect_record.invitation_key)
+        receipt = MessageReceipt(recipient_verkey=connect_record.invitation_key)
 
         requestA = ConnectionRequest(
             connection=ConnectionDetail(
@@ -108,7 +108,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             label="SameInviteRequestA",
         )
 
-        await self.manager.receive_request(requestA, delivery)
+        await self.manager.receive_request(requestA, receipt)
 
         requestB = ConnectionRequest(
             connection=ConnectionDetail(
@@ -118,5 +118,5 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             label="SameInviteRequestB",
         )
 
-        await self.manager.receive_request(requestB, delivery)
+        await self.manager.receive_request(requestB, receipt)
 

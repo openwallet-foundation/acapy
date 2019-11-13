@@ -2,9 +2,9 @@ import pytest
 from asynctest import mock as async_mock
 
 from .....messaging.base_handler import HandlerException
-from .....messaging.message_delivery import MessageDelivery
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
+from .....transport.inbound.receipt import MessageReceipt
 
 from ...handlers import connection_response_handler as handler
 from ...manager import ConnectionManagerError
@@ -15,7 +15,7 @@ from ...messages.problem_report import ProblemReport, ProblemReportReason
 @pytest.fixture()
 def request_context() -> RequestContext:
     ctx = RequestContext()
-    ctx.message_delivery = MessageDelivery()
+    ctx.message_receipt = MessageReceipt()
     yield ctx
 
 
@@ -31,7 +31,7 @@ class TestResponseHandler:
 
         mock_conn_mgr.assert_called_once_with(request_context)
         mock_conn_mgr.return_value.accept_response.assert_called_once_with(
-            request_context.message, request_context.message_delivery
+            request_context.message, request_context.message_receipt
         )
         assert not responder.messages
 

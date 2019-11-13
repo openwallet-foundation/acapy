@@ -1,13 +1,13 @@
 """Http outbound transport."""
 
 import logging
+from typing import Union
 
 from aiohttp import ClientSession, DummyCookieJar
 
-from ...messaging.outbound_message import OutboundMessage
 from ..stats import StatsTracer
 
-from .base import BaseOutboundTransport
+from .base import BaseOutboundTransport, OutboundTransportError
 
 
 class HttpTransport(BaseOutboundTransport):
@@ -36,7 +36,7 @@ class HttpTransport(BaseOutboundTransport):
         await self.client_session.close()
         self.client_session = None
 
-    async def handle_message(self, message: OutboundMessage):
+    async def handle_message(self, payload: Union[str, bytes], endpoint: str):
         """
         Handle message from queue.
 
@@ -44,12 +44,12 @@ class HttpTransport(BaseOutboundTransport):
             message: `OutboundMessage` to send over transport implementation
         """
         headers = {}
-        if isinstance(message.payload, bytes):
+        if isinstance(payload, bytes):
             headers["Content-Type"] = "application/ssi-agent-wire"
         else:
             headers["Content-Type"] = "application/json"
         async with self.client_session.post(
-            message.endpoint, data=message.payload, headers=headers
+            endpoint, data=payload, headers=headers
         ) as response:
             if response.status < 200 or response.status > 299:
-                raise Exception("Unexpected response status")
+                raise OutboundTransportError("Unexpected response status")

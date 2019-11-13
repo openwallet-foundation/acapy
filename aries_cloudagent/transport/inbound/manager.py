@@ -20,9 +20,7 @@ class InboundTransportManager:
         self.logger = logging.getLogger(__name__)
         self.registered_transports = []
 
-    def register(
-        self, config: InboundTransportConfiguration, message_handler, register_socket
-    ):
+    def register(self, config: InboundTransportConfiguration, create_session):
         """
         Register transport module.
 
@@ -30,8 +28,7 @@ class InboundTransportManager:
             module_path: Path to module
             host: The host to register on
             port: The port to register on
-            message_handler: The message handler for incoming messages
-            register_socket: A coroutine for registering a new socket
+            create_session: A coroutine for creating a new session
 
         """
         try:
@@ -43,9 +40,7 @@ class InboundTransportManager:
                 f"Failed to load inbound transport {config.module}"
             ) from e
 
-        instance = imported_class(
-            config.host, config.port, message_handler, register_socket
-        )
+        instance = imported_class(config.host, config.port, create_session)
         self.register_instance(instance)
 
     def register_instance(self, transport: BaseInboundTransport):

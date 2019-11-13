@@ -9,10 +9,12 @@ wallet.
 """
 
 import asyncio
-from collections import OrderedDict
 import hashlib
 import logging
-from typing import Coroutine, Union
+import time
+import uuid
+from collections import OrderedDict
+from typing import Union
 
 from .delivery_queue import DeliveryQueue
 from .admin.base_server import BaseAdminServer
@@ -24,18 +26,47 @@ from .config.logging import LoggingConfigurator
 from .config.wallet import wallet_config
 from .dispatcher import Dispatcher
 from .protocols.connections.manager import ConnectionManager, ConnectionManagerError
-from .connections.models.connection_record import ConnectionRecord
-from .messaging.error import MessageParseError, MessagePrepareError
-from .messaging.outbound_message import OutboundMessage
 from .messaging.responder import BaseResponder
-from .messaging.serializer import MessageSerializer
-from .messaging.socket import SocketInfo, SocketRef
 from .stats import Collector
-from .storage.error import StorageNotFoundError
+from .transport.base import BaseWireFormat
+from .transport.error import MessageEncodeError
+from .transport.pack_format import PackWireFormat
 from .transport.inbound.base import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
+from .transport.inbound.message import InboundMessage
+from .transport.inbound.session import InboundSession
+from .transport.outbound.base import BaseOutboundTransport
 from .transport.outbound.manager import OutboundTransportManager
-from .transport.outbound.queue.base import BaseOutboundMessageQueue
+from .transport.outbound.message import OutboundMessage
+from .transport.queue.base import BaseMessageQueue
+from .transport.queue.basic import BasicMessageQueue
+
+LOGGER = logging.getLogger(__name__)
+
+
+class QueuedOutboundMessage:
+    STATUS_PENDING = "pending"
+    STATUS_RETRY = "retry"
+    STATUS_DONE = "done"
+
+    def __init__(
+        self,
+        context: InjectionContext,
+        message: OutboundMessage,
+        target,
+        transport_id: str,
+    ):
+        self.context = context
+        self.delivery_task: asyncio.Task = None
+        self.endpoint: str = None
+        self.error: Exception = None
+        self.message = message
+        self.payload: Union[str, bytes] = None
+        self.retries = 0
+        self.retry_at: float = None
+        self.status = self.STATUS_PENDING
+        self.target = target
+        self.transport_id: str = transport_id
 
 
 class Conductor:
@@ -60,11 +91,15 @@ class Conductor:
         self.context: InjectionContext = None
         self.context_builder = context_builder
         self.dispatcher: Dispatcher = None
-        self.logger = logging.getLogger(__name__)
-        self.message_serializer: MessageSerializer = None
+        self.dispatcher_limit: asyncio.Semaphore = None
+        self.inbound_queue: BaseMessageQueue = None
+        self.inbound_sessions = OrderedDict()
+        self.inbound_session_limit: asyncio.Semaphore = None
         self.inbound_transport_manager: InboundTransportManager = None
+        self.outbound_buffer = []
+        self.outbound_event = asyncio.Event()
+        self.outbound_new = []
         self.outbound_transport_manager: OutboundTransportManager = None
-        self.sockets = OrderedDict()
         self.undelivered_queue: DeliveryQueue = None
 
     async def setup(self):
@@ -72,12 +107,15 @@ class Conductor:
 
         context = await self.context_builder.build()
 
-        # Populate message serializer
-        self.message_serializer = await context.inject(MessageSerializer)
-
         # Setup Delivery Queue
         if context.settings.get("queue.enable_undelivered_queue"):
             self.undelivered_queue = DeliveryQueue()
+
+        # FIXME add config options
+        self.dispatcher_limit = asyncio.Semaphore(20)
+        self.inbound_session_limit = asyncio.Semaphore(20)
+
+        self.inbound_queue = BasicMessageQueue()
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -87,29 +125,25 @@ class Conductor:
                 module, host, port = transport
                 self.inbound_transport_manager.register(
                     InboundTransportConfiguration(module=module, host=host, port=port),
-                    self.inbound_message_router,
-                    self.register_socket,
+                    self.create_inbound_session,
                 )
             except Exception:
-                self.logger.exception("Unable to register inbound transport")
+                LOGGER.exception("Unable to register inbound transport")
                 raise
 
         # Fetch stats collector, if any
         collector = await context.inject(Collector, required=False)
 
         # Register all outbound transports
-        outbound_queue = await context.inject(BaseOutboundMessageQueue)
-        if collector:
-            collector.wrap(outbound_queue, ("enqueue", "dequeue"))
         self.outbound_transport_manager = OutboundTransportManager(
-            outbound_queue, collector
+            collector
         )
         outbound_transports = context.settings.get("transport.outbound_configs") or []
         for outbound_transport in outbound_transports:
             try:
                 self.outbound_transport_manager.register(outbound_transport)
             except Exception:
-                self.logger.exception("Unable to register outbound transport")
+                LOGGER.exception("Unable to register outbound transport")
                 raise
 
         # Admin API
@@ -126,7 +160,7 @@ class Conductor:
                         self.admin_server.add_webhook_target(url)
                 context.injector.bind_instance(BaseAdminServer, self.admin_server)
             except Exception:
-                self.logger.exception("Unable to register admin server")
+                LOGGER.exception("Unable to register admin server")
                 raise
 
         self.context = context
@@ -168,12 +202,12 @@ class Conductor:
         try:
             await self.inbound_transport_manager.start()
         except Exception:
-            self.logger.exception("Unable to start inbound transports")
+            LOGGER.exception("Unable to start inbound transports")
             raise
         try:
             await self.outbound_transport_manager.start()
         except Exception:
-            self.logger.exception("Unable to start outbound transports")
+            LOGGER.exception("Unable to start outbound transports")
             raise
 
         # Start up Admin server
@@ -181,7 +215,7 @@ class Conductor:
             try:
                 await self.admin_server.start()
             except Exception:
-                self.logger.exception("Unable to start administration API")
+                LOGGER.exception("Unable to start administration API")
             # Make admin responder available during message parsing
             # This allows webhooks to be called when a connection is marked active,
             # for example
@@ -231,7 +265,7 @@ class Conductor:
                 print("Invitation URL:")
                 print(invite_url)
             except Exception:
-                self.logger.exception("Error creating invitation")
+                LOGGER.exception("Error creating invitation")
 
     async def stop(self, timeout=0.1):
         """Stop the agent."""
@@ -244,108 +278,100 @@ class Conductor:
             tasks.append(self.outbound_transport_manager.stop())
         await asyncio.wait_for(asyncio.gather(*tasks), timeout)
 
-    async def register_socket(
-        self, *, handler: Coroutine = None, single_response: asyncio.Future = None
-    ) -> SocketRef:
-        """Register a new duplex connection."""
-        socket = SocketInfo(handler=handler, single_response=single_response)
-        socket_id = socket.socket_id
-        self.sockets[socket_id] = socket
+    async def create_inbound_session(
+        self,
+        transport_type: str,
+        client_info: dict = None,
+        wire_format: BaseWireFormat = None,
+    ):
+        """Create a new inbound session."""
+        await self.inbound_session_limit
+        session = InboundSession(
+            context=self.context,
+            close_handler=self.closed_inbound_session,
+            inbound_handler=self.inbound_message_router,
+            session_id=str(uuid.uuid4()),
+            transport_type=transport_type,
+            wire_format=wire_format or PackWireFormat(),
+        )
+        self.inbound_sessions[session.session_id] = session
+        return session
 
-        async def close_socket():
-            socket.closed = True
-
-        return SocketRef(socket_id=socket_id, close=close_socket)
+    def closed_inbound_session(self, session: InboundSession):
+        """Clean up a closed session."""
+        self.inbound_sessions.remove(session)
+        self.inbound_session_limit.release()
+        # FIXME if there is a message in the buffer, re-queue it
 
     async def inbound_message_router(
-        self,
-        message_body: Union[str, bytes],
-        transport_type: str = None,
-        socket_id: str = None,
-        single_response: asyncio.Future = None,
-    ) -> asyncio.Future:
+        self, message: InboundMessage,
+    ):
         """
         Route inbound messages.
 
         Args:
-            message_body: Body of the incoming message
-            transport_type: Type of transport this message came from
-            socket_id: The identifier of the incoming socket connection
-            single_response: A future to contain the first direct response message
+            message: The inbound message instance
 
         """
 
-        try:
-            parsed_msg, delivery = await self.message_serializer.parse_message(
-                self.context, message_body, transport_type
-            )
-        except MessageParseError:
-            self.logger.exception("Error expanding message")
-            raise
-
-        connection_mgr = ConnectionManager(self.context)
-        connection = await connection_mgr.find_message_connection(delivery)
-        if connection:
-            delivery.connection_id = connection.connection_id
-
-        if single_response and not socket_id:
-            # if transport wasn't a socket, make a virtual socket used for responses
-            socket = SocketInfo(single_response=single_response)
-            socket_id = socket.socket_id
-            self.sockets[socket_id] = socket
-
-        if socket_id:
-            if socket_id not in self.sockets:
-                self.logger.warning(
-                    "Inbound message on unregistered socket ID: %s", socket_id
-                )
-                socket_id = None
-            elif self.sockets[socket_id].closed:
-                self.logger.warning(
-                    "Inbound message on closed socket ID: %s", socket_id
-                )
-                socket_id = None
-
-        delivery.socket_id = socket_id
-        socket: SocketInfo = self.sockets[socket_id] if socket_id else None
-
-        if socket:
-            socket.process_incoming(parsed_msg, delivery)
-        elif (
-            delivery.direct_response_requested
-            and delivery.direct_response_requested != SocketInfo.REPLY_MODE_NONE
+        if (
+            message.receipt.direct_response_requested
+            and message.receipt.direct_response_requested
+            != InboundSession.REPLY_MODE_NONE
         ):
-            self.logger.warning(
+            LOGGER.warning(
                 "Direct response requested, but not supported by transport: %s",
-                delivery.transport_type,
+                message.receipt.transport_type,
             )
 
-        handler_done = await self.dispatcher.dispatch(
-            parsed_msg, delivery, connection, self.outbound_message_router
+        # Note: at this point we could send the message to a shared queue
+        # if this pod is too busy to process it
+
+        await self.inbound_queue.queue(message)
+
+    async def process_inbound(self):
+        """Continually watch the inbound queue and send to the dispatcher."""
+        async for message in self.inbound_queue:
+            await self.dispatch(message)
+
+    async def dispatch(self, message: InboundMessage):
+        """Send a message to the dispatcher."""
+        await self.dispatcher_limit.acquire()
+        fut = asyncio.ensure_future(
+            self.dispatcher.dispatch(message, self.outbound_message_router)
         )
-        return asyncio.ensure_future(self.complete_dispatch(handler_done, socket))
+        fut.add_done_callback(lambda fut: self.complete_dispatch(fut, message))
+        self.dispatches.append(fut)
 
-    async def complete_dispatch(self, dispatch: asyncio.Future, socket: SocketInfo):
+    async def complete_dispatch(
+        self, dispatch: asyncio.Future, message: InboundMessage
+    ):
         """Wait for the dispatch to complete and perform final actions."""
-        await dispatch
-        await self.queue_processing(socket)
-        if socket:
-            socket.dispatch_complete()
+        if dispatch.exception():
+            LOGGER.exception(dispatch.exception())
+        self.dispatches.remove(dispatch)
+        self.dispatcher_limit.release()
+        # await self.queue_processing(socket)
+        session = self.inbound_sessions.get(message.session_id)
+        if session:
+            # need to scan the outbound buffer and see if anything is queued
+            # for this session first
+            session.dispatch_complete(message)
 
-    async def queue_processing(self, socket: SocketInfo):
+    async def queue_processing(self, session: InboundSession):
         """
         Interact with undelivered queue to find applicable messages.
 
         Args:
-            socket: The incoming socket connection
+            session: The inbound session
         """
         if (
-            socket
-            and socket.reply_mode
-            and not socket.closed
+            session
+            and session.reply_mode
+            and not session.closed
             and self.undelivered_queue
         ):
-            for key in socket.reply_verkeys:
+            for key in session.reply_verkeys:
                 if not isinstance(key, str):
                     key = key.value
                 if self.undelivered_queue.has_message_for_key(key):
@@ -353,43 +379,14 @@ class Conductor:
                         undelivered_message
                     ) in self.undelivered_queue.inspect_all_messages_for_key(key):
                         # pending message. Transmit, then kill single_response
-                        if socket.select_outgoing(undelivered_message):
-                            self.logger.debug(
+                        if session.select_outbound(undelivered_message):
+                            LOGGER.debug(
                                 "Sending Queued Message via inbound connection"
                             )
                             self.undelivered_queue.remove_message_for_key(
                                 key, undelivered_message
                             )
-                            await socket.send(undelivered_message)
-
-    async def get_connection_target(
-        self, connection_id: str, context: InjectionContext = None
-    ):
-        """Get a `ConnectionTarget` instance representing a connection.
-
-        Args:
-            connection_id: The connection record identifier
-            context: An optional injection context
-        """
-
-        context = context or self.context
-
-        try:
-            record = await ConnectionRecord.retrieve_by_id(context, connection_id)
-        except StorageNotFoundError as e:
-            raise MessagePrepareError(
-                "Could not locate connection record: {}".format(connection_id)
-            ) from e
-        mgr = ConnectionManager(context)
-        try:
-            target = await mgr.get_connection_target(record)
-        except ConnectionManagerError as e:
-            raise MessagePrepareError(str(e)) from e
-        if not target:
-            raise MessagePrepareError(
-                "No target found for connection: {}".format(connection_id)
-            )
-        return target
+                            await session.send(undelivered_message)
 
     async def prepare_outbound_message(
         self,
@@ -421,55 +418,170 @@ class Conductor:
             )
             message.encoded = True
 
+    def select_inbound_session(self, outbound: OutboundMessage):
+        # if outbound.reply_session_id:
+
+        # if inbound and inbound.receipt.
+
+        #  if the message has multiple targets, we cannot direct return unless
+        #  one of the targets has keys that match the inbound message (!)
+        # if an
+
+        accepted = False
+
+        # try open inbound sessions first, preferring the same session ID
+        # FIXME if outbound target is set, need to compare to inbound keys
+
+        if not outbound.target:
+            inbound_session = self.inbound_sessions.get(outbound.reply_session_id)
+            if inbound_session:
+                accepted, retry = inbound_session.accept_response(outbound)
+
+            if not accepted:
+                for inbound_session in self.inbound_sessions.values():
+                    if inbound_session.session_id != outbound.reply_session_id:
+                        accepted, retry = inbound_session.accept_response(outbound)
+                        break
+
+        if accepted:
+            LOGGER.debug("Returned message to socket %s", inbound_session.session_id)
+
     async def outbound_message_router(
-        self, message: OutboundMessage, context: InjectionContext = None
+        self,
+        context: InjectionContext,
+        outbound: OutboundMessage,
+        inbound: InboundMessage = None,
     ) -> None:
         """
         Route an outbound message.
 
         Args:
+            context: The request context
             message: An outbound message to be sent
-            context: Optional request context
+            inbound: The inbound message that produced this response, if available
         """
 
-        # try socket connections first, preferring the same socket ID
-        socket_id = message.reply_socket_id
-        sel_socket = None
-        if (
-            socket_id
-            and socket_id in self.sockets
-            and self.sockets[socket_id].select_outgoing(message)
-        ):
-            sel_socket = self.sockets[socket_id]
-        else:
-            for socket in self.sockets.values():
-                if socket.select_outgoing(message):
-                    sel_socket = socket
-                    break
-        if sel_socket:
+        # if inbound and inbound.direct_response:
+        #     if outbound.reply_to_verkey
+
+        # always populate connection targets using provided context
+        if not outbound.target and not outbound.target_list and outbound.connection_id:
+            mgr = ConnectionManager(context)
             try:
-                await self.prepare_outbound_message(message, context, True)
-            except MessagePrepareError:
-                self.logger.exception(
-                    "Error preparing outbound message for direct response"
+                outbound.target_list = await mgr.get_connection_targets(
+                    connection_id=outbound.connection_id
                 )
+            except ConnectionManagerError:
+                LOGGER.exception("Error preparing outbound message for transmission")
                 return
 
-            await sel_socket.send(message)
-            self.logger.debug("Returned message to socket %s", sel_socket.socket_id)
-            return
+        targets = [outbound.target] if outbound.target else (outbound.target_list or [])
+        transport_id = None
+        out_mgr = self.outbound_transport_manager
+        for target in targets:
+            endpoint = target.endpoint
+            transport_id = out_mgr.get_running_transport_for_endpoint(endpoint)
+            if transport_id:
+                break
+        if not transport_id:
 
-        try:
-            await self.prepare_outbound_message(message, context)
-        except MessagePrepareError:
-            self.logger.exception("Error preparing outbound message for transmission")
-            return
+            # Add message to outbound queue, indexed by key
+            # if self.undelivered_queue:
+            #     self.undelivered_queue.add_message(message)
 
-        # deliver directly to endpoint
-        if message.endpoint:
-            await self.outbound_transport_manager.send_message(message)
-            return
+            LOGGER.warning("Cannot queue message for delivery, no supported transport")
+            return  # drop message
 
-        # Add message to outbound queue, indexed by key
-        if self.undelivered_queue:
-            self.undelivered_queue.add_message(message)
+        queued = QueuedOutboundMessage(context, outbound, target, transport_id)
+        self.outbound_new.append(queued)
+        self.outbound_event.set()
+
+    async def process_outbound(self):
+        """Continually watch the outbound buffer and send to transports."""
+
+        while True:
+            # if self.stopping .. break
+
+            self.outbound_event.clear()
+            loop = asyncio.get_event_loop()
+            out_mgr = self.outbound_transport_manager
+
+            loop_time = time.perf_counter()
+            upd_buffer = []
+            for queued in self.outbound_buffer:
+                if queued.status == QueuedOutboundMessage.STATUS_DONE:
+                    if queued.error:
+                        LOGGER.exception(
+                            "Outbound message could not be delivered",
+                            exc_info=queued.error,
+                        )
+                    continue  # remove from buffer
+
+                if queued.status == QueuedOutboundMessage.STATUS_RETRY:
+                    if queued.retry_at < loop_time:
+                        transport: BaseOutboundTransport = out_mgr.get_transport(
+                            queued.transport_id
+                        )
+                        queued.retry_at = None
+                        queued.status = QueuedOutboundMessage.STATUS_PENDING
+                        delivery = loop.create_task(
+                            transport.handle_message(queued.payload, queued.endpoint)
+                        )
+                        queued.delivery_task = delivery
+                        delivery.add_done_callback(
+                            lambda fut: self.finished_delivery(fut, queued)
+                        )
+
+            new_messages = self.outbound_new.copy()
+            self.outbound_new = []
+            for queued in new_messages:
+                transport: BaseOutboundTransport = out_mgr.get_transport(
+                    queued.transport_id
+                )
+
+                if not queued.outbound.enc_payload:
+                    queued.payload = queued.message.enc_payload
+                else:
+                    wire_format: BaseWireFormat = (
+                        transport.wire_format or PackWireFormat()
+                    )
+                    try:
+                        queued.payload = await wire_format.encode_message(
+                            queued.context,
+                            queued.message.payload,
+                            queued.target.recipient_keys,
+                            queued.target.routing_keys,
+                            queued.target.sender_key,
+                        )
+                    except MessageEncodeError:
+                        LOGGER.exception(
+                            "Error preparing outbound message for transmission"
+                        )
+                        continue  # drop message
+
+                delivery = loop.create_task(
+                    transport.handle_message(queued.payload, queued.endpoint)
+                )
+                queued.delivery_task = delivery
+                delivery.add_done_callback(
+                    lambda fut: self.finished_delivery(fut, queued)
+                )
+                upd_buffer.append(queued)
+
+            self.outbound_buffer = upd_buffer
+            await self.outbound_event
+
+    def finished_delivery(self, task: asyncio.Task, queued: QueuedOutboundMessage):
+        """Clean up a closed session."""
+        if task.exception():
+            queued.error = task.exception()
+            if queued.retries < 5:
+                queued.status = QueuedOutboundMessage.STATUS_RETRY
+                queued.retry_at = time.perf_counter() + 10
+            else:
+                queued.status = QueuedOutboundMessage.STATUS_DONE
+        else:
+            queued.error = None
+            queued.status = QueuedOutboundMessage.STATUS_DONE
+        queued.delivery_task = None
+        self.outbound_event.set()

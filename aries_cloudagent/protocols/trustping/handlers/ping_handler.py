@@ -22,13 +22,13 @@ class PingHandler(BaseHandler):
         assert isinstance(context.message, Ping)
 
         self._logger.info(
-            "Received trust ping from: %s", context.message_delivery.sender_did
+            "Received trust ping from: %s", context.message_receipt.sender_did
         )
 
         if not context.connection_ready:
             self._logger.info(
                 "Connection not active, skipping ping response: %s",
-                context.message_delivery.sender_did,
+                context.message_receipt.sender_did,
             )
             return
 

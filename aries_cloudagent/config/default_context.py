@@ -21,7 +21,6 @@ from ..protocols.introduction.demo_service import DemoIntroductionService
 from ..stats import Collector
 from ..storage.base import BaseStorage
 from ..storage.provider import StorageProvider
-from ..transport.outbound.queue.base import BaseOutboundMessageQueue
 from ..wallet.base import BaseWallet
 from ..wallet.provider import WalletProvider
 
@@ -131,15 +130,6 @@ class DefaultContextBuilder(ContextBuilder):
                     ClassProvider(MessageSerializer),
                     ("encode_message", "parse_message"),
                 )
-            ),
-        )
-
-        # Set default outbound message queue
-        context.injector.bind_provider(
-            BaseOutboundMessageQueue,
-            ClassProvider(
-                "aries_cloudagent.transport.outbound.queue"
-                + ".basic.BasicOutboundMessageQueue"
             ),
         )
 

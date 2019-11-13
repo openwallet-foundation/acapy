@@ -1,47 +1,33 @@
 """Http Transport classes and functions."""
 
-import asyncio
 import logging
-from typing import Coroutine
 
 from aiohttp import web
 
+from ...messaging.error import MessageParseError
+
 from .base import BaseInboundTransport, InboundTransportSetupError
+
+LOGGER = logging.getLogger(__name__)
 
 
 class HttpTransport(BaseInboundTransport):
     """Http Transport class."""
 
-    def __init__(
-        self,
-        host: str,
-        port: int,
-        message_router: Coroutine,
-        register_socket: Coroutine,
-    ) -> None:
+    def __init__(self, host: str, port: int, create_session) -> None:
         """
         Initialize a Transport instance.
 
         Args:
             host: Host to listen on
             port: Port to listen on
-            message_router: Function to pass incoming messages to
-            register_socket: A coroutine for registering a new socket
+            create_session: Method to create a new inbound session
 
         """
+        super().__init__("http", create_session)
         self.host = host
         self.port = port
-        self.message_router = message_router
-        self.register_socket = register_socket
-        self.site = None
-
-        self._scheme = "http"
-        self.logger = logging.getLogger(__name__)
-
-    @property
-    def scheme(self):
-        """Accessor for this transport's scheme."""
-        return self._scheme
+        self.site: web.BaseSite = None
 
     async def make_application(self) -> web.Application:
         """Construct the aiohttp application."""
@@ -93,36 +79,37 @@ class HttpTransport(BaseInboundTransport):
         else:
             body = await request.read()
 
-        try:
-            response = asyncio.Future()
-            await self.message_router(body, self._scheme, single_response=response)
-        except Exception:
-            self.logger.exception("Error handling message")
-            return web.Response(status=400)
+        client_info = {"host": request.host, "remote": request.remote}
 
-        try:
-            await asyncio.wait_for(response, 30)
-        except asyncio.TimeoutError:
-            if not response.done():
-                response.cancel()
-            return web.Response(status=504)
-        except asyncio.CancelledError:
-            return web.Response(status=200)
+        async with self.create_session(client_info) as session:
 
-        message = response.result()
-        if message:
-            if isinstance(message, bytes):
-                return web.Response(
-                    body=message,
-                    status=200,
-                    headers={"Content-Type": "application/ssi-agent-wire"},
-                )
-            else:
-                return web.Response(
-                    text=message,
-                    status=200,
-                    headers={"Content-Type": "application/json"},
-                )
+            try:
+                inbound = await session.receive_packed(body)
+            except MessageParseError:
+                raise web.HTTPBadRequest()
+
+            if inbound.receipt.direct_response_requested:
+                response = await session.wait_response_packed()
+
+                # no more responses
+                session.can_respond = False
+                session.clear_outbound()
+
+                if response:
+                    response_body = response.payload
+                    if isinstance(response_body, bytes):
+                        return web.Response(
+                            body=response_body,
+                            status=200,
+                            headers={"Content-Type": "application/ssi-agent-wire"},
+                        )
+                    else:
+                        return web.Response(
+                            text=response_body,
+                            status=200,
+                            headers={"Content-Type": "application/json"},
+                        )
+
         return web.Response(status=200)
 
     async def invite_message_handler(self, request: web.BaseRequest):

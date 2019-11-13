@@ -9,9 +9,9 @@ from typing import Mapping
 
 from ..config.injection_context import InjectionContext
 from ..connections.models.connection_record import ConnectionRecord
+from ..transport.inbound.receipt import MessageReceipt
 
 from .agent_message import AgentMessage
-from .message_delivery import MessageDelivery
 
 
 class RequestContext(InjectionContext):
@@ -33,7 +33,7 @@ class RequestContext(InjectionContext):
         self._connection_ready = False
         self._connection_record = None
         self._message = None
-        self._message_delivery = None
+        self._message_receipt = None
 
     @property
     def connection_ready(self) -> bool:
@@ -137,25 +137,25 @@ class RequestContext(InjectionContext):
         self._message = msg
 
     @property
-    def message_delivery(self) -> MessageDelivery:
+    def message_receipt(self) -> MessageReceipt:
         """
-        Accessor for the message delivery information.
+        Accessor for the message receipt information.
 
         Returns:
-            This context's message delivery information
+            This context's message receipt information
 
         """
-        return self._message_delivery
+        return self._message_receipt
 
-    @message_delivery.setter
-    def message_delivery(self, delivery: MessageDelivery):
+    @message_receipt.setter
+    def message_receipt(self, receipt: MessageReceipt):
         """
-        Setter for the message delivery information.
+        Setter for the message receipt information.
 
         Args:
-            msg: This context's new message delivery information
+            msg: This context's new message receipt information
         """
-        self._message_delivery = delivery
+        self._message_receipt = receipt
 
     def __repr__(self) -> str:
         """

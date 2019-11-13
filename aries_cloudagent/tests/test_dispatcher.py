@@ -8,11 +8,12 @@ from ..config.injection_context import InjectionContext
 from ..connections.models.connection_record import ConnectionRecord
 from ..messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..messaging.error import MessageParseError
-from ..messaging.message_delivery import MessageDelivery
-from ..messaging.outbound_message import OutboundMessage
-from ..protocols.problem_report.message import ProblemReport
 from ..messaging.protocol_registry import ProtocolRegistry
 from ..messaging.serializer import MessageSerializer
+from ..protocols.problem_report.message import ProblemReport
+from ..transport.inbound.message import InboundMessage
+from ..transport.inbound.receipt import MessageReceipt
+from ..transport.outbound.message import OutboundMessage
 
 
 def make_context() -> InjectionContext:
@@ -22,12 +23,12 @@ def make_context() -> InjectionContext:
     return context
 
 
-def make_delivery() -> MessageDelivery:
-    return MessageDelivery()
+def make_inbound(payload) -> InboundMessage:
+    return InboundMessage(payload, MessageReceipt())
 
 
-def make_connection_record() -> ConnectionRecord:
-    return ConnectionRecord()
+# def make_connection_record() -> ConnectionRecord:
+#   return ConnectionRecord()
 
 
 class Receiver:
@@ -70,9 +71,7 @@ class TestDispatcher(AsyncTestCase):
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock:
-            await dispatcher.dispatch(
-                message, make_delivery(), make_connection_record(), rcv.send
-            )
+            await dispatcher.dispatch(make_inbound(message), rcv.send)
             await asyncio.sleep(0.1)
             handler_mock.assert_awaited_once()
             assert isinstance(handler_mock.call_args[0][1].message, StubAgentMessage)
@@ -84,9 +83,7 @@ class TestDispatcher(AsyncTestCase):
         dispatcher = test_module.Dispatcher(make_context())
         rcv = Receiver()
         bad_message = {"bad": "message"}
-        await dispatcher.dispatch(
-            bad_message, make_delivery(), make_connection_record(), rcv.send
-        )
+        await dispatcher.dispatch(make_inbound(bad_message), rcv.send)
         await asyncio.sleep(0.1)
         assert rcv.messages and isinstance(rcv.messages[0], OutboundMessage)
         payload = json.loads(rcv.messages[0].payload)

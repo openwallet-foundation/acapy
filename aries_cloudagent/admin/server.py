@@ -17,7 +17,7 @@ from ..messaging.plugin_registry import PluginRegistry
 from ..messaging.responder import BaseResponder
 from ..stats import Collector
 from ..task_processor import TaskProcessor
-from ..transport.outbound.queue.base import BaseOutboundMessageQueue
+from ..transport.queue.basic import BasicMessageQueue
 from ..transport.stats import StatsTracer
 
 from .base_server import BaseAdminServer
@@ -43,7 +43,9 @@ class AdminStatusSchema(Schema):
 class AdminResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
-    def __init__(self, send: Coroutine, webhook: Coroutine, **kwargs):
+    def __init__(
+        self, context: InjectionContext, send: Coroutine, webhook: Coroutine, **kwargs
+    ):
         """
         Initialize an instance of `AdminResponder`.
 
@@ -52,6 +54,7 @@ class AdminResponder(BaseResponder):
 
         """
         super().__init__(**kwargs)
+        self._context = context
         self._send = send
         self._webhook = webhook
 
@@ -62,7 +65,7 @@ class AdminResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(message)
+        await self._send(self._context, message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
@@ -134,7 +137,9 @@ class AdminServer(BaseAdminServer):
         self.site = None
 
         self.context = context.start_scope("admin")
-        self.responder = AdminResponder(outbound_message_router, self.send_webhook)
+        self.responder = AdminResponder(
+            self.context, outbound_message_router, self.send_webhook
+        )
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
     async def make_application(self) -> web.Application:
@@ -321,7 +326,7 @@ class AdminServer(BaseAdminServer):
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         socket_id = str(uuid.uuid4())
-        queue = await self.context.inject(BaseOutboundMessageQueue)
+        queue = BasicMessageQueue()
 
         try:
             self.websocket_queues[socket_id] = queue
@@ -375,7 +380,7 @@ class AdminServer(BaseAdminServer):
     async def send_webhook(self, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
         if not self.webhook_queue:
-            self.webhook_queue = await self.context.inject(BaseOutboundMessageQueue)
+            self.webhook_queue = BasicMessageQueue()
             self.webhook_task = asyncio.get_event_loop().create_task(
                 self._process_webhooks()
             )
