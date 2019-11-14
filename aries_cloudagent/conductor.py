@@ -14,7 +14,7 @@ import logging
 import time
 import uuid
 from collections import OrderedDict
-from typing import Callable, Coroutine, Union
+from typing import Union
 
 from .delivery_queue import DeliveryQueue
 from .admin.base_server import BaseAdminServer
@@ -27,6 +27,7 @@ from .config.wallet import wallet_config
 from .dispatcher import Dispatcher
 from .protocols.connections.manager import ConnectionManager, ConnectionManagerError
 from .messaging.responder import BaseResponder
+from .messaging.task_queue import TaskQueue
 from .stats import Collector
 from .transport.base import BaseWireFormat
 from .transport.pack_format import PackWireFormat
@@ -40,54 +41,6 @@ from .transport.queue.base import BaseMessageQueue
 from .transport.queue.basic import BasicMessageQueue
 
 LOGGER = logging.getLogger(__name__)
-
-
-class TaskRunner:
-    def __init__(self, *, max_pending: int = None):
-        self.limiter = asyncio.Semaphore(max_pending) if max_pending else None
-        self.max_pending = max_pending
-        self.tasks = []
-
-    def start_task(
-        self, coro: Coroutine, on_complete: Callable = None, limited: bool = False
-    ):
-        task = asyncio.get_event_loop().create_task(coro)
-        self.tasks.append(task)
-        task.add_done_callback(
-            lambda fut: self.completed_task(task, on_complete, limited)
-        )
-        return task
-
-    async def start_limited(self, coro: Coroutine, on_complete: Callable = None):
-        if self.limiter:
-            await self.limiter.acquire()
-        task = self.start_task(coro, on_complete, True)
-        return task
-
-    def completed_task(self, task: asyncio.Task, on_complete: Callable, limited: bool):
-        """Wait for the dispatch to complete and perform final actions."""
-        if task.exception():
-            exc_val = task.exception()
-            exc_info = type(exc_val), exc_val, task.get_stack()
-            if not on_complete:
-                LOGGER.exception("Error running task", exc_info=exc_info)
-        else:
-            exc_info = None
-        self.tasks.remove(task)
-        if limited and self.limiter:
-            self.limiter.release()
-        if on_complete:
-            on_complete(task, exc_info)
-
-    def cancel(self):
-        for task in self.tasks:
-            task.cancel()
-
-    async def __await__(self):
-        return await asyncio.gather(*self.tasks)
-
-    async def wait_for(self, timeout: float):
-        return await asyncio.wait_for(self, timeout)
 
 
 class QueuedOutboundMessage:
@@ -106,7 +59,6 @@ class QueuedOutboundMessage:
         transport_id: str,
     ):
         self.context = context
-        self.delivery_task: asyncio.Task = None
         self.endpoint = target and target.endpoint
         self.error: Exception = None
         self.message = message
@@ -115,6 +67,7 @@ class QueuedOutboundMessage:
         self.retry_at: float = None
         self.state = self.STATE_NEW
         self.target = target
+        self.task: asyncio.Task = None
         self.transport_id: str = transport_id
 
 
@@ -140,7 +93,7 @@ class Conductor:
         self.context: InjectionContext = None
         self.context_builder = context_builder
         self.dispatcher: Dispatcher = None
-        self.dispatch_runner: TaskRunner = None
+        self.dispatch_runner: TaskQueue = None
         self.inbound_queue: BaseMessageQueue = None
         self.inbound_sessions = OrderedDict()
         self.inbound_session_limit: asyncio.Semaphore = None
@@ -149,7 +102,7 @@ class Conductor:
         self.outbound_event: asyncio.Event = None
         self.outbound_new = []
         self.outbound_transport_manager: OutboundTransportManager = None
-        self.runner: TaskRunner = None
+        self.runner: TaskQueue = None
         self.undelivered_queue: DeliveryQueue = None
 
     async def setup(self):
@@ -165,8 +118,8 @@ class Conductor:
         self.outbound_event = asyncio.Event()
         self.inbound_session_limit = asyncio.Semaphore(50)
         self.inbound_queue = BasicMessageQueue()
-        self.runner = TaskRunner(max_pending=50)
-        self.dispatch_runner = TaskRunner(max_pending=50)
+        self.task_queue = TaskQueue(max_active=50)
+        self.dispatch_queue = TaskQueue()
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -205,7 +158,7 @@ class Conductor:
                     admin_port,
                     context,
                     self.outbound_message_router,
-                    self.runner.start_limited,
+                    self.task_queue.put,
                 )
                 webhook_urls = context.settings.get("admin.webhook_urls")
                 if webhook_urls:
@@ -327,14 +280,14 @@ class Conductor:
 
     async def stop(self, timeout=0.1):
         """Stop the agent."""
-        shutdown = TaskRunner()
+        shutdown = TaskQueue()
         if self.admin_server:
-            shutdown.start_task(self.admin_server.stop())
+            shutdown.run(self.admin_server.stop())
         if self.inbound_transport_manager:
-            shutdown.start_task(self.inbound_transport_manager.stop())
+            shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
-            shutdown.start_task(self.outbound_transport_manager.stop())
-        await shutdown.wait_for(timeout)
+            shutdown.run(self.outbound_transport_manager.stop())
+        await shutdown.complete(timeout)
 
     async def create_inbound_session(
         self,
@@ -402,7 +355,7 @@ class Conductor:
                     p += 1
                 t += 1
             s = len(self.inbound_sessions)
-            d = len(self.runner.tasks)
+            d = len(self.task_queue)
             print(f"{s:>4} sess  {d:>4} task  {e:>4} pack  {p:>4} send  {t:>4} out")
 
     async def process_inbound(self):
@@ -417,10 +370,13 @@ class Conductor:
                 session.dispatch_complete(message)
 
         async for message in self.inbound_queue:
-            await self.runner.start_limited(
-                self.dispatcher.dispatch(message, self.outbound_message_router),
-                complete,
-            )
+            try:
+                await self.task_queue.put(
+                    self.dispatcher.dispatch(message, self.outbound_message_router),
+                    complete,
+                )
+            except asyncio.CancelledError:
+                print("dispatch cancelled")
 
     async def queue_processing(self, session: InboundSession):
         """
@@ -560,7 +516,7 @@ class Conductor:
 
                 if deliver:
                     queued.state = QueuedOutboundMessage.STATE_DELIVER
-                    await self.deliver_queued_message(queued)
+                    self.deliver_queued_message(queued)
 
                 upd_buffer.append(queued)
 
@@ -571,20 +527,20 @@ class Conductor:
                 if queued.message.enc_payload:
                     queued.payload = queued.message.enc_payload
                     queued.state = QueuedOutboundMessage.STATE_DELIVER
-                    await self.deliver_queued_message(queued)
+                    self.deliver_queued_message(queued)
                 else:
                     queued.state = QueuedOutboundMessage.STATE_ENCODE
-                    await self.encode_queued_message(queued)
+                    self.encode_queued_message(queued)
 
                 upd_buffer.append(queued)
 
             self.outbound_buffer = upd_buffer
             await self.outbound_event.wait()
 
-    async def encode_queued_message(self, queued: QueuedOutboundMessage):
+    def encode_queued_message(self, queued: QueuedOutboundMessage) -> asyncio.Task:
         transport = self.outbound_transport_manager.get_transport(queued.transport_id)
         wire_format = transport.wire_format or PackWireFormat()
-        self.runner.start_task(
+        queued.task = self.task_queue.run(
             wire_format.encode_message(
                 queued.context,
                 queued.message.payload,
@@ -594,6 +550,7 @@ class Conductor:
             ),
             lambda task, exc_info: self.finished_encode(task, queued, exc_info),
         )
+        return queued.task
 
     def finished_encode(
         self, task: asyncio.Task, queued: QueuedOutboundMessage, exc_info=None
@@ -604,14 +561,16 @@ class Conductor:
         else:
             queued.payload = task.result()
             queued.state = QueuedOutboundMessage.STATE_PENDING
+        queued.task = None
         self.outbound_event.set()
 
-    async def deliver_queued_message(self, queued: QueuedOutboundMessage):
+    def deliver_queued_message(self, queued: QueuedOutboundMessage) -> asyncio.Task:
         transport = self.outbound_transport_manager.get_transport(queued.transport_id)
-        queued.delivery_task = self.dispatch_runner.start_task(
+        queued.task = self.dispatch_queue.run(
             transport.handle_message(queued.payload, queued.endpoint),
             lambda task, exc_info: self.finished_deliver(task, queued, exc_info),
         )
+        return queued.task
 
     def finished_deliver(
         self, task: asyncio.Task, queued: QueuedOutboundMessage, exc_info=None
@@ -627,5 +586,5 @@ class Conductor:
         else:
             queued.error = None
             queued.state = QueuedOutboundMessage.STATE_DONE
-        queued.delivery_task = None
+        queued.task = None
         self.outbound_event.set()
