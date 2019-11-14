@@ -19,7 +19,6 @@ from .protocols.problem_report.message import ProblemReport
 from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
-from .messaging.serializer import MessageSerializer
 from .messaging.util import datetime_now
 from .stats import Collector
 from .transport.inbound.message import InboundMessage
@@ -73,7 +72,7 @@ class Dispatcher:
             message = None
 
         context = RequestContext(base_context=self.context)
-        context.message = message.payload
+        context.message = message
         context.message_receipt = inbound_message.receipt
         context.connection_ready = connection and connection.is_ready
         context.connection_record = connection
@@ -121,13 +120,11 @@ class Dispatcher:
         """
 
         registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
-        serializer: MessageSerializer = await self.context.inject(MessageSerializer)
-
-        # throws a MessageParseError on failure
-        message_type = serializer.extract_message_type(parsed_msg)
+        message_type = parsed_msg.get("@type")
+        if not message_type:
+            raise MessageParseError("Message does not contain '@type' parameter")
 
         message_cls = registry.resolve_message_class(message_type)
-
         if not message_cls:
             raise MessageParseError(f"Unrecognized message type {message_type}")
 

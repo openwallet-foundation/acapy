@@ -26,6 +26,7 @@ class InboundSession:
         inbound_handler: Coroutine,
         session_id: str,
         wire_format: BaseWireFormat,
+        client_info: dict = None,
         close_handler: Callable = None,
         reply_mode: str = None,
         reply_thread_ids: Sequence[str] = None,
@@ -35,6 +36,7 @@ class InboundSession:
         """Initialize the inbound session."""
         self._closed = False
         self.context = context
+        self.client_info = client_info
         self.close_handler = close_handler
         self.inbound_handler = inbound_handler
         self.outbound_buffer: OutboundMessage = None
@@ -57,7 +59,7 @@ class InboundSession:
         self._closed = True
         self.outbound_event.set()  # end wait_response if blocked
         if self.close_handler:
-            self.close_handler()
+            self.close_handler(self)
 
     @property
     def reply_mode(self) -> str:
@@ -113,7 +115,6 @@ class InboundSession:
         """Deliver the inbound message to the conductor."""
         self.process_inbound(message)
         await self.inbound_handler(message)
-        return message
 
     def select_outbound(self, message: OutboundMessage) -> bool:
         """Determine if an outbound message should be sent to this session.
@@ -194,6 +195,6 @@ class InboundSession:
         """Async context manager entry."""
         return self
 
-    async def __aexit__(self):
+    async def __aexit__(self, exc_type, exc_value, exc_tb):
         """Async context manager entry."""
         self.close()

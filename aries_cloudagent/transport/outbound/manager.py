@@ -171,4 +171,4 @@ class OutboundTransportManager:
         return transport_id
 
     def get_transport(self, transport_id: str):
-        return self.registered_transports[transport_id]
+        return self.running_transports[transport_id]

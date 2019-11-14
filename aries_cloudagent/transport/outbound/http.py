@@ -43,6 +43,8 @@ class HttpTransport(BaseOutboundTransport):
         Args:
             message: `OutboundMessage` to send over transport implementation
         """
+        if not endpoint:
+            raise OutboundTransportError("No endpoint provided")
         headers = {}
         if isinstance(payload, bytes):
             headers["Content-Type"] = "application/ssi-agent-wire"

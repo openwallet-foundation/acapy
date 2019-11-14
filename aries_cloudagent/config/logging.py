@@ -142,11 +142,11 @@ class LoggingConfigurator:
         )
 
         outbound_transport_strings = []
-        for schemes in outbound_transports:
-            for scheme in schemes:
-                schema_string = f"  - {scheme}"
-                scheme_spacer = " " * (banner_length - len(schema_string))
-                outbound_transport_strings.append((schema_string, scheme_spacer))
+        schemes = set().union(*(transport.schemes for transport in outbound_transports))
+        for scheme in sorted(schemes):
+            schema_string = f"  - {scheme}"
+            scheme_spacer = " " * (banner_length - len(schema_string))
+            outbound_transport_strings.append((schema_string, scheme_spacer))
 
         version_string = f"ver: {__version__}"
         version_string_spacer = " " * (banner_length - len(version_string))

@@ -114,6 +114,7 @@ class AdminServer(BaseAdminServer):
         port: int,
         context: InjectionContext,
         outbound_message_router: Coroutine,
+        limiter,
     ):
         """
         Initialize an AdminServer instance.
@@ -126,6 +127,7 @@ class AdminServer(BaseAdminServer):
         self.app = None
         self.host = host
         self.port = port
+        self.limiter = limiter
         self.loaded_modules = []
         self.webhook_queue = None
         self.webhook_retries = 5
@@ -172,6 +174,15 @@ class AdminServer(BaseAdminServer):
                     raise web.HTTPUnauthorized()
 
             middlewares.append(check_token)
+
+        if self.limiter:
+
+            @web.middleware
+            async def apply_limiter(request, handler):
+                task = await self.limiter(handler(request))
+                return await task
+
+            middlewares.append(apply_limiter)
 
         stats: Collector = await self.context.inject(Collector, required=False)
         if stats:
@@ -394,7 +405,7 @@ class AdminServer(BaseAdminServer):
             session_args["trace_configs"] = [StatsTracer(collector, "webhook-http:")]
         session_args["cookie_jar"] = DummyCookieJar()
         self.webhook_session = ClientSession(**session_args)
-        self.webhook_processor = TaskProcessor(max_pending=20)
+        self.webhook_processor = TaskProcessor(max_pending=50)
         async for topic, payload in self.webhook_queue:
             for queue in self.websocket_queues.values():
                 await queue.enqueue({"topic": topic, "payload": payload})

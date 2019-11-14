@@ -81,15 +81,16 @@ class HttpTransport(BaseInboundTransport):
 
         client_info = {"host": request.host, "remote": request.remote}
 
-        async with self.create_session(client_info) as session:
+        session = await self.create_session(client_info)
 
+        async with session:
             try:
-                inbound = await session.receive_packed(body)
+                inbound = await session.receive(body)
             except MessageParseError:
                 raise web.HTTPBadRequest()
 
             if inbound.receipt.direct_response_requested:
-                response = await session.wait_response_packed()
+                response = await session.wait_response()
 
                 # no more responses
                 session.can_respond = False
@@ -109,7 +110,6 @@ class HttpTransport(BaseInboundTransport):
                             status=200,
                             headers={"Content-Type": "application/json"},
                         )
-
         return web.Response(status=200)
 
     async def invite_message_handler(self, request: web.BaseRequest):
