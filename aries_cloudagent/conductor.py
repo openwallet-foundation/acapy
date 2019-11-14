@@ -37,8 +37,6 @@ from .transport.inbound.message import InboundMessage
 from .transport.inbound.session import InboundSession
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.message import OutboundMessage
-from .transport.queue.base import BaseMessageQueue
-from .transport.queue.basic import BasicMessageQueue
 
 LOGGER = logging.getLogger(__name__)
 
@@ -92,9 +90,8 @@ class Conductor:
         self.admin_server = None
         self.context: InjectionContext = None
         self.context_builder = context_builder
+        self.delivery_queue: TaskQueue = None
         self.dispatcher: Dispatcher = None
-        self.dispatch_runner: TaskQueue = None
-        self.inbound_queue: BaseMessageQueue = None
         self.inbound_sessions = OrderedDict()
         self.inbound_session_limit: asyncio.Semaphore = None
         self.inbound_transport_manager: InboundTransportManager = None
@@ -102,24 +99,22 @@ class Conductor:
         self.outbound_event: asyncio.Event = None
         self.outbound_new = []
         self.outbound_transport_manager: OutboundTransportManager = None
-        self.runner: TaskQueue = None
         self.undelivered_queue: DeliveryQueue = None
 
     async def setup(self):
         """Initialize the global request context."""
 
         context = await self.context_builder.build()
+        self.dispatcher = Dispatcher(context)
 
         # Setup Delivery Queue
         if context.settings.get("queue.enable_undelivered_queue"):
             self.undelivered_queue = DeliveryQueue()
 
         # FIXME add config options
+        self.delivery_queue = TaskQueue(max_active=50)
         self.outbound_event = asyncio.Event()
         self.inbound_session_limit = asyncio.Semaphore(50)
-        self.inbound_queue = BasicMessageQueue()
-        self.task_queue = TaskQueue(max_active=50)
-        self.dispatch_queue = TaskQueue()
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager()
@@ -158,7 +153,7 @@ class Conductor:
                     admin_port,
                     context,
                     self.outbound_message_router,
-                    self.task_queue.put,
+                    self.dispatcher.put_task,
                 )
                 webhook_urls = context.settings.get("admin.webhook_urls")
                 if webhook_urls:
@@ -170,19 +165,18 @@ class Conductor:
                 raise
 
         self.context = context
-        self.dispatcher = Dispatcher(self.context)
 
         if collector:
             # add stats to our own methods
             collector.wrap(
                 self,
                 (
-                    "inbound_message_router",
+                    # "inbound_message_router",
                     "outbound_message_router",
                     "create_inbound_session",
                 ),
             )
-            collector.wrap(self.dispatcher, "dispatch")
+            collector.wrap(self.dispatcher, "handle_message")
             # at the class level (!) should not be performed multiple times
             collector.wrap(
                 ConnectionManager,
@@ -217,7 +211,6 @@ class Conductor:
             raise
 
         loop = asyncio.get_event_loop()
-        loop.create_task(self.process_inbound())
         loop.create_task(self.process_outbound())
         # loop.create_task(self.log_status())
 
@@ -278,7 +271,7 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
-    async def stop(self, timeout=0.1):
+    async def stop(self, timeout=1.0):
         """Stop the agent."""
         shutdown = TaskQueue()
         if self.admin_server:
@@ -316,7 +309,7 @@ class Conductor:
             self.inbound_session_limit.release()
         # FIXME if there is a message in the buffer, re-queue it
 
-    async def inbound_message_router(self, message: InboundMessage):
+    def inbound_message_router(self, message: InboundMessage):
         """
         Route inbound messages.
 
@@ -338,9 +331,18 @@ class Conductor:
         # Note: at this point we could send the message to a shared queue
         # if this pod is too busy to process it
 
-        # session = self.inbound_sessions.get(message.session_id)
-        # print("receive inbound", session.client_info)
-        await self.inbound_queue.enqueue(message)
+        self.dispatcher.queue_message(
+            message,
+            self.outbound_message_router,
+            lambda task, exc_info: self.dispatch_complete(message, task, exc_info),
+        )
+
+    def dispatch_complete(self, message, task, exc_info):
+        session = self.inbound_sessions.get(message.session_id)
+        if session:
+            # need to scan the undelivered queue and see if anything is queued
+            # for this session first
+            session.dispatch_complete(message)
 
     async def log_status(self):
         while True:
@@ -355,28 +357,12 @@ class Conductor:
                     p += 1
                 t += 1
             s = len(self.inbound_sessions)
-            d = len(self.task_queue)
-            print(f"{s:>4} sess  {d:>4} task  {e:>4} pack  {p:>4} send  {t:>4} out")
-
-    async def process_inbound(self):
-        """Continually watch the inbound queue and send to the dispatcher."""
-
-        def complete(task, exc_info=None):
-            # await self.queue_processing(socket)
-            session = self.inbound_sessions.get(message.session_id)
-            if session:
-                # need to scan the outbound buffer and see if anything is queued
-                # for this session first
-                session.dispatch_complete(message)
-
-        async for message in self.inbound_queue:
-            try:
-                await self.task_queue.put(
-                    self.dispatcher.dispatch(message, self.outbound_message_router),
-                    complete,
-                )
-            except asyncio.CancelledError:
-                print("dispatch cancelled")
+            r = self.dispatcher.task_queue.active
+            q = self.dispatcher.task_queue.pending
+            print(
+                f"{s:>4} sess  {r:>4} run  {q:>4} que  "
+                f"{e:>4} pack  {p:>4} send  {t:>4} out"
+            )
 
     async def queue_processing(self, session: InboundSession):
         """
@@ -540,7 +526,7 @@ class Conductor:
     def encode_queued_message(self, queued: QueuedOutboundMessage) -> asyncio.Task:
         transport = self.outbound_transport_manager.get_transport(queued.transport_id)
         wire_format = transport.wire_format or PackWireFormat()
-        queued.task = self.task_queue.run(
+        queued.task = self.dispatcher.run_task(
             wire_format.encode_message(
                 queued.context,
                 queued.message.payload,
@@ -548,12 +534,12 @@ class Conductor:
                 queued.target.routing_keys,
                 queued.target.sender_key,
             ),
-            lambda task, exc_info: self.finished_encode(task, queued, exc_info),
+            lambda task, exc_info: self.finished_encode(queued, task, exc_info),
         )
         return queued.task
 
     def finished_encode(
-        self, task: asyncio.Task, queued: QueuedOutboundMessage, exc_info=None
+        self, queued: QueuedOutboundMessage, task: asyncio.Task, exc_info=None
     ):
         if exc_info:
             queued.error = exc_info
@@ -566,14 +552,14 @@ class Conductor:
 
     def deliver_queued_message(self, queued: QueuedOutboundMessage) -> asyncio.Task:
         transport = self.outbound_transport_manager.get_transport(queued.transport_id)
-        queued.task = self.dispatch_queue.run(
+        queued.task = self.delivery_queue.run(
             transport.handle_message(queued.payload, queued.endpoint),
-            lambda task, exc_info: self.finished_deliver(task, queued, exc_info),
+            lambda task, exc_info: self.finished_deliver(queued, task, exc_info),
         )
         return queued.task
 
     def finished_deliver(
-        self, task: asyncio.Task, queued: QueuedOutboundMessage, exc_info=None
+        self, queued: QueuedOutboundMessage, task: asyncio.Task, exc_info=None
     ):
         """Clean up a closed session."""
         if exc_info:

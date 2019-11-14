@@ -1,7 +1,7 @@
 """Inbound connection handling classes."""
 
 import asyncio
-from typing import Callable, Coroutine, Sequence, Tuple, Union
+from typing import Callable, Sequence, Tuple, Union
 
 from ...config.injection_context import InjectionContext
 
@@ -23,7 +23,7 @@ class InboundSession:
         self,
         *,
         context: InjectionContext,
-        inbound_handler: Coroutine,
+        inbound_handler: Callable,
         session_id: str,
         wire_format: BaseWireFormat,
         client_info: dict = None,
@@ -108,13 +108,13 @@ class InboundSession:
             session_id=self.session_id,
             transport_type=self.transport_type,
         )
-        await self.receive_inbound(message)
+        self.receive_inbound(message)
         return message
 
-    async def receive_inbound(self, message: InboundMessage):
+    def receive_inbound(self, message: InboundMessage):
         """Deliver the inbound message to the conductor."""
         self.process_inbound(message)
-        await self.inbound_handler(message)
+        self.inbound_handler(message)
 
     def select_outbound(self, message: OutboundMessage) -> bool:
         """Determine if an outbound message should be sent to this session.

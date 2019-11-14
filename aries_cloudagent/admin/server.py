@@ -114,7 +114,7 @@ class AdminServer(BaseAdminServer):
         port: int,
         context: InjectionContext,
         outbound_message_router: Coroutine,
-        limiter,
+        limiter=None,
     ):
         """
         Initialize an AdminServer instance.

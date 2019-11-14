@@ -6,12 +6,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TaskQueue:
-    def __init__(self, auto_remove: bool = True, max_active: int = 0):
-        self.auto_remove = auto_remove
+    def __init__(self, max_active: int = 0):
         self.loop = asyncio.get_event_loop()
         self.active_tasks = []
         self.pending_tasks = []
-        self.done_tasks = []
         self._cancelled = False
         self._max_active = max_active
         self._lock = asyncio.Lock()
@@ -20,8 +18,11 @@ class TaskQueue:
 
     @staticmethod
     def exc_info(task: asyncio.Task):
-        if task.exception():
+        try:
             exc_val = task.exception()
+        except asyncio.CancelledError:
+            exc_val = asyncio.CancelledError("Task was cancelled")
+        if exc_val:
             return type(exc_val), exc_val, task.get_stack()
 
     @property
@@ -68,7 +69,9 @@ class TaskQueue:
     async def _poll(self):
         while self.pending_tasks:
             self._updated_evt.clear()
-            while self.pending_tasks and self.ready:
+            while self.pending_tasks and (
+                not self.max_active or len(self.active_tasks) < self.max_active
+            ):
                 coro, task_complete, fut = self.pending_tasks.pop(0)
                 task = self.run(coro, task_complete)
                 if fut:
@@ -124,7 +127,10 @@ class TaskQueue:
         except ValueError:
             pass
         if task_complete:
-            task_complete(task, exc_info)
+            try:
+                task_complete(task, exc_info)
+            except Exception:
+                LOGGER.exception("Error finalizing task")
         self._updated_evt.set()
 
     def cancel_pending(self):
@@ -139,7 +145,8 @@ class TaskQueue:
         self._cancelled = True
         self.cancel_pending()
         for task in self.active_tasks:
-            task.cancel()
+            if not task.done():
+                task.cancel()
 
     async def complete(self, timeout: float = None, cleanup: bool = True):
         self._cancelled = True
@@ -150,7 +157,8 @@ class TaskQueue:
             except TimeoutError:
                 pass
         for task in self.active_tasks:
-            task.cancel()
+            if not task.done():
+                task.cancel()
         if cleanup:
             while self.active_tasks:
                 await self._updated_evt.wait()

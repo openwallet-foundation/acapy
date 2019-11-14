@@ -7,7 +7,7 @@ lifecycle hook callbacks storing state for message threads, etc.
 
 import asyncio
 import logging
-from typing import Coroutine, Union
+from typing import Callable, Coroutine, Union
 
 from .admin.base_server import BaseAdminServer
 from .config.injection_context import InjectionContext
@@ -19,6 +19,7 @@ from .protocols.problem_report.message import ProblemReport
 from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
+from .messaging.task_queue import TaskQueue
 from .messaging.util import datetime_now
 from .stats import Collector
 from .transport.inbound.message import InboundMessage
@@ -38,16 +39,47 @@ class Dispatcher:
     def __init__(self, context: InjectionContext):
         """Initialize an instance of Dispatcher."""
         self.context = context
+        self.task_queue = TaskQueue(max_active=50)
 
-    async def dispatch(
-        self, inbound_message: InboundMessage, send: Coroutine,
-    ):
+    def put_task(self, coro: Coroutine, complete: Callable = None) -> asyncio.Future:
+        """Run a task in the task queue, potentially blocking other handlers."""
+        return self.task_queue.put(coro, complete)
+
+    def run_task(self, coro: Coroutine, complete: Callable = None) -> asyncio.Task:
+        """Run a task in the task queue, potentially blocking other handlers."""
+        return self.task_queue.run(coro, complete)
+
+    def queue_message(
+        self,
+        inbound_message: InboundMessage,
+        send_outbound: Coroutine,
+        complete: Callable = None,
+    ) -> asyncio.Future:
         """
-        Configure responder and dispatch message context to message handler.
+        Add a message to the processing queue for handling.
 
         Args:
-            message: The inbound message instance
-            send: Async function to send outbound messages
+            inbound_message: The inbound message instance
+            send_outbound: Async function to send outbound messages
+            complete: Function to call when the handler has completed
+
+        Returns:
+            A future resolving to the handler task
+
+        """
+        return self.put_task(
+            self.handle_message(inbound_message, send_outbound), complete
+        )
+
+    async def handle_message(
+        self, inbound_message: InboundMessage, send_outbound: Coroutine,
+    ):
+        """
+        Configure responder and message context and invoke the message handler.
+
+        Args:
+            inbound_message: The inbound message instance
+            send_outbound: Async function to send outbound messages
 
         Returns:
             The response from the handler
@@ -79,7 +111,7 @@ class Dispatcher:
 
         responder = DispatcherResponder(
             context,
-            send,
+            send_outbound,
             inbound_message,
             connection_id=connection and connection.connection_id,
             reply_session_id=inbound_message.session_id,
@@ -142,22 +174,23 @@ class DispatcherResponder(BaseResponder):
     def __init__(
         self,
         context: RequestContext,
-        send: Coroutine,
-        inbound: InboundMessage,
+        send_outbound: Coroutine,
+        inbound_message: InboundMessage,
         **kwargs,
     ):
         """
         Initialize an instance of `DispatcherResponder`.
 
         Args:
-            send: Function to send outbound message
             context: The request context of the incoming message
+            send_outbound: Function to send outbound message
+            inbound_message: The inbound message triggering this handler
 
         """
         super().__init__(**kwargs)
         self._context = context
-        self._inbound = inbound
-        self._send = send
+        self._inbound_message = inbound_message
+        self._send = send_outbound
 
     async def create_outbound(
         self, message: Union[AgentMessage, str, bytes], **kwargs
@@ -184,7 +217,7 @@ class DispatcherResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(self._context, message, self._inbound)
+        await self._send(self._context, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
