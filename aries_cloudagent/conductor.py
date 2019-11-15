@@ -91,6 +91,7 @@ class Conductor:
                     admin_port,
                     context,
                     self.outbound_message_router,
+                    self.webhook_router,
                     self.dispatcher.task_queue,
                 )
                 webhook_urls = context.settings.get("admin.webhook_urls")
@@ -98,6 +99,8 @@ class Conductor:
                     for url in webhook_urls:
                         self.admin_server.add_webhook_target(url)
                 context.injector.bind_instance(BaseAdminServer, self.admin_server)
+                if "http" not in self.outbound_transport_manager.registered_schemes:
+                    self.outbound_transport_manager.register("http")
             except Exception:
                 LOGGER.exception("Unable to register admin server")
                 raise
@@ -245,6 +248,7 @@ class Conductor:
         self.dispatcher.queue_message(
             message,
             self.outbound_message_router,
+            self.admin_server and self.admin_server.send_webhook,
             lambda completed: self.dispatch_complete(message, completed),
         )
 
@@ -312,3 +316,24 @@ class Conductor:
 
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
             # drop message
+
+    def webhook_router(
+        self, topic: str, payload: dict, endpoint: str, retries: int = None
+    ):
+        """
+        Route a webhook through the outbound transport manager.
+
+        Args:
+            topic: The webhook topic
+            payload: The webhook payload
+            endpoint: The endpoint of the webhook target
+            retries: The number of retries
+        """
+        try:
+            self.outbound_transport_manager.enqueue_webhook(
+                topic, payload, endpoint, retries
+            )
+        except OutboundDeliveryError:
+            LOGGER.warning(
+                "Cannot queue message webhook for delivery, no supported transport"
+            )

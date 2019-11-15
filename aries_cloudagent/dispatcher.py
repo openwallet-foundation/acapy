@@ -9,7 +9,6 @@ import asyncio
 import logging
 from typing import Callable, Coroutine, Union
 
-from .admin.base_server import BaseAdminServer
 from .config.injection_context import InjectionContext
 from .messaging.agent_message import AgentMessage
 from .messaging.error import MessageParseError
@@ -53,6 +52,7 @@ class Dispatcher:
         self,
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
+        send_webhook: Coroutine = None,
         complete: Callable = None,
     ) -> asyncio.Future:
         """
@@ -61,6 +61,7 @@ class Dispatcher:
         Args:
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
+            send_webhook: Async function to dispatch a webhook
             complete: Function to call when the handler has completed
 
         Returns:
@@ -68,11 +69,14 @@ class Dispatcher:
 
         """
         return self.put_task(
-            self.handle_message(inbound_message, send_outbound), complete
+            self.handle_message(inbound_message, send_outbound, send_webhook), complete
         )
 
     async def handle_message(
-        self, inbound_message: InboundMessage, send_outbound: Coroutine,
+        self,
+        inbound_message: InboundMessage,
+        send_outbound: Coroutine,
+        send_webhook: Coroutine = None,
     ):
         """
         Configure responder and message context and invoke the message handler.
@@ -80,6 +84,7 @@ class Dispatcher:
         Args:
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
+            send_webhook: Async function to dispatch a webhook
 
         Returns:
             The response from the handler
@@ -111,8 +116,9 @@ class Dispatcher:
 
         responder = DispatcherResponder(
             context,
-            send_outbound,
             inbound_message,
+            send_outbound,
+            send_webhook,
             connection_id=connection and connection.connection_id,
             reply_session_id=inbound_message.session_id,
             reply_to_verkey=inbound_message.receipt.sender_verkey,
@@ -174,8 +180,9 @@ class DispatcherResponder(BaseResponder):
     def __init__(
         self,
         context: RequestContext,
-        send_outbound: Coroutine,
         inbound_message: InboundMessage,
+        send_outbound: Coroutine,
+        send_webhook: Coroutine = None,
         **kwargs,
     ):
         """
@@ -183,14 +190,16 @@ class DispatcherResponder(BaseResponder):
 
         Args:
             context: The request context of the incoming message
-            send_outbound: Function to send outbound message
             inbound_message: The inbound message triggering this handler
+            send_outbound: Async function to send outbound message
+            send_webhook: Async function to dispatch a webhook
 
         """
         super().__init__(**kwargs)
         self._context = context
         self._inbound_message = inbound_message
         self._send = send_outbound
+        self._webhook = send_webhook
 
     async def create_outbound(
         self, message: Union[AgentMessage, str, bytes], **kwargs
@@ -232,10 +241,5 @@ class DispatcherResponder(BaseResponder):
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        asyncio.get_event_loop().create_task(self._dispatch_webhook(topic, payload))
-
-    async def _dispatch_webhook(self, topic: str, payload: dict):
-        """Perform dispatch of a webhook."""
-        server = await self._context.inject(BaseAdminServer, required=False)
-        if server:
-            await server.send_webhook(topic, payload)
+        if self._webhook:
+            await self._webhook(topic, payload)

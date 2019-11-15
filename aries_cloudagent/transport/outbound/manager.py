@@ -1,6 +1,7 @@
 """Outbound transport manager."""
 
 import asyncio
+import json
 import logging
 import time
 
@@ -8,6 +9,7 @@ from typing import Type, Union
 from urllib.parse import urlparse
 
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
+from ...connections.models.connection_target import ConnectionTarget
 from ...config.injection_context import InjectionContext
 from ...messaging.task_queue import CompletedTask, TaskQueue
 from ...stats import Collector
@@ -39,7 +41,7 @@ class QueuedOutboundMessage:
         self,
         context: InjectionContext,
         message: OutboundMessage,
-        target,
+        target: ConnectionTarget,
         transport_id: str,
     ):
         """Initialize the queued outbound message."""
@@ -48,7 +50,7 @@ class QueuedOutboundMessage:
         self.error: Exception = None
         self.message = message
         self.payload: Union[str, bytes] = None
-        self.retries = 0
+        self.retries = None
         self.retry_at: float = None
         self.state = self.STATE_NEW
         self.target = target
@@ -241,6 +243,34 @@ class OutboundTransportManager:
             raise OutboundDeliveryError("No supported transport for outbound message")
 
         queued = QueuedOutboundMessage(context, outbound, target, transport_id)
+        queued.retries = 5
+        self.outbound_new.append(queued)
+        self.process_queued()
+
+    def enqueue_webhook(
+        self, topic: str, payload: dict, endpoint: str, retries: int = None
+    ):
+        """
+        Add a webhook to the queue.
+
+        Args:
+            topic: The webhook topic
+            payload: The webhook payload
+            endpoint: The webhook endpoint
+            retries: Override the number of retries
+
+        Raises:
+            OutboundDeliveryError: if the associated transport is not registered
+
+        """
+        transport_id = self.get_running_transport_for_endpoint(endpoint)
+        queued = QueuedOutboundMessage(
+            None, None, None, transport_id
+        )
+        queued.endpoint = f"{endpoint}/topic/{topic}/"
+        queued.payload = json.dumps(payload)
+        queued.state = QueuedOutboundMessage.STATE_PENDING
+        queued.retries = 5 if retries is None else retries
         self.outbound_new.append(queued)
         self.process_queued()
 
@@ -300,13 +330,14 @@ class OutboundTransportManager:
             self.outbound_new = []
             for queued in new_messages:
 
-                if queued.message.enc_payload:
-                    queued.payload = queued.message.enc_payload
-                    queued.state = QueuedOutboundMessage.STATE_DELIVER
-                    self.deliver_queued_message(queued)
-                else:
-                    queued.state = QueuedOutboundMessage.STATE_ENCODE
-                    self.encode_queued_message(queued)
+                if queued.state == QueuedOutboundMessage.STATE_NEW:
+                    if queued.message and queued.message.enc_payload:
+                        queued.payload = queued.message.enc_payload
+                        queued.state = QueuedOutboundMessage.STATE_DELIVER
+                        self.deliver_queued_message(queued)
+                    else:
+                        queued.state = QueuedOutboundMessage.STATE_ENCODE
+                        self.encode_queued_message(queued)
 
                 upd_buffer.append(queued)
 
@@ -320,7 +351,7 @@ class OutboundTransportManager:
         """Kick off encoding of a queued message."""
         queued.task = self.task_queue.run(
             self.perform_encode(queued),
-            lambda completed: self.finished_encode(queued, completed)
+            lambda completed: self.finished_encode(queued, completed),
         )
         return queued.task
 
@@ -361,7 +392,8 @@ class OutboundTransportManager:
         """Handle completion of queued message delivery."""
         if completed.exc_info:
             queued.error = completed.exc_info
-            if queued.retries < 5:
+            if queued.retries:
+                queued.retries -= 1
                 queued.state = QueuedOutboundMessage.STATE_RETRY
                 queued.retry_at = time.perf_counter() + 10
             else:

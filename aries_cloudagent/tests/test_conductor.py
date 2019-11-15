@@ -136,7 +136,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_dispatch.assert_called_once()
             assert mock_dispatch.call_args[0][0] is message
             assert mock_dispatch.call_args[0][1] == conductor.outbound_message_router
-            assert callable(mock_dispatch.call_args[0][2])
+            assert mock_dispatch.call_args[0][2] is None  # admin webhook router
+            assert callable(mock_dispatch.call_args[0][3])
 
     # async def test_direct_response(self):
     #     builder: ContextBuilder = StubContextBuilder(self.test_settings)

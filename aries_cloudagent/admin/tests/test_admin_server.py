@@ -17,6 +17,7 @@ from ..server import AdminServer
 class TestAdminServerBasic(AsyncTestCase):
     async def setUp(self):
         self.message_results = []
+        self.webhook_results = []
 
     def get_admin_server(
         self, settings: dict = None, context: InjectionContext = None
@@ -26,11 +27,18 @@ class TestAdminServerBasic(AsyncTestCase):
         if settings:
             context.update_settings(settings)
         return AdminServer(
-            "0.0.0.0", unused_port(), context, self.outbound_message_router
+            "0.0.0.0",
+            unused_port(),
+            context,
+            self.outbound_message_router,
+            self.webhook_router,
         )
 
     async def outbound_message_router(self, *args):
         self.message_results.append(args)
+
+    def webhook_router(self, *args):
+        self.webhook_results.append(args)
 
     async def test_start_stop(self):
         with self.assertRaises(AssertionError):
@@ -63,12 +71,16 @@ class TestAdminServerBasic(AsyncTestCase):
 
     @unittest_run_loop
     async def test_responder_webhook(self):
-        with patch.object(AdminServer, "send_webhook", autospec=True) as sender:
-            admin_server = self.get_admin_server()
-            test_topic = "test_topic"
-            test_payload = {"test": "TEST"}
-            await admin_server.responder.send_webhook(test_topic, test_payload)
-            sender.assert_awaited_once_with(admin_server, test_topic, test_payload)
+        admin_server = self.get_admin_server()
+        test_url = "target_url"
+        test_retries = 99
+        admin_server.add_webhook_target(test_url, retries=test_retries)
+        test_topic = "test_topic"
+        test_payload = {"test": "TEST"}
+        await admin_server.responder.send_webhook(test_topic, test_payload)
+        assert self.webhook_results == [
+            (test_topic, test_payload, test_url, test_retries)
+        ]
 
     async def test_import_routes(self):
         # this test just imports all default admin routes
@@ -83,6 +95,7 @@ class TestAdminServerBasic(AsyncTestCase):
 class TestAdminServerClient(AioHTTPTestCase):
     async def setUpAsync(self):
         self.message_results = []
+        self.webhook_results = []
 
     async def get_application(self):
         """
@@ -93,11 +106,18 @@ class TestAdminServerClient(AioHTTPTestCase):
     async def outbound_message_router(self, *args):
         self.message_results.append(args)
 
+    def webhook_router(self, *args):
+        self.webhook_results.append(args)
+
     def get_admin_server(self) -> AdminServer:
         context = InjectionContext()
         context.settings["admin.admin_insecure_mode"] = True
         server = AdminServer(
-            "0.0.0.0", unused_port(), context, self.outbound_message_router
+            "0.0.0.0",
+            unused_port(),
+            context,
+            self.outbound_message_router,
+            self.webhook_router,
         )
         return server
 
@@ -141,13 +161,20 @@ class TestAdminServerSecure(AioHTTPTestCase):
         return await self.get_admin_server().make_application()
 
     async def outbound_message_router(self, *args):
-        self.message_results.append(args)
+        raise Exception()
+
+    def webhook_router(self, *args):
+        raise Exception()
 
     def get_admin_server(self) -> AdminServer:
         context = InjectionContext()
         context.settings["admin.admin_api_key"] = self.TEST_API_KEY
         self.server = AdminServer(
-            "0.0.0.0", unused_port(), context, self.outbound_message_router
+            "0.0.0.0",
+            unused_port(),
+            context,
+            self.outbound_message_router,
+            self.webhook_router,
         )
         return self.server
 
@@ -176,13 +203,20 @@ class TestAdminServerWebhook(AioHTTPTestCase):
         raise web.HTTPOk()
 
     async def outbound_message_router(self, *args):
-        pass
+        raise Exception()
+
+    def webhook_router(self, *args):
+        raise Exception()
 
     def get_admin_server(self) -> AdminServer:
         context = InjectionContext()
         context.settings["admin.admin_insecure_mode"] = True
         server = AdminServer(
-            "0.0.0.0", unused_port(), context, self.outbound_message_router
+            "0.0.0.0",
+            unused_port(),
+            context,
+            self.outbound_message_router,
+            self.webhook_router,
         )
         return server
 
@@ -193,21 +227,3 @@ class TestAdminServerWebhook(AioHTTPTestCase):
         app = web.Application()
         app.add_routes([web.post("/topic/{topic}/", self.receive_hook)])
         return app
-
-    @unittest_run_loop
-    async def test_webhook(self):
-        server_addr = f"http://localhost:{self.server.port}"
-        admin_server = self.get_admin_server()
-        await admin_server.start()
-
-        admin_server.add_webhook_target(server_addr)
-        test_topic = "test_topic"
-        test_payload = {"test": "TEST"}
-        await admin_server.send_webhook(test_topic, test_payload)
-        await asyncio.wait_for(admin_server.complete_webhooks(), 5.0)
-        assert self.hook_results == [(test_topic, test_payload)]
-
-        admin_server.remove_webhook_target(server_addr)
-        assert admin_server.webhook_targets == {}
-
-        await admin_server.stop()
