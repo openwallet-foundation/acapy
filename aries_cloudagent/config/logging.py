@@ -129,7 +129,7 @@ class LoggingConfigurator:
         )
 
         inbound_transport_strings = []
-        for transport in inbound_transports:
+        for transport in inbound_transports.values():
             host_port_string = (
                 f"  - {transport.scheme}://{transport.host}:{transport.port}"
             )

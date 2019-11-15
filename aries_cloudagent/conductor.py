@@ -12,8 +12,6 @@ import asyncio
 import hashlib
 import logging
 import time
-import uuid
-from collections import OrderedDict
 from typing import Union
 
 from .delivery_queue import DeliveryQueue
@@ -29,9 +27,7 @@ from .protocols.connections.manager import ConnectionManager, ConnectionManagerE
 from .messaging.responder import BaseResponder
 from .messaging.task_queue import TaskQueue
 from .stats import Collector
-from .transport.base import BaseWireFormat
 from .transport.pack_format import PackWireFormat
-from .transport.inbound.base import InboundTransportConfiguration
 from .transport.inbound.manager import InboundTransportManager
 from .transport.inbound.message import InboundMessage
 from .transport.inbound.session import InboundSession
@@ -92,8 +88,6 @@ class Conductor:
         self.context_builder = context_builder
         self.delivery_queue: TaskQueue = None
         self.dispatcher: Dispatcher = None
-        self.inbound_sessions = OrderedDict()
-        self.inbound_session_limit: asyncio.Semaphore = None
         self.inbound_transport_manager: InboundTransportManager = None
         self.outbound_buffer = []
         self.outbound_event: asyncio.Event = None
@@ -105,33 +99,21 @@ class Conductor:
         """Initialize the global request context."""
 
         context = await self.context_builder.build()
+
         self.dispatcher = Dispatcher(context)
 
-        # Setup Delivery Queue
-        if context.settings.get("queue.enable_undelivered_queue"):
-            self.undelivered_queue = DeliveryQueue()
+        # Fetch stats collector, if any
+        collector = await context.inject(Collector, required=False)
+
+        # Register all inbound transports
+        self.inbound_transport_manager = InboundTransportManager(
+            context, self.inbound_message_router
+        )
+        await self.inbound_transport_manager.setup()
 
         # FIXME add config options
         self.delivery_queue = TaskQueue(max_active=50)
         self.outbound_event = asyncio.Event()
-        self.inbound_session_limit = asyncio.Semaphore(50)
-
-        # Register all inbound transports
-        self.inbound_transport_manager = InboundTransportManager()
-        inbound_transports = context.settings.get("transport.inbound_configs") or []
-        for transport in inbound_transports:
-            try:
-                module, host, port = transport
-                self.inbound_transport_manager.register(
-                    InboundTransportConfiguration(module=module, host=host, port=port),
-                    self.create_inbound_session,
-                )
-            except Exception:
-                LOGGER.exception("Unable to register inbound transport")
-                raise
-
-        # Fetch stats collector, if any
-        collector = await context.inject(Collector, required=False)
 
         # Register all outbound transports
         self.outbound_transport_manager = OutboundTransportManager(collector)
@@ -282,33 +264,6 @@ class Conductor:
             shutdown.run(self.outbound_transport_manager.stop())
         await shutdown.complete(timeout)
 
-    async def create_inbound_session(
-        self,
-        transport_type: str,
-        client_info: dict = None,
-        wire_format: BaseWireFormat = None,
-    ):
-        """Create a new inbound session."""
-        await self.inbound_session_limit
-        session = InboundSession(
-            context=self.context,
-            client_info=client_info,
-            close_handler=self.closed_inbound_session,
-            inbound_handler=self.inbound_message_router,
-            session_id=str(uuid.uuid4()),
-            transport_type=transport_type,
-            wire_format=wire_format or PackWireFormat(),
-        )
-        self.inbound_sessions[session.session_id] = session
-        return session
-
-    def closed_inbound_session(self, session: InboundSession):
-        """Clean up a closed session."""
-        if session.session_id in self.inbound_sessions:
-            del self.inbound_sessions[session.session_id]
-            self.inbound_session_limit.release()
-        # FIXME if there is a message in the buffer, re-queue it
-
     def inbound_message_router(self, message: InboundMessage):
         """
         Route inbound messages.
@@ -334,15 +289,10 @@ class Conductor:
         self.dispatcher.queue_message(
             message,
             self.outbound_message_router,
-            lambda task, exc_info: self.dispatch_complete(message, task, exc_info),
+            lambda task, exc_info: self.inbound_transport_manager.dispatch_complete(
+                message, task, exc_info
+            ),
         )
-
-    def dispatch_complete(self, message, task, exc_info):
-        session = self.inbound_sessions.get(message.session_id)
-        if session:
-            # need to scan the undelivered queue and see if anything is queued
-            # for this session first
-            session.dispatch_complete(message)
 
     async def log_status(self):
         while True:

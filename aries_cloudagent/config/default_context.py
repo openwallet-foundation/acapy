@@ -21,6 +21,8 @@ from ..protocols.introduction.demo_service import DemoIntroductionService
 from ..stats import Collector
 from ..storage.base import BaseStorage
 from ..storage.provider import StorageProvider
+from ..transport.base import BaseWireFormat
+from ..transport.pack_format import PackWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.provider import WalletProvider
 
@@ -43,6 +45,9 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Global protocol registry
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+
+        # Set default pack format
+        context.injector.bind_instance(BaseWireFormat, PackWireFormat())
 
         await self.bind_providers(context)
         await self.load_plugins(context)
