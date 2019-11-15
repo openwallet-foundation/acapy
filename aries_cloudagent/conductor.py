@@ -73,9 +73,7 @@ class Conductor:
         await self.inbound_transport_manager.setup()
 
         # Register all outbound transports
-        self.outbound_transport_manager = OutboundTransportManager(
-            context, self.dispatcher.run_task
-        )
+        self.outbound_transport_manager = OutboundTransportManager(context)
         await self.outbound_transport_manager.setup()
 
         # Admin API
@@ -242,8 +240,8 @@ class Conductor:
         self.dispatcher.queue_message(
             message,
             self.outbound_message_router,
-            lambda task, exc_info: self.inbound_transport_manager.dispatch_complete(
-                message, task, exc_info
+            lambda completed: self.inbound_transport_manager.dispatch_complete(
+                message, completed
             ),
         )
 
@@ -253,15 +251,15 @@ class Conductor:
             e = 0
             p = 0
             t = 0
-            for m in self.outbound_buffer:
+            for m in self.outbound_transport_manager.outbound_buffer:
                 if m.state == m.STATE_ENCODE:
                     e += 1
                 if m.state == m.STATE_DELIVER:
                     p += 1
                 t += 1
-            s = len(self.inbound_sessions)
-            r = self.dispatcher.task_queue.active
-            q = self.dispatcher.task_queue.pending
+            s = len(self.inbound_transport_manager.sessions)
+            r = self.dispatcher.task_queue.current_active
+            q = self.dispatcher.task_queue.current_pending
             print(
                 f"{s:>4} sess  {r:>4} run  {q:>4} que  "
                 f"{e:>4} pack  {p:>4} send  {t:>4} out"
@@ -298,7 +296,7 @@ class Conductor:
                 return
 
         try:
-            self.outbound_transport_manager.deliver(context, outbound)
+            self.outbound_transport_manager.enqueue_message(context, outbound)
         except OutboundDeliveryError:
             # Add message to outbound queue, indexed by key
             # if self.undelivered_queue:

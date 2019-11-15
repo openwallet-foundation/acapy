@@ -2,7 +2,7 @@ import asyncio
 
 from asynctest import TestCase as AsyncTestCase
 
-from ..basic import BasicOutboundMessageQueue
+from ..basic import BasicMessageQueue
 
 
 async def collect(queue, count=1):
@@ -16,7 +16,7 @@ async def collect(queue, count=1):
 
 class TestBasicQueue(AsyncTestCase):
     async def test_enqueue_dequeue(self):
-        queue = BasicOutboundMessageQueue()
+        queue = BasicMessageQueue()
 
         with self.assertRaises(asyncio.TimeoutError):
             await queue.dequeue(timeout=0)
@@ -28,7 +28,7 @@ class TestBasicQueue(AsyncTestCase):
             await queue.dequeue(timeout=0)
 
     async def test_async_iter(self):
-        queue = BasicOutboundMessageQueue()
+        queue = BasicMessageQueue()
 
         results = asyncio.wait_for(collect(queue), timeout=1.0)
         test_value = "test value"
@@ -37,7 +37,7 @@ class TestBasicQueue(AsyncTestCase):
         assert found == [test_value]
 
     async def test_stopped(self):
-        queue = BasicOutboundMessageQueue()
+        queue = BasicMessageQueue()
         queue.stop()
 
         with self.assertRaises(asyncio.CancelledError):

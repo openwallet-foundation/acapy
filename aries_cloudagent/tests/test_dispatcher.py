@@ -9,7 +9,6 @@ from ..connections.models.connection_record import ConnectionRecord
 from ..messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..messaging.error import MessageParseError
 from ..messaging.protocol_registry import ProtocolRegistry
-from ..messaging.serializer import MessageSerializer
 from ..protocols.problem_report.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.inbound.receipt import MessageReceipt
@@ -19,7 +18,6 @@ from ..transport.outbound.message import OutboundMessage
 def make_context() -> InjectionContext:
     context = InjectionContext()
     context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-    context.injector.bind_instance(MessageSerializer, MessageSerializer())
     return context
 
 

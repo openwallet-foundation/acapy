@@ -5,7 +5,7 @@ from typing import Coroutine
 
 from aiohttp import web, WSMsgType
 
-from ...messaging.socket import SocketRef
+# from ...messaging.socket import SocketRef
 
 from .base import BaseInboundTransport, InboundTransportSetupError
 

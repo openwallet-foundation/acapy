@@ -13,7 +13,6 @@ from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
 from ..messaging.plugin_registry import PluginRegistry
 from ..messaging.protocol_registry import ProtocolRegistry
-from ..messaging.serializer import MessageSerializer
 from ..protocols.actionmenu.base_service import BaseMenuService
 from ..protocols.actionmenu.driver_service import DriverMenuService
 from ..protocols.introduction.base_service import BaseIntroductionService
@@ -45,9 +44,6 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Global protocol registry
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-
-        # Set default pack format
-        context.injector.bind_instance(BaseWireFormat, PackWireFormat())
 
         await self.bind_providers(context)
         await self.load_plugins(context)
@@ -127,13 +123,12 @@ class DefaultContextBuilder(ContextBuilder):
             ),
         )
 
-        # Register message serializer
+        # Register default pack format
         context.injector.bind_provider(
-            MessageSerializer,
+            BaseWireFormat,
             CachedProvider(
                 StatsProvider(
-                    ClassProvider(MessageSerializer),
-                    ("encode_message", "parse_message"),
+                    ClassProvider(PackWireFormat), ("encode_message", "parse_message"),
                 )
             ),
         )

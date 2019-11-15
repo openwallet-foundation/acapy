@@ -16,7 +16,6 @@ from ..connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ..messaging.serializer import MessageSerializer
 from ..messaging.outbound_message import OutboundMessage
 from ..messaging.protocol_registry import ProtocolRegistry
 from ..stats import Collector
@@ -24,8 +23,7 @@ from ..storage.base import BaseStorage
 from ..storage.basic import BasicStorage
 from ..transport.inbound.base import InboundTransportConfiguration
 from ..transport.inbound.receipt import MessageReceipt
-from ..transport.outbound.queue.base import BaseOutboundMessageQueue
-from ..transport.outbound.queue.basic import BasicOutboundMessageQueue
+from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.basic import BasicWallet
 
@@ -70,18 +68,15 @@ class TestDIDs:
 class StubContextBuilder(ContextBuilder):
     def __init__(self, settings):
         super().__init__(settings)
-        self.message_serializer = async_mock.create_autospec(MessageSerializer())
+        self.wire_format = async_mock.create_autospec(BaseWireFormat())
 
     async def build(self) -> InjectionContext:
         context = InjectionContext(settings=self.settings)
         context.injector.enforce_typing = False
-        context.injector.bind_instance(
-            BaseOutboundMessageQueue, BasicOutboundMessageQueue()
-        )
         context.injector.bind_instance(BaseStorage, BasicStorage())
         context.injector.bind_instance(BaseWallet, BasicWallet())
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-        context.injector.bind_instance(MessageSerializer, self.message_serializer)
+        context.injector.bind_instance(BaseWireFormat, self.wire_format)
         return context
 
 

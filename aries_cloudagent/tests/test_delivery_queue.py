@@ -5,26 +5,8 @@ from aries_cloudagent.delivery_queue import DeliveryQueue
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent import messaging
-from aries_cloudagent.connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
-from .. import conductor as test_module
-from ..admin.base_server import BaseAdminServer
-from ..config.base_context import ContextBuilder
-from ..config.injection_context import InjectionContext
 from ..connections.models.connection_target import ConnectionTarget
-from ..messaging.serializer import MessageSerializer
-from ..messaging.outbound_message import OutboundMessage
-from ..messaging.protocol_registry import ProtocolRegistry
-from ..transport.inbound.base import InboundTransportConfiguration
-from ..transport.outbound.queue.base import BaseOutboundMessageQueue
-from ..transport.outbound.queue.basic import BasicOutboundMessageQueue
-from ..wallet.base import BaseWallet
-from ..wallet.basic import BasicWallet
+from ..transport.outbound.message import OutboundMessage
 
 
 class TestDeliveryQueue(AsyncTestCase):

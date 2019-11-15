@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...config.injection_context import InjectionContext
-from ...messaging.task_queue import TaskQueue
+from ...messaging.task_queue import CompletedTask, TaskQueue
 from ...stats import Collector
 
 from ..wire_format import BaseWireFormat
@@ -26,6 +26,8 @@ MODULE_BASE_PATH = "aries_cloudagent.transport.outbound"
 
 
 class QueuedOutboundMessage:
+    """Class representing an outbound message pending delivery."""
+
     STATE_NEW = "new"
     STATE_PENDING = "pending"
     STATE_ENCODE = "encode"
@@ -40,6 +42,7 @@ class QueuedOutboundMessage:
         target,
         transport_id: str,
     ):
+        """Initialize the queued outbound message."""
         self.context = context
         self.endpoint = target and target.endpoint
         self.error: Exception = None
@@ -56,7 +59,7 @@ class QueuedOutboundMessage:
 class OutboundTransportManager:
     """Outbound transport manager class."""
 
-    def __init__(self, context: InjectionContext, run_task=None):
+    def __init__(self, context: InjectionContext):
         """
         Initialize a `OutboundTransportManager` instance.
 
@@ -65,17 +68,18 @@ class OutboundTransportManager:
 
         """
         self.context = context
-        self.registered_schemes = {}
-        self.registered_transports = {}
-        self.running_transports = {}
+        self.loop = asyncio.get_event_loop()
         self.outbound_buffer = []
         self.outbound_event = asyncio.Event()
         self.outbound_new = []
-        self.process_task: asyncio.Task = None
-        self.run_task = run_task
+        self.registered_schemes = {}
+        self.registered_transports = {}
+        self.running_transports = {}
         self.task_queue = TaskQueue(max_active=50)
+        self._process_task: asyncio.Task = None
 
     async def setup(self):
+        """Perform setup operations."""
         outbound_transports = (
             self.context.settings.get("transport.outbound_configs") or []
         )
@@ -109,7 +113,9 @@ class OutboundTransportManager:
 
         return self.register_class(imported_class)
 
-    def register_class(self, transport_class: Type[BaseOutboundTransport]) -> str:
+    def register_class(
+        self, transport_class: Type[BaseOutboundTransport], transport_id: str = None
+    ) -> str:
         """
         Register a new outbound transport class.
 
@@ -130,7 +136,8 @@ class OutboundTransportManager:
                 f"Imported class {transport_class} does not "
                 + "specify a required 'schemes' attribute"
             )
-        transport_id = transport_class.__qualname__
+        if not transport_id:
+            transport_id = transport_class.__qualname__
 
         for scheme in schemes:
             if scheme in self.registered_schemes:
@@ -149,7 +156,7 @@ class OutboundTransportManager:
         return transport_id
 
     async def start_transport(self, transport_id: str):
-        """Start the transport."""
+        """Start a registered transport."""
         transport = self.registered_transports[transport_id]()
         transport.collector = await self.context.inject(Collector, required=False)
         await transport.start()
@@ -159,21 +166,18 @@ class OutboundTransportManager:
         """Start all transports and feed messages from the queue."""
         for transport_id in self.registered_transports:
             self.task_queue.run(self.start_transport(transport_id))
-        self.process_task = asyncio.get_event_loop().create_task(self.process_queued())
 
     async def stop(self, wait: bool = True):
-        """Stop all transports."""
-        if self.process_task:
-            if not self.process_task.done():
-                self.process_task.cancel()
-            self.process_task = None
+        """Stop all running transports."""
+        if self._process_task and not self._process_task.done():
+            self._process_task.cancel()
         await self.task_queue.complete(None if wait else 0)
         for transport in self.running_transports.values():
             await transport.stop()
         self.running_transports = {}
 
     def get_registered_transport_for_scheme(self, scheme: str) -> str:
-        """Find the registered transport for a given scheme."""
+        """Find the registered transport ID for a given scheme."""
         try:
             return next(
                 transport_id
@@ -184,7 +188,7 @@ class OutboundTransportManager:
             pass
 
     def get_running_transport_for_scheme(self, scheme: str) -> str:
-        """Find the running transport for a given scheme."""
+        """Find the running transport ID for a given scheme."""
         try:
             return next(
                 transport_id
@@ -195,7 +199,7 @@ class OutboundTransportManager:
             pass
 
     def get_running_transport_for_endpoint(self, endpoint: str):
-        """Find the running transport to use for a given endpoint."""
+        """Find the running transport ID to use for a given endpoint."""
         # Grab the scheme from the uri
         scheme = urlparse(endpoint).scheme
         if scheme == "":
@@ -211,10 +215,18 @@ class OutboundTransportManager:
             )
         return transport_id
 
-    def get_transport(self, transport_id: str):
+    def get_transport_instance(self, transport_id: str) -> BaseOutboundTransport:
+        """Get an instance of a running transport by ID."""
         return self.running_transports[transport_id]
 
-    def deliver(self, context: InjectionContext, outbound: OutboundMessage):
+    def enqueue_message(self, context: InjectionContext, outbound: OutboundMessage):
+        """
+        Add an outbound message to the queue.
+
+        Args:
+            context: The context of the request
+            outbound: The outbound message to deliver
+        """
         targets = [outbound.target] if outbound.target else (outbound.target_list or [])
         transport_id = None
         for target in targets:
@@ -230,14 +242,32 @@ class OutboundTransportManager:
 
         queued = QueuedOutboundMessage(context, outbound, target, transport_id)
         self.outbound_new.append(queued)
-        self.outbound_event.set()
+        self.process_queued()
 
-    async def process_queued(self):
-        """Continually watch the outbound buffer and send to transports."""
+    def process_queued(self) -> asyncio.Task:
+        """
+        Start the process to deliver queued messages if necessary.
+
+        Returns: the current queue processing task or None
+
+        """
+        if self._process_task:
+            self.outbound_event.set()
+        elif self.outbound_new or self.outbound_buffer:
+            self._process_task = self.loop.create_task(self._process_loop())
+            self._process_task.add_done_callback(lambda task: self._process_done())
+        return self._process_task
+
+    def _process_done(self):
+        """Handle completion of the drain process."""
+        self._process_task = None
+
+    async def _process_loop(self):
+        """Continually kick off encoding and delivery on outbound messages."""
+        # Note: this method should not call async methods apart from
+        # waiting for the updated event, to avoid yielding to other queue methods
 
         while True:
-            # if self.stopping .. break
-
             self.outbound_event.clear()
             loop_time = time.perf_counter()
             upd_buffer = []
@@ -276,58 +306,61 @@ class OutboundTransportManager:
                     self.deliver_queued_message(queued)
                 else:
                     queued.state = QueuedOutboundMessage.STATE_ENCODE
-                    await self.encode_queued_message(queued)
+                    self.encode_queued_message(queued)
 
                 upd_buffer.append(queued)
 
             self.outbound_buffer = upd_buffer
-            await self.outbound_event.wait()
+            if self.outbound_buffer:
+                await self.outbound_event.wait()
+            else:
+                break
 
-    async def encode_queued_message(
-        self, queued: QueuedOutboundMessage
-    ) -> asyncio.Task:
-        transport = self.get_transport(queued.transport_id)
+    def encode_queued_message(self, queued: QueuedOutboundMessage) -> asyncio.Task:
+        """Kick off encoding of a queued message."""
+        queued.task = self.task_queue.run(
+            self.perform_encode(queued),
+            lambda completed: self.finished_encode(queued, completed)
+        )
+        return queued.task
+
+    async def perform_encode(self, queued: QueuedOutboundMessage):
+        """Perform message encoding."""
+        transport = self.get_transport_instance(queued.transport_id)
         wire_format = transport.wire_format or await queued.context.inject(
             BaseWireFormat
         )
-        queued.task = (self.run_task or self.task_queue.run)(
-            wire_format.encode_message(
-                queued.context,
-                queued.message.payload,
-                queued.target.recipient_keys,
-                queued.target.routing_keys,
-                queued.target.sender_key,
-            ),
-            lambda task, exc_info: self.finished_encode(queued, task, exc_info),
+        queued.payload = await wire_format.encode_message(
+            queued.context,
+            queued.message.payload,
+            queued.target.recipient_keys,
+            queued.target.routing_keys,
+            queued.target.sender_key,
         )
-        return queued.task
 
-    def finished_encode(
-        self, queued: QueuedOutboundMessage, task: asyncio.Task, exc_info=None
-    ):
-        if exc_info:
-            queued.error = exc_info
+    def finished_encode(self, queued: QueuedOutboundMessage, completed: CompletedTask):
+        """Handle completion of queued message encoding."""
+        if completed.exc_info:
+            queued.error = completed.exc_info
             queued.state = QueuedOutboundMessage.STATE_DONE
         else:
-            queued.payload = task.result()
             queued.state = QueuedOutboundMessage.STATE_PENDING
         queued.task = None
-        self.outbound_event.set()
+        self.process_queued()
 
     def deliver_queued_message(self, queued: QueuedOutboundMessage) -> asyncio.Task:
-        transport = self.get_transport(queued.transport_id)
+        """Kick off delivery of a queued message."""
+        transport = self.get_transport_instance(queued.transport_id)
         queued.task = self.task_queue.run(
             transport.handle_message(queued.payload, queued.endpoint),
-            lambda task, exc_info: self.finished_deliver(queued, task, exc_info),
+            lambda completed: self.finished_deliver(queued, completed),
         )
         return queued.task
 
-    def finished_deliver(
-        self, queued: QueuedOutboundMessage, task: asyncio.Task, exc_info=None
-    ):
-        """Clean up a closed session."""
-        if exc_info:
-            queued.error = exc_info
+    def finished_deliver(self, queued: QueuedOutboundMessage, completed: CompletedTask):
+        """Handle completion of queued message delivery."""
+        if completed.exc_info:
+            queued.error = completed.exc_info
             if queued.retries < 5:
                 queued.state = QueuedOutboundMessage.STATE_RETRY
                 queued.retry_at = time.perf_counter() + 10
@@ -337,4 +370,4 @@ class OutboundTransportManager:
             queued.error = None
             queued.state = QueuedOutboundMessage.STATE_DONE
         queued.task = None
-        self.outbound_event.set()
+        self.process_queued()

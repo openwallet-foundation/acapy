@@ -8,10 +8,8 @@ from asynctest.mock import patch
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
-from ...messaging.outbound_message import OutboundMessage
 from ...messaging.protocol_registry import ProtocolRegistry
-from ...transport.outbound.queue.base import BaseOutboundMessageQueue
-from ...transport.outbound.queue.basic import BasicOutboundMessageQueue
+from ...transport.outbound.message import OutboundMessage
 
 from ..server import AdminServer
 
@@ -25,9 +23,6 @@ class TestAdminServerBasic(AsyncTestCase):
     ) -> AdminServer:
         if not context:
             context = InjectionContext()
-        context.injector.bind_provider(
-            BaseOutboundMessageQueue, ClassProvider(BasicOutboundMessageQueue)
-        )
         if settings:
             context.update_settings(settings)
         return AdminServer(
@@ -100,9 +95,6 @@ class TestAdminServerClient(AioHTTPTestCase):
 
     def get_admin_server(self) -> AdminServer:
         context = InjectionContext()
-        context.injector.bind_provider(
-            BaseOutboundMessageQueue, ClassProvider(BasicOutboundMessageQueue)
-        )
         context.settings["admin.admin_insecure_mode"] = True
         server = AdminServer(
             "0.0.0.0", unused_port(), context, self.outbound_message_router
@@ -153,9 +145,6 @@ class TestAdminServerSecure(AioHTTPTestCase):
 
     def get_admin_server(self) -> AdminServer:
         context = InjectionContext()
-        context.injector.bind_provider(
-            BaseOutboundMessageQueue, ClassProvider(BasicOutboundMessageQueue)
-        )
         context.settings["admin.admin_api_key"] = self.TEST_API_KEY
         self.server = AdminServer(
             "0.0.0.0", unused_port(), context, self.outbound_message_router
@@ -191,9 +180,6 @@ class TestAdminServerWebhook(AioHTTPTestCase):
 
     def get_admin_server(self) -> AdminServer:
         context = InjectionContext()
-        context.injector.bind_provider(
-            BaseOutboundMessageQueue, ClassProvider(BasicOutboundMessageQueue)
-        )
         context.settings["admin.admin_insecure_mode"] = True
         server = AdminServer(
             "0.0.0.0", unused_port(), context, self.outbound_message_router

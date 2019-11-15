@@ -8,7 +8,7 @@ from typing import Coroutine
 
 from ...config.injection_context import InjectionContext
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
-from ...messaging.task_queue import TaskQueue
+from ...messaging.task_queue import CompletedTask, TaskQueue
 from ...delivery_queue import DeliveryQueue
 
 from ..outbound.message import OutboundMessage
@@ -40,6 +40,7 @@ class InboundTransportManager:
         self.undelivered_queue: DeliveryQueue = None
 
     async def setup(self):
+        """Perform setup operations."""
         inbound_transports = (
             self.context.settings.get("transport.inbound_configs") or []
         )
@@ -60,10 +61,7 @@ class InboundTransportManager:
         Register transport module.
 
         Args:
-            module_path: Path to module
-            host: The host to register on
-            port: The port to register on
-            create_session: A coroutine for creating a new session
+            config: The inbound transport configuration
 
         """
         try:
@@ -76,19 +74,19 @@ class InboundTransportManager:
             ) from e
 
         return self.register_transport(
-            imported_class.__qualname__,
             imported_class(config.host, config.port, self.create_session),
+            imported_class.__qualname__,
         )
 
     def register_transport(
-        self, transport_id: str, transport: BaseInboundTransport
+        self, transport: BaseInboundTransport, transport_id: str
     ) -> str:
         """
         Register a new inbound transport class.
 
         Args:
-            transport_id: The transport ID to register
             transport: Transport instance to register
+            transport_id: The transport ID to register
 
         """
         self.registered_transports[transport_id] = transport
@@ -105,7 +103,8 @@ class InboundTransportManager:
         await transport.start()
         self.running_transports[transport_id] = transport
 
-    def get_transport(self, transport_id: str):
+    def get_transport_instance(self, transport_id: str) -> BaseInboundTransport:
+        """Get an instance of a running transport by ID."""
         return self.running_transports[transport_id]
 
     async def start(self):
@@ -142,7 +141,8 @@ class InboundTransportManager:
         self.sessions[session.session_id] = session
         return session
 
-    def dispatch_complete(self, message, task, exc_info):
+    def dispatch_complete(self, message, completed: CompletedTask):
+        """Handle completion of message dispatch."""
         session = self.sessions.get(message.session_id)
         if session:
             # need to scan the undelivered queue and see if anything is queued
@@ -188,6 +188,7 @@ class InboundTransportManager:
                             await session.send(undelivered_message)
 
     def return_to_session(self, outbound: OutboundMessage):
+        """Return an outbound message to an open session, if possible."""
         # if outbound.reply_session_id:
 
         # if inbound and inbound.receipt.

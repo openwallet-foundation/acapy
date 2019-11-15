@@ -7,7 +7,7 @@ been delivered to their intended destination.
 """
 import time
 
-from aries_cloudagent.messaging.outbound_message import OutboundMessage
+from .transport.outbound.message import OutboundMessage
 
 
 class QueuedMessage:
@@ -65,9 +65,9 @@ class DeliveryQueue:
         ttl_seconds = ttl or self.ttl_seconds
         horizon = time.time() - ttl_seconds
         for key in self.queue_by_key.keys():
-            self.queue_by_key[key] = [wm for
-                                      wm in self.queue_by_key[key]
-                                      if not wm.older_than(horizon)]
+            self.queue_by_key[key] = [
+                wm for wm in self.queue_by_key[key] if not wm.older_than(horizon)
+            ]
 
     def add_message(self, msg: OutboundMessage):
         """

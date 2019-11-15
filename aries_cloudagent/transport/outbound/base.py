@@ -48,10 +48,12 @@ class BaseOutboundTransport(ABC):
 
     @property
     def wire_format(self) -> BaseWireFormat:
+        """Accessor for a custom wire format for the transport."""
         return self._wire_format
 
     @wire_format.setter
     def wire_format(self, format: BaseWireFormat):
+        """Setter for a custom wire format for the transport."""
         self._wire_format = format
 
     @abstractmethod

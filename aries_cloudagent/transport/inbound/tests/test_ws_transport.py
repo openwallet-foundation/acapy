@@ -4,7 +4,7 @@ import json
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
 from aiohttp import web
 
-from ....messaging.socket import SocketRef
+# from ....messaging.socket import SocketRef
 from ..ws import WsTransport
 
 
@@ -19,14 +19,14 @@ class TestWsTransport(AioHTTPTestCase):
         )
         super(TestWsTransport, self).setUp()
 
-    async def register_socket(self, handler):
-        assert not self.response_handler
-        self.response_handler = handler
-        return SocketRef(self.socket_id, self.close_socket)
+    # async def register_socket(self, handler):
+    #     assert not self.response_handler
+    #     self.response_handler = handler
+    #     return SocketRef(self.socket_id, self.close_socket)
 
-    async def close_socket(self):
-        assert self.response_handler
-        self.response_handler = None
+    # async def close_socket(self):
+    #     assert self.response_handler
+    #     self.response_handler = None
 
     def get_application(self):
         return self.transport.make_application()

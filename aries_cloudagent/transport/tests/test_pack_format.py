@@ -8,10 +8,10 @@ from ...wallet.base import BaseWallet
 from ...wallet.basic import BasicWallet
 
 from ..error import MessageParseError
-from ..serializer import MessageSerializer
+from ..pack_format import PackWireFormat
 
 
-class TestMessageSerializer(AsyncTestCase):
+class TestPackWireFormat(AsyncTestCase):
     test_message_type = "PROTOCOL/MESSAGE"
     test_message_id = "MESSAGE_ID"
     test_content = "CONTENT"
@@ -33,7 +33,7 @@ class TestMessageSerializer(AsyncTestCase):
         self.context.injector.bind_instance(BaseWallet, self.wallet)
 
     async def test_errors(self):
-        serializer = MessageSerializer()
+        serializer = PackWireFormat()
 
         bad_values = [None, "", "1", "[]", "{..."]
 
@@ -44,7 +44,7 @@ class TestMessageSerializer(AsyncTestCase):
                 )
 
     async def test_unpacked(self):
-        serializer = MessageSerializer()
+        serializer = PackWireFormat()
         message_json = json.dumps(self.test_message)
         message_dict, delivery = await serializer.parse_message(
             self.context, message_json, self.test_transport_type
@@ -55,7 +55,7 @@ class TestMessageSerializer(AsyncTestCase):
         assert delivery.direct_response_requested == "all"
 
     async def test_fallback(self):
-        serializer = MessageSerializer()
+        serializer = PackWireFormat()
 
         message = self.test_message.copy()
         message.pop("@type")
@@ -70,7 +70,7 @@ class TestMessageSerializer(AsyncTestCase):
 
     async def test_encode_decode(self):
         local_did = await self.wallet.create_local_did(self.test_seed)
-        serializer = MessageSerializer()
+        serializer = PackWireFormat()
         recipient_keys = (local_did.verkey,)
         routing_keys = ()
         sender_key = local_did.verkey
@@ -94,7 +94,7 @@ class TestMessageSerializer(AsyncTestCase):
     async def test_forward(self):
         local_did = await self.wallet.create_local_did(self.test_seed)
         router_did = await self.wallet.create_local_did(self.test_routing_seed)
-        serializer = MessageSerializer()
+        serializer = PackWireFormat()
         recipient_keys = (local_did.verkey,)
         routing_keys = (router_did.verkey,)
         sender_key = local_did.verkey
