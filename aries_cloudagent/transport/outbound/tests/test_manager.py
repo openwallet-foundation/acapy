@@ -28,6 +28,7 @@ class TestOutboundTransportManager(AsyncTestCase):
 
         transport = async_mock.MagicMock()
         transport.handle_message = async_mock.CoroutineMock()
+        transport.wire_format.encode_message = async_mock.CoroutineMock()
         transport.start = async_mock.CoroutineMock()
         transport.stop = async_mock.CoroutineMock()
         transport.schemes = ["http"]
@@ -43,15 +44,27 @@ class TestOutboundTransportManager(AsyncTestCase):
         transport.start.assert_awaited_once_with()
         assert mgr.get_running_transport_for_scheme("http") == "transport_cls"
 
-        message = OutboundMessage(payload=None, enc_payload="")
-        message.target = ConnectionTarget(endpoint="http://localhost")
-
-        mgr.enqueue_message(context, message)
-        await mgr.task_queue
-        await mgr.stop()
-        transport.handle_message.assert_called_once_with(
-            message.enc_payload, message.target.endpoint
+        message = OutboundMessage(payload="{}")
+        message.target = ConnectionTarget(
+            endpoint="http://localhost",
+            recipient_keys=[1, 2],
+            routing_keys=[3],
+            sender_key=4,
         )
 
+        mgr.enqueue_message(context, message)
+        await mgr.flush()
+        transport.wire_format.encode_message.assert_awaited_once_with(
+            context,
+            message.payload,
+            message.target.recipient_keys,
+            message.target.routing_keys,
+            message.target.sender_key,
+        )
+        transport.handle_message.assert_awaited_once_with(
+            transport.wire_format.encode_message.return_value, message.target.endpoint
+        )
+        await mgr.stop()
+
         assert mgr.get_running_transport_for_scheme("http") is None
-        transport.stop.assert_called_once_with()
+        transport.stop.assert_awaited_once_with()

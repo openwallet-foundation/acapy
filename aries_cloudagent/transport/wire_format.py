@@ -69,7 +69,6 @@ class BaseWireFormat:
 
 
 class JsonWireFormat(BaseWireFormat):
-
     """Unencrypted wire format."""
 
     @abstractmethod

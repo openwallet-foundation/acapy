@@ -371,3 +371,9 @@ class OutboundTransportManager:
             queued.state = QueuedOutboundMessage.STATE_DONE
         queued.task = None
         self.process_queued()
+
+    async def flush(self):
+        """Wait for any queued messages to be delivered."""
+        proc_task = self.process_queued()
+        if proc_task:
+            await proc_task

@@ -16,6 +16,7 @@ class BaseInboundTransport(ABC):
     def __init__(
         self, scheme: str, create_session: Callable,
     ):
+        """Initialize the inbound transport instance."""
         self._create_session = create_session
         self._scheme = scheme
 
@@ -27,6 +28,13 @@ class BaseInboundTransport(ABC):
     def create_session(
         self, client_info: dict = None, wire_format: BaseWireFormat = None,
     ) -> Awaitable[InboundSession]:
+        """
+        Create a new inbound session.
+
+        Args:
+            client_info: Request-specific client information
+            wire_format: Optionally override the session wire format
+        """
         return self._create_session(
             self.scheme, client_info=client_info, wire_format=wire_format
         )

@@ -22,7 +22,7 @@ from .config.wallet import wallet_config
 from .dispatcher import Dispatcher
 from .protocols.connections.manager import ConnectionManager, ConnectionManagerError
 from .messaging.responder import BaseResponder
-from .messaging.task_queue import TaskQueue
+from .messaging.task_queue import CompletedTask, TaskQueue
 from .stats import Collector
 from .transport.inbound.manager import InboundTransportManager
 from .transport.inbound.message import InboundMessage
@@ -30,6 +30,7 @@ from .transport.inbound.session import InboundSession
 from .transport.outbound.base import OutboundDeliveryError
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.message import OutboundMessage
+from .transport.wire_format import BaseWireFormat
 
 LOGGER = logging.getLogger(__name__)
 
@@ -66,6 +67,10 @@ class Conductor:
 
         self.dispatcher = Dispatcher(context)
 
+        wire_format = await context.inject(BaseWireFormat, required=False)
+        if wire_format and hasattr(wire_format, "task_queue"):
+            wire_format.task_queue = self.dispatcher.task_queue
+
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager(
             context, self.inbound_message_router
@@ -86,7 +91,7 @@ class Conductor:
                     admin_port,
                     context,
                     self.outbound_message_router,
-                    self.dispatcher.put_task,
+                    self.dispatcher.task_queue,
                 )
                 webhook_urls = context.settings.get("admin.webhook_urls")
                 if webhook_urls:
@@ -145,7 +150,7 @@ class Conductor:
             LOGGER.exception("Unable to start outbound transports")
             raise
 
-        # asyncio.get_event_loop().create_task(self.log_status())
+        # asyncio.get_event_loop().create_task(self.print_status())
 
         # Start up Admin server
         if self.admin_server:
@@ -165,7 +170,7 @@ class Conductor:
         LoggingConfigurator.print_banner(
             default_label,
             self.inbound_transport_manager.registered_transports,
-            self.outbound_transport_manager.registered_transports.values(),
+            self.outbound_transport_manager.registered_transports,
             public_did,
             self.admin_server,
         )
@@ -240,12 +245,15 @@ class Conductor:
         self.dispatcher.queue_message(
             message,
             self.outbound_message_router,
-            lambda completed: self.inbound_transport_manager.dispatch_complete(
-                message, completed
-            ),
+            lambda completed: self.dispatch_complete(message, completed),
         )
 
-    async def log_status(self):
+    def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
+        """Handle completion of message dispatch."""
+        self.inbound_transport_manager.dispatch_complete(message, completed)
+
+    async def print_status(self):
+        """Print the status of the various task queues."""
         while True:
             await asyncio.sleep(5.0)
             e = 0
@@ -283,13 +291,12 @@ class Conductor:
         # if inbound and inbound.direct_response:
         #     if outbound.reply_to_verkey
 
-        # FIXME - use dispatch task
         # always populate connection targets using provided context
         if not outbound.target and not outbound.target_list and outbound.connection_id:
             mgr = ConnectionManager(context)
             try:
-                outbound.target_list = await mgr.get_connection_targets(
-                    connection_id=outbound.connection_id
+                outbound.target_list = await self.dispatcher.run_task(
+                    mgr.get_connection_targets(connection_id=outbound.connection_id)
                 )
             except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
@@ -298,9 +305,10 @@ class Conductor:
         try:
             self.outbound_transport_manager.enqueue_message(context, outbound)
         except OutboundDeliveryError:
-            # Add message to outbound queue, indexed by key
+
+            # Add message to undelivered queue, indexed by key
             # if self.undelivered_queue:
             #     self.undelivered_queue.add_message(message)
 
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
-            return  # drop message
+            # drop message

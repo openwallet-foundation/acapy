@@ -195,7 +195,12 @@ class DispatcherResponder(BaseResponder):
     async def create_outbound(
         self, message: Union[AgentMessage, str, bytes], **kwargs
     ) -> OutboundMessage:
-        """Create an OutboundMessage from a message body."""
+        """
+        Create an OutboundMessage from a message body.
+
+        Args:
+            message: The message payload
+        """
         if isinstance(message, AgentMessage) and self._context.settings.get(
             "timing.enabled"
         ):

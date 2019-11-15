@@ -53,4 +53,4 @@ class TestResponseHandler:
             isinstance(result, ProblemReport)
             and result.problem_code == ProblemReportReason.RESPONSE_NOT_ACCEPTED
         )
-        assert target == {"target": None}
+        assert target == {"target_list": None}

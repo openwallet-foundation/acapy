@@ -14,7 +14,7 @@ def task_exc_info(task: asyncio.Task):
     except asyncio.CancelledError:
         exc_val = asyncio.CancelledError("Task was cancelled")
     if exc_val:
-        return type(exc_val), exc_val, task.get_stack()
+        return type(exc_val), exc_val, exc_val.__traceback__
 
 
 class CompletedTask:

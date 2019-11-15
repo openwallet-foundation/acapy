@@ -99,6 +99,7 @@ class InboundSession:
             self.add_reply_thread_id(receipt.thread_id)
 
     async def receive(self, payload_enc: Union[str, bytes]) -> InboundMessage:
+        """Receive a new message payload and construct an inbound message."""
         payload, receipt = await self.wire_format.parse_message(
             self.context, payload_enc
         )
@@ -161,7 +162,7 @@ class InboundSession:
         return (True, False)
 
     def clear_outbound(self):
-        """Called when the outbound buffered message has been delivered."""
+        """Handle when the outbound buffered message has been delivered."""
         self.outbound_buffer = None
         self.outbound_event.clear()
 
@@ -185,11 +186,6 @@ class InboundSession:
             )
 
         return response
-
-    def no_response(self, message: InboundMessage):
-        # need to close the connection if nothing was queued for it
-        # more complicated if the connection has received multiple messages
-        self.outbound_event.set()
 
     async def __aenter__(self):
         """Async context manager entry."""

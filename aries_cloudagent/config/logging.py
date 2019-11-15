@@ -142,7 +142,9 @@ class LoggingConfigurator:
         )
 
         outbound_transport_strings = []
-        schemes = set().union(*(transport.schemes for transport in outbound_transports))
+        schemes = set().union(
+            *(transport.schemes for transport in outbound_transports.values())
+        )
         for scheme in sorted(schemes):
             schema_string = f"  - {scheme}"
             scheme_spacer = " " * (banner_length - len(schema_string))

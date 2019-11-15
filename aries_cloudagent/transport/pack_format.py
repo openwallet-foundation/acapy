@@ -7,6 +7,7 @@ from typing import Sequence, Tuple, Union
 from ..config.base import InjectorError
 from ..config.injection_context import InjectionContext
 from ..protocols.routing.messages.forward import Forward
+from ..messaging.task_queue import TaskQueue
 from ..messaging.util import time_now
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
@@ -20,6 +21,11 @@ LOGGER = logging.getLogger(__name__)
 
 class PackWireFormat(BaseWireFormat):
     """Standard DIDComm message parser and serializer."""
+
+    def __init__(self):
+        """Initialize the pack wire format instance."""
+        super().__init__()
+        self.task_queue: TaskQueue = None
 
     async def parse_message(
         self, context: InjectionContext, message_body: Union[str, bytes],
@@ -59,19 +65,13 @@ class PackWireFormat(BaseWireFormat):
 
         # packed messages are detected by the absence of @type
         if "@type" not in message_dict:
-            try:
-                wallet: BaseWallet = await context.inject(BaseWallet)
-            except InjectorError:
-                raise MessageParseError("Wallet not defined in request context")
 
             try:
-                unpacked = await wallet.unpack_message(message_body)
-                (
-                    message_json,
-                    receipt.sender_verkey,
-                    receipt.recipient_verkey,
-                ) = unpacked
-            except WalletError:
+                unpack = self.unpack(context, message_body, receipt)
+                message_json = await (
+                    self.task_queue and self.task_queue.run(unpack) or unpack
+                )
+            except MessageParseError:
                 LOGGER.debug("Message unpack failed, falling back to JSON")
             else:
                 receipt.raw_message = message_json
@@ -96,6 +96,25 @@ class PackWireFormat(BaseWireFormat):
         LOGGER.debug(f"Expanded message: {message_dict}")
 
         return message_dict, receipt
+
+    async def unpack(
+        self,
+        context: InjectionContext,
+        message_body: Union[str, bytes],
+        receipt: MessageReceipt,
+    ):
+        """Look up the wallet instance and perform the message unpack."""
+        try:
+            wallet: BaseWallet = await context.inject(BaseWallet)
+        except InjectorError:
+            raise MessageParseError("Wallet not defined in request context")
+
+        try:
+            unpacked = await wallet.unpack_message(message_body)
+            (message_json, receipt.sender_verkey, receipt.recipient_verkey,) = unpacked
+            return message_json
+        except WalletError as e:
+            raise MessageParseError("Message unpack failed") from e
 
     async def encode_message(
         self,
@@ -123,29 +142,46 @@ class PackWireFormat(BaseWireFormat):
 
         """
 
+        if sender_key and recipient_keys:
+            pack = self.pack(
+                context, message_json, recipient_keys, routing_keys, sender_key
+            )
+            message = await (self.task_queue and self.task_queue.run(pack) or pack)
+        else:
+            message = message_json
+        return message
+
+    async def pack(
+        self,
+        context: InjectionContext,
+        message_json: Union[str, bytes],
+        recipient_keys: Sequence[str],
+        routing_keys: Sequence[str],
+        sender_key: str,
+    ):
+        """Look up the wallet instance and perform the message pack."""
+        if not sender_key or not recipient_keys:
+            raise MessageEncodeError("Cannot pack message without associated keys")
+
         wallet: BaseWallet = await context.inject(BaseWallet, required=False)
         if not wallet:
             raise MessageEncodeError("No wallet instance")
 
-        if sender_key and recipient_keys:
-            try:
-                message = await wallet.pack_message(
-                    message_json, recipient_keys, sender_key
-                )
-            except WalletError as e:
-                raise MessageEncodeError("Message pack failed") from e
-            if routing_keys:
-                recip_keys = recipient_keys
-                for router_key in routing_keys:
-                    fwd_msg = Forward(to=recip_keys[0], msg=message)
-                    # Forwards are anon packed
-                    recip_keys = [router_key]
-                    try:
-                        message = await wallet.pack_message(
-                            fwd_msg.to_json(), recip_keys
-                        )
-                    except WalletError as e:
-                        raise MessageEncodeError("Forward message pack failed") from e
-        else:
-            message = message_json
+        try:
+            message = await wallet.pack_message(
+                message_json, recipient_keys, sender_key
+            )
+        except WalletError as e:
+            raise MessageEncodeError("Message pack failed") from e
+
+        if routing_keys:
+            recip_keys = recipient_keys
+            for router_key in routing_keys:
+                fwd_msg = Forward(to=recip_keys[0], msg=message)
+                # Forwards are anon packed
+                recip_keys = [router_key]
+                try:
+                    message = await wallet.pack_message(fwd_msg.to_json(), recip_keys)
+                except WalletError as e:
+                    raise MessageEncodeError("Forward message pack failed") from e
         return message

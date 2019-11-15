@@ -1,44 +1,35 @@
 """Websockets Transport classes and functions."""
 
 import logging
-from typing import Coroutine
 
 from aiohttp import web, WSMsgType
 
-# from ...messaging.socket import SocketRef
+from ...messaging.error import MessageParseError
 
 from .base import BaseInboundTransport, InboundTransportSetupError
+
+LOGGER = logging.getLogger(__name__)
 
 
 class WsTransport(BaseInboundTransport):
     """Websockets Transport class."""
 
-    def __init__(
-        self,
-        host: str,
-        port: int,
-        message_router: Coroutine,
-        register_socket: Coroutine,
-    ) -> None:
+    def __init__(self, host: str, port: int, create_session) -> None:
         """
         Initialize a Transport instance.
 
         Args:
             host: Host to listen on
             port: Port to listen on
-            message_router: Function to pass incoming messages to
-            register_socket: A coroutine for registering a new socket
+            create_session: Method to create a new inbound session
 
         """
+        super().__init__("ws", create_session)
         self.host = host
         self.port = port
-        self.message_router = message_router
-        self.register_socket = register_socket
-        self.site = None
+        self.site: web.BaseSite = None
 
         # TODO: set scheme dynamically based on SSL settings (ws/wss)
-        self._scheme = "ws"
-        self.logger = logging.getLogger(__name__)
 
     @property
     def scheme(self):
@@ -97,28 +88,28 @@ class WsTransport(BaseInboundTransport):
             else:
                 await ws.send_bytes(result)
 
-        socket: SocketRef = await self.register_socket(handler=reply)
+        client_info = {"host": request.host, "remote": request.remote}
 
-        # Listen for incoming messages
-        async for msg in ws:
-            self.logger.info(f"Received message: {msg.data}")
-            if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
-                try:
-                    # Route message and provide connection instance as means to respond
-                    await self.message_router(msg.data, self._scheme, socket.socket_id)
-                except Exception:
-                    self.logger.exception("Error handling message")
+        session = await self.create_session(client_info)
 
-            elif msg.type == WSMsgType.ERROR:
-                self.logger.error(
-                    f"Websocket connection closed with exception {ws.exception()}"
-                )
+        async with session:
+            # Listen for incoming messages
+            async for msg in ws:
+                LOGGER.info(f"Received message: {msg.data}")
+                if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
+                    try:
+                        await session.receive(msg.data)
+                    except MessageParseError:
+                        raise web.HTTPBadRequest()
 
-            else:
-                self.logger.warning(f"Unexpected websocket message type {msg.type}")
+                elif msg.type == WSMsgType.ERROR:
+                    LOGGER.error(
+                        f"Websocket connection closed with exception {ws.exception()}"
+                    )
 
-        self.logger.info("Websocket connection closed")
+                else:
+                    LOGGER.warning(f"Unexpected websocket message type {msg.type}")
 
-        await socket.close()
+            LOGGER.info("Websocket connection closed")
 
         return ws

@@ -14,7 +14,7 @@ class TestDeliveryQueue(AsyncTestCase):
         queue = DeliveryQueue()
 
         t = ConnectionTarget(recipient_keys=["aaa"])
-        msg = OutboundMessage("x", target=t)
+        msg = OutboundMessage(payload="x", target=t)
         queue.add_message(msg)
         assert queue.has_message_for_key("aaa")
 
@@ -22,7 +22,7 @@ class TestDeliveryQueue(AsyncTestCase):
         queue = DeliveryQueue()
 
         t = ConnectionTarget(recipient_keys=["aaa"])
-        msg = OutboundMessage("x", target=t)
+        msg = OutboundMessage(payload="x", target=t)
         queue.add_message(msg)
         assert queue.has_message_for_key("bbb") is False
 
@@ -30,7 +30,7 @@ class TestDeliveryQueue(AsyncTestCase):
         queue = DeliveryQueue()
 
         t = ConnectionTarget(recipient_keys=["aaa"])
-        msg = OutboundMessage("x", target=t)
+        msg = OutboundMessage(payload="x", target=t)
         queue.add_message(msg)
         assert queue.has_message_for_key("aaa")
         assert queue.get_one_message_for_key("aaa") == msg
@@ -40,7 +40,7 @@ class TestDeliveryQueue(AsyncTestCase):
         queue = DeliveryQueue()
 
         t = ConnectionTarget(recipient_keys=["aaa"])
-        msg = OutboundMessage("x", target=t)
+        msg = OutboundMessage(payload="x", target=t)
         queue.add_message(msg)
         assert queue.has_message_for_key("aaa")
         msg_list = [m for m in queue.inspect_all_messages_for_key("aaa")]
@@ -54,7 +54,7 @@ class TestDeliveryQueue(AsyncTestCase):
         queue = DeliveryQueue()
 
         t = ConnectionTarget(recipient_keys=["aaa"])
-        msg = OutboundMessage("x", target=t)
+        msg = OutboundMessage(payload="x", target=t)
         queue.add_message(msg)
         assert queue.has_message_for_key("aaa")
         queue.expire_messages(ttl=-10)

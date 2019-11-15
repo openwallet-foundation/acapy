@@ -14,6 +14,7 @@ from marshmallow import fields, Schema
 from ..config.injection_context import InjectionContext
 from ..messaging.plugin_registry import PluginRegistry
 from ..messaging.responder import BaseResponder
+from ..messaging.task_queue import TaskQueue
 from ..stats import Collector
 from ..task_processor import TaskProcessor
 from ..transport.queue.basic import BasicMessageQueue
@@ -114,7 +115,7 @@ class AdminServer(BaseAdminServer):
         port: int,
         context: InjectionContext,
         outbound_message_router: Coroutine,
-        limiter=None,
+        task_queue: TaskQueue = None,
     ):
         """
         Initialize an AdminServer instance.
@@ -127,8 +128,8 @@ class AdminServer(BaseAdminServer):
         self.app = None
         self.host = host
         self.port = port
-        self.limiter = limiter
         self.loaded_modules = []
+        self.task_queue = task_queue
         self.webhook_queue = None
         self.webhook_retries = 5
         self.webhook_session: ClientSession = None
@@ -175,11 +176,11 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(check_token)
 
-        if self.limiter:
+        if self.task_queue:
 
             @web.middleware
             async def apply_limiter(request, handler):
-                task = await self.limiter(handler(request))
+                task = await self.task_queue.put(handler(request))
                 return await task
 
             middlewares.append(apply_limiter)

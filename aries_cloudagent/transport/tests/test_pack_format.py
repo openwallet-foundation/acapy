@@ -23,7 +23,6 @@ class TestPackWireFormat(AsyncTestCase):
         "~transport": {"return_route": "all"},
         "content": test_content,
     }
-    test_transport_type = "http"
     test_seed = "testseed000000000000000000000001"
     test_routing_seed = "testseed000000000000000000000002"
 
@@ -40,17 +39,17 @@ class TestPackWireFormat(AsyncTestCase):
         for message_json in bad_values:
             with self.assertRaises(MessageParseError):
                 message_dict, delivery = await serializer.parse_message(
-                    self.context, message_json, self.test_transport_type
+                    self.context, message_json
                 )
 
     async def test_unpacked(self):
         serializer = PackWireFormat()
         message_json = json.dumps(self.test_message)
         message_dict, delivery = await serializer.parse_message(
-            self.context, message_json, self.test_transport_type
+            self.context, message_json
         )
         assert message_dict == self.test_message
-        assert serializer.extract_message_type(message_dict) == self.test_message_type
+        assert message_dict["@type"] == self.test_message_type
         assert delivery.thread_id == self.test_thread_id
         assert delivery.direct_response_requested == "all"
 
@@ -62,11 +61,10 @@ class TestPackWireFormat(AsyncTestCase):
         message_json = json.dumps(message)
 
         message_dict, delivery = await serializer.parse_message(
-            self.context, message_json, self.test_transport_type
+            self.context, message_json
         )
         assert delivery.raw_message == message_json
-        with self.assertRaises(MessageParseError):
-            serializer.extract_message_type(message_dict)
+        assert message_dict == message
 
     async def test_encode_decode(self):
         local_did = await self.wallet.create_local_did(self.test_seed)
@@ -84,10 +82,10 @@ class TestPackWireFormat(AsyncTestCase):
         assert isinstance(packed, dict) and "protected" in packed
 
         message_dict, delivery = await serializer.parse_message(
-            self.context, packed_json, self.test_transport_type
+            self.context, packed_json
         )
         assert message_dict == self.test_message
-        assert serializer.extract_message_type(message_dict) == self.test_message_type
+        assert message_dict["@type"] == self.test_message_type
         assert delivery.thread_id == self.test_thread_id
         assert delivery.direct_response_requested == "all"
 
@@ -108,9 +106,8 @@ class TestPackWireFormat(AsyncTestCase):
         assert isinstance(packed, dict) and "protected" in packed
 
         message_dict, delivery = await serializer.parse_message(
-            self.context, packed_json, self.test_transport_type
+            self.context, packed_json
         )
-        assert serializer.extract_message_type(message_dict) == FORWARD
+        assert message_dict["@type"] == FORWARD
         assert delivery.recipient_verkey == router_did.verkey
         assert delivery.sender_verkey is None
-

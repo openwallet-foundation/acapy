@@ -56,10 +56,10 @@ class TestAdminServerBasic(AsyncTestCase):
         await server.stop()
 
     async def test_responder_send(self):
-        message = OutboundMessage("{}")
+        message = OutboundMessage(payload="{}")
         admin_server = self.get_admin_server()
         await admin_server.responder.send_outbound(message)
-        assert self.message_results == [(message,)]
+        assert self.message_results == [(admin_server.context, message)]
 
     @unittest_run_loop
     async def test_responder_webhook(self):
