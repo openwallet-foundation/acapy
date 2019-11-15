@@ -5,8 +5,8 @@ from asynctest import (
 )
 
 from ......messaging.request_context import RequestContext
-from ......messaging.message_delivery import MessageDelivery
 from ......messaging.responder import MockResponder
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.credential_request import CredentialRequest
 from .. import credential_request_handler as handler
@@ -15,7 +15,7 @@ from .. import credential_request_handler as handler
 class TestCredentialRequestHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
@@ -36,7 +36,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
 
     async def test_called_auto_issue(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
@@ -55,7 +55,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
                 return_value=mock_cred_proposal
             )
             mock_cred_proposal.credential_proposal = async_mock.MagicMock()
-            mock_cred_proposal.credential_proposal.attr_dict=async_mock.MagicMock()
+            mock_cred_proposal.credential_proposal.attr_dict = async_mock.MagicMock()
             request_context.message = CredentialRequest()
             request_context.connection_ready = True
             handler_inst = handler.CredentialRequestHandler()
@@ -72,14 +72,12 @@ class TestCredentialRequestHandler(AsyncTestCase):
 
     async def test_called_not_ready(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = (
-                async_mock.CoroutineMock()
-            )
+            mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock()
             request_context.message = CredentialRequest()
             request_context.connection_ready = False
             handler_inst = handler.CredentialRequestHandler()

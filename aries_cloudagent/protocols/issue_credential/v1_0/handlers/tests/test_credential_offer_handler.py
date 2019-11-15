@@ -5,8 +5,8 @@ from asynctest import (
 )
 
 from ......messaging.request_context import RequestContext
-from ......messaging.message_delivery import MessageDelivery
 from ......messaging.responder import MockResponder
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.credential_offer import CredentialOffer
 from .. import credential_offer_handler as handler
@@ -15,7 +15,7 @@ from .. import credential_offer_handler as handler
 class TestCredentialOfferHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_credential_offer"] = False
 
         with async_mock.patch.object(
@@ -34,7 +34,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
 
     async def test_called_auto_request(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_credential_offer"] = True
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.my_did = "dummy"
@@ -62,14 +62,12 @@ class TestCredentialOfferHandler(AsyncTestCase):
 
     async def test_called_not_ready(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_offer = (
-                async_mock.CoroutineMock()
-            )
+            mock_cred_mgr.return_value.receive_offer = async_mock.CoroutineMock()
             request_context.message = CredentialOffer()
             request_context.connection_ready = False
             handler_inst = handler.CredentialOfferHandler()

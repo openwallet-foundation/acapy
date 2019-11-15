@@ -5,9 +5,9 @@ from asynctest import (
 )
 
 from ......messaging.request_context import RequestContext
-from ......messaging.message_delivery import MessageDelivery
 from ......messaging.responder import MockResponder
 from ......storage.error import StorageNotFoundError
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.presentation_request import PresentationRequest
 from .. import presentation_request_handler as handler
@@ -18,7 +18,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         request_context = RequestContext()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.message = PresentationRequest()
         request_context.message.indy_proof_request = async_mock.MagicMock(
             return_value=async_mock.MagicMock()
@@ -54,7 +54,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         request_context = RequestContext()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.message = PresentationRequest()
         request_context.message.indy_proof_request = async_mock.MagicMock(
             return_value=async_mock.MagicMock()
@@ -95,7 +95,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         request_context.message.indy_proof_request = async_mock.MagicMock(
             return_value=async_mock.MagicMock()
         )
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
@@ -119,7 +119,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler.indy_proof_request2indy_requested_creds = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock()
             )
-            
+
             mock_pres_mgr.return_value.create_presentation = async_mock.CoroutineMock(
                 return_value=(mock_pres_ex_rec, "presentation_message")
             )
@@ -147,7 +147,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
         request_context.message.indy_proof_request = async_mock.MagicMock(
             return_value=async_mock.MagicMock()
         )
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
@@ -171,7 +171,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler.indy_proof_request2indy_requested_creds = async_mock.CoroutineMock(
                 side_effect=ValueError
             )
-            
+
             mock_pres_mgr.return_value.create_presentation = async_mock.CoroutineMock(
                 return_value=(mock_pres_ex_rec, "presentation_message")
             )
@@ -189,14 +189,12 @@ class TestPresentationRequestHandler(AsyncTestCase):
 
     async def test_called_not_ready(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_request = (
-                async_mock.CoroutineMock()
-            )
+            mock_pres_mgr.return_value.receive_request = async_mock.CoroutineMock()
             request_context.message = PresentationRequest()
             request_context.connection_ready = False
             handler_inst = handler.PresentationRequestHandler()
