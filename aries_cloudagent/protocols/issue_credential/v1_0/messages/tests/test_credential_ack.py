@@ -43,7 +43,7 @@ class TestCredentialAck(TestCase):
 
 
 class TestCredentialAckSchema(TestCase):
-    """Test credential cred ack schema"""
+    """Test credential ack schema"""
 
     credential_ack = CredentialAck()
 
