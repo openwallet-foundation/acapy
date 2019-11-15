@@ -6,8 +6,8 @@ from typing import Union
 
 from ...stats import Collector
 
-from ..base import BaseWireFormat
 from ..error import TransportError
+from ..wire_format import BaseWireFormat
 
 
 class BaseOutboundTransport(ABC):
@@ -71,3 +71,7 @@ class OutboundTransportError(TransportError):
 
 class OutboundTransportRegistrationError(OutboundTransportError):
     """Outbound transport registration error."""
+
+
+class OutboundDeliveryError(OutboundTransportError):
+    """Base exception when a message cannot be delivered via an outbound transport."""

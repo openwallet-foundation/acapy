@@ -11,8 +11,8 @@ from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...messaging.task_queue import TaskQueue
 from ...delivery_queue import DeliveryQueue
 
-from ..base import BaseWireFormat
 from ..outbound.message import OutboundMessage
+from ..wire_format import BaseWireFormat
 
 from .base import (
     BaseInboundTransport,
@@ -104,6 +104,9 @@ class InboundTransportManager:
         transport = self.registered_transports[transport_id]
         await transport.start()
         self.running_transports[transport_id] = transport
+
+    def get_transport(self, transport_id: str):
+        return self.running_transports[transport_id]
 
     async def start(self):
         """Start all registered transports."""

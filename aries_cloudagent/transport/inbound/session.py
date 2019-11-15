@@ -5,9 +5,9 @@ from typing import Callable, Sequence, Tuple, Union
 
 from ...config.injection_context import InjectionContext
 
-from ..base import BaseWireFormat
 from ..error import WireFormatError
 from ..outbound.message import OutboundMessage
+from ..wire_format import BaseWireFormat
 
 from .message import InboundMessage
 

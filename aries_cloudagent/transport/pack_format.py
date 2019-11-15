@@ -11,9 +11,9 @@ from ..messaging.util import time_now
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 
-from .base import BaseWireFormat
 from .error import MessageParseError, MessageEncodeError
 from .inbound.receipt import MessageReceipt
+from .wire_format import BaseWireFormat
 
 LOGGER = logging.getLogger(__name__)
 

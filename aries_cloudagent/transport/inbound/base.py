@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Awaitable, Callable
 
-from ..base import BaseWireFormat
 from ..error import TransportError
+from ..wire_format import BaseWireFormat
 
 from .session import InboundSession
 

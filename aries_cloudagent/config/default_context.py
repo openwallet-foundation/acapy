@@ -21,8 +21,8 @@ from ..protocols.introduction.demo_service import DemoIntroductionService
 from ..stats import Collector
 from ..storage.base import BaseStorage
 from ..storage.provider import StorageProvider
-from ..transport.base import BaseWireFormat
 from ..transport.pack_format import PackWireFormat
+from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.provider import WalletProvider
 
