@@ -319,14 +319,14 @@ class DemoAgent:
         topic = request.match_info["topic"]
         payload = await request.json()
         await self.handle_webhook(topic, payload)
-        return web.Response(text="")
+        return web.Response(status=200)
 
     async def handle_webhook(self, topic: str, payload):
         if topic != "webhook":  # would recurse
             handler = f"handle_{topic}"
             method = getattr(self, handler, None)
             if method:
-                await method(payload)
+                asyncio.get_event_loop().create_task(method(payload))
             else:
                 log_msg(
                     f"Error: agent {self.ident} "
