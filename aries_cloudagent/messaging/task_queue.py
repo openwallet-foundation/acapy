@@ -108,7 +108,7 @@ class TaskQueue:
             ):
                 coro, task_complete, fut = self.pending_tasks.pop(0)
                 task = self.run(coro, task_complete)
-                if fut:
+                if fut and not fut.done():
                     fut.set_result(task)
             if self.pending_tasks:
                 await self._updated_evt.wait()
@@ -179,9 +179,9 @@ class TaskQueue:
         """
         fut = self.loop.create_future()
         if self._cancelled:
+            coro.close()
             fut.cancel()
-            return
-        if self.ready:
+        elif self.ready:
             task = self.run(coro, task_complete)
             fut.set_result(task)
         else:
@@ -193,21 +193,22 @@ class TaskQueue:
         exc_info = task_exc_info(task)
         if exc_info and not task_complete:
             LOGGER.exception("Error running task", exc_info=exc_info)
-        try:
-            self.active_tasks.remove(task)
-        except ValueError:
-            pass
         if task_complete:
             try:
                 task_complete(CompletedTask(task, exc_info))
             except Exception:
                 LOGGER.exception("Error finalizing task")
+        try:
+            self.active_tasks.remove(task)
+        except ValueError:
+            pass
         self.drain()
 
     def cancel_pending(self):
         """Cancel any pending tasks in the queue."""
         if self._drain_task:
             self._drain_task.cancel()
+            self._drain_task = None
         for coro, task_complete, fut in self.pending_tasks:
             coro.close()
             fut.cancel()
@@ -228,24 +229,26 @@ class TaskQueue:
         if timeout or timeout is None:
             try:
                 await self.wait_for(timeout)
-            except TimeoutError:
+            except asyncio.TimeoutError:
                 pass
         for task in self.active_tasks:
             if not task.done():
                 task.cancel()
         if cleanup:
-            while self.active_tasks:
-                await self._updated_evt.wait()
+            while True:
+                drain = self.drain()
+                if not drain:
+                    break
+                await drain
 
     async def flush(self):
         """Wait for any active or pending tasks to be completed."""
-        if self.pending_tasks and not self._drain_task:
-            self.drain()
+        self.drain()
         while self.active_tasks or self._drain_task:
             if self._drain_task:
                 await self._drain_task
             if self.active_tasks:
-                await asyncio.gather(*self.active_tasks)
+                await asyncio.wait(self.active_tasks)
 
     def __await__(self):
         """Handle the builtin await operator."""
