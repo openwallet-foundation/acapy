@@ -51,7 +51,7 @@ class TestPackWireFormat(AsyncTestCase):
         assert message_dict == self.test_message
         assert message_dict["@type"] == self.test_message_type
         assert delivery.thread_id == self.test_thread_id
-        assert delivery.direct_response_requested == "all"
+        assert delivery.direct_response_mode == "all"
 
     async def test_fallback(self):
         serializer = PackWireFormat()
@@ -87,7 +87,7 @@ class TestPackWireFormat(AsyncTestCase):
         assert message_dict == self.test_message
         assert message_dict["@type"] == self.test_message_type
         assert delivery.thread_id == self.test_thread_id
-        assert delivery.direct_response_requested == "all"
+        assert delivery.direct_response_mode == "all"
 
     async def test_forward(self):
         local_did = await self.wallet.create_local_did(self.test_seed)

@@ -205,12 +205,12 @@ class InboundTransportManager:
         if not outbound.target:
             session = self.sessions.get(outbound.reply_session_id)
             if session:
-                accepted, retry = session.accept_response(outbound)
+                accepted = session.accept_response(outbound)
 
             if not accepted:
                 for session in self.session.values():
                     if session.session_id != outbound.reply_session_id:
-                        accepted, retry = session.accept_response(outbound)
+                        accepted = session.accept_response(outbound)
                         break
 
         if accepted:

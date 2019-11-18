@@ -26,7 +26,6 @@ from .messaging.task_queue import CompletedTask, TaskQueue
 from .stats import Collector
 from .transport.inbound.manager import InboundTransportManager
 from .transport.inbound.message import InboundMessage
-from .transport.inbound.session import InboundSession
 from .transport.outbound.base import OutboundDeliveryError
 from .transport.outbound.manager import OutboundTransportManager
 from .transport.outbound.message import OutboundMessage
@@ -232,11 +231,7 @@ class Conductor:
 
         """
 
-        if (
-            message.receipt.direct_response_requested
-            and message.receipt.direct_response_requested
-            != InboundSession.REPLY_MODE_NONE
-        ):
+        if message.receipt.direct_response_requested:
             LOGGER.warning(
                 "Direct response requested, but not supported by transport: %s",
                 message.transport_type,

@@ -94,7 +94,7 @@ class HttpTransport(BaseInboundTransport):
 
                 # no more responses
                 session.can_respond = False
-                session.clear_outbound()
+                session.clear_response()
 
                 if response:
                     response_body = response.payload

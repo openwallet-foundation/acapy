@@ -8,11 +8,15 @@ class MessageReceipt:
 
     # TODO - add trust context information
 
+    REPLY_MODE_ALL = "all"
+    REPLY_MODE_NONE = "none"
+    REPLY_MODE_THREAD = "thread"
+
     def __init__(
         self,
         *,
         connection_id: str = None,
-        direct_response_requested: str = None,
+        direct_response_mode: str = None,
         in_time: datetime = None,
         raw_message: str = None,
         recipient_verkey: str = None,
@@ -24,7 +28,7 @@ class MessageReceipt:
     ):
         """Initialize the message delivery instance."""
         self._connection_id = connection_id
-        self._direct_response_requested = direct_response_requested
+        self._direct_response_mode = direct_response_mode
         self._in_time = in_time
         self._raw_message = raw_message
         self._recipient_verkey = recipient_verkey
@@ -57,7 +61,7 @@ class MessageReceipt:
         self._connection_id = connection_id
 
     @property
-    def direct_response_requested(self) -> str:
+    def direct_response_mode(self) -> str:
         """
         Accessor for the requested direct response mode.
 
@@ -65,18 +69,23 @@ class MessageReceipt:
             This context's requested direct response mode
 
         """
-        return self._direct_response_requested
+        return self._direct_response_mode
 
-    @direct_response_requested.setter
-    def direct_response_requested(self, direct_mode: str):
+    @direct_response_mode.setter
+    def direct_response_mode(self, mode: str) -> str:
+        """Setter for the requested direct response mode."""
+        self._direct_response_mode = mode
+
+    @property
+    def direct_response_requested(self) -> str:
         """
-        Setter for the string indicating the requested direct responses mode.
+        Accessor for the the state of the direct response mode.
 
-        Args:
-            direct_mode: This context's new direct response mode
+        Returns:
+            This context's requested direct response mode
 
         """
-        self._direct_response_requested = direct_mode
+        return self._direct_response_mode and self._direct_response_mode != "none"
 
     @property
     def in_time(self) -> str:

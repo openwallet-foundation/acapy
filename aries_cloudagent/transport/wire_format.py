@@ -115,7 +115,7 @@ class JsonWireFormat(BaseWireFormat):
         # handle transport decorator
         transport_dec = message_dict.get("~transport")
         if transport_dec:
-            receipt.direct_response_requested = transport_dec.get("return_route")
+            receipt.direct_response_mode = transport_dec.get("return_route")
 
         LOGGER.debug(f"Expanded message: {message_dict}")
 
