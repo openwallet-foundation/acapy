@@ -77,7 +77,7 @@ class OutboundTransportManager:
         self.registered_schemes = {}
         self.registered_transports = {}
         self.running_transports = {}
-        self.task_queue = TaskQueue(max_active=50)
+        self.task_queue = TaskQueue(max_active=100)
         self._process_task: asyncio.Task = None
 
     async def setup(self):
@@ -260,13 +260,11 @@ class OutboundTransportManager:
             retries: Override the number of retries
 
         Raises:
-            OutboundDeliveryError: if the associated transport is not registered
+            OutboundDeliveryError: if the associated transport is not running
 
         """
         transport_id = self.get_running_transport_for_endpoint(endpoint)
-        queued = QueuedOutboundMessage(
-            None, None, None, transport_id
-        )
+        queued = QueuedOutboundMessage(None, None, None, transport_id)
         queued.endpoint = f"{endpoint}/topic/{topic}/"
         queued.payload = json.dumps(payload)
         queued.state = QueuedOutboundMessage.STATE_PENDING

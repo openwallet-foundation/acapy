@@ -38,7 +38,7 @@ class Dispatcher:
     def __init__(self, context: InjectionContext):
         """Initialize an instance of Dispatcher."""
         self.context = context
-        self.task_queue = TaskQueue(max_active=50)
+        self.task_queue = TaskQueue(max_active=20)
 
     def put_task(self, coro: Coroutine, complete: Callable = None) -> asyncio.Future:
         """Run a task in the task queue, potentially blocking other handlers."""
