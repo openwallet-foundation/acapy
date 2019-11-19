@@ -251,6 +251,10 @@ class Conductor:
 
     def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
         """Handle completion of message dispatch."""
+        if completed.exc_info:
+            LOGGER.exception(
+                "Exception in message handler:", exc_info=completed.exc_info
+            )
         self.inbound_transport_manager.dispatch_complete(message, completed)
 
     async def print_status(self):
