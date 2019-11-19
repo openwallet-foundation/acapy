@@ -2,8 +2,6 @@
 
 from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
-from ...connections.manager import ConnectionManager
-
 from ..messages.ping import Ping
 from ..messages.ping_response import PingResponse
 
@@ -34,19 +32,19 @@ class PingHandler(BaseHandler):
             )
             return
 
-        conn_mgr = ConnectionManager(context)
-        await conn_mgr.log_activity(
-            context.connection_record,
-            "ping",
-            context.connection_record.DIRECTION_RECEIVED,
-        )
-
         if context.message.response_requested:
             reply = PingResponse()
             reply.assign_thread_from(context.message)
             await responder.send_reply(reply)
-            await conn_mgr.log_activity(
-                context.connection_record,
+
+        if context.settings.get("debug.monitor_ping"):
+            await responder.send_webhook(
                 "ping",
-                context.connection_record.DIRECTION_SENT,
+                {
+                    "comment": context.message.comment,
+                    "connection_id": context.message_delivery.connection_id,
+                    "responded": context.message.response_requested,
+                    "state": "received",
+                    "thread_id": context.message._thread_id,
+                },
             )

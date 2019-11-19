@@ -512,6 +512,11 @@ class ProtocolGroup(ArgumentGroup):
             help="Base URL to use when formatting connection invitations in URL format."
         )
         parser.add_argument(
+            "--monitor-ping",
+            action="store_true",
+            help="Send a webhook when a ping is sent or received.",
+        )
+        parser.add_argument(
             "--public-invites",
             action="store_true",
             help="Send invitations out, and receive connection requests,\
@@ -536,6 +541,8 @@ class ProtocolGroup(ArgumentGroup):
             settings["auto_ping_connection"] = True
         if args.invite_base_url:
             settings["invite_base_url"] = args.invite_base_url
+        if args.monitor_ping:
+            settings["debug.monitor_ping"] = args.monitor_ping
         if args.public_invites:
             settings["public_invites"] = True
         if args.timing:

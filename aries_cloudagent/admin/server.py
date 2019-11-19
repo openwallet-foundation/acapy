@@ -389,9 +389,6 @@ class AdminServer(BaseAdminServer):
             for queue in self.websocket_queues.values():
                 await queue.enqueue({"topic": topic, "payload": payload})
             if self.webhook_targets:
-                if topic == "connections_activity":
-                    # filter connections activity by default (only sent to sockets)
-                    continue
                 targets = self.webhook_targets.copy()
                 for idx, target in targets.items():
                     if not target.topic_filter or topic in target.topic_filter:

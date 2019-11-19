@@ -2,8 +2,6 @@
 
 from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
-from ...connections.manager import ConnectionManager
-
 from ..messages.ping_response import PingResponse
 
 
@@ -27,11 +25,15 @@ class PingResponseHandler(BaseHandler):
             "Received trust ping response from: %s", context.message_delivery.sender_did
         )
 
-        # Nothing to do, Connection should be automatically promoted to 'active'
+        if context.settings.get("debug.monitor_ping"):
+            await responder.send_webhook(
+                "ping",
+                {
+                    "comment": context.message.comment,
+                    "connection_id": context.message_delivery.connection_id,
+                    "state": "response_received",
+                    "thread_id": context.message._thread_id,
+                },
+            )
 
-        conn_mgr = ConnectionManager(context)
-        await conn_mgr.log_activity(
-            context.connection_record,
-            "ping",
-            context.connection_record.DIRECTION_RECEIVED,
-        )
+        # Nothing to do, Connection should be automatically promoted to 'active'

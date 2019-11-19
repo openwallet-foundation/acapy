@@ -42,7 +42,6 @@ class ClassLoader:
         if package:
             # preload parent package
             if not cls.load_module(package):
-                print("no parent")
                 return None
             # must treat as a relative import
             if not mod_path.startswith("."):
@@ -57,7 +56,6 @@ class ClassLoader:
             if parent_mod_path and parent_mod_path[-1] != ".":
                 parent_mod = cls.load_module(parent_mod_path, package)
                 if not parent_mod:
-                    print("no parent 2")
                     return None
                 package = parent_mod.__name__
                 mod_path = f".{mod_name}"
@@ -66,7 +64,6 @@ class ClassLoader:
         # this means that a later ModuleNotFoundError indicates a code issue
         spec = find_spec(mod_path, package)
         if not spec:
-            print("no spec", mod_path, package)
             return None
 
         try:
