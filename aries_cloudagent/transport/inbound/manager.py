@@ -4,12 +4,11 @@ import asyncio
 import logging
 import uuid
 from collections import OrderedDict
-from typing import Coroutine
+from typing import Callable, Coroutine
 
 from ...config.injection_context import InjectionContext
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...messaging.task_queue import CompletedTask, TaskQueue
-from ...delivery_queue import DeliveryQueue
 
 from ..outbound.message import OutboundMessage
 from ..wire_format import BaseWireFormat
@@ -19,6 +18,8 @@ from .base import (
     InboundTransportConfiguration,
     InboundTransportRegistrationError,
 )
+from .delivery_queue import DeliveryQueue
+from .message import InboundMessage
 from .session import InboundSession
 
 LOGGER = logging.getLogger(__name__)
@@ -28,10 +29,16 @@ MODULE_BASE_PATH = "aries_cloudagent.transport.inbound"
 class InboundTransportManager:
     """Inbound transport manager class."""
 
-    def __init__(self, context: InjectionContext, receive_inbound: Coroutine):
+    def __init__(
+        self,
+        context: InjectionContext,
+        receive_inbound: Coroutine,
+        return_inbound: Callable = None,
+    ):
         """Initialize an `InboundTransportManager` instance."""
         self.context = context
         self.receive_inbound = receive_inbound
+        self.return_inbound = return_inbound
         self.registered_transports = {}
         self.running_transports = {}
         self.sessions = OrderedDict()
@@ -121,16 +128,30 @@ class InboundTransportManager:
     async def create_session(
         self,
         transport_type: str,
+        *,
+        accept_undelivered: bool = False,
+        can_respond: bool = False,
         client_info: dict = None,
         wire_format: BaseWireFormat = None,
     ):
-        """Create a new inbound session."""
+        """
+        Create a new inbound session.
+
+        Args:
+            transport_type: The inbound transport identifier
+            accept_undelivered: Flag for accepting undelivered messages
+            can_respond: Flag indicating that the transport can send responses
+            client_info: An optional dict describing the client
+            wire_format: Override the wire format for this session
+        """
         if self.session_limit:
             await self.session_limit
         if not wire_format:
             wire_format = await self.context.inject(BaseWireFormat)
         session = InboundSession(
             context=self.context,
+            accept_undelivered=accept_undelivered,
+            can_respond=can_respond,
             client_info=client_info,
             close_handler=self.closed_session,
             inbound_handler=self.receive_inbound,
@@ -141,77 +162,75 @@ class InboundTransportManager:
         self.sessions[session.session_id] = session
         return session
 
-    def dispatch_complete(self, message, completed: CompletedTask):
+    def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
         """Handle completion of message dispatch."""
-        session = self.sessions.get(message.session_id)
-        if session:
-            # need to scan the undelivered queue and see if anything is queued
-            # for this session first
-            session.dispatch_complete(message)
+        session: InboundSession = self.sessions.get(message.session_id)
+        if session and session.accept_undelivered and not session.response_buffered:
+            self.process_undelivered(session)
 
     def closed_session(self, session: InboundSession):
-        """Clean up a closed session."""
+        """
+        Clean up a closed session.
+
+        Returns an undelivered message to the caller if possible.
+        """
         if session.session_id in self.sessions:
             del self.sessions[session.session_id]
             if self.session_limit:
                 self.session_limit.release()
-        # FIXME if there is a message in the outbound buffer, re-queue it
-
-    async def queue_processing(self, session: InboundSession):
-        """
-        Interact with undelivered queue to find applicable messages.
-
-        Args:
-            session: The inbound session
-        """
-        if (
-            session
-            and session.reply_mode
-            and not session.closed
-            and self.undelivered_queue
-        ):
-            for key in session.reply_verkeys:
-                if not isinstance(key, str):
-                    key = key.value
-                if self.undelivered_queue.has_message_for_key(key):
-                    for (
-                        undelivered_message
-                    ) in self.undelivered_queue.inspect_all_messages_for_key(key):
-                        # pending message. Transmit, then kill single_response
-                        if session.select_outbound(undelivered_message):
-                            LOGGER.debug(
-                                "Sending Queued Message via inbound connection"
-                            )
-                            self.undelivered_queue.remove_message_for_key(
-                                key, undelivered_message
-                            )
-                            await session.send(undelivered_message)
+        if session.response_buffer:
+            if self.return_inbound:
+                self.return_inbound(session.response_buffer)
+            else:
+                LOGGER.warning("Message failed return delivery, will not be delivered")
 
     def return_to_session(self, outbound: OutboundMessage):
-        """Return an outbound message to an open session, if possible."""
-        # if outbound.reply_session_id:
-
-        # if inbound and inbound.receipt.
-
-        #  if the message has multiple targets, we cannot direct return unless
-        #  one of the targets has keys that match the inbound message (!)
-        # if an
-
+        """Return an outbound message via an open session, if possible."""
         accepted = False
 
-        # try open inbound sessions first, preferring the same session ID
-        # FIXME if outbound target is set, need to compare to inbound keys
-
         if not outbound.target:
+            # prefer the same session ID
             session = self.sessions.get(outbound.reply_session_id)
             if session:
                 accepted = session.accept_response(outbound)
 
             if not accepted:
-                for session in self.session.values():
+                for session in self.sessions.values():
                     if session.session_id != outbound.reply_session_id:
                         accepted = session.accept_response(outbound)
                         break
 
         if accepted:
             LOGGER.debug("Returned message to socket %s", session.session_id)
+
+    def return_undelivered(self, outbound: OutboundMessage) -> bool:
+        """
+        Add an undelivered message to the undelivered queue.
+
+        At this point the message could not be associated with an inbound
+        session and could not be delivered via an outbound transport.
+        """
+        if self.undelivered_queue:
+            self.undelivered_queue.add_message(outbound)
+            return True
+        return False
+
+    async def process_undelivered(self, session: InboundSession):
+        """
+        Interact with undelivered queue to find applicable messages.
+
+        Args:
+            session: The inbound session
+        """
+        if session and session.can_respond and self.undelivered_queue:
+            for key in session.reply_verkeys:
+                for (
+                    undelivered_message
+                ) in self.undelivered_queue.inspect_all_messages_for_key(key):
+                    if session.accept_response(undelivered_message):
+                        LOGGER.debug(
+                            "Sending previously undelivered message via inbound session"
+                        )
+                        self.undelivered_queue.remove_message_for_key(
+                            key, undelivered_message
+                        )

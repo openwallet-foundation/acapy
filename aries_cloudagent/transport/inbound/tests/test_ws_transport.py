@@ -5,7 +5,11 @@ from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
 from aiohttp import web
 from asynctest import mock as async_mock
 
+from ...outbound.message import OutboundMessage
+from ...wire_format import JsonWireFormat
+
 from ..message import InboundMessage
+from ..session import InboundSession
 from ..ws import WsTransport
 
 
@@ -13,20 +17,22 @@ class TestWsTransport(AioHTTPTestCase):
     def setUp(self):
         self.message_results = []
         self.port = unused_port()
-        self.receipt = None
         self.session = None
         self.transport = WsTransport("0.0.0.0", self.port, self.create_session)
+        self.transport.wire_format = JsonWireFormat()
+        self.result_event = None
         super(TestWsTransport, self).setUp()
 
-    def create_session(self, scheme, client_info, wire_format):
+    def create_session(self, transport_type, *, client_info, wire_format, **kwargs):
         if not self.session:
-            session = async_mock.MagicMock()
-            session.scheme, session.client_info, session.wire_format = (
-                scheme,
-                client_info,
-                wire_format,
+            session = InboundSession(
+                context=None,
+                inbound_handler=self.receive_message,
+                session_id=None,
+                wire_format=wire_format,
+                client_info=client_info,
+                transport_type=transport_type,
             )
-            session.receive = self.receive_message
             self.session = session
         result = asyncio.Future()
         result.set_result(self.session)
@@ -35,28 +41,34 @@ class TestWsTransport(AioHTTPTestCase):
     def get_application(self):
         return self.transport.make_application()
 
-    async def receive_message(self, payload):
-        self.message_results.append([json.loads(payload)])
-        # if self.response_handler:
-        #     await self.response_handler('{"response": "ok"}')
-        # else:
-        #     self.fail("no response handler")
-        return InboundMessage(payload, self.receipt)
+    def receive_message(self, message: InboundMessage):
+        self.message_results.append((message.payload, message.receipt))
+        if self.result_event:
+            self.result_event.set()
 
     @unittest_run_loop
-    async def test_send_message(self):
+    async def test_message_and_response(self):
         await self.transport.start()
 
         test_message = {"test": "message"}
-        async with self.client.ws_connect("/") as ws:
-            await ws.send_json(test_message)
-            await asyncio.sleep(0.1)
-            assert self.session
-            # result = await asyncio.wait_for(ws.receive_json(), 1.0)
-            # assert json.loads(result) == {"response": "ok"}
+        test_response = {"response": "ok"}
 
-        assert self.message_results == [[test_message]]
+        async with self.client.ws_connect("/") as ws:
+            self.result_event = asyncio.Event()
+            await ws.send_json(test_message)
+            await asyncio.wait((self.result_event.wait(),), timeout=0.1)
+
+            assert self.session is not None
+            assert len(self.message_results) == 1
+            received, receipt = self.message_results[0]
+            assert received == test_message
+
+            response = OutboundMessage(
+                payload=None, enc_payload=json.dumps(test_response)
+            )
+            self.session.set_response(response)
+
+            result = await asyncio.wait_for(ws.receive_json(), 1.0)
+            assert result == {"response": "ok"}
 
         await self.transport.stop()
-
-        # assert not self.response_handler

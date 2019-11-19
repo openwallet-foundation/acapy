@@ -36,6 +36,8 @@ class InboundSession:
         inbound_handler: Callable,
         session_id: str,
         wire_format: BaseWireFormat,
+        accept_undelivered: bool = False,
+        can_respond: bool = False,
         client_info: dict = None,
         close_handler: Callable = None,
         reply_mode: str = None,
@@ -45,15 +47,18 @@ class InboundSession:
     ):
         """Initialize the inbound session."""
         self.context = context
-        self.client_info = client_info
-        self.close_handler = close_handler
         self.inbound_handler = inbound_handler
-        self.response_buffer: OutboundMessage = None
-        self.response_event = asyncio.Event()
         self.session_id = session_id
-        self.transport_type = transport_type
         self.wire_format = wire_format
 
+        self.accept_undelivered = accept_undelivered
+        self.client_info = client_info
+        self.close_handler = close_handler
+        self.response_buffer: OutboundMessage = None
+        self.response_event = asyncio.Event()
+        self.transport_type = transport_type
+
+        self._can_respond = can_respond
         self._closed = False
         self._reply_mode = None
         self._reply_verkeys = None
@@ -63,6 +68,16 @@ class InboundSession:
         self.reply_thread_ids = reply_thread_ids
         self.reply_verkeys = reply_verkeys
         self.reply_mode = reply_mode
+
+    @property
+    def can_respond(self) -> bool:
+        """Accessor for the session can-respond state."""
+        return self._can_respond and not self._closed
+
+    @can_respond.setter
+    def can_respond(self, can_respond: bool):
+        """Setter for the session can-respond state."""
+        self._can_respond = can_respond
 
     @property
     def closed(self) -> bool:
@@ -124,6 +139,11 @@ class InboundSession:
         for verkey in filter(None, verkeys):
             self._reply_verkeys.add(verkey)
 
+    @property
+    def response_buffered(self) -> bool:
+        """Check if a response is currently buffered."""
+        return bool(self.response_buffer)
+
     def process_inbound(self, message: InboundMessage):
         """
         Process an incoming message and update the session metadata as necessary.
@@ -169,7 +189,7 @@ class InboundSession:
             message: The outbound message to be checked
 
         """
-        if self.closed:  # or not self.can_respond
+        if not self.can_respond:
             return False
 
         mode = self.reply_mode
@@ -223,22 +243,29 @@ class InboundSession:
         return AcceptResult(True)
 
     def set_response(self, message: OutboundMessage):
-        """Set the contents of the outbound buffer."""
+        """Set the contents of the response message buffer."""
         self.response_buffer = message
         self.response_event.set()
 
     def clear_response(self):
-        """Handle when the outbound buffered message has been delivered."""
+        """Handle when the buffered response message has been delivered."""
         self.response_buffer = None
-        self.response_event.clear()
+        self.response_event.set()
 
     async def wait_response(self) -> OutboundMessage:
-        """Wait for a response to be buffered and unpack it."""
-        await self.response_event.wait()
-        response = self.response_buffer
-        if response and not response.enc_payload:
-            response = self.response_buffer = await self.encode_outbound(response)
-        return response
+        """Wait for a response to be buffered and pack it."""
+        while True:
+            if self._closed:
+                return
+            response = self.response_buffer
+            if response:
+                if not response.enc_payload:
+                    response = self.response_buffer = await self.encode_outbound(
+                        response
+                    )
+                return response
+            self.response_event.clear()
+            await self.response_event.wait()
 
     async def __aenter__(self):
         """Async context manager entry."""

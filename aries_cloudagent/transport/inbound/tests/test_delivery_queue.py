@@ -1,12 +1,13 @@
 import asyncio
 from unittest import mock, TestCase
 
-from aries_cloudagent.delivery_queue import DeliveryQueue
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from ..connections.models.connection_target import ConnectionTarget
-from ..transport.outbound.message import OutboundMessage
+from ....connections.models.connection_target import ConnectionTarget
+from ....transport.outbound.message import OutboundMessage
+
+from ..delivery_queue import DeliveryQueue
 
 
 class TestDeliveryQueue(AsyncTestCase):

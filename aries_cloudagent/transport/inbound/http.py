@@ -81,7 +81,9 @@ class HttpTransport(BaseInboundTransport):
 
         client_info = {"host": request.host, "remote": request.remote}
 
-        session = await self.create_session(client_info)
+        session = await self.create_session(
+            accept_undelivered=True, can_respond=True, client_info=client_info
+        )
 
         async with session:
             try:
@@ -97,7 +99,7 @@ class HttpTransport(BaseInboundTransport):
                 session.clear_response()
 
                 if response:
-                    response_body = response.payload
+                    response_body = response.enc_payload
                     if isinstance(response_body, bytes):
                         return web.Response(
                             body=response_body,

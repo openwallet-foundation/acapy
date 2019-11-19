@@ -92,7 +92,7 @@ class Dispatcher:
         """
 
         connection_mgr = ConnectionManager(self.context)
-        connection = await connection_mgr.find_message_connection(
+        connection = await connection_mgr.find_inbound_connection(
             inbound_message.receipt
         )
         if connection:

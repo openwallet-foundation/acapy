@@ -5,58 +5,76 @@ from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
 from aiohttp import web
 from asynctest import mock as async_mock
 
+from ...outbound.message import OutboundMessage
+from ...wire_format import JsonWireFormat
+
 from ..http import HttpTransport
 from ..message import InboundMessage
-from ..receipt import MessageReceipt
+from ..session import InboundSession
 
 
 class TestHttpTransport(AioHTTPTestCase):
     def setUp(self):
         self.message_results = []
         self.port = unused_port()
-        self.receipt = None
         self.session = None
-        self.transport = None
+        self.transport = HttpTransport("0.0.0.0", self.port, self.create_session)
+        self.transport.wire_format = JsonWireFormat()
+        self.result_event = None
+        self.response_message = None
         super(TestHttpTransport, self).setUp()
 
-    def get_transport(self):
-        if not self.transport:
-            self.transport = HttpTransport("0.0.0.0", self.port, self.create_session)
-        return self.transport
-
-    def create_session(self, scheme, client_info, wire_format):
+    def create_session(self, transport_type, *, client_info, wire_format, **kwargs):
         if not self.session:
-            session = async_mock.MagicMock()
-            session.scheme, session.client_info, session.wire_format = (
-                scheme,
-                client_info,
-                wire_format,
+            session = InboundSession(
+                context=None,
+                inbound_handler=self.receive_message,
+                session_id=None,
+                wire_format=wire_format,
+                client_info=client_info,
+                transport_type=transport_type,
             )
-            session.receive = self.receive_message
             self.session = session
         result = asyncio.Future()
         result.set_result(self.session)
         return result
 
-    async def receive_message(self, payload):
-        self.message_results.append([json.loads(payload)])
-        return InboundMessage(payload, self.receipt)
-        # single_response.set_result('{"response": "ok"}')
+    def receive_message(self, message: InboundMessage):
+        self.message_results.append((message.payload, message.receipt))
+        if self.result_event:
+            self.result_event.set()
+        if self.response_message and self.session:
+            self.session.set_response(self.response_message)
 
     def get_application(self):
-        return self.get_transport().make_application()
+        return self.transport.make_application()
 
     @unittest_run_loop
     async def test_send_message(self):
         await self.transport.start()
 
         test_message = {"test": "message"}
-        self.receipt = MessageReceipt()
-        resp = await self.client.post("/", json=test_message)
+        async with self.client.post("/", json=test_message) as resp:
+            await resp.text()
 
-        assert self.session
-        assert self.session.scheme == "http"
-        assert self.message_results == [[test_message]]
-        # assert await resp.json() == {"response": "ok"}
+        assert self.session is not None
+        assert self.session.transport_type == "http"
+        assert len(self.message_results) == 1
+        assert self.message_results[0][0] == test_message
+
+        await self.transport.stop()
+
+    @unittest_run_loop
+    async def test_send_receive_message(self):
+        await self.transport.start()
+
+        test_message = {"~transport": {"return_route": "all"}, "test": "message"}
+        test_response = {"response": "ok"}
+        self.response_message = OutboundMessage(
+            payload=None, enc_payload=json.dumps(test_response)
+        )
+
+        async with self.client.post("/", json=test_message) as resp:
+            assert await resp.json() == {"response": "ok"}
 
         await self.transport.stop()

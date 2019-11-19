@@ -5,7 +5,7 @@ import json
 import logging
 import time
 
-from typing import Type, Union
+from typing import Callable, Type, Union
 from urllib.parse import urlparse
 
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
@@ -61,16 +61,20 @@ class QueuedOutboundMessage:
 class OutboundTransportManager:
     """Outbound transport manager class."""
 
-    def __init__(self, context: InjectionContext):
+    def __init__(
+        self, context: InjectionContext, handle_not_delivered: Callable = None
+    ):
         """
         Initialize a `OutboundTransportManager` instance.
 
         Args:
-            queue: `BaseOutboundMessageQueue` instance to use
+            context: The application context
+            handle_not_delivered: An optional handler for undelivered messages
 
         """
         self.context = context
         self.loop = asyncio.get_event_loop()
+        self.handle_not_delivered = handle_not_delivered
         self.outbound_buffer = []
         self.outbound_event = asyncio.Event()
         self.outbound_new = []
@@ -307,7 +311,9 @@ class OutboundTransportManager:
                             "Outbound message could not be delivered",
                             exc_info=queued.error,
                         )
-                    continue  # remove from buffer
+                    if self.handle_not_delivered:
+                        self.handle_not_delivered(queued.context, queued.message)
+                    continue
 
                 deliver = False
 

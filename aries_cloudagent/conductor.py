@@ -72,12 +72,14 @@ class Conductor:
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager(
-            context, self.inbound_message_router
+            context, self.inbound_message_router, self.handle_not_returned,
         )
         await self.inbound_transport_manager.setup()
 
         # Register all outbound transports
-        self.outbound_transport_manager = OutboundTransportManager(context)
+        self.outbound_transport_manager = OutboundTransportManager(
+            context, self.handle_not_delivered
+        )
         await self.outbound_transport_manager.setup()
 
         # Admin API
@@ -123,7 +125,7 @@ class Conductor:
                 (
                     "get_connection_targets",
                     "fetch_did_document",
-                    "find_message_connection",
+                    "find_inbound_connection",
                 ),
             )
 
@@ -287,11 +289,34 @@ class Conductor:
             inbound: The inbound message that produced this response, if available
         """
 
-        # if inbound and inbound.direct_response:
-        #     if outbound.reply_to_verkey
+        # return message to an inbound session
+        if self.inbound_transport_manager.return_to_session(outbound):
+            # don't need to populate connection information
+            pass
+        else:
+            await self.queue_outbound(context, outbound, inbound)
 
-        # always populate connection targets using provided context
+    def handle_not_returned(self, context: InjectionContext, outbound: OutboundMessage):
+        """Handle a message that failed delivery via an inbound session."""
+        self.dispatcher.run_task(self.queue_outbound(context, outbound))
+
+    async def queue_outbound(
+        self,
+        context: InjectionContext,
+        outbound: OutboundMessage,
+        inbound: InboundMessage = None,
+    ):
+        """
+        Queue an outbound message.
+
+        Args:
+            context: The request context
+            message: An outbound message to be sent
+            inbound: The inbound message that produced this response, if available
+        """
+        # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
+            # using provided request context
             mgr = ConnectionManager(context)
             try:
                 outbound.target_list = await self.dispatcher.run_task(
@@ -304,13 +329,14 @@ class Conductor:
         try:
             self.outbound_transport_manager.enqueue_message(context, outbound)
         except OutboundDeliveryError:
-
-            # Add message to undelivered queue, indexed by key
-            # if self.undelivered_queue:
-            #     self.undelivered_queue.add_message(message)
-
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
-            # drop message
+            self.handle_not_delivered(context, outbound)
+
+    def handle_not_delivered(
+        self, context: InjectionContext, outbound: OutboundMessage
+    ):
+        """Handle a message that failed delivery via an inbound session."""
+        self.inbound_message_router.return_undelivered(outbound)
 
     def webhook_router(
         self, topic: str, payload: dict, endpoint: str, retries: int = None

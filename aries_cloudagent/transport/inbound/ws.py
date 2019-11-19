@@ -1,10 +1,13 @@
 """Websockets Transport classes and functions."""
 
+import asyncio
 import logging
 
-from aiohttp import web, WSMsgType
+from aiohttp import web, WSMessage, WSMsgType
 
 from ...messaging.error import MessageParseError
+
+from ..outbound.message import OutboundMessage
 
 from .base import BaseInboundTransport, InboundTransportSetupError
 
@@ -79,8 +82,10 @@ class WsTransport(BaseInboundTransport):
             The web response
 
         """
+
         ws = web.WebSocketResponse()
         await ws.prepare(request)
+        loop = asyncio.get_event_loop()
 
         async def reply(result):
             if isinstance(result, str):
@@ -90,26 +95,47 @@ class WsTransport(BaseInboundTransport):
 
         client_info = {"host": request.host, "remote": request.remote}
 
-        session = await self.create_session(client_info)
+        session = await self.create_session(
+            accept_undelivered=True, can_respond=True, client_info=client_info
+        )
 
         async with session:
-            # Listen for incoming messages
-            async for msg in ws:
-                LOGGER.info(f"Received message: {msg.data}")
-                if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
-                    try:
-                        await session.receive(msg.data)
-                    except MessageParseError:
-                        raise web.HTTPBadRequest()
+            inbound = loop.create_task(ws.receive())
+            outbound = loop.create_task(session.wait_response())
 
-                elif msg.type == WSMsgType.ERROR:
-                    LOGGER.error(
-                        f"Websocket connection closed with exception {ws.exception()}"
-                    )
+            while not ws.closed:
+                await asyncio.wait(
+                    (inbound, outbound), return_when=asyncio.FIRST_COMPLETED
+                )
 
-                else:
-                    LOGGER.warning(f"Unexpected websocket message type {msg.type}")
+                if inbound.done():
+                    msg: WSMessage = inbound.result()
+                    LOGGER.info("Websocket received message: %s", msg.data)
+                    if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
+                        try:
+                            await session.receive(msg.data)
+                        except MessageParseError:
+                            await ws.close(1003)  # unsupported data error
+                    elif msg.type == WSMsgType.ERROR:
+                        LOGGER.error(
+                            "Websocket connection closed with exception: %s",
+                            ws.exception(),
+                        )
+                    if not ws.closed:
+                        inbound = loop.create_task(ws.receive())
 
-            LOGGER.info("Websocket connection closed")
+                if outbound.done() and not ws.closed:
+                    response: OutboundMessage = outbound.result()
+                    response_body = response.enc_payload
+                    if isinstance(response_body, bytes):
+                        await ws.send_bytes(response_body)
+                    else:
+                        await ws.send_str(response_body)
+                    session.clear_response()
+                    outbound = loop.create_task(session.wait_response())
+
+        if not ws.closed:
+            await ws.close()
+        LOGGER.info("Websocket connection closed")
 
         return ws

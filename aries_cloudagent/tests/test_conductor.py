@@ -289,7 +289,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
     #             )
 
     #             # we don't need the connection, so avoid looking for one.
-    #             mock_connection_manager.find_message_connection.return_value = None
+    #             mock_connection_manager.find_inbound_connection.return_value = None
 
     #             delivery = MessageReceipt()
     #             delivery.sender_verkey = sender_pk

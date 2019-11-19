@@ -155,6 +155,8 @@ class TestInboundSession(TestCase):
         test_msg = OutboundMessage(payload=None)
         assert not sess.select_outbound(test_msg)
         test_msg.reply_session_id = test_session_id
+        assert not sess.select_outbound(test_msg)
+        sess.can_respond = True
         assert sess.select_outbound(test_msg)
 
         test_msg = OutboundMessage(payload=None)
@@ -195,7 +197,6 @@ class TestInboundSession(TestCase):
 
         sess.clear_response()
         assert not sess.response_buffer
-        assert not sess.response_event.is_set()
 
     async def test_encode_response(self):
         test_ctx = InjectionContext()

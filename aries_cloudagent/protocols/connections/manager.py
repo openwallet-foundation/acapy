@@ -670,7 +670,7 @@ class ConnectionManager:
 
         return connection
 
-    async def find_message_connection(
+    async def find_inbound_connection(
         self, receipt: MessageReceipt
     ) -> ConnectionRecord:
         """
@@ -705,7 +705,7 @@ class ConnectionManager:
                             self.context, cached["id"]
                         )
                     else:
-                        connection = await self.resolve_message_connection(receipt)
+                        connection = await self.resolve_inbound_connection(receipt)
                         if connection:
                             cache_val = {
                                 "id": connection.connection_id,
@@ -717,10 +717,10 @@ class ConnectionManager:
                         resolved = True
 
         if not connection and not resolved:
-            connection = await self.resolve_message_connection(receipt)
+            connection = await self.resolve_inbound_connection(receipt)
         return connection
 
-    async def resolve_message_connection(
+    async def resolve_inbound_connection(
         self, receipt: MessageReceipt
     ) -> ConnectionRecord:
         """
