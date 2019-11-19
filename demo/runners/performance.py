@@ -28,6 +28,9 @@ class BaseAgent(DemoAgent):
         self._connection_ready = None
         self.credential_state = {}
         self.credential_event = asyncio.Event()
+        self.ping_state = {}
+        self.ping_event = asyncio.Event()
+        self.sent_pings = set()
 
     @property
     def connection_id(self) -> str:
@@ -76,6 +79,16 @@ class BaseAgent(DemoAgent):
         self.credential_state[cred_id] = payload["state"]
         self.credential_event.set()
 
+    async def handle_ping(self, payload):
+        thread_id = payload["thread_id"]
+        if thread_id in self.sent_pings or (
+            payload["state"] == "received"
+            and payload["comment"]
+            and payload["comment"].startswith("test-ping")
+        ):
+            self.ping_state[thread_id] = payload["state"]
+            self.ping_event.set()
+
     async def check_received_creds(self) -> (int, int):
         while True:
             self.credential_event.clear()
@@ -91,6 +104,28 @@ class BaseAgent(DemoAgent):
     async def update_creds(self):
         await self.credential_event.wait()
 
+    async def check_received_pings(self) -> (int, int):
+        while True:
+            self.ping_event.clear()
+            result = {}
+            for thread_id, state in self.ping_state.items():
+                if not result.get(state):
+                    result[state] = set()
+                result[state].add(thread_id)
+            if self.ping_event.is_set():
+                continue
+            return result
+
+    async def update_pings(self):
+        await self.ping_event.wait()
+
+    async def send_ping(self, ident: str = None) -> str:
+        resp = await self.admin_POST(
+            f"/connections/{self.connection_id}/send-ping",
+            {"comment": f"test-ping {ident}"},
+        )
+        self.sent_pings.add(resp["thread_id"])
+
     def check_task_exception(self, fut: asyncio.Task):
         if fut.done():
             try:
@@ -104,7 +139,11 @@ class BaseAgent(DemoAgent):
 class AliceAgent(BaseAgent):
     def __init__(self, port: int, **kwargs):
         super().__init__("Alice", port, seed=None, **kwargs)
-        self.extra_args = ["--auto-respond-credential-offer", "--auto-store-credential"]
+        self.extra_args = [
+            "--auto-respond-credential-offer",
+            "--auto-store-credential",
+            "--monitor-ping",
+        ]
         self.timing_log = "logs/alice_perf.log"
 
     async def set_tag_policy(self, cred_def_id, taggables):
@@ -117,6 +156,7 @@ class FaberAgent(BaseAgent):
         super().__init__("Faber", port, **kwargs)
         self.schema_id = None
         self.credential_definition_id = None
+        self.extra_args = ["--monitor-ping"]
         self.timing_log = "logs/faber_perf.log"
 
     async def publish_defs(self):
@@ -168,6 +208,8 @@ class RoutingAgent(BaseAgent):
 
 async def main(
     start_port: int,
+    threads: int = 20,
+    ping_only: bool = False,
     show_timing: bool = False,
     routing: bool = False,
     issue_count: int = 300,
@@ -205,9 +247,10 @@ async def main(
             await alice.start_process()
             await faber.start_process()
 
-        with log_timer("Publish duration:"):
-            await faber.publish_defs()
-            # await alice.set_tag_policy(faber.credential_definition_id, ["name"])
+        if not ping_only:
+            with log_timer("Publish duration:"):
+                await faber.publish_defs()
+                # await alice.set_tag_policy(faber.credential_definition_id, ["name"])
 
         with log_timer("Connect duration:"):
             if routing:
@@ -235,13 +278,13 @@ async def main(
 
         batch_size = 100
 
-        semaphore = asyncio.Semaphore(10)
+        semaphore = asyncio.Semaphore(threads)
 
         def done_send(fut: asyncio.Task):
             semaphore.release()
             faber.check_task_exception(fut)
 
-        async def send(index: int):
+        async def send_credential(index: int):
             await semaphore.acquire()
             comment = f"issue test credential {index}"
             attributes = {
@@ -254,22 +297,15 @@ async def main(
                 faber.send_credential(attributes, comment)
             ).add_done_callback(done_send)
 
-        recv_timer = alice.log_timer(f"Received {issue_count} credentials in ")
-        recv_timer.start()
-        batch_timer = faber.log_timer(f"Started {batch_size} credential exchanges in ")
-        batch_timer.start()
-
-        async def check_received(agent, issue_count, pb):
+        async def check_received_creds(agent, issue_count, pb):
             reported = 0
             iter_pb = iter(pb) if pb else None
-            prev = -1
             while True:
                 pending, total = await agent.check_received_creds()
                 complete = total - pending
-                if prev == complete:
+                if reported == complete:
                     await asyncio.wait_for(agent.update_creds(), 30)
                     continue
-                prev = complete
                 if iter_pb and complete > reported:
                     try:
                         while next(iter_pb) < complete:
@@ -280,11 +316,60 @@ async def main(
                 if reported == issue_count:
                     break
 
+        async def send_ping(index: int):
+            await semaphore.acquire()
+            asyncio.ensure_future(faber.send_ping(str(index))).add_done_callback(
+                done_send
+            )
+
+        async def check_received_pings(agent, issue_count, pb):
+            reported = 0
+            iter_pb = iter(pb) if pb else None
+            while True:
+                pings = await agent.check_received_pings()
+                complete = sum(len(tids) for tids in pings.values())
+                if complete == reported:
+                    await asyncio.wait_for(agent.update_pings(), 30)
+                    continue
+                if iter_pb and complete > reported:
+                    try:
+                        while next(iter_pb) < complete:
+                            pass
+                    except StopIteration:
+                        iter_pb = None
+                reported = complete
+                if reported >= issue_count:
+                    break
+
+        if ping_only:
+            recv_timer = faber.log_timer(f"Completed {issue_count} ping exchanges in")
+            batch_timer = faber.log_timer(f"Started {batch_size} ping exchanges in")
+        else:
+            recv_timer = faber.log_timer(
+                f"Completed {issue_count} credential exchanges in"
+            )
+            batch_timer = faber.log_timer(
+                f"Started {batch_size} credential exchanges in"
+            )
+        recv_timer.start()
+        batch_timer.start()
+
         with progress() as pb:
             receive_task = None
             try:
-                issue_pg = pb(range(issue_count), label="Issuing credentials")
-                receive_pg = pb(range(issue_count), label="Receiving credentials")
+                if ping_only:
+                    issue_pg = pb(range(issue_count), label="Sending pings")
+                    receive_pg = pb(range(issue_count), label="Responding pings")
+                    check_received = check_received_pings
+                    send = send_ping
+                    completed = f"Done sending {issue_count} pings in"
+                else:
+                    issue_pg = pb(range(issue_count), label="Issuing credentials")
+                    receive_pg = pb(range(issue_count), label="Receiving credentials")
+                    check_received = check_received_creds
+                    send = send_credential
+                    completed = f"Done starting {issue_count} credential exchanges in"
+
                 issue_task = asyncio.ensure_future(
                     check_received(faber, issue_count, issue_pg)
                 )
@@ -293,9 +378,7 @@ async def main(
                     check_received(alice, issue_count, receive_pg)
                 )
                 receive_task.add_done_callback(alice.check_task_exception)
-                with faber.log_timer(
-                    f"Done starting {issue_count} credential exchanges in "
-                ):
+                with faber.log_timer(completed):
                     for idx in range(0, issue_count):
                         await send(idx + 1)
                         if not (idx + 1) % batch_size and idx < issue_count - 1:
@@ -310,14 +393,16 @@ async def main(
 
         recv_timer.stop()
         avg = recv_timer.duration / issue_count
-        alice.log(f"Average time per credential: {avg:.2f}s ({1/avg:.2f}/s)")
+        item_short = "ping" if ping_only else "cred"
+        item_long = "ping exchange" if ping_only else "credential"
+        faber.log(f"Average time per {item_long}: {avg:.2f}s ({1/avg:.2f}/s)")
 
         if alice.postgres:
-            await alice.collect_postgres_stats(f"{issue_count} creds")
+            await alice.collect_postgres_stats(f"{issue_count} {item_short}s")
             for line in alice.format_postgres_stats():
                 alice.log(line)
         if faber.postgres:
-            await faber.collect_postgres_stats(f"{issue_count} creds")
+            await faber.collect_postgres_stats(f"{issue_count} {item_short}s")
             for line in faber.format_postgres_stats():
                 faber.log(line)
 
@@ -387,7 +472,20 @@ if __name__ == "__main__":
         help="Choose the starting port number to listen on",
     )
     parser.add_argument(
+        "--ping",
+        action="store_true",
+        default=False,
+        help="Only send ping messages between the agents",
+    )
+    parser.add_argument(
         "--routing", action="store_true", help="Enable inbound routing demonstration"
+    )
+    parser.add_argument(
+        "-t",
+        "--threads",
+        type=int,
+        default=10,
+        help="Set the number of concurrent exchanges to start",
     )
     parser.add_argument(
         "--timing", action="store_true", help="Enable detailed timing report"
@@ -398,7 +496,14 @@ if __name__ == "__main__":
 
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, args.timing, args.routing, args.count)
+            main(
+                args.port,
+                args.threads,
+                args.ping,
+                args.timing,
+                args.routing,
+                args.count,
+            )
         )
     except KeyboardInterrupt:
         os._exit(1)

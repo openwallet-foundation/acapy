@@ -36,3 +36,15 @@ class PingHandler(BaseHandler):
             reply = PingResponse()
             reply.assign_thread_from(context.message)
             await responder.send_reply(reply)
+
+        if context.settings.get("debug.monitor_ping"):
+            await responder.send_webhook(
+                "ping",
+                {
+                    "comment": context.message.comment,
+                    "connection_id": context.message_delivery.connection_id,
+                    "responded": context.message.response_requested,
+                    "state": "received",
+                    "thread_id": context.message._thread_id,
+                },
+            )

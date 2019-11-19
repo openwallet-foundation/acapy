@@ -25,4 +25,15 @@ class PingResponseHandler(BaseHandler):
             "Received trust ping response from: %s", context.message_delivery.sender_did
         )
 
+        if context.settings.get("debug.monitor_ping"):
+            await responder.send_webhook(
+                "ping",
+                {
+                    "comment": context.message.comment,
+                    "connection_id": context.message_delivery.connection_id,
+                    "state": "response_received",
+                    "thread_id": context.message._thread_id,
+                },
+            )
+
         # Nothing to do, Connection should be automatically promoted to 'active'
