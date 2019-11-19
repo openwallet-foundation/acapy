@@ -335,8 +335,8 @@ class Conductor:
     def handle_not_delivered(
         self, context: InjectionContext, outbound: OutboundMessage
     ):
-        """Handle a message that failed delivery via an inbound session."""
-        self.inbound_message_router.return_undelivered(outbound)
+        """Handle a message that failed delivery via outbound transports."""
+        self.inbound_transport_manager.return_undelivered(outbound)
 
     def webhook_router(
         self, topic: str, payload: dict, endpoint: str, retries: int = None
