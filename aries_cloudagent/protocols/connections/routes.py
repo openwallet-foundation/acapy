@@ -168,11 +168,7 @@ async def connections_list(request: web.BaseRequest):
         if param_name in request.query and request.query[param_name] != "":
             post_filter[param_name] = request.query[param_name]
     records = await ConnectionRecord.query(context, tag_filter, post_filter)
-    results = []
-    for record in records:
-        row = record.serialize()
-        row["activity"] = await record.fetch_activity(context)
-        results.append(row)
+    results = [record.serialize() for record in records]
     results.sort(key=connection_sort_key)
     return web.json_response({"results": results})
 

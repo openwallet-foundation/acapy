@@ -2,8 +2,6 @@
 
 from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
-from ...connections.manager import ConnectionManager
-
 from ..messages.ping_response import PingResponse
 
 
@@ -28,10 +26,3 @@ class PingResponseHandler(BaseHandler):
         )
 
         # Nothing to do, Connection should be automatically promoted to 'active'
-
-        conn_mgr = ConnectionManager(context)
-        await conn_mgr.log_activity(
-            context.connection_record,
-            "ping",
-            context.connection_record.DIRECTION_RECEIVED,
-        )

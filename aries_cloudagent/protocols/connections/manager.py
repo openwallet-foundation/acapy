@@ -176,10 +176,6 @@ class ConnectionManager:
         )
         await connection.attach_invitation(self.context, invitation)
 
-        await connection.log_activity(
-            self.context, "invitation", connection.DIRECTION_SENT
-        )
-
         return connection, invitation
 
     async def receive_invitation(
@@ -230,10 +226,6 @@ class ConnectionManager:
 
         # Save the invitation for later processing
         await connection.attach_invitation(self.context, invitation)
-
-        await connection.log_activity(
-            self.context, "invitation", connection.DIRECTION_RECEIVED
-        )
 
         if connection.accept == connection.ACCEPT_AUTO:
             request = await self.create_request(connection)
@@ -295,10 +287,6 @@ class ConnectionManager:
         connection.state = ConnectionRecord.STATE_REQUEST
 
         await connection.save(self.context, reason="Created connection request")
-
-        await connection.log_activity(
-            self.context, "request", connection.DIRECTION_SENT
-        )
 
         return request
 
@@ -406,10 +394,6 @@ class ConnectionManager:
         # Attach the connection request so it can be found and responded to
         await connection.attach_request(self.context, request)
 
-        await connection.log_activity(
-            self.context, "request", connection.DIRECTION_RECEIVED
-        )
-
         if connection.accept == ConnectionRecord.ACCEPT_AUTO:
             response = await self.create_response(connection)
             responder: BaseResponder = await self._context.inject(
@@ -487,10 +471,6 @@ class ConnectionManager:
             reason="Created connection response",
             log_params={"response": response},
         )
-        await connection.log_activity(
-            self.context, "response", connection.DIRECTION_SENT
-        )
-
         return response
 
     async def accept_response(
@@ -565,9 +545,6 @@ class ConnectionManager:
         connection.state = ConnectionRecord.STATE_RESPONSE
 
         await connection.save(self.context, reason="Accepted connection response")
-        await connection.log_activity(
-            self.context, "response", connection.DIRECTION_RECEIVED
-        )
 
         return connection
 
@@ -1120,13 +1097,3 @@ class ConnectionManager:
             if conn_info.verkey == recip_verkey:
                 connection.routing_state = routing_state
                 await connection.save(self.context)
-
-    async def log_activity(
-        self,
-        connection: ConnectionRecord,
-        activity_type: str,
-        direction: str,
-        meta: dict = None,
-    ):
-        """Log activity against a connection record and send webhook."""
-        await connection.log_activity(self._context, activity_type, direction, meta)

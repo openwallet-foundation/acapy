@@ -31,8 +31,6 @@ async def connections_send_ping(request: web.BaseRequest):
         msg = Ping()
         await outbound_handler(msg, connection_id=connection_id)
 
-        await connection.log_activity(context, "ping", connection.DIRECTION_SENT)
-
     return web.json_response({})
 
 

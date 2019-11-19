@@ -2,8 +2,6 @@
 
 from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
-from ...connections.manager import ConnectionManager
-
 from ..messages.basicmessage import BasicMessage
 
 
@@ -29,14 +27,6 @@ class BasicMessageHandler(BaseHandler):
         # For Workshop: mark invitations as copyable
         if context.message.content and context.message.content.startswith("http"):
             meta["copy_invite"] = True
-
-        conn_mgr = ConnectionManager(context)
-        await conn_mgr.log_activity(
-            context.connection_record,
-            "message",
-            context.connection_record.DIRECTION_RECEIVED,
-            meta,
-        )
 
         await responder.send_webhook(
             "basicmessages",
@@ -66,9 +56,3 @@ class BasicMessageHandler(BaseHandler):
             if "l10n" in context.message._decorators:
                 reply_msg._decorators["l10n"] = context.message._decorators["l10n"]
             await responder.send_reply(reply_msg)
-            await conn_mgr.log_activity(
-                context.connection_record,
-                "message",
-                context.connection_record.DIRECTION_SENT,
-                {"content": reply},
-            )
