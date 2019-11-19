@@ -42,7 +42,7 @@ class PingHandler(BaseHandler):
                 "ping",
                 {
                     "comment": context.message.comment,
-                    "connection_id": context.message_delivery.connection_id,
+                    "connection_id": context.message_receipt.connection_id,
                     "responded": context.message.response_requested,
                     "state": "received",
                     "thread_id": context.message._thread_id,
