@@ -81,7 +81,7 @@ class OutboundTransportManager:
         self.registered_schemes = {}
         self.registered_transports = {}
         self.running_transports = {}
-        self.task_queue = TaskQueue(max_active=100)
+        self.task_queue = TaskQueue(max_active=200)
         self._process_task: asyncio.Task = None
 
     async def setup(self):

@@ -3,7 +3,7 @@
 import logging
 from typing import Union
 
-from aiohttp import ClientSession, DummyCookieJar
+from aiohttp import ClientSession, DummyCookieJar, TCPConnector
 
 from ..stats import StatsTracer
 
@@ -18,16 +18,20 @@ class HttpTransport(BaseOutboundTransport):
     def __init__(self) -> None:
         """Initialize an `HttpTransport` instance."""
         super(HttpTransport, self).__init__()
+        self.client_session: ClientSession = None
+        self.connector: TCPConnector = None
         self.logger = logging.getLogger(__name__)
 
     async def start(self):
         """Start the transport."""
         session_args = {}
+        self.connector = TCPConnector(limit=200, limit_per_host=50)
         if self.collector:
             session_args["trace_configs"] = [
                 StatsTracer(self.collector, "outbound-http:")
             ]
         session_args["cookie_jar"] = DummyCookieJar()
+        session_args["connector"] = self.connector
         self.client_session = ClientSession(**session_args)
         return self
 
