@@ -87,12 +87,6 @@ class WsTransport(BaseInboundTransport):
         await ws.prepare(request)
         loop = asyncio.get_event_loop()
 
-        async def reply(result):
-            if isinstance(result, str):
-                await ws.send_json(result)
-            else:
-                await ws.send_bytes(result)
-
         client_info = {"host": request.host, "remote": request.remote}
 
         session = await self.create_session(
