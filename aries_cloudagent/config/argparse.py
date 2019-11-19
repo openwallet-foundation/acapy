@@ -522,6 +522,12 @@ class ProtocolGroup(ArgumentGroup):
             action="store_true",
             help="Include timing information in response messages.",
         )
+        parser.add_argument(
+            "--timing-log",
+            type=str,
+            metavar="<log-path>",
+            help="Write timing information to a given log file.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
@@ -534,6 +540,8 @@ class ProtocolGroup(ArgumentGroup):
             settings["public_invites"] = True
         if args.timing:
             settings["timing.enabled"] = True
+        if args.timing_log:
+            settings["timing.log_file"] = args.timing_log
         return settings
 
 

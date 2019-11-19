@@ -81,6 +81,7 @@ class DemoAgent:
         color: str = None,
         prefix: str = None,
         timing: bool = False,
+        timing_log: str = None,
         postgres: bool = None,
         extra_args=None,
         **params,
@@ -95,6 +96,7 @@ class DemoAgent:
         self.color = color
         self.prefix = prefix
         self.timing = timing
+        self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.extra_args = extra_args
 
@@ -173,6 +175,8 @@ class DemoAgent:
             result.append(("--storage-type", self.storage_type))
         if self.timing:
             result.append("--timing")
+        if self.timing_log:
+            result.append(("--timing-log", self.timing_log))
         if self.postgres:
             result.extend(
                 [

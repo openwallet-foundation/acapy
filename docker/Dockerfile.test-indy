@@ -6,7 +6,7 @@ RUN mkdir src test-reports
 
 WORKDIR /home/indy/src
 
-RUN mkdir -p test-reports
+RUN mkdir -p test-reports && chown -R indy:indy test-reports && chmod -R ug+rw test-reports
 
 ADD requirements.txt requirements.dev.txt ./
 
