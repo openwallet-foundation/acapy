@@ -185,6 +185,7 @@ class TestInboundSession(TestCase):
         test_msg = OutboundMessage(payload=None)
         sess.set_response(test_msg)
         assert sess.response_event.is_set()
+        assert sess.response_buffered
 
         with async_mock.patch.object(
             sess, "encode_outbound", async_mock.CoroutineMock()
@@ -195,6 +196,9 @@ class TestInboundSession(TestCase):
 
         sess.clear_response()
         assert not sess.response_buffer
+
+        sess.close()
+        assert await asyncio.wait_for(sess.wait_response(), 0.1) is None
 
     async def test_encode_response(self):
         test_ctx = InjectionContext()

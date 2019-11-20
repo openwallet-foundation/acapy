@@ -79,8 +79,13 @@ class DeliveryQueue:
         Args:
             msg: The OutboundMessage to add
         """
+        keys = set()
+        if msg.target:
+            keys.update(msg.target.recipient_keys)
+        if msg.reply_to_verkey:
+            keys.add(msg.reply_to_verkey)
         wrapped_msg = QueuedMessage(msg)
-        for recipient_key in msg.target.recipient_keys:
+        for recipient_key in keys:
             if recipient_key not in self.queue_by_key:
                 self.queue_by_key[recipient_key] = []
             self.queue_by_key[recipient_key].append(wrapped_msg)
