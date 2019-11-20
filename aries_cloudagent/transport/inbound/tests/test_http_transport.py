@@ -24,10 +24,19 @@ class TestHttpTransport(AioHTTPTestCase):
         self.response_message = None
         super(TestHttpTransport, self).setUp()
 
-    def create_session(self, transport_type, *, client_info, wire_format, **kwargs):
+    def create_session(
+        self,
+        transport_type,
+        *,
+        client_info,
+        wire_format,
+        can_respond: bool = False,
+        **kwargs
+    ):
         if not self.session:
             session = InboundSession(
                 context=None,
+                can_respond=can_respond,
                 inbound_handler=self.receive_message,
                 session_id=None,
                 wire_format=wire_format,
@@ -39,8 +48,8 @@ class TestHttpTransport(AioHTTPTestCase):
         result.set_result(self.session)
         return result
 
-    def receive_message(self, message: InboundMessage):
-        self.message_results.append((message.payload, message.receipt))
+    def receive_message(self, message: InboundMessage, can_respond: bool = False):
+        self.message_results.append((message.payload, message.receipt, can_respond))
         if self.result_event:
             self.result_event.set()
         if self.response_message and self.session:

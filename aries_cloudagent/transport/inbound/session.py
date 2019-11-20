@@ -1,6 +1,7 @@
 """Inbound connection handling classes."""
 
 import asyncio
+import logging
 from typing import Callable, Sequence, Union
 
 from ...config.injection_context import InjectionContext
@@ -11,6 +12,8 @@ from ..wire_format import BaseWireFormat
 
 from .message import InboundMessage
 from .receipt import MessageReceipt
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AcceptResult:
@@ -180,7 +183,7 @@ class InboundSession:
     def receive_inbound(self, message: InboundMessage):
         """Deliver the inbound message to the conductor."""
         self.process_inbound(message)
-        self.inbound_handler(message)
+        self.inbound_handler(message, can_respond=self.can_respond)
 
     def select_outbound(self, message: OutboundMessage) -> bool:
         """Determine if an outbound message should be sent to this session.
@@ -193,22 +196,18 @@ class InboundSession:
             return False
 
         mode = self.reply_mode
-        if mode == MessageReceipt.REPLY_MODE_ALL:
-            if (
-                message.reply_session_id and message.reply_session_id == self.session_id
-            ) or (
-                message.reply_to_verkey
-                and message.reply_to_verkey in self._reply_verkeys
+        reply_verkey = message.reply_to_verkey
+        reply_thread_id = message.reply_thread_id
+
+        if reply_verkey and reply_verkey in self.reply_verkeys:
+            if mode == MessageReceipt.REPLY_MODE_ALL:
+                return True
+            elif (
+                mode == MessageReceipt.REPLY_MODE_THREAD
+                and reply_thread_id
+                and reply_thread_id in self._reply_thread_ids
             ):
                 return True
-        elif (
-            mode == MessageReceipt.REPLY_MODE_THREAD
-            and message.reply_thread_id
-            and message.reply_thread_id in self._reply_thread_ids
-            and message.reply_to_verkey
-            and message.reply_to_verkey in self._reply_verkeys
-        ):
-            return True
 
         return False
 
@@ -260,10 +259,14 @@ class InboundSession:
             response = self.response_buffer
             if response:
                 if not response.enc_payload:
-                    response = self.response_buffer = await self.encode_outbound(
-                        response
-                    )
-                return response
+                    try:
+                        self.response_buffer = await self.encode_outbound(response)
+                    except WireFormatError as e:
+                        LOGGER.warning("Error encoding direct response: %s", str(e))
+                        self.clear_response()
+                    response = self.response_buffer
+                if response:
+                    return response
             self.response_event.clear()
             await self.response_event.wait()
 

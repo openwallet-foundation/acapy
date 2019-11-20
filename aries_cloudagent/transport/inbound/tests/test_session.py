@@ -50,7 +50,7 @@ class TestInboundSession(TestCase):
         with async_mock.patch.object(sess, "process_inbound") as process:
             sess.receive_inbound(test_msg)
             process.assert_called_once_with(test_msg)
-            test_inbound.assert_called_once_with(test_msg)
+            test_inbound.assert_called_once_with(test_msg, can_respond=False)
 
         sess.close()
         test_close.assert_called_once()
@@ -153,13 +153,11 @@ class TestInboundSession(TestCase):
 
         sess.reply_mode = MessageReceipt.REPLY_MODE_ALL
         test_msg = OutboundMessage(payload=None)
-        assert not sess.select_outbound(test_msg)
+        assert not sess.select_outbound(test_msg)  # no key
         test_msg.reply_session_id = test_session_id
-        assert not sess.select_outbound(test_msg)
+        assert not sess.select_outbound(test_msg)  # no difference
         sess.can_respond = True
-        assert sess.select_outbound(test_msg)
-
-        test_msg = OutboundMessage(payload=None)
+        assert not sess.select_outbound(test_msg)  # no difference
         test_msg.reply_to_verkey = test_verkey
         sess.add_reply_verkeys(test_verkey)
         assert sess.select_outbound(test_msg)

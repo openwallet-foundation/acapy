@@ -180,28 +180,29 @@ class InboundTransportManager:
                 self.session_limit.release()
         if session.response_buffer:
             if self.return_inbound:
-                self.return_inbound(session.response_buffer)
+                self.return_inbound(session.context, session.response_buffer)
             else:
                 LOGGER.warning("Message failed return delivery, will not be delivered")
 
-    def return_to_session(self, outbound: OutboundMessage):
+    def return_to_session(self, outbound: OutboundMessage) -> bool:
         """Return an outbound message via an open session, if possible."""
         accepted = False
 
-        if not outbound.target:
-            # prefer the same session ID
-            session = self.sessions.get(outbound.reply_session_id)
-            if session:
-                accepted = session.accept_response(outbound)
+        # prefer the same session ID
+        if outbound.reply_session_id and outbound.reply_session_id in self.sessions:
+            session = self.sessions[outbound.reply_session_id]
+            accepted = session.accept_response(outbound)
 
-            if not accepted:
-                for session in self.sessions.values():
-                    if session.session_id != outbound.reply_session_id:
-                        accepted = session.accept_response(outbound)
+        if not accepted:
+            for session in self.sessions.values():
+                if session.session_id != outbound.reply_session_id:
+                    accepted = session.accept_response(outbound)
+                    if accepted:
                         break
 
         if accepted:
             LOGGER.debug("Returned message to socket %s", session.session_id)
+        return accepted
 
     def return_undelivered(self, outbound: OutboundMessage) -> bool:
         """
@@ -215,7 +216,7 @@ class InboundTransportManager:
             return True
         return False
 
-    async def process_undelivered(self, session: InboundSession):
+    def process_undelivered(self, session: InboundSession):
         """
         Interact with undelivered queue to find applicable messages.
 

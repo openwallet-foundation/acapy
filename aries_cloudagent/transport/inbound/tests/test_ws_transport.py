@@ -23,10 +23,19 @@ class TestWsTransport(AioHTTPTestCase):
         self.result_event = None
         super(TestWsTransport, self).setUp()
 
-    def create_session(self, transport_type, *, client_info, wire_format, **kwargs):
+    def create_session(
+        self,
+        transport_type,
+        *,
+        client_info,
+        wire_format,
+        can_respond: bool = False,
+        **kwargs
+    ):
         if not self.session:
             session = InboundSession(
                 context=None,
+                can_respond=can_respond,
                 inbound_handler=self.receive_message,
                 session_id=None,
                 wire_format=wire_format,
@@ -41,8 +50,8 @@ class TestWsTransport(AioHTTPTestCase):
     def get_application(self):
         return self.transport.make_application()
 
-    def receive_message(self, message: InboundMessage):
-        self.message_results.append((message.payload, message.receipt))
+    def receive_message(self, message: InboundMessage, can_respond: bool = False):
+        self.message_results.append((message.payload, message.receipt, can_respond))
         if self.result_event:
             self.result_event.set()
 
@@ -60,8 +69,9 @@ class TestWsTransport(AioHTTPTestCase):
 
             assert self.session is not None
             assert len(self.message_results) == 1
-            received, receipt = self.message_results[0]
+            received, receipt, can_respond = self.message_results[0]
             assert received == test_message
+            assert can_respond
 
             response = OutboundMessage(
                 payload=None, enc_payload=json.dumps(test_response)

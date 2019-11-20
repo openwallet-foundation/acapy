@@ -119,6 +119,7 @@ class WsTransport(BaseInboundTransport):
                         inbound = loop.create_task(ws.receive())
 
                 if outbound.done() and not ws.closed:
+                    # response would be None if session was closed
                     response: OutboundMessage = outbound.result()
                     response_body = response.enc_payload
                     if isinstance(response_body, bytes):
@@ -127,6 +128,11 @@ class WsTransport(BaseInboundTransport):
                         await ws.send_str(response_body)
                     session.clear_response()
                     outbound = loop.create_task(session.wait_response())
+
+        if inbound and not inbound.done():
+            inbound.cancel()
+        if outbound and not outbound.done():
+            outbound.cancel()
 
         if not ws.closed:
             await ws.close()

@@ -19,6 +19,7 @@ from .config.injection_context import InjectionContext
 from .config.ledger import ledger_config
 from .config.logging import LoggingConfigurator
 from .config.wallet import wallet_config
+from .connections.models.connection_target import ConnectionTarget
 from .dispatcher import Dispatcher
 from .protocols.connections.manager import ConnectionManager, ConnectionManagerError
 from .messaging.responder import BaseResponder
@@ -224,16 +225,19 @@ class Conductor:
             shutdown.run(self.outbound_transport_manager.stop())
         await shutdown.complete(timeout)
 
-    def inbound_message_router(self, message: InboundMessage):
+    def inbound_message_router(
+        self, message: InboundMessage, can_respond: bool = False
+    ):
         """
         Route inbound messages.
 
         Args:
             message: The inbound message instance
+            can_respond: If the session supports return routing
 
         """
 
-        if message.receipt.direct_response_requested:
+        if message.receipt.direct_response_requested and not can_respond:
             LOGGER.warning(
                 "Direct response requested, but not supported by transport: %s",
                 message.transport_type,
@@ -292,16 +296,21 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
-
-        # return message to an inbound session
-        if self.inbound_transport_manager.return_to_session(outbound):
-            # don't need to populate connection information
-            pass
-        else:
-            await self.queue_outbound(context, outbound, inbound)
+        if not outbound.target and outbound.reply_to_verkey and inbound:
+            # return message to an inbound session
+            outbound.target = ConnectionTarget(
+                recipient_keys=[outbound.reply_to_verkey],
+                sender_key=inbound.receipt.recipient_verkey,
+            )
+            if self.inbound_transport_manager.return_to_session(outbound):
+                # don't need to populate connection information
+                return
+            outbound.target = None
+        await self.queue_outbound(context, outbound, inbound)
 
     def handle_not_returned(self, context: InjectionContext, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
+        outbound.target = None
         self.dispatcher.run_task(self.queue_outbound(context, outbound))
 
     async def queue_outbound(

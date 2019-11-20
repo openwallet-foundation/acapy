@@ -321,4 +321,9 @@ class DIDDoc:
     def __str__(self) -> str:
         """Return string representation for abbreviated display."""
 
-        return "DIDDoc({})".format(self.did)
+        return f"DIDDoc({self.did})"
+
+    def __repr__(self) -> str:
+        """Format DIDDoc for logging."""
+
+        return f"<DIDDoc did={self.did}>"
