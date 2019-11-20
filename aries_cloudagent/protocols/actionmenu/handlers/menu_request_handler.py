@@ -17,7 +17,7 @@ class MenuRequestHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug(f"MenuRequestHandler called with context {context}")
+        self._logger.debug("MenuRequestHandler called with context %s", context)
         assert isinstance(context.message, MenuRequest)
 
         self._logger.info("Received action menu request")
