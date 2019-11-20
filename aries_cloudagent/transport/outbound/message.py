@@ -18,6 +18,7 @@ class OutboundMessage:
         reply_session_id: str = None,
         reply_thread_id: str = None,
         reply_to_verkey: str = None,
+        reply_from_verkey: str = None,
         target: ConnectionTarget = None,
         target_list: Sequence[ConnectionTarget] = None,
     ):
@@ -29,6 +30,7 @@ class OutboundMessage:
         self.reply_session_id = reply_session_id
         self.reply_thread_id = reply_thread_id
         self.reply_to_verkey = reply_to_verkey
+        self.reply_from_verkey = reply_from_verkey
         self.target = target
         self.target_list = list(target_list) if target_list else []
 

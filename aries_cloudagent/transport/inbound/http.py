@@ -99,16 +99,15 @@ class HttpTransport(BaseInboundTransport):
                 session.clear_response()
 
                 if response:
-                    response_body = response.enc_payload
-                    if isinstance(response_body, bytes):
+                    if isinstance(response, bytes):
                         return web.Response(
-                            body=response_body,
+                            body=response,
                             status=200,
                             headers={"Content-Type": "application/ssi-agent-wire"},
                         )
                     else:
                         return web.Response(
-                            text=response_body,
+                            text=response,
                             status=200,
                             headers={"Content-Type": "application/json"},
                         )

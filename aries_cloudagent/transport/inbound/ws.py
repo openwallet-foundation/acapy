@@ -7,8 +7,6 @@ from aiohttp import web, WSMessage, WSMsgType
 
 from ...messaging.error import MessageParseError
 
-from ..outbound.message import OutboundMessage
-
 from .base import BaseInboundTransport, InboundTransportSetupError
 
 LOGGER = logging.getLogger(__name__)
@@ -120,12 +118,11 @@ class WsTransport(BaseInboundTransport):
 
                 if outbound.done() and not ws.closed:
                     # response would be None if session was closed
-                    response: OutboundMessage = outbound.result()
-                    response_body = response.enc_payload
-                    if isinstance(response_body, bytes):
-                        await ws.send_bytes(response_body)
+                    response = outbound.result()
+                    if isinstance(response, bytes):
+                        await ws.send_bytes(response)
                     else:
-                        await ws.send_str(response_body)
+                        await ws.send_str(response)
                     session.clear_response()
                     outbound = loop.create_task(session.wait_response())
 

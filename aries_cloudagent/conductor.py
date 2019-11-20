@@ -19,7 +19,6 @@ from .config.injection_context import InjectionContext
 from .config.ledger import ledger_config
 from .config.logging import LoggingConfigurator
 from .config.wallet import wallet_config
-from .connections.models.connection_target import ConnectionTarget
 from .dispatcher import Dispatcher
 from .protocols.connections.manager import ConnectionManager, ConnectionManagerError
 from .messaging.responder import BaseResponder
@@ -296,21 +295,17 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
-        if not outbound.target and outbound.reply_to_verkey and inbound:
+        if not outbound.target and outbound.reply_to_verkey:
+            if not outbound.reply_from_verkey and inbound:
+                outbound.reply_from_verkey = inbound.receipt.recipient_verkey
             # return message to an inbound session
-            outbound.target = ConnectionTarget(
-                recipient_keys=[outbound.reply_to_verkey],
-                sender_key=inbound.receipt.recipient_verkey,
-            )
             if self.inbound_transport_manager.return_to_session(outbound):
-                # don't need to populate connection information
                 return
-            outbound.target = None
+
         await self.queue_outbound(context, outbound, inbound)
 
     def handle_not_returned(self, context: InjectionContext, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
-        outbound.target = None
         self.dispatcher.run_task(self.queue_outbound(context, outbound))
 
     async def queue_outbound(

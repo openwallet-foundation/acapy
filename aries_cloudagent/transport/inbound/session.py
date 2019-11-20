@@ -215,18 +215,16 @@ class InboundSession:
         """Apply wire formatting to an outbound message."""
         if not outbound.payload:
             raise WireFormatError("Message has no payload to encode")
-        if not outbound.target:
-            raise WireFormatError("No target available for encoding message")
+        if not outbound.reply_to_verkey:
+            raise WireFormatError("No reply verkey available for encoding message")
 
-        target = outbound.target
-        outbound.enc_payload = await self.wire_format.encode_message(
+        return await self.wire_format.encode_message(
             self.context,
             outbound.payload,
-            target.recipient_keys,
+            [outbound.reply_to_verkey],
             None,
-            target.sender_key,
+            outbound.reply_from_verkey,
         )
-        return outbound
 
     def accept_response(self, message: OutboundMessage) -> AcceptResult:
         """
@@ -251,20 +249,19 @@ class InboundSession:
         self.response_buffer = None
         self.response_event.set()
 
-    async def wait_response(self) -> OutboundMessage:
+    async def wait_response(self) -> Union[str, bytes]:
         """Wait for a response to be buffered and pack it."""
         while True:
             if self._closed:
                 return
-            response = self.response_buffer
-            if response:
-                if not response.enc_payload:
+            if self.response_buffer:
+                response = self.response_buffer.enc_payload
+                if not response:
                     try:
-                        self.response_buffer = await self.encode_outbound(response)
+                        response = await self.encode_outbound(self.response_buffer)
                     except WireFormatError as e:
                         LOGGER.warning("Error encoding direct response: %s", str(e))
                         self.clear_response()
-                    response = self.response_buffer
                 if response:
                     return response
             self.response_event.clear()

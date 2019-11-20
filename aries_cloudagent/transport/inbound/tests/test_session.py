@@ -207,22 +207,25 @@ class TestInboundSession(TestCase):
             wire_format=test_wire_format,
         )
         test_msg = OutboundMessage(payload=None)
-        test_target = async_mock.MagicMock()
+        test_from_verkey = "from-verkey"
+        test_to_verkey = "to-verkey"
 
         with self.assertRaises(WireFormatError):
             await sess.encode_outbound(test_msg)
         test_msg.payload = "{}"
         with self.assertRaises(WireFormatError):
             await sess.encode_outbound(test_msg)
-        test_msg.target = test_target
-        await sess.encode_outbound(test_msg)
+        test_msg.reply_from_verkey = test_from_verkey
+        test_msg.reply_to_verkey = test_to_verkey
+        result = await sess.encode_outbound(test_msg)
+        assert result is test_wire_format.encode_message.return_value
 
         test_wire_format.encode_message.assert_awaited_once_with(
             test_ctx,
             test_msg.payload,
-            test_target.recipient_keys,
+            [test_to_verkey],
             None,
-            test_target.sender_key,
+            test_from_verkey,
         )
 
     async def test_accept_response(self):
