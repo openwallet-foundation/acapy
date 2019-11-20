@@ -135,57 +135,6 @@ class TestBasicWallet:
             )
 
     @pytest.mark.asyncio
-    async def test_create_retrieve_pairwise(self, wallet):
-        await wallet.create_local_did(self.test_seed, self.test_did)
-        pair_created = await wallet.create_pairwise(
-            self.test_target_did, self.test_target_verkey, None, self.test_metadata
-        )
-        assert pair_created.their_did == self.test_target_did
-        assert pair_created.their_verkey == self.test_target_verkey
-        assert pair_created.my_did
-        assert pair_created.my_verkey
-        assert pair_created.metadata == self.test_metadata
-
-        pair_info = await wallet.get_pairwise_for_did(self.test_target_did)
-        assert pair_info == pair_created
-
-        pair_info_vk = await wallet.get_pairwise_for_verkey(self.test_target_verkey)
-        assert pair_info_vk == pair_created
-
-        pair_infos = await wallet.get_pairwise_list()
-        found = False
-        for info in pair_infos:
-            if info == pair_created:
-                assert not found
-                found = True
-        assert found
-
-        with pytest.raises(WalletDuplicateError):
-            await wallet.create_pairwise(
-                self.test_target_did, self.test_target_verkey, None, self.test_metadata
-            )
-        with pytest.raises(WalletNotFoundError):
-            await wallet.get_pairwise_for_did(self.missing_did)
-
-    @pytest.mark.asyncio
-    async def test_pairwise_metadata(self, wallet):
-        await wallet.create_local_did(self.test_seed, self.test_did)
-        _ = await wallet.create_pairwise(
-            self.test_target_did, self.test_target_verkey, None, self.test_metadata
-        )
-
-        await wallet.replace_pairwise_metadata(
-            self.test_target_did, self.test_update_metadata
-        )
-        pair_info = await wallet.get_pairwise_for_did(self.test_target_did)
-        assert pair_info.metadata == self.test_update_metadata
-
-        with pytest.raises(WalletNotFoundError):
-            await wallet.replace_pairwise_metadata(
-                self.missing_did, self.test_update_metadata
-            )
-
-    @pytest.mark.asyncio
     async def test_sign_verify(self, wallet):
         info = await wallet.create_local_did(self.test_seed, self.test_did)
         message_bin = self.test_message.encode("ascii")

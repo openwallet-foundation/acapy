@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from .base import BaseWallet, KeyInfo, DIDInfo, PairwiseInfo
+from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import (
     create_keypair,
     random_seed,
@@ -245,132 +245,6 @@ class BasicWallet(BaseWallet):
         if did not in self._local_dids:
             raise WalletNotFoundError("Unknown DID: {}".format(did))
         self._local_dids[did]["metadata"] = metadata.copy() if metadata else {}
-
-    async def create_pairwise(
-        self,
-        their_did: str,
-        their_verkey: str,
-        my_did: str = None,
-        metadata: dict = None,
-    ) -> PairwiseInfo:
-        """
-        Create a new pairwise DID for a secure connection.
-
-        Args:
-            their_did: The other party's DID
-            their_verkey: The other party's verkey
-            my_did: My DID
-            metadata: Metadata to store with this relationship
-
-        Returns:
-            A `PairwiseInfo` object representing the pairwise connection
-
-        Raises:
-            WalletDuplicateError: If the DID already exists in the wallet
-
-        """
-        if my_did:
-            my_info = await self.get_local_did(my_did)
-        else:
-            my_info = await self.create_local_did(
-                None, None, {"pairwise_for": their_did}
-            )
-
-        if their_did in self._pair_dids:
-            raise WalletDuplicateError(
-                "Pairwise DID already present in wallet: {}".format(their_did)
-            )
-
-        self._pair_dids[their_did] = {
-            "my_did": my_info.did,
-            "their_verkey": their_verkey,
-            "metadata": metadata.copy() if metadata else {},
-        }
-        return self._get_pairwise_info(their_did)
-
-    def _get_pairwise_info(self, their_did: str) -> PairwiseInfo:
-        """
-        Convert internal pairwise DID record to `PairwiseInfo`.
-
-        Args:
-            their_did: The DID to get `PairwiseInfo` for
-
-        Returns:
-            A `PairwiseInfo` instance
-
-        """
-        info = self._pair_dids[their_did]
-        return PairwiseInfo(
-            their_did=their_did,
-            their_verkey=info["their_verkey"],
-            my_did=info["my_did"],
-            my_verkey=self._local_dids[info["my_did"]]["verkey"],
-            metadata=info["metadata"].copy(),
-        )
-
-    async def get_pairwise_list(self) -> Sequence[PairwiseInfo]:
-        """
-        Get list of defined pairwise DIDs.
-
-        Returns:
-            A list of `PairwiseInfo` instances for all pairwise relationships
-
-        """
-        ret = [self._get_pairwise_info(their_did) for their_did in self._pair_dids]
-        return ret
-
-    async def get_pairwise_for_did(self, their_did: str) -> PairwiseInfo:
-        """
-        Find info for a pairwise DID.
-
-        Args:
-            their_did: The DID to get a pairwise relationship for
-
-        Returns:
-            A `PairwiseInfo` instance representing the relationship
-
-        Raises:
-            WalletNotFoundError: If the DID is unknown
-
-        """
-        if their_did not in self._pair_dids:
-            raise WalletNotFoundError("Unknown target DID: {}".format(their_did))
-        return self._get_pairwise_info(their_did)
-
-    async def get_pairwise_for_verkey(self, their_verkey: str) -> PairwiseInfo:
-        """
-        Resolve a pairwise DID from a verkey.
-
-        Args:
-            their_verkey: The verkey to get a pairwise relationship for
-
-        Returns:
-            A `PairwiseInfo` instance for the relationship
-
-        Raises:
-            WalletNotFoundError: If the verkey is not found
-
-        """
-        for did, info in self._pair_dids.items():
-            if info["their_verkey"] == their_verkey:
-                return self._get_pairwise_info(did)
-        raise WalletNotFoundError("Verkey not found: {}".format(their_verkey))
-
-    async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
-        """
-        Replace metadata for a pairwise DID.
-
-        Args:
-            their_did: The DID to replace metadata for
-            metadata: The new metadata
-
-        Raises:
-            WalletNotFoundError: If the DID is unknown
-
-        """
-        if their_did not in self._pair_dids:
-            raise WalletNotFoundError("Unknown target DID: {}".format(their_did))
-        self._pair_dids[their_did]["metadata"] = metadata.copy() if metadata else {}
 
     def _get_private_key(self, verkey: str, long=False) -> bytes:
         """

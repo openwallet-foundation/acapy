@@ -355,11 +355,7 @@ class IndyLedger(BaseLedger):
             "schema_version": schema_id_parts[-1],
             "epoch": str(int(time())),
         }
-        record = StorageRecord(
-            SCHEMA_SENT_RECORD_TYPE,
-            schema_id,
-            schema_tags,
-        )
+        record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags,)
         storage = self.get_indy_storage()
         await storage.add_record(record)
 
@@ -441,7 +437,7 @@ class IndyLedger(BaseLedger):
             await self.cache.set(
                 [f"schema::{schema_id}", f"schema::{response['result']['seqNo']}"],
                 parsed_response,
-                self.cache_duration
+                self.cache_duration,
             )
 
         return parsed_response
@@ -562,9 +558,7 @@ class IndyLedger(BaseLedger):
             "epoch": str(int(time())),
         }
         record = StorageRecord(
-            CRED_DEF_SENT_RECORD_TYPE,
-            credential_definition_id,
-            cred_def_tags,
+            CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags,
         )
         storage = self.get_indy_storage()
         await storage.add_record(record)
@@ -655,9 +649,7 @@ class IndyLedger(BaseLedger):
         public_info = await self.wallet.get_public_did()
         public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception when building nym request"):
-            request_json = await indy.ledger.build_get_nym_request(
-                public_did, nym
-            )
+            request_json = await indy.ledger.build_get_nym_request(public_did, nym)
         response_json = await self._submit(request_json, public_did=public_did)
         data_json = (json.loads(response_json))["result"]["data"]
         return json.loads(data_json)["verkey"]
@@ -718,9 +710,7 @@ class IndyLedger(BaseLedger):
         """
         public_info = await self.wallet.get_public_did()
         public_did = public_info.did if public_info else None
-        r = await indy.ledger.build_nym_request(
-            public_did, did, verkey, alias, role
-        )
+        r = await indy.ledger.build_nym_request(public_did, did, verkey, alias, role)
         await self._submit(r, True, True, public_did=public_did)
 
     def nym_to_did(self, nym: str) -> str:
