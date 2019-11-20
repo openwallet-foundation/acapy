@@ -135,6 +135,46 @@ class TestBasicWallet:
             )
 
     @pytest.mark.asyncio
+    async def test_create_public_did(self, wallet):
+        info = await wallet.create_local_did(
+            self.test_seed, self.test_did, self.test_metadata
+        )
+        assert not info.metadata.get("public")
+
+        info_public = await wallet.create_public_did()
+        assert info_public.metadata.get("public")
+
+        # test replace
+        info_replace = await wallet.create_public_did()
+        assert info_replace.metadata.get("public")
+        info_check = await wallet.get_local_did(info_public.did)
+        assert not info_check.metadata.get("public")
+
+    @pytest.mark.asyncio
+    async def test_set_public_did(self, wallet):
+        info = await wallet.create_local_did(
+            self.test_seed, self.test_did, self.test_metadata
+        )
+        assert not info.metadata.get("public")
+
+        with pytest.raises(WalletNotFoundError):
+            await wallet.set_public_did("55GkHamhTU1ZbTbV2ab9DF")
+
+        # test assign
+        info_same = await wallet.set_public_did(info.did)
+        assert info_same.did == info.did
+        assert info_same.metadata.get("public")
+
+        info_new = await wallet.create_local_did()
+        assert info_new.did != info_same.did
+        assert not info_new.metadata.get("public")
+
+        # test replace
+        info_final = await wallet.set_public_did(info_new.did)
+        assert info_final.did == info_new.did
+        assert info_final.metadata.get("public")
+
+    @pytest.mark.asyncio
     async def test_sign_verify(self, wallet):
         info = await wallet.create_local_did(self.test_seed, self.test_did)
         message_bin = self.test_message.encode("ascii")

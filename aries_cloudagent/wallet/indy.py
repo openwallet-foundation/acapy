@@ -365,6 +365,8 @@ class IndyWallet(BaseWallet):
                 raise WalletError(str(x_indy))
         if metadata:
             await self.replace_local_did_metadata(did, metadata)
+        else:
+            metadata = {}
         return DIDInfo(did, verkey, metadata)
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
