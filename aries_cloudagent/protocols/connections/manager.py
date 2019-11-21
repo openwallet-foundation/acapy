@@ -595,8 +595,6 @@ class ConnectionManager:
             their_verkey = bytes_to_b58(their_verkey_bin)
         their_info = DIDInfo(their_did, their_verkey, {})
 
-        print(their_info, my_info)
-
         # Create connection record
         connection = ConnectionRecord(
             initiator=ConnectionRecord.INITIATOR_SELF,
