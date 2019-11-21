@@ -1,9 +1,9 @@
 import pytest
 
 from .....messaging.base_handler import HandlerException
-from .....messaging.message_delivery import MessageDelivery
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
+from .....transport.inbound.receipt import MessageReceipt
 
 from ...handlers.ping_handler import PingHandler
 from ...messages.ping import Ping
@@ -19,7 +19,7 @@ def request_context() -> RequestContext:
 class TestPingHandler:
     @pytest.mark.asyncio
     async def test_ping(self, request_context):
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.message = Ping(response_requested=False)
         request_context.connection_ready = True
         handler = PingHandler()
@@ -30,7 +30,7 @@ class TestPingHandler:
 
     @pytest.mark.asyncio
     async def test_ping_response(self, request_context):
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.message = Ping(response_requested=True)
         request_context.connection_ready = True
         handler = PingHandler()

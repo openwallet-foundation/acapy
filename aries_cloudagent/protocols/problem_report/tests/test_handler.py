@@ -1,9 +1,9 @@
 import pytest
 
 from ....messaging.base_handler import HandlerException
-from ....messaging.message_delivery import MessageDelivery
 from ....messaging.request_context import RequestContext
 from ....messaging.responder import MockResponder
+from ....transport.inbound.receipt import MessageReceipt
 
 from ..handler import ProblemReportHandler
 from ..message import ProblemReport
@@ -18,7 +18,7 @@ def request_context() -> RequestContext:
 class TestPingHandler:
     @pytest.mark.asyncio
     async def test_problem_report(self, request_context):
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.message = ProblemReport()
         request_context.connection_ready = True
         handler = ProblemReportHandler()
