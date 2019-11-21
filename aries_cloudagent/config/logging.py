@@ -79,6 +79,7 @@ class LoggingConfigurator:
     @classmethod
     def print_banner(
         cls,
+        agent_label,
         inbound_transports,
         outbound_transports,
         public_did,
@@ -111,7 +112,7 @@ class LoggingConfigurator:
                 + f" {content} {border_character}{border_character}"
             )
 
-        banner_title_string = "Aries Cloud Agent"
+        banner_title_string = agent_label
         banner_title_spacer = " " * (banner_length - len(banner_title_string))
 
         banner_border = border_character * (banner_length + 6)
