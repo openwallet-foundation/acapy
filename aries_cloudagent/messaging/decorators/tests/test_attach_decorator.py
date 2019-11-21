@@ -71,6 +71,8 @@ async def wallet():
         {
             "auto_create": True,
             "auto_remove": True,
+            "key": await IndyWallet.generate_wallet_key(),
+            "key_derivation_method": "RAW",
             "name": "test-wallet-sign-verify-attach-deco",
         }
     )

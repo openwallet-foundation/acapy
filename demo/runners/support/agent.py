@@ -369,9 +369,7 @@ class DemoAgent:
             raise
 
     async def detect_process(self):
-        text = None
-
-        async def fetch_swagger(url: str, timeout: float):
+        async def fetch_status(url: str, timeout: float):
             text = None
             start = default_timer()
             async with ClientSession(timeout=ClientTimeout(total=3.0)) as session:
@@ -386,17 +384,23 @@ class DemoAgent:
                     await asyncio.sleep(0.5)
             return text
 
-        swagger_url = self.admin_url + "/api/docs/swagger.json"
-        text = await fetch_swagger(swagger_url, START_TIMEOUT)
+        status_url = self.admin_url + "/status"
+        status_text = await fetch_status(status_url, START_TIMEOUT)
 
-        if not text:
+        if not status_text:
             raise Exception(
                 "Timed out waiting for agent process to start. "
-                + f"Admin URL: {swagger_url}"
+                + f"Admin URL: {status_url}"
             )
-        if "Aries Cloud Agent" not in text:
+        ok = False
+        try:
+            status = json.loads(status_text)
+            ok = isinstance(status, dict) and "version" in status
+        except json.JSONDecodeError:
+            pass
+        if not ok:
             raise Exception(
-                f"Unexpected response from agent process. Admin URL: {swagger_url}"
+                f"Unexpected response from agent process. Admin URL: {status_url}"
             )
 
     async def fetch_timing(self):

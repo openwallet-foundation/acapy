@@ -16,7 +16,7 @@ class BasicMessageHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug(f"BasicMessageHandler called with context {context}")
+        self._logger.debug("BasicMessageHandler called with context %s", context)
         assert isinstance(context.message, BasicMessage)
 
         self._logger.info("Received basic message: %s", context.message.content)
@@ -39,20 +39,16 @@ class BasicMessageHandler(BaseHandler):
         )
 
         reply = None
-        if context.settings.get("debug.auto_respond_messages"):
-            if (
-                "received your message" not in body
-                and "received your invitation" not in body
-            ):
-                if context.message.content.startswith("http"):
-                    reply = f"{context.default_label} received your invitation"
-                else:
+        if body:
+            if context.settings.get("debug.auto_respond_messages"):
+                if "received your message" not in body:
                     reply = f"{context.default_label} received your message"
-        elif body.startswith("Reply with: "):
-            reply = body[12:]
+            elif body.startswith("Reply with: "):
+                reply = body[12:]
 
         if reply:
             reply_msg = BasicMessage(content=reply)
+            reply_msg.assign_thread_from(context.message)
             if "l10n" in context.message._decorators:
                 reply_msg._decorators["l10n"] = context.message._decorators["l10n"]
             await responder.send_reply(reply_msg)

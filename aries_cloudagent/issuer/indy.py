@@ -29,7 +29,7 @@ class IndyIssuer(BaseIssuer):
         self.logger = logging.getLogger(__name__)
         self.wallet = wallet
 
-    async def create_credential_offer(self, credential_definition_id):
+    async def create_credential_offer(self, credential_definition_id: str):
         """
         Create a credential offer for the given credential definition id.
 
