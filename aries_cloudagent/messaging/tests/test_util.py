@@ -25,6 +25,9 @@ class TestUtil(TestCase):
             "2019-05-17 20:51Z": datetime(
                 2019, 5, 17, 20, 51, 0, 0, tzinfo=timezone.utc
             ),
+            "2019-11-15T22:37:14": datetime(
+                2019, 11, 15, 22, 37, 14, tzinfo=timezone.utc
+            ),
             "2019-05-17 20:51:19.519437+01:00": datetime(
                 2019, 5, 17, 19, 51, 19, 519437, tzinfo=timezone.utc
             ),

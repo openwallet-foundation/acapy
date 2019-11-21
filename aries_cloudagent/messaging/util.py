@@ -33,7 +33,7 @@ def str_to_datetime(dt: Union[str, datetime]) -> datetime:
     if isinstance(dt, str):
         match = re.match(
             r"^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)"
-            r"(?:\:(\d\d(?:\.\d{1,6})?))?([+-]\d\d:?\d\d|Z)$",
+            r"(?:\:(\d\d(?:\.\d{1,6})?))?([+-]\d\d:?\d\d|Z|)$",
             dt,
         )
         if not match:
@@ -58,7 +58,7 @@ def str_to_datetime(dt: Union[str, datetime]) -> datetime:
             microsecond,
             timezone.utc,
         )
-        if tz != "Z":
+        if tz != "Z" and tz != "":
             tz_sgn = int(tz[0] + "1")
             tz_hours = int(tz[1:3])
             tz_mins = int(tz[-2:])
