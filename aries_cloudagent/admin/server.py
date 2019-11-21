@@ -342,6 +342,7 @@ class AdminServer(BaseAdminServer):
         await ws.prepare(request)
         socket_id = str(uuid.uuid4())
         queue = BasicMessageQueue()
+        loop = asyncio.get_event_loop()
 
         try:
             self.websocket_queues[socket_id] = queue
@@ -360,19 +361,39 @@ class AdminServer(BaseAdminServer):
             )
 
             closed = False
+            receive = loop.create_task(ws.receive())
+            send = loop.create_task(queue.dequeue(timeout=5.0))
+
             while not closed:
                 try:
-                    msg = await queue.dequeue(timeout=5.0)
-                    if msg is None:
-                        # we send fake pings because the JS client
-                        # can't detect real ones
-                        msg = {"topic": "ping"}
+                    await asyncio.wait(
+                        (receive, send), return_when=asyncio.FIRST_COMPLETED
+                    )
                     if ws.closed:
                         closed = True
-                    if msg and not closed:
-                        await ws.send_json(msg)
+
+                    if receive.done():
+                        # ignored
+                        if not closed:
+                            receive = loop.create_task(ws.receive())
+
+                    if send.done():
+                        msg = send.result()
+                        if msg is None:
+                            # we send fake pings because the JS client
+                            # can't detect real ones
+                            msg = {"topic": "ping"}
+                        if not closed:
+                            if msg:
+                                await ws.send_json(msg)
+                            send = loop.create_task(queue.dequeue(timeout=5.0))
                 except asyncio.CancelledError:
                     closed = True
+
+            if not receive.done():
+                receive.cancel()
+            if not send.done():
+                send.cancel()
 
         finally:
             del self.websocket_queues[socket_id]
