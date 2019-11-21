@@ -23,6 +23,8 @@ from ..transport.stats import StatsTracer
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 
+from ..version import __version__
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -209,9 +211,12 @@ class AdminServer(BaseAdminServer):
         )
         for route in app.router.routes():
             cors.add(route)
+        # get agent label
+        agent_label = self.context.settings.get("default_label"),
+        version_string = f"v{__version__}"
 
         setup_aiohttp_apispec(
-            app=app, title="Aries Cloud Agent", version="v1", swagger_path="/api/doc"
+            app=app, title=agent_label, version=version_string, swagger_path="/api/doc"
         )
         app.on_startup.append(self.on_startup)
         return app

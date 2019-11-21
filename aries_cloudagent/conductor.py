@@ -187,8 +187,12 @@ class Conductor:
             # for example
             context.injector.bind_instance(BaseResponder, self.admin_server.responder)
 
+        # Get agent label
+        default_label = context.settings.get("default_label")
+
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
+            default_label,
             self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
             public_did,
