@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Tuple
+from typing import Tuple, List
 
 from ...cache.base import BaseCache
 from ...connections.models.connection_record import ConnectionRecord
@@ -271,9 +271,10 @@ class ConnectionManager:
 
         # Create connection request message
         if not my_endpoint:
-            my_endpoint = self.context.settings.get("default_endpoint")
+            my_endpoints = [self.context.settings.get("default_endpoint")]
+            my_endpoints.extend(self.context.settings.get("additional_endpoints"))
         did_doc = await self.create_did_document(
-            my_info, connection.inbound_connection_id, my_endpoint
+            my_info, connection.inbound_connection_id, my_endpoints
         )
         if not my_label:
             my_label = self.context.settings.get("default_label")
@@ -450,9 +451,10 @@ class ConnectionManager:
 
         # Create connection response message
         if not my_endpoint:
-            my_endpoint = self.context.settings.get("default_endpoint")
+            my_endpoints = [self.context.settings.get("default_endpoint")]
+            my_endpoints.extend(self.context.settings.get("additional_endpoints"))
         did_doc = await self.create_did_document(
-            my_info, connection.inbound_connection_id, my_endpoint
+            my_info, connection.inbound_connection_id, my_endpoints
         )
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
@@ -608,7 +610,7 @@ class ConnectionManager:
         await connection.save(self.context, reason="Created new static connection")
 
         # Synthesize their DID doc
-        did_doc = await self.create_did_document(their_info, None, their_endpoint)
+        did_doc = await self.create_did_document(their_info, None, [their_endpoint])
         await self.store_did_document(did_doc)
 
         return connection
@@ -778,14 +780,14 @@ class ConnectionManager:
         self,
         did_info: DIDInfo,
         inbound_connection_id: str = None,
-        svc_endpoint: str = None,
+        svc_endpoints: List[str] = [],
     ) -> DIDDoc:
         """Create our DID document for a given DID.
 
         Args:
             did_info: The DID information (DID and verkey) used in the connection
             inbound_connection_id: The ID of the inbound routing connection to use
-            svc_endpoint: A custom endpoint for the DID Document
+            svc_endpoints: Custom endpoints for the DID Document
 
         Returns:
             The prepared `DIDDoc` instance
@@ -838,13 +840,19 @@ class ConnectionManager:
                     True,
                 )
                 routing_keys.append(rk)
-                svc_endpoint = service.endpoint
+                svc_endpoint = [service.endpoint]
                 break
             router_id = router.inbound_connection_id
 
-        if svc_endpoint:
+        for endpoint_index, svc_endpoint in enumerate(svc_endpoints):
+            endpoint_ident = "indy" if endpoint_index == 0 else f'indy{endpoint_index}'
             service = Service(
-                did_info.did, "indy", "IndyAgent", [pk], routing_keys, svc_endpoint
+                did_info.did,
+                endpoint_ident,
+                "IndyAgent",
+                [pk],
+                routing_keys,
+                svc_endpoint
             )
             did_doc.set(service)
 
