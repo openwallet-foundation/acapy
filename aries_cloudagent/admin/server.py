@@ -115,6 +115,7 @@ class AdminServer(BaseAdminServer):
         outbound_message_router: Coroutine,
         webhook_router: Callable,
         task_queue: TaskQueue = None,
+        conductor_stats: Coroutine = None,
     ):
         """
         Initialize an AdminServer instance.
@@ -130,6 +131,7 @@ class AdminServer(BaseAdminServer):
         self.app = None
         self.host = host
         self.port = port
+        self.conductor_stats = conductor_stats
         self.loaded_modules = []
         self.task_queue = task_queue
         self.webhook_router = webhook_router
@@ -202,14 +204,16 @@ class AdminServer(BaseAdminServer):
         app.add_routes(
             [
                 web.get("/", self.redirect_handler),
-                web.get("/modules", self.modules_handler),
+                web.get("/plugins", self.plugins_handler),
                 web.get("/status", self.status_handler),
                 web.post("/status/reset", self.status_reset_handler),
                 web.get("/ws", self.websocket_handler),
             ]
         )
 
-        plugin_registry = await self.context.inject(PluginRegistry, required=False)
+        plugin_registry: PluginRegistry = await self.context.inject(
+            PluginRegistry, required=False
+        )
         if plugin_registry:
             await plugin_registry.register_admin_routes(app)
 
@@ -268,11 +272,11 @@ class AdminServer(BaseAdminServer):
     async def on_startup(self, app: web.Application):
         """Perform webserver startup actions."""
 
-    @docs(tags=["server"], summary="Fetch the list of loaded modules")
+    @docs(tags=["server"], summary="Fetch the list of loaded plugins")
     @response_schema(AdminModulesSchema(), 200)
-    async def modules_handler(self, request: web.BaseRequest):
+    async def plugins_handler(self, request: web.BaseRequest):
         """
-        Request handler for the loaded modules list.
+        Request handler for the loaded plugins list.
 
         Args:
             request: aiohttp request object
@@ -281,7 +285,12 @@ class AdminServer(BaseAdminServer):
             The module list response
 
         """
-        return web.json_response({"result": self.loaded_modules})
+        registry: PluginRegistry = await self.context.inject(
+            PluginRegistry, required=False
+        )
+        print(registry)
+        plugins = registry and sorted(registry.plugin_names) or []
+        return web.json_response({"result": plugins})
 
     @docs(tags=["server"], summary="Fetch the server status")
     @response_schema(AdminStatusSchema(), 200)
@@ -300,6 +309,8 @@ class AdminServer(BaseAdminServer):
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
+        if self.conductor_stats:
+            status["conductor"] = await self.conductor_stats()
         return web.json_response(status)
 
     @docs(tags=["server"], summary="Reset statistics")
@@ -386,9 +397,7 @@ class AdminServer(BaseAdminServer):
         if self.webhook_router:
             for idx, target in self.webhook_targets.items():
                 if not target.topic_filter or topic in target.topic_filter:
-                    self.webhook_router(
-                        topic, payload, target.endpoint, target.retries
-                    )
+                    self.webhook_router(topic, payload, target.endpoint, target.retries)
 
         for queue in self.websocket_queues.values():
             await queue.enqueue({"topic": topic, "payload": payload})

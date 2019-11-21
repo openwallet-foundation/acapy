@@ -8,7 +8,6 @@ wallet.
 
 """
 
-import asyncio
 import hashlib
 import logging
 
@@ -94,6 +93,7 @@ class Conductor:
                     self.outbound_message_router,
                     self.webhook_router,
                     self.dispatcher.task_queue,
+                    self.get_stats,
                 )
                 webhook_urls = context.settings.get("admin.webhook_urls")
                 if webhook_urls:
@@ -153,8 +153,6 @@ class Conductor:
         except Exception:
             LOGGER.exception("Unable to start outbound transports")
             raise
-
-        # asyncio.get_event_loop().create_task(self.print_status())
 
         # Start up Admin server
         if self.admin_server:
@@ -260,26 +258,23 @@ class Conductor:
             )
         self.inbound_transport_manager.dispatch_complete(message, completed)
 
-    async def print_status(self):
-        """Print the status of the various task queues."""
-        while True:
-            await asyncio.sleep(5.0)
-            e = 0
-            p = 0
-            t = 0
-            for m in self.outbound_transport_manager.outbound_buffer:
-                if m.state == m.STATE_ENCODE:
-                    e += 1
-                if m.state == m.STATE_DELIVER:
-                    p += 1
-                t += 1
-            s = len(self.inbound_transport_manager.sessions)
-            r = self.dispatcher.task_queue.current_active
-            q = self.dispatcher.task_queue.current_pending
-            print(
-                f"{s:>4} sess  {r:>4} run  {q:>4} que  "
-                f"{e:>4} pack  {p:>4} send  {t:>4} out"
-            )
+    async def get_stats(self) -> dict:
+        """Get the current stats tracked by the conductor."""
+        stats = {
+            "in_sessions": len(self.inbound_transport_manager.sessions),
+            "out_encode": 0,
+            "out_deliver": 0,
+            "task_active": self.dispatcher.task_queue.current_active,
+            "task_done": self.dispatcher.task_queue.total_done,
+            "task_failed": self.dispatcher.task_queue.total_failed,
+            "task_pending": self.dispatcher.task_queue.current_pending,
+        }
+        for m in self.outbound_transport_manager.outbound_buffer:
+            if m.state == m.STATE_ENCODE:
+                stats["out_encode"] += 1
+            if m.state == m.STATE_DELIVER:
+                stats["out_deliver"] += 1
+        return stats
 
     async def outbound_message_router(
         self,

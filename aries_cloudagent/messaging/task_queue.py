@@ -41,6 +41,8 @@ class TaskQueue:
         self.loop = asyncio.get_event_loop()
         self.active_tasks = []
         self.pending_tasks = []
+        self.total_done = 0
+        self.total_failed = 0
         self._cancelled = False
         self._drain_task: asyncio.Task = None
         self._max_active = max_active
@@ -191,8 +193,12 @@ class TaskQueue:
     def completed_task(self, task: asyncio.Task, task_complete: Callable):
         """Clean up after a task has completed and run callbacks."""
         exc_info = task_exc_info(task)
-        if exc_info and not task_complete:
-            LOGGER.exception("Error running task", exc_info=exc_info)
+        if exc_info:
+            self.total_failed += 1
+            if not task_complete:
+                LOGGER.exception("Error running task", exc_info=exc_info)
+        else:
+            self.total_done += 1
         if task_complete:
             try:
                 task_complete(CompletedTask(task, exc_info))

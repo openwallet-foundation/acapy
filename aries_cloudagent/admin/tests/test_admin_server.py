@@ -8,6 +8,7 @@ from asynctest.mock import patch
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
+from ...messaging.plugin_registry import PluginRegistry
 from ...messaging.protocol_registry import ProtocolRegistry
 from ...transport.outbound.message import OutboundMessage
 
@@ -93,9 +94,11 @@ class TestAdminServerBasic(AsyncTestCase):
 
 
 class TestAdminServerClient(AioHTTPTestCase):
-    async def setUpAsync(self):
+    def setUp(self):
+        self.admin_server = None
         self.message_results = []
         self.webhook_results = []
+        super().setUp()
 
     async def get_application(self):
         """
@@ -110,16 +113,17 @@ class TestAdminServerClient(AioHTTPTestCase):
         self.webhook_results.append(args)
 
     def get_admin_server(self) -> AdminServer:
-        context = InjectionContext()
-        context.settings["admin.admin_insecure_mode"] = True
-        server = AdminServer(
-            "0.0.0.0",
-            unused_port(),
-            context,
-            self.outbound_message_router,
-            self.webhook_router,
-        )
-        return server
+        if not self.admin_server:
+            context = InjectionContext()
+            context.settings["admin.admin_insecure_mode"] = True
+            self.admin_server = AdminServer(
+                "0.0.0.0",
+                unused_port(),
+                context,
+                self.outbound_message_router,
+                self.webhook_router,
+            )
+        return self.admin_server
 
     # the unittest_run_loop decorator can be used in tandem with
     # the AioHTTPTestCase to simplify running
@@ -135,6 +139,16 @@ class TestAdminServerClient(AioHTTPTestCase):
         assert resp.status == 200
         text = await resp.text()
         assert "Swagger UI" in text
+
+    @unittest_run_loop
+    async def test_plugins(self):
+        test_registry = PluginRegistry()
+        test_plugin = "aries_cloudagent.protocols.trustping"
+        test_registry.register_plugin(test_plugin)
+        self.admin_server.context.injector.bind_instance(PluginRegistry, test_registry)
+        resp = await self.client.request("GET", "/plugins")
+        resp_dict = await resp.json()
+        assert test_plugin in resp_dict["result"]
 
     @unittest_run_loop
     async def test_status(self):
