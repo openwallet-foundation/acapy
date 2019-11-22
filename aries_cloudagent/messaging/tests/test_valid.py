@@ -165,7 +165,6 @@ class TestValid(TestCase):
             "2020-01-01",
             "2020-01-01:00:00:00Z",
             "2020.01.01 00:00:00Z",
-            "2020-01-01T00:00:00",
             "2020-01-01T00:00.123456+00:00",
             "2020-01-01T00:00:00.123456+0:00"
         ]
@@ -175,6 +174,8 @@ class TestValid(TestCase):
 
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00:00Z")
         INDY_ISO8601_DATETIME["validate"]("2020-01-01T00:00:00Z")
+        INDY_ISO8601_DATETIME["validate"]("2020-01-01T00:00:00")
+        INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00:00")
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00:00+00:00")
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00:00-00:00")
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00-00:00")
