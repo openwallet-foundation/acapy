@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 from ...classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...connections.models.connection_target import ConnectionTarget
 from ...config.injection_context import InjectionContext
-from ...messaging.task_queue import CompletedTask, TaskQueue
+from ...messaging.task_queue import CompletedTask, TaskQueue, task_exc_info
 from ...stats import Collector
 
 from ..wire_format import BaseWireFormat
@@ -283,16 +283,22 @@ class OutboundTransportManager:
         Returns: the current queue processing task or None
 
         """
-        if self._process_task:
+        if self._process_task and not self._process_task.done():
             self.outbound_event.set()
         elif self.outbound_new or self.outbound_buffer:
             self._process_task = self.loop.create_task(self._process_loop())
-            self._process_task.add_done_callback(lambda task: self._process_done())
+            self._process_task.add_done_callback(lambda task: self._process_done(task))
         return self._process_task
 
-    def _process_done(self):
+    def _process_done(self, task: asyncio.Task):
         """Handle completion of the drain process."""
-        self._process_task = None
+        exc_info = task_exc_info(task)
+        if exc_info:
+            LOGGER.exception(
+                "Exception in outbound queue processing:", exc_info=exc_info
+            )
+        if self._process_task and self._process_task.done():
+            self._process_task = None
 
     async def _process_loop(self):
         """Continually kick off encoding and delivery on outbound messages."""
@@ -308,12 +314,13 @@ class OutboundTransportManager:
                 if queued.state == QueuedOutboundMessage.STATE_DONE:
                     if queued.error:
                         LOGGER.exception(
-                            "Outbound message could not be delivered",
+                            "Outbound message could not be delivered to %s",
+                            queued.endpoint,
                             exc_info=queued.error,
                         )
-                    if self.handle_not_delivered:
-                        self.handle_not_delivered(queued.context, queued.message)
-                    continue
+                        if self.handle_not_delivered:
+                            self.handle_not_delivered(queued.context, queued.message)
+                    continue  # remove from buffer
 
                 deliver = False
 
@@ -330,24 +337,28 @@ class OutboundTransportManager:
 
                 upd_buffer.append(queued)
 
-            new_messages = self.outbound_new.copy()
+            new_pending = 0
+            new_messages = self.outbound_new
             self.outbound_new = []
-            for queued in new_messages:
 
+            for queued in new_messages:
                 if queued.state == QueuedOutboundMessage.STATE_NEW:
                     if queued.message and queued.message.enc_payload:
                         queued.payload = queued.message.enc_payload
-                        queued.state = QueuedOutboundMessage.STATE_DELIVER
-                        self.deliver_queued_message(queued)
+                        queued.state = QueuedOutboundMessage.STATE_PENDING
+                        new_pending += 1
                     else:
                         queued.state = QueuedOutboundMessage.STATE_ENCODE
                         self.encode_queued_message(queued)
+                else:
+                    new_pending += 1
 
                 upd_buffer.append(queued)
 
             self.outbound_buffer = upd_buffer
             if self.outbound_buffer:
-                await self.outbound_event.wait()
+                if not new_pending:
+                    await self.outbound_event.wait()
             else:
                 break
 
@@ -396,6 +407,10 @@ class OutboundTransportManager:
         """Handle completion of queued message delivery."""
         if completed.exc_info:
             queued.error = completed.exc_info
+            LOGGER.exception(
+                "Outbound message could not be delivered", exc_info=queued.error,
+            )
+
             if queued.retries:
                 queued.retries -= 1
                 queued.state = QueuedOutboundMessage.STATE_RETRY

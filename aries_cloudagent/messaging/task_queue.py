@@ -9,6 +9,8 @@ LOGGER = logging.getLogger(__name__)
 
 def task_exc_info(task: asyncio.Task):
     """Extract exception info from an asyncio task."""
+    if not task or not task.done():
+        return
     try:
         exc_val = task.exception()
     except asyncio.CancelledError:
@@ -44,9 +46,9 @@ class TaskQueue:
         self.total_done = 0
         self.total_failed = 0
         self._cancelled = False
+        self._drain_evt = asyncio.Event()
         self._drain_task: asyncio.Task = None
         self._max_active = max_active
-        self._updated_evt = asyncio.Event()
 
     @property
     def cancelled(self) -> bool:
@@ -88,23 +90,27 @@ class TaskQueue:
 
     def drain(self) -> asyncio.Task:
         """Start the process to run queued tasks."""
-        if self._drain_task:
-            self._updated_evt.set()
+        if self._drain_task and not self._drain_task.done():
+            self._drain_evt.set()
         elif self.pending_tasks:
             self._drain_task = self.loop.create_task(self._drain_loop())
-            self._drain_task.add_done_callback(lambda task: self._drain_done())
+            self._drain_task.add_done_callback(lambda task: self._drain_done(task))
         return self._drain_task
 
-    def _drain_done(self):
+    def _drain_done(self, task: asyncio.Task):
         """Handle completion of the drain process."""
-        self._drain_task = None
+        exc_info = task_exc_info(task)
+        if exc_info:
+            LOGGER.exception("Error draining task queue:", exc_info=exc_info)
+        if self._drain_task and self._drain_task.done():
+            self._drain_task = None
 
     async def _drain_loop(self):
         """Run pending tasks while there is room in the queue."""
         # Note: this method should not call async methods apart from
         # waiting for the updated event, to avoid yielding to other queue methods
         while True:
-            self._updated_evt.clear()
+            self._drain_evt.clear()
             while self.pending_tasks and (
                 not self._max_active or len(self.active_tasks) < self._max_active
             ):
@@ -113,7 +119,7 @@ class TaskQueue:
                 if fut and not fut.done():
                     fut.set_result(task)
             if self.pending_tasks:
-                await self._updated_evt.wait()
+                await self._drain_evt.wait()
             else:
                 break
 
