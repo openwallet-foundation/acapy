@@ -840,7 +840,7 @@ class ConnectionManager:
                     True,
                 )
                 routing_keys.append(rk)
-                svc_endpoint = [service.endpoint]
+                svc_endpoints = [service.endpoint]
                 break
             router_id = router.inbound_connection_id
 
