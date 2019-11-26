@@ -617,14 +617,17 @@ class TransportGroup(ArgumentGroup):
             "-e",
             "--endpoint",
             type=str,
+            nargs="+",
             metavar="<endpoint>",
-            help="Specifies the endpoint to put into invitations and DIDDocs\
+            help="Specifies the endpoints to put into DIDDocs\
             to inform other agents of where they should send messages destined\
-            for this agent. The endpoint could be one of the specified inbound\
+            for this agent. Each endpoint could be one of the specified inbound\
             transports for this agent, or the endpoint could be that of\
             another agent (e.g. 'https://example.com/agent-endpoint') if the\
             routing of messages to this agent by a mediator is configured.\
-            The endpoint is used in the formation of a connection with another agent.",
+            The first endpoint specified will be used in invitations.\
+            The endpoints are used in the formation of a connection \
+            with another agent.",
         )
 
         parser.add_argument(
@@ -643,7 +646,8 @@ class TransportGroup(ArgumentGroup):
         settings["transport.outbound_configs"] = args.outbound_transports
 
         if args.endpoint:
-            settings["default_endpoint"] = args.endpoint
+            settings["default_endpoint"] = args.endpoint[0]
+            settings["additional_endpoints"] = args.endpoint[1:]
         if args.label:
             settings["default_label"] = args.label
         return settings
