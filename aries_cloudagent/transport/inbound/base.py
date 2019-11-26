@@ -14,12 +14,30 @@ class BaseInboundTransport(ABC):
     """Base inbound transport class."""
 
     def __init__(
-        self, scheme: str, create_session: Callable,
+        self,
+        scheme: str,
+        create_session: Callable,
+        *,
+        max_message_size: int = 0,
+        wire_format: BaseWireFormat = None,
     ):
-        """Initialize the inbound transport instance."""
+        """
+        Initialize the inbound transport instance.
+
+        Args:
+            scheme: The transport scheme identifier
+            create_session: Method to create a new inbound session
+        """
+
         self._create_session = create_session
+        self._max_message_size = max_message_size
         self._scheme = scheme
-        self.wire_format: BaseWireFormat = None
+        self.wire_format: BaseWireFormat = wire_format
+
+    @property
+    def max_message_size(self):
+        """Accessor for this transport's max message size."""
+        return self._max_message_size
 
     @property
     def scheme(self):

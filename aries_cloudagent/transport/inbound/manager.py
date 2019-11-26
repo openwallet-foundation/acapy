@@ -37,6 +37,7 @@ class InboundTransportManager:
     ):
         """Initialize an `InboundTransportManager` instance."""
         self.context = context
+        self.max_message_size = 0
         self.receive_inbound = receive_inbound
         self.return_inbound = return_inbound
         self.registered_transports = {}
@@ -48,6 +49,10 @@ class InboundTransportManager:
 
     async def setup(self):
         """Perform setup operations."""
+        # Load config settings
+        if self.context.settings.get("transport.max_message_size"):
+            self.max_message_size = self.context.settings["transport.max_message_size"]
+
         inbound_transports = (
             self.context.settings.get("transport.inbound_configs") or []
         )
@@ -81,7 +86,12 @@ class InboundTransportManager:
             ) from e
 
         return self.register_transport(
-            imported_class(config.host, config.port, self.create_session),
+            imported_class(
+                config.host,
+                config.port,
+                self.create_session,
+                max_message_size=self.max_message_size,
+            ),
             imported_class.__qualname__,
         )
 

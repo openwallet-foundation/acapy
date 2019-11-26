@@ -14,9 +14,9 @@ LOGGER = logging.getLogger(__name__)
 class HttpTransport(BaseInboundTransport):
     """Http Transport class."""
 
-    def __init__(self, host: str, port: int, create_session) -> None:
+    def __init__(self, host: str, port: int, create_session, **kwargs) -> None:
         """
-        Initialize a Transport instance.
+        Initialize an inbound HTTP transport instance.
 
         Args:
             host: Host to listen on
@@ -24,14 +24,17 @@ class HttpTransport(BaseInboundTransport):
             create_session: Method to create a new inbound session
 
         """
-        super().__init__("http", create_session)
+        super().__init__("http", create_session, **kwargs)
         self.host = host
         self.port = port
         self.site: web.BaseSite = None
 
     async def make_application(self) -> web.Application:
         """Construct the aiohttp application."""
-        app = web.Application()
+        app_args = {}
+        if self.max_message_size:
+            app_args["client_max_size"] = self.max_message_size
+        app = web.Application(**app_args)
         app.add_routes([web.get("/", self.invite_message_handler)])
         app.add_routes([web.post("/", self.inbound_message_handler)])
         return app

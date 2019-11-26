@@ -7,6 +7,7 @@ from argparse import ArgumentParser, Namespace
 from typing import Type
 
 from .error import ArgsParseError
+from .util import ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
@@ -574,7 +575,6 @@ class TransportGroup(ArgumentGroup):
             be specified multiple times to create multiple interfaces.\
             Supported inbound transport types are 'http' and 'ws'.",
         )
-
         parser.add_argument(
             "-ot",
             "--outbound-transport",
@@ -588,7 +588,6 @@ class TransportGroup(ArgumentGroup):
             multiple times to supoort multiple transport types. Supported outbound\
             transport types are 'http' and 'ws'.",
         )
-
         parser.add_argument(
             "-e",
             "--endpoint",
@@ -605,7 +604,6 @@ class TransportGroup(ArgumentGroup):
             The endpoints are used in the formation of a connection \
             with another agent.",
         )
-
         parser.add_argument(
             "-l",
             "--label",
@@ -613,6 +611,13 @@ class TransportGroup(ArgumentGroup):
             metavar="<label>",
             help="Specifies the label for this agent. This label is publicized\
             (self-attested) to other agents as part of forming a connection.",
+        )
+        parser.add_argument(
+            "--max-message-size",
+            default=2097152,
+            type=ByteSize(min_size=1024),
+            metavar="<message-size>",
+            help="Set the maximum size in bytes for inbound agent messages.",
         )
 
         parser.add_argument(
@@ -635,6 +640,9 @@ class TransportGroup(ArgumentGroup):
             settings["additional_endpoints"] = args.endpoint[1:]
         if args.label:
             settings["default_label"] = args.label
+        if args.max_message_size:
+            settings["transport.max_message_size"] = args.max_message_size
+
         return settings
 
 

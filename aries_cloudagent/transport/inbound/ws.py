@@ -15,9 +15,9 @@ LOGGER = logging.getLogger(__name__)
 class WsTransport(BaseInboundTransport):
     """Websockets Transport class."""
 
-    def __init__(self, host: str, port: int, create_session) -> None:
+    def __init__(self, host: str, port: int, create_session, **kwargs) -> None:
         """
-        Initialize a Transport instance.
+        Initialize an inbound WebSocket transport instance.
 
         Args:
             host: Host to listen on
@@ -25,7 +25,7 @@ class WsTransport(BaseInboundTransport):
             create_session: Method to create a new inbound session
 
         """
-        super().__init__("ws", create_session)
+        super().__init__("ws", create_session, **kwargs)
         self.host = host
         self.port = port
         self.site: web.BaseSite = None
