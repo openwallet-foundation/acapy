@@ -144,7 +144,7 @@ class IndyISO8601DateTime(Regexp):
 
         super().__init__(
             r"^\d{4}-\d\d-\d\d[T ]\d\d:\d\d"
-            r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z)$",
+            r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z|)$",
             error="Value {input} is not a date in valid format."
         )
 

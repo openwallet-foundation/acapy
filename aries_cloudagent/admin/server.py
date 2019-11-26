@@ -287,7 +287,7 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
-        status = {}
+        status = {"version": __version__}
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
