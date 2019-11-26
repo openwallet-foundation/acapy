@@ -91,11 +91,6 @@ class AliceAgent(DemoAgent):
             self.log("credential_definition_id", message["credential_definition_id"])
             self.log("schema_id", message["schema_id"])
 
-        elif state == "credential_acked":
-            cred_id = message["credential_id"]
-            self.log(f"Acked credential {cred_id} acceptance")
-            log_status(f"#18.2 Acked credential {cred_id} acceptance")
-
     async def handle_present_proof(self, message):
         state = message["state"]
         presentation_exchange_id = message["presentation_exchange_id"]

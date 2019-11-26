@@ -211,7 +211,7 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
         description="Issuer choice to issue to request in this credential exchange",
         example=False,
     )
-    ack_on = fields.Bool(
+    ack_on_store = fields.Bool(
         required=False,
         description="Whether holder promises to send ack to issuer on credential store",
         example=True,
