@@ -77,9 +77,9 @@ class AliceAgent(DemoAgent):
                 "/issue-credential/records/" f"{credential_exchange_id}/send-request"
             )
 
-        elif state == "credential_acked":
-            self.log("Stored credential {cred_id} in wallet")
+        elif state == "credential_stored":
             cred_id = message["credential_id"]
+            self.log(f"Stored credential {cred_id} in wallet")
             log_status(f"#18.1 Stored credential {cred_id} in wallet")
             resp = await self.admin_GET(f"/credential/{cred_id}")
             log_json(resp, label="Credential details:")
@@ -90,6 +90,11 @@ class AliceAgent(DemoAgent):
             self.log("credential_id", message["credential_id"])
             self.log("credential_definition_id", message["credential_definition_id"])
             self.log("schema_id", message["schema_id"])
+
+        elif state == "credential_acked":
+            cred_id = message["credential_id"]
+            self.log(f"Acked credential {cred_id} acceptance")
+            log_status(f"#18.2 Acked credential {cred_id} acceptance")
 
     async def handle_present_proof(self, message):
         state = message["state"]

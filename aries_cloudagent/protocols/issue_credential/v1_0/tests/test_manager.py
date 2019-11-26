@@ -7,10 +7,11 @@ from .....issuer.base import BaseIssuer
 from .....messaging.request_context import RequestContext
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
+from .....storage.base import BaseStorage, BaseStorageRecordSearch
 
 from ..manager import CredentialManager, CredentialManagerError
 from ..messages.credential_ack import CredentialAck
-from ..messages.credential_issue import CredentialIssue
+from ..messages.credential_issue import CredentialIssue, PLEASE_ACK_ON_STORE
 from ..messages.credential_offer import CredentialOffer
 from ..messages.credential_proposal import CredentialProposal
 from ..messages.credential_request import CredentialRequest
@@ -23,10 +24,41 @@ class TestCredentialManager(AsyncTestCase):
         self.context = RequestContext(
             base_context=InjectionContext(enforce_typing=False)
         )
+
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
         self.context.injector.bind_instance(BaseLedger, self.ledger)
+
         self.manager = CredentialManager(self.context)
+
+    async def test_match_sent(self):
+        cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
+
+        search_records = async_mock.MagicMock()
+        self.context.inject = async_mock.CoroutineMock()
+        self.context.inject.return_value.search_records = search_records
+        search_records.return_value.fetch_all = async_mock.CoroutineMock()
+        search_records.return_value.fetch_all.return_value = [
+            async_mock.MagicMock(tags={"epoch": "123", "cred_def_id": None}),
+            async_mock.MagicMock(tags={"epoch": "456", "cred_def_id": None}),
+            async_mock.MagicMock(tags={"epoch": "789", "cred_def_id": cred_def_id}),
+        ]
+
+        best_cred_def_id = await self.manager._match_sent_cred_def_id(tag_query={})
+        search_records.assert_called_once()
+        assert best_cred_def_id == cred_def_id
+
+    async def test_match_none_sent(self):
+        cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
+
+        search_records = async_mock.MagicMock()
+        self.context.inject = async_mock.CoroutineMock()
+        self.context.inject.return_value.search_records = search_records
+        search_records.return_value.fetch_all = async_mock.CoroutineMock()
+        search_records.return_value.fetch_all.return_value = []
+
+        with self.assertRaises(CredentialManagerError):
+            best_cred_def_id = await self.manager._match_sent_cred_def_id(tag_query={})
 
     async def test_prepare_send(self):
         schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
@@ -159,6 +191,8 @@ class TestCredentialManager(AsyncTestCase):
         exchange = V10CredentialExchange(
             credential_definition_id=cred_def_id, role=V10CredentialExchange.ROLE_ISSUER
         )
+        assert not exchange.credential_exchange_id
+        assert exchange.record_value
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -329,6 +363,37 @@ class TestCredentialManager(AsyncTestCase):
             proposal = CredentialProposal.deserialize(exchange.credential_proposal_dict)
             assert proposal.credential_proposal.attributes == preview.attributes
 
+    async def test_receive_offer_non_proposed_no_preview(self):
+        schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
+        cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
+        connection_id = "test_conn_id"
+        indy_offer = {"schema_id": schema_id, "cred_def_id": cred_def_id}
+        offer = CredentialOffer(
+            offers_attach=[CredentialOffer.wrap_indy_offer(indy_offer)],
+        )
+        self.context.message = offer
+        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record.connection_id = connection_id
+
+        with async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V10CredentialExchange,
+            "retrieve_by_connection_and_thread",
+            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
+        ) as retrieve_ex:
+            exchange = await self.manager.receive_offer()
+
+            assert exchange.connection_id == connection_id
+            assert exchange.credential_definition_id == cred_def_id
+            assert exchange.schema_id == schema_id
+            assert exchange.thread_id == offer._thread_id
+            assert exchange.role == V10CredentialExchange.ROLE_HOLDER
+            assert exchange.state == V10CredentialExchange.STATE_OFFER_RECEIVED
+            assert exchange.credential_offer == indy_offer
+
+            assert exchange.credential_proposal_dict is None
+
     async def test_create_request(self):
         schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
         cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
@@ -381,6 +446,28 @@ class TestCredentialManager(AsyncTestCase):
             assert ret_request._thread_id == thread_id
 
             assert ret_exchange.state == V10CredentialExchange.STATE_REQUEST_SENT
+
+    async def test_create_request_no_nonce(self):
+        schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
+        cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
+        connection_id = "test_conn_id"
+        indy_offer = {"schema_id": schema_id, "cred_def_id": cred_def_id}
+        indy_cred_req = {"schema_id": schema_id, "cred_def_id": cred_def_id}
+        thread_id = "thread-id"
+        holder_did = "did"
+
+        stored_exchange = V10CredentialExchange(
+            connection_id=connection_id,
+            credential_definition_id=cred_def_id,
+            credential_offer=indy_offer,
+            initiator=V10CredentialExchange.INITIATOR_SELF,
+            role=V10CredentialExchange.ROLE_HOLDER,
+            schema_id=schema_id,
+            thread_id=thread_id,
+        )
+
+        with self.assertRaises(CredentialManagerError):
+            await self.manager.create_request(stored_exchange, holder_did)
 
     async def test_receive_request(self):
         schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
@@ -464,6 +551,7 @@ class TestCredentialManager(AsyncTestCase):
 
             assert ret_exchange.credential == cred
             assert ret_cred_issue.indy_credential() == cred
+            assert ret_cred_issue.please_ack == PLEASE_ACK_ON_STORE
             assert ret_exchange.state == V10CredentialExchange.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
 
@@ -480,7 +568,8 @@ class TestCredentialManager(AsyncTestCase):
         )
 
         issue = CredentialIssue(
-            credentials_attach=[CredentialIssue.wrap_indy_credential(indy_cred)]
+            credentials_attach=[CredentialIssue.wrap_indy_credential(indy_cred)],
+            please_ack=PLEASE_ACK_ON_STORE,
         )
         self.context.message = issue
         self.context.connection_record = async_mock.MagicMock()
@@ -501,6 +590,7 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             assert exchange.raw_credential == indy_cred
+            assert exchange.ack_on_store
             assert exchange.state == V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
 
     async def test_store_credential(self):
@@ -520,6 +610,7 @@ class TestCredentialManager(AsyncTestCase):
             initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
             role=V10CredentialExchange.ROLE_HOLDER,
             thread_id=thread_id,
+            ack_on_store=True,
         )
 
         cred_def = object()
@@ -559,7 +650,7 @@ class TestCredentialManager(AsyncTestCase):
 
             assert ret_exchange.credential_id == cred_id
             assert ret_exchange.credential == stored_cred
-            assert ret_exchange.state == V10CredentialExchange.STATE_ACKED
+            assert ret_exchange.state == V10CredentialExchange.STATE_CREDENTIAL_STORED
             assert ret_cred_ack._thread_id == thread_id
 
     async def test_credential_ack(self):

@@ -1,4 +1,4 @@
-"""The please-ack decorator to request acknowledgement."""
+"""The please-ack decorator (~please_ack) to request acknowledgement."""
 
 from typing import Sequence
 
@@ -32,6 +32,15 @@ class PleaseAckDecorator(BaseModel):
         super().__init__()
         self.message_id = message_id
         self.on = list(on) if on else None
+
+    def __eq__(self, other):
+        """Equality comparator."""
+
+        return (
+            type(self) == type(other) and
+            self.message_id == other.message_id and
+            (set(self.on or []) == set(other.on or []))
+        )
 
 
 class PleaseAckDecoratorSchema(BaseModelSchema):

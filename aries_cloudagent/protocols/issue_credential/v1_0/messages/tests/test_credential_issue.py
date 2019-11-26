@@ -1,10 +1,10 @@
 from unittest import mock, TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
-
+from ......messaging.decorators.please_ack_decorator import PleaseAckDecorator
+from ......messaging.models.base import BaseModelError
 from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
-
-from ..credential_issue import CredentialIssue
+from ..credential_issue import CredentialIssue, PLEASE_ACK_ON_STORE
 
 
 class TestCredentialIssue(TestCase):
@@ -67,11 +67,7 @@ class TestCredentialIssue(TestCase):
 
     cred_issue = CredentialIssue(
         comment="Test",
-        credentials_attach=[
-            AttachDecorator.from_indy_dict(
-                indy_dict=indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
-            )
-        ],
+        credentials_attach=[CredentialIssue.wrap_indy_credential(indy_cred)]
     )
 
     def test_init(self):
@@ -87,6 +83,23 @@ class TestCredentialIssue(TestCase):
         assert credential_issue.credentials_attach[0].indy_dict == self.indy_cred
         assert credential_issue.credentials_attach[0].ident  # auto-generates UUID4
         assert credential_issue.indy_credential(0) == self.indy_cred
+        assert credential_issue.please_ack == None
+
+    def test_init_please_ack(self):
+        """Test initializer with please-ack"""
+        credential_issue = CredentialIssue(
+            comment="Test",
+            credentials_attach=[
+                AttachDecorator.from_indy_dict(
+                    indy_dict=self.indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                )
+            ],
+            please_ack=PLEASE_ACK_ON_STORE
+        )
+        assert credential_issue.credentials_attach[0].indy_dict == self.indy_cred
+        assert credential_issue.credentials_attach[0].ident  # auto-generates UUID4
+        assert credential_issue.indy_credential(0) == self.indy_cred
+        assert credential_issue.please_ack == PLEASE_ACK_ON_STORE
 
     def test_type(self):
         """Test type"""
@@ -133,13 +146,35 @@ class TestCredentialIssue(TestCase):
 class TestCredentialIssueSchema(TestCase):
     """Test credential cred issue schema"""
 
-    credential_issue = CredentialIssue(
-        comment="Test",
-        credentials_attach=[AttachDecorator.from_indy_dict({"hello": "world"})],
-    )
-
     def test_make_model(self):
         """Test making model."""
-        data = self.credential_issue.serialize()
+        credential_issue = CredentialIssue(
+            comment="Test",
+            credentials_attach=[AttachDecorator.from_indy_dict({"hello": "world"})],
+        )
+        data = credential_issue.serialize()
         model_instance = CredentialIssue.deserialize(data)
         assert isinstance(model_instance, CredentialIssue)
+
+    def test_make_model_ack(self):
+        """Test making model with please-ack."""
+        credential_issue = CredentialIssue(
+            comment="Test",
+            credentials_attach=[AttachDecorator.from_indy_dict({"hello": "world"})],
+            please_ack=PLEASE_ACK_ON_STORE
+        )
+        data = credential_issue.serialize()
+        assert data.get("~please_ack", None) == PLEASE_ACK_ON_STORE.serialize()
+        model_instance = CredentialIssue.deserialize(data)
+        assert isinstance(model_instance, CredentialIssue)
+
+    def test_make_model_ack_x(self):
+        """Test making model with non-compliant please-ack."""
+        credential_issue = CredentialIssue(
+            comment="Test",
+            credentials_attach=[AttachDecorator.from_indy_dict({"hello": "world"})],
+            please_ack=PleaseAckDecorator()
+        )
+        data = credential_issue.serialize()
+        with self.assertRaises(BaseModelError):
+            CredentialIssue.deserialize(data)

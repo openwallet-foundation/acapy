@@ -16,7 +16,7 @@ from ....messaging.credential_definitions.util import (
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
-from .messages.credential_issue import CredentialIssue
+from .messages.credential_issue import CredentialIssue, PLEASE_ACK_ON_STORE
 from .messages.credential_offer import CredentialOffer
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
@@ -57,10 +57,11 @@ class CredentialManager:
         """Return most recent matching id of cred def that agent sent to ledger."""
 
         storage: BaseStorage = await self.context.inject(BaseStorage)
-        found = await storage.search_records(
+        search = storage.search_records(
             type_filter=CRED_DEF_SENT_RECORD_TYPE,
             tag_query=tag_query,
-        ).fetch_all()
+        )
+        found = await search.fetch_all()
         if not found:
             raise CredentialManagerError(
                 f"Issuer has no operable cred def for proposal spec {tag_query}"
@@ -278,7 +279,7 @@ class CredentialManager:
         schema_id = indy_offer["schema_id"]
         cred_def_id = indy_offer["cred_def_id"]
 
-        if credential_preview:
+        if credential_preview.attributes:
             credential_proposal_dict = CredentialProposal(
                 comment=credential_offer_message.comment,
                 credential_proposal=credential_preview,
@@ -474,17 +475,20 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(self.context, reason="issue credential")
 
-        credential_message = CredentialIssue(
+        credential_issue_message = CredentialIssue(
             comment=comment,
             credentials_attach=[
                 CredentialIssue.wrap_indy_credential(
                     credential_exchange_record.credential
                 )
             ],
+            please_ack=PLEASE_ACK_ON_STORE,
         )
-        credential_message._thread = {"thid": credential_exchange_record.thread_id}
+        credential_issue_message._thread = {
+            "thid": credential_exchange_record.thread_id
+        }
 
-        return (credential_exchange_record, credential_message)
+        return (credential_exchange_record, credential_issue_message)
 
     async def receive_credential(self) -> V10CredentialExchange:
         """
@@ -496,24 +500,29 @@ class CredentialManager:
             Credential exchange record, retrieved and updated
 
         """
-        credential_message = self.context.message
-        assert len(credential_message.credentials_attach or []) == 1
-        raw_credential = credential_message.indy_credential(0)
+        credential_issue_message = self.context.message
+        assert len(credential_issue_message.credentials_attach or []) == 1
+        raw_credential = credential_issue_message.indy_credential(0)
 
         (
             credential_exchange_record
         ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
             self.context,
             self.context.connection_record.connection_id,
-            credential_message._thread_id,
+            credential_issue_message._thread_id,
         )
 
         credential_exchange_record.raw_credential = raw_credential
         credential_exchange_record.state = (
             V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
         )
+        if V10CredentialExchange.STATE_CREDENTIAL_STORED in (
+            credential_issue_message.please_ack.on or []
+        ):
+            credential_exchange_record.ack_on_store = True
 
         await credential_exchange_record.save(self.context, reason="receive credential")
+
         return credential_exchange_record
 
     async def store_credential(
@@ -552,16 +561,20 @@ class CredentialManager:
 
         credential = await holder.get_credential(credential_id)
 
-        credential_exchange_record.state = V10CredentialExchange.STATE_ACKED
+        credential_exchange_record.state = (
+            V10CredentialExchange.STATE_CREDENTIAL_STORED
+        )
         credential_exchange_record.credential_id = credential_id
         credential_exchange_record.credential = credential
-        await credential_exchange_record.save(self.context, reason="store credential")
+        await credential_exchange_record.save(self.context, reason="stored credential")
 
-        credential_ack_message = CredentialAck()
-        credential_ack_message.assign_thread_id(
-            credential_exchange_record.thread_id,
-            credential_exchange_record.parent_thread_id,
-        )
+        credential_ack_message = None
+        if credential_exchange_record.ack_on_store:
+            credential_ack_message = CredentialAck()
+            credential_ack_message.assign_thread_id(
+                credential_exchange_record.thread_id,
+                credential_exchange_record.parent_thread_id,
+            )
 
         # Delete the exchange record since we're done with it
         await credential_exchange_record.delete_record(self.context)

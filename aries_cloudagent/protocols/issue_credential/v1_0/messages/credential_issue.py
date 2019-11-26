@@ -1,6 +1,7 @@
 """A credential content message."""
 
-from typing import Sequence
+from copy import deepcopy
+from typing import Mapping, Sequence
 
 from marshmallow import fields
 
@@ -9,12 +10,20 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+from .....messaging.decorators.please_ack_decorator import (
+    PleaseAckDecorator,
+    PleaseAckDecoratorSchema,
+)
 
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
+from ..models.credential_exchange import V10CredentialExchange
 
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.credential_issue_handler.CredentialIssueHandler"
+)
+PLEASE_ACK_ON_STORE = PleaseAckDecorator(
+    on=[V10CredentialExchange.STATE_CREDENTIAL_STORED]
 )
 
 
@@ -34,6 +43,7 @@ class CredentialIssue(AgentMessage):
         *,
         comment: str = None,
         credentials_attach: Sequence[AttachDecorator] = None,
+        please_ack: Mapping = None,
         **kwargs,
     ):
         """
@@ -47,6 +57,7 @@ class CredentialIssue(AgentMessage):
         super().__init__(_id=_id, **kwargs)
         self.comment = comment
         self.credentials_attach = list(credentials_attach) if credentials_attach else []
+        self.please_ack = deepcopy(please_ack)
 
     def indy_credential(self, index: int = 0):
         """
@@ -77,5 +88,16 @@ class CredentialIssueSchema(AgentMessageSchema):
 
     comment = fields.Str(comment="Human-readable comment", required=False)
     credentials_attach = fields.Nested(
-        AttachDecoratorSchema, required=True, many=True, data_key="credentials~attach"
+        AttachDecoratorSchema,
+        required=True,
+        many=True,
+        data_key="credentials~attach",
+    )
+    please_ack = fields.Nested(
+        PleaseAckDecoratorSchema,
+        required=False,
+        data_key="~please_ack",
+        comment=f"Specify {PLEASE_ACK_ON_STORE.serialize(as_string=True)}",
+        example=PLEASE_ACK_ON_STORE,
+        validate=lambda p: p == PLEASE_ACK_ON_STORE
     )

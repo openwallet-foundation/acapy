@@ -34,6 +34,7 @@ class V10CredentialExchange(BaseRecord):
     STATE_REQUEST_RECEIVED = "request_received"
     STATE_ISSUED = "credential_issued"
     STATE_CREDENTIAL_RECEIVED = "credential_received"
+    STATE_CREDENTIAL_STORED = "credential_stored"
     STATE_ACKED = "credential_acked"
 
     def __init__(
@@ -57,6 +58,7 @@ class V10CredentialExchange(BaseRecord):
         credential: dict = None,  # indy credential as stored
         auto_offer: bool = False,
         auto_issue: bool = False,
+        ack_on_store: bool = False,
         error_msg: str = None,
         **kwargs,
     ):
@@ -80,6 +82,7 @@ class V10CredentialExchange(BaseRecord):
         self.credential = credential
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
+        self.ack_on_store = ack_on_store
         self.error_msg = error_msg
 
     @property
@@ -101,6 +104,7 @@ class V10CredentialExchange(BaseRecord):
                 "error_msg",
                 "auto_offer",
                 "auto_issue",
+                "ack_on_store",
                 "raw_credential",
                 "credential",
                 "parent_thread_id",
@@ -206,6 +210,11 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
         required=False,
         description="Issuer choice to issue to request in this credential exchange",
         example=False,
+    )
+    ack_on = fields.Bool(
+        required=False,
+        description="Whether holder promises to send ack to issuer on credential store",
+        example=True,
     )
     error_msg = fields.Str(
         required=False,

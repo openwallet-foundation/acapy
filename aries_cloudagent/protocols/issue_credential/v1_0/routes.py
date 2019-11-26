@@ -596,10 +596,12 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     (
         credential_exchange_record,
-        credential_stored_message,
+        credential_ack_message,
     ) = await credential_manager.store_credential(credential_exchange_record)
 
-    await outbound_handler(credential_stored_message, connection_id=connection_id)
+    if credential_ack_message:
+        await outbound_handler(credential_ack_message, connection_id=connection_id)
+
     return web.json_response(credential_exchange_record.serialize())
 
 

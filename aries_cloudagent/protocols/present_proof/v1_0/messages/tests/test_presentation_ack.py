@@ -47,13 +47,13 @@ class TestPresentationAckSchema(TestCase):
     def test_make_model(self):
         """Test making model."""
         pres_ack_dict = PresentationAck().serialize()
-        '''
+        """
         Looks like: {
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/ack",
             "@id": "f49773e3-bd56-4868-a5f1-456d1e6d1a16",
             "status": "OK"
         }
-        '''
+        """
 
         model_instance = PresentationAck.deserialize(pres_ack_dict)
         assert isinstance(model_instance, PresentationAck)

@@ -65,3 +65,15 @@ class TestPleaseAckDecorator(TestCase):
         assert type(loaded) == PleaseAckDecorator
         assert loaded.message_id == MESSAGE_ID
         assert loaded.on == list(ON)
+
+    def test_eq(self):
+        a = PleaseAckDecorator()
+        b = PleaseAckDecorator()
+        c = PleaseAckDecorator(on=[])
+        d = PleaseAckDecorator(message_id=MESSAGE_ID)
+        e = PleaseAckDecorator(message_id=MESSAGE_ID, on=ON)
+        assert a == b == c
+        assert a != d
+        assert a != e
+        assert d != e
+

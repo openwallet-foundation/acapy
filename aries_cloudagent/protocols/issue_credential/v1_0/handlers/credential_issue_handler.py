@@ -46,4 +46,5 @@ class CredentialIssueHandler(BaseHandler):
             ) = await credential_manager.store_credential(credential_exchange_record)
 
             # Ack issuer that holder stored credential
-            await responder.send_reply(credential_ack_message)
+            if credential_ack_message:
+                await responder.send_reply(credential_ack_message)
