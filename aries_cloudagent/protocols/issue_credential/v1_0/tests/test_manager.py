@@ -4,14 +4,14 @@ from asynctest import mock as async_mock
 from .....config.injection_context import InjectionContext
 from .....holder.base import BaseHolder
 from .....issuer.base import BaseIssuer
+from .....messaging.decorators.please_ack_decorator import PleaseAckDecorator
 from .....messaging.request_context import RequestContext
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
-from .....storage.base import BaseStorage, BaseStorageRecordSearch
 
 from ..manager import CredentialManager, CredentialManagerError
 from ..messages.credential_ack import CredentialAck
-from ..messages.credential_issue import CredentialIssue, PLEASE_ACK_ON_STORE
+from ..messages.credential_issue import CredentialIssue
 from ..messages.credential_offer import CredentialOffer
 from ..messages.credential_proposal import CredentialProposal
 from ..messages.credential_request import CredentialRequest
@@ -551,7 +551,7 @@ class TestCredentialManager(AsyncTestCase):
 
             assert ret_exchange.credential == cred
             assert ret_cred_issue.indy_credential() == cred
-            assert ret_cred_issue.please_ack == PLEASE_ACK_ON_STORE
+            assert ret_cred_issue.please_ack == PleaseAckDecorator()
             assert ret_exchange.state == V10CredentialExchange.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
 
@@ -569,7 +569,7 @@ class TestCredentialManager(AsyncTestCase):
 
         issue = CredentialIssue(
             credentials_attach=[CredentialIssue.wrap_indy_credential(indy_cred)],
-            please_ack=PLEASE_ACK_ON_STORE,
+            please_ack=PleaseAckDecorator(),
         )
         self.context.message = issue
         self.context.connection_record = async_mock.MagicMock()

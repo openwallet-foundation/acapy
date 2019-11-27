@@ -4,7 +4,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.decorators.please_ack_decorator import PleaseAckDecorator
 from ......messaging.models.base import BaseModelError
 from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
-from ..credential_issue import CredentialIssue, PLEASE_ACK_ON_STORE
+from ..credential_issue import CredentialIssue
 
 
 class TestCredentialIssue(TestCase):
@@ -94,12 +94,12 @@ class TestCredentialIssue(TestCase):
                     indy_dict=self.indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
                 )
             ],
-            please_ack=PLEASE_ACK_ON_STORE
+            please_ack=PleaseAckDecorator()
         )
         assert credential_issue.credentials_attach[0].indy_dict == self.indy_cred
         assert credential_issue.credentials_attach[0].ident  # auto-generates UUID4
         assert credential_issue.indy_credential(0) == self.indy_cred
-        assert credential_issue.please_ack == PLEASE_ACK_ON_STORE
+        assert credential_issue.please_ack == PleaseAckDecorator()
 
     def test_type(self):
         """Test type"""
@@ -161,10 +161,10 @@ class TestCredentialIssueSchema(TestCase):
         credential_issue = CredentialIssue(
             comment="Test",
             credentials_attach=[AttachDecorator.from_indy_dict({"hello": "world"})],
-            please_ack=PLEASE_ACK_ON_STORE
+            please_ack=PleaseAckDecorator()
         )
         data = credential_issue.serialize()
-        assert data.get("~please_ack", None) == PLEASE_ACK_ON_STORE.serialize()
+        assert data.get("~please_ack", None) == PleaseAckDecorator().serialize()
         model_instance = CredentialIssue.deserialize(data)
         assert isinstance(model_instance, CredentialIssue)
 
@@ -173,7 +173,7 @@ class TestCredentialIssueSchema(TestCase):
         credential_issue = CredentialIssue(
             comment="Test",
             credentials_attach=[AttachDecorator.from_indy_dict({"hello": "world"})],
-            please_ack=PleaseAckDecorator()
+            please_ack=PleaseAckDecorator(on=["not-supported"])
         )
         data = credential_issue.serialize()
         with self.assertRaises(BaseModelError):

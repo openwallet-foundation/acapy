@@ -13,10 +13,11 @@ from ....messaging.credential_definitions.util import (
     CRED_DEF_TAGS,
     CRED_DEF_SENT_RECORD_TYPE
 )
+from ....messaging.decorators.please_ack_decorator import PleaseAckDecorator
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
-from .messages.credential_issue import CredentialIssue, PLEASE_ACK_ON_STORE
+from .messages.credential_issue import CredentialIssue
 from .messages.credential_offer import CredentialOffer
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
@@ -482,7 +483,7 @@ class CredentialManager:
                     credential_exchange_record.credential
                 )
             ],
-            please_ack=PLEASE_ACK_ON_STORE,
+            please_ack=PleaseAckDecorator(),
         )
         credential_issue_message._thread = {
             "thid": credential_exchange_record.thread_id
@@ -516,9 +517,7 @@ class CredentialManager:
         credential_exchange_record.state = (
             V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
         )
-        if V10CredentialExchange.STATE_CREDENTIAL_STORED in (
-            credential_issue_message.please_ack.on or []
-        ):
+        if credential_issue_message.please_ack is not None:
             credential_exchange_record.ack_on_store = True
 
         await credential_exchange_record.save(self.context, reason="receive credential")
