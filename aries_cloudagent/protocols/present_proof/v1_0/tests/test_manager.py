@@ -232,6 +232,28 @@ class TestPresentationManager(AsyncTestCase):
             save_ex.assert_called_once()
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
+    async def test_no_matching_creds_for_proof_req(self):
+        exchange_in = V10PresentationExchange()
+        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
+            name=PROOF_REQ_NAME,
+            version=PROOF_REQ_VERSION,
+            nonce=PROOF_REQ_NONCE,
+        )
+        self.holder.get_credentials_for_presentation_request_by_referent.return_value = ()
+
+        with self.assertRaises(ValueError):
+            await indy_proof_request2indy_requested_creds(
+                indy_proof_req, self.holder
+            )
+
+        self.holder.get_credentials_for_presentation_request_by_referent.return_value = (
+            {
+                "cred_info": {
+                    "referent": "dummy_reft"
+                }
+            },  # leave this comma: return a tuple
+        )
+
     async def test_receive_presentation(self):
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = CONN_ID
