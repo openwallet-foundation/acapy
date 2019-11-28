@@ -12,6 +12,7 @@ from indy.error import IndyError, ErrorCode
 from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import validate_seed
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
+from .plugin import load_postgres_plugin
 from .util import bytes_to_b64
 
 
@@ -57,6 +58,9 @@ class IndyWallet(BaseWallet):
         self._storage_config = config.get("storage_config", None)
         self._storage_creds = config.get("storage_creds", None)
         self._master_secret_id = None
+
+        if self._storage_type == "postgres_storage":
+            load_postgres_plugin()
 
     @property
     def handle(self):
