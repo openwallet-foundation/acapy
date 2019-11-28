@@ -69,6 +69,7 @@ class TestDIDDoc(AsyncTestCase):
         dd = DIDDoc.deserialize(dd_in)
         assert len(dd.pubkey) == len(dd_in["publicKey"])
         assert len(dd.authnkey) == len(dd_in["authentication"])
+        assert str(dd) == f"DIDDoc({dd.did})"
 
         dd_out = dd.serialize()
         # print('\n\n== 1 == DID Doc {} on abbreviated identifiers: {}'.format(dd, ppjson(dd_out)))
@@ -351,6 +352,14 @@ class TestDIDDoc(AsyncTestCase):
             PublicKeyType.ED25519_SIG_2018,
             dd.did,
             True,
+        )
+        assert repr(pk) == "PublicKey({}, {}, {}, {}, {}, {})".format(
+            pk.did,
+            pk.id,
+            pk.value,
+            pk.type,
+            pk.controller,
+            pk.authn
         )
         dd.set(pk)
         assert len(dd.pubkey) == 2 + len(dd_in["publicKey"])
