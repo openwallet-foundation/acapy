@@ -110,6 +110,9 @@ class TestPresAttrSpec(TestCase):
         )
         assert unrevealed.posture == PresAttrSpec.Posture.UNREVEALED_CLAIM
 
+        no_posture = PresAttrSpec(name="no_spec")
+        assert no_posture.posture is None
+
     def test_list_plain(self):
         by_list = PresAttrSpec.list_plain(
             plain={
@@ -216,6 +219,48 @@ class TestPresAttrSpec(TestCase):
         }
 
 
+class TestPredicate(TestCase):
+    """Predicate tests for coverage"""
+
+    def test_get(self):
+        """Get predicate."""
+        assert Predicate.get("LT") == Predicate.get("$lt") == Predicate.get("<")
+        assert Predicate.get("LE") == Predicate.get("$lte") == Predicate.get("<=")
+        assert Predicate.get("GE") == Predicate.get("$gte") == Predicate.get(">=")
+        assert Predicate.get("GT") == Predicate.get("$gt") == Predicate.get(">")
+        assert Predicate.get("!=") is None
+
+    def test_cmp(self):
+        """Test comparison via predicates"""
+        assert Predicate.get("LT").value.yes(0, 1)
+        assert Predicate.get("LT").value.yes("0", "1")
+        assert Predicate.get("LT").value.no(0, 0)
+        assert Predicate.get("LT").value.no(1, 0)
+        assert Predicate.get("LT").value.no("1", "0")
+        assert Predicate.get("LT").value.no("0", "0")
+
+        assert Predicate.get("LE").value.yes(0, 1)
+        assert Predicate.get("LE").value.yes("0", "1")
+        assert Predicate.get("LE").value.yes(0, 0)
+        assert Predicate.get("LE").value.no(1, 0)
+        assert Predicate.get("LE").value.no("1", "0")
+        assert Predicate.get("LE").value.yes("0", "0")
+
+        assert Predicate.get("GE").value.no(0, 1)
+        assert Predicate.get("GE").value.no("0", "1")
+        assert Predicate.get("GE").value.yes(0, 0)
+        assert Predicate.get("GE").value.yes(1, 0)
+        assert Predicate.get("GE").value.yes("1", "0")
+        assert Predicate.get("GE").value.yes("0", "0")
+
+        assert Predicate.get("GT").value.no(0, 1)
+        assert Predicate.get("GT").value.no("0", "1")
+        assert Predicate.get("GT").value.no(0, 0)
+        assert Predicate.get("GT").value.yes(1, 0)
+        assert Predicate.get("GT").value.yes("1", "0")
+        assert Predicate.get("GT").value.no("0", "0")
+
+
 class TestPresPredSpec(TestCase):
     """Presentation predicate specification tests"""
 
@@ -242,6 +287,35 @@ class TestPresPredSpec(TestCase):
             "predicate": ">=",
             "threshold": 1000000
         }
+
+    def test_eq(self):
+        """Test equality operator."""
+
+        pred_spec_a = PresPredSpec(
+            name="a",
+            cred_def_id=CD_ID,
+            predicate=Predicate.GE.value.math,
+            threshold=0,
+        )
+        pred_spec_b = PresPredSpec(
+            name="b",
+            cred_def_id=CD_ID,
+            predicate=Predicate.GE.value.math,
+            threshold=0,
+        )
+
+        assert pred_spec_a != pred_spec_b
+
+        pred_spec_a.name = "b"
+        assert pred_spec_a == pred_spec_b
+
+        pred_spec_a.predicate = Predicate.LE.value.math
+        assert pred_spec_a != pred_spec_b
+        pred_spec_a.predicate = Predicate.GE.value.math
+
+        assert pred_spec_a == pred_spec_b
+        pred_spec_a.threshold = 100
+        assert pred_spec_a != pred_spec_b
 
 
 @pytest.mark.indy
@@ -378,3 +452,10 @@ class TestPresentationPreview(TestCase):
                 }
             ]
         }
+
+    def test_eq(self):
+        pres_preview_a = PresentationPreview.deserialize(PRES_PREVIEW.serialize())
+        assert pres_preview_a == PRES_PREVIEW
+
+        pres_preview_a.predicates = []
+        assert pres_preview_a != PRES_PREVIEW
