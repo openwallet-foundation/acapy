@@ -7,6 +7,7 @@ lifecycle hook callbacks storing state for message threads, etc.
 
 import asyncio
 import logging
+import os
 from typing import Callable, Coroutine, Union
 
 from .config.injection_context import InjectionContext
@@ -38,7 +39,8 @@ class Dispatcher:
     def __init__(self, context: InjectionContext):
         """Initialize an instance of Dispatcher."""
         self.context = context
-        self.task_queue = TaskQueue(max_active=20)
+        max_active = int(os.getenv("DISPATCHER_MAX_ACTIVE", 100))
+        self.task_queue = TaskQueue(max_active=max_active)
 
     def put_task(self, coro: Coroutine, complete: Callable = None) -> asyncio.Future:
         """Run a task in the task queue, potentially blocking other handlers."""
