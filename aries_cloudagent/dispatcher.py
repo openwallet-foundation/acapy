@@ -27,6 +27,10 @@ from .transport.outbound.message import OutboundMessage
 LOGGER = logging.getLogger(__name__)
 
 
+class ProblemReportParseError(MessageParseError):
+    """Error raised when a problem-report message could not be parsed."""
+
+
 class Dispatcher:
     """
     Dispatcher class.
@@ -99,14 +103,16 @@ class Dispatcher:
             inbound_message.connection_id = connection.connection_id
 
         error_result = None
+        message = None
         try:
             message = await self.make_message(inbound_message.payload)
+        except ProblemReportParseError:
+            pass  # avoid problem report recursion
         except MessageParseError as e:
             LOGGER.error(f"Message parsing failed: {str(e)}, sending problem report")
             error_result = ProblemReport(description={"en": str(e)})
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
-            message = None
 
         context = RequestContext(base_context=self.context)
         context.message = message
@@ -126,16 +132,15 @@ class Dispatcher:
 
         if error_result:
             await responder.send_reply(error_result)
-            return
+        elif context.message:
+            context.injector.bind_instance(BaseResponder, responder)
 
-        context.injector.bind_instance(BaseResponder, responder)
-
-        handler_cls = context.message.Handler
-        handler_obj = handler_cls()
-        collector: Collector = await context.inject(Collector, required=False)
-        if collector:
-            collector.wrap(handler_obj, "handle", ["any-message-handler"])
-        await handler_obj.handle(context, responder)
+            handler_cls = context.message.Handler
+            handler_obj = handler_cls()
+            collector: Collector = await context.inject(Collector, required=False)
+            if collector:
+                collector.wrap(handler_obj, "handle", ["any-message-handler"])
+            await handler_obj.handle(context, responder)
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:
         """
@@ -157,11 +162,14 @@ class Dispatcher:
 
         """
 
-        registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
+        if not isinstance(parsed_msg, dict):
+            raise MessageParseError("Expected a JSON object")
+
         message_type = parsed_msg.get("@type")
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
 
+        registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
         message_cls = registry.resolve_message_class(message_type)
         if not message_cls:
             raise MessageParseError(f"Unrecognized message type {message_type}")
@@ -169,6 +177,8 @@ class Dispatcher:
         try:
             instance = message_cls.deserialize(parsed_msg)
         except BaseModelError as e:
+            if "/problem-report" in message_type:
+                raise ProblemReportParseError("Error parsing problem report message")
             raise MessageParseError(f"Error deserializing message: {e}") from e
 
         return instance
