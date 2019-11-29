@@ -578,7 +578,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
             test_module.web.json_response.assert_called_once_with({})
             mock_outbound.assert_called_once_with(
-                mock_prob_report.return_value,
+                mock_prob_report.deserialize.return_value,
                 connection_id=mock_cred_ex.retrieve_by_id.return_value.connection_id,
             )
 

@@ -50,10 +50,10 @@ class ProblemReport(AgentMessage):
             escalation_uri: URI for escalating the problem
         """
         super(ProblemReport, self).__init__(**kwargs)
-        self.description = description
-        self.problem_items = problem_items
+        self.description = dict(description) if description else None
+        self.problem_items = dict(problem_items) if problem_items else None
         self.who_retries = who_retries
-        self.fix_hint = fix_hint
+        self.fix_hint = dict(fix_hint) if fix_hint else None
         self.impact = impact
         self.where = where
         self.noticed_time = noticed_time

@@ -13,7 +13,7 @@ from ...messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID, INDY_SCHEMA_ID
 from ...storage.error import StorageNotFoundError
 from ...wallet.error import WalletNotFoundError
 
-from ..problem_report.message import ProblemReport
+from ..problem_report.message import ProblemReport, ProblemReportSchema
 
 from .manager import CredentialManager
 from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema
@@ -136,12 +136,6 @@ class CredentialListSchema(Schema):
     """Result schema for a credential query."""
 
     results = fields.List(fields.Nested(CredentialSchema()))
-
-
-class CredentialProblemReportRequestSchema(Schema):
-    """Request schema for sending a problem report."""
-
-    explain_ltxt = fields.Str(required=True)
 
 
 @docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
@@ -560,7 +554,7 @@ async def credential_exchange_store(request: web.BaseRequest):
     tags=["credential_exchange *DEPRECATED*"],
     summary="Send a problem report for credential exchange",
 )
-@request_schema(CredentialProblemReportRequestSchema())
+@request_schema(ProblemReportSchema())
 async def credential_exchange_problem_report(request: web.BaseRequest):
     """
     Request handler for sending a problem report.
@@ -581,7 +575,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     except StorageNotFoundError:
         raise web.HTTPNotFound()
 
-    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
+    error_result = ProblemReport.deserialize(body)
     error_result.assign_thread_id(credential_exchange_record.thread_id)
 
     await outbound_handler(

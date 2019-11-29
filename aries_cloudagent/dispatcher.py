@@ -103,7 +103,7 @@ class Dispatcher:
             message = await self.make_message(inbound_message.payload)
         except MessageParseError as e:
             LOGGER.error(f"Message parsing failed: {str(e)}, sending problem report")
-            error_result = ProblemReport(explain_ltxt=str(e))
+            error_result = ProblemReport(description={"en": str(e)})
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
             message = None

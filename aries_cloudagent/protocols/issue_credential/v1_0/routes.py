@@ -16,7 +16,7 @@ from ....messaging.valid import (
 )
 from ....storage.error import StorageNotFoundError
 
-from ...problem_report.message import ProblemReport
+from ...problem_report.message import ProblemReport, ProblemReportSchema
 
 from .manager import CredentialManager
 from .messages.credential_proposal import CredentialProposal
@@ -115,12 +115,6 @@ class V10CredentialIssueRequestSchema(Schema):
 
     comment = fields.Str(description="Human-readable comment", required=False)
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
-
-
-class V10CredentialProblemReportRequestSchema(Schema):
-    """Request schema for sending problem report."""
-
-    explain_ltxt = fields.Str(required=True)
 
 
 @docs(tags=["issue-credential"], summary="Get attribute MIME types from wallet")
@@ -606,7 +600,7 @@ async def credential_exchange_store(request: web.BaseRequest):
 @docs(
     tags=["issue-credential"], summary="Send a problem report for credential exchange"
 )
-@request_schema(V10CredentialProblemReportRequestSchema())
+@request_schema(ProblemReportSchema())
 async def credential_exchange_problem_report(request: web.BaseRequest):
     """
     Request handler for sending problem report.
@@ -628,7 +622,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     except StorageNotFoundError:
         raise web.HTTPNotFound()
 
-    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
+    error_result = ProblemReport.deserialize(body)
     error_result.assign_thread_id(credential_exchange_record.thread_id)
 
     await outbound_handler(
