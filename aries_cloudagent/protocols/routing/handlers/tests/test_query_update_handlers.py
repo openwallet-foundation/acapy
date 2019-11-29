@@ -2,11 +2,11 @@ import pytest
 
 from .....connections.models.connection_record import ConnectionRecord
 from .....messaging.base_handler import HandlerException
-from .....messaging.message_delivery import MessageDelivery
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
 from .....storage.base import BaseStorage
 from .....storage.basic import BasicStorage
+from .....transport.inbound.receipt import MessageReceipt
 
 from ...handlers.route_query_request_handler import RouteQueryRequestHandler
 from ...handlers.route_update_request_handler import RouteUpdateRequestHandler
@@ -27,7 +27,7 @@ def request_context() -> RequestContext:
     ctx = RequestContext()
     ctx.connection_ready = True
     ctx.connection_record = ConnectionRecord(connection_id="conn-id")
-    ctx.message_delivery = MessageDelivery(sender_verkey=TEST_VERKEY)
+    ctx.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
     ctx.injector.bind_instance(BaseStorage, BasicStorage())
     yield ctx
 

@@ -1,9 +1,9 @@
 import pytest
 
-from aries_cloudagent.messaging.message_delivery import MessageDelivery
 from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.storage.base import BaseStorage
 from aries_cloudagent.storage.basic import BasicStorage
+from aries_cloudagent.transport.inbound.receipt import MessageReceipt
 
 from ..manager import RoutingManager, RoutingManagerError
 from ..models.route_record import RouteRecord
@@ -16,7 +16,7 @@ TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 @pytest.fixture()
 def request_context() -> RequestContext:
     ctx = RequestContext()
-    ctx.message_delivery = MessageDelivery(sender_verkey=TEST_VERKEY)
+    ctx.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
     ctx.injector.bind_instance(BaseStorage, BasicStorage())
     yield ctx
 
@@ -24,7 +24,7 @@ def request_context() -> RequestContext:
 @pytest.fixture()
 def manager() -> RoutingManager:
     ctx = RequestContext()
-    ctx.message_delivery = MessageDelivery(sender_verkey=TEST_VERKEY)
+    ctx.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
     ctx.injector.bind_instance(BaseStorage, BasicStorage())
     return RoutingManager(ctx)
 

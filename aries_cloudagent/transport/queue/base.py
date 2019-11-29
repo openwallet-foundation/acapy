@@ -1,11 +1,11 @@
-"""Abstract outbound queue."""
+"""Abstract message queue."""
 
 from abc import ABC, abstractmethod
 import asyncio
 
 
-class BaseOutboundMessageQueue(ABC):
-    """Abstract outbound queue class."""
+class BaseMessageQueue(ABC):
+    """Abstract message queue class."""
 
     @abstractmethod
     async def enqueue(self, message):

@@ -1,19 +1,22 @@
 """Base outbound transport."""
 
-from abc import ABC, abstractmethod
 import asyncio
+from abc import ABC, abstractmethod
+from typing import Union
 
-from ...error import BaseError
-from ...messaging.outbound_message import OutboundMessage
 from ...stats import Collector
+
+from ..error import TransportError
+from ..wire_format import BaseWireFormat
 
 
 class BaseOutboundTransport(ABC):
     """Base outbound transport class."""
 
-    def __init__(self) -> None:
+    def __init__(self, wire_format: BaseWireFormat = None) -> None:
         """Initialize a `BaseOutboundTransport` instance."""
         self._collector = None
+        self._wire_format = wire_format
 
     @property
     def collector(self) -> Collector:
@@ -43,15 +46,34 @@ class BaseOutboundTransport(ABC):
     async def stop(self):
         """Shut down the transport."""
 
+    @property
+    def wire_format(self) -> BaseWireFormat:
+        """Accessor for a custom wire format for the transport."""
+        return self._wire_format
+
+    @wire_format.setter
+    def wire_format(self, format: BaseWireFormat):
+        """Setter for a custom wire format for the transport."""
+        self._wire_format = format
+
     @abstractmethod
-    async def handle_message(self, message: OutboundMessage):
+    async def handle_message(self, payload: Union[str, bytes], endpoint: str):
         """
         Handle message from queue.
 
         Args:
-            message: `OutboundMessage` to send over transport implementation
+            payload: message payload in string or byte format
+            endpoint: URI endpoint for delivery
         """
 
 
-class OutboundTransportRegistrationError(BaseError):
+class OutboundTransportError(TransportError):
+    """Generic outbound transport error."""
+
+
+class OutboundTransportRegistrationError(OutboundTransportError):
     """Outbound transport registration error."""
+
+
+class OutboundDeliveryError(OutboundTransportError):
+    """Base exception when a message cannot be delivered via an outbound transport."""

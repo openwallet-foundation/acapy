@@ -1,19 +1,22 @@
-"""Classes for representing message delivery details."""
+"""Classes for representing message receipt details."""
 
 from datetime import datetime
 
 
-class MessageDelivery:
+class MessageReceipt:
     """Properties of an agent message's delivery."""
 
     # TODO - add trust context information
+
+    REPLY_MODE_ALL = "all"
+    REPLY_MODE_NONE = "none"
+    REPLY_MODE_THREAD = "thread"
 
     def __init__(
         self,
         *,
         connection_id: str = None,
-        direct_response: bool = False,
-        direct_response_requested: str = None,
+        direct_response_mode: str = None,
         in_time: datetime = None,
         raw_message: str = None,
         recipient_verkey: str = None,
@@ -21,14 +24,11 @@ class MessageDelivery:
         recipient_did_public: str = None,
         sender_did: str = None,
         sender_verkey: str = None,
-        socket_id: str = None,
         thread_id: str = None,
-        transport_type: str = None,
     ):
         """Initialize the message delivery instance."""
         self._connection_id = connection_id
-        self._direct_response = direct_response
-        self._direct_response_requested = direct_response_requested
+        self._direct_response_mode = direct_response_mode
         self._in_time = in_time
         self._raw_message = raw_message
         self._recipient_verkey = recipient_verkey
@@ -36,9 +36,7 @@ class MessageDelivery:
         self._recipient_did_public = recipient_did_public
         self._sender_did = sender_did
         self._sender_verkey = sender_verkey
-        self._socket_id = socket_id
         self._thread_id = thread_id
-        self._transport_type = transport_type
 
     @property
     def connection_id(self) -> str:
@@ -63,29 +61,7 @@ class MessageDelivery:
         self._connection_id = connection_id
 
     @property
-    def direct_response(self) -> bool:
-        """
-        Accessor for the flag indicating that direct responses are preferred.
-
-        Returns:
-            This context's direct response flag
-
-        """
-        return self._direct_response
-
-    @direct_response.setter
-    def direct_response(self, direct: bool):
-        """
-        Setter for the flag indicating that direct responses are preferred.
-
-        Args:
-            direct: This context's new direct response flag
-
-        """
-        self._direct_response = direct
-
-    @property
-    def direct_response_requested(self) -> str:
+    def direct_response_mode(self) -> str:
         """
         Accessor for the requested direct response mode.
 
@@ -93,18 +69,23 @@ class MessageDelivery:
             This context's requested direct response mode
 
         """
-        return self._direct_response_requested
+        return self._direct_response_mode
 
-    @direct_response_requested.setter
-    def direct_response_requested(self, direct_mode: str):
+    @direct_response_mode.setter
+    def direct_response_mode(self, mode: str) -> str:
+        """Setter for the requested direct response mode."""
+        self._direct_response_mode = mode
+
+    @property
+    def direct_response_requested(self) -> str:
         """
-        Setter for the string indicating the requested direct responses mode.
+        Accessor for the the state of the direct response mode.
 
-        Args:
-            direct_mode: This context's new direct response mode
+        Returns:
+            This context's requested direct response mode
 
         """
-        self._direct_response_requested = direct_mode
+        return self._direct_response_mode and self._direct_response_mode != "none"
 
     @property
     def in_time(self) -> str:
@@ -264,28 +245,6 @@ class MessageDelivery:
         self._sender_verkey = verkey
 
     @property
-    def socket_id(self) -> str:
-        """
-        Accessor for the identifier of the incoming socket connection.
-
-        Returns:
-            This context's socket identifier
-
-        """
-        return self._socket_id
-
-    @socket_id.setter
-    def socket_id(self, socket: str):
-        """
-        Setter for the incoming socket identifier.
-
-        Args:
-            socket: This context's socket identifier
-
-        """
-        self._socket_id = socket
-
-    @property
     def thread_id(self) -> str:
         """
         Accessor for the identifier of the message thread.
@@ -306,28 +265,6 @@ class MessageDelivery:
 
         """
         self._thread_id = thread
-
-    @property
-    def transport_type(self) -> str:
-        """
-        Accessor for the transport type used to receive the message.
-
-        Returns:
-            This context's transport type
-
-        """
-        return self._transport_type
-
-    @transport_type.setter
-    def transport_type(self, transport: str):
-        """
-        Setter for the transport type used to receive the message.
-
-        Args:
-            transport: This context's new transport
-
-        """
-        self._transport_type = transport
 
     def __repr__(self) -> str:
         """

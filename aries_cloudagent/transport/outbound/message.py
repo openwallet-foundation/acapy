@@ -1,8 +1,8 @@
 """Outbound message representation."""
 
-from typing import Union
+from typing import Sequence, Union
 
-from ..connections.models.connection_target import ConnectionTarget
+from ...connections.models.connection_target import ConnectionTarget
 
 
 class OutboundMessage:
@@ -10,38 +10,29 @@ class OutboundMessage:
 
     def __init__(
         self,
-        payload: Union[str, bytes],
         *,
         connection_id: str = None,
-        encoded: bool = False,
+        enc_payload: Union[str, bytes] = None,
         endpoint: str = None,
-        reply_socket_id: str = None,
+        payload: Union[str, bytes],
+        reply_session_id: str = None,
         reply_thread_id: str = None,
         reply_to_verkey: str = None,
+        reply_from_verkey: str = None,
         target: ConnectionTarget = None,
+        target_list: Sequence[ConnectionTarget] = None,
     ):
         """Initialize an outgoing message."""
         self.connection_id = connection_id
-        self.encoded = encoded
+        self.enc_payload = enc_payload
         self._endpoint = endpoint
         self.payload = payload
-        self.reply_socket_id = reply_socket_id
+        self.reply_session_id = reply_session_id
         self.reply_thread_id = reply_thread_id
         self.reply_to_verkey = reply_to_verkey
+        self.reply_from_verkey = reply_from_verkey
         self.target = target
-
-    @property
-    def endpoint(self) -> str:
-        """Return the endpoint of the outbound message.
-
-        Defaults to the endpoint of the connection target.
-        """
-        return self._endpoint or (self.target and self.target.endpoint)
-
-    @endpoint.setter
-    def endpoint(self, endp: str) -> None:
-        """Set the endpoint of the outbound message."""
-        self._endpoint = endp
+        self.target_list = list(target_list) if target_list else []
 
     def __repr__(self) -> str:
         """

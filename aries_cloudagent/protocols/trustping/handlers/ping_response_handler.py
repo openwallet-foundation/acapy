@@ -22,7 +22,7 @@ class PingResponseHandler(BaseHandler):
         assert isinstance(context.message, PingResponse)
 
         self._logger.info(
-            "Received trust ping response from: %s", context.message_delivery.sender_did
+            "Received trust ping response from: %s", context.message_receipt.sender_did
         )
 
         if context.settings.get("debug.monitor_ping"):
@@ -30,7 +30,7 @@ class PingResponseHandler(BaseHandler):
                 "ping",
                 {
                     "comment": context.message.comment,
-                    "connection_id": context.message_delivery.connection_id,
+                    "connection_id": context.message_receipt.connection_id,
                     "state": "response_received",
                     "thread_id": context.message._thread_id,
                 },

@@ -5,8 +5,8 @@ from asynctest import (
 )
 
 from ......messaging.request_context import RequestContext
-from ......messaging.message_delivery import MessageDelivery
 from ......messaging.responder import MockResponder
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.presentation_ack import PresentationAck
 from .. import presentation_ack_handler as handler
@@ -15,7 +15,7 @@ from .. import presentation_ack_handler as handler
 class TestPresentationAckHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
@@ -35,7 +35,7 @@ class TestPresentationAckHandler(AsyncTestCase):
 
     async def test_called_not_ready(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True

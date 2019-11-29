@@ -2,27 +2,22 @@
 
 import asyncio
 import logging
-import os
 
-from .base import BaseOutboundMessageQueue
+from .base import BaseMessageQueue
 
 
-class BasicOutboundMessageQueue(BaseOutboundMessageQueue):
+class BasicMessageQueue(BaseMessageQueue):
     """Basic in memory queue implementation class."""
 
     def __init__(self):
-        """Initialize a `BasicOutboundMessageQueue` instance."""
+        """Initialize a `BasicMessageQueue` instance."""
         self.queue = self.make_queue()
         self.logger = logging.getLogger(__name__)
         self.stop_event = asyncio.Event()
 
     def make_queue(self):
         """Create the queue instance."""
-        queue_size = os.environ.get("QUEUE_SIZE")
-        if queue_size:
-            return asyncio.Queue(maxsize=int(queue_size))
-        else:
-            return asyncio.Queue()
+        return asyncio.Queue()
 
     async def enqueue(self, message):
         """

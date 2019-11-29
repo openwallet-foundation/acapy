@@ -7,23 +7,24 @@ lifecycle hook callbacks storing state for message threads, etc.
 
 import asyncio
 import logging
-from typing import Coroutine, Union
+from typing import Callable, Coroutine, Union
 
-from .admin.base_server import BaseAdminServer
 from .config.injection_context import InjectionContext
 from .messaging.agent_message import AgentMessage
-from .connections.models.connection_record import ConnectionRecord
 from .messaging.error import MessageParseError
-from .messaging.message_delivery import MessageDelivery
 from .messaging.models.base import BaseModelError
-from .messaging.outbound_message import OutboundMessage
+from .protocols.connections.manager import ConnectionManager
 from .protocols.problem_report.message import ProblemReport
 from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
-from .messaging.serializer import MessageSerializer
+from .messaging.task_queue import TaskQueue
 from .messaging.util import datetime_now
 from .stats import Collector
+from .transport.inbound.message import InboundMessage
+from .transport.outbound.message import OutboundMessage
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Dispatcher:
@@ -37,59 +38,95 @@ class Dispatcher:
     def __init__(self, context: InjectionContext):
         """Initialize an instance of Dispatcher."""
         self.context = context
-        self.logger = logging.getLogger(__name__)
+        self.task_queue = TaskQueue(max_active=20)
 
-    async def dispatch(
+    def put_task(self, coro: Coroutine, complete: Callable = None) -> asyncio.Future:
+        """Run a task in the task queue, potentially blocking other handlers."""
+        return self.task_queue.put(coro, complete)
+
+    def run_task(self, coro: Coroutine, complete: Callable = None) -> asyncio.Task:
+        """Run a task in the task queue, potentially blocking other handlers."""
+        return self.task_queue.run(coro, complete)
+
+    def queue_message(
         self,
-        parsed_msg: dict,
-        delivery: MessageDelivery,
-        connection: ConnectionRecord,
-        send: Coroutine,
+        inbound_message: InboundMessage,
+        send_outbound: Coroutine,
+        send_webhook: Coroutine = None,
+        complete: Callable = None,
     ) -> asyncio.Future:
         """
-        Configure responder and dispatch message context to message handler.
+        Add a message to the processing queue for handling.
 
         Args:
-            parsed_msg: The parsed message body
-            delivery: The incoming message delivery metadata
-            connection: The related connection record, if any
-            send: Function to send outbound messages
+            inbound_message: The inbound message instance
+            send_outbound: Async function to send outbound messages
+            send_webhook: Async function to dispatch a webhook
+            complete: Function to call when the handler has completed
+
+        Returns:
+            A future resolving to the handler task
+
+        """
+        return self.put_task(
+            self.handle_message(inbound_message, send_outbound, send_webhook), complete
+        )
+
+    async def handle_message(
+        self,
+        inbound_message: InboundMessage,
+        send_outbound: Coroutine,
+        send_webhook: Coroutine = None,
+    ):
+        """
+        Configure responder and message context and invoke the message handler.
+
+        Args:
+            inbound_message: The inbound message instance
+            send_outbound: Async function to send outbound messages
+            send_webhook: Async function to dispatch a webhook
 
         Returns:
             The response from the handler
 
         """
 
+        connection_mgr = ConnectionManager(self.context)
+        connection = await connection_mgr.find_inbound_connection(
+            inbound_message.receipt
+        )
+        if connection:
+            inbound_message.connection_id = connection.connection_id
+
         error_result = None
         try:
-            message = await self.make_message(parsed_msg)
+            message = await self.make_message(inbound_message.payload)
         except MessageParseError as e:
-            self.logger.error(
-                f"Message parsing failed: {str(e)}, sending problem report"
-            )
+            LOGGER.error(f"Message parsing failed: {str(e)}, sending problem report")
             error_result = ProblemReport(explain_ltxt=str(e))
-            if delivery.thread_id:
-                error_result.assign_thread_id(delivery.thread_id)
+            if inbound_message.receipt.thread_id:
+                error_result.assign_thread_id(inbound_message.receipt.thread_id)
             message = None
 
         context = RequestContext(base_context=self.context)
         context.message = message
-        context.message_delivery = delivery
+        context.message_receipt = inbound_message.receipt
         context.connection_ready = connection and connection.is_ready
         context.connection_record = connection
 
         responder = DispatcherResponder(
-            send,
             context,
+            inbound_message,
+            send_outbound,
+            send_webhook,
             connection_id=connection and connection.connection_id,
-            reply_socket_id=delivery.socket_id,
-            reply_to_verkey=delivery.sender_verkey,
+            reply_session_id=inbound_message.session_id,
+            reply_to_verkey=inbound_message.receipt.sender_verkey,
         )
 
         if error_result:
-            return asyncio.get_event_loop().create_task(
-                responder.send_reply(error_result)
-            )
+            await responder.send_reply(error_result)
+            return
 
         context.injector.bind_instance(BaseResponder, responder)
 
@@ -98,10 +135,7 @@ class Dispatcher:
         collector: Collector = await context.inject(Collector, required=False)
         if collector:
             collector.wrap(handler_obj, "handle", ["any-message-handler"])
-        handler = asyncio.get_event_loop().create_task(
-            handler_obj.handle(context, responder)
-        )
-        return handler
+        await handler_obj.handle(context, responder)
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:
         """
@@ -124,13 +158,11 @@ class Dispatcher:
         """
 
         registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
-        serializer: MessageSerializer = await self.context.inject(MessageSerializer)
-
-        # throws a MessageParseError on failure
-        message_type = serializer.extract_message_type(parsed_msg)
+        message_type = parsed_msg.get("@type")
+        if not message_type:
+            raise MessageParseError("Message does not contain '@type' parameter")
 
         message_cls = registry.resolve_message_class(message_type)
-
         if not message_cls:
             raise MessageParseError(f"Unrecognized message type {message_type}")
 
@@ -145,30 +177,45 @@ class Dispatcher:
 class DispatcherResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
-    def __init__(self, send: Coroutine, context: RequestContext, **kwargs):
+    def __init__(
+        self,
+        context: RequestContext,
+        inbound_message: InboundMessage,
+        send_outbound: Coroutine,
+        send_webhook: Coroutine = None,
+        **kwargs,
+    ):
         """
         Initialize an instance of `DispatcherResponder`.
 
         Args:
-            send: Function to send outbound message
             context: The request context of the incoming message
+            inbound_message: The inbound message triggering this handler
+            send_outbound: Async function to send outbound message
+            send_webhook: Async function to dispatch a webhook
 
         """
         super().__init__(**kwargs)
         self._context = context
-        self._send = send
+        self._inbound_message = inbound_message
+        self._send = send_outbound
+        self._webhook = send_webhook
 
     async def create_outbound(
         self, message: Union[AgentMessage, str, bytes], **kwargs
     ) -> OutboundMessage:
-        """Create an OutboundMessage from a message body."""
+        """
+        Create an OutboundMessage from a message body.
+
+        Args:
+            message: The message payload
+        """
         if isinstance(message, AgentMessage) and self._context.settings.get(
             "timing.enabled"
         ):
             # Inject the timing decorator
             in_time = (
-                self._context.message_delivery
-                and self._context.message_delivery.in_time
+                self._context.message_receipt and self._context.message_receipt.in_time
             )
             if not message._decorators.get("timing"):
                 message._decorators["timing"] = {
@@ -184,7 +231,7 @@ class DispatcherResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        await self._send(message)
+        await self._send(self._context, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
@@ -194,10 +241,5 @@ class DispatcherResponder(BaseResponder):
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        asyncio.get_event_loop().create_task(self._dispatch_webhook(topic, payload))
-
-    async def _dispatch_webhook(self, topic: str, payload: dict):
-        """Perform dispatch of a webhook."""
-        server = await self._context.inject(BaseAdminServer, required=False)
-        if server:
-            await server.send_webhook(topic, payload)
+        if self._webhook:
+            await self._webhook(topic, payload)

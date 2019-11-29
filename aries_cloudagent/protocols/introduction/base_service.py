@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 from ...error import BaseError
-from ...messaging.base_context import BaseRequestContext
+from ...messaging.request_context import RequestContext
 
 from .messages.invitation import Invitation
 
@@ -15,7 +15,7 @@ class IntroductionError(BaseError):
 class BaseIntroductionService(ABC):
     """Service handler for allowing connections to exchange invitations."""
 
-    def __init__(self, context: BaseRequestContext):
+    def __init__(self, context: RequestContext):
         """Init admin service."""
         self._context = context
 
@@ -23,7 +23,7 @@ class BaseIntroductionService(ABC):
     def service_handler(cls):
         """Quick accessor for conductor to use."""
 
-        async def get_instance(context: BaseRequestContext):
+        async def get_instance(context: RequestContext):
             """Return registered server."""
             return cls(context)
 

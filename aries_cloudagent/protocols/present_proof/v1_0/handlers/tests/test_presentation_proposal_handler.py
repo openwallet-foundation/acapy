@@ -5,8 +5,8 @@ from asynctest import (
 )
 
 from ......messaging.request_context import RequestContext
-from ......messaging.message_delivery import MessageDelivery
 from ......messaging.responder import MockResponder
+from ......transport.inbound.receipt import MessageReceipt
 
 from ...messages.presentation_proposal import PresentationProposal
 from .. import presentation_proposal_handler as handler
@@ -15,7 +15,7 @@ from .. import presentation_proposal_handler as handler
 class TestPresentationProposalHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_presentation_proposal"] = False
 
         with async_mock.patch.object(
@@ -38,7 +38,7 @@ class TestPresentationProposalHandler(AsyncTestCase):
         request_context = RequestContext()
         request_context.message = async_mock.MagicMock()
         request_context.message.comment = "hello world"
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_presentation_proposal"] = True
 
         with async_mock.patch.object(
@@ -50,7 +50,7 @@ class TestPresentationProposalHandler(AsyncTestCase):
             mock_pres_mgr.return_value.create_bound_request = async_mock.CoroutineMock(
                 return_value=(
                     mock_pres_mgr.return_value.receive_proposal.return_value,
-                    "presentation_request_message"
+                    "presentation_request_message",
                 )
             )
             request_context.message = PresentationProposal()
@@ -64,7 +64,7 @@ class TestPresentationProposalHandler(AsyncTestCase):
             presentation_exchange_record=(
                 mock_pres_mgr.return_value.receive_proposal.return_value
             ),
-            comment=request_context.message.comment
+            comment=request_context.message.comment,
         )
         messages = responder.messages
         assert len(messages) == 1
@@ -74,14 +74,12 @@ class TestPresentationProposalHandler(AsyncTestCase):
 
     async def test_called_not_ready(self):
         request_context = RequestContext()
-        request_context.message_delivery = MessageDelivery()
+        request_context.message_receipt = MessageReceipt()
 
         with async_mock.patch.object(
             handler, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_proposal = (
-                async_mock.CoroutineMock()
-            )
+            mock_pres_mgr.return_value.receive_proposal = async_mock.CoroutineMock()
             request_context.message = PresentationProposal()
             request_context.connection_ready = False
             handler_inst = handler.PresentationProposalHandler()

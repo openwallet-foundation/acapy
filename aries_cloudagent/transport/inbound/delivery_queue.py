@@ -7,7 +7,7 @@ been delivered to their intended destination.
 """
 import time
 
-from aries_cloudagent.messaging.outbound_message import OutboundMessage
+from ..outbound.message import OutboundMessage
 
 
 class QueuedMessage:
@@ -26,13 +26,14 @@ class QueuedMessage:
         self.msg = msg
         self.timestamp = time.time()
 
-    def older_than(self, compare_timestamp):
+    def older_than(self, compare_timestamp: float) -> bool:
         """
         Age Comparison.
 
         Allows you to test age as compared to the provided timestamp.
-        :param compare_timestamp:
-        :return:
+
+        Args:
+            compare_timestamp: The timestamp to compare
         """
         return self.timestamp < compare_timestamp
 
@@ -58,16 +59,16 @@ class DeliveryQueue:
         """
         Expire messages that are past the time limit.
 
-        :param ttl: Optional. Allows override of configured ttl
-        :return: None
+        Args:
+            ttl: Optional. Allows override of configured ttl
         """
 
         ttl_seconds = ttl or self.ttl_seconds
         horizon = time.time() - ttl_seconds
         for key in self.queue_by_key.keys():
-            self.queue_by_key[key] = [wm for
-                                      wm in self.queue_by_key[key]
-                                      if not wm.older_than(horizon)]
+            self.queue_by_key[key] = [
+                wm for wm in self.queue_by_key[key] if not wm.older_than(horizon)
+            ]
 
     def add_message(self, msg: OutboundMessage):
         """
@@ -75,11 +76,16 @@ class DeliveryQueue:
 
         The message is added once per recipient key
 
-        Arguments:
+        Args:
             msg: The OutboundMessage to add
         """
+        keys = set()
+        if msg.target:
+            keys.update(msg.target.recipient_keys)
+        if msg.reply_to_verkey:
+            keys.add(msg.reply_to_verkey)
         wrapped_msg = QueuedMessage(msg)
-        for recipient_key in msg.target.recipient_keys:
+        for recipient_key in keys:
             if recipient_key not in self.queue_by_key:
                 self.queue_by_key[recipient_key] = []
             self.queue_by_key[recipient_key].append(wrapped_msg)
@@ -88,7 +94,7 @@ class DeliveryQueue:
         """
         Check for queued messages by key.
 
-        Arguments:
+        Args:
             key: The key to use for lookup
         """
         if key in self.queue_by_key and len(self.queue_by_key[key]):
@@ -99,7 +105,7 @@ class DeliveryQueue:
         """
         Count of queued messages by key.
 
-        Arguments:
+        Args:
             key: The key to use for lookup
         """
         if key in self.queue_by_key:
@@ -111,30 +117,35 @@ class DeliveryQueue:
         """
         Remove and return a matching message.
 
-        Arguments:
+        Args:
             key: The key to use for lookup
         """
-        return self.queue_by_key[key].pop(0).msg
+        if key in self.queue_by_key:
+            return self.queue_by_key[key].pop(0).msg
 
     def inspect_all_messages_for_key(self, key: str):
         """
         Return all messages for key.
 
-        Arguments:
+        Args:
             key: The key to use for lookup
         """
-        for wrapped_msg in self.queue_by_key[key]:
-            yield wrapped_msg.msg
+        if key in self.queue_by_key:
+            for wrapped_msg in self.queue_by_key[key]:
+                yield wrapped_msg.msg
 
-    def remove_message_for_key(self, key, msg: OutboundMessage):
+    def remove_message_for_key(self, key: str, msg: OutboundMessage):
         """
         Remove specified message from queue for key.
 
-        Arguments:
+        Args:
             key: The key to use for lookup
             msg: The message to remove from the queue
         """
-        for wrapped_msg in self.queue_by_key[key]:
-            if wrapped_msg.msg == msg:
-                self.queue_by_key[key].remove(wrapped_msg)
-                break  # exit processing loop
+        if key in self.queue_by_key:
+            for wrapped_msg in self.queue_by_key[key]:
+                if wrapped_msg.msg == msg:
+                    self.queue_by_key[key].remove(wrapped_msg)
+                    if not self.queue_by_key[key]:
+                        del self.queue_by_key[key]
+                    break  # exit processing loop
