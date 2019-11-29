@@ -28,4 +28,4 @@ class TestPingHandler:
         assert len(messages) == 0
         hooks = responder.webhooks
         assert len(hooks) == 1
-        assert hooks[0] == ("problem-report", request_context.message.serialize())
+        assert hooks[0] == ("problem_report", request_context.message.serialize())
