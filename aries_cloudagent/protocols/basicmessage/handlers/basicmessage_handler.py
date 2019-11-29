@@ -25,7 +25,9 @@ class BasicMessageHandler(BaseHandler):
         meta = {"content": body}
 
         # For Workshop: mark invitations as copyable
-        if context.message.content and context.message.content.startswith("http"):
+        if context.message.content and context.message.content.startswith(
+            ("http:", "https:")
+        ):
             meta["copy_invite"] = True
 
         await responder.send_webhook(
