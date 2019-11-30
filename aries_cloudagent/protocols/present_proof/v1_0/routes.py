@@ -32,6 +32,7 @@ from .models.presentation_exchange import (
     V10PresentationExchange,
     V10PresentationExchangeSchema,
 )
+from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST
 
 
 class V10PresentationExchangeListSchema(Schema):
@@ -47,7 +48,7 @@ class V10PresentationProposalRequestSchema(Schema):
     """Request schema for sending a presentation proposal admin message."""
 
     connection_id = fields.UUID(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE,
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
     comment = fields.Str(
         description="Human-readable comment", required=False, default=""
@@ -131,9 +132,7 @@ class IndyProofReqPredSpecSchema(Schema):
         required=True,
         **INDY_PREDICATE
     )
-    p_value: fields.Integer(
-        description="Threshold value", required=True,
-    )
+    p_value: fields.Integer(description="Threshold value", required=True)
     restrictions = fields.List(
         fields.Nested(IndyProofReqSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
@@ -176,7 +175,7 @@ class V10PresentationRequestRequestSchema(Schema):
     """Request schema for sending a proof request."""
 
     connection_id = fields.UUID(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE,
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
     comment = fields.Str(required=False)
@@ -260,11 +259,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
     if "thread_id" in request.query and request.query["thread_id"] != "":
         tag_filter["thread_id"] = request.query["thread_id"]
     post_filter = {}
-    for param_name in (
-        "connection_id",
-        "role",
-        "state",
-    ):
+    for param_name in ("connection_id", "role", "state"):
         if param_name in request.query and request.query[param_name] != "":
             post_filter[param_name] = request.query[param_name]
     records = await V10PresentationExchange.query(context, tag_filter, post_filter)
@@ -472,7 +467,10 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     presentation_request_message = PresentationRequest(
         comment=comment,
         request_presentations_attach=[
-            AttachDecorator.from_indy_dict(indy_proof_request)
+            AttachDecorator.from_indy_dict(
+                indy_dict=indy_proof_request,
+                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+            )
         ],
     )
 
@@ -644,9 +642,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     return web.json_response(presentation_exchange_record.serialize())
 
 
-@docs(
-    tags=["present-proof"], summary="Remove an existing presentation exchange record",
-)
+@docs(tags=["present-proof"], summary="Remove an existing presentation exchange record")
 async def presentation_exchange_remove(request: web.BaseRequest):
     """
     Request handler for removing a presentation exchange record.
@@ -686,10 +682,10 @@ async def register(app: web.Application):
                 presentation_exchange_credentials_list,
             ),
             web.post(
-                "/present-proof/send-proposal", presentation_exchange_send_proposal,
+                "/present-proof/send-proposal", presentation_exchange_send_proposal
             ),
             web.post(
-                "/present-proof/send-request", presentation_exchange_send_free_request,
+                "/present-proof/send-request", presentation_exchange_send_free_request
             ),
             web.post(
                 "/present-proof/records/{pres_ex_id}/send-request",
