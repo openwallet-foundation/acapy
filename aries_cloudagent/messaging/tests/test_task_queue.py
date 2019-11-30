@@ -173,5 +173,5 @@ class TestTaskQueue(TestCase):
 
         task = queue.run(retval(1), done)
         await task
-        queue.completed_task(task, done)
+        queue.completed_task(task, done, None, dict())
         assert completed == [1, 1]
