@@ -13,6 +13,15 @@ def coro_ident(coro: Coroutine):
     return coro and (hasattr(coro, "__qualname__") and coro.__qualname__ or repr(coro))
 
 
+async def coro_timed(coro: Coroutine, timing: dict):
+    """Capture timing for a coroutine."""
+    timing["started"] = time.perf_counter()
+    try:
+        return await coro
+    finally:
+        timing["ended"] = time.perf_counter()
+
+
 def task_exc_info(task: asyncio.Task):
     """Extract exception info from an asyncio task."""
     if not task or not task.done():
@@ -41,6 +50,10 @@ class CompletedTask:
         self.task = task
         self.timing = timing
 
+    def __repr__(self) -> str:
+        """Generate string representation for logging."""
+        return f"<{self.__class__.__name__} ident={self.ident} timing={self.timing}>"
+
 
 class PendingTask:
     """Represent a task in the queue."""
@@ -51,6 +64,7 @@ class PendingTask:
         complete_hook: Callable = None,
         ident: str = None,
         task_future: asyncio.Future = None,
+        queued_time: float = None,
     ):
         """
         Initialize the pending task.
@@ -60,13 +74,15 @@ class PendingTask:
             complete_hook: A callback to run on completion
             ident: A string identifier for the task
             task_future: A future to be resolved to the asyncio Task
+            queued_time: When the pending task was added to the queue
         """
         if not asyncio.iscoroutine(coro):
             raise ValueError(f"Expected coroutine, got {coro}")
         self._cancelled = False
         self.complete_hook = complete_hook
         self.coro = coro
-        self.created_time: float = time.perf_counter()
+        self.queued_time: float = queued_time
+        self.unqueued_time: float = None
         self.ident = ident or coro_ident(coro)
         self.task_future = task_future or asyncio.get_event_loop().create_future()
 
@@ -100,22 +116,33 @@ class PendingTask:
         """Wait for the task to be queued."""
         return self.task_future.__await__()
 
+    def __repr__(self) -> str:
+        """Generate string representation for logging."""
+        return f"<{self.__class__.__name__} ident={self.ident}>"
+
 
 class TaskQueue:
     """A class for managing a set of asyncio tasks."""
 
-    def __init__(self, max_active: int = 0):
+    def __init__(
+        self, max_active: int = 0, timed: bool = False, trace_fn: Callable = None
+    ):
         """
         Initialize the task queue.
 
         Args:
             max_active: The maximum number of tasks to automatically run
+            timed: A flag indicating that timing should be collected for tasks
+            trace_fn: A callback for all completed tasks
         """
         self.loop = asyncio.get_event_loop()
         self.active_tasks = []
         self.pending_tasks = []
+        self.timed = timed
         self.total_done = 0
         self.total_failed = 0
+        self.total_started = 0
+        self._trace_fn = trace_fn
         self._cancelled = False
         self._drain_evt = asyncio.Event()
         self._drain_task: asyncio.Task = None
@@ -155,6 +182,14 @@ class TaskQueue:
         """Accessor for the total number of tasks in the queue."""
         return len(self.active_tasks) + len(self.pending_tasks)
 
+    def __bool__(self) -> bool:
+        """
+        Support for the bool() builtin.
+
+        Otherwise, evaluates as false when there are no tasks.
+        """
+        return True
+
     def __len__(self) -> int:
         """Support for the len() builtin."""
         return self.current_size
@@ -186,7 +221,14 @@ class TaskQueue:
                 not self._max_active or len(self.active_tasks) < self._max_active
             ):
                 pending: PendingTask = self.pending_tasks.pop(0)
-                timing = {"queued": pending.created_time}
+                if pending.queued_time:
+                    pending.unqueued_time = time.perf_counter()
+                    timing = {
+                        "queued": pending.queued_time,
+                        "unqueued": pending.unqueued_time,
+                    }
+                else:
+                    timing = None
                 task = self.run(
                     pending.coro, pending.complete_hook, pending.ident, timing
                 )
@@ -206,6 +248,8 @@ class TaskQueue:
         Args:
             pending: The `PendingTask` to add to the task queue
         """
+        if self.timed and not pending.queued_time:
+            pending.queued_time = time.perf_counter()
         self.pending_tasks.append(pending)
         self.drain()
 
@@ -229,6 +273,7 @@ class TaskQueue:
         task.add_done_callback(
             lambda fut: self.completed_task(task, task_complete, ident, timing)
         )
+        self.total_started += 1
         return task
 
     def run(
@@ -256,9 +301,10 @@ class TaskQueue:
             raise ValueError(f"Expected coroutine, got {coro}")
         if not ident:
             ident = coro_ident(coro)
-        if not timing:
-            timing = dict()
-        timing["start_time"] = time.perf_counter()
+        if self.timed:
+            if not timing:
+                timing = dict()
+            coro = coro_timed(coro, timing)
         task = self.loop.create_task(coro)
         return self.add_active(task, task_complete, ident, timing)
 
@@ -286,22 +332,31 @@ class TaskQueue:
         return pending
 
     def completed_task(
-        self, task: asyncio.Task, task_complete: Callable, ident: str, timing: dict
+        self,
+        task: asyncio.Task,
+        task_complete: Callable,
+        ident: str,
+        timing: dict = None,
     ):
         """Clean up after a task has completed and run callbacks."""
-        timing["end_time"] = time.perf_counter()
         exc_info = task_exc_info(task)
         if exc_info:
             self.total_failed += 1
-            if not task_complete:
-                LOGGER.exception("Error running task", exc_info=exc_info)
+            if not task_complete and not self._trace_fn:
+                LOGGER.exception(
+                    "Error running task %s", ident or "", exc_info=exc_info
+                )
         else:
             self.total_done += 1
-        if task_complete:
+        if task_complete or self._trace_fn:
+            completed = CompletedTask(task, exc_info, ident, timing)
             try:
-                task_complete(CompletedTask(task, exc_info, ident, timing))
+                if task_complete:
+                    task_complete(completed)
+                if self._trace_fn:
+                    self._trace_fn(completed)
             except Exception:
-                LOGGER.exception("Error finalizing task")
+                LOGGER.exception("Error finalizing task %s", completed)
         try:
             self.active_tasks.remove(task)
         except ValueError:

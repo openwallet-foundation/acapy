@@ -10,6 +10,8 @@ import logging
 import os
 from typing import Callable, Coroutine, Union
 
+from aiohttp.web import HTTPException
+
 from .config.injection_context import InjectionContext
 from .messaging.agent_message import AgentMessage
 from .messaging.error import MessageParseError
@@ -19,7 +21,7 @@ from .protocols.problem_report.message import ProblemReport
 from .messaging.protocol_registry import ProtocolRegistry
 from .messaging.request_context import RequestContext
 from .messaging.responder import BaseResponder
-from .messaging.task_queue import TaskQueue
+from .messaging.task_queue import CompletedTask, PendingTask, TaskQueue
 from .messaging.util import datetime_now
 from .stats import Collector
 from .transport.inbound.message import InboundMessage
@@ -39,16 +41,44 @@ class Dispatcher:
     def __init__(self, context: InjectionContext):
         """Initialize an instance of Dispatcher."""
         self.context = context
-        max_active = int(os.getenv("DISPATCHER_MAX_ACTIVE", 100))
-        self.task_queue = TaskQueue(max_active=max_active)
+        self.collector: Collector = None
+        self.task_queue: TaskQueue = None
 
-    def put_task(self, coro: Coroutine, complete: Callable = None) -> asyncio.Future:
-        """Run a task in the task queue, potentially blocking other handlers."""
-        return self.task_queue.put(coro, complete)
+    async def setup(self):
+        """Perform async instance setup."""
+        self.collector = await self.context.inject(Collector, required=False)
+        max_active = int(os.getenv("DISPATCHER_MAX_ACTIVE", 50))
+        self.task_queue = TaskQueue(
+            max_active=max_active, timed=bool(self.collector), trace_fn=self.log_task
+        )
 
-    def run_task(self, coro: Coroutine, complete: Callable = None) -> asyncio.Task:
+    def put_task(
+        self, coro: Coroutine, complete: Callable = None, ident: str = None
+    ) -> PendingTask:
         """Run a task in the task queue, potentially blocking other handlers."""
-        return self.task_queue.run(coro, complete)
+        return self.task_queue.put(coro, complete, ident)
+
+    def run_task(
+        self, coro: Coroutine, complete: Callable = None, ident: str = None
+    ) -> asyncio.Task:
+        """Run a task in the task queue, potentially blocking other handlers."""
+        return self.task_queue.run(coro, complete, ident)
+
+    def log_task(self, task: CompletedTask):
+        """Log a completed task using the stats collector."""
+        if task.exc_info and not issubclass(task.exc_info[0], HTTPException):
+            # skip errors intentionally returned to HTTP clients
+            LOGGER.exception(
+                "Handler error: %s", task.ident or "", exc_info=task.exc_info
+            )
+        if self.collector:
+            timing = task.timing
+            if "queued" in timing:
+                self.collector.log(
+                    f"Dispatcher:queued", timing["unqueued"] - timing["queued"]
+                )
+            if task.ident:
+                self.collector.log(task.ident, timing["ended"] - timing["started"])
 
     def queue_message(
         self,
@@ -56,7 +86,7 @@ class Dispatcher:
         send_outbound: Coroutine,
         send_webhook: Coroutine = None,
         complete: Callable = None,
-    ) -> asyncio.Future:
+    ) -> PendingTask:
         """
         Add a message to the processing queue for handling.
 
@@ -67,7 +97,7 @@ class Dispatcher:
             complete: Function to call when the handler has completed
 
         Returns:
-            A future resolving to the handler task
+            A pending task instance resolving to the handler task
 
         """
         return self.put_task(
@@ -133,11 +163,10 @@ class Dispatcher:
         context.injector.bind_instance(BaseResponder, responder)
 
         handler_cls = context.message.Handler
-        handler_obj = handler_cls()
-        collector: Collector = await context.inject(Collector, required=False)
-        if collector:
-            collector.wrap(handler_obj, "handle", ["any-message-handler"])
-        await handler_obj.handle(context, responder)
+        handler = handler_cls().handle
+        if self.collector:
+            handler = self.collector.wrap_coro(handler, [handler.__qualname__])
+        await handler(context, responder)
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:
         """
@@ -174,6 +203,10 @@ class Dispatcher:
             raise MessageParseError(f"Error deserializing message: {e}") from e
 
         return instance
+
+    async def complete(self, timeout: float = 0.1):
+        """Wait for pending tasks to complete."""
+        await self.task_queue.complete(timeout=timeout)
 
 
 class DispatcherResponder(BaseResponder):

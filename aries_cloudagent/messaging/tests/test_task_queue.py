@@ -140,7 +140,7 @@ class TestTaskQueue(TestCase):
 
     async def test_cancel_long(self):
         queue = TaskQueue()
-        task = queue.run(asyncio.sleep(5))
+        task = queue.run(retval(1, delay=5))
         queue.cancel()
         await queue
 
@@ -152,7 +152,7 @@ class TestTaskQueue(TestCase):
 
     async def test_complete_with_timeout(self):
         queue = TaskQueue()
-        task = queue.run(asyncio.sleep(5))
+        task = queue.run(retval(1, delay=5))
         await queue.complete(0.01)
 
         # cancellation may take a second
@@ -175,3 +175,19 @@ class TestTaskQueue(TestCase):
         await task
         queue.completed_task(task, done, None, dict())
         assert completed == [1, 1]
+
+    async def test_timed(self):
+        completed = []
+
+        def done(complete: CompletedTask):
+            assert not complete.exc_info
+            completed.append((complete.task.result(), complete.timing))
+
+        queue = TaskQueue(max_active=1, timed=True, trace_fn=done)
+        task1 = queue.run(retval(1))
+        task2 = await queue.put(retval(2))
+        await queue.complete(0.1)
+
+        assert len(completed) == 2
+        assert "queued" not in completed[0][1]
+        assert "queued" in completed[1][1]

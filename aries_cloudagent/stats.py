@@ -82,7 +82,7 @@ class Timer:
         if self.start_time:
             dur = self.now() - self.start_time
             for grp in self.groups:
-                self.collector.log(grp, dur)
+                self.collector.log(grp, dur, self.start_time)
         self.start_time = None
 
     def __enter__(self):
@@ -124,12 +124,13 @@ class Collector:
         """Setter for the collector's enabled property."""
         self._enabled = val
 
-    def log(self, name: str, duration: float):
+    def log(self, name: str, duration: float, start: float = None):
         """Log an entry in the statistics if the collector is enabled."""
         if self._enabled:
             self._stats.log(name, duration)
             if self._log_file:
-                start = time.perf_counter() - duration
+                if start is None:
+                    start = time.perf_counter() - duration
                 self._log_file.write(f"{name} {start:.5f} {duration:.5f}\n")
 
     def mark(self, *names):

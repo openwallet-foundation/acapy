@@ -64,6 +64,7 @@ class Conductor:
         context = await self.context_builder.build()
 
         self.dispatcher = Dispatcher(context)
+        await self.dispatcher.setup()
 
         wire_format = await context.inject(BaseWireFormat, required=False)
         if wire_format and hasattr(wire_format, "task_queue"):
@@ -118,12 +119,11 @@ class Conductor:
                     # "create_inbound_session",
                 ),
             )
-            collector.wrap(self.dispatcher, "handle_message")
             # at the class level (!) should not be performed multiple times
             collector.wrap(
                 ConnectionManager,
                 (
-                    "get_connection_targets",
+                    # "get_connection_targets",
                     "fetch_did_document",
                     "find_inbound_connection",
                 ),
@@ -214,6 +214,8 @@ class Conductor:
     async def stop(self, timeout=1.0):
         """Stop the agent."""
         shutdown = TaskQueue()
+        if self.dispatcher:
+            shutdown.run(self.dispatcher.complete())
         if self.admin_server:
             shutdown.run(self.admin_server.stop())
         if self.inbound_transport_manager:
