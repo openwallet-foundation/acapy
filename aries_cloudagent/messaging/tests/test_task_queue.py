@@ -1,10 +1,12 @@
 import asyncio
 from asynctest import TestCase
 
-from ..task_queue import CompletedTask, TaskQueue
+from ..task_queue import CompletedTask, PendingTask, TaskQueue, task_exc_info
 
 
-async def retval(val):
+async def retval(val, *, delay=0):
+    if delay:
+        await asyncio.sleep(delay)
     return val
 
 
@@ -38,14 +40,14 @@ class TestTaskQueue(TestCase):
             assert not complete.exc_info
             completed.append(complete.task.result())
 
-        fut = queue.put(retval(1), done)
+        pend = queue.put(retval(1), done)
         assert not queue.pending_tasks
         await queue.flush()
         assert completed == [1]
-        assert fut.result().result() == 1
+        assert pend.task.result() == 1
 
         with self.assertRaises(ValueError):
-            queue.add_pending(None, done)
+            queue.put(None, done)
 
     async def test_put_limited(self):
         queue = TaskQueue(1)
@@ -57,13 +59,27 @@ class TestTaskQueue(TestCase):
             assert not complete.exc_info
             completed.add(complete.task.result())
 
-        fut1 = queue.put(retval(1), done)
-        fut2 = queue.put(retval(2), done)
+        pend1 = queue.put(retval(1), done)
+        pend2 = queue.put(retval(2), done)
         assert queue.pending_tasks
         await queue.flush()
         assert completed == {1, 2}
-        assert fut1.result().result() == 1
-        assert fut2.result().result() == 2
+        assert pend1.task.result() == 1
+        assert pend2.task.result() == 2
+
+    async def test_pending(self):
+        coro = retval(1, delay=1)
+        pend = PendingTask(coro, None)
+        task = asyncio.get_event_loop().create_task(coro)
+        assert task_exc_info(task) is None
+        pend.task = task
+        assert pend.task is task
+        assert pend.task_future.result() is task
+        with self.assertRaises(ValueError):
+            pend.task = task
+        pend.cancel()
+        assert pend.cancelled
+        task.cancel()
 
     async def test_complete(self):
         queue = TaskQueue()
@@ -88,9 +104,11 @@ class TestTaskQueue(TestCase):
             completed.add(complete.task.result())
 
         queue.run(retval(1), done)
+        sleep = queue.run(retval(1, delay=1), done)
         queue.put(retval(2), done)
         queue.put(retval(3), done)
         queue.cancel_pending()
+        sleep.cancel()
         await queue.flush()
         assert completed == {1}
 
@@ -102,7 +120,7 @@ class TestTaskQueue(TestCase):
             assert not complete.exc_info
             completed.add(complete.task.result())
 
-        queue.run(retval(1), done)
+        queue.run(retval(1, delay=1), done)
         queue.put(retval(2), done)
         queue.put(retval(3), done)
         queue.cancel()
@@ -117,8 +135,8 @@ class TestTaskQueue(TestCase):
         co.close()
 
         co = retval(1)
-        fut = queue.put(co)
-        assert fut.cancelled()
+        pend = queue.put(co)
+        assert pend.cancelled
 
     async def test_cancel_long(self):
         queue = TaskQueue()
