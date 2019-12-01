@@ -1,7 +1,7 @@
 """Trust ping admin routes."""
 
 from aiohttp import web
-from aiohttp_apispec import docs
+from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
@@ -14,10 +14,18 @@ from .messages.ping import Ping
 class PingRequestSchema(Schema):
     """Request schema for performing a ping."""
 
-    comment = fields.Str(required=False, description="Comment for the ping message",)
+    comment = fields.Str(required=False, description="Comment for the ping message")
+
+
+class PingRequestResponseSchema(Schema):
+    """Request schema for performing a ping."""
+
+    thread_id = fields.Str(required=False, description="Thread ID of the ping message")
 
 
 @docs(tags=["trustping"], summary="Send a trust ping to a connection")
+@request_schema(PingRequestSchema())
+@response_schema(PingRequestResponseSchema(), 200)
 async def connections_send_ping(request: web.BaseRequest):
     """
     Request handler for sending a trust ping to a connection.
@@ -30,7 +38,7 @@ async def connections_send_ping(request: web.BaseRequest):
     connection_id = request.match_info["id"]
     outbound_handler = request.app["outbound_message_router"]
     body = await request.json()
-    comment = body and body.get("comment")
+    comment = body.get("comment")
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
