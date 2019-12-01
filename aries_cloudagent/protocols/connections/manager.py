@@ -807,7 +807,7 @@ class ConnectionManager:
                 raise ConnectionManagerError(
                     f"Router connection not active: {router_id}"
                 )
-            routing_doc = await self.fetch_did_document(router.their_did)
+            routing_doc, _ = await self.fetch_did_document(router.their_did)
             if not routing_doc.service:
                 raise ConnectionManagerError(
                     f"No services defined by routing DIDDoc: {router_id}"
@@ -848,7 +848,7 @@ class ConnectionManager:
 
         return did_doc
 
-    async def fetch_did_document(self, did: str) -> DIDDoc:
+    async def fetch_did_document(self, did: str) -> Tuple[DIDDoc, StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
@@ -858,7 +858,7 @@ class ConnectionManager:
         record = await storage.search_records(
             self.RECORD_TYPE_DID_DOC, {"did": did}
         ).fetch_single()
-        return DIDDoc.from_json(record.value)
+        return DIDDoc.from_json(record.value), record
 
     async def store_did_document(self, did_doc: DIDDoc):
         """Store a DID document.
@@ -869,10 +869,7 @@ class ConnectionManager:
         assert did_doc.did
         storage: BaseStorage = await self.context.inject(BaseStorage)
         try:
-            storage: BaseStorage = await self.context.inject(BaseStorage)
-            record = await storage.search_records(
-                self.RECORD_TYPE_DID_DOC, {"did": did_doc.did}
-            ).fetch_single()
+            stored_doc, record = await self.fetch_did_document(did_doc.did)
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC, did_doc.to_json(), {"did": did_doc.did}
@@ -880,7 +877,6 @@ class ConnectionManager:
             await storage.add_record(record)
         else:
             await storage.update_record_value(record, did_doc.to_json())
-
         await self.remove_keys_for_did(did_doc.did)
         for key in did_doc.pubkey.values():
             if key.controller == did_doc.did:
@@ -1011,9 +1007,9 @@ class ConnectionManager:
                 self._logger.debug("No target DID associated with connection")
                 return None
 
-            doc = await self.fetch_did_document(connection.their_did)
+            did_doc, _ = await self.fetch_did_document(connection.their_did)
             results = self.diddoc_connection_targets(
-                doc, my_info.verkey, connection.their_label
+                did_doc, my_info.verkey, connection.their_label
             )
 
         return results
