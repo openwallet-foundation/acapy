@@ -33,6 +33,7 @@ RUN_MODE = os.getenv("RUNMODE")
 
 GENESIS_URL = os.getenv("GENESIS_URL")
 LEDGER_URL = os.getenv("LEDGER_URL")
+GENESIS_FILE = os.getenv("GENESIS_FILE")
 
 if RUN_MODE == "docker":
     DEFAULT_INTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
@@ -59,6 +60,9 @@ async def default_genesis_txns():
                     f"http://{DEFAULT_EXTERNAL_HOST}:9000/genesis"
                 ) as resp:
                     genesis = await resp.text()
+        elif GENESIS_FILE:
+            with open(GENESIS_FILE, "r") as genesis_file:
+                genesis = genesis_file.read()
         else:
             with open("local-genesis.txt", "r") as genesis_file:
                 genesis = genesis_file.read()
