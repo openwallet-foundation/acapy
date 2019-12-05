@@ -334,12 +334,15 @@ class PresentationManager:
         """
         presentation = self.context.message.indy_proof()
         thread_id = self.context.message._thread_id
+        connection_id_filter = (
+            {"connection_id": self.context.connection_record.connection_id}
+            if self.context.connection_record is not None
+            else None
+        )
         (
             presentation_exchange_record
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
-            self.context,
-            {"thread_id": thread_id},
-            {"connection_id": self.context.connection_record.connection_id},
+            self.context, {"thread_id": thread_id}, connection_id_filter
         )
 
         presentation_exchange_record.presentation = presentation
@@ -433,7 +436,7 @@ class PresentationManager:
         else:
             self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
-                presentation_exchange_record.thread_id
+                presentation_exchange_record.thread_id,
             )
 
     async def receive_presentation_ack(self):
@@ -459,8 +462,7 @@ class PresentationManager:
         )
 
         await presentation_exchange_record.save(
-            self.context,
-            reason="receive presentation ack",
+            self.context, reason="receive presentation ack"
         )
 
         return presentation_exchange_record
