@@ -34,11 +34,6 @@ class DIDDocWrapper(fields.Field):
             The deserialized value
 
         """
-        # quick fix for missing optional values
-        if "authentication" not in value:
-            value["authentication"] = []
-        if "service" not in value:
-            value["service"] = []
         return DIDDoc.deserialize(value)
 
 
@@ -59,7 +54,7 @@ class ConnectionDetail(BaseModel):
             did_doc: DIDDoc for connection detail
 
         """
-        super(ConnectionDetail, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._did = did
         self._did_doc = did_doc
 
