@@ -3,7 +3,6 @@
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
-    HandlerException,
     RequestContext,
 )
 
@@ -29,9 +28,6 @@ class PresentationHandler(BaseHandler):
             "Received presentation message: %s",
             context.message.serialize(as_string=True),
         )
-
-        if not context.connection_ready:
-            raise HandlerException("No connection established for presentation request")
 
         presentation_manager = PresentationManager(context)
 

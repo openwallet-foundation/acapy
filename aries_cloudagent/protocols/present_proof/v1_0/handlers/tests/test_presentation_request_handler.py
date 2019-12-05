@@ -186,20 +186,3 @@ class TestPresentationRequestHandler(AsyncTestCase):
             mock_pres_ex_rec
         )
         assert not responder.messages
-
-    async def test_called_not_ready(self):
-        request_context = RequestContext()
-        request_context.message_receipt = MessageReceipt()
-
-        with async_mock.patch.object(
-            handler, "PresentationManager", autospec=True
-        ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_request = async_mock.CoroutineMock()
-            request_context.message = PresentationRequest()
-            request_context.connection_ready = False
-            handler_inst = handler.PresentationRequestHandler()
-            responder = MockResponder()
-            with self.assertRaises(handler.HandlerException):
-                await handler_inst.handle(request_context, responder)
-
-        assert not responder.messages
