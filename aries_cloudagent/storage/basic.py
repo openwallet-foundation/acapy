@@ -178,12 +178,12 @@ def basic_tag_value_match(value: str, match: dict) -> bool:
         raise StorageSearchError("Unsupported subquery: {}".format(match))
     if value is None:
         return False
-    op = match.keys()[0]
+    op = list(match.keys())[0]
     cmp_val = match[op]
     if op == "$in":
         if not isinstance(cmp_val, list):
             raise StorageSearchError("Expected list for $in value")
-        chk = cmp_val in op
+        chk = value in cmp_val
     else:
         if not isinstance(cmp_val, str):
             raise StorageSearchError("Expected string for filter value")
