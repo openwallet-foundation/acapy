@@ -227,7 +227,7 @@ class ConnectionManager:
         # Save the invitation for later processing
         await connection.attach_invitation(self.context, invitation)
 
-        if connection.accept == connection.ACCEPT_AUTO:
+        if connection.accept == ConnectionRecord.ACCEPT_AUTO:
             request = await self.create_request(connection)
             responder: BaseResponder = await self._context.inject(
                 BaseResponder, required=False
@@ -434,8 +434,8 @@ class ConnectionManager:
         )
 
         if connection.state not in (
-            connection.STATE_REQUEST,
-            connection.STATE_RESPONSE,
+            ConnectionRecord.STATE_REQUEST,
+            ConnectionRecord.STATE_RESPONSE,
         ):
             raise ConnectionManagerError(
                 "Connection is not in the request or response state"
@@ -591,7 +591,7 @@ class ConnectionManager:
         if not their_did:
             their_did = seed_to_did(their_seed)
         if not their_verkey:
-            their_verkey_bin, _ = create_keypair(their_seed)
+            their_verkey_bin, _ = create_keypair(their_seed.encode())
             their_verkey = bytes_to_b58(their_verkey_bin)
         their_info = DIDInfo(their_did, their_verkey, {})
 
@@ -835,7 +835,7 @@ class ConnectionManager:
             router_id = router.inbound_connection_id
 
         for endpoint_index, svc_endpoint in enumerate(svc_endpoints):
-            endpoint_ident = "indy" if endpoint_index == 0 else f'indy{endpoint_index}'
+            endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
             service = Service(
                 did_info.did,
                 endpoint_ident,
@@ -869,14 +869,18 @@ class ConnectionManager:
         assert did_doc.did
         storage: BaseStorage = await self.context.inject(BaseStorage)
         try:
-            record = await self.fetch_did_document(did_doc.did)
+            storage: BaseStorage = await self.context.inject(BaseStorage)
+            record = await storage.search_records(
+                self.RECORD_TYPE_DID_DOC, {"did": did_doc.did}
+            ).fetch_single()
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC, did_doc.to_json(), {"did": did_doc.did}
             )
             await storage.add_record(record)
         else:
-            await storage.update_record_value(record, did_doc.value)
+            await storage.update_record_value(record, did_doc.to_json())
+
         await self.remove_keys_for_did(did_doc.did)
         for key in did_doc.pubkey.values():
             if key.controller == did_doc.did:
@@ -967,8 +971,11 @@ class ConnectionManager:
         results = None
 
         if (
-            connection.state in (connection.STATE_INVITATION, connection.STATE_REQUEST)
-            and connection.initiator == connection.INITIATOR_EXTERNAL
+            connection.state in (
+                ConnectionRecord.STATE_INVITATION,
+                ConnectionRecord.STATE_REQUEST
+            )
+            and connection.initiator == ConnectionRecord.INITIATOR_EXTERNAL
         ):
             invitation = await connection.retrieve_invitation(self.context)
             if invitation.did:

@@ -1,7 +1,7 @@
 from unittest import mock, TestCase
 
+from .....messaging.models.base import BaseModelError
 from ...message_types import CONNECTION_INVITATION
-
 from ..connection_invitation import ConnectionInvitation
 
 
@@ -73,6 +73,10 @@ class TestConnectionInvitation(TestCase):
         invitation = ConnectionInvitation.from_url(url)
         assert isinstance(invitation, ConnectionInvitation)
 
+    def test_from_no_url(self):
+        url = "http://aries.ca/no_ci"
+        assert ConnectionInvitation.from_url(url) is None
+
 
 class TestConnectionInvitationSchema(TestCase):
 
@@ -84,3 +88,29 @@ class TestConnectionInvitationSchema(TestCase):
         data = self.connection_invitation.serialize()
         model_instance = ConnectionInvitation.deserialize(data)
         assert isinstance(model_instance, ConnectionInvitation)
+
+    def test_make_model_invalid(self):
+        x_conns = [
+            ConnectionInvitation(
+                label="did-and-recip-keys",
+                did="did:sov:QmWbsNYhMrjHiqZDTUTEJs",
+                recipient_keys=["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+            ),
+            ConnectionInvitation(
+                label="did-and-endpoint",
+                did="did:sov:QmWbsNYhMrjHiqZDTUTEJs",
+                endpoint = "https://example.com/endpoint",
+            ),
+            ConnectionInvitation(
+                label="no-did-no-recip-keys",
+                endpoint = "https://example.com/endpoint",
+            ),
+            ConnectionInvitation(
+                label="no-did-no-endpoint",
+                recipient_keys=["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+            )
+        ]
+        for x_conn in x_conns:
+            data = x_conn.serialize()
+            with self.assertRaises(BaseModelError):
+                ConnectionInvitation.deserialize(data)
