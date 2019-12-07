@@ -211,7 +211,18 @@ async def connections_retrieve(request: web.BaseRequest):
             "schema": {"type": "string", "enum": ["none", "auto"]},
             "required": False,
         },
-        {"name": "public", "in": "query", "schema": {"type": "int"}, "required": False},
+        {
+            "name": "public",
+            "in": "query",
+            "schema": {"type": "int"},
+            "required": False
+        },
+        {
+            "name": "multi_use",
+            "in": "query",
+            "schema": {"type": "int"},
+            "required": False
+        },
     ],
 )
 @response_schema(InvitationResultSchema(), 200)
@@ -375,8 +386,8 @@ async def connections_accept_request(request: web.BaseRequest):
         raise web.HTTPNotFound()
     connection_mgr = ConnectionManager(context)
     my_endpoint = request.query.get("my_endpoint") or None
-    request = await connection_mgr.create_response(connection, my_endpoint)
-    await outbound_handler(request, connection_id=connection.connection_id)
+    response = await connection_mgr.create_response(connection, my_endpoint)
+    await outbound_handler(response, connection_id=connection.connection_id)
     return web.json_response(connection.serialize())
 
 

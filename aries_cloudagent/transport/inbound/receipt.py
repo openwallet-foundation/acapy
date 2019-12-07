@@ -21,7 +21,7 @@ class MessageReceipt:
         raw_message: str = None,
         recipient_verkey: str = None,
         recipient_did: str = None,
-        recipient_did_public: str = None,
+        recipient_did_public: bool = None,
         sender_did: str = None,
         sender_verkey: str = None,
         thread_id: str = None,
