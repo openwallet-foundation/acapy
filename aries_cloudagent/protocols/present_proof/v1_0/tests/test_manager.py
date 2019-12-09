@@ -46,9 +46,9 @@ PRES_PREVIEW = PresentationPreview(
         )
     ],
 )
-PROOF_REQ_NAME="name"
-PROOF_REQ_VERSION="1.0"
-PROOF_REQ_NONCE="12345"
+PROOF_REQ_NAME = "name"
+PROOF_REQ_VERSION = "1.0"
+PROOF_REQ_NONCE = "12345"
 
 
 class TestPresentationManager(AsyncTestCase):
@@ -69,22 +69,15 @@ class TestPresentationManager(AsyncTestCase):
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        self.holder.get_credentials_for_presentation_request_by_referent = (
-            async_mock.CoroutineMock(
-                return_value=(
-                    {
-                        "cred_info": {
-                            "referent": "dummy_reft"
-                    }
+        self.holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+            return_value=(
+                {
+                    "cred_info": {"referent": "dummy_reft"}
                 },  # leave this comma: return a tuple
-                )
             )
         )
         self.holder.get_credential = async_mock.CoroutineMock(
-            return_value={
-                "schema_id": S_ID,
-                "cred_def_id": CD_ID,
-            }
+            return_value={"schema_id": S_ID, "cred_def_id": CD_ID}
         )
         self.holder.create_presentation = async_mock.CoroutineMock(
             return_value=async_mock.MagicMock()
@@ -93,10 +86,8 @@ class TestPresentationManager(AsyncTestCase):
 
         Verifier = async_mock.MagicMock(IndyVerifier, autospec=True)
         self.verifier = Verifier()
-        self.verifier.verify_presentation = (
-            async_mock.CoroutineMock(
-                return_value="true"
-            )
+        self.verifier.verify_presentation = async_mock.CoroutineMock(
+            return_value="true"
         )
         self.context.injector.bind_instance(BaseVerifier, self.verifier)
 
@@ -142,9 +133,7 @@ class TestPresentationManager(AsyncTestCase):
     async def test_create_bound_request(self):
         comment = "comment"
 
-        proposal = PresentationProposal(
-            presentation_proposal=PRES_PREVIEW
-        )
+        proposal = PresentationProposal(presentation_proposal=PRES_PREVIEW)
         exchange = V10PresentationExchange(
             presentation_proposal_dict=proposal.serialize(),
             role=V10PresentationExchange.ROLE_VERIFIER,
@@ -203,9 +192,7 @@ class TestPresentationManager(AsyncTestCase):
 
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
+            name=PROOF_REQ_NAME, version=PROOF_REQ_VERSION, nonce=PROOF_REQ_NONCE
         )
 
         request = async_mock.MagicMock()
@@ -226,8 +213,8 @@ class TestPresentationManager(AsyncTestCase):
                 indy_proof_req, self.holder
             )
 
-            (exchange_out, pres_msg) = (
-                await self.manager.create_presentation(exchange_in, req_creds)
+            (exchange_out, pres_msg) = await self.manager.create_presentation(
+                exchange_in, req_creds
             )
             save_ex.assert_called_once()
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
@@ -235,26 +222,20 @@ class TestPresentationManager(AsyncTestCase):
     async def test_no_matching_creds_for_proof_req(self):
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
-            name=PROOF_REQ_NAME,
-            version=PROOF_REQ_VERSION,
-            nonce=PROOF_REQ_NONCE,
+            name=PROOF_REQ_NAME, version=PROOF_REQ_VERSION, nonce=PROOF_REQ_NONCE
         )
         self.holder.get_credentials_for_presentation_request_by_referent.return_value = ()
 
         with self.assertRaises(ValueError):
-            await indy_proof_request2indy_requested_creds(
-                indy_proof_req, self.holder
-            )
+            await indy_proof_request2indy_requested_creds(indy_proof_req, self.holder)
 
         self.holder.get_credentials_for_presentation_request_by_referent.return_value = (
             {
-                "cred_info": {
-                    "referent": "dummy_reft"
-                }
+                "cred_info": {"referent": "dummy_reft"}
             },  # leave this comma: return a tuple
         )
 
-    async def test_receive_presentation(self):
+    async def test_receive_presentation_active_connection(self):
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = CONN_ID
 
@@ -268,6 +249,33 @@ class TestPresentationManager(AsyncTestCase):
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation()
+            retrieve_ex.assert_called_once_with(
+                self.context,
+                {"thread_id": self.context.message._thread_id},
+                {"connection_id": self.context.connection_record.connection_id},
+            )
+            save_ex.assert_called_once()
+
+            assert exchange_out.state == (
+                V10PresentationExchange.STATE_PRESENTATION_RECEIVED
+            )
+
+    async def test_receive_presentation_connection_less(self):
+        exchange_dummy = V10PresentationExchange()
+        self.context.message = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = exchange_dummy
+            exchange_out = await self.manager.receive_presentation()
+            retrieve_ex.assert_called_once_with(
+                self.context,
+                {"thread_id": self.context.message._thread_id},
+                None,
+            )
             save_ex.assert_called_once()
 
             assert exchange_out.state == (
@@ -277,12 +285,7 @@ class TestPresentationManager(AsyncTestCase):
     async def test_verify_presentation(self):
         exchange_in = V10PresentationExchange()
         exchange_in.presentation = {
-            "identifiers": [
-                {
-                    "schema_id": S_ID,
-                    "cred_def_id": CD_ID,
-                }
-            ]
+            "identifiers": [{"schema_id": S_ID, "cred_def_id": CD_ID}]
         }
 
         with async_mock.patch.object(
@@ -291,9 +294,7 @@ class TestPresentationManager(AsyncTestCase):
             exchange_out = await self.manager.verify_presentation(exchange_in)
             save_ex.assert_called_once()
 
-            assert exchange_out.state == (
-                V10PresentationExchange.STATE_VERIFIED
-            )
+            assert exchange_out.state == (V10PresentationExchange.STATE_VERIFIED)
 
     async def test_send_presentation_ack(self):
         exchange = V10PresentationExchange()
