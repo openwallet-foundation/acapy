@@ -44,7 +44,7 @@ class PluginRegistry:
                 if mod:
                     self._plugins[module_name] = mod
                 else:
-                    LOGGER.warning("Plugin module not found: %s", module_name)
+                    LOGGER.error("Plugin module not found: %s", module_name)
         return mod
 
     def register_package(self, package_name: str) -> Sequence[ModuleType]:
