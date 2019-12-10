@@ -81,11 +81,14 @@ class WebhookTarget:
     """Class for managing webhook target information."""
 
     def __init__(
-        self, endpoint: str, topic_filter: Sequence[str] = None, retries: int = None
+        self,
+        endpoint: str,
+        topic_filter: Sequence[str] = None,
+        max_attempts: int = None,
     ):
         """Initialize the webhook target."""
         self.endpoint = endpoint
-        self.retries = retries
+        self.max_attempts = max_attempts
         self._topic_filter = None
         self.topic_filter = topic_filter  # call setter
 
@@ -398,11 +401,14 @@ class AdminServer(BaseAdminServer):
         return ws
 
     def add_webhook_target(
-        self, target_url: str, topic_filter: Sequence[str] = None, retries: int = None
+        self,
+        target_url: str,
+        topic_filter: Sequence[str] = None,
+        max_attempts: int = None,
     ):
         """Add a webhook target."""
         self.webhook_targets[target_url] = WebhookTarget(
-            target_url, topic_filter, retries
+            target_url, topic_filter, max_attempts
         )
 
     def remove_webhook_target(self, target_url: str):
@@ -415,7 +421,9 @@ class AdminServer(BaseAdminServer):
         if self.webhook_router:
             for idx, target in self.webhook_targets.items():
                 if not target.topic_filter or topic in target.topic_filter:
-                    self.webhook_router(topic, payload, target.endpoint, target.retries)
+                    self.webhook_router(
+                        topic, payload, target.endpoint, target.max_attempts
+                    )
 
         for queue in self.websocket_queues.values():
             await queue.enqueue({"topic": topic, "payload": payload})
