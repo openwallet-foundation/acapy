@@ -1,6 +1,6 @@
 """Admin error classes."""
 
-from ..error import BaseError
+from ..core.error import BaseError
 
 
 class AdminError(BaseError):

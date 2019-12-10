@@ -8,7 +8,7 @@ in response to the message being handled.
 from abc import ABC, abstractmethod
 from typing import Sequence, Union
 
-from ..error import BaseError
+from ..core.error import BaseError
 from ..connections.models.connection_target import ConnectionTarget
 from ..transport.outbound.message import OutboundMessage
 

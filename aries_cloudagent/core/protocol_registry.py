@@ -2,8 +2,8 @@
 
 from typing import Mapping, Sequence
 
-from ..classloader import ClassLoader
 from ..config.injection_context import InjectionContext
+from ..utils.classloader import ClassLoader
 
 
 class ProtocolRegistry:

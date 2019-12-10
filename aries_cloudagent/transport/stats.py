@@ -2,7 +2,7 @@
 
 import aiohttp
 
-from ..stats import Collector
+from ..utils.stats import Collector
 
 
 class StatsTracer(aiohttp.TraceConfig):

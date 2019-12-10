@@ -5,7 +5,7 @@ from typing import Mapping, Tuple
 
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
-from ....error import BaseError
+from ....core.error import BaseError
 from ....holder.base import BaseHolder
 from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger

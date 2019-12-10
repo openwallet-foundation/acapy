@@ -6,8 +6,8 @@ from typing import Union
 
 from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError
 
-from ...classloader import ClassLoader
-from ...error import BaseError
+from ...core.error import BaseError
+from ...utils.classloader import ClassLoader
 
 LOGGER = logging.getLogger(__name__)
 

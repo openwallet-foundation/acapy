@@ -1,7 +1,7 @@
 """Handler for incoming query messages."""
 
+from ....core.protocol_registry import ProtocolRegistry
 from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
-from ....messaging.protocol_registry import ProtocolRegistry
 
 from ..messages.disclose import Disclose
 from ..messages.query import Query

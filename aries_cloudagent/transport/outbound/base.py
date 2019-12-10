@@ -4,7 +4,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Union
 
-from ...stats import Collector
+from ...utils.stats import Collector
 
 from ..error import TransportError
 from ..wire_format import BaseWireFormat

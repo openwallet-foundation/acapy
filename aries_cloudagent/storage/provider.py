@@ -2,8 +2,8 @@
 
 import logging
 
-from ..classloader import ClassLoader
 from ..config.base import BaseProvider, BaseInjector, BaseSettings
+from ..utils.classloader import ClassLoader
 from ..wallet.base import BaseWallet
 
 LOGGER = logging.getLogger(__name__)

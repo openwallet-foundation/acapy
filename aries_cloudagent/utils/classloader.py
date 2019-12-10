@@ -9,7 +9,7 @@ from importlib.util import find_spec, resolve_name
 from types import ModuleType
 from typing import Sequence, Type
 
-from .error import BaseError
+from ..core.error import BaseError
 
 
 class ModuleLoadError(BaseError):

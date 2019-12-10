@@ -1,6 +1,6 @@
 """Ledger related errors."""
 
-from ..error import BaseError
+from ..core.error import BaseError
 
 
 class LedgerError(BaseError):

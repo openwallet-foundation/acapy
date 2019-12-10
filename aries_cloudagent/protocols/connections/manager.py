@@ -10,7 +10,7 @@ from ...connections.models.connection_target import ConnectionTarget
 from ...connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ...config.base import InjectorError
 from ...config.injection_context import InjectionContext
-from ...error import BaseError
+from ...core.error import BaseError
 from ...ledger.base import BaseLedger
 from ...messaging.responder import BaseResponder
 from ...storage.base import BaseStorage

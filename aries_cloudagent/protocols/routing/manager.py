@@ -4,7 +4,7 @@ import json
 from typing import Sequence
 
 from ...config.injection_context import InjectionContext
-from ...error import BaseError
+from ...core.error import BaseError
 from ...messaging.util import time_now
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError, StorageDuplicateError, StorageNotFoundError

@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from ...error import BaseError
+from ...core.error import BaseError
 from ...messaging.request_context import RequestContext
 
 from .messages.invitation import Invitation

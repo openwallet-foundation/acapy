@@ -11,7 +11,7 @@ from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
 from ..ledger.base import BaseLedger
-from ..transport.util import http_fetch, TransportFetchError
+from ..utils.http import fetch, FetchError
 
 from .base import ConfigError
 from .injection_context import InjectionContext
@@ -25,8 +25,8 @@ async def fetch_genesis_transactions(genesis_url: str) -> str:
     headers["Content-Type"] = "application/json"
     LOGGER.info("Fetching genesis transactions from: %s", genesis_url)
     try:
-        return await http_fetch(genesis_url, headers=headers)
-    except TransportFetchError as e:
+        return await fetch(genesis_url, headers=headers)
+    except FetchError as e:
         raise ConfigError("Error retrieving ledger genesis transactions") from e
 
 

@@ -1,7 +1,7 @@
 from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 
-from ..util import http_fetch, TransportFetchError
+from ..http import fetch, FetchError
 
 
 class TestTransportUtils(AioHTTPTestCase):
@@ -26,19 +26,19 @@ class TestTransportUtils(AioHTTPTestCase):
         return ret
 
     @unittest_run_loop
-    async def test_http_fetch(self):
+    async def test_fetch(self):
         server_addr = f"http://localhost:{self.server.port}"
-        result = await http_fetch(
+        result = await fetch(
             f"{server_addr}/succeed", session=self.client.session, json=True
         )
         assert result == [1]
         assert self.succeed_calls == 1
 
     @unittest_run_loop
-    async def test_http_fetch_fail(self):
+    async def test_fetch_fail(self):
         server_addr = f"http://localhost:{self.server.port}"
-        with self.assertRaises(TransportFetchError):
-            result = await http_fetch(
+        with self.assertRaises(FetchError):
+            result = await fetch(
                 f"{server_addr}/fail",
                 max_attempts=2,
                 interval=0,

@@ -13,7 +13,7 @@ try:
 except ImportError:
     uvloop = None
 
-from ..conductor import Conductor
+from ..core.conductor import Conductor
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.util import common_config
