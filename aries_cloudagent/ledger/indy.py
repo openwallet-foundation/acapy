@@ -742,10 +742,11 @@ class IndyLedger(BaseLedger):
         )
         response_json = await self._submit(get_taa_req, public_did=public_did)
         taa_found = (json.loads(response_json))["result"]["data"]
-        taa_required = taa_found and taa_found["text"]
+        taa_required = bool(taa_found and taa_found["text"])
         if taa_found:
-            taa_plaintext = taa_found["version"] + taa_found["text"]
-            taa_found["digest"] = sha256(taa_plaintext.encode("utf-8")).digest().hex()
+            taa_found["digest"] = self.taa_digest(
+                taa_found["version"], taa_found["text"]
+            )
 
         return {
             "aml_record": aml_found,
@@ -764,12 +765,15 @@ class IndyLedger(BaseLedger):
         """
         return int(datetime.combine(date.today(), datetime.min.time()).timestamp())
 
+    def taa_digest(self, version: str, text: str):
+        """Generate the digest of a TAA record."""
+        if not version or not text:
+            raise ValueError("Bad input for TAA digest")
+        taa_plaintext = version + text
+        return sha256(taa_plaintext.encode("utf-8")).digest().hex()
+
     async def accept_txn_author_agreement(
-        self,
-        taa_record: dict,
-        mechanism: str,
-        accept_time: int = None,
-        store: bool = False,
+        self, taa_record: dict, mechanism: str, accept_time: int = None
     ):
         """Save a new record recording the acceptance of the TAA."""
         if not accept_time:

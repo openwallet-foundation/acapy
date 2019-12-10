@@ -48,8 +48,9 @@ class BaseLedger(ABC):
         """
 
     @abstractmethod
-    async def register_nym(self, did: str, verkey: str, alias: str = None,
-                           role: str = None):
+    async def register_nym(
+        self, did: str, verkey: str, alias: str = None, role: str = None
+    ):
         """
         Register a nym on the ledger.
 
@@ -68,3 +69,20 @@ class BaseLedger(ABC):
         """Remove the ledger's DID prefix to produce a nym."""
         if did:
             return re.sub(r"^did:\w+:", "", did)
+
+    async def get_txn_author_agreement(self, reload: bool = False):
+        """Get the current transaction author agreement, fetching it if necessary."""
+
+    async def fetch_txn_author_agreement(self):
+        """Fetch the current AML and TAA from the ledger."""
+
+    async def accept_txn_author_agreement(
+        self, taa_record: dict, mechanism: str, accept_time: int = None
+    ):
+        """Save a new record recording the acceptance of the TAA."""
+
+    async def get_latest_txn_author_acceptance(self):
+        """Look up the latest TAA acceptance."""
+
+    def taa_digest(self, version: str, text: str):
+        """Generate the digest of a TAA record."""
