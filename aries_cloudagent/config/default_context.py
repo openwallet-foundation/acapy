@@ -20,7 +20,6 @@ from ..protocols.introduction.demo_service import DemoIntroductionService
 from ..stats import Collector
 from ..storage.base import BaseStorage
 from ..storage.provider import StorageProvider
-from ..transport.pack_format import PackWireFormat
 from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.provider import WalletProvider
@@ -67,14 +66,12 @@ class DefaultContextBuilder(ContextBuilder):
                 StatsProvider(
                     WalletProvider(),
                     (
-                        "create",
-                        "open",
                         "sign_message",
                         "verify_message",
                         "encrypt_message",
                         "decrypt_message",
-                        "pack_message",
-                        "unpack_message",
+                        # "pack_message",
+                        # "unpack_message",
                         "get_local_did",
                     ),
                 )
@@ -128,7 +125,12 @@ class DefaultContextBuilder(ContextBuilder):
             BaseWireFormat,
             CachedProvider(
                 StatsProvider(
-                    ClassProvider(PackWireFormat), ("encode_message", "parse_message"),
+                    ClassProvider(
+                        "aries_cloudagent.transport.pack_format.PackWireFormat"
+                    ),
+                    (
+                        # "encode_message", "parse_message"
+                    ),
                 )
             ),
         )

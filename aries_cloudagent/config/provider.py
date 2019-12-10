@@ -103,7 +103,10 @@ class StatsProvider(BaseProvider):
     async def provide(self, config: BaseSettings, injector: BaseInjector):
         """Provide the object instance given a config and injector."""
         instance = await self._provider.provide(config, injector)
-        collector: Collector = await injector.inject(Collector, required=False)
-        if collector:
-            collector.wrap(instance, self._methods, ignore_missing=self._ignore_missing)
+        if self._methods:
+            collector: Collector = await injector.inject(Collector, required=False)
+            if collector:
+                collector.wrap(
+                    instance, self._methods, ignore_missing=self._ignore_missing
+                )
         return instance
