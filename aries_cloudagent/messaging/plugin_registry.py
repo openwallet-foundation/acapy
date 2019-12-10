@@ -5,9 +5,9 @@ from collections import OrderedDict
 from types import ModuleType
 from typing import Sequence
 
-from ..classloader import ClassLoader, ModuleLoadError
 from ..config.injection_context import InjectionContext
 from ..messaging.protocol_registry import ProtocolRegistry
+from ..utils.classloader import ClassLoader, ModuleLoadError
 
 LOGGER = logging.getLogger(__name__)
 

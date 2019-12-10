@@ -4,7 +4,7 @@ import json
 import logging
 
 from ....config.injection_context import InjectionContext
-from ....error import BaseError
+from ....core.error import BaseError
 from ....holder.base import BaseHolder
 from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator

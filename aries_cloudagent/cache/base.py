@@ -4,7 +4,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Sequence, Text, Union
 
-from ..error import BaseError
+from ..core.error import BaseError
 
 
 class CacheError(BaseError):

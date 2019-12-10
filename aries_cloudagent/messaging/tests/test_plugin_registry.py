@@ -1,7 +1,7 @@
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ...classloader import ClassLoader
 from ...config.injection_context import InjectionContext
+from ...utils.classloader import ClassLoader
 
 from ..plugin_registry import PluginRegistry
 

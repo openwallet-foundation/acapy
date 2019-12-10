@@ -17,10 +17,10 @@ from ..protocols.actionmenu.base_service import BaseMenuService
 from ..protocols.actionmenu.driver_service import DriverMenuService
 from ..protocols.introduction.base_service import BaseIntroductionService
 from ..protocols.introduction.demo_service import DemoIntroductionService
-from ..stats import Collector
 from ..storage.base import BaseStorage
 from ..storage.provider import StorageProvider
 from ..transport.wire_format import BaseWireFormat
+from ..utils.stats import Collector
 from ..wallet.base import BaseWallet
 from ..wallet.provider import WalletProvider
 

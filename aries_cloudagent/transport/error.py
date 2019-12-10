@@ -1,6 +1,6 @@
 """Transport-related error classes and codes."""
 
-from ..error import BaseError
+from ..core.error import BaseError
 
 
 class TransportError(BaseError):

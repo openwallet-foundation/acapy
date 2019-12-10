@@ -3,7 +3,7 @@ import asyncio
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from aiohttp import web
 
-from ....stats import Collector
+from ....utils.stats import Collector
 
 from ...outbound.message import OutboundMessage
 

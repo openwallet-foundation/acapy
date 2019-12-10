@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Mapping
 
-from ..error import BaseError
+from ..core.error import BaseError
 
 
 class ConfigError(BaseError):

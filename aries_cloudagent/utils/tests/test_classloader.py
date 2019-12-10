@@ -1,8 +1,9 @@
 from unittest import TestCase, mock
 
-from .. import classloader
+from ...core.error import BaseError
+
+from .. import classloader as test_module
 from ..classloader import ClassLoader, ClassNotFoundError, ModuleLoadError
-from ..error import BaseError
 
 
 class TestClassLoader(TestCase):
@@ -10,24 +11,24 @@ class TestClassLoader(TestCase):
         assert ClassLoader.load_module("unittest")
 
     def test_import_local(self):
-        with mock.patch.object(classloader.sys, "modules", {}):
+        with mock.patch.object(test_module.sys, "modules", {}):
             assert (
                 ClassLoader.load_module("aries_cloudagent.transport").__name__
                 == "aries_cloudagent.transport"
             )
 
     def test_import_relative(self):
-        with mock.patch.object(classloader.sys, "modules", {}):
+        with mock.patch.object(test_module.sys, "modules", {}):
             assert (
                 ClassLoader.load_module("transport", "aries_cloudagent").__name__
                 == "aries_cloudagent.transport"
             )
-        with mock.patch.object(classloader.sys, "modules", {}):
+        with mock.patch.object(test_module.sys, "modules", {}):
             assert (
                 ClassLoader.load_module(".transport", "aries_cloudagent").__name__
                 == "aries_cloudagent.transport"
             )
-        with mock.patch.object(classloader.sys, "modules", {}):
+        with mock.patch.object(test_module.sys, "modules", {}):
             assert (
                 ClassLoader.load_module(
                     "..transport", "aries_cloudagent.config"
@@ -36,17 +37,17 @@ class TestClassLoader(TestCase):
             )
 
     def test_import_missing(self):
-        with mock.patch.object(classloader.sys, "modules", {}):
+        with mock.patch.object(test_module.sys, "modules", {}):
             assert ClassLoader.load_module("aries_cloudagent.not") is None
-        with mock.patch.object(classloader.sys, "modules", {}):
+        with mock.patch.object(test_module.sys, "modules", {}):
             assert ClassLoader.load_module("aries_cloudagent.not.a-module") is None
-        with mock.patch.object(classloader.sys, "modules", {}):
+        with mock.patch.object(test_module.sys, "modules", {}):
             assert ClassLoader.load_module("aries_cloudagent", "not.a-module") is None
 
     def test_import_error(self):
         with mock.patch.object(
-            classloader, "import_module", autospec=True
-        ) as import_module, mock.patch.object(classloader.sys, "modules", {}):
+            test_module, "import_module", autospec=True
+        ) as import_module, mock.patch.object(test_module.sys, "modules", {}):
             import_module.side_effect = ModuleNotFoundError
             with self.assertRaises(ModuleLoadError):
                 ClassLoader.load_module("aries_cloudagent.config")

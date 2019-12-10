@@ -2,9 +2,10 @@
 
 from typing import Sequence, Union
 
+from ..utils.classloader import ClassLoader
+from ..utils.stats import Collector
+
 from .base import BaseProvider, BaseSettings, BaseInjector
-from ..classloader import ClassLoader
-from ..stats import Collector
 
 
 class InstanceProvider(BaseProvider):

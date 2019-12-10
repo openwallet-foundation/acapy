@@ -4,30 +4,30 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .. import conductor as test_module
-from ..admin.base_server import BaseAdminServer
-from ..config.base_context import ContextBuilder
-from ..config.injection_context import InjectionContext
-from ..protocols.connections.manager import ConnectionManager
-from ..connections.models.connection_record import ConnectionRecord
-from ..connections.models.connection_target import ConnectionTarget
-from ..connections.models.diddoc import (
+from ...admin.base_server import BaseAdminServer
+from ...config.base_context import ContextBuilder
+from ...config.injection_context import InjectionContext
+from ...connections.models.connection_record import ConnectionRecord
+from ...connections.models.connection_target import ConnectionTarget
+from ...connections.models.diddoc import (
     DIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
 )
-from ..messaging.protocol_registry import ProtocolRegistry
-from ..stats import Collector
-from ..storage.base import BaseStorage
-from ..storage.basic import BasicStorage
-from ..transport.inbound.base import InboundTransportConfiguration
-from ..transport.inbound.message import InboundMessage
-from ..transport.inbound.receipt import MessageReceipt
-from ..transport.outbound.base import OutboundDeliveryError
-from ..transport.outbound.message import OutboundMessage
-from ..transport.wire_format import BaseWireFormat
-from ..wallet.base import BaseWallet
-from ..wallet.basic import BasicWallet
+from ...messaging.protocol_registry import ProtocolRegistry
+from ...protocols.connections.manager import ConnectionManager
+from ...storage.base import BaseStorage
+from ...storage.basic import BasicStorage
+from ...transport.inbound.base import InboundTransportConfiguration
+from ...transport.inbound.message import InboundMessage
+from ...transport.inbound.receipt import MessageReceipt
+from ...transport.outbound.base import OutboundDeliveryError
+from ...transport.outbound.message import OutboundMessage
+from ...transport.wire_format import BaseWireFormat
+from ...utils.stats import Collector
+from ...wallet.base import BaseWallet
+from ...wallet.basic import BasicWallet
 
 
 class Config:
