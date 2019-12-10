@@ -6,8 +6,9 @@ from types import ModuleType
 from typing import Sequence
 
 from ..config.injection_context import InjectionContext
-from ..messaging.protocol_registry import ProtocolRegistry
 from ..utils.classloader import ClassLoader, ModuleLoadError
+
+from .protocol_registry import ProtocolRegistry
 
 LOGGER = logging.getLogger(__name__)
 

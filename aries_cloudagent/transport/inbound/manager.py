@@ -7,8 +7,8 @@ from collections import OrderedDict
 from typing import Callable, Coroutine
 
 from ...config.injection_context import InjectionContext
-from ...messaging.task_queue import CompletedTask, TaskQueue
 from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
+from ...utils.task_queue import CompletedTask, TaskQueue
 
 from ..outbound.message import OutboundMessage
 from ..wire_format import BaseWireFormat

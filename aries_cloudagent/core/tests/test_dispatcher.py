@@ -3,16 +3,17 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from .. import dispatcher as test_module
 from ...config.injection_context import InjectionContext
 from ...connections.models.connection_record import ConnectionRecord
+from ...core.protocol_registry import ProtocolRegistry
 from ...messaging.agent_message import AgentMessage, AgentMessageSchema
 from ...messaging.error import MessageParseError
-from ...messaging.protocol_registry import ProtocolRegistry
 from ...protocols.problem_report.message import ProblemReport
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.message import OutboundMessage
+
+from .. import dispatcher as test_module
 
 
 def make_context() -> InjectionContext:

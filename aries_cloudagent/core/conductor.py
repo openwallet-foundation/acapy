@@ -19,7 +19,6 @@ from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..messaging.responder import BaseResponder
-from ..messaging.task_queue import CompletedTask, TaskQueue
 from ..protocols.connections.manager import ConnectionManager, ConnectionManagerError
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
@@ -27,6 +26,7 @@ from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
+from ..utils.task_queue import CompletedTask, TaskQueue
 from ..utils.stats import Collector
 
 from .dispatcher import Dispatcher

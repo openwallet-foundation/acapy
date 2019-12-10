@@ -15,7 +15,7 @@ from ...connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ...messaging.protocol_registry import ProtocolRegistry
+from ...core.protocol_registry import ProtocolRegistry
 from ...protocols.connections.manager import ConnectionManager
 from ...storage.base import BaseStorage
 from ...storage.basic import BasicStorage

@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ...messaging.protocol_registry import ProtocolRegistry
+from ...core.protocol_registry import ProtocolRegistry
 from ...storage.base import BaseStorage
 from ...transport.wire_format import BaseWireFormat
 from ...wallet.base import BaseWallet

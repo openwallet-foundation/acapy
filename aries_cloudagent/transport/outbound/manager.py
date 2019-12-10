@@ -10,9 +10,9 @@ from urllib.parse import urlparse
 
 from ...connections.models.connection_target import ConnectionTarget
 from ...config.injection_context import InjectionContext
-from ...messaging.task_queue import CompletedTask, TaskQueue, task_exc_info
 from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...utils.stats import Collector
+from ...utils.task_queue import CompletedTask, TaskQueue, task_exc_info
 
 from ..wire_format import BaseWireFormat
 

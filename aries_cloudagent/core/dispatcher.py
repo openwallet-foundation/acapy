@@ -13,19 +13,19 @@ from typing import Callable, Coroutine, Union
 from aiohttp.web import HTTPException
 
 from ..config.injection_context import InjectionContext
+from ..core.protocol_registry import ProtocolRegistry
 from ..messaging.agent_message import AgentMessage
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
-from ..messaging.protocol_registry import ProtocolRegistry
 from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder
-from ..messaging.task_queue import CompletedTask, PendingTask, TaskQueue
 from ..messaging.util import datetime_now
 from ..protocols.connections.manager import ConnectionManager
 from ..protocols.problem_report.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
+from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 
 LOGGER = logging.getLogger(__name__)
 

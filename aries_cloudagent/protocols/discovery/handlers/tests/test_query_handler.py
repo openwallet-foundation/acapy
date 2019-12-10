@@ -1,7 +1,7 @@
 import pytest
 
+from .....core.protocol_registry import ProtocolRegistry
 from .....messaging.base_handler import HandlerException
-from .....messaging.protocol_registry import ProtocolRegistry
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
 

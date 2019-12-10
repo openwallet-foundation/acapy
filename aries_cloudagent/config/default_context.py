@@ -6,13 +6,13 @@ from .provider import CachedProvider, ClassProvider, StatsProvider
 
 from ..cache.base import BaseCache
 from ..cache.basic import BasicCache
+from ..core.plugin_registry import PluginRegistry
+from ..core.protocol_registry import ProtocolRegistry
 from ..ledger.base import BaseLedger
 from ..ledger.provider import LedgerProvider
 from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
-from ..messaging.plugin_registry import PluginRegistry
-from ..messaging.protocol_registry import ProtocolRegistry
 from ..protocols.actionmenu.base_service import BaseMenuService
 from ..protocols.actionmenu.driver_service import DriverMenuService
 from ..protocols.introduction.base_service import BaseIntroductionService

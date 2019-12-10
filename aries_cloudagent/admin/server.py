@@ -12,12 +12,12 @@ import aiohttp_cors
 from marshmallow import fields, Schema
 
 from ..config.injection_context import InjectionContext
-from ..messaging.plugin_registry import PluginRegistry
+from ..core.plugin_registry import PluginRegistry
 from ..messaging.responder import BaseResponder
-from ..messaging.task_queue import TaskQueue
 from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
+from ..utils.task_queue import TaskQueue
 from ..version import __version__
 
 from .base_server import BaseAdminServer

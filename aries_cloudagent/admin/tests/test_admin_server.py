@@ -8,8 +8,8 @@ from asynctest.mock import patch
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
-from ...messaging.plugin_registry import PluginRegistry
-from ...messaging.protocol_registry import ProtocolRegistry
+from ...core.plugin_registry import PluginRegistry
+from ...core.protocol_registry import ProtocolRegistry
 from ...transport.outbound.message import OutboundMessage
 
 from ..server import AdminServer
