@@ -35,6 +35,7 @@ from .models.presentation_exchange import (
 
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST
 
+
 class V10PresentationExchangeListSchema(Schema):
     """Result schema for an Aries#0037 v1.0 presentation exchange query."""
 
