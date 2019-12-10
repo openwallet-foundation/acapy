@@ -30,12 +30,13 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.serialize = async_mock.MagicMock()
             mock_presentation_exchange.serialize.return_value = {"hello": "world"}
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
-            await test_module.presentation_exchange_list(mock)
-            test_module.web.json_response.assert_called_once_with(
-                {"results": [mock_presentation_exchange.serialize.return_value]}
-            )
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_list(mock)
+                mock_response.assert_called_once_with(
+                    {"results": [mock_presentation_exchange.serialize.return_value]}
+                )
 
     async def test_presentation_exchange_credentials_list_not_found(self):
         mock = async_mock.MagicMock()
@@ -63,8 +64,6 @@ class TestProofRoutes(AsyncTestCase):
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_presentation_exchange:
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
             mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
                 mock_presentation_exchange
             )
@@ -81,9 +80,11 @@ class TestProofRoutes(AsyncTestCase):
                 returned_credentials
             )
 
-            await test_module.presentation_exchange_credentials_list(mock)
-
-            test_module.web.json_response.assert_called_once_with(returned_credentials)
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_credentials_list(mock)
+                mock_response.assert_called_once_with(returned_credentials)
 
     async def test_presentation_exchange_credentials_list_multiple_referents(self):
         mock = async_mock.MagicMock()
@@ -98,8 +99,6 @@ class TestProofRoutes(AsyncTestCase):
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_presentation_exchange:
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
             mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
                 mock_presentation_exchange
             )
@@ -116,9 +115,11 @@ class TestProofRoutes(AsyncTestCase):
                 returned_credentials
             )
 
-            await test_module.presentation_exchange_credentials_list(mock)
-
-            test_module.web.json_response.assert_called_once_with(returned_credentials)
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_credentials_list(mock)
+                mock_response.assert_called_once_with(returned_credentials)
 
     async def test_presentation_exchange_retrieve(self):
         mock = async_mock.MagicMock()
@@ -133,12 +134,13 @@ class TestProofRoutes(AsyncTestCase):
             mock_pres_ex.serialize = async_mock.MagicMock()
             mock_pres_ex.serialize.return_value = {"hello": "world"}
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
-            await test_module.presentation_exchange_retrieve(mock)
-            test_module.web.json_response.assert_called_once_with(
-                mock_pres_ex.serialize.return_value
-            )
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_retrieve(mock)
+                mock_response.assert_called_once_with(
+                    mock_pres_ex.serialize.return_value
+                )
 
     async def test_presentation_exchange_retrieve_not_found(self):
         mock = async_mock.MagicMock()
@@ -173,8 +175,6 @@ class TestProofRoutes(AsyncTestCase):
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal:
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
             mock_presentation_manager.return_value.create_exchange_for_proposal = (
                 async_mock.CoroutineMock()
             )
@@ -189,11 +189,13 @@ class TestProofRoutes(AsyncTestCase):
                 async_mock.MagicMock()
             )
 
-            await test_module.presentation_exchange_send_proposal(mock)
-
-            test_module.web.json_response.assert_called_once_with(
-                mock_presentation_exchange_record.serialize.return_value
-            )
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_send_proposal(mock)
+                mock_response.assert_called_once_with(
+                    mock_presentation_exchange_record.serialize.return_value
+                )
 
     async def test_presentation_exchange_send_proposal_no_conn_record(self):
         mock = async_mock.MagicMock()
@@ -209,8 +211,6 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_presentation_manager:
-
-            test_module.web.json_response = async_mock.CoroutineMock()
 
             # Emulate storage not found (bad connection id)
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -241,8 +241,6 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_presentation_manager:
-
-            test_module.web.json_response = async_mock.CoroutineMock()
 
             # Emulate connection not ready
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
@@ -288,17 +286,17 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.serialize = async_mock.MagicMock()
             mock_presentation_exchange.serialize.return_value = {"hello": "world"}
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
             mock_presentation_manager.return_value.create_exchange_for_request = async_mock.CoroutineMock(
                 return_value=mock_presentation_exchange
             )
 
-            await test_module.presentation_exchange_create_request(mock)
-
-            test_module.web.json_response.assert_called_once_with(
-                mock_presentation_exchange.serialize.return_value
-            )
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_create_request(mock)
+                mock_response.assert_called_once_with(
+                    mock_presentation_exchange.serialize.return_value
+                )
 
     async def test_presentation_exchange_send_free_request(self):
         mock = async_mock.MagicMock()
@@ -339,17 +337,17 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.serialize = async_mock.MagicMock()
             mock_presentation_exchange.serialize.return_value = {"hello": "world"}
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
             mock_presentation_manager.return_value.create_exchange_for_request = async_mock.CoroutineMock(
                 return_value=mock_presentation_exchange
             )
 
-            await test_module.presentation_exchange_send_free_request(mock)
-
-            test_module.web.json_response.assert_called_once_with(
-                mock_presentation_exchange.serialize.return_value
-            )
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_send_free_request(mock)
+                mock_response.assert_called_once_with(
+                    mock_presentation_exchange.serialize.return_value
+                )
 
     async def test_presentation_exchange_send_free_request_not_found(self):
         mock = async_mock.MagicMock()
@@ -435,17 +433,17 @@ class TestProofRoutes(AsyncTestCase):
                 return_value=mock_connection_record
             )
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
             mock_presentation_manager.return_value.create_bound_request = async_mock.CoroutineMock(
                 return_value=(mock_presentation_exchange, mock_presentation_request)
             )
 
-            await test_module.presentation_exchange_send_bound_request(mock)
-
-            test_module.web.json_response.assert_called_once_with(
-                mock_presentation_exchange.serialize.return_value
-            )
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_send_bound_request(mock)
+                mock_response.assert_called_once_with(
+                    mock_presentation_exchange.serialize.return_value
+                )
 
     async def test_presentation_exchange_send_bound_request_not_found(self):
         mock = async_mock.MagicMock()
@@ -561,17 +559,17 @@ class TestProofRoutes(AsyncTestCase):
                 return_value=mock_connection_record
             )
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
             mock_presentation_manager.return_value.create_presentation = async_mock.CoroutineMock(
                 return_value=(mock_presentation_exchange, async_mock.MagicMock())
             )
 
-            await test_module.presentation_exchange_send_presentation(mock)
-
-            test_module.web.json_response.assert_called_once_with(
-                mock_presentation_exchange.serialize.return_value
-            )
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_send_presentation(mock)
+                mock_response.assert_called_once_with(
+                    mock_presentation_exchange.serialize.return_value
+                )
 
     async def test_presentation_exchange_send_presentation_not_found(self):
         mock = async_mock.MagicMock()
@@ -659,17 +657,17 @@ class TestProofRoutes(AsyncTestCase):
                 return_value=mock_connection_record
             )
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
             mock_presentation_manager.return_value.verify_presentation = async_mock.CoroutineMock(
                 return_value=mock_presentation_exchange
             )
 
-            await test_module.presentation_exchange_verify_presentation(mock)
-
-            test_module.web.json_response.assert_called_once_with(
-                mock_presentation_exchange.serialize.return_value
-            )
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_verify_presentation(mock)
+                mock_response.assert_called_once_with(
+                    mock_presentation_exchange.serialize.return_value
+                )
 
     async def test_presentation_exchange_verify_presentation_not_found(self):
         mock = async_mock.MagicMock()
@@ -736,11 +734,11 @@ class TestProofRoutes(AsyncTestCase):
 
             mock_presentation_exchange.delete_record = async_mock.CoroutineMock()
 
-            test_module.web.json_response = async_mock.CoroutineMock()
-
-            await test_module.presentation_exchange_remove(mock)
-
-            test_module.web.json_response.assert_called_once_with({})
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_remove(mock)
+                mock_response.assert_called_once_with({})
 
     async def test_presentation_exchange_remove_not_found(self):
         mock_request = async_mock.MagicMock()

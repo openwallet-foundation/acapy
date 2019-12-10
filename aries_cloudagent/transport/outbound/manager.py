@@ -247,12 +247,12 @@ class OutboundTransportManager:
             raise OutboundDeliveryError("No supported transport for outbound message")
 
         queued = QueuedOutboundMessage(context, outbound, target, transport_id)
-        queued.retries = 5
+        queued.retries = 4
         self.outbound_new.append(queued)
         self.process_queued()
 
     def enqueue_webhook(
-        self, topic: str, payload: dict, endpoint: str, retries: int = None
+        self, topic: str, payload: dict, endpoint: str, max_attempts: int = None
     ):
         """
         Add a webhook to the queue.
@@ -261,7 +261,7 @@ class OutboundTransportManager:
             topic: The webhook topic
             payload: The webhook payload
             endpoint: The webhook endpoint
-            retries: Override the number of retries
+            max_attempts: Override the maximum number of attempts
 
         Raises:
             OutboundDeliveryError: if the associated transport is not running
@@ -272,7 +272,7 @@ class OutboundTransportManager:
         queued.endpoint = f"{endpoint}/topic/{topic}/"
         queued.payload = json.dumps(payload)
         queued.state = QueuedOutboundMessage.STATE_PENDING
-        queued.retries = 5 if retries is None else retries
+        queued.retries = 4 if max_attempts is None else max_attempts - 1
         self.outbound_new.append(queued)
         self.process_queued()
 

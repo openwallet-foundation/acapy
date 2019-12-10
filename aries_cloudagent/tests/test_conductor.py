@@ -289,17 +289,17 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         test_topic = "test-topic"
         test_payload = {"test": "payload"}
         test_endpoint = "http://example"
-        test_retries = 2
+        test_attempts = 2
 
         await conductor.setup()
         with async_mock.patch.object(
             conductor.outbound_transport_manager, "enqueue_webhook"
         ) as mock_enqueue:
             conductor.webhook_router(
-                test_topic, test_payload, test_endpoint, test_retries
+                test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
-                test_topic, test_payload, test_endpoint, test_retries
+                test_topic, test_payload, test_endpoint, test_attempts
             )
 
         # swallow error
@@ -309,9 +309,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             side_effect=OutboundDeliveryError,
         ) as mock_enqueue:
             conductor.webhook_router(
-                test_topic, test_payload, test_endpoint, test_retries
+                test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
-                test_topic, test_payload, test_endpoint, test_retries
+                test_topic, test_payload, test_endpoint, test_attempts
             )
 

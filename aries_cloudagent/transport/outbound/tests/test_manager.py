@@ -89,11 +89,11 @@ class TestOutboundTransportManager(AsyncTestCase):
         test_topic = "test-topic"
         test_payload = {"test": "payload"}
         test_endpoint = "http://example"
-        test_retries = 2
+        test_attempts = 2
 
         with self.assertRaises(OutboundDeliveryError):
             mgr.enqueue_webhook(
-                test_topic, test_payload, test_endpoint, retries=test_retries
+                test_topic, test_payload, test_endpoint, max_attempts=test_attempts
             )
 
         transport_cls = async_mock.MagicMock()
@@ -106,12 +106,12 @@ class TestOutboundTransportManager(AsyncTestCase):
 
         with async_mock.patch.object(mgr, "process_queued") as mock_process:
             mgr.enqueue_webhook(
-                test_topic, test_payload, test_endpoint, retries=test_retries
+                test_topic, test_payload, test_endpoint, max_attempts=test_attempts
             )
             mock_process.assert_called_once_with()
             assert len(mgr.outbound_new) == 1
             queued = mgr.outbound_new[0]
             assert queued.endpoint == f"{test_endpoint}/topic/{test_topic}/"
             assert json.loads(queued.payload) == test_payload
-            assert queued.retries == test_retries
+            assert queued.retries == test_attempts - 1
             assert queued.state == QueuedOutboundMessage.STATE_PENDING

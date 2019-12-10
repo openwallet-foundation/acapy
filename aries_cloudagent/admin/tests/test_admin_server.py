@@ -74,13 +74,13 @@ class TestAdminServerBasic(AsyncTestCase):
     async def test_responder_webhook(self):
         admin_server = self.get_admin_server()
         test_url = "target_url"
-        test_retries = 99
-        admin_server.add_webhook_target(test_url, retries=test_retries)
+        test_attempts = 99
+        admin_server.add_webhook_target(test_url, max_attempts=test_attempts)
         test_topic = "test_topic"
         test_payload = {"test": "TEST"}
         await admin_server.responder.send_webhook(test_topic, test_payload)
         assert self.webhook_results == [
-            (test_topic, test_payload, test_url, test_retries)
+            (test_topic, test_payload, test_url, test_attempts)
         ]
 
     async def test_import_routes(self):

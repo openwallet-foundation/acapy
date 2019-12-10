@@ -12,15 +12,10 @@ from .. import routes as test_module
 
 class TestIntroductionRoutes(AsyncTestCase):
     async def test_introduction_start_no_service(self):
-        context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
 
         mock_req = async_mock.MagicMock()
-        mock_req.app = {
-            "request_context": context,
-            "outbound_message_router": None
-        }
+        mock_req.app = {"request_context": context, "outbound_message_router": None}
         mock_req.json = async_mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
@@ -43,15 +38,10 @@ class TestIntroductionRoutes(AsyncTestCase):
             await test_module.introduction_start(mock_req)
 
     async def test_introduction_start(self):
-        context = RequestContext(
-            base_context=InjectionContext(enforce_typing=False)
-        )
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
 
         mock_req = async_mock.MagicMock()
-        mock_req.app = {
-            "request_context": context,
-            "outbound_message_router": None
-        }
+        mock_req.app = {"request_context": context, "outbound_message_router": None}
         mock_req.json = async_mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
@@ -73,11 +63,11 @@ class TestIntroductionRoutes(AsyncTestCase):
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
 
-        test_module.web.json_response = async_mock.CoroutineMock()
-
         with async_mock.patch.object(
             context, "inject", async_mock.CoroutineMock()
-        ) as mock_ctx_inject:
+        ) as mock_ctx_inject, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
             mock_ctx_inject.return_value = async_mock.MagicMock(
                 start_introduction=async_mock.CoroutineMock()
             )
@@ -89,7 +79,7 @@ class TestIntroductionRoutes(AsyncTestCase):
                 mock_req.query["message"],
                 mock_req.app["outbound_message_router"],
             )
-            test_module.web.json_response.assert_called_once_with({})
+            mock_response.assert_called_once_with({})
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
