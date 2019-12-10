@@ -33,6 +33,7 @@ from .models.presentation_exchange import (
     V10PresentationExchangeSchema,
 )
 
+from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST
 
 class V10PresentationExchangeListSchema(Schema):
     """Result schema for an Aries#0037 v1.0 presentation exchange query."""
@@ -460,7 +461,10 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     presentation_request_message = PresentationRequest(
         comment=comment,
         request_presentations_attach=[
-            AttachDecorator.from_indy_dict(indy_proof_request)
+            AttachDecorator.from_indy_dict(
+                indy_dict=indy_proof_request,
+                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+            )
         ],
     )
 
