@@ -59,7 +59,7 @@ class DemoIntroductionService(BaseIntroductionService):
         msg = InvitationRequest(responder=init_connection.their_label, message=message)
 
         record = StorageRecord(
-            type=self.RECORD_TYPE,
+            type=DemoIntroductionService.RECORD_TYPE,
             value=json.dumps({"thread_id": msg._id, "state": "pending"}),
             tags={
                 "init_connection_id": init_connection_id,
@@ -87,7 +87,10 @@ class DemoIntroductionService(BaseIntroductionService):
 
         tag_filter = {"target_connection_id": target_connection_id}
         storage: BaseStorage = await self._context.inject(BaseStorage)
-        records = await storage.search_records(self.RECORD_TYPE, tag_filter).fetch_all()
+        records = await storage.search_records(
+            DemoIntroductionService.RECORD_TYPE,
+            tag_filter,
+        ).fetch_all()
 
         found = False
         for row in records:

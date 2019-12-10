@@ -68,6 +68,7 @@ class TestDispatcher(AsyncTestCase):
             {StubAgentMessage.Meta.message_type: StubAgentMessage}
         )
         dispatcher = test_module.Dispatcher(context)
+        await dispatcher.setup()
         rcv = Receiver()
         message = {"@type": StubAgentMessage.Meta.message_type}
 
@@ -84,6 +85,7 @@ class TestDispatcher(AsyncTestCase):
 
     async def test_bad_message_dispatch(self):
         dispatcher = test_module.Dispatcher(make_context())
+        await dispatcher.setup()
         rcv = Receiver()
         bad_message = {"bad": "message"}
         await dispatcher.queue_message(make_inbound(bad_message), rcv.send)

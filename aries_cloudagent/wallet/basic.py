@@ -1,5 +1,6 @@
 """In-memory implementation of BaseWallet interface."""
 
+import asyncio
 from typing import Sequence
 
 from .base import BaseWallet, KeyInfo, DIDInfo
@@ -9,10 +10,6 @@ from .crypto import (
     validate_seed,
     sign_message,
     verify_signed_message,
-    anon_crypt_message,
-    anon_decrypt_message,
-    auth_crypt_message,
-    auth_decrypt_message,
     encode_pack_message,
     decode_pack_message,
 )
@@ -246,7 +243,7 @@ class BasicWallet(BaseWallet):
             raise WalletNotFoundError("Unknown DID: {}".format(did))
         self._local_dids[did]["metadata"] = metadata.copy() if metadata else {}
 
-    def _get_private_key(self, verkey: str, long=False) -> bytes:
+    def _get_private_key(self, verkey: str) -> bytes:
         """
         Resolve private key for a wallet DID.
 
@@ -266,7 +263,7 @@ class BasicWallet(BaseWallet):
         keys_and_dids = list(self._local_dids.values()) + list(self._keys.values())
         for info in keys_and_dids:
             if info["verkey"] == verkey:
-                return info["secret"] if long else info["seed"]
+                return info["secret"]
 
         raise WalletError("Private key not found for verkey: {}".format(verkey))
 
@@ -290,7 +287,7 @@ class BasicWallet(BaseWallet):
             raise WalletError("Message not provided")
         if not from_verkey:
             raise WalletError("Verkey not provided")
-        secret = self._get_private_key(from_verkey, True)
+        secret = self._get_private_key(from_verkey)
         signature = sign_message(message, secret)
         return signature
 
@@ -324,55 +321,6 @@ class BasicWallet(BaseWallet):
         verified = verify_signed_message(signature + message, verkey_bytes)
         return verified
 
-    async def encrypt_message(
-        self, message: bytes, to_verkey: str, from_verkey: str = None
-    ) -> bytes:
-        """
-        Apply auth_crypt or anon_crypt to a message.
-
-        Args:
-            message: The binary message content
-            to_verkey: The verkey of the recipient
-            from_verkey: The verkey of the sender. If provided then auth_crypt is used,
-                otherwise anon_crypt is used.
-
-        Returns:
-            The encrypted message content
-
-        """
-        to_verkey_bytes = b58_to_bytes(to_verkey)
-        if from_verkey:
-            secret = self._get_private_key(from_verkey)
-            result = auth_crypt_message(message, to_verkey_bytes, secret)
-        else:
-            result = anon_crypt_message(message, to_verkey_bytes)
-        return result
-
-    async def decrypt_message(
-        self, enc_message: bytes, to_verkey: str, use_auth: bool
-    ) -> (bytes, str):
-        """
-        Decrypt a message assembled by auth_crypt or anon_crypt.
-
-        Args:
-            message: The encrypted message content
-            to_verkey: The verkey of the recipient. If provided then auth_decrypt is
-                used, otherwise anon_decrypt is used.
-            use_auth: True if you would like to auth_decrypt, False for anon_decrypt
-
-        Returns:
-            A tuple of the decrypted message content and sender verkey
-            (None for anon_crypt)
-
-        """
-        secret = self._get_private_key(to_verkey)
-        if use_auth:
-            message, from_verkey = auth_decrypt_message(enc_message, secret)
-        else:
-            message = anon_decrypt_message(enc_message, secret)
-            from_verkey = None
-        return message, from_verkey
-
     async def pack_message(
         self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
     ) -> bytes:
@@ -390,7 +338,9 @@ class BasicWallet(BaseWallet):
         """
         keys_bin = [b58_to_bytes(key) for key in to_verkeys]
         secret = self._get_private_key(from_verkey) if from_verkey else None
-        result = encode_pack_message(message, keys_bin, secret)
+        result = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: encode_pack_message(message, keys_bin, secret)
+        )
         return result
 
     async def unpack_message(self, enc_message: bytes) -> (str, str, str):
@@ -411,8 +361,12 @@ class BasicWallet(BaseWallet):
         if not enc_message:
             raise WalletError("Message not provided")
         try:
-            message, from_verkey, to_verkey = decode_pack_message(
-                enc_message, lambda k: self._get_private_key(k, True)
+            (
+                message,
+                from_verkey,
+                to_verkey,
+            ) = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: decode_pack_message(enc_message, self._get_private_key)
             )
         except ValueError as e:
             raise WalletError("Message could not be unpacked: {}".format(str(e)))

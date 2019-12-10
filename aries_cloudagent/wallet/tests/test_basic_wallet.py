@@ -218,50 +218,6 @@ class TestBasicWallet:
             unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b"{}")
 
     @pytest.mark.asyncio
-    async def test_encrypt_decrypt_dids(self, wallet):
-        await wallet.create_local_did(self.test_seed, self.test_did)
-        encrypted_msg = await wallet.encrypt_message(
-            self.test_message_bytes, self.test_verkey
-        )
-        decrypted_msg, sender_verkey = await wallet.decrypt_message(
-            encrypted_msg, self.test_verkey, False
-        )
-        assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey is None
-
-        await wallet.create_local_did(self.test_target_seed, self.test_target_did)
-        encrypted_msg = await wallet.encrypt_message(
-            self.test_message_bytes, self.test_target_verkey, self.test_verkey
-        )
-        decrypted_msg, sender_verkey = await wallet.decrypt_message(
-            encrypted_msg, self.test_target_verkey, True
-        )
-        assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey == self.test_verkey
-
-    @pytest.mark.asyncio
-    async def test_encrypt_decrypt_keys(self, wallet):
-        key_info = await wallet.create_signing_key()
-        encrypted_msg = await wallet.encrypt_message(
-            self.test_message_bytes, key_info.verkey
-        )
-        decrypted_msg, sender_verkey = await wallet.decrypt_message(
-            encrypted_msg, key_info.verkey, False
-        )
-        assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey is None
-
-        target_key_info = await wallet.create_signing_key()
-        encrypted_msg = await wallet.encrypt_message(
-            self.test_message_bytes, target_key_info.verkey, key_info.verkey
-        )
-        decrypted_msg, sender_verkey = await wallet.decrypt_message(
-            encrypted_msg, target_key_info.verkey, True
-        )
-        assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey == key_info.verkey
-
-    @pytest.mark.asyncio
     async def test_signature_round_trip(self, wallet):
         key_info = await wallet.create_signing_key()
         msg = {"test": "signed field"}
