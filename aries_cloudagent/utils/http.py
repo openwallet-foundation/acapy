@@ -1,19 +1,19 @@
-"""Transport utility methods."""
+"""HTTP utility methods."""
 
 import asyncio
 
 from aiohttp import BaseConnector, ClientError, ClientResponse, ClientSession
 
-from ..messaging.repeat import RepeatSequence
+from ..core.error import BaseError
 
-from .error import TransportError
+from .repeat import RepeatSequence
 
 
-class TransportFetchError(TransportError):
+class FetchError(BaseError):
     """Error raised when an HTTP fetch fails."""
 
 
-async def http_fetch(
+async def fetch(
     url: str,
     *,
     headers: dict = None,
@@ -56,4 +56,4 @@ async def http_fetch(
                     return await (response.json() if json else response.text())
             except (ClientError, asyncio.TimeoutError) as e:
                 if attempt.final:
-                    raise TransportFetchError("Exceeded maximum fetch attempts") from e
+                    raise FetchError("Exceeded maximum fetch attempts") from e
