@@ -4,7 +4,6 @@ import os
 from aries_cloudagent.wallet.indy import IndyWallet
 from aries_cloudagent.storage.indy import IndyStorage
 from aries_cloudagent.storage.record import StorageRecord
-from aries_cloudagent.postgres import load_postgres_plugin
 
 from . import test_basic_storage
 
@@ -41,7 +40,6 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
         if not postgres_url:
             pytest.fail("POSTGRES_URL not configured")
 
-        load_postgres_plugin()
         wallet_key = await IndyWallet.generate_wallet_key()
         postgres_wallet = IndyWallet(
             {
