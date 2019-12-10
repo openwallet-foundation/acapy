@@ -12,6 +12,7 @@ from indy.error import IndyError, ErrorCode
 from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import validate_seed
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
+from .plugin import load_postgres_plugin
 from .util import bytes_to_b64
 
 
@@ -57,6 +58,9 @@ class IndyWallet(BaseWallet):
         self._storage_config = config.get("storage_config", None)
         self._storage_creds = config.get("storage_creds", None)
         self._master_secret_id = None
+
+        if self._storage_type == "postgres_storage":
+            load_postgres_plugin()
 
     @property
     def handle(self):
@@ -516,76 +520,6 @@ class IndyWallet(BaseWallet):
             else:
                 raise WalletError(str(x_indy))
         return result
-
-    async def encrypt_message(
-        self, message: bytes, to_verkey: str, from_verkey: str = None
-    ) -> bytes:
-        """
-        Apply auth_crypt or anon_crypt to a message.
-
-        Args:
-            message: The binary message content
-            to_verkey: The verkey of the recipient
-            from_verkey: The verkey of the sender. If provided then auth_crypt is used,
-                otherwise anon_crypt is used.
-
-        Returns:
-            The encrypted message content
-
-        Raises:
-            WalletError: If a libindy error occurs
-
-        """
-        if from_verkey:
-            try:
-                result = await indy.crypto.auth_crypt(
-                    self.handle, from_verkey, to_verkey, message
-                )
-            except IndyError:
-                raise WalletError("Exception when encrypting auth message")
-        else:
-            try:
-                result = await indy.crypto.anon_crypt(to_verkey, message)
-            except IndyError:
-                raise WalletError("Exception when encrypting anonymous message")
-        return result
-
-    async def decrypt_message(
-        self, enc_message: bytes, to_verkey: str, use_auth: bool
-    ) -> (bytes, str):
-        """
-        Decrypt a message assembled by auth_crypt or anon_crypt.
-
-        Args:
-            message: The encrypted message content
-            to_verkey: The verkey of the recipient. If provided then auth_decrypt is
-                used, otherwise anon_decrypt is used.
-            use_auth: True if you would like to auth_decrypt, False for anon_decrypt
-
-        Returns:
-            A tuple of the decrypted message content and sender verkey
-            (None for anon_crypt)
-
-        Raises:
-            WalletError: If a libindy error occurs
-
-        """
-        if use_auth:
-            try:
-                sender_verkey, result = await indy.crypto.auth_decrypt(
-                    self.handle, to_verkey, enc_message
-                )
-            except IndyError:
-                raise WalletError("Exception when decrypting auth message")
-        else:
-            try:
-                result = await indy.crypto.anon_decrypt(
-                    self.handle, to_verkey, enc_message
-                )
-            except IndyError:
-                raise WalletError("Exception when decrypting anonymous message")
-            sender_verkey = None
-        return result, sender_verkey
 
     async def pack_message(
         self, message: str, to_verkeys: Sequence[str], from_verkey: str = None

@@ -43,7 +43,7 @@ echo "Preparing agent image..."
 docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
 
 if [ -z "${PWD_HOST_FQDN}" ]; then
-	DOCKERHOST=`docker run --rm --net=host codenvy/che-ip`
+	DOCKERHOST=`docker run --rm --net=host eclipse/che-ip`
     export RUNMODE="docker"
 else
 	PWD_HOST="${PWD_HOST_FQDN}"
