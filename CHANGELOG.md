@@ -1,3 +1,29 @@
+# 0.4.0
+
+## December 10, 2019
+
+- Improved unit test coverage (actionmenu, basicmessage, connections, introduction, issue-credential, present-proof, routing protocols)
+- Various documentation and bug fixes
+- Add admin routes for fetching and accepting the ledger transaction author agreement [#144](https://github.com/hyperledger/aries-cloudagent-python/pull/144)
+- Add support for receiving connection-less proof presentations [#296](https://github.com/hyperledger/aries-cloudagent-python/pull/296)
+- Set attachment id explicitely in unbound proof request [#289](https://github.com/hyperledger/aries-cloudagent-python/pull/289)
+- Add create-proposal admin endpoint to the present-proof protocol [#288](https://github.com/hyperledger/aries-cloudagent-python/pull/288)
+- Remove old anon/authcrypt support [#282](https://github.com/hyperledger/aries-cloudagent-python/pull/282)
+- Allow additional endpoints to be specified [#276](https://github.com/hyperledger/aries-cloudagent-python/pull/276)
+- Allow timestamp without trailing 'Z' [#275](https://github.com/hyperledger/aries-cloudagent-python/pull/275), [#277](https://github.com/hyperledger/aries-cloudagent-python/pull/277)
+- Display agent label and version on CLI and SwaggerUI [#274](https://github.com/hyperledger/aries-cloudagent-python/pull/274)
+- Remove connection activity tracking and add ping webhooks (with --monitor-ping) [#271](https://github.com/hyperledger/aries-cloudagent-python/pull/271)
+- Refactor message transport to track all async tasks, active message handlers [#269](https://github.com/hyperledger/aries-cloudagent-python/pull/269), [#287](https://github.com/hyperledger/aries-cloudagent-python/pull/287)
+- Add invitation mode "static" for static connections [#260](https://github.com/hyperledger/aries-cloudagent-python/pull/260)
+- Allow for cred proposal underspecification of cred def id, only lock down cred def id at issuer on offer. Sync up api requests to Aries RFC-36 verbiage [#259](https://github.com/hyperledger/aries-cloudagent-python/pull/259)
+- Disable cookies on outbound requests (avoid session affinity) [#258](https://github.com/hyperledger/aries-cloudagent-python/pull/258)
+- Add plugin registry for managing all loaded protocol plugins, streamline ClassLoader [#257](https://github.com/hyperledger/aries-cloudagent-python/pull/257), [#261](https://github.com/hyperledger/aries-cloudagent-python/pull/261)
+- Add support for locking a cache key to avoid repeating expensive operations [#256](https://github.com/hyperledger/aries-cloudagent-python/pull/256)
+- Add optional support for uvloop [#255](https://github.com/hyperledger/aries-cloudagent-python/pull/255)
+- Output timing information when --timing-log argument is provided [#254](https://github.com/hyperledger/aries-cloudagent-python/pull/254)
+- General refactoring - modules moved from messaging into new core, protocols, and utils sub-packages [#250](https://github.com/hyperledger/aries-cloudagent-python/pull/250), [#301](https://github.com/hyperledger/aries-cloudagent-python/pull/301)
+- Switch performance demo to the newer issue-credential protocol [#243](https://github.com/hyperledger/aries-cloudagent-python/pull/243)
+
 # 0.3.5
 
 ## November 1, 2019
