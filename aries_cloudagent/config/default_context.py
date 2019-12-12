@@ -82,10 +82,10 @@ class DefaultContextBuilder(ContextBuilder):
                 StatsProvider(
                     LedgerProvider(),
                     (
+                        "create_and_send_credential_definition",
+                        "create_and_send_schema",
                         "get_credential_definition",
                         "get_schema",
-                        "send_credential_definition",
-                        "send_schema",
                     ),
                 )
             ),

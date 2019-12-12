@@ -11,8 +11,9 @@ from ....issuer.base import BaseIssuer
 from ....ledger.base import BaseLedger
 from ....messaging.credential_definitions.util import (
     CRED_DEF_TAGS,
-    CRED_DEF_SENT_RECORD_TYPE
+    CRED_DEF_SENT_RECORD_TYPE,
 )
+from ....revocation.indy import IndyRevocation
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
@@ -58,8 +59,7 @@ class CredentialManager:
 
         storage: BaseStorage = await self.context.inject(BaseStorage)
         found = await storage.search_records(
-            type_filter=CRED_DEF_SENT_RECORD_TYPE,
-            tag_query=tag_query,
+            type_filter=CRED_DEF_SENT_RECORD_TYPE, tag_query=tag_query,
         ).fetch_all()
         if not found:
             raise CredentialManagerError(
@@ -140,7 +140,7 @@ class CredentialManager:
             schema_name=schema_name,
             schema_version=schema_version,
             cred_def_id=cred_def_id,
-            issuer_did=issuer_did
+            issuer_did=issuer_did,
         )
 
         credential_exchange_record = V10CredentialExchange(
@@ -211,7 +211,8 @@ class CredentialManager:
             cred_def_id = await self._match_sent_cred_def_id(
                 {
                     t: getattr(credential_proposal_message, t)
-                    for t in CRED_DEF_TAGS if getattr(credential_proposal_message, t)
+                    for t in CRED_DEF_TAGS
+                    if getattr(credential_proposal_message, t)
                 }
             )
 
@@ -601,3 +602,44 @@ class CredentialManager:
             await credential_exchange_record.delete_record(self.context)
 
         return credential_exchange_record
+
+    async def revoke_credential(
+        self, credential_exchange_record: V10CredentialExchange
+    ):
+        """
+        Revoke a previously-issued credential.
+
+        Args:
+            credential_exchange_record: the active credential exchange
+
+        """
+
+        assert (
+            credential_exchange_record.revocation_id
+            and credential_exchange_record.revoc_reg_id
+        )
+        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+
+        revoc = IndyRevocation(self.context)
+        registry_record = await revoc.get_issuer_revocation_record(
+            credential_exchange_record.revoc_reg_id
+        )
+        # FIXME exception on missing
+
+        registry = await registry_record.get_registry()
+        tails_reader = await registry.create_tails_reader()
+
+        delta = await issuer.revoke_credential(
+            registry.registry_id, tails_reader, credential_exchange_record.revocation_id
+        )
+
+        credential_exchange_record.state = V10CredentialExchange.STATE_REVOKED
+        await credential_exchange_record.save(self.context, reason="Revoked credential")
+
+        # create entry and send to ledger
+        if delta:
+            ledger: BaseLedger = await self.context.inject(BaseLedger)
+            async with ledger:
+                await ledger.send_revoc_reg_entry(
+                    registry.registry_id, registry.reg_def_type, delta
+                )
