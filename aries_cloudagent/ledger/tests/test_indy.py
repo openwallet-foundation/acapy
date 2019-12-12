@@ -231,7 +231,7 @@ class TestIndyLedger(AsyncTestCase):
             mock_wallet.get_public_did.return_value = None
 
             with self.assertRaises(BadLedgerRequestError):
-                schema_id = await ledger.send_schema(
+                schema_id, schema_def = await ledger.create_and_send_schema(
                     "schema_name", "schema_version", [1, 2, 3]
                 )
 
@@ -239,7 +239,7 @@ class TestIndyLedger(AsyncTestCase):
             mock_did = mock_wallet.get_public_did.return_value
             mock_did.did = self.test_did
 
-            schema_id = await ledger.send_schema(
+            schema_id, schema_def = await ledger.create_and_send_schema(
                 "schema_name", "schema_version", [1, 2, 3]
             )
 
@@ -253,7 +253,7 @@ class TestIndyLedger(AsyncTestCase):
             )
 
             mock_submit.assert_called_once_with(
-                mock_build_schema_req.return_value, public_did=mock_did.did
+                mock_build_schema_req.return_value, True, True
             )
 
             assert schema_id == mock_create_schema.return_value[0]
@@ -287,15 +287,16 @@ class TestIndyLedger(AsyncTestCase):
         mock_create_schema.return_value = (1, 2)
 
         fetch_schema_id = f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
-        mock_check_existing.return_value = fetch_schema_id
+        mock_check_existing.return_value = (fetch_schema_id, {})
 
         ledger = IndyLedger("name", mock_wallet)
 
         async with ledger:
-            schema_id = await ledger.send_schema(
+            schema_id, schema_def = await ledger.create_and_send_schema(
                 "schema_name", "schema_version", [1, 2, 3]
             )
             assert schema_id == fetch_schema_id
+            assert schema_def == {}
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
@@ -376,12 +377,14 @@ class TestIndyLedger(AsyncTestCase):
             mock_wallet.get_public_did.return_value = None
 
             with self.assertRaises(BadLedgerRequestError):
-                await ledger.send_credential_definition(schema_id, tag)
+                await ledger.create_and_send_credential_definition(schema_id, tag)
 
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_did = mock_wallet.get_public_did.return_value
 
-            result_id = await ledger.send_credential_definition(schema_id, tag)
+            result_id, result_json = await ledger.create_and_send_credential_definition(
+                schema_id, tag
+            )
             assert result_id == cred_id
 
             mock_wallet.get_public_did.assert_called_once_with()

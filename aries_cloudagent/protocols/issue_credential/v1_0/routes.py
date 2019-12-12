@@ -637,6 +637,41 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     return web.json_response({})
 
 
+@docs(tags=["issue-credential"], summary="Revoke an issued credential")
+@response_schema(V10CredentialExchangeSchema(), 200)
+async def credential_exchange_revoke(request: web.BaseRequest):
+    """
+    Request handler for storing a credential request.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential request details.
+
+    """
+
+    context = request.app["request_context"]
+
+    credential_exchange_id = request.match_info["id"]
+    credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
+        context, credential_exchange_id
+    )
+
+    if (
+        credential_exchange_record.state != V10CredentialExchange.STATE_ISSUED
+        or not credential_exchange_record.revocation_id
+        or not credential_exchange_record.revoc_reg_id
+    ):
+        raise web.HTTPBadRequest()
+
+    credential_manager = CredentialManager(context)
+
+    await credential_manager.revoke_credential(credential_exchange_record)
+
+    return web.json_response(credential_exchange_record.serialize())
+
+
 @docs(
     tags=["issue-credential"], summary="Remove an existing credential exchange record"
 )
@@ -694,6 +729,10 @@ async def register(app: web.Application):
             web.post(
                 "/issue-credential/records/{cred_ex_id}/store",
                 credential_exchange_store,
+            ),
+            web.post(
+                "/issue-credential/{id}/revoke",
+                credential_exchange_revoke
             ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/problem-report",

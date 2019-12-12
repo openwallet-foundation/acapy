@@ -35,6 +35,7 @@ class V10CredentialExchange(BaseRecord):
     STATE_ISSUED = "credential_issued"
     STATE_CREDENTIAL_RECEIVED = "credential_received"
     STATE_ACKED = "credential_acked"
+    STATE_REVOKED = "credential_revoked"
 
     def __init__(
         self,
@@ -55,6 +56,8 @@ class V10CredentialExchange(BaseRecord):
         credential_id: str = None,
         raw_credential: dict = None,  # indy credential as received
         credential: dict = None,  # indy credential as stored
+        revoc_reg_id: str = None,
+        revocation_id: str = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
         error_msg: str = None,
@@ -78,6 +81,8 @@ class V10CredentialExchange(BaseRecord):
         self.credential_id = credential_id
         self.raw_credential = raw_credential
         self.credential = credential
+        self.revoc_reg_id = revoc_reg_id
+        self.revocation_id = revocation_id
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.error_msg = error_msg
@@ -108,6 +113,8 @@ class V10CredentialExchange(BaseRecord):
                 "credential_definition_id",
                 "schema_id",
                 "credential_id",
+                "revoc_reg_id",
+                "revocation_id",
                 "role",
                 "state",
             )
@@ -211,4 +218,10 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
         required=False,
         description="Error message",
         example="credential definition identifier is not set in proposal",
+    )
+    revoc_reg_id = fields.Str(
+        required=False, description="Revocation registry identifier"
+    )
+    revocation_id = fields.Str(
+        required=False, description="Credential identifier within revocation registry"
     )
