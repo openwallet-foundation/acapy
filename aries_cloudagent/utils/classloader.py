@@ -70,7 +70,7 @@ class ClassLoader:
             return import_module(mod_path, package)
         except ModuleNotFoundError as e:
             raise ModuleLoadError(
-                f"Unable to import module {mod_path}: {str(e)}"
+                f"Unable to import module {full_path}: {str(e)}"
             ) from e
 
     @classmethod

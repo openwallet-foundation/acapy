@@ -30,7 +30,7 @@ class PluginRegistry:
         """Accessor for a list of all plugin modules."""
         return list(self._plugins.values())
 
-    def register_plugin(self, module_name) -> ModuleType:
+    def register_plugin(self, module_name: str) -> ModuleType:
         """Register a plugin module."""
         if module_name in self._plugins:
             mod = self._plugins[module_name]
@@ -52,7 +52,7 @@ class PluginRegistry:
         try:
             module_names = ClassLoader.scan_subpackages(package_name)
         except ModuleLoadError:
-            LOGGER.error(f"Plugin module package not found: {package_name}")
+            LOGGER.error("Plugin module package not found: %s", package_name)
             module_names = []
         return list(
             filter(
