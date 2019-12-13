@@ -234,7 +234,7 @@ class TestCredentialManager(AsyncTestCase):
             self.context.injector.bind_instance(BaseCache, self.cache)
 
             cred_offer = {"cred_def_id": cred_def_id, "schema_id": schema_id}
-            issuer = async_mock.MagicMock()
+            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
                 return_value=cred_offer
             )
@@ -286,7 +286,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as set_cached_key:
             get_cached_key.return_value = None
             cred_offer = {"cred_def_id": cred_def_id, "schema_id": schema_id}
-            issuer = async_mock.MagicMock()
+            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
                 return_value=cred_offer
             )
@@ -671,7 +671,7 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             issuer.create_credential.assert_called_once_with(
-                schema, indy_offer, indy_cred_req, cred_values
+                schema, indy_offer, indy_cred_req, cred_values, None, None
             )
 
             assert ret_exchange.credential == cred

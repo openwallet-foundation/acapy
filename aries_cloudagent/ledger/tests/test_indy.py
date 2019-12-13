@@ -443,7 +443,7 @@ class TestIndyLedger(AsyncTestCase):
             )
 
             mock_submit.assert_called_once_with(
-                mock_build_schema_req.return_value, True, True
+                mock_build_schema_req.return_value, True, sign_did=mock_wallet.get_public_did.return_value
             )
 
             assert schema_id == mock_create_schema.return_value[0]
@@ -641,7 +641,7 @@ class TestIndyLedger(AsyncTestCase):
             mock_wallet.get_public_did.assert_called_once_with()
             mock_build_get_schema_req.assert_called_once_with(mock_did.did, "schema_id")
             mock_submit.assert_called_once_with(
-                mock_build_get_schema_req.return_value, public_did=mock_did.did
+                mock_build_get_schema_req.return_value, sign_did=mock_did
             )
             mock_parse_get_schema_resp.assert_called_once_with(mock_submit.return_value)
 
@@ -1318,7 +1318,7 @@ class TestIndyLedger(AsyncTestCase):
                 mock_did.did, "cred_def_id"
             )
             mock_submit.assert_called_once_with(
-                mock_build_get_cred_def_req.return_value, public_did=mock_did.did
+                mock_build_get_cred_def_req.return_value, sign_did=mock_did
             )
             mock_parse_get_cred_def_resp.assert_called_once_with(
                 mock_submit.return_value
