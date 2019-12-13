@@ -28,6 +28,7 @@ class BaseAgent(DemoAgent):
         self._connection_ready = None
         self.credential_state = {}
         self.credential_event = asyncio.Event()
+        self.cred_ex_ids = set()
         self.ping_state = {}
         self.ping_event = asyncio.Event()
         self.sent_pings = set()
@@ -77,6 +78,7 @@ class BaseAgent(DemoAgent):
     async def handle_issue_credential(self, payload):
         cred_id = payload["credential_exchange_id"]
         self.credential_state[cred_id] = payload["state"]
+        self.cred_ex_ids.add(cred_id)
         self.credential_event.set()
 
     async def handle_ping(self, payload):
@@ -156,10 +158,9 @@ class FaberAgent(BaseAgent):
         super().__init__("Faber", port, **kwargs)
         self.schema_id = None
         self.credential_definition_id = None
-        self.extra_args = ["--monitor-ping"]
-        self.timing_log = "logs/faber_perf.log"
+        self.revocation_registry_id = None
 
-    async def publish_defs(self):
+    async def publish_defs(self, support_revocation: bool = False):
         # create a schema
         self.log("Publishing test schema")
         version = format(
@@ -177,7 +178,10 @@ class FaberAgent(BaseAgent):
 
         # create a cred def for the schema
         self.log("Publishing test credential definition")
-        credential_definition_body = {"schema_id": self.schema_id}
+        credential_definition_body = {
+            "schema_id": self.schema_id,
+            "support_revocation": support_revocation,
+        }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
         )
@@ -186,7 +190,20 @@ class FaberAgent(BaseAgent):
         ]
         self.log(f"Credential Definition ID: {self.credential_definition_id}")
 
-    async def send_credential(self, cred_attrs: dict, comment: str = None):
+        # create revocation registry
+        if support_revocation:
+            revoc_body = {
+                "credential_definition_id": self.credential_definition_id,
+            }
+            revoc_response = await self.admin_POST(
+                "/revocation/create-registry", revoc_body
+            )
+            self.revocation_registry_id = revoc_response["result"]["revoc_reg_id"]
+            self.log(f"Revocation Registry ID: {self.revocation_registry_id}")
+
+    async def send_credential(
+        self, cred_attrs: dict, comment: str = None, auto_remove: bool = True
+    ):
         cred_preview = {
             "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()]
         }
@@ -197,8 +214,13 @@ class FaberAgent(BaseAgent):
                 "cred_def_id": self.credential_definition_id,
                 "credential_proposal": cred_preview,
                 "comment": comment,
+                "auto_remove": auto_remove,
+                "revoc_reg_id": self.revocation_registry_id,
             },
         )
+
+    async def revoke_credential(self, cred_ex_id: str):
+        await self.admin_POST(f"/issue-credential/records/{cred_ex_id}/revoke")
 
 
 class RoutingAgent(BaseAgent):
@@ -213,6 +235,7 @@ async def main(
     show_timing: bool = False,
     routing: bool = False,
     issue_count: int = 300,
+    revoc: bool = True,
 ):
 
     genesis = await default_genesis_txns()
@@ -249,7 +272,7 @@ async def main(
 
         if not ping_only:
             with log_timer("Publish duration:"):
-                await faber.publish_defs()
+                await faber.publish_defs(revoc)
                 # await alice.set_tag_policy(faber.credential_definition_id, ["name"])
 
         with log_timer("Connect duration:"):
@@ -294,7 +317,7 @@ async def main(
                 "age": "24",
             }
             asyncio.ensure_future(
-                faber.send_credential(attributes, comment)
+                faber.send_credential(attributes, comment, not revoc)
             ).add_done_callback(done_send)
 
         async def check_received_creds(agent, issue_count, pb):
@@ -405,6 +428,11 @@ async def main(
             await faber.collect_postgres_stats(f"{issue_count} {item_short}s")
             for line in faber.format_postgres_stats():
                 faber.log(line)
+
+        cred_id = next(iter(faber.cred_ex_ids))
+        if revoc:
+            print("Revoking credential", cred_id)
+            await faber.revoke_credential(cred_id)
 
         if show_timing:
             timing = await alice.fetch_timing()

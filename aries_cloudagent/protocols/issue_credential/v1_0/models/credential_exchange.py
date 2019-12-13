@@ -62,6 +62,7 @@ class V10CredentialExchange(BaseRecord):
         revocation_id: str = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
+        auto_remove: bool = True,
         error_msg: str = None,
         **kwargs,
     ):
@@ -87,6 +88,7 @@ class V10CredentialExchange(BaseRecord):
         self.revocation_id = revocation_id
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
+        self.auto_remove = auto_remove
         self.error_msg = error_msg
 
     @property
@@ -108,6 +110,7 @@ class V10CredentialExchange(BaseRecord):
                 "error_msg",
                 "auto_offer",
                 "auto_issue",
+                "auto_remove",
                 "raw_credential",
                 "credential",
                 "parent_thread_id",
@@ -218,6 +221,14 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
     auto_issue = fields.Bool(
         required=False,
         description="Issuer choice to issue to request in this credential exchange",
+        example=False,
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        default=True,
+        description=(
+            "Issuer choice to remove this credential exchange record when complete"
+        ),
         example=False,
     )
     error_msg = fields.Str(
