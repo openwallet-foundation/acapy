@@ -1,5 +1,5 @@
-aries\_cloudagent.cache package
-===============================
+aries\_cloudagent\.cache package
+================================
 
 .. automodule:: aries_cloudagent.cache
     :members:
@@ -9,16 +9,16 @@ aries\_cloudagent.cache package
 Submodules
 ----------
 
-aries\_cloudagent.cache.base module
------------------------------------
+aries\_cloudagent\.cache\.base module
+-------------------------------------
 
 .. automodule:: aries_cloudagent.cache.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent.cache.basic module
-------------------------------------
+aries\_cloudagent\.cache\.basic module
+--------------------------------------
 
 .. automodule:: aries_cloudagent.cache.basic
     :members:
