@@ -573,6 +573,7 @@ class IndyLedger(BaseLedger):
         )
         storage = self.get_indy_storage()
         await storage.add_record(record)
+        print(record.tags)
 
         return credential_definition_id, json.loads(credential_definition_json)
 

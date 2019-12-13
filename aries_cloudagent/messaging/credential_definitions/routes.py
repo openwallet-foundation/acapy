@@ -113,24 +113,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             )
         )
 
-    # if support_revocation:
-    #     # TODO - move into scheduled task?
-    #     issuer_did = credential_definition_id.split(":")[0]
-    #     IndyRevocation = ClassLoader.load_class(
-    #         "aries_cloudagent.revocation.indy.IndyRevocation"
-    #     )
-    #     revoc = IndyRevocation(context)
-    #     registry_record = await revoc.init_issuer_registry(
-    #         credential_definition_id, issuer_did
-    #     )
-    #     await registry_record.generate_registry(context, revoc.get_temp_dir())
-    #     print("generated tails file")
-    #     # print(registry_record)
-    #     await registry_record.publish_registry_definition(context)
-    #     await registry_record.publish_registry_entry(context)
-    #     print("published registry definition")
-    #     print("published registry entry")
-
     return web.json_response({"credential_definition_id": credential_definition_id})
 
 

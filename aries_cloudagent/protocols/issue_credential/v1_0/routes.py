@@ -10,6 +10,7 @@ from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_DID,
+    INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
     UUIDFour,
@@ -57,29 +58,27 @@ class V10CredentialProposalRequestSchema(Schema):
         **INDY_CRED_DEF_ID,
     )
     schema_id = fields.Str(
-        description="Schema identifier",
-        required=False,
-        **INDY_SCHEMA_ID,
+        description="Schema identifier", required=False, **INDY_SCHEMA_ID,
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID",
-        required=False,
-        **INDY_DID,
+        description="Schema issuer DID", required=False, **INDY_DID,
     )
     schema_name = fields.Str(
-        description="Schema name",
-        required=False,
-        example="preferences",
+        description="Schema name", required=False, example="preferences",
     )
     schema_version = fields.Str(
-        description="Schema version",
-        required=False,
-        **INDY_VERSION,
+        description="Schema version", required=False, **INDY_VERSION,
     )
     issuer_did = fields.Str(
-        description="Credential issuer DID",
+        description="Credential issuer DID", required=False, **INDY_DID,
+    )
+    auto_remove = fields.Bool(
+        description=("Whether to remove the credential exchange record on completion"),
         required=False,
-        **INDY_DID,
+        default=True,
+    )
+    revoc_reg_id = fields.Str(
+        description="Revocation Registry ID", required=False, **INDY_REV_REG_ID,
     )
     comment = fields.Str(description="Human-readable comment", required=False)
     credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
@@ -105,6 +104,14 @@ class V10CredentialOfferRequestSchema(Schema):
         ),
         required=False,
         default=False,
+    )
+    auto_remove = fields.Bool(
+        description=("Whether to remove the credential exchange record on completion"),
+        required=False,
+        default=True,
+    )
+    revoc_reg_id = fields.Str(
+        description="Revocation Registry ID", required=False, **INDY_REV_REG_ID,
     )
     comment = fields.Str(description="Human-readable comment", required=False)
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
@@ -220,6 +227,8 @@ async def credential_exchange_send(request: web.BaseRequest):
     preview_spec = body.get("credential_proposal")
     if not preview_spec:
         raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
+    auto_remove = body.get("auto_remove", True)
+    revoc_reg_id = body.get("revoc_reg_id")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -243,7 +252,10 @@ async def credential_exchange_send(request: web.BaseRequest):
         credential_exchange_record,
         credential_offer_message,
     ) = await credential_manager.prepare_send(
-        connection_id, credential_proposal=credential_proposal
+        connection_id,
+        credential_proposal=credential_proposal,
+        auto_remove=auto_remove,
+        revoc_reg_id=revoc_reg_id,
     )
     await outbound_handler(
         credential_offer_message, connection_id=credential_exchange_record.connection_id
@@ -276,6 +288,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     preview_spec = body.get("credential_proposal")
     if not preview_spec:
         raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
+    auto_remove = body.get("auto_remove", True)
+    revoc_reg_id = body.get("revoc_reg_id")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -295,6 +309,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         connection_id,
         comment=comment,
         credential_preview=credential_preview,
+        auto_remove=auto_remove,
+        revoc_reg_id=revoc_reg_id,
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
@@ -339,6 +355,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
+    auto_remove = body.get("auto_remove", True)
+    revoc_reg_id = body.get("revoc_reg_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
 
@@ -378,6 +396,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         credential_definition_id=cred_def_id,
         credential_proposal_dict=credential_proposal_dict,
         auto_issue=auto_issue,
+        auto_remove=auto_remove,
+        revoc_reg_id=revoc_reg_id,
     )
 
     credential_manager = CredentialManager(context)
@@ -659,7 +679,8 @@ async def credential_exchange_revoke(request: web.BaseRequest):
     )
 
     if (
-        credential_exchange_record.state != V10CredentialExchange.STATE_ISSUED
+        credential_exchange_record.state
+        not in (V10CredentialExchange.STATE_ISSUED, V10CredentialExchange.STATE_ACKED)
         or not credential_exchange_record.revocation_id
         or not credential_exchange_record.revoc_reg_id
     ):
@@ -731,8 +752,7 @@ async def register(app: web.Application):
                 credential_exchange_store,
             ),
             web.post(
-                "/issue-credential/{id}/revoke",
-                credential_exchange_revoke
+                "/issue-credential/records/{id}/revoke", credential_exchange_revoke
             ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/problem-report",
