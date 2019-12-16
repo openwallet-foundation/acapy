@@ -1,5 +1,5 @@
-aries\_cloudagent.messaging.schemas package
-===========================================
+aries\_cloudagent\.messaging\.schemas package
+=============================================
 
 .. automodule:: aries_cloudagent.messaging.schemas
     :members:
@@ -9,10 +9,18 @@ aries\_cloudagent.messaging.schemas package
 Submodules
 ----------
 
-aries\_cloudagent.messaging.schemas.routes module
--------------------------------------------------
+aries\_cloudagent\.messaging\.schemas\.routes module
+----------------------------------------------------
 
 .. automodule:: aries_cloudagent.messaging.schemas.routes
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+aries\_cloudagent\.messaging\.schemas\.util module
+--------------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.schemas.util
     :members:
     :undoc-members:
     :show-inheritance:

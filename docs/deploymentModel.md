@@ -65,4 +65,3 @@ Current examples of deployed instances of Aries cloud agent and controllers incl
 
 * [indy-email-verification](https://github.com/bcgov/indy-email-verification) - a web app Controller that sends an email to a given email address with an embedded DIDcomm invitation and on establishment of a connection, offers and provides the connected agent with an email control verifiable credential.
 * [iiwbook](https://github.com/bcgov/iiwbook) - a web app Controller that on creation of a DIDcomm connection, requests a proof of email control, and then sends to the connection a verifiable credential proving attendance at IIW. In between the proof and issuance is a human approval step using a simple web-based UI that implements a request queue.
-* Indy-catalyst-agent - an issuer/verifier agent that proofs credentials from, and issues credentials to, an instance of an Indy Catalyst Credential Registry. 
