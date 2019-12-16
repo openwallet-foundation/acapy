@@ -236,6 +236,19 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         )
         assert conn_req
 
+    async def test_create_request_my_endpoint(self):
+        conn_req = await self.manager.create_request(
+            ConnectionRecord(
+                initiator=ConnectionRecord.INITIATOR_EXTERNAL,
+                invitation_key=self.test_verkey,
+                their_label="Hello",
+                their_role="Point of contact",
+                alias="Bob",
+            ),
+            my_endpoint="http://testendpoint.com/endpoint"
+        )
+        assert conn_req
+
     async def test_create_request_my_did(self):
         wallet = await self.context.inject(BaseWallet)
         await wallet.create_local_did(

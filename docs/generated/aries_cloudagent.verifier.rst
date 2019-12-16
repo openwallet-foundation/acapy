@@ -1,5 +1,5 @@
-aries\_cloudagent.verifier package
-==================================
+aries\_cloudagent\.verifier package
+===================================
 
 .. automodule:: aries_cloudagent.verifier
     :members:
@@ -9,16 +9,16 @@ aries\_cloudagent.verifier package
 Submodules
 ----------
 
-aries\_cloudagent.verifier.base module
---------------------------------------
+aries\_cloudagent\.verifier\.base module
+----------------------------------------
 
 .. automodule:: aries_cloudagent.verifier.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent.verifier.indy module
---------------------------------------
+aries\_cloudagent\.verifier\.indy module
+----------------------------------------
 
 .. automodule:: aries_cloudagent.verifier.indy
     :members:

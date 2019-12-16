@@ -14,19 +14,26 @@ This is the Read The Docs site for the Hyperledger
 This site contains only the ACA-Py docstrings documentation
 extracted from the Python Code. For other documentation, please consult the links
 in the Readme for the `ACA-Py <https://github.com/hyperledger/aries-cloudagent-python>`_
-GitHub Repo. If you are getting started with verifiable credentials or Aries,
+GitHub Repo.
+
+If you are getting started with verifiable credentials or Aries,
 we recommend that you start with this `verifiable credentials and agents
 getting started guide
 <https://github.com/hyperledger/aries-cloudagent-python/tree/master/docs/GettingStartedAriesDev>`_.
 
-All of the code in ACA-Py is within the `aries_cloudagent
-<generated/aries_cloudagent.html>`_ module. To investigate the
-code, use search or click on the `aries_cloudagent package` link in the left menu to
-drill down into the modules, subpackages and submodules that make up ACA-Py.
+Want to quick overview of the deployment model for ACA-Py? See 
+`this document <https://github.com/hyperledger/aries-cloudagent-python/blob/master/docs/deploymentModel.md>`_.
+
+To investigate the code, use search or click the package links in the left menu to
+drill into the modules, subpackages and submodules that make up ACA-Py.
 
 Developers that are interested in what DIDComm protocols are supported in ACA-Py
-should take a look at the `messaging <generated/aries_cloudagent.messaging.html>`_ subpackage. 
-Other general purpose subpackages that might be of particular interest include
+should take a look at the `protocols <generated/aries_cloudagent.protocols.html>`_ package. 
+These should align with the corresponding
+`aries-rfcs protocols <https://github.com/hyperledger/aries-rfcs/tree/master/features>`_.
+Decorators defined in aries-rfcs and implemented in ACA-Py can be found
+`here <generated/aries_cloudagent.messaging.decorators.html>`_.
+Some general purpose subpackages that might be of interest include
 `wallet <generated/aries_cloudagent.wallet.html>`_ and
 `storage <generated/aries_cloudagent.storage.html>`_. For those
 agents playing different roles in a verifiable credential exchange, take a look
@@ -38,17 +45,16 @@ Please see the `ACA-Py Contribution guidelines
 <https://github.com/hyperledger/aries-cloudagent-python/blob/master/README.md#contributing>`_
 for how to contribute to ACA-Py, including for how to submit issues about ACA-Py.
 
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Aries Cloud Agent Python - Modules
 
    generated/aries_cloudagent
+   generated/aries_cloudagent.connections.rst
+   generated/aries_cloudagent.protocols.rst
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
