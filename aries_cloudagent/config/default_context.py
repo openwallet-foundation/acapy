@@ -68,8 +68,6 @@ class DefaultContextBuilder(ContextBuilder):
                     (
                         "sign_message",
                         "verify_message",
-                        "encrypt_message",
-                        "decrypt_message",
                         # "pack_message",
                         # "unpack_message",
                         "get_local_did",
