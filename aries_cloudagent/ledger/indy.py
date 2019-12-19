@@ -817,9 +817,6 @@ class IndyLedger(BaseLedger):
         if not acceptance:
             storage = self.get_indy_storage()
             tag_filter = {"pool_name": self.pool_name}
-            recs = storage.search_records(
-                TAA_ACCEPTED_RECORD_TYPE, tag_filter
-            )
             found = await storage.search_records(
                 TAA_ACCEPTED_RECORD_TYPE, tag_filter
             ).fetch_all()
