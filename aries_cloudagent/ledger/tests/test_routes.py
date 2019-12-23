@@ -51,6 +51,13 @@ class TestLedgerRoutes(AsyncTestCase):
             )
             assert result is json_response.return_value
 
+    async def test_get_verkey_no_did(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"no": "did"}
+        with self.assertRaises(HTTPBadRequest):
+            await test_module.get_did_verkey(request)
+
     async def test_get_endpoint(self):
         request = async_mock.MagicMock()
         request.app = self.app
@@ -65,6 +72,13 @@ class TestLedgerRoutes(AsyncTestCase):
             )
             assert result is json_response.return_value
 
+    async def test_get_endpoint_no_did(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"no": "did"}
+        with self.assertRaises(HTTPBadRequest):
+            await test_module.get_did_endpoint(request)
+
     async def test_register_nym(self):
         request = async_mock.MagicMock()
         request.app = self.app
@@ -78,6 +92,23 @@ class TestLedgerRoutes(AsyncTestCase):
                 {"success": self.ledger.register_nym.return_value}
             )
             assert result is json_response.return_value
+
+    async def test_register_nym_bad_request(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"no": "did"}
+        with self.assertRaises(HTTPBadRequest):
+            await test_module.register_ledger_nym(request)
+
+    async def test_register_nym_ledger_txn_error(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did, "verkey": self.test_verkey}
+        self.ledger.register_nym.side_effect = test_module.LedgerTransactionError(
+            "Error"
+        )
+        with self.assertRaises(HTTPForbidden):
+            await test_module.register_ledger_nym(request)
 
     async def test_taa_forbidden(self):
         request = async_mock.MagicMock()
@@ -98,6 +129,30 @@ class TestLedgerRoutes(AsyncTestCase):
             result = await test_module.ledger_get_taa(request)
             json_response.assert_called_once_with(
                 {"result": {"taa_accepted": None, "taa_required": False}}
+            )
+            assert result is json_response.return_value
+
+    async def test_get_taa_required(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        accepted = {
+            "mechanism": "dummy",
+            "time": 1234567890,
+        }
+        taa_info = {"taa_required": True}
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.LEDGER_TYPE = "indy"
+            self.ledger.get_txn_author_agreement.return_value = taa_info
+            self.ledger.get_latest_txn_author_acceptance.return_value = accepted
+            result = await test_module.ledger_get_taa(request)
+            taa_info["taa_accepted"] = accepted
+            json_response.assert_called_once_with(
+                {
+                    "result": taa_info
+                }
             )
             assert result is json_response.return_value
 
@@ -144,3 +199,18 @@ class TestLedgerRoutes(AsyncTestCase):
                 "mechanism",
             )
             assert result is json_response.return_value
+
+    async def test_accept_taa_bad_ledger(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+
+        self.ledger.LEDGER_TYPE = "not-indy"
+        with self.assertRaises(HTTPForbidden):
+            await test_module.ledger_accept_taa(request)
+
+    async def test_register(self):
+        mock_app = async_mock.MagicMock()
+        mock_app.add_routes = async_mock.MagicMock()
+
+        await test_module.register(mock_app)
+        mock_app.add_routes.assert_called_once()
