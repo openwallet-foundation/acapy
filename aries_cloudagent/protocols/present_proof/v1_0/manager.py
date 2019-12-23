@@ -450,10 +450,8 @@ class PresentationManager:
             presentation_exchange_record
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={
-                "thread_id": self.context.message._thread_id,
-                "connection_id": self.context.connection_record.connection_id,
-            },
+            {"thread_id": self.context.message._thread_id},
+            {"connection_id": self.context.connection_record.connection_id}
         )
 
         presentation_exchange_record.state = (
