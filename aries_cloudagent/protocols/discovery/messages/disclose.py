@@ -1,6 +1,6 @@
 """Represents a feature discovery disclosure message."""
 
-from typing import Mapping
+from typing import Mapping, Sequence
 
 from marshmallow import fields, Schema
 from marshmallow.validate import OneOf
@@ -22,7 +22,7 @@ class Disclose(AgentMessage):
         message_type = DISCLOSE
         schema_class = "DiscloseSchema"
 
-    def __init__(self, *, protocols: Mapping[str, Mapping] = None, **kwargs):
+    def __init__(self, *, protocols: Sequence[Mapping[str, Mapping]] = None, **kwargs):
         """
         Initialize disclose message object.
 
