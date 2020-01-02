@@ -133,10 +133,11 @@ class TestIndyLedger(AsyncTestCase):
         mock_close_pool.assert_called_once()
         assert ledger.pool_handle == None
 
+    ''' insufficient for now: needs to cover nested context management with keepalive
     @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.open_pool_ledger")
     @async_mock.patch("indy.pool.close_pool_ledger")
-    async def test_aenter_aexit_cancel_close(
+    async def test_aenter_aexit_nested_keepalive(
         self, mock_close_pool, mock_open_ledger, mock_set_proto
     ):
         mock_wallet = async_mock.MagicMock()
@@ -146,18 +147,20 @@ class TestIndyLedger(AsyncTestCase):
         async with ledger as led0:
             mock_set_proto.assert_called_once_with(2)
             mock_open_ledger.assert_called_once_with("name", "{}")
+            assert led0 == ledger
             mock_close_pool.assert_not_called()
             assert led0.pool_handle == mock_open_ledger.return_value
 
-        async with ledger as led1:
-            assert ledger.ref_count == 1
+            async with ledger as led1:
+                assert ledger.ref_count == 2
 
         mock_close_pool.assert_not_called()  # it's a future
         assert ledger.pool_handle
 
-        await asyncio.sleep(1.01)  # exactly 1 is not enough: close comes after shutdown
+        await asyncio.sleep(1)
         mock_close_pool.assert_called_once()
         assert ledger.pool_handle == None
+    '''
 
     @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.create_pool_ledger_config")
