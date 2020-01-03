@@ -1,0 +1,29 @@
+﻿@inject IJSRuntime JSRuntime
+
+<div class="form-group">
+    <label>@Label</label>
+    <div class="input-group">
+        <textarea id="@Id" class="form-control" cols="30" rows="10" @bind="@ObjectString" readonly></textarea>
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" @onclick="@(e => copy(String.Format("#{0}", Id)))">
+                <i class="fas fa-clipboard"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    [Parameter]
+    public string Label { get; set; }
+
+    [Parameter]
+    public string ObjectString { get; set; }
+
+    public async void copy(string selector)
+    {
+        await JSRuntime.InvokeAsync<string>("copyInputValue", selector);
+    }
+}

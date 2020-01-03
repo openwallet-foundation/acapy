@@ -1,0 +1,12 @@
+﻿<div class="card text-center shadow-sm">
+    <div class="card-body">
+        <NavLink class="stretched-link text-decoration-none" href="@Url">@Label</NavLink>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public string Url { get; set; }
+
+    [Parameter]
+    public string Label { get; set; }
+}

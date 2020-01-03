@@ -1,0 +1,49 @@
+﻿@page "/definitions"
+
+@using FaberController.Services
+@using FaberController.Shared.Components.ComponentNav
+@using FaberController.Shared.Components.ObjectViewer
+@using Newtonsoft.Json.Linq
+
+@inject FCAgentService AgentService
+
+<ComponentNav></ComponentNav>
+
+<div class="content">
+    <div class="container">
+        <select class="custom-select custom-select-lg mb-3" @onchange="OnSelectCredentialDefinition">
+            <option selected disabled value="">Select a CredentialDefinition</option>
+            @foreach (var CredentialDefinitionId in CredentialDefinitionIds)
+            {
+                <option value="@CredentialDefinitionId">@CredentialDefinitionId</option>
+
+            }
+        </select>
+
+        @if ((SelectedCredentialDefinitionObject != null) && (SelectedCredentialDefinitionObject != ""))
+        {
+            <div class="row">
+                <div class="col-12">
+                    <ObjectViewer Id="selectedCredentialDefinitionObject" Label="Credential Definition:" ObjectString="@SelectedCredentialDefinitionObject"></ObjectViewer>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public JArray CredentialDefinitionIds = new JArray();
+    public string SelectedCredentialDefinitionObject { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        CredentialDefinitionIds = await AgentService.GetCredentialDefinitions();
+    }
+
+    public async void OnSelectCredentialDefinition(ChangeEventArgs e)
+    {
+        JObject SelectedCredentialDefinition = await AgentService.GetCredentialDefinition(e.Value.ToString());
+        SelectedCredentialDefinitionObject = SelectedCredentialDefinition.ToString();
+        base.StateHasChanged();
+    }
+}

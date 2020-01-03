@@ -1,0 +1,94 @@
+﻿@using Newtonsoft.Json.Linq
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <button type="button" class="close" aria-label="Close" @onclick="@Remove">
+            <span aria-hidden="true">&times;</span>
+        </button>
+
+        @if (ConnectionState == "active" || ConnectionState == "request")
+        {
+            <div class="card-title">
+                <small>
+                    @if (ConnectionInitiator == "self")
+                    {
+                        <span>Sent&nbsp;</span>
+                    }
+                    @if (ConnectionInitiator == "external")
+                    {
+                        <span>Received&nbsp;</span>
+                    }
+                </small>
+                <small class="text-muted">@ConnectionCreatedAt</small>
+            </div>
+            <div class="card-text">
+                <span>
+                    @if (ConnectionInitiator == "self")
+                    {
+                        <small class="text-muted">To:&nbsp;</small>
+                    }
+
+                    @if (ConnectionInitiator == "external")
+                    {
+                        <small class="text-muted">From:&nbsp;</small>
+                    }
+                </span>
+                <span>@ConnectionTheirLabel</span>
+            </div>
+            <div class="card-text">
+                <span>
+                    <small class="text-muted">DID:</small>&nbsp;
+                </span>
+                <span>@ConnectionTheirDid</span>
+            </div>
+        }
+        else
+        {
+            <div class="card-title">
+                <small>
+                    <span>Created</span>&nbsp;
+                </small>
+                <small class="text-muted">@ConnectionCreatedAt</small>
+            </div>
+            <div class="card-text">
+                <div>
+                    <small class="text-muted">Connection ID:</small>
+                </div>
+                <span>@ConnectionId</span>
+            </div>
+        }
+    </div>
+    <div class="card-footer">
+        <p class="card-text">
+            <small class="text-muted">Last updated @ConnectionUpdatedAt</small>
+        </p>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public JObject Connection { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> Remove { get; set; }
+
+    public string ConnectionId { get; set; }
+    public string ConnectionState { get; set; }
+    public string ConnectionInitiator { get; set; }
+    public string ConnectionTheirLabel { get; set; }
+    public string ConnectionTheirDid { get; set; }
+    public DateTime ConnectionCreatedAt = new DateTime();
+    public DateTime ConnectionUpdatedAt = new DateTime();
+
+    protected override void OnInitialized()
+    {
+        ConnectionId = (string)Connection["connection_id"];
+        ConnectionState = (string)Connection["state"];
+        ConnectionInitiator = (string)Connection["initiator"];
+        ConnectionTheirLabel = (string)Connection["their_label"];
+        ConnectionTheirDid = (string)Connection["their_did"];
+        ConnectionCreatedAt = (DateTime)Connection["created_at"];
+        ConnectionUpdatedAt = (DateTime)Connection["updated_at"];
+        base.OnInitialized();
+    }
+}

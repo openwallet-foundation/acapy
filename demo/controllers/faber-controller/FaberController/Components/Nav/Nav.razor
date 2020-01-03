@@ -1,0 +1,31 @@
+﻿@using Newtonsoft.Json.Linq
+@using FaberController.Enums
+@using FaberController.Services
+@inject FCAgentService AgentService
+
+<nav class="navbar sticky-top navbar-dark bg-secondary">
+    <span class="navbar-brand mb-0 h1">Faber</span>
+    @switch (@Status)
+    {
+        case @AgentStatus.Up:
+            <div class="status-light bg-success" role="status"></div>
+            break;
+        case @AgentStatus.Down:
+            <div class="status-light bg-danger" role="status"></div>
+            break;
+        case @AgentStatus.Loading:
+            <div class="spinner-grow text-light" role="status"></div>
+            break;
+        default:
+            break;
+    }
+</nav>
+
+@code {
+    public AgentStatus Status = AgentStatus.Loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Status = await AgentService.GetStatus();
+    }
+}

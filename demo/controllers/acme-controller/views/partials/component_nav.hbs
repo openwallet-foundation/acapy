@@ -1,0 +1,22 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse-markup"
+        aria-controls="navbar-collapse-markup" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-start navbar-collapse-markup">
+        <div class="navbar-nav">
+            <!-- Custom links go here -->
+            {{#each customNavLinks}}
+            <a class="nav-item nav-link {{this.class}}" href="{{this.url}}">{{this.label}}</a>
+            {{/each}}
+        </div>
+    </div>
+    <div class="collapse navbar-collapse justify-content-end navbar-collapse-markup">
+        <div class="navbar-nav">
+            <a class="nav-item nav-link" href="/">Home</a>
+            {{#each moreNavLinks}}
+            <a class="nav-item nav-link {{this.class}}" href="{{this.url}}">{{this.label}}</a>
+            {{/each}}
+        </div>
+    </div>
+</nav>

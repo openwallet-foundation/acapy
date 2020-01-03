@@ -1,0 +1,29 @@
+﻿@using FaberController.Services
+@inject FCNavLinkService NavLinkService
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse-markup"
+            aria-controls="navbar-collapse-markup" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-start navbar-collapse-markup">
+        <div class="navbar-nav">
+            <!-- Custom links go here -->
+            @ChildContent
+        </div>
+    </div>
+    <div class="collapse navbar-collapse justify-content-end navbar-collapse-markup">
+        <div class="navbar-nav">
+            <NavLink class="nav-item nav-link" href="/" Match="NavLinkMatch.All">Home</NavLink>
+            @foreach (var MoreNavLink in NavLinkService.GetNavLinks())
+            {
+                <NavLink class="nav-item nav-link" href="@MoreNavLink.Url">@MoreNavLink.Label</NavLink>
+            }
+        </div>
+    </div>
+</nav>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+}

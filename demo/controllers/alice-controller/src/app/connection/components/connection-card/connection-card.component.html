@@ -1,0 +1,48 @@
+<div class="card shadow-sm">
+    <div class="card-body">
+        <button type="button" class="close" aria-label="Close" (click)="removeConnection(connection)">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        <ng-container *ngIf="connection?.state === 'active' || connection?.state === 'request';else invitation">
+            <div class="card-title">
+                <small>
+                    <span *ngIf="connection?.initiator === 'self'">Sent&nbsp;</span>
+                    <span *ngIf="connection?.initiator === 'external'">Received&nbsp;</span>
+                </small>
+                <small class="text-muted">{{ connection?.created_at | date:'medium' }}</small>
+            </div>
+            <div class="card-text">
+                <span>
+                    <small *ngIf="connection?.initiator === 'self'" class="text-muted">To:&nbsp;</small>
+                    <small *ngIf="connection?.initiator === 'external'" class="text-muted">From:&nbsp;</small>
+                </span>
+                <span>{{ connection?.their_label }}</span>
+            </div>
+            <div class="card-text">
+                <span>
+                    <small class="text-muted">DID:</small>&nbsp;
+                </span>
+                <span>{{ connection?.their_did }}</span>
+            </div>
+        </ng-container>
+        <ng-template #invitation>
+            <div class="card-title">
+                <small>
+                    <span>Created</span>&nbsp;
+                </small>
+                <small class="text-muted">{{ connection?.created_at | date:'medium' }}</small>
+            </div>
+            <div class="card-text">
+                <div>
+                    <small class="text-muted">Connection ID:</small>
+                </div>
+                <span>{{ connection?.connection_id }}</span>
+            </div>
+        </ng-template>
+    </div>
+    <div class="card-footer">
+        <p class="card-text">
+            <small class="text-muted">Last updated {{ connection?.updated_at | date:'medium' }}</small>
+        </p>
+    </div>
+</div>

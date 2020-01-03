@@ -1,0 +1,58 @@
+<div class="card shadow-sm">
+    <div class="card-body">
+        <a type="button" class="close" aria-label="Close"
+            href="/connections/{{ connection.connection_id }}/remove?state={{ connection.state }}">
+            <span aria-hidden="true">&times;</span>
+        </a>
+
+        {{#unlessEq connection.state 'invitation'}}
+        <div class="card-title">
+            <small>
+                {{#eq connection.initiator "self"}}
+                <span>Sent&nbsp;</span>
+                {{/eq}}
+                {{#eq connection.initiator "external"}}
+                <span>Received&nbsp;</span>
+                {{/eq}}
+            </small>
+            <small class="text-muted">{{ connection.created_at }}</small>
+        </div>
+        <div class="card-text">
+            <span>
+                {{#eq connection.initiator "self"}}
+                <small class="text-muted">To:&nbsp;</small>
+                {{/eq}}
+                {{#eq connection.initiator "external"}}
+                <small class="text-muted">From:&nbsp;</small>
+                {{/eq}}
+            </span>
+            <span>{{ connection.their_label }}</span>
+        </div>
+        <div class="card-text">
+            <span>
+                <small class="text-muted">DID:</small>&nbsp;
+            </span>
+            <span>{{ connection.their_did }}</span>
+        </div>
+        {{/unlessEq}}
+        {{#eq connection.state "invitation"}}
+        <div class="card-title">
+            <small>
+                <span>Created</span>&nbsp;
+            </small>
+            <small class="text-muted">{{ connection.created_at }}</small>
+        </div>
+        <div class="card-text">
+            <div>
+                <small class="text-muted">Connection ID:</small>
+            </div>
+            <span>{{ connection.connection_id }}</span>
+        </div>
+        {{/eq}}
+    </div>
+    <div class="card-footer">
+        <p class="card-text">
+            <small class="text-muted">Last updated {{ connection.created_at }}</small>
+        </p>
+    </div>
+</div>

@@ -1,0 +1,90 @@
+﻿@page "/connections/active"
+@page "/connections/pending"
+
+@implements IDisposable
+
+@layout Connection
+@using FaberController.Services
+@using FaberController.Shared.Components.EmptyList
+@using Newtonsoft.Json.Linq
+
+@inject NavigationManager Navigation
+@inject FCAgentService AgentService
+
+<div class="card-columns">
+    @foreach (JObject Connection in Connections)
+    {
+        <ConnectionCard Connection="@Connection" Remove="@(e => OnRemoveConnection(Connection))" @key="Connection"></ConnectionCard>
+    }
+</div>
+
+@if ((Connections == null) || (Connections.Count == 0))
+{
+    <EmptyList></EmptyList>
+}
+
+@code {
+    private string _pagePath
+    {
+        get
+        {
+            return Navigation.ToBaseRelativePath(Navigation.Uri).Replace("connections/", "");
+        }
+    }
+
+    public JArray Connections = new JArray();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        Navigation.LocationChanged += _onLocationChanged;
+        await _refreshConnections();
+    }
+
+    public async void OnRemoveConnection(JObject connection)
+    {
+        var connectionId = _getConnectionId(connection);
+        await AgentService.RemoveConnection((string)connectionId);
+        Connections = new JArray(Connections.Where(Connection => _getConnectionId(Connection) != connectionId));
+        base.StateHasChanged();
+    }
+
+    public void Dispose() {
+        Navigation.LocationChanged -= _onLocationChanged;
+    }
+
+    private async void _onLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        await _refreshConnections();
+    }
+
+    private async Task _refreshConnections() {
+        if (_pagePath == null || _pagePath == "")
+        {
+            return;
+        }
+
+        Connections = await AgentService.GetConnections();
+
+        if (_pagePath == "active")
+        {
+            Connections = new JArray(Connections
+                .Where(Connection => _getConnectionState(Connection) == "active" || _getConnectionState(Connection) == "request"));
+        } else if (_pagePath == "pending")
+        {
+            Connections = new JArray(Connections
+                .Where(Connection => _getConnectionState(Connection) == "invitation"));
+        }
+        base.StateHasChanged();
+    }
+
+    private string _getConnectionId(JToken connection)
+    {
+        return (string)connection["connection_id"];
+    }
+
+    private string _getConnectionState(JToken connection)
+    {
+        return (string)connection["state"];
+    }
+}

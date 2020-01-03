@@ -1,0 +1,125 @@
+{{> component_nav moreNavLinks=navLinks}}
+
+<div class="content">
+    <div class="container">
+        <form novalidate autocomplete="off" method="POST" , action="/connections/accept">
+            <div class="form-group">
+                <label for="invitationObject">Paste invitation object block:</label>
+                <textarea class="form-control {{#if errors}}is-invalid{{/if}}" id="invitationObject"
+                    name="invitation_object" cols="30" rows="10">{{invitation.invitation_object}}</textarea>
+                {{#if errors}}
+                <div class="invalid-feedback d-block">
+                    {{#each errors}}
+                    <div>{{ this.msg }}</div>
+                    {{/each}}
+                </div>
+                {{/if}}
+            </div>
+            <div class="form-group">
+                <label for="invitationUrl">Alternatively paste an invitation URL:</label>
+                <input type="text" class="form-control" id="invitationUrl" name="invitation_url"
+                    value="{{invitation.invitation_url}}">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                Accept Invitation
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let urlInput, objectInput, invalidUrlEl;
+    window.addEventListener('load', function () {
+        objectInput = document.querySelector('#invitationObject');
+        urlInput = document.querySelector('#invitationUrl');
+        invalidUrlEl = document.createElement('small');
+        invalidUrlEl.innerText = 'Unable to process that URL: Invalid invitation URL';
+        init();
+    });
+
+    window.addEventListener('beforeunload', function () {
+        cleanup();
+    });
+
+    const debouncedDecode = debounce(decode, 300);
+    const debouncedRemoveUrlErr = debounce(removeInvalidUrlEl, 300, true);
+    const debouncedRemoveObjErr = debounce(removeInvalidObjectErr, 300, true);
+
+    function removeInvalidUrlEl() {
+        const urlParentNode = invalidUrlEl.parentNode;
+
+        if (urlParentNode) {
+            urlParentNode.removeChild(invalidUrlEl);
+        }
+    }
+
+    function removeInvalidObjectErr() {
+        const objectParentNode = objectInput.parentNode;
+        const errorMsgs = objectParentNode.querySelector('.invalid-feedback');
+
+        if (objectParentNode && errorMsgs) {
+            objectParentNode.removeChild(errorMsgs);
+        }
+
+        objectInput.classList.remove('is-invalid');
+    }
+
+    // Adapted from David Walsh Blog https://davidwalsh.name/javascript-debounce-function
+    function debounce(fn, delay, now) {
+        let timeout;
+        return function () {
+            const args = arguments;
+            const laterFn = () => {
+                timeout = null;
+                if (!now) {
+                    fn.apply(this, args)
+                };
+            }
+            const execOnLeadingEdge = now && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(laterFn, delay);
+            if (execOnLeadingEdge) {
+                fn.apply(this, args);
+            }
+        }
+    }
+
+    function decode(e) {
+        try {
+            const value = e.target.value;
+            if (!value) {
+                return;
+            }
+            const url = new URL(value);
+            const invitationParam = url.searchParams.get('c_i');
+            if (!invitationParam) {
+                throw new Error();
+            }
+
+            objectInput.value = JSON.stringify(JSON.parse(atob(invitationParam)), null, 4);
+            removeInvalidObjectErr();
+        } catch (error) {
+            urlInput.parentNode.appendChild(invalidUrlEl);
+        }
+    }
+
+    function init() {
+        if (!(urlInput && objectInput)) {
+            return;
+        }
+        urlInput.addEventListener('input', debouncedDecode);
+        urlInput.addEventListener('input', debouncedRemoveUrlErr);
+        objectInput.addEventListener('input', debouncedRemoveObjErr);
+    }
+
+    function cleanup() {
+        if (urlInput) {
+            urlInput.removeEventListener('input', debouncedDecode);
+            urlInput.removeEventListener('input', debouncedRemoveUrlErr);
+        }
+        if (objectInput) {
+            objectInput.removeEventListener('input', debouncedRemoveObjErr);
+        }
+        return;
+    }
+</script>

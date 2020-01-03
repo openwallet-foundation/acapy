@@ -1,0 +1,27 @@
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="card-title">
+            <h5>
+                <span>{{ proof?.presentation_request?.name }}</span>
+                <span
+                    *ngIf="proof?.presentation_request?.version">&nbsp;({{ proof?.presentation_request?.version }})</span>
+            </h5>
+            <small>
+                <span *ngIf="proof?.initiator === 'self'">Sent&nbsp;</span>
+                <span *ngIf="proof?.initiator === 'external'">Received&nbsp;</span>
+            </small>
+            <small class="text-muted">{{ proof?.created_at | date:'medium' }}</small>
+        </div>
+        <div class="card-text">
+            <div>
+                <small class="text-muted">Presentation Exchange ID:&nbsp;</small>
+                <p>{{ proof?.presentation_exchange_id }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        <p class="card-text">
+            <small class="text-muted">Updated at {{ proof?.updated_at | date:'medium' }}</small>
+        </p>
+    </div>
+</div>

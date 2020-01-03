@@ -1,0 +1,11 @@
+<app-component-nav>
+    <a class="nav-item nav-link" routerLink="active" routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }">Active</a>
+    <a class="nav-item nav-link" routerLink="pending" routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }">Pending</a>
+    <a class="nav-item nav-link" routerLink="new" routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }">New</a>
+    <a class="nav-item nav-link" routerLink="accept" routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }">Accept</a>
+</app-component-nav>
+<router-outlet></router-outlet>

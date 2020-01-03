@@ -1,0 +1,34 @@
+<div class="container">
+    <form novalidate autocomplete="false">
+        <button type="button" class="btn btn-primary btn-lg btn-block mb-3" (click)="onSubmit()"
+            [disabled]="invitation">Create New Invitation</button>
+    </form>
+
+    <div *ngIf="invitation" class="row">
+        <div class="col-12">
+            <div class="form-group">
+                <label>Copy the following invitation object:</label>
+                <div class="input-group">
+                    <textarea class="form-control" cols="30" rows="10" [value]="invitationObject" #invitationObjectEl
+                        readonly></textarea>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" (click)="copy(invitationObjectEl)">
+                            <i class="fas fa-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Alternatively copy the following invitation URL:</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" [value]="invitationUrl" #invitationUrlEl readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" (click)="copy(invitationUrlEl)">
+                            <i class="fas fa-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

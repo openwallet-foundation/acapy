@@ -1,0 +1,64 @@
+﻿@page "/connections/new"
+
+@layout Connection
+
+@using FaberController.Shared.Components.ObjectViewer
+@using FaberController.Services
+@using Newtonsoft.Json.Linq
+
+@inject FCAgentService AgentService
+@inject IJSRuntime JSRuntime
+
+<div class="container">
+    <form novalidate autocomplete="false">
+        <button type="button" class="btn btn-primary btn-lg btn-block mb-3" @onclick="@OnSubmit" disabled="@(Invitation != null && Invitation.HasValues)">
+            Create New Invitation
+        </button>
+    </form>
+
+    @if (Invitation != null && Invitation.HasValues)
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="form-group">
+                    <ObjectViewer Id="invitationObject" Label="Copy the following invitation object:" ObjectString="@InvitationObject"></ObjectViewer>
+                </div>
+
+                <div class="form-group">
+                    <label>Alternatively copy the following invitation URL:</label>
+                    <div class="input-group">
+                        <input id="invitationUrl" type="text" class="form-control" @bind="InvitationUrl" readonly>
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" @onclick="@(e => copy("#invitationUrl"))">
+                                <i class="fas fa-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    public JObject Invitation { get; set; }
+    public string InvitationObject { get; set; }
+    public string InvitationUrl { get; set; }
+
+    public async void OnSubmit()
+    {
+        Invitation = await AgentService.CreateInvitation();
+
+        if (Invitation != null && Invitation.HasValues)
+        {
+            InvitationObject = Invitation["invitation"].ToString();
+            InvitationUrl = Invitation["invitation_url"].ToString();
+        }
+        base.StateHasChanged();
+    }
+
+    public async void copy(string selector)
+    {
+        await JSRuntime.InvokeAsync<string>("copyInputValue", selector);
+    }
+}

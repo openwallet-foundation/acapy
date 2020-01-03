@@ -1,0 +1,20 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-white">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse-markup"
+        aria-controls="navbar-collapse-markup" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-start navbar-collapse-markup">
+        <div class="navbar-nav">
+            <!-- Custom links go here -->
+            <ng-content></ng-content>
+        </div>
+    </div>
+    <div class="collapse navbar-collapse justify-content-end navbar-collapse-markup">
+        <div class="navbar-nav">
+            <a class="nav-item nav-link" routerLink="/" routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }">Home</a>
+            <a *ngFor="let moreNavLink of moreNavLinks" class="nav-item nav-link" routerLink="{{ moreNavLink.url }}"
+                routerLinkActive="active">{{ moreNavLink.label }}</a>
+        </div>
+    </div>
+</nav>

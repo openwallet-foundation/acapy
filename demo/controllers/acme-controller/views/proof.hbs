@@ -1,0 +1,13 @@
+{{> component_nav moreNavLinks=navLinks}}
+
+<div class="content">
+    {{#if proofs}}
+    <div class="card-columns">
+        {{#each proofs}}
+        {{> proof_card proof=this}}
+        {{/each}}
+    </div>
+    {{else}}
+    {{> empty_list }}
+    {{/if}}
+</div>

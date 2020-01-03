@@ -1,0 +1,49 @@
+﻿@page "/schemas"
+
+@using FaberController.Services
+@using FaberController.Shared.Components.ComponentNav
+@using FaberController.Shared.Components.ObjectViewer
+@using Newtonsoft.Json.Linq
+
+@inject FCAgentService AgentService
+
+<ComponentNav></ComponentNav>
+
+<div class="content">
+    <div class="container">
+        <select class="custom-select custom-select-lg mb-3" @onchange="OnSelectSchema">
+            <option selected disabled value="">Select a Schema</option>
+            @foreach (var SchemaId in SchemaIds)
+            {
+                <option value="@SchemaId">@SchemaId</option>
+
+            }
+        </select>
+
+        @if ((SelectedSchemaObject != null) && (SelectedSchemaObject != ""))
+        {
+            <div class="row">
+                <div class="col-12">
+                    <ObjectViewer Id="selectedSchemaObject" Label="Schema:" ObjectString="@SelectedSchemaObject"></ObjectViewer>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public JArray SchemaIds = new JArray();
+    public string SelectedSchemaObject { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        SchemaIds = await AgentService.GetSchemas();
+    }
+
+    public async void OnSelectSchema(ChangeEventArgs e)
+    {
+        JObject SelectedSchema = await AgentService.GetSchema(e.Value.ToString());
+        SelectedSchemaObject = SelectedSchema.ToString();
+        base.StateHasChanged();
+    }
+}

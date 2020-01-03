@@ -1,0 +1,16 @@
+﻿@using FaberController.Services
+@using FaberController.Components.Card
+@inject FCNavLinkService NavLinkService
+
+<div class="content">
+    <div class="card-deck">
+        @foreach (var NavLink in NavLinkService.GetNavLinks())
+        {
+            <Card Url="@NavLink.Url" Label="@NavLink.Label"></Card>
+        }
+    </div>
+</div>
+
+@code {
+
+}

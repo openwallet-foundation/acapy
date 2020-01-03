@@ -1,0 +1,146 @@
+{{> component_nav moreNavLinks=navLinks}}
+
+<div class="content">
+    <div class="container">
+        <form novalidate autocomplete="false" method="POST" action="/proofs/request">
+            <div class="form-group">
+                <select id="connectionId" name="connection_id"
+                    class="custom-select {{#filter error_keys "connection_id"}}is-invalid{{/filter}}"
+                    value="{{ proof.connectionId }}">
+                    <option selected disabled value="">Select a Connection</option>
+                    {{#each connections}}
+                    <option {{#eq this.connection_id ../proof.connectionId}}selected{{/eq}}
+                        value="{{this.connection_id}}">{{this.their_label}} {{this.connection_id}}</option>
+                    {{/each}}
+                </select>
+                {{#filter error_keys "connection_id"}}
+                <div class="invalid-feedback d-block">
+                    {{#each ../errors}}
+                    {{#eq this.param "connection_id"}}
+                    <div>{{ this.msg }}</div>
+                    {{/eq}}
+                    {{/each}}
+                </div>
+                {{/filter}}
+            </div>
+            <div class="form-group">
+                <label for="credentialDefinitionId">Enter a Credential Definition ID:</label>
+                <input type="text"
+                    class="form-control {{#filter error_keys "credential_definition_id"}}is-invalid{{/filter}}"
+                    id="credentialDefinitionId" name="credential_definition_id"
+                    value="{{ proof.credentialDefinitionId }}">
+                {{#filter error_keys "credential_definition_id"}}
+                <div class="invalid-feedback d-block">
+                    {{#each ../errors}}
+                    {{#eq this.param "credential_definition_id"}}
+                    <div>{{ this.msg }}</div>
+                    {{/eq}}
+                    {{/each}}
+                </div>
+                {{/filter}}
+            </div>
+            <div class="form-group">
+                <label>Proof Request Object:</label>
+                <textarea id="proofObject" name="proof_object" class="form-control" cols="30" rows="10"
+                    readonly>{{ proof.proof }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block mb-3">
+                Request Proof
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let urlInput, credDefInput, proofObject;
+    window.addEventListener('load', function () {
+        connectionSelect = document.querySelector('#connectionId');
+        credDefInput = document.querySelector('#credentialDefinitionId');
+        proofObject = document.querySelector('#proofObject');
+        init();
+    });
+
+    window.addEventListener('beforeunload', function () {
+        cleanup();
+    });
+
+    const debouncedUpdateConnectionId = debounce((e) => {
+        if (!proofObject) {
+            return;
+        }
+
+        try {
+            const value = e.target.value || '<Enter a valid Connection ID>'
+            const proof = JSON.parse(proofObject.value);
+            proof.connection_id = value;
+            proofObject.value = JSON.stringify(proof, null, 4);
+        } catch (error) {
+            console.error(error);
+            return;
+        }
+    }, 300);
+
+    const debouncedUpdateCredDefId = debounce((e) => {
+        if (!proofObject) {
+            return;
+        }
+
+        try {
+            const value = e.target.value || '<Enter a valid Credential Definition ID>';
+            const proof = JSON.parse(proofObject.value);
+
+            Object.keys(proof.proof_request.requested_attributes)
+                .filter(attr => proof.proof_request.requested_attributes[attr].restrictions)
+                .forEach(attr => {
+                    proof.proof_request.requested_attributes[attr].restrictions[0].cred_def_id = value
+                });
+            Object.keys(proof.proof_request.requested_predicates)
+                .filter(attr => proof.proof_request.requested_predicates[attr].restrictions)
+                .forEach(attr => {
+                    proof.proof_request.requested_predicates[attr].restrictions[0].cred_def_id = value
+                });
+            proofObject.value = JSON.stringify(proof, null, 4);
+        } catch (error) {
+            console.error(error);
+            return;
+        }
+    }, 300);
+
+    // Adapted from David Walsh Blog https://davidwalsh.name/javascript-debounce-function
+    function debounce(fn, delay, now) {
+        let timeout;
+        return function () {
+            const args = arguments;
+            const laterFn = () => {
+                timeout = null;
+                if (!now) {
+                    fn.apply(this, args)
+                };
+            }
+            const execOnLeadingEdge = now && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(laterFn, delay);
+            if (execOnLeadingEdge) {
+                fn.apply(this, args);
+            }
+        }
+    }
+
+    function init() {
+        if (!(connectionSelect && credDefInput)) {
+            return;
+        }
+        connectionSelect.addEventListener('input', debouncedUpdateConnectionId);
+        credDefInput.addEventListener('input', debouncedUpdateCredDefId);
+    }
+
+    function cleanup() {
+        if (connectionSelect) {
+            connectionSelect.removeEventListener('input', debouncedUpdateConnectionId);
+        }
+        if (credDefInput) {
+            credDefInput.removeEventListener('input', debouncedUpdateCredDefId);
+        }
+        return;
+    }
+</script>

@@ -1,0 +1,5 @@
+<div class="card-columns">
+    <app-proof-card *ngFor="let proof of proofs" [proof]="proof"></app-proof-card>
+</div>
+
+<app-empty-list *ngIf="!proofs?.length"></app-empty-list>

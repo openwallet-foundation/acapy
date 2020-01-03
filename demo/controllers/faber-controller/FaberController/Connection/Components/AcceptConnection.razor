@@ -1,0 +1,106 @@
+﻿@page "/connections/accept"
+
+@layout Connection
+
+@using Newtonsoft.Json
+@using System.Web
+@using System.ComponentModel.DataAnnotations
+@using FaberController.Services
+
+@inject FCAgentService AgentService
+@inject NavigationManager Navigation
+
+<div class="container">
+    <EditForm novalidate autocomplete="off" Model="@_acceptConnectionModel" OnValidSubmit="@_handleValidSubmit">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <div class="form-group">
+            <label for="invitationObject">Paste invitation object block:</label>
+            <InputTextArea class="form-control" id="invitationObject"
+                           @bind-Value="_acceptConnectionModel.InvitationObject" cols="30" rows="10"></InputTextArea>
+
+            <div class="invalid-feedback d-block">
+                <ValidationMessage For="@(() => _acceptConnectionModel.InvitationObject)" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="invitationUrl">Alternatively paste an invitation URL:</label>
+            <InputText type="text" class="form-control" id="invitationUrl" name="invitation_url"
+                       @bind-Value="_acceptConnectionModel.InvitationUrl" @oninput="_parseInvitationUrl"></InputText>
+            @if (_invitationUrlError)
+            {
+                <small *ngIf="">
+                    Unable to process that URL: Invalid invitation URL
+                </small>
+            }
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">
+            Accept Invitation
+        </button>
+    </EditForm>
+</div>
+
+@code {
+    private AcceptConnectionModel _acceptConnectionModel = new AcceptConnectionModel();
+
+    private bool _invitationUrlError = false;
+
+    private async void _handleValidSubmit()
+    {
+        await AgentService.ReceiveInvitation(_acceptConnectionModel.InvitationObject);
+        Navigation.NavigateTo("/connections/active");
+    }
+
+    private void _parseInvitationUrl(ChangeEventArgs e)
+    {
+        _invitationUrlError = false;
+        var value = e.Value.ToString();
+        if (value == null || value == "")
+        {
+            return;
+        }
+        try
+        {
+            var uri = new Uri(value);
+            var invitationParam = HttpUtility.ParseQueryString(uri.Query).Get("c_i");
+            if (invitationParam == null || invitationParam == "")
+            {
+                throw new Exception();
+            }
+
+            var data = System.Convert.FromBase64String(invitationParam);
+            var invitationObject = JsonConvert.DeserializeObject<dynamic>(System.Text.ASCIIEncoding.ASCII.GetString(data));
+            _acceptConnectionModel.InvitationObject = invitationObject.ToString();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex);
+            _invitationUrlError = true;
+        }
+    }
+
+    public class AcceptConnectionModel
+    {
+        [Required(ErrorMessage = "Invitation object is required")]
+        [ValidJson]
+        public string InvitationObject { get; set; }
+
+        public string InvitationUrl { get; set; }
+    }
+
+    public class ValidJson : ValidationAttribute
+    {
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            try
+            {
+                JsonConvert.DeserializeObject<dynamic>(value.ToString());
+            }
+            catch (Exception ex)
+            {
+                return new ValidationResult(String.Format("Invalid object: {0}", ex.Message), new[] { validationContext.MemberName });
+            }
+            return ValidationResult.Success;
+        }
+    }
+
+}

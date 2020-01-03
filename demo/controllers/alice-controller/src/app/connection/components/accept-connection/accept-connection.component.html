@@ -1,0 +1,25 @@
+<div class="container">
+    <form novalidate autocomplete="off" [formGroup]="form">
+        <div class="form-group">
+            <label for="invitationObject">Paste invitation object block:</label>
+            <textarea class="form-control"
+                [ngClass]="{'is-invalid': (invitation.touched || invitation.dirty) && invitation.invalid}"
+                id="invitationObject" cols="30" rows="10" [formControl]="invitation"></textarea>
+            <div *ngIf="(invitation.touched || invitation.dirty) && invitation.invalid"
+                class="invalid-feedback d-block">
+                <div *ngIf="invitation.errors.required">Invitation object is required</div>
+                <div *ngIf="invitation.errors.json">Invalid object: {{ invitation.errors.json }}</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="invitationUrl">Alternatively paste an invitation URL:</label>
+            <input type="text" class="form-control" id="invitationUrl" [formControl]="invitationUrl">
+            <small *ngIf="invitationUrlError$ | async">Unable to process that URL:
+                {{ invitationUrlError$ | async }}</small>
+        </div>
+        <button type="button" class="btn btn-primary btn-lg btn-block" (click)="onSubmit()"
+            [disabled]="form.invalid">Accept
+            Invitation
+        </button>
+    </form>
+</div>
