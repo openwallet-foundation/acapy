@@ -194,7 +194,7 @@ Now that you have a solid foundation in using ACA-Py, time for a coding challeng
 * ACME requesting a proof of her College degree
 * ACME issuing Alice a credential after she is hired.
 
-The framework for the code is in the [acme.py](runners/acme.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
+The framework for the code is in the [acme_incomplete.py](runners/acme_incomplete.py) file, but the code is incomplete. Using the knowledge you gained from running demo and viewing the alice.py and faber.py code, fill in the blanks for the code.  When you are ready to test your work:
 
 * Use the instructions above to start the Alice/Faber demo (above).
 * Start another terminal session and run the same commands as for "Alice", but replace "alice" with "acme".

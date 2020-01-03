@@ -81,7 +81,35 @@ class AcmeAgent(DemoAgent):
         )
 
         if state == "presentation_received":
-            # TODO handle received presentations
+            # if presentation is a degree schema (proof of education),
+            # check values received
+            pres_req = message["presentation_request"]
+            pres = message["presentation"]
+            presentation_exchange_id = message["presentation_exchange_id"]
+
+            proof = await self.admin_POST(
+                f"/present-proof/records/{presentation_exchange_id}/"
+                "verify-presentation"
+            )
+            self.log("Proof =", proof["verified"])
+
+            is_proof_of_education = (
+                pres_req["name"] == "Proof of Education"
+            )
+            if is_proof_of_education:
+                log_status("#28.1 Received proof of education, check claims")
+                for (referent, attr_spec) in pres_req["requested_attributes"].items():
+                    self.log(
+                        f"{attr_spec['name']}: "
+                        f"{pres['requested_proof']['revealed_attrs'][referent]['raw']}"
+                    )
+                for id_spec in pres["identifiers"]:
+                    # just print out the schema/cred def id's of presented claims
+                    self.log(f"schema_id: {id_spec['schema_id']}")
+                    self.log(f"cred_def_id {id_spec['cred_def_id']}")
+            else:
+                # in case there are any other kinds of proofs received
+                self.log("#28.1 Received ", message["presentation_request"]["name"])
             pass
 
     async def handle_basicmessages(self, message):
