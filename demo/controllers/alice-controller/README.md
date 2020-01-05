@@ -1,30 +1,52 @@
-# AliceController
+# Alice Controller
 
 Web controller for a Hyperledger Aries Alice CloudAgent (aca-py)
 
----
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.1.1.
+## Table of Contents
 
-## Development server
+- [Prerequisites](#prerequisites)
+- [Running Locally](#running-locally)
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+### Prerequisites
 
-## Code scaffolding
+Alice Controller requires `Node.js 10.x` or higher. Node.js can be downloaded [here](https://nodejs.org/en/download/). Alternatively you can use a Node.js version manager like [`nvm`](https://github.com/nvm-sh/nvm) or [`nvm-windows`](https://github.com/coreybutler/nvm-windows).
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### Running Locally
 
-## Build
+Alice controller was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.1.1 and can be run locally with minimal effort using the CLI. The CLI is installed as a global npm package.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+For example on Linux:
 
-## Running unit tests
+```
+$ npm install -g @angular/cli
+```
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+From the alice-controller root directory, simply install application node modules then call `ng serve`
 
-## Running end-to-end tests
+For example on Linux:
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+```
+$ npm install
+$ ng serve
+```
 
-## Further help
+You may see an output like:
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+```
+chunk {connection-connection-module} connection-connection-module.js, connection-connection-module.js.map (connection-connection-module) 306 kB  [rendered]
+chunk {credential-credential-module} credential-credential-module.js, credential-credential-module.js.map (credential-credential-module) 17.7 kB  [rendered]
+chunk {main} main.js, main.js.map (main) 60.6 kB [initial] [rendered]
+chunk {polyfills} polyfills.js, polyfills.js.map (polyfills) 264 kB [initial] [rendered]
+chunk {proof-proof-module} proof-proof-module.js, proof-proof-module.js.map (proof-proof-module) 16.7 kB  [rendered]
+chunk {runtime} runtime.js, runtime.js.map (runtime) 9.13 kB [entry] [rendered]
+chunk {styles} styles.js, styles.js.map (styles) 842 kB [initial] [rendered]
+chunk {vendor} vendor.js, vendor.js.map (vendor) 4.63 MB [initial] [rendered]
+Date: 2020-01-05T18:47:21.136Z - Hash: 61c4728366fef065089e - Time: 7894ms
+** Angular Live Development Server is listening on localhost:4200, open your browser on http://localhost:4200/ **
+ℹ ｢wdm｣: Compiled successfully.
+```
+
+You can now open your browser tab to `localhost:4200` to see the application.
+
+_Note: Alice Controller has already been configured to connect to it's agent on localhost:8031. If the controller is not connected to it's agent you will see a red status indicator on the top right-hand side of the navbar. If the agent is succesffully connected, you will see a green status indicator._
+
