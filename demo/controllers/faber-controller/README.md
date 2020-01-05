@@ -9,11 +9,11 @@ Web controller for a Hyperledger Aries Faber CloudAgent demo
 
 ### Prerequisites
 
-Faber Controller requires `.NET Core 3.1` installation instructions for vairous platforms can be viewed [here](https://dotnet.microsoft.com/download).
+Faber Controller requires `.NET Core 3.1`. Installation instructions for vairous platforms can be viewed [here](https://dotnet.microsoft.com/download).
 
 ### Running Locally
 
-`.NET Core 3.1` comes with a CLI for running .NET applications. To run the controller Simply navigate to the `FaberController` project from the faber-controller root directory and issue the `dotnet run` command:
+`.NET Core 3.1` comes with a CLI for running .NET applications. To run the controller, simply navigate to the `FaberController` project from the faber-controller root directory and issue the `dotnet run` command:
 
 For example on Linux:
 
