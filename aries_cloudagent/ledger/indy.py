@@ -207,12 +207,14 @@ class IndyLedger(BaseLedger):
             The current instance
 
         """
+        await super().__aenter__()
         await self._context_open()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         """Context manager exit."""
         await self._context_close()
+        await super().__aexit__(exc_type, exc, tb)
 
     async def _submit(
         self,
@@ -491,6 +493,7 @@ class IndyLedger(BaseLedger):
             )
 
         schema = await self.get_schema(schema_id)
+        credential_definition_json = None
 
         # TODO: add support for tag, sig type, and config
         try:
@@ -525,15 +528,25 @@ class IndyLedger(BaseLedger):
                 raise IndyErrorHandler.wrap_error(error) from error
 
         # check if the cred def already exists on the ledger
-        cred_def = json.loads(credential_definition_json)
+        created_cred_def = json.loads(
+            credential_definition_json
+        ) if credential_definition_json else None
         exist_def = await self.fetch_credential_definition(credential_definition_id)
-        if exist_def:
-            if exist_def["value"] != cred_def["value"]:
-                self.logger.warning(
-                    "Ledger definition of cred def %s will be replaced",
-                    credential_definition_id,
+
+        if created_cred_def:
+            if exist_def:
+                if exist_def["value"] != created_cred_def["value"]:
+                    self.logger.warning(
+                        "Ledger definition of cred def %s will be replaced",
+                        credential_definition_id,
+                    )
+                    exist_def = None
+        else:
+            if not exist_def:
+                raise LedgerError(
+                    f"Wallet {self.wallet.name} "
+                    f"does not pertain to ledger on pool {self.pool_name}"
                 )
-                exist_def = None
 
         if not exist_def:
             with IndyErrorHandler("Exception when building cred def request"):
@@ -668,9 +681,10 @@ class IndyLedger(BaseLedger):
                 public_did, nym, "endpoint", None, None
             )
         response_json = await self._submit(request_json, public_did=public_did)
-        endpoint_json = json.loads(response_json)["result"]["data"]
-        if endpoint_json:
-            address = json.loads(endpoint_json)["endpoint"].get("endpoint", None)
+        data_json = json.loads(response_json)["result"]["data"]
+        if data_json:
+            endpoint = json.loads(data_json).get("endpoint", None)
+            address = endpoint.get("endpoint", None) if endpoint else None
         else:
             address = None
 
@@ -792,14 +806,15 @@ class IndyLedger(BaseLedger):
         )
         storage = self.get_indy_storage()
         await storage.add_record(record)
-        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
-        await self.cache.set(cache_key, acceptance, self.cache_duration)
+        if self.cache:
+            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
+            await self.cache.set(cache_key, acceptance, self.cache_duration)
 
     async def get_latest_txn_author_acceptance(self):
         """Look up the latest TAA acceptance."""
         cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
-        acceptance = await self.cache.get(cache_key)
-        if acceptance is None:
+        acceptance = self.cache and await self.cache.get(cache_key)
+        if not acceptance:
             storage = self.get_indy_storage()
             tag_filter = {"pool_name": self.pool_name}
             found = await storage.search_records(
@@ -811,5 +826,6 @@ class IndyLedger(BaseLedger):
                 acceptance = records[0]
             else:
                 acceptance = {}
-            await self.cache.set(cache_key, acceptance, self.cache_duration)
+            if self.cache:
+                await self.cache.set(cache_key, acceptance, self.cache_duration)
         return acceptance
