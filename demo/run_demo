@@ -69,7 +69,10 @@ if ! [ -z "$POSTGRES" ]; then
 fi
 if ! [ -z "$LEDGER_URL" ]; then
 	GENESIS_URL="${LEDGER_URL}/genesis"
-	DOCKER_ENV="${DOCKER_ENV} -e LEDGER_URL=${LEDGER_URL} -e GENESIS_URL=${GENESIS_URL}"
+	DOCKER_ENV="${DOCKER_ENV} -e LEDGER_URL=${LEDGER_URL}"
+fi
+if ! [ -z "$GENESIS_URL" ]; then
+	DOCKER_ENV="${DOCKER_ENV} -e GENESIS_URL=${GENESIS_URL}"
 fi
 
 # on Windows, docker run needs to be prefixed by winpty
