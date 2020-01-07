@@ -49,9 +49,12 @@ class CredentialOffer(AgentMessage):
         """
         super().__init__(_id=_id, **kwargs)
         self.comment = comment
+        '''
         self.credential_preview = (
             credential_preview if credential_preview else CredentialPreview()
         )
+        '''
+        self.credential_preview = credential_preview
         self.offers_attach = list(offers_attach) if offers_attach else []
 
     def indy_offer(self, index: int = 0) -> dict:
