@@ -77,8 +77,15 @@ class InboundTransportManager:
 
         """
         try:
+            if '.' in config.module:
+                package, *mod_parts = config.module.split('.')
+                module = '.'.join(mod_parts)
+            else:
+                package = MODULE_BASE_PATH
+                module = config.module
+
             imported_class = ClassLoader.load_subclass_of(
-                BaseInboundTransport, config.module, MODULE_BASE_PATH
+                BaseInboundTransport, module, package
             )
         except (ModuleLoadError, ClassNotFoundError) as e:
             raise InboundTransportRegistrationError(

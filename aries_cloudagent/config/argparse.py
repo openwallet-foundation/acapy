@@ -573,7 +573,9 @@ class TransportGroup(ArgumentGroup):
             help="REQUIRED. Defines the inbound transport(s) on which the agent\
             listens for receiving messages from other agents. This parameter can\
             be specified multiple times to create multiple interfaces.\
-            Supported inbound transport types are 'http' and 'ws'.",
+            Built-in inbound transport types include 'http' and 'ws'.\
+            However, other transports can be loaded by specifying an absolute\
+            module path.",
         )
         parser.add_argument(
             "-ot",
