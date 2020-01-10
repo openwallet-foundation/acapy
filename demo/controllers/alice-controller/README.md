@@ -6,12 +6,16 @@ Web controller for a Hyperledger Aries Alice CloudAgent (aca-py)
 
 - [Prerequisites](#prerequisites)
 - [Running Locally](#running-locally)
-
-### Prerequisites
-
-Alice Controller requires `Node.js 10.x` or higher. Node.js can be downloaded [here](https://nodejs.org/en/download/). Alternatively you can use a Node.js version manager like [`nvm`](https://github.com/nvm-sh/nvm) or [`nvm-windows`](https://github.com/coreybutler/nvm-windows).
+    - [Prerequisites](#prerequisites)
+    - [Start the Application](#start-the-application)
+- [Running with Docker](#running-with-docker)
+- [Notes](#notes)
 
 ### Running Locally
+
+#### Prerequisites
+
+Alice Controller requires `Node.js 10.x` or higher. Node.js can be downloaded [here](https://nodejs.org/en/download/). Alternatively you can use a Node.js version manager like [`nvm`](https://github.com/nvm-sh/nvm) or [`nvm-windows`](https://github.com/coreybutler/nvm-windows).
 
 Alice controller was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.1.1 and can be run locally with minimal effort using the CLI. The CLI is installed as a global npm package.
 
@@ -20,6 +24,8 @@ For example on Linux:
 ```
 $ npm install -g @angular/cli
 ```
+
+#### Start the Application
 
 From the alice-controller root directory, simply install application node modules then call `ng serve`
 
@@ -47,6 +53,18 @@ Date: 2020-01-05T18:47:21.136Z - Hash: 61c4728366fef065089e - Time: 7894ms
 ```
 
 You can now open your browser tab to `localhost:4200` to see the application.
+
+### Running with Docker
+
+Alice Controller comes with a Docker configuration that containerizes the application with an `Nginx` web server. You simply need to issue the follwing command from the alice-controller root directory in a terminal:
+
+```
+$ docker-compose up
+```
+
+You can now open your browser tab to localhost:8032 to see the application.
+
+### Notes
 
 _Note: Alice Controller has already been configured to connect to it's agent on localhost:8031. If the controller is not connected to it's agent you will see a red status indicator on the top right-hand side of the navbar. If the agent is succesffully connected, you will see a green status indicator._
 
