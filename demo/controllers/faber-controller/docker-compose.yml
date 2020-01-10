@@ -1,0 +1,6 @@
+version: '3'
+services:
+  faber-web:
+    build: .
+    ports:
+    - "8022:80"
