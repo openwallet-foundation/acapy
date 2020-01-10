@@ -1,0 +1,6 @@
+version: '3'
+services:
+  acme-web:
+    build: .
+    ports:
+    - "8042:3000"
