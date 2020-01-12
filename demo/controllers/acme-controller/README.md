@@ -38,7 +38,7 @@ Acme Controller comes with a Docker configuration that containerizes the applica
 $ docker-compose up
 ```
 
-You can now open your browser tab to `localhost:8042` to see the application.
+You can now open your browser tab to `localhost:9041` to see the application.
 
 ### Notes
 

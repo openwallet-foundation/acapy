@@ -6,8 +6,10 @@ import { RouterModule } from '@angular/router';
 import { ComponentNavComponent } from './components/component-nav/component-nav.component';
 import { EmptyListComponent } from './components/empty-list/empty-list.component';
 
+import { ToDatePipe } from './pipes/to-date.pipe';
+
 @NgModule({
-  declarations: [ComponentNavComponent, EmptyListComponent],
+  declarations: [ComponentNavComponent, EmptyListComponent, ToDatePipe],
   imports: [
     CommonModule,
     HttpClientModule,
@@ -19,7 +21,8 @@ import { EmptyListComponent } from './components/empty-list/empty-list.component
     RouterModule,
     // Components
     ComponentNavComponent,
-    EmptyListComponent
+    EmptyListComponent,
+    ToDatePipe
   ]
 })
 export class SharedModule { }

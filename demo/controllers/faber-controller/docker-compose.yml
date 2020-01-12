@@ -3,4 +3,4 @@ services:
   faber-web:
     build: .
     ports:
-    - "8022:80"
+    - "9021:80"

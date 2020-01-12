@@ -50,7 +50,7 @@ Faber Controller comes with a Docker configuration that containerizes the applic
 $ docker-compose up
 ```
 
-You can now open your browser tab to `localhost:8022` to see the application.
+You can now open your browser tab to `localhost:9021` to see the application.
 
 ### Notes
 

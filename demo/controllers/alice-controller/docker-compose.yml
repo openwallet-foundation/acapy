@@ -3,4 +3,4 @@ services:
   alice-web:
     build: .
     ports:
-    - "8032:80"
+    - "9031:80"

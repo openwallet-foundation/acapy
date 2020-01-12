@@ -9,7 +9,7 @@
                     <span *ngIf="connection?.initiator === 'self'">Sent&nbsp;</span>
                     <span *ngIf="connection?.initiator === 'external'">Received&nbsp;</span>
                 </small>
-                <small class="text-muted">{{ connection?.created_at | date:'medium' }}</small>
+                <small class="text-muted">{{ connection?.created_at | toDate | date:'medium' }}</small>
             </div>
             <div class="card-text">
                 <span>
@@ -30,7 +30,7 @@
                 <small>
                     <span>Created</span>&nbsp;
                 </small>
-                <small class="text-muted">{{ connection?.created_at | date:'medium' }}</small>
+                <small class="text-muted">{{ connection?.created_at | toDate | date:'medium' }}</small>
             </div>
             <div class="card-text">
                 <div>
@@ -42,7 +42,7 @@
     </div>
     <div class="card-footer">
         <p class="card-text">
-            <small class="text-muted">Last updated {{ connection?.updated_at | date:'medium' }}</small>
+            <small class="text-muted">Last updated {{ connection?.updated_at | toDate | date:'medium' }}</small>
         </p>
     </div>
 </div>

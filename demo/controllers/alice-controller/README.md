@@ -62,7 +62,7 @@ Alice Controller comes with a Docker configuration that containerizes the applic
 $ docker-compose up
 ```
 
-You can now open your browser tab to localhost:8032 to see the application.
+You can now open your browser tab to localhost:9031 to see the application.
 
 ### Notes
 
