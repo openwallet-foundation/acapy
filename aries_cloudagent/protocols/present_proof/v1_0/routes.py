@@ -128,12 +128,12 @@ class IndyProofReqPredSpecSchema(Schema):
     """Schema for predicate specification in indy proof request."""
 
     name = fields.String(example="index", description="Attribute name", required=True)
-    p_type: fields.String(
+    p_type = fields.String(
         description="Predicate type (indy currently supports only '>=')",
         required=True,
         **INDY_PREDICATE
     )
-    p_value: fields.Integer(description="Threshold value", required=True)
+    p_value = fields.Integer(description="Threshold value", required=True)
     restrictions = fields.List(
         fields.Nested(IndyProofReqSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
