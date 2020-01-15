@@ -56,6 +56,7 @@ class PresentationRequestHandler(BaseHandler):
                 connection_id=context.connection_record.connection_id,
                 thread_id=context.message._thread_id,
                 initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
+                role=V10PresentationExchange.ROLE_PROVER,
                 presentation_request=indy_proof_request,
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
