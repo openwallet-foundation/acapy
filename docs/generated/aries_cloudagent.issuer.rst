@@ -1,5 +1,5 @@
-aries\_cloudagent.issuer package
-================================
+aries\_cloudagent\.issuer package
+=================================
 
 .. automodule:: aries_cloudagent.issuer
     :members:
@@ -9,24 +9,24 @@ aries\_cloudagent.issuer package
 Submodules
 ----------
 
-aries\_cloudagent.issuer.base module
-------------------------------------
+aries\_cloudagent\.issuer\.base module
+--------------------------------------
 
 .. automodule:: aries_cloudagent.issuer.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent.issuer.indy module
-------------------------------------
+aries\_cloudagent\.issuer\.indy module
+--------------------------------------
 
 .. automodule:: aries_cloudagent.issuer.indy
     :members:
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent.issuer.util module
-------------------------------------
+aries\_cloudagent\.issuer\.util module
+--------------------------------------
 
 .. automodule:: aries_cloudagent.issuer.util
     :members:

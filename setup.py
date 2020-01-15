@@ -25,6 +25,7 @@ if __name__ == "__main__":
         version=VERSION,
         long_description=long_description,
         long_description_content_type="text/markdown",
+        url="https://github.com/hyperledger/aries-cloudagent-python",
         packages=find_packages(),
         include_package_data=True,
         package_data={"aries_cloudagent": ["requirements.txt"]},
@@ -35,5 +36,10 @@ if __name__ == "__main__":
             "uvloop": {"uvloop": "^=0.14.0"},
         },
         python_requires=">=3.6.3",
+        classifiers=[
+            "Programming Language :: Python :: 3",
+            "License :: OSI Approved :: Apache Software License",
+            "Operating System :: OS Independent",
+        ],
         scripts=["bin/aca-py"],
     )

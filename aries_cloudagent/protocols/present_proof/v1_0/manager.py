@@ -223,29 +223,28 @@ class PresentationManager:
         Args:
             presentation_exchange_record: Record to update
             requested_credentials: Indy formatted requested_credentials
+            comment: optional human-readable comment
 
-            e.g.,
+        Example `requested_credentials` format:
 
-            ::
+        ::
 
-                {
-                    "self_attested_attributes": {
-                        "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
-                    },
-                    "requested_attributes": {
-                        "6253ffbb-bd35-49b3-934f-46e083106f6c": {
-                            "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
-                            "revealed": true
-                        }
-                    },
-                    "requested_predicates": {
-                        "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
-                            "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
-                        }
+            {
+                "self_attested_attributes": {
+                    "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
+                },
+                "requested_attributes": {
+                    "6253ffbb-bd35-49b3-934f-46e083106f6c": {
+                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
+                        "revealed": true
+                    }
+                },
+                "requested_predicates": {
+                    "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
+                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
                     }
                 }
-
-            comment: optional human-readable comment
+            }
 
         Returns:
             A tuple (updated presentation exchange record, presentation message)
@@ -451,10 +450,8 @@ class PresentationManager:
             presentation_exchange_record
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
             self.context,
-            tag_filter={
-                "thread_id": self.context.message._thread_id,
-                "connection_id": self.context.connection_record.connection_id,
-            },
+            {"thread_id": self.context.message._thread_id},
+            {"connection_id": self.context.connection_record.connection_id}
         )
 
         presentation_exchange_record.state = (
