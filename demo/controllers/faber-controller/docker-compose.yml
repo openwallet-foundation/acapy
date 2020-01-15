@@ -1,6 +1,0 @@
-version: '3'
-services:
-  faber-web:
-    build: .
-    ports:
-    - "9021:80"

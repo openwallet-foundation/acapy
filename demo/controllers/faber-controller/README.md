@@ -7,7 +7,6 @@ Web controller for a Hyperledger Aries Faber CloudAgent demo
 - [Running Locally](#running-locally)
     - [Prerequisites](#prerequisites)
     - [Start the Application](#start-the-application)
-- [Running with Docker](#runnig-with-docker)
 - [Notes](#notes)
 
 
@@ -41,16 +40,6 @@ info: Microsoft.Hosting.Lifetime[0]
 ```
 
 You can now open your browser tab to either `localhost:5000` or `localhost:5001` to see the application.
-
-### Running with Docker
-
-Faber Controller comes with a Docker configuration that containerizes the application along with the `.NET Core 3.1` runtime. You simply need to issue the follwing command from the faber-controller root directory in a terminal:
-
-```
-$ docker-compose up
-```
-
-You can now open your browser tab to `localhost:9021` to see the application.
 
 ### Notes
 

@@ -8,7 +8,6 @@ Web controller for a Hyperledger Aries Alice CloudAgent (aca-py)
 - [Running Locally](#running-locally)
     - [Prerequisites](#prerequisites)
     - [Start the Application](#start-the-application)
-- [Running with Docker](#running-with-docker)
 - [Notes](#notes)
 
 ### Running Locally
@@ -53,16 +52,6 @@ Date: 2020-01-05T18:47:21.136Z - Hash: 61c4728366fef065089e - Time: 7894ms
 ```
 
 You can now open your browser tab to `localhost:4200` to see the application.
-
-### Running with Docker
-
-Alice Controller comes with a Docker configuration that containerizes the application with an `Nginx` web server. You simply need to issue the follwing command from the alice-controller root directory in a terminal:
-
-```
-$ docker-compose up
-```
-
-You can now open your browser tab to localhost:9031 to see the application.
 
 ### Notes
 

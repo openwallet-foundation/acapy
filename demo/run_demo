@@ -34,12 +34,18 @@ elif [ "$AGENT" = "performance" ]; then
 	AGENT_MODULE="performance"
 	AGENT_PORT=8030
 	AGENT_PORT_RANGE=8030-8038
+elif [ "$AGENT" = "web" ]; then
+	case "$@" in *--down*)
+		docker-compose -f ../docker/docker-compose.demo.yml down
+		exit 0
+	esac
+	echo "Starting all agents and controllers, this may take a moment."
 else
-	echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'."
+	echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', 'performance', or 'web'."
 	exit 1
 fi
 
-echo "Preparing agent image..."
+echo "Preparing agent image(s)..."
 docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
 
 if [ -z "${PWD_HOST_FQDN}" ]; then
@@ -82,6 +88,11 @@ fi
 DOCKER=${DOCKER:-docker}
 
 echo "Starting $AGENT..."
+if [ "$AGENT" = "web" ]; then
+	DOCKERHOST=${DOCKERHOST} docker-compose -f ../docker/docker-compose.demo.yml up
+	exit 0
+fi
+
 $DOCKER run --name $AGENT --rm -it \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	-v `pwd`/../logs:/home/indy/logs \

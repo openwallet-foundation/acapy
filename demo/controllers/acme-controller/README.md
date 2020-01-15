@@ -6,7 +6,6 @@ Web controller for a Hyperledger Aries Acme CloudAgent
 - [Running Locally](#running-locally)
     - [Prerequisites](#prerequisites)
     - [Starting the Application](#starting-the-application)
-- [Running with Docker](#running-with-docker)
 - [Notes](#notes)
 
 ### Prerequisites
@@ -29,16 +28,6 @@ $ npm start
 ```
 
 You can now open your browser tab to `localhost:3000` to see the application.
-
-### Running with Docker
-
-Acme Controller comes with a Docker configuration that containerizes the application with a `Node.js` web server and a 'Nodemon' daemon. You simply need to issue the follwing command from the acme-controller root directory in a terminal:
-
-```
-$ docker-compose up
-```
-
-You can now open your browser tab to `localhost:9041` to see the application.
 
 ### Notes
 
