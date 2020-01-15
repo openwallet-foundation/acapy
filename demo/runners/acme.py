@@ -110,7 +110,6 @@ class AcmeAgent(DemoAgent):
             else:
                 # in case there are any other kinds of proofs received
                 self.log("#28.1 Received ", message["presentation_request"]["name"])
-            pass
 
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
