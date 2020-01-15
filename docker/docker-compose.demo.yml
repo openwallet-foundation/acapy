@@ -1,0 +1,85 @@
+version: '3'
+
+services:
+    # Agents
+    faber-agent:
+        command: ['faber --port 8020']
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.demo
+        ports:
+            - 8020-8027:8020-8027
+        networks:
+            - aca
+            - von
+        environment:
+            - RUNMODE=docker
+            - DOCKERHOST=${DOCKERHOST}
+        tty: true
+    alice-agent:
+        command: ['alice --port 8030']
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.demo
+        ports:
+            - 8030-8037:8030-8037
+        networks:
+            - aca
+            - von
+        environment:
+            - RUNMODE=docker
+            - DOCKERHOST=${DOCKERHOST}
+        tty: true
+    acme-agent:
+        command: ['acme --port 8040']
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.demo
+        ports:
+            - 8040-8047:8040-8047
+        networks:
+            - aca
+            - von
+        environment:
+            - RUNMODE=docker
+            - DOCKERHOST=${DOCKERHOST}
+        tty: true
+    
+    # Controllers
+    faber-controller:
+        build:
+            context: ../demo/controllers/faber-controller/
+        ports:
+            - 9021:80
+        networks:
+            - aca
+        depends_on:
+            - faber-agent
+        environment:
+            - FABER_AGENT_URL=faber-agent
+    alice-controller:
+        build:
+            context: ../demo/controllers/alice-controller/
+        ports:
+            - 9031:80
+        networks:
+            - aca
+        depends_on:
+            - alice-agent
+    acme-controller:
+        build:
+            context: ../demo/controllers/acme-controller/
+        ports:
+            - 9041:3000
+        networks:
+            - aca
+        depends_on:
+            - acme-agent
+        environment:
+            - ACME_AGENT_URL=acme-agent
+
+networks:
+    aca:
+    von:
+        external:
+            name: von_von

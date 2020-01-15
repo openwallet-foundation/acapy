@@ -30,7 +30,18 @@ namespace FaberController
             services.AddServerSideBlazor();
             services.AddHttpClient<FCAgentService>(c =>
             {
-                c.BaseAddress = new Uri("http://localhost:8021");
+                var agentUrl = Environment.GetEnvironmentVariable("FABER_AGENT_URL");
+                var port = 8021;
+
+                if (agentUrl == null && agentUrl == "") {
+                    agentUrl = "localhost";
+                }
+
+                var formattedAgentUrl = String.Format("http://{0}:{1}", agentUrl, port);
+
+                Console.WriteLine("Agent is running on: " + formattedAgentUrl);
+
+                c.BaseAddress = new Uri(formattedAgentUrl);
                 c.DefaultRequestHeaders.Add("Accept", "application/json");
                 c.DefaultRequestHeaders.Add("User-Agent", "FaberController");
             });

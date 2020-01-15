@@ -1,7 +1,9 @@
 const http = require('http');
 
-const hostname = 'localhost';
+const hostname = process.env.ACME_AGENT_URL || 'localhost';
 const port = 8041;
+
+console.log('Agent is running on: ' + `http://${hostname}:${port}`);
 
 function httpAsync(options, body) {
     return new Promise(function (resolve, reject) {
