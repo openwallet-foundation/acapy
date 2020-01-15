@@ -177,24 +177,6 @@ class Base64URL(Regexp):
         )
 
 
-class JSONWebToken(Regexp):
-    """Validate JSON Web token."""
-
-    EXAMPLE = (
-        "eyJhbGciOiJFZERTQSJ9."
-        "eyJhIjogIjAifQ."
-        "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
-    )
-
-    def __init__(self):
-        """Initializer."""
-
-        super().__init__(
-            r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$",
-            error="Value {input} is not a valid JSON Web token"
-        )
-
-
 class SHA256Hash(Regexp):
     """Validate (binhex-encoded) SHA256 value."""
 
