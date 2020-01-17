@@ -13,7 +13,7 @@ from .......holder.indy import IndyHolder
 from .......messaging.util import canon, str_to_datetime, str_to_epoch
 
 from ....message_types import PRESENTATION_PREVIEW
-from ....util.indy import Predicate
+from ....util.predicate import Predicate
 
 from ..presentation_preview import (
     PresAttrSpec,
@@ -62,7 +62,7 @@ INDY_PROOF_REQ = json.loads(f"""{{
                 }}
             ]
         }},
-        "0_screencapture_uuid": {{
+        "1_screencapture_uuid": {{
             "name": "screenCapture",
             "restrictions": [
                 {{
