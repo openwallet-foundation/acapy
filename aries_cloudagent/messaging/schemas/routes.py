@@ -71,6 +71,7 @@ class SchemaSchema(Schema):
             example="score",
         ),
         description="Schema attribute names",
+        data_key="attrNames",
     )
     seqNo = fields.Integer(
         description="Schema sequence number",
