@@ -34,14 +34,13 @@ elif [ "$AGENT" = "performance" ]; then
 	AGENT_MODULE="performance"
 	AGENT_PORT=8030
 	AGENT_PORT_RANGE=8030-8038
-elif [ "$AGENT" = "web" ]; then
-	case "$@" in *--down*)
-		docker-compose -f ../docker/docker-compose.demo.yml down
-		exit 0
-	esac
+elif [ "$AGENT" = "webstart" ]; then
 	echo "Starting all agents and controllers, this may take a moment."
+elif [ "$AGENT" = "webdown" ]; then
+	docker-compose -f ../docker/docker-compose.demo.yml down
+	exit 0
 else
-	echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', 'performance', or 'web'."
+	echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', 'performance', 'webstart' or 'webdown'."
 	exit 1
 fi
 
@@ -88,8 +87,8 @@ fi
 DOCKER=${DOCKER:-docker}
 
 echo "Starting $AGENT..."
-if [ "$AGENT" = "web" ]; then
-	DOCKERHOST=${DOCKERHOST} docker-compose -f ../docker/docker-compose.demo.yml up
+if [ "$AGENT" = "webstart" ]; then
+	DOCKERHOST=${DOCKERHOST} docker-compose -f ../docker/docker-compose.demo.yml up -d
 	exit 0
 fi
 
