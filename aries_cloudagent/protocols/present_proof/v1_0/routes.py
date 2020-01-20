@@ -523,7 +523,10 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     presentation_request_message = PresentationRequest(
         comment=comment,
         request_presentations_attach=[
-            AttachDecorator.from_indy_dict(indy_proof_request)
+            AttachDecorator.from_indy_dict(
+                indy_dict=indy_proof_request,
+                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
+            )
         ],
     )
 
@@ -736,9 +739,6 @@ async def register(app: web.Application):
             ),
             web.post(
                 "/present-proof/send-proposal", presentation_exchange_send_proposal
-            ),
-            web.post(
-                "/present-proof/create-request", presentation_exchange_create_request
             ),
             web.post(
                 "/present-proof/send-request", presentation_exchange_send_free_request

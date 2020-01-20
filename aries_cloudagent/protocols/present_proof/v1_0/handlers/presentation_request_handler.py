@@ -10,9 +10,10 @@ from .....holder.base import BaseHolder
 from .....storage.error import StorageNotFoundError
 
 from ..manager import PresentationManager
+from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
 from ..models.presentation_exchange import V10PresentationExchange
-from ..util.indy import indy_proof_request2indy_requested_creds
+from ..util.indy import indy_proof_req_preview2indy_requested_creds
 
 
 class PresentationRequestHandler(BaseHandler):
@@ -41,7 +42,7 @@ class PresentationRequestHandler(BaseHandler):
 
         indy_proof_request = context.message.indy_proof_request(0)
 
-        # Get credential exchange record (holder initiated via proposal)
+        # Get presentation exchange record (holder initiated via proposal)
         # or create it (verifier sent request first)
         try:
             (
@@ -70,9 +71,18 @@ class PresentationRequestHandler(BaseHandler):
 
         # If auto_present is enabled, respond immediately with presentation
         if presentation_exchange_record.auto_present:
+            presentation_preview = None
+            if presentation_exchange_record.presentation_proposal_dict:
+                exchange_pres_proposal = PresentationProposal.deserialize(
+                    presentation_exchange_record.presentation_proposal_dict
+                )
+                presentation_preview = exchange_pres_proposal.presentation_proposal
+
             try:
-                req_creds = await indy_proof_request2indy_requested_creds(
-                    indy_proof_request, await context.inject(BaseHolder)
+                req_creds = await indy_proof_req_preview2indy_requested_creds(
+                    indy_proof_request,
+                    presentation_preview,
+                    holder=await context.inject(BaseHolder)
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")
