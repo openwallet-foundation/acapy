@@ -256,6 +256,48 @@ class TestProofRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.presentation_exchange_send_proposal(mock)
 
+    async def test_presentation_exchange_create_request(self):
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock(
+            return_value={"comment": "dummy", "proof_request": {}}
+        )
+
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": self.mock_context,
+        }
+
+        with async_mock.patch.object(
+            test_module, "PresentationManager", autospec=True
+        ) as mock_presentation_manager, async_mock.patch.object(
+            test_module, "PresentationPreview", autospec=True
+        ) as mock_presentation_proposal, async_mock.patch.object(
+            test_module, "PresentationRequest", autospec=True
+        ) as mock_presentation_request, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_exchange:
+
+            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            mock_presentation_exchange.serialize = async_mock.MagicMock()
+            mock_presentation_exchange.serialize.return_value = {"hello": "world"}
+
+            mock_presentation_manager.return_value.create_exchange_for_request = async_mock.CoroutineMock(
+                return_value=mock_presentation_exchange
+            )
+
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_create_request(mock)
+                mock_response.assert_called_once_with(
+                    mock_presentation_exchange.serialize.return_value
+                )
+
     async def test_presentation_exchange_send_free_request(self):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock(

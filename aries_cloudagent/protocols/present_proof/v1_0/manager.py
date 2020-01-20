@@ -370,7 +370,6 @@ class PresentationManager:
                         f"Presentation {name}={value} mismatches proposal value"
                     )
 
-        # Looks OK
         presentation_exchange_record.presentation = presentation
         presentation_exchange_record.state = (
             V10PresentationExchange.STATE_PRESENTATION_RECEIVED

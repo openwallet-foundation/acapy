@@ -429,6 +429,61 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 
 @docs(
     tags=["present-proof"],
+    summary="""
+    Creates a presentation request not bound to any proposal or existing connection
+    """,
+)
+@request_schema(V10PresentationRequestRequestSchema())
+@response_schema(V10PresentationExchangeSchema(), 200)
+async def presentation_exchange_create_request(request: web.BaseRequest):
+    """
+    Request handler for creating a free presentation request.
+
+    The presentation request will not be bound to any proposal
+    or existing connection.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The presentation exchange details
+
+    """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+
+    body = await request.json()
+
+    comment = body.get("comment")
+    indy_proof_request = body.get("proof_request")
+    if not indy_proof_request.get("nonce"):
+        indy_proof_request["nonce"] = str(uuid4().int)
+
+    presentation_request_message = PresentationRequest(
+        comment=comment,
+        request_presentations_attach=[
+            AttachDecorator.from_indy_dict(
+                indy_dict=indy_proof_request,
+                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+            )
+        ],
+    )
+
+    presentation_manager = PresentationManager(context)
+
+    (
+        presentation_exchange_record
+    ) = await presentation_manager.create_exchange_for_request(
+        connection_id=None, presentation_request_message=presentation_request_message
+    )
+
+    await outbound_handler(presentation_request_message, connection_id=None)
+
+    return web.json_response(presentation_exchange_record.serialize())
+
+
+@docs(
+    tags=["present-proof"],
     summary="Sends a free presentation request not bound to any proposal",
 )
 @request_schema(V10PresentationRequestRequestSchema())
