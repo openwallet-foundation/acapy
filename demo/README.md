@@ -19,6 +19,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
 - [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
 - [Performance Demo](#performance-demo)
+- [Web Demo](#web-demo)
 - [Coding Challenge: Adding ACME](#coding-challenge-adding-acme)
 
 ## The IIWBook Demo
@@ -185,6 +186,12 @@ To run the demo, make sure that you shut down any running Alice/Faber agents. Th
 The script starts both agents, runs the performance test, spits out performance results and shuts down the agents. Note that this is just one demonstration of how performance metrics tracking can be done with ACA-Py.
 
 A second version of the performance test can be run by adding the parameter `--router` to the invocation above. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
+
+## Web Demo
+
+An [interactive web demo](README_web.md) has been developed to showcase agent to agent interactions with an easy-to-use interface. The web demo follows the familiar [Alice/Faber Python demo](#the-alicefaber-python-demo) and also adds an Acme agent as part of the workflow.
+
+More information, including how to run the demo, can be viewed [here](README_web.md).
 
 ## Coding Challenge: Adding ACME
 
