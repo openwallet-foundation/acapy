@@ -43,8 +43,8 @@ class V10CredentialExchangeListResultSchema(Schema):
     )
 
 
-class V10CredentialProposalRequestSchema(Schema):
-    """Request schema for sending credential proposal admin message."""
+class V10CredentialProposalRequestSchemaBase(Schema):
+    """Base class for request schema for sending credential proposal admin message."""
 
     connection_id = fields.UUID(
         description="Connection identifier",
@@ -82,6 +82,17 @@ class V10CredentialProposalRequestSchema(Schema):
         **INDY_DID,
     )
     comment = fields.Str(description="Human-readable comment", required=False)
+
+
+class V10CredentialProposalRequestOptSchema(V10CredentialProposalRequestSchemaBase):
+    """Request schema for sending credential proposal on optional proposal preview."""
+
+    credential_proposal = fields.Nested(CredentialPreviewSchema, required=False)
+
+
+class V10CredentialProposalRequestMandSchema(V10CredentialProposalRequestSchemaBase):
+    """Request schema for sending credential proposal on mandatory proposal preview."""
+
     credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
 
@@ -192,8 +203,11 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
     return web.json_response(record.serialize())
 
 
-@docs(tags=["issue-credential"], summary="Send credential, automating entire flow")
-@request_schema(V10CredentialProposalRequestSchema())
+@docs(
+    tags=["issue-credential"],
+    summary="Send holder a credential, automating entire flow"
+)
+@request_schema(V10CredentialProposalRequestMandSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send(request: web.BaseRequest):
     """
@@ -217,9 +231,7 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     comment = body.get("comment")
     connection_id = body.get("connection_id")
-    preview_spec = body.get("credential_proposal")
-    if not preview_spec:
-        raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
+    preview = CredentialPreview.deserialize(body.get("credential_proposal"))
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -233,7 +245,7 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     credential_proposal = CredentialProposal(
         comment=comment,
-        credential_proposal=CredentialPreview.deserialize(preview_spec),
+        credential_proposal=preview,
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
@@ -243,17 +255,19 @@ async def credential_exchange_send(request: web.BaseRequest):
         credential_exchange_record,
         credential_offer_message,
     ) = await credential_manager.prepare_send(
-        connection_id, credential_proposal=credential_proposal
+        connection_id,
+        credential_proposal=credential_proposal
     )
     await outbound_handler(
-        credential_offer_message, connection_id=credential_exchange_record.connection_id
+        credential_offer_message,
+        connection_id=credential_exchange_record.connection_id
     )
 
     return web.json_response(credential_exchange_record.serialize())
 
 
 @docs(tags=["issue-credential"], summary="Send issuer a credential proposal")
-@request_schema(V10CredentialProposalRequestSchema())
+@request_schema(V10CredentialProposalRequestOptSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send_proposal(request: web.BaseRequest):
     """
@@ -274,8 +288,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_proposal")
-    if not preview_spec:
-        raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
+    preview = CredentialPreview.deserialize(preview_spec) if preview_spec else None
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -287,14 +300,12 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    credential_preview = CredentialPreview.deserialize(preview_spec)
-
     credential_manager = CredentialManager(context)
 
     credential_exchange_record = await credential_manager.create_proposal(
         connection_id,
         comment=comment,
-        credential_preview=credential_preview,
+        credential_preview=preview,
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
@@ -310,7 +321,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential"],
-    summary="Send holder a credential offer, free from reference to any proposal",
+    summary="Send holder a credential offer, independent of any proposal with preview",
 )
 @request_schema(V10CredentialOfferRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
@@ -318,8 +329,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     """
     Request handler for sending free credential offer.
 
-    An issuer initiates a such a credential offer, which is free any
-    holder-initiated corresponding proposal.
+    An issuer initiates a such a credential offer, free from any
+    holder-initiated corresponding credential proposal with preview.
 
     Args:
         request: aiohttp request object
@@ -396,7 +407,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential"],
-    summary="Send holder a credential offer in reference to a proposal",
+    summary="Send holder a credential offer in reference to a proposal with preview",
 )
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send_bound_offer(request: web.BaseRequest):
@@ -448,7 +459,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["issue-credential"], summary="Send a credential request")
+@docs(tags=["issue-credential"], summary="Send issuer a credential request")
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send_request(request: web.BaseRequest):
     """
@@ -497,7 +508,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     return web.json_response(credential_exchange_record.serialize())
 
 
-@docs(tags=["issue-credential"], summary="Send a credential")
+@docs(tags=["issue-credential"], summary="Send holder a credential")
 @request_schema(V10CredentialIssueRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_issue(request: web.BaseRequest):

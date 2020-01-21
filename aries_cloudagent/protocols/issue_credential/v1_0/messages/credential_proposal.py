@@ -60,9 +60,7 @@ class CredentialProposal(AgentMessage):
         """
         super().__init__(_id, **kwargs)
         self.comment = comment
-        self.credential_proposal = (
-            credential_proposal if credential_proposal else CredentialPreview()
-        )
+        self.credential_proposal = credential_proposal
         self.schema_id = schema_id
         self.schema_issuer_did = schema_issuer_did
         self.schema_name = schema_name
@@ -80,7 +78,11 @@ class CredentialProposalSchema(AgentMessageSchema):
         model_class = CredentialProposal
 
     comment = fields.Str(required=False, allow_none=False)
-    credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
+    credential_proposal = fields.Nested(
+        CredentialPreviewSchema,
+        required=False,
+        allow_none=False,
+    )
     schema_id = fields.Str(
         required=False,
         allow_none=False,
