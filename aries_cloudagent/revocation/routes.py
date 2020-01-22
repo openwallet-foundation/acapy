@@ -83,6 +83,55 @@ async def revocation_create_registry(request: web.BaseRequest):
     return web.json_response({"result": registry_record.serialize()})
 
 
+@docs(
+    tags=["revocation"], summary="Publish current revocation registry",
+)
+@request_schema(RevRegCreateRequestSchema())
+@response_schema(RevRegCreateResultSchema(), 200)
+async def publish_current_registry(request: web.BaseRequest):
+    """
+    Request handler for publishing the current revocation registry.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The revocation registry identifier
+
+    """
+    context = request.app["request_context"]
+
+    body = await request.json()
+
+    credential_definition_id = body.get("credential_definition_id")
+
+    # check we published this cred def
+    storage = await context.inject(BaseStorage)
+    found = await storage.search_records(
+        type_filter=CRED_DEF_SENT_RECORD_TYPE,
+        tag_query={"cred_def_id": credential_definition_id},
+    ).fetch_all()
+    if not found:
+        raise web.HTTPNotFound()
+
+    try:
+        revoc = IndyRevocation(context)
+        registry_record = await revoc.get_active_issuer_revocation_record(credential_definition_id)
+    except RevocationNotSupportedError as e:
+        raise web.HTTPBadRequest() from e
+    await shield(
+        registry_record.generate_registry(context, RevocationRegistry.get_temp_dir())
+    )
+    print("generated tails file")
+    # print(registry_record)
+    await registry_record.publish_registry_definition(context)
+    print("published registry definition")
+    await registry_record.publish_registry_entry(context)
+    print("published registry entry")
+
+    return web.json_response({"result": registry_record.serialize()})
+
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
