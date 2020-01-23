@@ -474,6 +474,7 @@ async def register(app: web.Application):
         [
             web.get("/connections", connections_list),
             web.get("/connections/{id}", connections_retrieve),
+            web.post("/connections/create-static", connections_create_static),
             web.post("/connections/create-invitation", connections_create_invitation),
             web.post("/connections/receive-invitation", connections_receive_invitation),
             web.post(
