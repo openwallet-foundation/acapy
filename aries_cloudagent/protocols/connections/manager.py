@@ -561,6 +561,7 @@ class ConnectionManager:
         their_verkey: str = None,
         their_endpoint: str = None,
         their_role: str = None,
+        their_label: str = None,
         alias: str = None,
     ) -> ConnectionRecord:
         """
@@ -604,6 +605,7 @@ class ConnectionManager:
             my_did=my_info.did,
             their_did=their_info.did,
             their_role=their_role,
+            their_label=their_label,
             state=ConnectionRecord.STATE_ACTIVE,
             alias=alias,
         )

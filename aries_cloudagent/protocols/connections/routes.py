@@ -63,6 +63,9 @@ class ConnectionStaticRequestSchema(Schema):
     their_role = fields.Str(
         description="Role to assign to this connection", required=False
     )
+    their_label = fields.Str(
+        description="Label to assign to this connection", required=False
+    )
     alias = fields.Str(description="Alias to assign to this connection", required=False)
 
 
@@ -460,6 +463,7 @@ async def connections_create_static(request: web.BaseRequest):
         their_verkey=body.get("their_verkey") or None,
         their_endpoint=body.get("their_endpoint") or None,
         their_role=body.get("their_role") or None,
+        their_label=body.get("their_label") or None,
         alias=body.get("alias") or None,
     )
     result = connection.serialize()
