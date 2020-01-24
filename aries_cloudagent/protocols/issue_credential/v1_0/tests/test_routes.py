@@ -137,26 +137,14 @@ class TestCredentialRoutes(AsyncTestCase):
                 mock_cred_ex_record.serialize.return_value
             )
 
-    async def test_credential_exchange_send_no_proposal(self):
-        mock = async_mock.MagicMock()
-        mock.json = async_mock.CoroutineMock()
-        mock.json.return_value = {
-            "comment": "comment",
-            "connection_id": "dummy",
-        }
-
-        mock.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
-
-        with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.credential_exchange_send(mock)
-
     async def test_credential_exchange_send_no_conn_record(self):
-        mock = async_mock.MagicMock()
-        mock.json = async_mock.CoroutineMock()
+        conn_id = "connection-id"
+        preview_spec = {"attributes": [{"name": "attr", "value": "value"}]}
 
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock(
+            return_value={"connection_id": conn_id, "credential_proposal": preview_spec}
+        )
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
             "request_context": "context",
@@ -180,9 +168,13 @@ class TestCredentialRoutes(AsyncTestCase):
                 await test_module.credential_exchange_send(mock)
 
     async def test_credential_exchange_send_not_ready(self):
-        mock = async_mock.MagicMock()
-        mock.json = async_mock.CoroutineMock()
+        conn_id = "connection-id"
+        preview_spec = {"attributes": [{"name": "attr", "value": "value"}]}
 
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock(
+            return_value={"connection_id": conn_id, "credential_proposal": preview_spec}
+        )
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
             "request_context": "context",
@@ -243,22 +235,6 @@ class TestCredentialRoutes(AsyncTestCase):
             mock.app["outbound_message_router"].assert_called_once_with(
                 mock_proposal_deserialize.return_value, connection_id=conn_id
             )
-
-    async def test_credential_exchange_send_proposal_no_proposal(self):
-        mock = async_mock.MagicMock()
-        mock.json = async_mock.CoroutineMock()
-        mock.json.return_value = {
-            "comment": "comment",
-            "connection_id": "dummy",
-        }
-
-        mock.app = {
-            "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
-        }
-
-        with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.credential_exchange_send_proposal(mock)
 
     async def test_credential_exchange_send_proposal_no_conn_record(self):
         mock = async_mock.MagicMock()

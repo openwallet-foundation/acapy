@@ -6,12 +6,13 @@ import base64
 
 def pad(val: str) -> str:
     """Pad base64 values if need be: JWT calls to omit trailing padding."""
-    return val + "=" * ((len(val) - 1) // 4 * 4 + 4 - len(val))
+    padlen = 4 - len(val) % 4
+    return val if padlen > 2 else (val + "=" * padlen)
 
 
 def unpad(val: str) -> str:
     """Remove padding from base64 values if need be."""
-    return val.replace("=", "")
+    return val.rstrip("=")
 
 
 def b64_to_bytes(val: str, urlsafe=False) -> bytes:
@@ -28,9 +29,11 @@ def b64_to_str(val: str, urlsafe=False, encoding=None) -> str:
 
 def bytes_to_b64(val: bytes, urlsafe=False, pad=True) -> str:
     """Convert a byte string to base 64."""
-    b64 = base64.urlsafe_b64encode(val).decode(
-        "ascii"
-    ) if urlsafe else base64.b64encode(val).decode("ascii")
+    b64 = (
+        base64.urlsafe_b64encode(val).decode("ascii")
+        if urlsafe
+        else base64.b64encode(val).decode("ascii")
+    )
     return b64 if pad else unpad(b64)
 
 
