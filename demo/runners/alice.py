@@ -180,6 +180,9 @@ async def input_invitation(agent):
 
         if b64_invite:
             try:
+                padlen = 4 - len(b64_invite) % 4
+                if padlen <= 2:
+                    b64_invite += "=" * padlen
                 invite_json = base64.urlsafe_b64decode(b64_invite)
                 details = invite_json.decode("utf-8")
             except binascii.Error:

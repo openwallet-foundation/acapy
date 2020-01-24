@@ -61,7 +61,7 @@ When a webhook is dispatched, the record `topic` is appended as a path component
 * `thread_id`: the thread ID of the previously received credential proposal or offer
 * `parent_thread_id`: the parent thread ID of the previously received credential proposal or offer
 * `initiator`: issue-credential exchange initiator `self` / `external`
-* `state`: `proposal_sent` / `proposal_received` / `offer_sent` / `offer_received` / `request_sent` / `request_received` / `issued` / `credential_received` / `stored`
+* `state`: `proposal_sent` / `proposal_received` / `offer_sent` / `offer_received` / `request_sent` / `request_received` / `issued` / `credential_received` / `credential_acked`
 * `credential_definition_id`: the ledger identifier of the related credential definition
 * `schema_id`: the ledger identifier of the related credential schema
 * `credential_proposal_dict`: the credential proposal message
