@@ -72,15 +72,6 @@ class TestCredentialManager(AsyncTestCase):
             return_value=schema_id
         )
 
-        with self.assertRaises(CredentialManagerError):
-            await self.manager.create_proposal(
-                connection_id,
-                auto_offer=True,
-                comment=comment,
-                credential_preview=None,
-                cred_def_id=cred_def_id,
-            )
-
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
@@ -99,14 +90,46 @@ class TestCredentialManager(AsyncTestCase):
                 comment=comment,
                 credential_preview=preview,
                 cred_def_id=None,
-            )  # OK to leave open until offer
+            )  # OK to leave underspecified until offer
 
         proposal = CredentialProposal.deserialize(exchange.credential_proposal_dict)
 
         assert exchange.auto_offer
         assert exchange.connection_id == connection_id
-        assert not exchange.credential_definition_id  # leave open until offer
-        assert not exchange.schema_id  # leave open until offer
+        assert not exchange.credential_definition_id  # leave underspecified until offer
+        assert not exchange.schema_id  # leave underspecified until offer
+        assert exchange.thread_id == proposal._thread_id
+        assert exchange.role == exchange.ROLE_HOLDER
+        assert exchange.state == V10CredentialExchange.STATE_PROPOSAL_SENT
+
+    async def test_create_proposal_no_preview(self):
+        schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
+        cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
+        connection_id = "test_conn_id"
+        comment = "comment"
+
+        self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
+            return_value=schema_id
+        )
+
+        with async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as save_ex:
+            exchange: V10CredentialExchange = await self.manager.create_proposal(
+                connection_id,
+                auto_offer=True,
+                comment=comment,
+                credential_preview=None,
+                cred_def_id=cred_def_id,
+            )
+            save_ex.assert_called_once()
+
+        proposal = CredentialProposal.deserialize(exchange.credential_proposal_dict)
+
+        assert exchange.auto_offer
+        assert exchange.connection_id == connection_id
+        assert not exchange.credential_definition_id  # leave underspecified until offer
+        assert not exchange.schema_id  # leave underspecified until offer
         assert exchange.thread_id == proposal._thread_id
         assert exchange.role == exchange.ROLE_HOLDER
         assert exchange.state == V10CredentialExchange.STATE_PROPOSAL_SENT
@@ -714,6 +737,63 @@ class TestCredentialManager(AsyncTestCase):
                 cred,
                 cred_req_meta,
                 mock_preview_deserialize.return_value.mime_types.return_value,
+            )
+
+            holder.get_credential.assert_called_once_with(cred_id)
+
+            assert ret_exchange.credential_id == cred_id
+            assert ret_exchange.credential == stored_cred
+            assert ret_exchange.state == V10CredentialExchange.STATE_ACKED
+            assert ret_cred_ack._thread_id == thread_id
+
+    async def test_store_credential_no_preview(self):
+        schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
+        cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
+        connection_id = "test_conn_id"
+        cred = {"cred_def_id": cred_def_id}
+        cred_req_meta = {"req": "meta"}
+        thread_id = "thread-id"
+
+        stored_exchange = V10CredentialExchange(
+            connection_id=connection_id,
+            credential_definition_id=cred_def_id,
+            credential_request_metadata=cred_req_meta,
+            credential_proposal_dict=None,
+            raw_credential=cred,
+            initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
+            role=V10CredentialExchange.ROLE_HOLDER,
+            thread_id=thread_id,
+        )
+
+        cred_def = object()
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value=cred_def
+        )
+
+        cred_id = "cred-id"
+        holder = async_mock.MagicMock()
+        holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
+        stored_cred = {"stored": "cred"}
+        holder.get_credential = async_mock.CoroutineMock(return_value=stored_cred)
+        self.context.injector.bind_instance(BaseHolder, holder)
+
+        with async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as save_ex:
+
+            ret_exchange, ret_cred_ack = await self.manager.store_credential(
+                stored_exchange
+            )
+
+            save_ex.assert_called_once()
+
+            self.ledger.get_credential_definition.assert_called_once_with(cred_def_id)
+
+            holder.store_credential.assert_called_once_with(
+                cred_def,
+                cred,
+                cred_req_meta,
+                None
             )
 
             holder.get_credential.assert_called_once_with(cred_id)

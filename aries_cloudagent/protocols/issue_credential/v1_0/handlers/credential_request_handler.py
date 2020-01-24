@@ -40,15 +40,25 @@ class CredentialRequestHandler(BaseHandler):
 
         # If auto_issue is enabled, respond immediately
         if cred_exchange_rec.auto_issue:
-            (
-                cred_exchange_rec,
-                credential_issue_message,
-            ) = await credential_manager.issue_credential(
-                credential_exchange_record=cred_exchange_rec,
-                comment=context.message.comment,
-                credential_values=CredentialProposal.deserialize(
-                    cred_exchange_rec.credential_proposal_dict
-                ).credential_proposal.attr_dict(),
-            )
+            if (
+                cred_exchange_rec.credential_proposal_dict and
+                "credential_proposal" in cred_exchange_rec.credential_proposal_dict
+            ):
+                (
+                    cred_exchange_rec,
+                    credential_issue_message,
+                ) = await credential_manager.issue_credential(
+                    credential_exchange_record=cred_exchange_rec,
+                    comment=context.message.comment,
+                    credential_values=CredentialProposal.deserialize(
+                        cred_exchange_rec.credential_proposal_dict
+                    ).credential_proposal.attr_dict(),
+                )
 
-            await responder.send_reply(credential_issue_message)
+                await responder.send_reply(credential_issue_message)
+            else:
+                self._logger.warning(
+                    "Operation set for auto-issue but credential exchange record "
+                    f"{cred_exchange_rec.credential_exchange_id} "
+                    "has no attribute values"
+                )
