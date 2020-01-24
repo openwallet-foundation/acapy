@@ -69,6 +69,20 @@ class ConnectionStaticRequestSchema(Schema):
     alias = fields.Str(description="Alias to assign to this connection", required=False)
 
 
+class ConnectionStaticResultSchema(Schema):
+    """Result schema for new static connection."""
+    my_did = fields.Str(
+        description="Local DID", required=True, example=IndyDID.EXAMPLE
+    )
+    mv_verkey = fields.Str(description="My verification key", required=True)
+    my_endpoint = fields.Str(description="My endpoint", required=True)
+    their_did = fields.Str(
+        description="Remote DID", required=True, example=IndyDID.EXAMPLE
+    )
+    their_verkey = fields.Str(description="Remote verification key", required=True)
+    record = fields.Nested(ConnectionRecordSchema, required=True)
+
+
 def connection_sort_key(conn):
     """Get the sorting key for a particular connection."""
     if conn["state"] == ConnectionRecord.STATE_INACTIVE:
