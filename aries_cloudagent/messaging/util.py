@@ -132,10 +132,6 @@ def encode(orig: Any) -> str:
         pass
 
     rv = int.from_bytes(sha256(str(orig).encode()).digest(), "big")
-    while -I32_BOUND <= rv < I32_BOUND:
-        rv = int.from_bytes(
-            sha256(rv.encode()).digest(), "big"
-        )  # sha256 maps no 32-bit int to another: terminates
 
     return str(rv)
 
