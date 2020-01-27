@@ -27,7 +27,7 @@ class IndyVerifier(BaseVerifier):
     def check_encoding(pres_req: dict, pres: dict) -> bool:
         """
         Check for tampering in presentation.
-        
+
         Visit encoded attribute values against raw, and predicate bounds,
         in presentation, cross-reference against presentation request.
 
