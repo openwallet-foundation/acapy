@@ -300,7 +300,8 @@ class Conductor:
             if self.inbound_transport_manager.return_to_session(outbound):
                 return
 
-        await self.queue_outbound(context, outbound, inbound)
+        if not outbound.to_session_only:
+            await self.queue_outbound(context, outbound, inbound)
 
     def handle_not_returned(self, context: InjectionContext, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
