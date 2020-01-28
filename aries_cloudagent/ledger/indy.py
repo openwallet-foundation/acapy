@@ -494,9 +494,11 @@ class IndyLedger(BaseLedger):
                 )
                 return True
             except IndyError as error:
-                if error.error_code != ErrorCode.CommonInvalidStructure:
+                if error.error_code not in (
+                    ErrorCode.CommonInvalidStructure, ErrorCode.WalletItemNotFound,
+                ):
                     raise IndyErrorHandler.wrap_error(error) from error
-                # CommonInvalidStructure signifies no such cred def in wallet: pass
+                # recognized error signifies no such cred def in wallet: pass
             return False
 
         public_info = await self.wallet.get_public_did()
