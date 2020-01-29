@@ -21,7 +21,7 @@ from runners.support.utils import (
 )
 
 CRED_PREVIEW_TYPE = (
-    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
+    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.1/credential-preview"
 )
 
 LOGGER = logging.getLogger(__name__)

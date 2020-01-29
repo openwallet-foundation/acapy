@@ -1,6 +1,6 @@
 """Message and inner object type identifiers for credential issue."""
 
-PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0"
+PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.1"
 
 # Message types
 
@@ -10,7 +10,7 @@ CREDENTIAL_REQUEST = f"{PROTOCOL_URI}/request-credential"
 CREDENTIAL_ISSUE = f"{PROTOCOL_URI}/issue-credential"
 CREDENTIAL_ACK = f"{PROTOCOL_URI}/ack"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v1_0"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v1_1"
 
 MESSAGE_TYPES = {
     CREDENTIAL_PROPOSAL: (
