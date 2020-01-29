@@ -286,7 +286,7 @@ class DebugGroup(ArgumentGroup):
             "--auto-respond-presentation-request",
             action="store_true",
             help="Automatically respond to Indy presentation requests with a\
-            constructed presentation if exactly one credential can be retrieved\
+            constructed presentation if a corresponding credential can be retrieved\
             for every referent in the presentation request. Default: false.",
         )
         parser.add_argument(
@@ -603,7 +603,7 @@ class TransportGroup(ArgumentGroup):
             another agent (e.g. 'https://example.com/agent-endpoint') if the\
             routing of messages to this agent by a mediator is configured.\
             The first endpoint specified will be used in invitations.\
-            The endpoints are used in the formation of a connection \
+            The endpoints are used in the formation of a connection\
             with another agent.",
         )
         parser.add_argument(
@@ -625,9 +625,9 @@ class TransportGroup(ArgumentGroup):
         parser.add_argument(
             "--enable-undelivered-queue",
             action="store_true",
-            help="Enable the outbound undelivered queue that enables this agent to hold messages\
-            for delivery to agents without an endpoint. This option will require\
-            additional memory to store messages in the queue.",
+            help="Enable the outbound undelivered queue that enables this agent\
+            to hold messages for delivery to agents without an endpoint. This\
+            option will require additional memory to store messages in the queue.",
         )
 
     def get_settings(self, args: Namespace):
