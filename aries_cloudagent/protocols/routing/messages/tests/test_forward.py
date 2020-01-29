@@ -37,7 +37,7 @@ class TestForward(TestCase):
 
 class TestForwardSchema(TestCase):
     def test_make_model(self):
-        message = Forward(to="to", msg="msg")
+        message = Forward(to="to", msg={"some": "msg"})
         data = message.serialize()
         model_instance = Forward.deserialize(data)
         assert isinstance(model_instance, Forward)
