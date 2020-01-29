@@ -1,5 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
+import json
 
 from .....config.injection_context import InjectionContext
 from .....messaging.base_handler import HandlerException
@@ -19,7 +20,7 @@ TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 
-class TestQueryUpdateHandlers(AsyncTestCase):
+class TestForwardHandler(AsyncTestCase):
     async def setUp(self):
         self.storage = BasicStorage()
 
@@ -29,7 +30,7 @@ class TestQueryUpdateHandlers(AsyncTestCase):
         self.context.injector.bind_instance(BaseStorage, self.storage)
 
         self.context.connection_ready = True
-        self.context.message = Forward(to="sample-did", msg="sample-message")
+        self.context.message = Forward(to="sample-did", msg={"msg": "sample-message"})
 
     async def test_handle(self):
         self.context.message_receipt = MessageReceipt(recipient_verkey=TEST_VERKEY)
@@ -48,7 +49,7 @@ class TestQueryUpdateHandlers(AsyncTestCase):
             messages = responder.messages
             assert len(messages) == 1
             (result, target) = messages[0]
-            assert result == self.context.message.msg.encode("ascii")
+            assert json.loads(result) == self.context.message.msg
             assert target["connection_id"] == "dummy"
 
     async def test_handle_receipt_no_recipient_verkey(self):
