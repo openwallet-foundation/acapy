@@ -15,7 +15,7 @@ from ......messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
 from ......wallet.util import b64_to_str
 
 from ...message_types import PRESENTATION_PREVIEW
-from ...util.indy import Predicate
+from ...util.predicate import Predicate
 
 
 class PresPredSpec(BaseModel):
@@ -98,6 +98,7 @@ class PresAttrSpec(BaseModel):
         cred_def_id: str = None,
         mime_type: str = None,
         value: str = None,
+        referent: str = None,
         **kwargs,
     ):
         """
@@ -110,6 +111,7 @@ class PresAttrSpec(BaseModel):
             mime_type: MIME type
             value: attribute value as credential stores it
                 (None for unrevealed attribute)
+            referent: credential referent
 
         """
         super().__init__(**kwargs)
@@ -117,22 +119,29 @@ class PresAttrSpec(BaseModel):
         self.cred_def_id = cred_def_id
         self.mime_type = mime_type.lower() if mime_type else None
         self.value = value
+        self.referent = referent
 
     @staticmethod
-    def list_plain(plain: dict, cred_def_id: str):
+    def list_plain(plain: dict, cred_def_id: str, referent: str = None):
         """
         Return a list of `PresAttrSpec` on input cred def id.
 
         Args:
             plain: dict mapping names to values
-
+            cred_def_id: credential definition identifier to specify
+            referent: single referent to use, omit for none
 
         Returns:
             List of PresAttrSpec on input cred def id with no MIME types
 
         """
         return [
-            PresAttrSpec(name=k, cred_def_id=cred_def_id, value=plain[k]) for k in plain
+            PresAttrSpec(
+                name=k,
+                cred_def_id=cred_def_id,
+                value=plain[k],
+                referent=referent
+            ) for k in plain
         ]
 
     @property
@@ -178,6 +187,9 @@ class PresAttrSpec(BaseModel):
         if self.mime_type != other.mime_type:
             return False  # distinct MIME types
 
+        if self.referent != other.referent:
+            return False  # distinct credential referents
+
         return self.b64_decoded_value() == other.b64_decoded_value()
 
 
@@ -200,6 +212,11 @@ class PresAttrSpecSchema(BaseModelSchema):
         example="image/jpeg",
     )
     value = fields.Str(description="Attribute value", required=False, example="martini")
+    referent = fields.Str(
+        description="Credential referent",
+        required=False,
+        example="0"
+    )
 
 
 class PresentationPreview(BaseModel):
@@ -238,6 +255,28 @@ class PresentationPreview(BaseModel):
 
         return PresentationPreview.Meta.message_type
 
+    def has_attr_spec(self, cred_def_id: str, name: str, value: str) -> bool:
+        """
+        Return whether preview contains given attribute specification.
+
+        Args:
+            cred_def_id: credential definition identifier
+            name: attribute name
+            value: attribute value
+
+        Returns:
+            Whether preview contains matching attribute specification.
+
+        """
+
+        return any(
+            a.name == canon(name) and a.value in (
+                value,
+                None
+            ) and a.cred_def_id == cred_def_id
+            for a in self.attributes
+        )
+
     async def indy_proof_request(
         self,
         name: str = None,
@@ -272,18 +311,7 @@ class PresentationPreview(BaseModel):
 
             return (timestamps or {}).get(cred_def_id, epoch_now)
 
-        def ord_cred_def_id(cred_def_id: str):
-            """Ordinal for cred def id to use in suggestive proof req referent."""
-
-            nonlocal cred_def_ids
-
-            if cred_def_id in cred_def_ids:
-                return cred_def_ids.index(cred_def_id)
-            cred_def_ids.append(cred_def_id)
-            return len(cred_def_ids) - 1
-
         epoch_now = int(time())  # TODO: take cred_def_id->timestamp here, default now
-        cred_def_ids = []
 
         proof_req = {
             "name": name or "proof-request",
@@ -293,9 +321,12 @@ class PresentationPreview(BaseModel):
             "requested_predicates": {},
         }
 
+        attr_specs_names = {}
         for attr_spec in self.attributes:
             if attr_spec.posture == PresAttrSpec.Posture.SELF_ATTESTED:
-                proof_req["requested_attributes"][f"{canon(attr_spec.name)}"] = {
+                proof_req["requested_attributes"][
+                    "self_{}_uuid".format(canon(attr_spec.name))
+                ] = {
                     "name": canon(attr_spec.name)
                 }
             else:
@@ -308,17 +339,44 @@ class PresentationPreview(BaseModel):
                 )
 
                 timestamp = non_revo(attr_spec.cred_def_id)
-                proof_req["requested_attributes"][
-                    "{}_{}_uuid".format(ord_cred_def_id(cd_id), canon(attr_spec.name))
-                ] = {
-                    "name": canon(attr_spec.name),
-                    "restrictions": [{"cred_def_id": cd_id}],
-                    **{
-                        "non_revoked": {"from": timestamp, "to": timestamp}
-                        for _ in [""]
-                        if revo_support
-                    },
-                }
+
+                if attr_spec.referent:
+                    if attr_spec.referent in attr_specs_names:
+                        attr_specs_names[attr_spec.referent]["names"].append(
+                            canon(attr_spec.name)
+                        )
+                    else:
+                        attr_specs_names[attr_spec.referent] = {
+                            "names": [canon(attr_spec.name)],
+                            "restrictions": [{"cred_def_id": cd_id}],
+                            **{
+                                "non_revoked": {"from": timestamp, "to": timestamp}
+                                for _ in [""]
+                                if revo_support
+                            },
+                        }
+                else:
+                    proof_req["requested_attributes"][
+                        "{}_{}_uuid".format(
+                            len(proof_req["requested_attributes"]),
+                            canon(attr_spec.name)
+                        )
+                    ] = {
+                        "name": canon(attr_spec.name),
+                        "restrictions": [{"cred_def_id": cd_id}],
+                        **{
+                            "non_revoked": {"from": timestamp, "to": timestamp}
+                            for _ in [""]
+                            if revo_support
+                        },
+                    }
+        for (reft, attr_spec) in attr_specs_names.items():
+            proof_req["requested_attributes"][
+                "{}_{}_uuid".format(
+                    len(proof_req["requested_attributes"]),
+                    canon(attr_spec["names"][0])
+                )
+            ] = attr_spec
 
         for pred_spec in self.predicates:
             cd_id = pred_spec.cred_def_id
@@ -330,7 +388,7 @@ class PresentationPreview(BaseModel):
             timestamp = non_revo(attr_spec.cred_def_id)
             proof_req["requested_predicates"][
                 "{}_{}_{}_uuid".format(
-                    ord_cred_def_id(cd_id),
+                    len(proof_req["requested_predicates"]),
                     canon(pred_spec.name),
                     Predicate.get(pred_spec.predicate).value.fortran,
                 )

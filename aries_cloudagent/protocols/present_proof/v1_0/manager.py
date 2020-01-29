@@ -332,6 +332,7 @@ class PresentationManager:
 
         """
         presentation = self.context.message.indy_proof()
+
         thread_id = self.context.message._thread_id
         connection_id_filter = (
             {"connection_id": self.context.connection_record.connection_id}
@@ -343,6 +344,31 @@ class PresentationManager:
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
             self.context, {"thread_id": thread_id}, connection_id_filter
         )
+
+        # Check for bait-and-switch in presented attribute values vs. proposal
+        if presentation_exchange_record.presentation_proposal_dict:
+            exchange_pres_proposal = PresentationProposal.deserialize(
+                presentation_exchange_record.presentation_proposal_dict
+            )
+            presentation_preview = exchange_pres_proposal.presentation_proposal
+
+            proof_req = presentation_exchange_record.presentation_request
+            for (
+                reft,
+                attr_spec
+            ) in presentation["requested_proof"]["revealed_attrs"].items():
+                name = proof_req["requested_attributes"][reft]["name"]
+                value = attr_spec["raw"]
+                if not presentation_preview.has_attr_spec(
+                    cred_def_id=presentation["identifiers"][
+                        attr_spec["sub_proof_index"]
+                    ]["cred_def_id"],
+                    name=name,
+                    value=value
+                ):
+                    raise PresentationManagerError(
+                        f"Presentation {name}={value} mismatches proposal value"
+                    )
 
         presentation_exchange_record.presentation = presentation
         presentation_exchange_record.state = (

@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-import re
 import tempfile
 
 from hashlib import sha256
@@ -486,6 +485,22 @@ class IndyLedger(BaseLedger):
 
         """
 
+        async def cred_def_in_wallet(wallet_handle, cred_def_id) -> bool:
+            """Create an offer to check whether cred def id is in wallet."""
+            try:
+                await indy.anoncreds.issuer_create_credential_offer(
+                    wallet_handle,
+                    cred_def_id
+                )
+                return True
+            except IndyError as error:
+                if error.error_code not in (
+                    ErrorCode.CommonInvalidStructure, ErrorCode.WalletItemNotFound,
+                ):
+                    raise IndyErrorHandler.wrap_error(error) from error
+                # recognized error signifies no such cred def in wallet: pass
+            return False
+
         public_info = await self.wallet.get_public_did()
         if not public_info:
             raise BadLedgerRequestError(
@@ -493,88 +508,87 @@ class IndyLedger(BaseLedger):
             )
 
         schema = await self.get_schema(schema_id)
-        credential_definition_json = None
+        if not schema:
+            raise LedgerError(f"Ledger {self.pool_name} has no schema {schema_id}")
 
-        # TODO: add support for tag, sig type, and config
-        try:
-            (
-                credential_definition_id,
-                credential_definition_json,
-            ) = await indy.anoncreds.issuer_create_and_store_credential_def(
-                self.wallet.handle,
-                public_info.did,
-                json.dumps(schema),
-                tag or "default",
-                "CL",
-                json.dumps({"support_revocation": False}),
+        # check if cred def is on ledger already
+        for test_tag in [tag, ] if tag else ["tag", "default"]:
+            credential_definition_id = (
+                f"{public_info.did}:3:CL:{str(schema['seqNo'])}:{test_tag}"
             )
-        # If the cred def already exists in the wallet, we need some way of obtaining
-        # that cred def id (from schema id passed) since we can now assume we can use
-        # it in future operations.
-        except IndyError as error:
-            if error.error_code == ErrorCode.AnoncredsCredDefAlreadyExistsError:
-                try:
-                    credential_definition_id = re.search(
-                        r"\w*:3:CL:(([1-9][0-9]*)|(.{21,22}:2:.+:[0-9.]+)):\w*",
-                        error.message,
-                    ).group(0)
-                # The regex search failed so let the error bubble up
-                except AttributeError:
+            ledger_cred_def = await self.fetch_credential_definition(
+                credential_definition_id
+            )
+            if ledger_cred_def:
+                self.logger.warning(
+                    "Credential definition %s already exists on ledger %s",
+                    credential_definition_id,
+                    self.pool_name,
+                )
+                if not await cred_def_in_wallet(
+                    self.wallet.handle, credential_definition_id
+                ):
                     raise LedgerError(
-                        "Previous credential definition exists, but ID could "
-                        "not be extracted"
+                        f"Credential definition {credential_definition_id} is on "
+                        f"ledger {self.pool_name} but not in wallet {self.wallet.name}"
                     )
-            else:
-                raise IndyErrorHandler.wrap_error(error) from error
-
-        # check if the cred def already exists on the ledger
-        created_cred_def = json.loads(
-            credential_definition_json
-        ) if credential_definition_json else None
-        exist_def = await self.fetch_credential_definition(credential_definition_id)
-
-        if created_cred_def:
-            if exist_def:
-                if exist_def["value"] != created_cred_def["value"]:
-                    self.logger.warning(
-                        "Ledger definition of cred def %s will be replaced",
-                        credential_definition_id,
-                    )
-                    exist_def = None
-        else:
-            if not exist_def:
+                break
+        else:  # no such cred def on ledger
+            if await cred_def_in_wallet(self.wallet.handle, credential_definition_id):
                 raise LedgerError(
-                    f"Wallet {self.wallet.name} "
-                    f"does not pertain to ledger on pool {self.pool_name}"
+                    f"Credential definition {credential_definition_id} is in wallet "
+                    f"{self.wallet.name} but not on ledger {self.pool_name}"
                 )
 
-        if not exist_def:
-            with IndyErrorHandler("Exception when building cred def request"):
-                request_json = await indy.ledger.build_cred_def_request(
-                    public_info.did, credential_definition_json
+            # Cred def is neither on ledger nor in wallet: create and send it
+            try:
+                (
+                    credential_definition_id,
+                    credential_definition_json,
+                ) = await indy.anoncreds.issuer_create_and_store_credential_def(
+                    self.wallet.handle,
+                    public_info.did,
+                    json.dumps(schema),
+                    tag or "default",
+                    "CL",
+                    json.dumps({"support_revocation": False}),
                 )
-            await self._submit(request_json, True, public_did=public_info.did)
-        else:
-            self.logger.warning(
-                "Ledger definition of cred def %s already exists",
-                credential_definition_id,
-            )
+            except IndyError as error:
+                raise IndyErrorHandler.wrap_error(error) from error
+            else:  # created cred def in wallet OK
+                wallet_cred_def = json.loads(credential_definition_json)
+                with IndyErrorHandler("Exception when building cred def request"):
+                    request_json = await indy.ledger.build_cred_def_request(
+                        public_info.did, credential_definition_json
+                    )
+                await self._submit(request_json, True, public_did=public_info.did)
+                ledger_cred_def = await self.fetch_credential_definition(
+                    credential_definition_id
+                )
+                assert wallet_cred_def["value"] == ledger_cred_def["value"]
 
-        schema_id_parts = schema_id.split(":")
-        cred_def_tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": schema_id_parts[0],
-            "schema_name": schema_id_parts[-2],
-            "schema_version": schema_id_parts[-1],
-            "issuer_did": public_info.did,
-            "cred_def_id": credential_definition_id,
-            "epoch": str(int(time())),
-        }
-        record = StorageRecord(
-            CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags,
-        )
+        # Add non-secrets records if not yet present
         storage = self.get_indy_storage()
-        await storage.add_record(record)
+        found = await storage.search_records(
+            type_filter=CRED_DEF_SENT_RECORD_TYPE,
+            tag_query={"cred_def_id": credential_definition_id}
+        ).fetch_all()
+
+        if not found:
+            schema_id_parts = schema_id.split(":")
+            cred_def_tags = {
+                "schema_id": schema_id,
+                "schema_issuer_did": schema_id_parts[0],
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "issuer_did": public_info.did,
+                "cred_def_id": credential_definition_id,
+                "epoch": str(int(time())),
+            }
+            record = StorageRecord(
+                CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags,
+            )
+            await storage.add_record(record)
 
         return credential_definition_id
 

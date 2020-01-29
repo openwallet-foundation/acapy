@@ -128,12 +128,12 @@ class IndyProofReqPredSpecSchema(Schema):
     """Schema for predicate specification in indy proof request."""
 
     name = fields.String(example="index", description="Attribute name", required=True)
-    p_type: fields.String(
+    p_type = fields.String(
         description="Predicate type (indy currently supports only '>=')",
         required=True,
         **INDY_PREDICATE
     )
-    p_value: fields.Integer(description="Threshold value", required=True)
+    p_value = fields.Integer(description="Threshold value", required=True)
     restrictions = fields.List(
         fields.Nested(IndyProofReqSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
@@ -523,7 +523,10 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     presentation_request_message = PresentationRequest(
         comment=comment,
         request_presentations_attach=[
-            AttachDecorator.from_indy_dict(indy_proof_request)
+            AttachDecorator.from_indy_dict(
+                indy_dict=indy_proof_request,
+                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
+            )
         ],
     )
 
@@ -736,9 +739,6 @@ async def register(app: web.Application):
             ),
             web.post(
                 "/present-proof/send-proposal", presentation_exchange_send_proposal
-            ),
-            web.post(
-                "/present-proof/create-request", presentation_exchange_create_request
             ),
             web.post(
                 "/present-proof/send-request", presentation_exchange_send_free_request

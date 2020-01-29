@@ -68,7 +68,9 @@ class CredentialManager:
         return max(found, key=lambda r: int(r.tags["epoch"])).tags["cred_def_id"]
 
     async def prepare_send(
-        self, connection_id: str, credential_proposal: CredentialProposal
+        self,
+        connection_id: str,
+        credential_proposal: CredentialProposal
     ) -> Tuple[V10CredentialExchange, CredentialOffer]:
         """
         Set up a new credential exchange for an automated send.
@@ -130,10 +132,6 @@ class CredentialManager:
             Resulting credential exchange record including credential proposal
 
         """
-        # Credential preview must be present
-        if not credential_preview:
-            raise CredentialManagerError("credential_preview is not set")
-
         credential_proposal_message = CredentialProposal(
             comment=comment,
             credential_proposal=credential_preview,
@@ -539,15 +537,23 @@ class CredentialManager:
             )
 
         holder: BaseHolder = await self.context.inject(BaseHolder)
+        if (
+            credential_exchange_record.credential_proposal_dict and
+            "credential_proposal" in credential_exchange_record.credential_proposal_dict
+        ):
+            mime_types = CredentialPreview.deserialize(
+                credential_exchange_record.credential_proposal_dict[
+                    "credential_proposal"
+                ]
+            ).mime_types()
+        else:
+            mime_types = None
+
         credential_id = await holder.store_credential(
             credential_definition,
             raw_credential,
             credential_exchange_record.credential_request_metadata,
-            CredentialPreview.deserialize(
-                credential_exchange_record.credential_proposal_dict[
-                    "credential_proposal"
-                ]
-            ).mime_types(),
+            mime_types
         )
 
         credential = await holder.get_credential(credential_id)

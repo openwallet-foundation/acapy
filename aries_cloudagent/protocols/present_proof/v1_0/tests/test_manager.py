@@ -24,7 +24,7 @@ from ..messages.inner.presentation_preview import (
     PresPredSpec,
 )
 from ..models.presentation_exchange import V10PresentationExchange
-from ..util.indy import indy_proof_request2indy_requested_creds
+from ..util.indy import indy_proof_req_preview2indy_requested_creds
 
 
 CONN_ID = "connection_id"
@@ -209,8 +209,9 @@ class TestPresentationManager(AsyncTestCase):
                 return_value=mock_attach_decorator
             )
 
-            req_creds = await indy_proof_request2indy_requested_creds(
-                indy_proof_req, self.holder
+            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                indy_proof_req,
+                holder=self.holder
             )
 
             (exchange_out, pres_msg) = await self.manager.create_presentation(
@@ -227,7 +228,10 @@ class TestPresentationManager(AsyncTestCase):
         self.holder.get_credentials_for_presentation_request_by_referent.return_value = ()
 
         with self.assertRaises(ValueError):
-            await indy_proof_request2indy_requested_creds(indy_proof_req, self.holder)
+            await indy_proof_req_preview2indy_requested_creds(
+                indy_proof_req,
+                holder=self.holder
+            )
 
         self.holder.get_credentials_for_presentation_request_by_referent.return_value = (
             {
@@ -235,11 +239,93 @@ class TestPresentationManager(AsyncTestCase):
             },  # leave this comma: return a tuple
         )
 
-    async def test_receive_presentation_active_connection(self):
+    async def test_receive_presentation(self):
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = CONN_ID
 
-        exchange_dummy = V10PresentationExchange()
+        exchange_dummy = V10PresentationExchange(
+            presentation_proposal_dict={
+                "presentation_proposal": {
+                    "@type": (
+                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+                        "spec/present-proof/1.0/presentation-preview"
+                    ),
+                    "attributes": [
+                        {
+                            "name": "favourite",
+                            "cred_def_id": CD_ID,
+                            "value": "potato"
+                        },
+                        {
+                            "name": "icon",
+                            "cred_def_id": CD_ID,
+                            "value": "cG90YXRv"
+                        }
+                    ],
+                    "predicates": []
+                }
+            },
+            presentation_request={
+                "name": "proof-request",
+                "version": "1.0",
+                "nonce": "1234567890",
+                "requested_attributes": {
+                    "0_favourite_uuid": {
+                        "name": "favourite",
+                        "restrictions": [
+                            {
+                                "cred_def_id": CD_ID,
+                            }
+                        ]
+                    },
+                    "1_icon_uuid": {
+                        "name": "icon",
+                        "restrictions": [
+                            {
+                                "cred_def_id": CD_ID,
+                            }
+                        ]
+                    }
+                }
+            },
+            presentation={
+                "proof": {
+                    "proofs": [],
+                    "requested_proof": {
+                        "revealed_attrs": {
+                            "0_favourite_uuid": {
+                                "sub_proof_index": 0,
+                                "raw": "potato",
+                                "encoded": "12345678901234567890"
+                            },
+                            "1_icon_uuid": {
+                                "sub_proof_index": 1,
+                                "raw": "cG90YXRv",
+                                "encoded": "12345678901234567890"
+                            }
+                        },
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {
+                        }
+                    }
+                },
+                "identifiers": [
+                    {
+                        "schema_id": S_ID,
+                        "cred_def_id": CD_ID,
+                        "rev_reg_id": None,
+                        "timestamp": None
+                    },
+                    {
+                        "schema_id": S_ID,
+                        "cred_def_id": CD_ID,
+                        "rev_reg_id": None,
+                        "timestamp": None
+                    }
+                ]
+            }
+        )
         self.context.message = async_mock.MagicMock()
 
         with async_mock.patch.object(
@@ -259,6 +345,106 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == (
                 V10PresentationExchange.STATE_PRESENTATION_RECEIVED
             )
+
+    async def test_receive_presentation_bait_and_switch(self):
+        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record.connection_id = CONN_ID
+
+        exchange_dummy = V10PresentationExchange(
+            presentation_proposal_dict={
+                "presentation_proposal": {
+                    "@type": (
+                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+                        "spec/present-proof/1.0/presentation-preview"
+                    ),
+                    "attributes": [
+                        {
+                            "name": "favourite",
+                            "cred_def_id": CD_ID,
+                            "value": "no potato"
+                        },
+                        {
+                            "name": "icon",
+                            "cred_def_id": CD_ID,
+                            "value": "cG90YXRv"
+                        }
+                    ],
+                    "predicates": []
+                }
+            },
+            presentation_request={
+                "name": "proof-request",
+                "version": "1.0",
+                "nonce": "1234567890",
+                "requested_attributes": {
+                    "0_favourite_uuid": {
+                        "name": "favourite",
+                        "restrictions": [
+                            {
+                                "cred_def_id": CD_ID,
+                            }
+                        ]
+                    },
+                    "1_icon_uuid": {
+                        "name": "icon",
+                        "restrictions": [
+                            {
+                                "cred_def_id": CD_ID,
+                            }
+                        ]
+                    }
+                }
+            }
+        )
+        self.context.message = async_mock.MagicMock()
+        self.context.message.indy_proof = async_mock.MagicMock(
+            return_value={
+                "proof": {
+                    "proofs": [],
+                },
+                "requested_proof": {
+                    "revealed_attrs": {
+                        "0_favourite_uuid": {
+                            "sub_proof_index": 0,
+                            "raw": "potato",
+                            "encoded": "12345678901234567890"
+                        },
+                        "1_icon_uuid": {
+                            "sub_proof_index": 1,
+                            "raw": "cG90YXRv",
+                            "encoded": "23456789012345678901"
+                        }
+                    },
+                    "self_attested_attrs": {},
+                    "unrevealed_attrs": {},
+                    "predicates": {
+                    }
+                },
+                "identifiers": [
+                    {
+                        "schema_id": S_ID,
+                        "cred_def_id": CD_ID,
+                        "rev_reg_id": None,
+                        "timestamp": None
+                    },
+                    {
+                        "schema_id": S_ID,
+                        "cred_def_id": CD_ID,
+                        "rev_reg_id": None,
+                        "timestamp": None
+                    }
+                ]
+            }
+        )
+
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = exchange_dummy
+            with self.assertRaises(PresentationManagerError):
+                await self.manager.receive_presentation()
 
     async def test_receive_presentation_connection_less(self):
         exchange_dummy = V10PresentationExchange()
