@@ -93,6 +93,39 @@ class TestPresentationManager(AsyncTestCase):
 
         self.manager = PresentationManager(self.context)
 
+    async def test_record_eq(self):
+        same = [
+            V10PresentationExchange(
+                presentation_exchange_id="dummy-0",
+                thread_id="thread-0",
+                role=V10PresentationExchange.ROLE_PROVER
+            )
+        ] * 2
+        diff = [
+            V10PresentationExchange(
+                presentation_exchange_id="dummy-1",
+                role=V10PresentationExchange.ROLE_PROVER
+            ),
+            V10PresentationExchange(
+                presentation_exchange_id="dummy-0",
+                thread_id="thread-1",
+                role=V10PresentationExchange.ROLE_PROVER
+            ),
+            V10PresentationExchange(
+                presentation_exchange_id="dummy-1",
+                thread_id="thread-0",
+                role=V10PresentationExchange.ROLE_VERIFIER
+            )
+        ]
+
+        for i in range(len(same) - 1):
+            for j in range(i, len(same)):
+                assert same[i] == same[j]
+
+        for i in range(len(diff) - 1):
+            for j in range(i, len(diff)):
+                assert diff[i] == diff[j] if i == j else diff[i] != diff[j]
+
     async def test_create_exchange_for_proposal(self):
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = CONN_ID

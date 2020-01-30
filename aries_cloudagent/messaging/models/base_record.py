@@ -109,8 +109,7 @@ class BaseRecord(BaseModel):
         return {
             tag: getattr(self, prop)
             for (prop, tag) in self.get_tag_map().items()
-            if getattr(self, prop)
-            if not None
+            if getattr(self, prop) is not None
         }
 
     @property
