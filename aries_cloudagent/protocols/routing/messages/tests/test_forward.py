@@ -7,7 +7,7 @@ from unittest import mock, TestCase
 class TestForward(TestCase):
 
     to = "to"
-    msg = "msg"
+    msg = {"msg": "body"}
 
     def setUp(self):
         self.message = Forward(to=self.to, msg=self.msg)
