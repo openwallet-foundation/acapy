@@ -1,5 +1,7 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
+from typing import Any
+
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
@@ -128,6 +130,10 @@ class V11CredentialExchange(BaseRecord):
             )
             await cls.set_cached_key(context, cache_key, record.credential_exchange_id)
         return record
+
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
 
 
 class V11CredentialExchangeSchema(BaseRecordSchema):
