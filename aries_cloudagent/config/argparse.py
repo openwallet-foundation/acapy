@@ -534,6 +534,11 @@ class ProtocolGroup(ArgumentGroup):
             metavar="<log-path>",
             help="Write timing information to a given log file.",
         )
+        parser.add_argument(
+            "--preserve-exchange-records",
+            action="store_true",
+            help="Keep credential exchange records after exchange has completed."
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
@@ -550,6 +555,8 @@ class ProtocolGroup(ArgumentGroup):
             settings["timing.enabled"] = True
         if args.timing_log:
             settings["timing.log_file"] = args.timing_log
+        if args.preserve_exchange_records:
+            settings["preserve_exchange_records"] = True
         return settings
 
 
