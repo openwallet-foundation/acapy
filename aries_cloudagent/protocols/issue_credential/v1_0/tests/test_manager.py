@@ -41,27 +41,27 @@ class TestCredentialManager(AsyncTestCase):
                 credential_exchange_id="dummy-0",
                 thread_id="thread-0",
                 credential_definition_id=cred_def_id,
-                role=V10CredentialExchange.ROLE_ISSUER
+                role=V10CredentialExchange.ROLE_ISSUER,
             )
         ] * 2
         diff = [
             V10CredentialExchange(
                 credential_exchange_id="dummy-1",
                 credential_definition_id=cred_def_id,
-                role=V10CredentialExchange.ROLE_ISSUER
+                role=V10CredentialExchange.ROLE_ISSUER,
             ),
             V10CredentialExchange(
                 credential_exchange_id="dummy-0",
                 thread_id="thread-1",
                 credential_definition_id=cred_def_id,
-                role=V10CredentialExchange.ROLE_ISSUER
+                role=V10CredentialExchange.ROLE_ISSUER,
             ),
             V10CredentialExchange(
                 credential_exchange_id="dummy-1",
                 thread_id="thread-0",
                 credential_definition_id=f"{cred_def_id}_distinct_tag",
-                role=V10CredentialExchange.ROLE_ISSUER
-            )
+                role=V10CredentialExchange.ROLE_ISSUER,
+            ),
         ]
 
         for i in range(len(same) - 1):
@@ -86,7 +86,9 @@ class TestCredentialManager(AsyncTestCase):
             self.manager, "create_offer", autospec=True
         ) as create_offer:
             create_offer.return_value = (async_mock.MagicMock(), async_mock.MagicMock())
-            ret_exchange, ret_cred_offer = await self.manager.prepare_send(connection_id, proposal)
+            ret_exchange, ret_cred_offer = await self.manager.prepare_send(
+                connection_id, proposal
+            )
             create_offer.assert_called_once()
             assert ret_exchange is create_offer.return_value[0]
             arg_exchange = create_offer.call_args[1]["credential_exchange_record"]
@@ -230,6 +232,9 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
+            self.ledger.get_credential_definition = async_mock.CoroutineMock(
+                return_value={"value": {}}
+            )
             self.cache = BasicCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
 
@@ -284,6 +289,9 @@ class TestCredentialManager(AsyncTestCase):
         ) as get_cached_key, async_mock.patch.object(
             V10CredentialExchange, "set_cached_key", autospec=True
         ) as set_cached_key:
+            self.ledger.get_credential_definition = async_mock.CoroutineMock(
+                return_value={"value": {}}
+            )
             get_cached_key.return_value = None
             cred_offer = {"cred_def_id": cred_def_id, "schema_id": schema_id}
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
@@ -305,7 +313,7 @@ class TestCredentialManager(AsyncTestCase):
                     "issuer_did": TEST_DID,
                     "cred_def_id": cred_def_id,
                     "epoch": str(int(time())),
-                }
+                },
             )
             storage: BaseStorage = await self.context.inject(BaseStorage)
             await storage.add_record(cred_def_record)
@@ -459,7 +467,7 @@ class TestCredentialManager(AsyncTestCase):
         indy_offer = {
             "schema_id": schema_id,
             "cred_def_id": cred_def_id,
-            "nonce": nonce
+            "nonce": nonce,
         }
         indy_cred_req = {"schema_id": schema_id, "cred_def_id": cred_def_id}
         thread_id = "thread-id"
@@ -512,11 +520,10 @@ class TestCredentialManager(AsyncTestCase):
 
             # cover case with existing cred req
             stored_exchange.credential_request = indy_cred_req
-            (ret_existing_exchange, ret_existing_request) = (
-                await self.manager.create_request(
-                    stored_exchange, holder_did
-                )
-            )
+            (
+                ret_existing_exchange,
+                ret_existing_request,
+            ) = await self.manager.create_request(stored_exchange, holder_did)
             assert ret_existing_exchange == ret_exchange
             assert ret_existing_request._thread_id == thread_id
 
@@ -528,7 +535,7 @@ class TestCredentialManager(AsyncTestCase):
         indy_offer = {
             "schema_id": schema_id,
             "cred_def_id": cred_def_id,
-            "nonce": nonce
+            "nonce": nonce,
         }
         indy_cred_req = {"schema_id": schema_id, "cred_def_id": cred_def_id}
         thread_id = "thread-id"
@@ -681,10 +688,11 @@ class TestCredentialManager(AsyncTestCase):
 
             # cover case with existing cred
             stored_exchange.credential = cred
-            (ret_existing_exchange, ret_existing_cred) = (
-                await self.manager.issue_credential(
-                    stored_exchange, comment=comment, credential_values=cred_values
-                )
+            (
+                ret_existing_exchange,
+                ret_existing_cred,
+            ) = await self.manager.issue_credential(
+                stored_exchange, comment=comment, credential_values=cred_values
             )
             assert ret_existing_exchange == ret_exchange
             assert ret_existing_cred._thread_id == thread_id
@@ -829,11 +837,7 @@ class TestCredentialManager(AsyncTestCase):
             self.ledger.get_credential_definition.assert_called_once_with(cred_def_id)
 
             holder.store_credential.assert_called_once_with(
-                cred_def,
-                cred,
-                cred_req_meta,
-                None,
-                credential_id=None
+                cred_def, cred, cred_req_meta, None, credential_id=None
             )
 
             holder.get_credential.assert_called_once_with(cred_id)
@@ -892,7 +896,7 @@ class TestCredentialManager(AsyncTestCase):
             await exchange_record.save(self.context)
 
         for i in range(2):  # second pass gets from cache
-            for index in range(2): 
+            for index in range(2):
                 ret_ex = await V10CredentialExchange.retrieve_by_connection_and_thread(
                     self.context, str(index), str(1000 + index)
                 )

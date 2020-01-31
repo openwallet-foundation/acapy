@@ -552,6 +552,7 @@ class IndyLedger(BaseLedger):
                         f"Credential definition {credential_definition_id} is on "
                         f"ledger {self.pool_name} but not in wallet {self.wallet.name}"
                     )
+                credential_definition_json = json.dumps(ledger_cred_def)
                 break
         else:  # no such cred def on ledger
             if await cred_def_in_wallet(self.wallet.handle, credential_definition_id):
@@ -586,7 +587,7 @@ class IndyLedger(BaseLedger):
                     request_json = await indy.ledger.build_cred_def_request(
                         public_info.did, credential_definition_json
                     )
-                await self._submit(request_json, True, public_did=public_info.did)
+                await self._submit(request_json, True, sign_did=public_info)
                 ledger_cred_def = await self.fetch_credential_definition(
                     credential_definition_id
                 )
@@ -719,7 +720,7 @@ class IndyLedger(BaseLedger):
             request_json = await indy.ledger.build_get_attrib_request(
                 public_did, nym, "endpoint", None, None
             )
-        response_json = await self._submit(request_json, public_did=public_did)
+        response_json = await self._submit(request_json, sign_did=public_info)
         data_json = json.loads(response_json)["result"]["data"]
         if data_json:
             endpoint = json.loads(data_json).get("endpoint", None)
