@@ -71,6 +71,7 @@ class ConnectionStaticRequestSchema(Schema):
 
 class ConnectionStaticResultSchema(Schema):
     """Result schema for new static connection."""
+
     my_did = fields.Str(
         description="Local DID", required=True, example=IndyDID.EXAMPLE
     )
