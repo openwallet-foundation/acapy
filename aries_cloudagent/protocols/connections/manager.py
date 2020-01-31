@@ -563,7 +563,7 @@ class ConnectionManager:
         their_role: str = None,
         their_label: str = None,
         alias: str = None,
-    ) -> ConnectionRecord:
+    ) -> (DIDInfo, DIDInfo, ConnectionRecord):
         """
         Register a new static connection (for use by the test suite).
 
@@ -615,7 +615,7 @@ class ConnectionManager:
         did_doc = await self.create_did_document(their_info, None, [their_endpoint])
         await self.store_did_document(did_doc)
 
-        return connection
+        return my_info, their_info, connection
 
     async def find_connection(
         self,
