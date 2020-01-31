@@ -599,7 +599,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             ConnectionRecord, "save", autospec=True
         ) as mock_conn_rec_save:
 
-            conn_rec = await self.manager.create_static_connection(
+            _my, _their, conn_rec = await self.manager.create_static_connection(
                 my_did=self.test_did,
                 their_did=self.test_target_did,
                 their_verkey=self.test_target_verkey,
@@ -626,7 +626,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             ConnectionRecord, "save", autospec=True
         ) as mock_conn_rec_save:
 
-            conn_rec = await self.manager.create_static_connection(
+            _my, _their, conn_rec = await self.manager.create_static_connection(
                 my_did=self.test_did,
                 their_seed=self.test_seed,
                 their_endpoint=self.test_endpoint,
