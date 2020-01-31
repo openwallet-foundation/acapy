@@ -31,9 +31,7 @@ class RevRegCreateResultSchema(Schema):
     result = IssuerRevocationRecordSchema()
 
 
-@docs(
-    tags=["revocation"], summary="Creates a new revocation registry",
-)
+@docs(tags=["revocation"], summary="Creates a new revocation registry")
 @request_schema(RevRegCreateRequestSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def revocation_create_registry(request: web.BaseRequest):
@@ -77,9 +75,7 @@ async def revocation_create_registry(request: web.BaseRequest):
     return web.json_response({"result": registry_record.serialize()})
 
 
-@docs(
-    tags=["revocation"], summary="Get current revocation registry",
-)
+@docs(tags=["revocation"], summary="Get current revocation registry")
 @request_schema(RevRegCreateRequestSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_current_registry(request: web.BaseRequest):
@@ -110,20 +106,21 @@ async def get_current_registry(request: web.BaseRequest):
 
     try:
         revoc = IndyRevocation(context)
-        registry_record = await revoc.get_active_issuer_revocation_record(credential_definition_id)
+        registry_record = await revoc.get_active_issuer_revocation_record(
+            credential_definition_id
+        )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest() from e
 
     return web.json_response({"result": registry_record.serialize()})
 
-@docs(
-    tags=["revocation"], summary="Publish a given revocation registry",
-)
+
+@docs(tags=["revocation"], summary="Publish a given revocation registry")
 @request_schema(RevRegCreateRequestSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def publish_registry(request: web.BaseRequest):
     """
-    Request handler for publishing a revocation registry based on the revocation registry id.
+    Request handler for publishing a revocation registry based on the registry id.
 
     Args:
         request: aiohttp request object
@@ -164,10 +161,13 @@ async def publish_registry(request: web.BaseRequest):
 
     return web.json_response({"result": registry_record.serialize()})
 
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
-        [web.post("/revocation/create-registry", revocation_create_registry,),
-         web.post("/revocation/get-current-registry", get_current_registry,),
-         web.post("/revocation/records/{id}/publish", publish_registry,)]
+        [
+            web.post("/revocation/create-registry", revocation_create_registry),
+            web.post("/revocation/get-current-registry", get_current_registry),
+            web.post("/revocation/records/{id}/publish", publish_registry),
+        ]
     )
