@@ -11,6 +11,8 @@ from .base import BaseVerifier
 
 
 class PreVerifyResult(Enum):
+    """Represent the result of IndyVerifier.pre_verify."""
+
     OK = "ok"
     INCOMPLETE = "missing essential components"
     ENCODING_MISMATCH = "demonstrates tampering with raw values"
