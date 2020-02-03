@@ -34,6 +34,44 @@ class TestCredentialManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseLedger, self.ledger)
         self.manager = CredentialManager(self.context)
 
+    async def test_record_eq(self):
+        cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
+        same = [
+            V10CredentialExchange(
+                credential_exchange_id="dummy-0",
+                thread_id="thread-0",
+                credential_definition_id=cred_def_id,
+                role=V10CredentialExchange.ROLE_ISSUER
+            )
+        ] * 2
+        diff = [
+            V10CredentialExchange(
+                credential_exchange_id="dummy-1",
+                credential_definition_id=cred_def_id,
+                role=V10CredentialExchange.ROLE_ISSUER
+            ),
+            V10CredentialExchange(
+                credential_exchange_id="dummy-0",
+                thread_id="thread-1",
+                credential_definition_id=cred_def_id,
+                role=V10CredentialExchange.ROLE_ISSUER
+            ),
+            V10CredentialExchange(
+                credential_exchange_id="dummy-1",
+                thread_id="thread-0",
+                credential_definition_id=f"{cred_def_id}_distinct_tag",
+                role=V10CredentialExchange.ROLE_ISSUER
+            )
+        ]
+
+        for i in range(len(same) - 1):
+            for j in range(i, len(same)):
+                assert same[i] == same[j]
+
+        for i in range(len(diff) - 1):
+            for j in range(i, len(diff)):
+                assert diff[i] == diff[j] if i == j else diff[i] != diff[j]
+
     async def test_prepare_send(self):
         schema_id = "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0"
         cred_def_id = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"

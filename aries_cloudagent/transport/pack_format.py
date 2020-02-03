@@ -177,6 +177,7 @@ class PackWireFormat(BaseWireFormat):
         if routing_keys:
             recip_keys = recipient_keys
             for router_key in routing_keys:
+                message = json.loads(message.decode("utf-8"))
                 fwd_msg = Forward(to=recip_keys[0], msg=message)
                 # Forwards are anon packed
                 recip_keys = [router_key]

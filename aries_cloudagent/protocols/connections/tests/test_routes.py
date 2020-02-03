@@ -409,6 +409,12 @@ class TestConnectionRoutes(AsyncTestCase):
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
+        mock_my_info = async_mock.MagicMock()
+        mock_my_info.did = "my_did"
+        mock_my_info.verkey = "my_verkey"
+        mock_their_info = async_mock.MagicMock()
+        mock_their_info.did = "their_did"
+        mock_their_info.verkey = "their_verkey"
 
         with async_mock.patch.object(
             test_module, "ConnectionManager", autospec=True
@@ -417,11 +423,18 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_response:
 
             mock_conn_mgr.return_value.create_static_connection = async_mock.CoroutineMock(
-                return_value=mock_conn_rec
+                return_value=(mock_my_info, mock_their_info, mock_conn_rec)
             )
 
             await test_module.connections_create_static(mock_req)
-            mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
+            mock_response.assert_called_once_with({
+                "my_did": mock_my_info.did,
+                "my_verkey": mock_my_info.verkey,
+                "their_did": mock_their_info.did,
+                "their_verkey": mock_their_info.verkey,
+                "my_endpoint": context.settings.get("default_endpoint"),
+                "record": mock_conn_rec.serialize.return_value
+            })
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()

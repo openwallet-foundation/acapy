@@ -1,5 +1,7 @@
 """Handler for incoming forward messages."""
 
+import json
+
 from ....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -25,7 +27,8 @@ class ForwardHandler(BaseHandler):
             "Received forward for: %s", context.message_receipt.recipient_verkey
         )
 
-        packed = context.message.msg.encode("ascii")
+        packed = context.message.msg
+        packed = json.dumps(packed).encode("ascii")
         rt_mgr = RoutingManager(context)
         target = context.message.to
 

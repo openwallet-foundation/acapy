@@ -7,7 +7,7 @@ from unittest import mock, TestCase
 class TestForward(TestCase):
 
     to = "to"
-    msg = "msg"
+    msg = {"msg": "body"}
 
     def setUp(self):
         self.message = Forward(to=self.to, msg=self.msg)
@@ -37,7 +37,7 @@ class TestForward(TestCase):
 
 class TestForwardSchema(TestCase):
     def test_make_model(self):
-        message = Forward(to="to", msg="msg")
+        message = Forward(to="to", msg={"some": "msg"})
         data = message.serialize()
         model_instance = Forward.deserialize(data)
         assert isinstance(model_instance, Forward)

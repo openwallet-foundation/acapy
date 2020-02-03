@@ -1,6 +1,10 @@
 """Represents a forward message."""
 
-from marshmallow import fields
+import json
+
+from typing import Union
+
+from marshmallow import fields, pre_load
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -19,7 +23,7 @@ class Forward(AgentMessage):
         message_type = FORWARD
         schema_class = "ForwardSchema"
 
-    def __init__(self, *, to: str = None, msg: str = None, **kwargs):
+    def __init__(self, *, to: str = None, msg: Union[dict, str] = None, **kwargs):
         """
         Initialize forward message object.
 
@@ -29,6 +33,8 @@ class Forward(AgentMessage):
         """
         super(Forward, self).__init__(**kwargs)
         self.to = to
+        if isinstance(msg, str):
+            msg = json.loads(msg)
         self.msg = msg
 
 
@@ -40,5 +46,12 @@ class ForwardSchema(AgentMessageSchema):
 
         model_class = Forward
 
+    @pre_load
+    def handle_str_message(self, data, **kwargs):
+        """Accept string value for msg, as produced by previous implementation."""
+        if "msg" in data and isinstance(data["msg"], str):
+            data["msg"] = json.loads(data["msg"])
+        return data
+
     to = fields.Str(required=True)
-    msg = fields.Str(required=True)
+    msg = fields.Dict(required=True)
