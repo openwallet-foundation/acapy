@@ -586,7 +586,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential v1.0 *DEPRECATED"],
+    tags=["issue-credential v1.0 *DEPRECATED*"],
     summary="Store a received credential"
 )
 @response_schema(V10CredentialExchangeSchema(), 200)
