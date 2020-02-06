@@ -84,6 +84,6 @@ DOCKER=${DOCKER:-docker}
 echo "Starting $AGENT..."
 $DOCKER run --name $AGENT --rm -it \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
-	-v `pwd`/../logs:/home/indy/logs \
+	-v "/$(pwd)/../logs:/home/indy/logs" \
 	$DOCKER_ENV \
 	faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $@
