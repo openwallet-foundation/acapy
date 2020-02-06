@@ -407,15 +407,17 @@ class OutboundTransportManager:
         """Handle completion of queued message delivery."""
         if completed.exc_info:
             queued.error = completed.exc_info
-            LOGGER.exception(
-                "Outbound message could not be delivered", exc_info=queued.error,
-            )
 
             if queued.retries:
+                LOGGER.error(">>> Posting error; Re-queue failed message ...")
                 queued.retries -= 1
                 queued.state = QueuedOutboundMessage.STATE_RETRY
                 queued.retry_at = time.perf_counter() + 10
             else:
+                LOGGER.exception(
+                    "Outbound message could not be delivered", exc_info=queued.error,
+                )
+                LOGGER.error(">>> NO Re-queue, message state is DONE, failed to deliver.")
                 queued.state = QueuedOutboundMessage.STATE_DONE
         else:
             queued.error = None
