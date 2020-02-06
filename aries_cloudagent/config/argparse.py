@@ -448,7 +448,7 @@ class LedgerGroup(ArgumentGroup):
         if args.ledger_pool_name:
             settings["ledger.pool_name"] = args.ledger_pool_name
         if args.read_only_ledger:
-            settings["ledger.read_only_ledger"] = True
+            settings["ledger.read_only"] = True
         return settings
 
 
