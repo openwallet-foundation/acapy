@@ -417,7 +417,7 @@ class OutboundTransportManager:
                 LOGGER.exception(
                     "Outbound message could not be delivered", exc_info=queued.error,
                 )
-                LOGGER.error(">>> NO Re-queue, message state is DONE, failed to deliver.")
+                LOGGER.error(">>> NOT Re-queued, state is DONE, failed to deliver msg.")
                 queued.state = QueuedOutboundMessage.STATE_DONE
         else:
             queued.error = None
