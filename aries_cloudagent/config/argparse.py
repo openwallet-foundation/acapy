@@ -393,6 +393,13 @@ class GeneralGroup(ArgumentGroup):
             The endpoints are used in the formation of a connection\
             with another agent.",
         )
+        parser.add_argument(
+            "--dev-provision",
+            action="store_true",
+            help="Allows ledger writes for auto-provisioning in DEV mode.\
+            Note this should NOT be used in a production environment.\
+            Default: false.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -404,6 +411,8 @@ class GeneralGroup(ArgumentGroup):
         if args.endpoint:
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
+        if args.dev_provision:
+            settings["dev_provision"] = True
         return settings
 
 
