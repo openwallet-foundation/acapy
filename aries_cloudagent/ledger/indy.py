@@ -724,14 +724,13 @@ class IndyLedger(BaseLedger):
             endpoint: The endpoint address
             transport_vk: The endpoint transport verkey
         """
-        if self.read_only:
-            raise LedgerError(
-                "Error cannot update endpoint when ledger is in read only mode"
-            )
-
         exist_endpoint = await self.get_endpoint_for_did(did)
         if exist_endpoint != endpoint:
-            print(">>> endpoint mis-match", exist_endpoint, endpoint)
+            if self.read_only:
+                raise LedgerError(
+                    "Error cannot update endpoint when ledger is in read only mode"
+                )
+
             nym = self.did_to_nym(did)
             attr_json = json.dumps({"endpoint": {"endpoint": endpoint}})
             with IndyErrorHandler("Exception when building attribute request"):
