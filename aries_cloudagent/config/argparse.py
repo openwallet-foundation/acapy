@@ -429,12 +429,6 @@ class LedgerGroup(ArgumentGroup):
             the URL might be 'http://localhost:9000/genesis'.\
             Genesis transactions URLs are available for the Sovrin test/main networks.",
         )
-        parser.add_argument(
-            "--read-only-ledger",
-            action="store_true",
-            help="Specifies that the agent should NEVER try to write to the ledger.\
-            Default: false.",
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -447,8 +441,6 @@ class LedgerGroup(ArgumentGroup):
             settings["ledger.genesis_transactions"] = args.genesis_transactions
         if args.ledger_pool_name:
             settings["ledger.pool_name"] = args.ledger_pool_name
-        if args.read_only_ledger:
-            settings["ledger.read_only"] = True
         return settings
 
 

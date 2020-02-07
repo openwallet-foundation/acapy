@@ -47,6 +47,9 @@ def execute(argv: Sequence[str] = None):
     settings = get_settings(args)
     common_config(settings)
 
+    # set ledger to read only
+    settings["ledger.read_only"] = True
+
     # Support WEBHOOK_URL environment variable
     webhook_url = os.environ.get("WEBHOOK_URL")
     if webhook_url:

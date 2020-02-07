@@ -725,8 +725,9 @@ class IndyLedger(BaseLedger):
             transport_vk: The endpoint transport verkey
         """
         if self.read_only:
-            # special case - don't raise an exception, just return false
-            return False
+            raise LedgerError(
+                "Error cannot update endpoint when ledger is in read only mode"
+            )
 
         exist_endpoint = await self.get_endpoint_for_did(did)
         if exist_endpoint != endpoint:
