@@ -74,6 +74,7 @@ async def ledger_config(
 
         # Publish endpoint if necessary - skipped if TAA is required but not accepted
         endpoint = context.settings.get("default_endpoint")
+        print(">>> default endpoint is:", endpoint)
         if public_did:
             await ledger.update_endpoint_for_did(public_did, endpoint)
 

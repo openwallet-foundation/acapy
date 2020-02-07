@@ -731,6 +731,7 @@ class IndyLedger(BaseLedger):
 
         exist_endpoint = await self.get_endpoint_for_did(did)
         if exist_endpoint != endpoint:
+            print(">>> endpoint mis-match", exist_endpoint, endpoint)
             nym = self.did_to_nym(did)
             attr_json = json.dumps({"endpoint": {"endpoint": endpoint}})
             with IndyErrorHandler("Exception when building attribute request"):
