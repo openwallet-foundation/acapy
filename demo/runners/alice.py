@@ -34,7 +34,7 @@ class AliceAgent(DemoAgent):
             extra_args=[
                 "--auto-accept-invites",
                 "--auto-accept-requests",
-                "--auto-store-credential",
+                "--auto-store-credential"
             ],
             seed=None,
             **kwargs,
