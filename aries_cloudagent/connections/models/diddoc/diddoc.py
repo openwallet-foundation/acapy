@@ -18,6 +18,7 @@ limitations under the License.
 """
 
 
+import collections
 import json
 import logging
 
@@ -136,10 +137,7 @@ class DIDDoc:
             "id": canon_ref(self.did, self.did),
             "publicKey": [pubkey.to_dict() for pubkey in self.pubkey.values()],
             "authentication": [
-                {
-                    "type": pubkey.type.authn_type,
-                    "publicKey": canon_ref(self.did, pubkey.id),
-                }
+                canon_ref(self.did, pubkey.id)
                 for pubkey in self.pubkey.values()
                 if pubkey.authn
             ],
@@ -254,10 +252,10 @@ class DIDDoc:
         ):  # include all public keys, authentication pubkeys by reference
             pubkey_type = PublicKeyType.get(pubkey["type"])
             authn = any(
-                canon_ref(rv.did, ak.get("publicKey", ""))
+                canon_ref(rv.did, ak)
                 == canon_ref(rv.did, pubkey["id"])
-                for ak in did_doc.get("authentication", {})
-                if isinstance(ak.get("publicKey", None), str)
+                for ak in did_doc.get("authentication", "")
+                if isinstance(ak, str)
             )
             key = PublicKey(  # initialization canonicalizes id
                 rv.did,
@@ -272,7 +270,7 @@ class DIDDoc:
         for akey in did_doc.get(
             "authentication", {}
         ):  # include embedded authentication keys
-            if "publicKey" not in akey:  # not yet got it with public keys
+            if isinstance(akey, collections.Mapping):
                 pubkey_type = PublicKeyType.get(akey["type"])
                 key = PublicKey(  # initialization canonicalized id
                     rv.did,

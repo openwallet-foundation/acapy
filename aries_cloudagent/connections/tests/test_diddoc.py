@@ -52,10 +52,7 @@ class TestDIDDoc(AsyncTestCase):
                 },
             ],
             "authentication": [
-                {
-                    "type": "RsaSignatureAuthentication2018",
-                    "publicKey": "did:sov:LjgpST2rjsoxYegQDRm7EL#4",
-                }
+                "did:sov:LjgpST2rjsoxYegQDRm7EL#4"
             ],
             "service": [
                 {
@@ -122,10 +119,7 @@ class TestDIDDoc(AsyncTestCase):
                 },
             ],
             "authentication": [
-                {
-                    "type": "RsaSignatureAuthentication2018",
-                    "publicKey": "did:sov:LjgpST2rjsoxYegQDRm7EL#4",
-                },
+                "did:sov:LjgpST2rjsoxYegQDRm7EL#4",
                 {
                     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#6",
                     "type": "RsaVerificationKey2018",
@@ -169,10 +163,7 @@ class TestDIDDoc(AsyncTestCase):
                 },
             ],
             "authentication": [
-                {
-                    "type": "RsaSignatureAuthentication2018",
-                    "publicKey": "did:sov:LjgpST2rjsoxYegQDRm7EL#4",
-                },
+                "did:sov:LjgpST2rjsoxYegQDRm7EL#4",
                 {
                     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#6",
                     "type": "RsaVerificationKey2018",
