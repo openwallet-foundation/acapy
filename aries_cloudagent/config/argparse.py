@@ -394,10 +394,9 @@ class GeneralGroup(ArgumentGroup):
             with another agent.",
         )
         parser.add_argument(
-            "--dev-provision",
+            "--read-only-ledger",
             action="store_true",
-            help="Allows ledger writes for auto-provisioning in DEV mode.\
-            Note this should NOT be used in a production environment.\
+            help="Sets ledger to read-only to prevent updates.\
             Default: false.",
         )
 
@@ -411,8 +410,8 @@ class GeneralGroup(ArgumentGroup):
         if args.endpoint:
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
-        if args.dev_provision:
-            settings["dev_provision"] = True
+        if args.read_only_ledger:
+            settings["read_only_ledger"] = True
         return settings
 
 

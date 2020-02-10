@@ -47,11 +47,8 @@ def execute(argv: Sequence[str] = None):
     settings = get_settings(args)
     common_config(settings)
 
-    # set ledger to read only, unless dev is explicitely specified
-    if settings.get("dev_provision", False):
-        settings["ledger.read_only"] = False
-    else:
-        settings["ledger.read_only"] = True
+    # set ledger to read only if explicitely specified
+    settings["ledger.read_only"] = settings.get("read_only_ledger", False)
 
     # Support WEBHOOK_URL environment variable
     webhook_url = os.environ.get("WEBHOOK_URL")
