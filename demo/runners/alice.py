@@ -302,7 +302,7 @@ if __name__ == "__main__":
         try:
             import pydevd_pycharm
 
-            print(f"pydevd_pycharm remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}")
+            print(f"Alice remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}")
             pydevd_pycharm.settrace(host=PYDEVD_PYCHARM_HOST, port=PYDEVD_PYCHARM_CONTROLLER_PORT,
                                     stdoutToServer=True, stderrToServer=True, suspend=False)
         except ImportError:

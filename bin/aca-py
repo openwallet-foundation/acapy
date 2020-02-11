@@ -30,7 +30,7 @@ if ENABLE_PYDEVD_PYCHARM or "--debug-pycharm" in sys.argv:
     try:
         import pydevd_pycharm
 
-        print(f"pydevd_pycharm remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_AGENT_PORT}")
+        print(f"aca-py remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_AGENT_PORT}")
         pydevd_pycharm.settrace(host=PYDEVD_PYCHARM_HOST, port=PYDEVD_PYCHARM_AGENT_PORT,
                                 stdoutToServer=True, stderrToServer=True, suspend=False)
     except ImportError:

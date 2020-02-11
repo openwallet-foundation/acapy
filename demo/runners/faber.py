@@ -162,12 +162,18 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                 "degree schema", version, ["name", "date", "degree", "age"]
             )
 
+        with log_timer("Publish revocation registry duration:"):
+            log_status("#5/6 Create and publish the revocation registry on the ledger")
+            revocation_registry_id = await agent.create_and_publish_revocation_registry(
+                credential_definition_id, 2
+            )
+
         # TODO add an additional credential for Student ID
 
         with log_timer("Generate invitation duration:"):
             # Generate an invitation
             log_status(
-                "#5 Create a connection to alice and print out the invite details"
+                "#7 Create a connection to alice and print out the invite details"
             )
             connection = await agent.admin_POST("/connections/create-invitation")
 
@@ -307,7 +313,7 @@ if __name__ == "__main__":
         try:
             import pydevd_pycharm
 
-            print(f"pydevd_pycharm remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}")
+            print(f"Faber remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}")
             pydevd_pycharm.settrace(host=PYDEVD_PYCHARM_HOST, port=PYDEVD_PYCHARM_CONTROLLER_PORT,
                                     stdoutToServer=True, stderrToServer=True, suspend=False)
         except ImportError:

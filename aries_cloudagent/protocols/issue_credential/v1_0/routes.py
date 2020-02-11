@@ -702,10 +702,13 @@ async def credential_exchange_revoke(request: web.BaseRequest):
 
     context = request.app["request_context"]
 
-    credential_exchange_id = request.match_info["id"]
-    credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
-        context, credential_exchange_id
-    )
+    try:
+        credential_exchange_id = request.match_info["cred_ex_id"]
+        credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
+            context, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
 
     if (
         credential_exchange_record.state
@@ -781,7 +784,7 @@ async def register(app: web.Application):
                 credential_exchange_store,
             ),
             web.post(
-                "/issue-credential/records/{id}/revoke", credential_exchange_revoke
+                "/issue-credential/records/{cred_ex_id}/revoke", credential_exchange_revoke
             ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/problem-report",

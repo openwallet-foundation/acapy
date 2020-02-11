@@ -1,10 +1,11 @@
 """Ledger base class."""
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, ABCMeta
 import re
+from typing import Tuple, Sequence
 
 
-class BaseLedger(ABC):
+class BaseLedger(ABC, metaclass=ABCMeta):
     """Base class for ledger."""
 
     LEDGER_TYPE = None
@@ -86,3 +87,32 @@ class BaseLedger(ABC):
 
     def taa_digest(self, version: str, text: str):
         """Generate the digest of a TAA record."""
+
+    @abstractmethod
+    async def create_and_send_schema(
+            self, schema_name: str, schema_version: str, attribute_names: Sequence[str]
+    ) -> Tuple[str, dict]:
+        """
+        Send schema to ledger.
+
+        Args:
+            schema_name: The schema name
+            schema_version: The schema version
+            attribute_names: A list of schema attributes
+
+        """
+
+    @abstractmethod
+    def get_revoc_reg_def(self, revoc_reg_id):
+        """Look up a revocation registry definition by ID."""
+        pass
+
+    @abstractmethod
+    def send_revoc_reg_def(self, revoc_reg_def, issuer_did):
+        """Publish a revocation registry definition to the ledger."""
+        pass
+
+    @abstractmethod
+    def send_revoc_reg_entry(self, revoc_reg_id, revoc_def_type, revoc_reg_entry, issuer_did):
+        """Publish a revocation registry entry to the ledger."""
+        pass
