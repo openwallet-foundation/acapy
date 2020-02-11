@@ -71,6 +71,14 @@ class SetTagPolicyRequestSchema(Schema):
         description="List of attributes to set taggable for credential search",
     )
 
+class SetDidCreateRequestSchema(Schema):
+    """Request did seed."""
+
+    seed = fields.Str(
+        required=False,
+        description="seed for creating did",
+        example="00000000000000000000000000sample"
+    )
 
 def format_did_info(info: DIDInfo):
     """Serialize a DIDInfo object."""
@@ -159,6 +167,7 @@ async def wallet_did_list(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Create a local DID")
+@request_schema(SetDidCreateRequestSchema)
 @response_schema(DIDResultSchema, 200)
 async def wallet_create_did(request: web.BaseRequest):
     """
@@ -172,10 +181,12 @@ async def wallet_create_did(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    body = await request.json()
+    seed = body.get("seed")
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden()
-    info = await wallet.create_local_did()
+    info = await wallet.create_local_did(seed)
     return web.json_response({"result": format_did_info(info)})
 
 
