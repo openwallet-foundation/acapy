@@ -3,7 +3,6 @@
 import os
 import sys
 
-import pydevd_pycharm
 
 ENABLE_PTVSD = os.getenv("ENABLE_PTVSD", "").lower()
 ENABLE_PTVSD = ENABLE_PTVSD and ENABLE_PTVSD not in ("false", "0")
