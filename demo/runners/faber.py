@@ -157,9 +157,9 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
             )
             (
                 _,  # schema id
-                credential_definition_id,
+                credential_definition_id
             ) = await agent.register_schema_and_creddef(
-                "degree schema", version, ["name", "date", "degree", "age"]
+                "degree schema", version, ["name", "date", "degree", "age"], support_revocation=True
             )
 
         with log_timer("Publish revocation registry duration:"):
@@ -215,7 +215,9 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                     "connection_id": agent.connection_id,
                     "cred_def_id": credential_definition_id,
                     "comment": f"Offer on cred def id {credential_definition_id}",
+                    "autoe_remove": False,
                     "credential_preview": cred_preview,
+                    "revoc_reg_id": revocation_registry_id
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
 

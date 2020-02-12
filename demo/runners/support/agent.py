@@ -192,7 +192,7 @@ class DemoAgent:
         tails_hash = revoc_response["result"]["tails_hash"]
 
         # get the tail file from "GET /revocation/registry/{id}/tail-file"
-        tail_file = await self.admin_GET_FILE(f"/revocation/registry/{credential_def_id}/tail-file")
+        tail_file = await self.admin_GET_FILE(f"/revocation/registry/{revocation_registry_id}/tail-file")
         hasher = hashlib.sha256()
         hasher.update(tail_file)
         my_tails_hash = base58.b58encode(hasher.digest()).decode("utf-8")
@@ -202,9 +202,9 @@ class DemoAgent:
         # Real app should publish tail file somewhere and update the revocation registry with the URI.
         # But for the demo, assume the agent's admin end-points are accessible to the other agents
         # Update the revocation registry with the public URL to the tail file
-        tail_file_url = f"{self.admin_url}/revocation/registry/{credential_def_id}/tail-file"
+        tail_file_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tail-file"
         revoc_updated_response = await self.admin_PATCH(
-            f"/revocation/registry/{credential_def_id}",
+            f"/revocation/registry/{revocation_registry_id}",
             {
                 "tails_public_uri": tail_file_url
             }
@@ -214,7 +214,7 @@ class DemoAgent:
         assert tail_public_uri == tail_file_url
 
         revoc_publish_response = await self.admin_POST(
-            f"/revocation/registry/{credential_def_id}/publish"
+            f"/revocation/registry/{revocation_registry_id}/publish"
         )
 
         return revoc_publish_response["result"]["revoc_reg_id"]

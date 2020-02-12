@@ -9,13 +9,12 @@ from marshmallow import fields, Schema
 
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.valid import INDY_CRED_DEF_ID
-from ..storage.base import BaseStorage
+from ..storage.base import BaseStorage, StorageNotFoundError
 
 from .error import RevocationNotSupportedError
 from .indy import IndyRevocation
 from .models.issuer_revocation_record import IssuerRevocationRecordSchema
 from .models.revocation_registry import RevocationRegistry
-
 
 class RevRegCreateRequestSchema(Schema):
     """Request schema for revocation registry creation request."""
@@ -80,7 +79,7 @@ async def revocation_create_registry(request: web.BaseRequest):
             credential_definition_id, issuer_did, max_cred_num=max_cred_num
         )
     except RevocationNotSupportedError as e:
-        raise web.HTTPBadRequest() from e
+        raise web.HTTPBadRequest(reason=e.message) from e
     await shield(
         registry_record.generate_registry(context, RevocationRegistry.get_temp_dir())
     )
@@ -92,7 +91,7 @@ async def revocation_create_registry(request: web.BaseRequest):
       parameters=[{
           "in": "path",
           "name": "id",
-          "description": "use credential definition id as the revocation registry id."
+          "description": "revocation registry id."
       }])
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_current_registry(request: web.BaseRequest):
@@ -108,33 +107,22 @@ async def get_current_registry(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    credential_definition_id = request.match_info["id"]
-
-    # check we published this cred def
-    storage = await context.inject(BaseStorage)
-    found = await storage.search_records(
-        type_filter=CRED_DEF_SENT_RECORD_TYPE,
-        tag_query={"cred_def_id": credential_definition_id},
-    ).fetch_all()
-    if not found:
-        raise web.HTTPNotFound()
+    registry_id = request.match_info["id"]
 
     try:
         revoc = IndyRevocation(context)
-        registry_record = await revoc.get_active_issuer_revocation_record(
-            credential_definition_id
-        )
-    except RevocationNotSupportedError as e:
-        raise web.HTTPBadRequest() from e
+        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+    except StorageNotFoundError as e:
+        raise web.HTTPNotFound() from e
 
-    return web.json_response({"result": registry_record.serialize()})
+    return web.json_response({"result": revoc_registry.serialize()})
 
 @docs(tags=["revocation"], summary="Get the tail file of revocation registry",
       produces="application/octet-stream",
       parameters=[{
           "in": "path",
           "name": "id",
-          "description": "use credential definition id as the revocation registry id."
+          "description": "revocation registry id."
       }],
       responses={
           200: {
@@ -157,33 +145,22 @@ async def get_tail_file(request: web.BaseRequest) -> web.FileResponse:
     """
     context = request.app["request_context"]
 
-    credential_definition_id = request.match_info["id"]
-
-    # check we published this cred def
-    storage = await context.inject(BaseStorage)
-    found = await storage.search_records(
-        type_filter=CRED_DEF_SENT_RECORD_TYPE,
-        tag_query={"cred_def_id": credential_definition_id},
-    ).fetch_all()
-    if not found:
-        raise web.HTTPNotFound()
+    registry_id = request.match_info["id"]
 
     try:
         revoc = IndyRevocation(context)
-        registry_record = await revoc.get_active_issuer_revocation_record(
-            credential_definition_id
-        )
-    except RevocationNotSupportedError as e:
-        raise web.HTTPBadRequest() from e
+        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+    except StorageNotFoundError as e:
+        raise web.HTTPNotFound() from e
 
-    return web.FileResponse(path=registry_record.tails_local_path, status=200)
+    return web.FileResponse(path=revoc_registry.tails_local_path, status=200)
 
 
 @docs(tags=["revocation"], summary="Publish a given revocation registry",
       parameters=[{
           "in": "path",
           "name": "id",
-          "description": "use credential definition id as the revocation registry id."
+          "description": "revocation registry id."
       }])
 @response_schema(RevRegCreateResultSchema(), 200)
 async def publish_registry(request: web.BaseRequest):
@@ -198,22 +175,13 @@ async def publish_registry(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-
-    credential_definition_id = request.match_info["id"]
-
-    # check we published this cred def
-    storage = await context.inject(BaseStorage)
-    found = await storage.search_records(
-        type_filter=CRED_DEF_SENT_RECORD_TYPE,
-        tag_query={"cred_def_id": credential_definition_id},
-    ).fetch_all()
-    if not found:
-        raise web.HTTPNotFound()
+    registry_id = request.match_info["id"]
 
     try:
-        revoc_registry = await IndyRevocation(context).get_active_issuer_revocation_record(credential_definition_id)
-    except RevocationNotSupportedError as e:
-        raise web.HTTPBadRequest() from e
+        revoc = IndyRevocation(context)
+        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+    except StorageNotFoundError as e:
+        raise web.HTTPNotFound() from e
 
     await revoc_registry.publish_registry_definition(context)
     print("published registry definition")
@@ -244,24 +212,22 @@ async def update_registry(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    credential_definition_id = request.match_info["id"]
-
     body = await request.json()
-
     tails_public_uri = body.get("tails_public_uri")
+
+    registry_id = request.match_info["id"]
 
     try:
         revoc = IndyRevocation(context)
-        registry_record = await revoc.get_active_issuer_revocation_record(
-            credential_definition_id
-        )
-    except RevocationNotSupportedError as e:
-        raise web.HTTPBadRequest() from e
+        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+    except StorageNotFoundError as e:
+        raise web.HTTPNotFound() from e
 
-    registry_record.set_tail_file_public_uri(tails_public_uri)
-    await registry_record.save(context, reason="Updating tail file public URI.")
+    revoc_registry.set_tail_file_public_uri(tails_public_uri)
+    await revoc_registry.save(context, reason="Updating tail file public URI.")
 
-    return web.json_response({"result": registry_record.serialize()})
+    return web.json_response({"result": revoc_registry.serialize()})
+
 
 async def register(app: web.Application):
     """Register routes."""
