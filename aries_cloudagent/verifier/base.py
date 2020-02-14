@@ -1,9 +1,9 @@
 """Base Verifier class."""
 
-from abc import ABC
+from abc import ABC, ABCMeta, abstractmethod
 
 
-class BaseVerifier(ABC):
+class BaseVerifier(ABC, metaclass=ABCMeta):
     """Base class for verifier."""
 
     def __repr__(self) -> str:
@@ -15,3 +15,16 @@ class BaseVerifier(ABC):
 
         """
         return "<{}>".format(self.__class__.__name__)
+
+    @abstractmethod
+    def verify_presentation(self, presentation_request, presentation, schemas, credential_definitions):
+        """
+        Verify a presentation.
+
+        Args:
+            presentation_request: Presentation request data
+            presentation: Presentation data
+            schemas: Schema data
+            credential_definitions: credential definition data
+        """
+        pass

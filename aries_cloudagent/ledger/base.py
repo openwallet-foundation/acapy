@@ -116,3 +116,27 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     def send_revoc_reg_entry(self, revoc_reg_id, revoc_def_type, revoc_reg_entry, issuer_did):
         """Publish a revocation registry entry to the ledger."""
         pass
+
+    @abstractmethod
+    def create_and_send_credential_definition(self, schema_id, tag, support_revocation):
+        """
+        Send credential definition to ledger and store relevant key matter in wallet.
+
+        Args:
+            schema_id: The schema id of the schema to create cred def for
+            tag: Optional tag to distinguish multiple credential definitions
+            support_revocation: Optional flag to enable revocation for this cred def
+
+        """
+        pass
+
+    @abstractmethod
+    def get_credential_definition(self, credential_definition_id):
+        """
+        Get a credential definition from the cache if available, otherwise the ledger.
+
+        Args:
+            credential_definition_id: The schema id of the schema to fetch cred def for
+
+        """
+        pass

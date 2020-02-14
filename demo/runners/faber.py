@@ -215,7 +215,7 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                     "connection_id": agent.connection_id,
                     "cred_def_id": credential_definition_id,
                     "comment": f"Offer on cred def id {credential_definition_id}",
-                    "autoe_remove": False,
+                    "auto_remove": False,
                     "credential_preview": cred_preview,
                     "revoc_reg_id": revocation_registry_id
                 }

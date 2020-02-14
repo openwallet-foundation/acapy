@@ -77,7 +77,8 @@ class IndyHolder(BaseHolder):
         credential_data,
         credential_request_metadata,
         credential_attr_mime_types=None,
-        credential_id=None
+        credential_id=None,
+        rev_reg_def_json=None
     ):
         """
         Store a credential in the wallet.
@@ -89,15 +90,17 @@ class IndyHolder(BaseHolder):
                 by the issuer
             credential_attr_mime_types: dict mapping attribute names to (optional)
                 MIME types to store as non-secret record, if specified
+            credential_id: credential id
+            rev_reg_def_json: revocation registry definition in json
 
         """
         credential_id = await indy.anoncreds.prover_store_credential(
-            self.wallet.handle,
-            credential_id,
-            json.dumps(credential_request_metadata),
-            json.dumps(credential_data),
-            json.dumps(credential_definition),
-            None,  # We don't support revocation yet
+            wallet_handle=self.wallet.handle,
+            cred_id=credential_id,
+            cred_req_metadata_json=json.dumps(credential_request_metadata),
+            cred_json=json.dumps(credential_data),
+            cred_def_json=json.dumps(credential_definition),
+            rev_reg_def_json=json.dumps(rev_reg_def_json)
         )
 
         if credential_attr_mime_types:
