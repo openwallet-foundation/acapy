@@ -377,6 +377,28 @@ class GeneralGroup(ArgumentGroup):
             storage engine. This storage interface is used to store internal state.\
             Supported internal storage types are 'basic' (memory) and 'indy'.",
         )
+        parser.add_argument(
+            "-e",
+            "--endpoint",
+            type=str,
+            nargs="+",
+            metavar="<endpoint>",
+            help="Specifies the endpoints to put into DIDDocs\
+            to inform other agents of where they should send messages destined\
+            for this agent. Each endpoint could be one of the specified inbound\
+            transports for this agent, or the endpoint could be that of\
+            another agent (e.g. 'https://example.com/agent-endpoint') if the\
+            routing of messages to this agent by a mediator is configured.\
+            The first endpoint specified will be used in invitations.\
+            The endpoints are used in the formation of a connection\
+            with another agent.",
+        )
+        parser.add_argument(
+            "--read-only-ledger",
+            action="store_true",
+            help="Sets ledger to read-only to prevent updates.\
+            Default: false.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -385,6 +407,11 @@ class GeneralGroup(ArgumentGroup):
             settings["external_plugins"] = args.external_plugins
         if args.storage_type:
             settings["storage.type"] = args.storage_type
+        if args.endpoint:
+            settings["default_endpoint"] = args.endpoint[0]
+            settings["additional_endpoints"] = args.endpoint[1:]
+        if args.read_only_ledger:
+            settings["read_only_ledger"] = True
         return settings
 
 
@@ -591,22 +618,6 @@ class TransportGroup(ArgumentGroup):
             transport types are 'http' and 'ws'.",
         )
         parser.add_argument(
-            "-e",
-            "--endpoint",
-            type=str,
-            nargs="+",
-            metavar="<endpoint>",
-            help="Specifies the endpoints to put into DIDDocs\
-            to inform other agents of where they should send messages destined\
-            for this agent. Each endpoint could be one of the specified inbound\
-            transports for this agent, or the endpoint could be that of\
-            another agent (e.g. 'https://example.com/agent-endpoint') if the\
-            routing of messages to this agent by a mediator is configured.\
-            The first endpoint specified will be used in invitations.\
-            The endpoints are used in the formation of a connection\
-            with another agent.",
-        )
-        parser.add_argument(
             "-l",
             "--label",
             type=str,
@@ -621,7 +632,6 @@ class TransportGroup(ArgumentGroup):
             metavar="<message-size>",
             help="Set the maximum size in bytes for inbound agent messages.",
         )
-
         parser.add_argument(
             "--enable-undelivered-queue",
             action="store_true",
@@ -637,9 +647,6 @@ class TransportGroup(ArgumentGroup):
         settings["transport.outbound_configs"] = args.outbound_transports
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
-        if args.endpoint:
-            settings["default_endpoint"] = args.endpoint[0]
-            settings["additional_endpoints"] = args.endpoint[1:]
         if args.label:
             settings["default_label"] = args.label
         if args.max_message_size:
