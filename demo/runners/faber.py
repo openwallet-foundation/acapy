@@ -34,7 +34,7 @@ class FaberAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Faber",
-            extra_args=[
+            extra_args=[] if os.getenv("NO_AUTO") else [
                 "--auto-accept-invites",
                 "--auto-accept-requests"
             ],
