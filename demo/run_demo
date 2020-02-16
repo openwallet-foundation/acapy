@@ -4,8 +4,19 @@ shopt -s nocasematch
 
 cd $(dirname $0)
 
-AGENT="$1"
-shift
+for i in "$@"
+do
+	case $i in
+	-e|--events)
+		EVENTS=1
+		shift
+	;;
+	*)
+		AGENT="$i"
+		shift
+	;;
+	esac
+done
 
 case "$@" in *--timing*)
 	if [ ! -d "../logs" ]; then
@@ -73,6 +84,10 @@ if ! [ -z "$LEDGER_URL" ]; then
 fi
 if ! [ -z "$GENESIS_URL" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e GENESIS_URL=${GENESIS_URL}"
+fi
+
+if ! [ -z "$EVENTS" ]; then
+	DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
 fi
 
 # on Windows, docker run needs to be prefixed by winpty
