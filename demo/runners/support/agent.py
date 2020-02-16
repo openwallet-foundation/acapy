@@ -24,7 +24,7 @@ LOGGER = logging.getLogger(__name__)
 event_stream_handler = logging.StreamHandler()
 event_stream_handler.setFormatter(logging.Formatter("\nEVENT: %(message)s"))
 
-EVENT_LOGGER = logging.getLogger('event')
+EVENT_LOGGER = logging.getLogger("event")
 EVENT_LOGGER.setLevel(logging.DEBUG if os.getenv("EVENTS") else logging.NOTSET)
 EVENT_LOGGER.addHandler(event_stream_handler)
 EVENT_LOGGER.propagate = False
