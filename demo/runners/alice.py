@@ -31,7 +31,7 @@ class AliceAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Alice",
-            extra_args=[
+            extra_args=[] if os.getenv("NO_AUTO") else [
                 "--auto-accept-invites",
                 "--auto-accept-requests",
                 "--auto-store-credential"

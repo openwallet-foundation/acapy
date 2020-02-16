@@ -7,8 +7,12 @@ cd $(dirname $0)
 for i in "$@"
 do
 	case $i in
-	-e|--events)
+	--events)
 		EVENTS=1
+		shift
+	;;
+	--no-auto)
+		NO_AUTO=1
 		shift
 	;;
 	*)
@@ -88,6 +92,9 @@ fi
 
 if ! [ -z "$EVENTS" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
+fi
+if ! [ -z "$NO_AUTO" ]; then
+	DOCKER_ENV="${DOCKER_ENV} -e NO_AUTO=1"
 fi
 
 # on Windows, docker run needs to be prefixed by winpty
