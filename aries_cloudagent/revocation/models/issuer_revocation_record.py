@@ -108,7 +108,6 @@ class IssuerRevocationRecord(BaseRecord):
                 "tag",
                 "tails_hash",
                 "tails_public_uri",
-                # FIXME - remove
                 "tails_local_path",
             )
         }

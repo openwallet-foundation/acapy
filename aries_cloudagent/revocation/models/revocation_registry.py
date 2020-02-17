@@ -1,14 +1,17 @@
 """Classes for managing a revocation registry."""
 
 import json
-import tempfile
+from pathlib import Path
 
 import indy.blob_storage
 
-from ...utils.http import fetch, FetchError
+from ...config.injection_context import InjectionContext
+from ...utils.http import FetchError, fetch_stream
 from ...utils.temp import get_temp_dir
 
 from ..error import RevocationError
+import hashlib
+import base58
 
 
 class RevocationRegistry:
@@ -47,15 +50,16 @@ class RevocationRegistry:
         tails_location = revoc_reg_def["value"]["tailsLocation"]
         init = {
             "cred_def_id": revoc_reg_def["credDefId"],
-            "reg_def_type": revoc_reg_def["regDefType"],
+            "reg_def_type": revoc_reg_def["revocDefType"],
             "max_creds": revoc_reg_def["value"]["maxCredNum"],
             "tag": revoc_reg_def["tag"],
             "tails_hash": revoc_reg_def["value"]["tailsHash"],
         }
         if public_def:
-            init["tails_local_path"] = tails_location
-        else:
             init["tails_public_uri"] = tails_location
+        else:
+            init["tails_local_path"] = tails_location
+
         # currently ignored - definition version, public keys
         return cls(reg_id, **init)
 
@@ -121,22 +125,60 @@ class RevocationRegistry:
 
     async def create_tails_reader(self) -> int:
         """Get a handle for the blob_storage file reader."""
+        if not self.has_local_tail_file():
+            raise RevocationError("Tail file does not exist or not valid.")
+
         if self._tails_local_path:
             tails_reader_config = json.dumps(
                 {"base_dir": self.get_temp_dir(), "file": self._tails_local_path}
             )
             return await indy.blob_storage.open_reader("default", tails_reader_config)
 
-    async def retrieve_tails(self, target_dir: str) -> str:
+    def get_receiving_tails_local_path(self, context: InjectionContext):
+        """Make the local path to the tail file we download from remote URI"""
+        tail_file_dir = context.settings.get("holder.revocation.tail_files.path", "/tmp/indy/revocation/tail_files")
+        return f"{tail_file_dir}/{self.registry_id}"
+
+    def has_local_tail_file(self) -> bool:
+        if not self._tails_local_path:
+            return False
+
+        tail_file_path = Path(self._tails_local_path)
+        if not tail_file_path.is_file():
+            return False
+
+        return True
+
+    async def retrieve_tails(self, context: InjectionContext):
         """Fetch the tails file from the public URI."""
-        if self._tails_public_uri:
-            try:
-                tails = await fetch(self._tails_public_uri)
-            except FetchError as e:
-                raise RevocationError("Error retrieving tails file") from e
-            with tempfile.mkstemp(suffix="tails", dir=target_dir, text=True) as tf:
-                tf.write(tails)
-                return tf.name
+        if not self._tails_public_uri:
+            raise RevocationError("Tail file public uri is empty")
+
+        try:
+            tails_stream = await fetch_stream(self._tails_public_uri)
+        except FetchError as e:
+            raise RevocationError("Error retrieving tails file") from e
+
+        tails_file_path = Path(self.get_receiving_tails_local_path(context))
+        tails_file_dir =  tails_file_path.parent
+        if not tails_file_dir.exists():
+            tails_file_dir.mkdir(parents=True)
+
+        buffer_size = 65536 # should be multiple of 32 bytes for sha256
+        with open(tails_file_path, "wb", buffer_size) as tail_file:
+            file_hasher = hashlib.sha256()
+            buf = await tails_stream.read(buffer_size)
+            while len(buf) > 0:
+                file_hasher.update(buf)
+                tail_file.write(buf)
+                buf = await tails_stream.read(buffer_size)
+
+            download_tail_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
+            if download_tail_hash != self.tails_hash:
+                raise RevocationError("The hash of the downloaded tails file does not match.")
+
+        self.tails_local_path = tails_file_path
+        return self.tails_local_path
 
     def __repr__(self) -> str:
         """Return a human readable representation of this class."""

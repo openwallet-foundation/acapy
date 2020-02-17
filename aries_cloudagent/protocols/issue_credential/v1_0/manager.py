@@ -3,6 +3,7 @@
 import logging
 from typing import Mapping, Tuple
 
+from ....revocation.models.revocation_registry import RevocationRegistry
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
@@ -603,6 +604,12 @@ class CredentialManager:
             ).mime_types()
         else:
             mime_types = None
+
+        if raw_credential["rev_reg_id"]:
+            revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
+            if not revoc_reg.has_local_tail_file():
+                self._logger.info(f"Downloading the tail file for the revocation registry: {revoc_reg.registry_id}")
+                await revoc_reg.retrieve_tails(self.context)
 
         credential_id = await holder.store_credential(
             credential_definition,
