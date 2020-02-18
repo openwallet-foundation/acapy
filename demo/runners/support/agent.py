@@ -21,6 +21,14 @@ from .utils import flatten, log_json, log_msg, log_timer, output_reader
 
 LOGGER = logging.getLogger(__name__)
 
+event_stream_handler = logging.StreamHandler()
+event_stream_handler.setFormatter(logging.Formatter("\nEVENT: %(message)s"))
+
+EVENT_LOGGER = logging.getLogger("event")
+EVENT_LOGGER.setLevel(logging.DEBUG if os.getenv("EVENTS") else logging.NOTSET)
+EVENT_LOGGER.addHandler(event_stream_handler)
+EVENT_LOGGER.propagate = False
+
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
@@ -330,6 +338,7 @@ class DemoAgent:
             handler = f"handle_{topic}"
             method = getattr(self, handler, None)
             if method:
+                EVENT_LOGGER.debug(f"Agent called controller webhook: {handler}" + f" with payload: \n{json.dumps(payload, indent=4)}" if payload else "")
                 asyncio.get_event_loop().create_task(method(payload))
             else:
                 log_msg(
@@ -358,7 +367,9 @@ class DemoAgent:
 
     async def admin_GET(self, path, text=False, params=None) -> ClientResponse:
         try:
-            return await self.admin_request("GET", path, None, text, params)
+            EVENT_LOGGER.debug(f"Controller GET {path} request to Agent")
+            response = await self.admin_request("GET", path, None, text, params)
+            EVENT_LOGGER.debug(f"Response from GET {path} received: \n{json.dumps(response, indent=4)}")
         except ClientError as e:
             self.log(f"Error during GET {path}: {str(e)}")
             raise
@@ -367,7 +378,10 @@ class DemoAgent:
         self, path, data=None, text=False, params=None
     ) -> ClientResponse:
         try:
-            return await self.admin_request("POST", path, data, text, params)
+            EVENT_LOGGER.debug(f"Controller POST {path} request to Agent" + f" with data: \n{json.dumps(data, indent=4)}" if data else "");
+            response =  await self.admin_request("POST", path, data, text, params)
+            EVENT_LOGGER.debug(f"Response from POST {path} received: \n{json.dumps(response, indent=4)}");
+            return response
         except ClientError as e:
             self.log(f"Error during POST {path}: {str(e)}")
             raise
