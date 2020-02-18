@@ -48,7 +48,7 @@ class InvitationSchema(AgentMessageSchema):
 
         model_class = Invitation
 
-    invitation = fields.Nested(ConnectionInvitationSchema(), required=True,)
+    invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
     message = fields.Str(
         required=False,
         description="Comments on the introduction",

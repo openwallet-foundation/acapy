@@ -98,7 +98,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         model_class = ConnectionInvitation
 
     label = fields.Str(
-        required=False, description="Optional label for connection", example="Bob",
+        required=False, description="Optional label for connection", example="Bob"
     )
     did = fields.Str(
         required=False, description="DID for connection invitation", **INDY_DID

@@ -85,7 +85,7 @@ class ProblemReportSchema(AgentMessageSchema):
         example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/error-codes",
     )
     locale = fields.Str(
-        data_key="@locale", required=False, description="Locale", example="en-US",
+        data_key="@locale", required=False, description="Locale", example="en-US"
     )
     explain_ltxt = fields.Str(
         data_key="explain-ltxt",
