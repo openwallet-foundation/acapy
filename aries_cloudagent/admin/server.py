@@ -30,7 +30,7 @@ class AdminModulesSchema(Schema):
     """Schema for the modules endpoint."""
 
     result = fields.List(
-        fields.Str(description="admin module"), description="List of admin modules",
+        fields.Str(description="admin module"), description="List of admin modules"
     )
 
 
@@ -377,7 +377,11 @@ class AdminServer(BaseAdminServer):
                             receive = loop.create_task(ws.receive())
 
                     if send.done():
-                        msg = send.result()
+                        try:
+                            msg = send.result()
+                        except asyncio.TimeoutError:
+                            msg = None
+
                         if msg is None:
                             # we send fake pings because the JS client
                             # can't detect real ones
