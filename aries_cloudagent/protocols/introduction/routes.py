@@ -5,7 +5,7 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import docs
 
-from ...messaging.base_service import BaseIntroductionService
+from .base_service import BaseIntroductionService
 
 LOGGER = logging.getLogger(__name__)
 

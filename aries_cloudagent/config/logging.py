@@ -79,6 +79,7 @@ class LoggingConfigurator:
     @classmethod
     def print_banner(
         cls,
+        agent_label,
         inbound_transports,
         outbound_transports,
         public_did,
@@ -90,6 +91,7 @@ class LoggingConfigurator:
         Print a startup banner describing the configuration.
 
         Args:
+            agent_label: Agent Label
             inbound_transports: Configured inbound transports
             outbound_transports: Configured outbound transports
             admin_server: Admin server info
@@ -111,7 +113,7 @@ class LoggingConfigurator:
                 + f" {content} {border_character}{border_character}"
             )
 
-        banner_title_string = "Aries Cloud Agent"
+        banner_title_string = agent_label or "ACA"
         banner_title_spacer = " " * (banner_length - len(banner_title_string))
 
         banner_border = border_character * (banner_length + 6)
@@ -127,7 +129,7 @@ class LoggingConfigurator:
         )
 
         inbound_transport_strings = []
-        for transport in inbound_transports:
+        for transport in inbound_transports.values():
             host_port_string = (
                 f"  - {transport.scheme}://{transport.host}:{transport.port}"
             )
@@ -140,11 +142,13 @@ class LoggingConfigurator:
         )
 
         outbound_transport_strings = []
-        for schemes in outbound_transports:
-            for scheme in schemes:
-                schema_string = f"  - {scheme}"
-                scheme_spacer = " " * (banner_length - len(schema_string))
-                outbound_transport_strings.append((schema_string, scheme_spacer))
+        schemes = set().union(
+            *(transport.schemes for transport in outbound_transports.values())
+        )
+        for scheme in sorted(schemes):
+            schema_string = f"  - {scheme}"
+            scheme_spacer = " " * (banner_length - len(schema_string))
+            outbound_transport_strings.append((schema_string, scheme_spacer))
 
         version_string = f"ver: {__version__}"
         version_string_spacer = " " * (banner_length - len(version_string))

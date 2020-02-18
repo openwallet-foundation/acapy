@@ -3,7 +3,6 @@
 from datetime import datetime
 
 from base58 import alphabet
-from marshmallow.exceptions import ValidationError
 from marshmallow.validate import OneOf, Range, Regexp
 
 from .util import epoch_to_str
@@ -145,7 +144,7 @@ class IndyISO8601DateTime(Regexp):
 
         super().__init__(
             r"^\d{4}-\d\d-\d\d[T ]\d\d:\d\d"
-            r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z)$",
+            r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z|)$",
             error="Value {input} is not a date in valid format."
         )
 
@@ -163,14 +162,6 @@ class Base64(Regexp):
             error="Value {input} is not a valid base64 encoding"
         )
 
-    def __call__(self, value):
-        """Validate input value."""
-
-        if value is None or len(value) % 4:
-            raise ValidationError(self.error)
-
-        return super().__call__(value)
-
 
 class Base64URL(Regexp):
     """Validate base64 value."""
@@ -184,14 +175,6 @@ class Base64URL(Regexp):
             r"^[-_a-zA-Z0-9]*={0,2}$",
             error="Value {input} is not a valid base64url encoding"
         )
-
-    def __call__(self, value):
-        """Validate input value."""
-
-        if value is None or len(value) % 4:
-            raise ValidationError(self.error)
-
-        return super().__call__(value)
 
 
 class SHA256Hash(Regexp):

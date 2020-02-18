@@ -1,16 +1,11 @@
 """Handle connection information interface with non-secrets storage."""
 
-import json
-
-from typing import Sequence
-
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
-from ...messaging.util import time_now
 from ...protocols.connections.messages.connection_invitation import ConnectionInvitation
 from ...protocols.connections.messages.connection_request import ConnectionRequest
 from ...storage.base import BaseStorage
@@ -27,7 +22,6 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
 
     RECORD_ID_NAME = "connection_id"
     WEBHOOK_TOPIC = "connections"
-    WEBHOOK_TOPIC_ACTIVITY = "connections_activity"
     LOG_STATE_FLAG = "debug.connections"
     CACHE_ENABLED = True
     TAG_NAMES = {
@@ -38,7 +32,6 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
     }
 
     RECORD_TYPE = "connection"
-    RECORD_TYPE_ACTIVITY = "connection_activity"
     RECORD_TYPE_INVITATION = "connection_invitation"
     RECORD_TYPE_REQUEST = "connection_request"
 
@@ -59,6 +52,7 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
 
     INVITATION_MODE_ONCE = "once"
     INVITATION_MODE_MULTI = "multi"
+    INVITATION_MODE_STATIC = "static"
 
     ROUTING_STATE_NONE = "none"
     ROUTING_STATE_REQUEST = "request"
@@ -248,103 +242,6 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         ).fetch_single()
         return ConnectionRequest.from_json(result.value)
 
-    async def log_activity(
-        self,
-        context: InjectionContext,
-        activity_type: str,
-        direction: str,
-        meta: dict = None,
-    ):
-        """Log an event against this connection record.
-
-        Args:
-            context: The injection context to use
-            activity_type: The activity type identifier
-            direction: The direction of the activity (sent or received)
-            meta: Optional metadata for the activity
-        """
-        assert self.connection_id
-        record = StorageRecord(
-            self.RECORD_TYPE_ACTIVITY,
-            json.dumps({"meta": meta, "time": time_now()}),
-            {
-                "type": activity_type,
-                "direction": direction,
-                "connection_id": self.connection_id,
-            },
-        )
-        storage: BaseStorage = await context.inject(BaseStorage)
-        await storage.add_record(record)
-        await self.updated_activity(context)
-
-    async def updated_activity(self, context: InjectionContext):
-        """Call webhook when the record activity is updated."""
-        activity = await self.fetch_activity(context)
-        await self.send_webhook(
-            context,
-            {"connection_id": self.connection_id, "activity": activity},
-            topic=self.WEBHOOK_TOPIC_ACTIVITY,
-        )
-
-    async def fetch_activity(
-        self,
-        context: InjectionContext,
-        activity_type: str = None,
-        direction: str = None,
-    ) -> Sequence[dict]:
-        """Fetch all activity logs for this connection record.
-
-        Args:
-            context: The injection context to use
-            activity_type: An optional activity type filter
-            direction: An optional direction filter
-        """
-        tag_filter = {"connection_id": self.connection_id}
-        if activity_type:
-            tag_filter["activity_type"] = activity_type
-        if direction:
-            tag_filter["direction"] = direction
-        storage: BaseStorage = await context.inject(BaseStorage)
-        records = await storage.search_records(
-            self.RECORD_TYPE_ACTIVITY, tag_filter
-        ).fetch_all()
-        results = [
-            dict(id=record.id, **json.loads(record.value), **record.tags)
-            for record in records
-        ]
-        results.sort(key=lambda x: x["time"], reverse=True)
-        return results
-
-    async def retrieve_activity(
-        self, context: InjectionContext, activity_id: str
-    ) -> Sequence[dict]:
-        """Retrieve a single activity record.
-
-        Args:
-            context: The injection context to use
-            activity_id: The ID of the activity entry
-        """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        record = await storage.get_record(self.RECORD_TYPE_ACTIVITY, activity_id)
-        result = dict(id=record.id, **json.loads(record.value), **record.tags)
-        return result
-
-    async def update_activity_meta(
-        self, context: InjectionContext, activity_id: str, meta: dict
-    ) -> Sequence[dict]:
-        """Update metadata for an activity entry.
-
-        Args:
-            context: The injection context to use
-            activity_id: The ID of the activity entry
-            meta: The metadata stored on the activity
-        """
-        storage: BaseStorage = await context.inject(BaseStorage)
-        record = await storage.get_record(self.RECORD_TYPE_ACTIVITY, activity_id)
-        value = json.loads(record.value)
-        value["meta"] = meta
-        await storage.update_record_value(record, json.dumps(value))
-
     @property
     def is_ready(self) -> str:
         """Accessor for connection readiness."""
@@ -430,9 +327,9 @@ class ConnectionRecordSchema(BaseRecordSchema):
     )
     invitation_mode = fields.Str(
         required=False,
-        description="Invitation mode: once or multi",
+        description="Invitation mode: once, multi, or static",
         example=ConnectionRecord.INVITATION_MODE_ONCE,
-        validate=OneOf(["once", "multi"]),
+        validate=OneOf(["once", "multi", "static"]),
     )
     alias = fields.Str(
         required=False,

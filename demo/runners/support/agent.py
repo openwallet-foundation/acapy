@@ -21,6 +21,14 @@ from .utils import flatten, log_json, log_msg, log_timer, output_reader
 
 LOGGER = logging.getLogger(__name__)
 
+event_stream_handler = logging.StreamHandler()
+event_stream_handler.setFormatter(logging.Formatter("\nEVENT: %(message)s"))
+
+EVENT_LOGGER = logging.getLogger("event")
+EVENT_LOGGER.setLevel(logging.DEBUG if os.getenv("EVENTS") else logging.NOTSET)
+EVENT_LOGGER.addHandler(event_stream_handler)
+EVENT_LOGGER.propagate = False
+
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
@@ -33,6 +41,7 @@ RUN_MODE = os.getenv("RUNMODE")
 
 GENESIS_URL = os.getenv("GENESIS_URL")
 LEDGER_URL = os.getenv("LEDGER_URL")
+GENESIS_FILE = os.getenv("GENESIS_FILE")
 
 if RUN_MODE == "docker":
     DEFAULT_INTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
@@ -59,6 +68,9 @@ async def default_genesis_txns():
                     f"http://{DEFAULT_EXTERNAL_HOST}:9000/genesis"
                 ) as resp:
                     genesis = await resp.text()
+        elif GENESIS_FILE:
+            with open(GENESIS_FILE, "r") as genesis_file:
+                genesis = genesis_file.read()
         else:
             with open("local-genesis.txt", "r") as genesis_file:
                 genesis = genesis_file.read()
@@ -81,6 +93,7 @@ class DemoAgent:
         color: str = None,
         prefix: str = None,
         timing: bool = False,
+        timing_log: str = None,
         postgres: bool = None,
         extra_args=None,
         **params,
@@ -95,6 +108,7 @@ class DemoAgent:
         self.color = color
         self.prefix = prefix
         self.timing = timing
+        self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.extra_args = extra_args
 
@@ -173,6 +187,8 @@ class DemoAgent:
             result.append(("--storage-type", self.storage_type))
         if self.timing:
             result.append("--timing")
+        if self.timing_log:
+            result.append(("--timing-log", self.timing_log))
         if self.postgres:
             result.extend(
                 [
@@ -315,14 +331,15 @@ class DemoAgent:
         topic = request.match_info["topic"]
         payload = await request.json()
         await self.handle_webhook(topic, payload)
-        return web.Response(text="")
+        return web.Response(status=200)
 
     async def handle_webhook(self, topic: str, payload):
         if topic != "webhook":  # would recurse
             handler = f"handle_{topic}"
             method = getattr(self, handler, None)
             if method:
-                await method(payload)
+                EVENT_LOGGER.debug(f"Agent called controller webhook: {handler}" + f" with payload: \n{json.dumps(payload, indent=4)}" if payload else "")
+                asyncio.get_event_loop().create_task(method(payload))
             else:
                 log_msg(
                     f"Error: agent {self.ident} "
@@ -350,7 +367,9 @@ class DemoAgent:
 
     async def admin_GET(self, path, text=False, params=None) -> ClientResponse:
         try:
-            return await self.admin_request("GET", path, None, text, params)
+            EVENT_LOGGER.debug(f"Controller GET {path} request to Agent")
+            response = await self.admin_request("GET", path, None, text, params)
+            EVENT_LOGGER.debug(f"Response from GET {path} received: \n{json.dumps(response, indent=4)}")
         except ClientError as e:
             self.log(f"Error during GET {path}: {str(e)}")
             raise
@@ -359,15 +378,16 @@ class DemoAgent:
         self, path, data=None, text=False, params=None
     ) -> ClientResponse:
         try:
-            return await self.admin_request("POST", path, data, text, params)
+            EVENT_LOGGER.debug(f"Controller POST {path} request to Agent" + f" with data: \n{json.dumps(data, indent=4)}" if data else "");
+            response =  await self.admin_request("POST", path, data, text, params)
+            EVENT_LOGGER.debug(f"Response from POST {path} received: \n{json.dumps(response, indent=4)}");
+            return response
         except ClientError as e:
             self.log(f"Error during POST {path}: {str(e)}")
             raise
 
     async def detect_process(self):
-        text = None
-
-        async def fetch_swagger(url: str, timeout: float):
+        async def fetch_status(url: str, timeout: float):
             text = None
             start = default_timer()
             async with ClientSession(timeout=ClientTimeout(total=3.0)) as session:
@@ -382,17 +402,23 @@ class DemoAgent:
                     await asyncio.sleep(0.5)
             return text
 
-        swagger_url = self.admin_url + "/api/docs/swagger.json"
-        text = await fetch_swagger(swagger_url, START_TIMEOUT)
+        status_url = self.admin_url + "/status"
+        status_text = await fetch_status(status_url, START_TIMEOUT)
 
-        if not text:
+        if not status_text:
             raise Exception(
                 "Timed out waiting for agent process to start. "
-                + f"Admin URL: {swagger_url}"
+                + f"Admin URL: {status_url}"
             )
-        if "Aries Cloud Agent" not in text:
+        ok = False
+        try:
+            status = json.loads(status_text)
+            ok = isinstance(status, dict) and "version" in status
+        except json.JSONDecodeError:
+            pass
+        if not ok:
             raise Exception(
-                f"Unexpected response from agent process. Admin URL: {swagger_url}"
+                f"Unexpected response from agent process. Admin URL: {status_url}"
             )
 
     async def fetch_timing(self):

@@ -1,7 +1,7 @@
 """Represents a connection problem report message."""
 
 from enum import Enum
-from marshmallow import fields
+from marshmallow import fields, validate
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import PROBLEM_REPORT, NEW_PROBLEM_REPORT
@@ -38,7 +38,7 @@ class ProblemReport(AgentMessage):
             explain: The localized error explanation
             problem_code: The standard error identifier
         """
-        super(ProblemReport, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.explain = explain
         self.problem_code = problem_code
 
@@ -60,5 +60,9 @@ class ProblemReportSchema(AgentMessageSchema):
         data_key="problem-code",
         required=False,
         description="Standard error identifier",
+        validate=validate.OneOf(
+            choices=[prr.value for prr in ProblemReportReason],
+            error="Value {input} must be one of {choices}."
+        ),
         example=ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
     )

@@ -11,9 +11,16 @@ done
 
 PTVSD_PORT="${PTVSD_PORT-5678}"
 
-if [ ! -z "${ENABLE_PTVSD}" ] || [[ "$@" == *--debug* ]]; then
+for arg in $@; do
+	if [ "$arg" = "--timing" ]; then
+		ENABLE_PTVSD=1
+	fi
+done
+if [ ! -z "${ENABLE_PTVSD}" ]; then
 	ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
+
+ARGS="${ARGS} -v /$(pwd)/../logs:/home/indy/logs"
 
 if [ ! -z "${WEBHOOK_URL}" ]; then
 	ARGS="${ARGS} -e WEBHOOK_URL=\"${WEBHOOK_URL}\""

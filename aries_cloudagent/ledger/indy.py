@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-import re
 import tempfile
 
 from hashlib import sha256
@@ -89,6 +88,7 @@ class IndyLedger(BaseLedger):
         keepalive: int = 0,
         cache: BaseCache = None,
         cache_duration: int = 600,
+        read_only: bool = False,
     ):
         """
         Initialize an IndyLedger instance.
@@ -114,6 +114,7 @@ class IndyLedger(BaseLedger):
         self.pool_name = pool_name
         self.taa_acceptance = None
         self.taa_cache = None
+        self.read_only = read_only
 
         if wallet.WALLET_TYPE != "indy":
             raise LedgerConfigError("Wallet type is not 'indy'")
@@ -207,12 +208,14 @@ class IndyLedger(BaseLedger):
             The current instance
 
         """
+        await super().__aenter__()
         await self._context_open()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         """Context manager exit."""
         await self._context_close()
+        await super().__aexit__(exc_type, exc, tb)
 
     async def _submit(
         self,
@@ -313,6 +316,11 @@ class IndyLedger(BaseLedger):
         if schema_id:
             self.logger.warning("Schema already exists on ledger. Returning ID.")
         else:
+            if self.read_only:
+                raise LedgerError(
+                    "Error cannot write schema when ledger is in read only mode"
+                )
+
             with IndyErrorHandler("Exception when creating schema definition"):
                 schema_id, schema_json = await indy.anoncreds.issuer_create_schema(
                     public_info.did,
@@ -355,11 +363,7 @@ class IndyLedger(BaseLedger):
             "schema_version": schema_id_parts[-1],
             "epoch": str(int(time())),
         }
-        record = StorageRecord(
-            SCHEMA_SENT_RECORD_TYPE,
-            schema_id,
-            schema_tags,
-        )
+        record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags,)
         storage = self.get_indy_storage()
         await storage.add_record(record)
 
@@ -441,7 +445,7 @@ class IndyLedger(BaseLedger):
             await self.cache.set(
                 [f"schema::{schema_id}", f"schema::{response['result']['seqNo']}"],
                 parsed_response,
-                self.cache_duration
+                self.cache_duration,
             )
 
         return parsed_response
@@ -488,6 +492,22 @@ class IndyLedger(BaseLedger):
 
         """
 
+        async def cred_def_in_wallet(wallet_handle, cred_def_id) -> bool:
+            """Create an offer to check whether cred def id is in wallet."""
+            try:
+                await indy.anoncreds.issuer_create_credential_offer(
+                    wallet_handle,
+                    cred_def_id
+                )
+                return True
+            except IndyError as error:
+                if error.error_code not in (
+                    ErrorCode.CommonInvalidStructure, ErrorCode.WalletItemNotFound,
+                ):
+                    raise IndyErrorHandler.wrap_error(error) from error
+                # recognized error signifies no such cred def in wallet: pass
+            return False
+
         public_info = await self.wallet.get_public_did()
         if not public_info:
             raise BadLedgerRequestError(
@@ -495,79 +515,92 @@ class IndyLedger(BaseLedger):
             )
 
         schema = await self.get_schema(schema_id)
+        if not schema:
+            raise LedgerError(f"Ledger {self.pool_name} has no schema {schema_id}")
 
-        # TODO: add support for tag, sig type, and config
-        try:
-            (
-                credential_definition_id,
-                credential_definition_json,
-            ) = await indy.anoncreds.issuer_create_and_store_credential_def(
-                self.wallet.handle,
-                public_info.did,
-                json.dumps(schema),
-                tag or "default",
-                "CL",
-                json.dumps({"support_revocation": False}),
+        # check if cred def is on ledger already
+        for test_tag in [tag, ] if tag else ["tag", "default"]:
+            credential_definition_id = (
+                f"{public_info.did}:3:CL:{str(schema['seqNo'])}:{test_tag}"
             )
-        # If the cred def already exists in the wallet, we need some way of obtaining
-        # that cred def id (from schema id passed) since we can now assume we can use
-        # it in future operations.
-        except IndyError as error:
-            if error.error_code == ErrorCode.AnoncredsCredDefAlreadyExistsError:
-                try:
-                    credential_definition_id = re.search(
-                        r"\w*:3:CL:(([1-9][0-9]*)|(.{21,22}:2:.+:[0-9.]+)):\w*",
-                        error.message,
-                    ).group(0)
-                # The regex search failed so let the error bubble up
-                except AttributeError:
-                    raise LedgerError(
-                        "Previous credential definition exists, but ID could "
-                        "not be extracted"
-                    )
-            else:
-                raise IndyErrorHandler.wrap_error(error) from error
-
-        # check if the cred def already exists on the ledger
-        cred_def = json.loads(credential_definition_json)
-        exist_def = await self.fetch_credential_definition(credential_definition_id)
-        if exist_def:
-            if exist_def["value"] != cred_def["value"]:
+            ledger_cred_def = await self.fetch_credential_definition(
+                credential_definition_id
+            )
+            if ledger_cred_def:
                 self.logger.warning(
-                    "Ledger definition of cred def %s will be replaced",
+                    "Credential definition %s already exists on ledger %s",
                     credential_definition_id,
+                    self.pool_name,
                 )
-                exist_def = None
-
-        if not exist_def:
-            with IndyErrorHandler("Exception when building cred def request"):
-                request_json = await indy.ledger.build_cred_def_request(
-                    public_info.did, credential_definition_json
+                if not await cred_def_in_wallet(
+                    self.wallet.handle, credential_definition_id
+                ):
+                    raise LedgerError(
+                        f"Credential definition {credential_definition_id} is on "
+                        f"ledger {self.pool_name} but not in wallet {self.wallet.name}"
+                    )
+                break
+        else:  # no such cred def on ledger
+            if await cred_def_in_wallet(self.wallet.handle, credential_definition_id):
+                raise LedgerError(
+                    f"Credential definition {credential_definition_id} is in wallet "
+                    f"{self.wallet.name} but not on ledger {self.pool_name}"
                 )
-            await self._submit(request_json, True, public_did=public_info.did)
-        else:
-            self.logger.warning(
-                "Ledger definition of cred def %s already exists",
-                credential_definition_id,
-            )
 
-        schema_id_parts = schema_id.split(":")
-        cred_def_tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": schema_id_parts[0],
-            "schema_name": schema_id_parts[-2],
-            "schema_version": schema_id_parts[-1],
-            "issuer_did": public_info.did,
-            "cred_def_id": credential_definition_id,
-            "epoch": str(int(time())),
-        }
-        record = StorageRecord(
-            CRED_DEF_SENT_RECORD_TYPE,
-            credential_definition_id,
-            cred_def_tags,
-        )
+            # Cred def is neither on ledger nor in wallet: create and send it
+            try:
+                (
+                    credential_definition_id,
+                    credential_definition_json,
+                ) = await indy.anoncreds.issuer_create_and_store_credential_def(
+                    self.wallet.handle,
+                    public_info.did,
+                    json.dumps(schema),
+                    tag or "default",
+                    "CL",
+                    json.dumps({"support_revocation": False}),
+                )
+            except IndyError as error:
+                raise IndyErrorHandler.wrap_error(error) from error
+            else:  # created cred def in wallet OK
+                if self.read_only:
+                    raise LedgerError(
+                        "Error cannot write cred def when ledger is in read only mode"
+                    )
+
+                wallet_cred_def = json.loads(credential_definition_json)
+                with IndyErrorHandler("Exception when building cred def request"):
+                    request_json = await indy.ledger.build_cred_def_request(
+                        public_info.did, credential_definition_json
+                    )
+                await self._submit(request_json, True, public_did=public_info.did)
+                ledger_cred_def = await self.fetch_credential_definition(
+                    credential_definition_id
+                )
+                assert wallet_cred_def["value"] == ledger_cred_def["value"]
+
+        # Add non-secrets records if not yet present
         storage = self.get_indy_storage()
-        await storage.add_record(record)
+        found = await storage.search_records(
+            type_filter=CRED_DEF_SENT_RECORD_TYPE,
+            tag_query={"cred_def_id": credential_definition_id}
+        ).fetch_all()
+
+        if not found:
+            schema_id_parts = schema_id.split(":")
+            cred_def_tags = {
+                "schema_id": schema_id,
+                "schema_issuer_did": schema_id_parts[0],
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "issuer_did": public_info.did,
+                "cred_def_id": credential_definition_id,
+                "epoch": str(int(time())),
+            }
+            record = StorageRecord(
+                CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags,
+            )
+            await storage.add_record(record)
 
         return credential_definition_id
 
@@ -655,9 +688,7 @@ class IndyLedger(BaseLedger):
         public_info = await self.wallet.get_public_did()
         public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception when building nym request"):
-            request_json = await indy.ledger.build_get_nym_request(
-                public_did, nym
-            )
+            request_json = await indy.ledger.build_get_nym_request(public_did, nym)
         response_json = await self._submit(request_json, public_did=public_did)
         data_json = (json.loads(response_json))["result"]["data"]
         return json.loads(data_json)["verkey"]
@@ -676,9 +707,10 @@ class IndyLedger(BaseLedger):
                 public_did, nym, "endpoint", None, None
             )
         response_json = await self._submit(request_json, public_did=public_did)
-        endpoint_json = json.loads(response_json)["result"]["data"]
-        if endpoint_json:
-            address = json.loads(endpoint_json)["endpoint"].get("endpoint", None)
+        data_json = json.loads(response_json)["result"]["data"]
+        if data_json:
+            endpoint = json.loads(data_json).get("endpoint", None)
+            address = endpoint.get("endpoint", None) if endpoint else None
         else:
             address = None
 
@@ -694,6 +726,11 @@ class IndyLedger(BaseLedger):
         """
         exist_endpoint = await self.get_endpoint_for_did(did)
         if exist_endpoint != endpoint:
+            if self.read_only:
+                raise LedgerError(
+                    "Error cannot update endpoint when ledger is in read only mode"
+                )
+
             nym = self.did_to_nym(did)
             attr_json = json.dumps({"endpoint": {"endpoint": endpoint}})
             with IndyErrorHandler("Exception when building attribute request"):
@@ -716,11 +753,14 @@ class IndyLedger(BaseLedger):
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
         """
+        if self.read_only:
+            raise LedgerError(
+                "Error cannot register nym when ledger is in read only mode"
+            )
+
         public_info = await self.wallet.get_public_did()
         public_did = public_info.did if public_info else None
-        r = await indy.ledger.build_nym_request(
-            public_did, did, verkey, alias, role
-        )
+        r = await indy.ledger.build_nym_request(public_did, did, verkey, alias, role)
         await self._submit(r, True, True, public_did=public_did)
 
     def nym_to_did(self, nym: str) -> str:
@@ -752,10 +792,11 @@ class IndyLedger(BaseLedger):
         )
         response_json = await self._submit(get_taa_req, public_did=public_did)
         taa_found = (json.loads(response_json))["result"]["data"]
-        taa_required = taa_found and taa_found["text"]
+        taa_required = bool(taa_found and taa_found["text"])
         if taa_found:
-            taa_plaintext = taa_found["version"] + taa_found["text"]
-            taa_found["digest"] = sha256(taa_plaintext.encode("utf-8")).digest().hex()
+            taa_found["digest"] = self.taa_digest(
+                taa_found["version"], taa_found["text"]
+            )
 
         return {
             "aml_record": aml_found,
@@ -774,12 +815,15 @@ class IndyLedger(BaseLedger):
         """
         return int(datetime.combine(date.today(), datetime.min.time()).timestamp())
 
+    def taa_digest(self, version: str, text: str):
+        """Generate the digest of a TAA record."""
+        if not version or not text:
+            raise ValueError("Bad input for TAA digest")
+        taa_plaintext = version + text
+        return sha256(taa_plaintext.encode("utf-8")).digest().hex()
+
     async def accept_txn_author_agreement(
-        self,
-        taa_record: dict,
-        mechanism: str,
-        accept_time: int = None,
-        store: bool = False,
+        self, taa_record: dict, mechanism: str, accept_time: int = None
     ):
         """Save a new record recording the acceptance of the TAA."""
         if not accept_time:
@@ -798,14 +842,15 @@ class IndyLedger(BaseLedger):
         )
         storage = self.get_indy_storage()
         await storage.add_record(record)
-        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
-        await self.cache.set(cache_key, acceptance, self.cache_duration)
+        if self.cache:
+            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
+            await self.cache.set(cache_key, acceptance, self.cache_duration)
 
     async def get_latest_txn_author_acceptance(self):
         """Look up the latest TAA acceptance."""
         cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
-        acceptance = await self.cache.get(cache_key)
-        if acceptance is None:
+        acceptance = self.cache and await self.cache.get(cache_key)
+        if not acceptance:
             storage = self.get_indy_storage()
             tag_filter = {"pool_name": self.pool_name}
             found = await storage.search_records(
@@ -817,5 +862,6 @@ class IndyLedger(BaseLedger):
                 acceptance = records[0]
             else:
                 acceptance = {}
-            await self.cache.set(cache_key, acceptance, self.cache_duration)
+            if self.cache:
+                await self.cache.set(cache_key, acceptance, self.cache_duration)
         return acceptance

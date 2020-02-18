@@ -4,15 +4,21 @@ import os
 from aries_cloudagent.wallet.indy import IndyWallet
 from aries_cloudagent.storage.indy import IndyStorage
 from aries_cloudagent.storage.record import StorageRecord
-from aries_cloudagent.postgres import load_postgres_plugin
 
 from . import test_basic_storage
 
 
 @pytest.fixture()
 async def store():
+    key = await IndyWallet.generate_wallet_key()
     wallet = IndyWallet(
-        {"auto_create": True, "auto_remove": True, "name": "test-wallet"}
+        {
+            "auto_create": True,
+            "auto_remove": True,
+            "name": "test-wallet",
+            "key": key,
+            "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
+        }
     )
     await wallet.open()
     yield IndyStorage(wallet)
@@ -34,13 +40,14 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
         if not postgres_url:
             pytest.fail("POSTGRES_URL not configured")
 
-        load_postgres_plugin()
+        wallet_key = await IndyWallet.generate_wallet_key()
         postgres_wallet = IndyWallet(
             {
                 "auto_create": False,
                 "auto_remove": False,
                 "name": "test_pg_wallet",
-                "key": "my_postgres",
+                "key": wallet_key,
+                "key_derivation_method": "RAW",
                 "storage_type": "postgres_storage",
                 "storage_config": '{"url":"' + postgres_url + '", "max_connections":5}',
                 "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',

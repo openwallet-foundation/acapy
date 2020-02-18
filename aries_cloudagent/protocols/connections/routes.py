@@ -63,7 +63,25 @@ class ConnectionStaticRequestSchema(Schema):
     their_role = fields.Str(
         description="Role to assign to this connection", required=False
     )
+    their_label = fields.Str(
+        description="Label to assign to this connection", required=False
+    )
     alias = fields.Str(description="Alias to assign to this connection", required=False)
+
+
+class ConnectionStaticResultSchema(Schema):
+    """Result schema for new static connection."""
+
+    my_did = fields.Str(
+        description="Local DID", required=True, example=IndyDID.EXAMPLE
+    )
+    mv_verkey = fields.Str(description="My verification key", required=True)
+    my_endpoint = fields.Str(description="My endpoint", required=True)
+    their_did = fields.Str(
+        description="Remote DID", required=True, example=IndyDID.EXAMPLE
+    )
+    their_verkey = fields.Str(description="Remote verification key", required=True)
+    record = fields.Nested(ConnectionRecordSchema, required=True)
 
 
 def connection_sort_key(conn):
@@ -168,11 +186,7 @@ async def connections_list(request: web.BaseRequest):
         if param_name in request.query and request.query[param_name] != "":
             post_filter[param_name] = request.query[param_name]
     records = await ConnectionRecord.query(context, tag_filter, post_filter)
-    results = []
-    for record in records:
-        row = record.serialize()
-        row["activity"] = await record.fetch_activity(context)
-        results.append(row)
+    results = [record.serialize() for record in records]
     results.sort(key=connection_sort_key)
     return web.json_response({"results": results})
 
@@ -215,7 +229,18 @@ async def connections_retrieve(request: web.BaseRequest):
             "schema": {"type": "string", "enum": ["none", "auto"]},
             "required": False,
         },
-        {"name": "public", "in": "query", "schema": {"type": "int"}, "required": False},
+        {
+            "name": "public",
+            "in": "query",
+            "schema": {"type": "int"},
+            "required": False
+        },
+        {
+            "name": "multi_use",
+            "in": "query",
+            "schema": {"type": "int"},
+            "required": False
+        },
     ],
 )
 @response_schema(InvitationResultSchema(), 200)
@@ -379,8 +404,8 @@ async def connections_accept_request(request: web.BaseRequest):
         raise web.HTTPNotFound()
     connection_mgr = ConnectionManager(context)
     my_endpoint = request.query.get("my_endpoint") or None
-    request = await connection_mgr.create_response(connection, my_endpoint)
-    await outbound_handler(request, connection_id=connection.connection_id)
+    response = await connection_mgr.create_response(connection, my_endpoint)
+    await outbound_handler(response, connection_id=connection.connection_id)
     return web.json_response(connection.serialize())
 
 
@@ -429,7 +454,7 @@ async def connections_remove(request: web.BaseRequest):
 
 @docs(tags=["connection"], summary="Create a new static connection")
 @request_schema(ConnectionStaticRequestSchema())
-@response_schema(ConnectionRecordSchema(), 200)
+@response_schema(ConnectionStaticResultSchema(), 200)
 async def connections_create_static(request: web.BaseRequest):
     """
     Request handler for creating a new static connection.
@@ -445,7 +470,11 @@ async def connections_create_static(request: web.BaseRequest):
     body = await request.json()
 
     connection_mgr = ConnectionManager(context)
-    connection = await connection_mgr.create_static_connection(
+    (
+        my_info,
+        their_info,
+        connection
+    ) = await connection_mgr.create_static_connection(
         my_seed=body.get("my_seed") or None,
         my_did=body.get("my_did") or None,
         their_seed=body.get("their_seed") or None,
@@ -453,11 +482,19 @@ async def connections_create_static(request: web.BaseRequest):
         their_verkey=body.get("their_verkey") or None,
         their_endpoint=body.get("their_endpoint") or None,
         their_role=body.get("their_role") or None,
+        their_label=body.get("their_label") or None,
         alias=body.get("alias") or None,
     )
-    result = connection.serialize()
+    response = {
+        'my_did': my_info.did,
+        'my_verkey': my_info.verkey,
+        'my_endpoint': context.settings.get('default_endpoint'),
+        'their_did': their_info.did,
+        'their_verkey': their_info.verkey,
+        'record': connection.serialize()
+    }
 
-    return web.json_response(result)
+    return web.json_response(response)
 
 
 async def register(app: web.Application):
@@ -467,6 +504,7 @@ async def register(app: web.Application):
         [
             web.get("/connections", connections_list),
             web.get("/connections/{id}", connections_retrieve),
+            web.post("/connections/create-static", connections_create_static),
             web.post("/connections/create-invitation", connections_create_invitation),
             web.post("/connections/receive-invitation", connections_receive_invitation),
             web.post(

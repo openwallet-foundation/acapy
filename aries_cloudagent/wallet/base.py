@@ -9,10 +9,6 @@ KeyInfo = namedtuple("KeyInfo", "verkey metadata")
 
 DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
 
-PairwiseInfo = namedtuple(
-    "PairwiseInfo", "their_did their_verkey my_did my_verkey metadata"
-)
-
 
 class BaseWallet(ABC):
     """Abstract wallet interface."""
@@ -262,75 +258,6 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
-    async def create_pairwise(
-        self,
-        their_did: str,
-        their_verkey: str,
-        my_did: str = None,
-        metadata: dict = None,
-    ) -> PairwiseInfo:
-        """
-        Create a new pairwise DID for a secure connection.
-
-        Args:
-            their_did: Their DID
-            their_verkey: Their verkey
-            my_did: My DID
-            metadata: Metadata for relationship
-
-        Returns:
-            A `PairwiseInfo` instance representing the new relationship
-
-        """
-
-    @abstractmethod
-    async def get_pairwise_list(self) -> Sequence[PairwiseInfo]:
-        """
-        Get list of defined pairwise DIDs.
-
-        Returns:
-            A list of `PairwiseInfo` instances for all relationships
-
-        """
-
-    @abstractmethod
-    async def get_pairwise_for_did(self, their_did: str) -> PairwiseInfo:
-        """
-        Find info for a pairwise DID.
-
-        Args:
-            their_did: The DID representing the relationship
-
-        Returns:
-            A `PairwiseInfo` instance representing the relationship
-
-        """
-
-    @abstractmethod
-    async def get_pairwise_for_verkey(self, their_verkey: str) -> PairwiseInfo:
-        """
-        Resolve a pairwise DID from a verkey.
-
-        Args:
-            their_verkey: The verkey representing the relationship
-
-        Returns:
-            A `PairwiseInfo` instance representing the relationship
-
-        """
-
-    @abstractmethod
-    async def replace_pairwise_metadata(self, their_did: str, metadata: dict):
-        """
-        Replace the metadata associated with a pairwise DID.
-
-        Args:
-            their_did: The did representing the relationship
-            metadata: The new metadata
-
-        """
-
-    @abstractmethod
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
         """
         Sign a message using the private key associated with a given verkey.
@@ -358,42 +285,6 @@ class BaseWallet(ABC):
 
         Returns:
             True if verified, else False
-
-        """
-
-    @abstractmethod
-    async def encrypt_message(
-        self, message: bytes, to_verkey: str, from_verkey: str = None
-    ) -> bytes:
-        """
-        Apply auth_crypt or anon_crypt to a message.
-
-        Args:
-            message: The binary message content
-            to_verkey: The verkey of the recipient
-            from_verkey: The verkey of the sender. If provided then auth_crypt is used,
-                otherwise anon_crypt is used.
-
-        Returns:
-            The encrypted message content
-
-        """
-
-    @abstractmethod
-    async def decrypt_message(
-        self, enc_message: bytes, to_verkey: str, use_auth: bool
-    ) -> (bytes, str):
-        """
-        Decrypt a message assembled by auth_crypt or anon_crypt.
-
-        Args:
-            enc_message: The encrypted message content
-            to_verkey: The verkey of the recipient. If provided then auth_decrypt is
-                used, otherwise anon_decrypt is used.
-
-        Returns:
-            A tuple of the decrypted message content and sender verkey
-                (None for anon_crypt)
 
         """
 
@@ -426,10 +317,6 @@ class BaseWallet(ABC):
             A tuple: (message, from_verkey, to_verkey)
 
         """
-
-    # TODO:
-    # store credential (return ID)
-    # fetch credentials by ID [or query, filter, proof request?]
 
     def __repr__(self) -> str:
         """Get a human readable string."""

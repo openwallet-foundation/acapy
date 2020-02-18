@@ -1,10 +1,9 @@
 """Websockets outbound transport."""
 
 import logging
+from typing import Union
 
-from aiohttp import ClientSession
-
-from ...messaging.outbound_message import OutboundMessage
+from aiohttp import ClientSession, DummyCookieJar
 
 from .base import BaseOutboundTransport
 
@@ -21,7 +20,7 @@ class WsTransport(BaseOutboundTransport):
 
     async def start(self):
         """Start the outbound transport."""
-        self.client_session = ClientSession()
+        self.client_session = ClientSession(cookie_jar=DummyCookieJar())
         return self
 
     async def stop(self):
@@ -29,7 +28,7 @@ class WsTransport(BaseOutboundTransport):
         await self.client_session.close()
         self.client_session = None
 
-    async def handle_message(self, message: OutboundMessage):
+    async def handle_message(self, payload: Union[str, bytes], endpoint: str):
         """
         Handle message from queue.
 
@@ -37,8 +36,8 @@ class WsTransport(BaseOutboundTransport):
             message: `OutboundMessage` to send over transport implementation
         """
         # aiohttp should automatically handle websocket sessions
-        async with self.client_session.ws_connect(message.endpoint) as ws:
-            if isinstance(message.payload, bytes):
-                await ws.send_bytes(message.payload)
+        async with self.client_session.ws_connect(endpoint) as ws:
+            if isinstance(payload, bytes):
+                await ws.send_bytes(payload)
             else:
-                await ws.send_str(message.payload)
+                await ws.send_str(payload)

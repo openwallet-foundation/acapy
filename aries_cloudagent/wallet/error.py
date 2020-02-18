@@ -1,6 +1,6 @@
 """Wallet-related exceptions."""
 
-from ..error import BaseError
+from ..core.error import BaseError
 
 
 class WalletError(BaseError):

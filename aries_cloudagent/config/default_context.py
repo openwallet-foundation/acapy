@@ -1,29 +1,26 @@
 """Classes for configuring the default injection context."""
 
-from .base import ConfigError
 from .base_context import ContextBuilder
 from .injection_context import InjectionContext
 from .provider import CachedProvider, ClassProvider, StatsProvider
 
 from ..cache.base import BaseCache
 from ..cache.basic import BasicCache
-from ..classloader import ClassLoader
-from ..defaults import default_protocol_registry
+from ..core.plugin_registry import PluginRegistry
+from ..core.protocol_registry import ProtocolRegistry
 from ..ledger.base import BaseLedger
 from ..ledger.provider import LedgerProvider
 from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
-from ..messaging.protocol_registry import ProtocolRegistry
-from ..messaging.serializer import MessageSerializer
 from ..protocols.actionmenu.base_service import BaseMenuService
 from ..protocols.actionmenu.driver_service import DriverMenuService
 from ..protocols.introduction.base_service import BaseIntroductionService
 from ..protocols.introduction.demo_service import DemoIntroductionService
-from ..stats import Collector
 from ..storage.base import BaseStorage
 from ..storage.provider import StorageProvider
-from ..transport.outbound.queue.base import BaseOutboundMessageQueue
+from ..transport.wire_format import BaseWireFormat
+from ..utils.stats import Collector
 from ..wallet.base import BaseWallet
 from ..wallet.provider import WalletProvider
 
@@ -37,12 +34,18 @@ class DefaultContextBuilder(ContextBuilder):
         context.settings.set_default("default_label", "Aries Cloud Agent")
 
         if context.settings.get("timing.enabled"):
-            collector = Collector()
+            timing_log = context.settings.get("timing.log_file")
+            collector = Collector(log_path=timing_log)
             context.injector.bind_instance(Collector, collector)
 
+        # Shared in-memory cache
         context.injector.bind_instance(BaseCache, BasicCache())
 
+        # Global protocol registry
+        context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+
         await self.bind_providers(context)
+        await self.load_plugins(context)
 
         return context
 
@@ -63,14 +66,10 @@ class DefaultContextBuilder(ContextBuilder):
                 StatsProvider(
                     WalletProvider(),
                     (
-                        "create",
-                        "open",
                         "sign_message",
                         "verify_message",
-                        "encrypt_message",
-                        "decrypt_message",
-                        "pack_message",
-                        "unpack_message",
+                        # "pack_message",
+                        # "unpack_message",
                         "get_local_did",
                     ),
                 )
@@ -119,39 +118,18 @@ class DefaultContextBuilder(ContextBuilder):
             ),
         )
 
-        # Set up protocol registry
-        protocol_registry: ProtocolRegistry = default_protocol_registry()
-        # Dynamically register externally loaded protocol message types
-        for protocol_module_path in self.settings.get("external_protocols", []):
-            try:
-                external_module = ClassLoader.load_module(
-                    f"{protocol_module_path}.message_types"
-                )
-                protocol_registry.register_message_types(external_module.MESSAGE_TYPES)
-            except Exception as e:
-                raise ConfigError(
-                    "Failed to load external protocol module "
-                    + f"'{protocol_module_path}'"
-                ) from e
-        context.injector.bind_instance(ProtocolRegistry, protocol_registry)
-
-        # Register message serializer
+        # Register default pack format
         context.injector.bind_provider(
-            MessageSerializer,
+            BaseWireFormat,
             CachedProvider(
                 StatsProvider(
-                    ClassProvider(MessageSerializer),
-                    ("encode_message", "parse_message"),
+                    ClassProvider(
+                        "aries_cloudagent.transport.pack_format.PackWireFormat"
+                    ),
+                    (
+                        # "encode_message", "parse_message"
+                    ),
                 )
-            ),
-        )
-
-        # Set default outbound message queue
-        context.injector.bind_provider(
-            BaseOutboundMessageQueue,
-            ClassProvider(
-                "aries_cloudagent.transport.outbound.queue"
-                + ".basic.BasicOutboundMessageQueue"
             ),
         )
 
@@ -160,3 +138,27 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_instance(
             BaseIntroductionService, DemoIntroductionService(context)
         )
+
+    async def load_plugins(self, context: InjectionContext):
+        """Set up plugin registry and load plugins."""
+
+        plugin_registry = PluginRegistry()
+        context.injector.bind_instance(PluginRegistry, plugin_registry)
+
+        # Register standard protocol plugins
+        plugin_registry.register_package("aries_cloudagent.protocols")
+
+        # Currently providing admin routes only
+        plugin_registry.register_plugin("aries_cloudagent.ledger")
+        plugin_registry.register_plugin(
+            "aries_cloudagent.messaging.credential_definitions"
+        )
+        plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
+        plugin_registry.register_plugin("aries_cloudagent.wallet")
+
+        # Register external plugins
+        for plugin_path in self.settings.get("external_plugins", []):
+            plugin_registry.register_plugin(plugin_path)
+
+        # Register message protocols
+        await plugin_registry.init_context(context)

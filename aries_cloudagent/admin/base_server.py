@@ -24,7 +24,10 @@ class BaseAdminServer(ABC):
 
     @abstractmethod
     def add_webhook_target(
-        self, target_url: str, topic_filter: Sequence[str] = None, retries: int = None
+        self,
+        target_url: str,
+        topic_filter: Sequence[str] = None,
+        max_attempts: int = None,
     ):
         """Add a webhook target."""
 

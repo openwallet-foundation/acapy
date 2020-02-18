@@ -1,30 +1,69 @@
-## How to generate documentation
+# Aries Cloud Agent - Python: Documentation
 
-Ensure the `sphinx_rtd_theme` theme is installed
+This `docs` folder has several kinds of documentation about Aries Cloud Agent - Python (ACA-Py).
+
+If you are interested in becoming an Aries Developer and want to use ACA-Py to get started, you
+can start by looking at this [Getting Started](GettingStartedAriesDev/README.md) guide. It covers
+a range of topics necessary to understanding how Aries agents work, particularly ACA-Py.
+
+The recommended developer reference documentation is generated from this folder and hosted
+at this [ACA-Py Read The Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) site.
+Head their if you are looking for reference materials.
+
+The remainder of this document describes how to maintain the `Read The Docs` documentation. As
+the structure of the ACA-Py code evolves, the RTD files need to be regenerated and possibly
+updated, as noted below.
+
+## How to generate ACA-Py Read The Docs (RTD) documentation
+
+### Before you start
+
+To test generate and view the RTD documentation locally, you must install [Sphinx](https://www.sphinx-doc.org/en/master/) and the
+[Sphinx RTD theme](https://pypi.org/project/sphinx-rtd-theme/). Both can be installed from PyPi using pip. For example:
 
 ```
+pip install -U sphinx
 pip install -U sphinx-rtd-theme
 ```
 
-Ensure the sphinx tool is installed and run:
+### Generate Module Files
 
 To rebuild the project and settings from scratch (you'll need to move the generated index file up a level):
 ```
-sphinx-apidoc -f -M -F -o  ./generated .. '../setup.py'
+rm -rf generated
+sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')
 ```
 
-```
-sphinx-apidoc -f -M -o  ./generated .. '../setup.py'
-```
+Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.
 
-To auto-generate the module documentation then run:
+Check the  `git status` in your repo to see if the generator updates, adds or removes any existing RTD modules.
 
-```
-make html
-```
-or
+### Reviewing the files locally
+
+To auto-generate the module documentation locally run:
+
 ```
 sphinx-build -b html -a -E -c ./ ./ ./_build
 ```
 
-To build the html.
+Once generated, go into the `_build` folder and open `index.html` in a browser. Note that the `_build` is
+`.gitignore'd` and so will not be part of a git push.
+
+### Checking for missing modules
+
+The file [`index.rst`](index.rst) in this folder drive the RTD generation. It should pick up all the modules
+in the source code, starting from the root `../aries_cloudagent` folder. However, some modules
+are not picked up automatically from the root and have to be manually added to `index.rst`. To do that:
+
+* Get a list of all generated modules by running: `ls generated | grep "aries_cloudagent.[a-z]*.rst"`
+* Compare that list with the modules documented in your local review of the RTD documentation.
+
+If any are missing, you likely need to add them to the `index.rst` file in the `toctree` section of the file.
+You will see there are already several instances of that.
+
+### Updating the [readthedocs.org](https://readthedocs.org) site
+
+The RTD documentation is **not** currently auto-generated, so a manual re-generation of the documentation
+is still required.
+
+> TODO: Automate this when new tags are applied to the repository.

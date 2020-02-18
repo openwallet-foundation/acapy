@@ -1,18 +1,17 @@
 """Ledger configuration."""
 
-import asyncio
 from collections import OrderedDict
 import logging
 import re
 import sys
 
-from aiohttp import ClientSession, ClientError, ClientResponse
 import markdown
 import prompt_toolkit
 from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
 from ..ledger.base import BaseLedger
+from ..utils.http import fetch, FetchError
 
 from .base import ConfigError
 from .injection_context import InjectionContext
@@ -20,28 +19,15 @@ from .injection_context import InjectionContext
 LOGGER = logging.getLogger(__name__)
 
 
-async def fetch_genesis_transactions(genesis_url: str):
+async def fetch_genesis_transactions(genesis_url: str) -> str:
     """Get genesis transactions."""
     headers = {}
     headers["Content-Type"] = "application/json"
-    retry = 5
     LOGGER.info("Fetching genesis transactions from: %s", genesis_url)
-    while True:
-        try:
-            async with ClientSession() as client_session:
-                response: ClientResponse = await client_session.get(
-                    genesis_url, headers=headers
-                )
-                if response.status < 200 or response.status >= 300:
-                    raise ClientError("Bad response from server")
-                genesis_txns = await response.text()
-                return genesis_txns
-        except ClientError as e:
-            if retry:
-                retry -= 1
-                await asyncio.sleep(5.0)
-            else:
-                raise ConfigError("Error retrieving ledger genesis transactions") from e
+    try:
+        return await fetch(genesis_url, headers=headers)
+    except FetchError as e:
+        raise ConfigError("Error retrieving ledger genesis transactions") from e
 
 
 async def ledger_config(

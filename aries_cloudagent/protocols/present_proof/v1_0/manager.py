@@ -4,13 +4,15 @@ import json
 import logging
 
 from ....config.injection_context import InjectionContext
-from ....error import BaseError
+from ....core.error import BaseError
 from ....holder.base import BaseHolder
 from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.responder import BaseResponder
 from ....verifier.base import BaseVerifier
 
 from .models.presentation_exchange import V10PresentationExchange
+from .messages.presentation_ack import PresentationAck
 from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
@@ -221,29 +223,28 @@ class PresentationManager:
         Args:
             presentation_exchange_record: Record to update
             requested_credentials: Indy formatted requested_credentials
+            comment: optional human-readable comment
 
-            e.g.,
+        Example `requested_credentials` format:
 
-            ::
+        ::
 
-                {
-                    "self_attested_attributes": {
-                        "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
-                    },
-                    "requested_attributes": {
-                        "6253ffbb-bd35-49b3-934f-46e083106f6c": {
-                            "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
-                            "revealed": true
-                        }
-                    },
-                    "requested_predicates": {
-                        "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
-                            "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
-                        }
+            {
+                "self_attested_attributes": {
+                    "j233ffbc-bd35-49b1-934f-51e083106f6d": "value"
+                },
+                "requested_attributes": {
+                    "6253ffbb-bd35-49b3-934f-46e083106f6c": {
+                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e",
+                        "revealed": true
+                    }
+                },
+                "requested_predicates": {
+                    "bfc8a97d-60d3-4f21-b998-85eeabe5c8c0": {
+                        "cred_id": "5bfa40b7-062b-4ae0-a251-a86c87922c0e"
                     }
                 }
-
-            comment: optional human-readable comment
+            }
 
         Returns:
             A tuple (updated presentation exchange record, presentation message)
@@ -331,14 +332,43 @@ class PresentationManager:
 
         """
         presentation = self.context.message.indy_proof()
+
         thread_id = self.context.message._thread_id
+        connection_id_filter = (
+            {"connection_id": self.context.connection_record.connection_id}
+            if self.context.connection_record is not None
+            else None
+        )
         (
             presentation_exchange_record
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
-            self.context,
-            {"thread_id": thread_id},
-            {"connection_id": self.context.connection_record.connection_id},
+            self.context, {"thread_id": thread_id}, connection_id_filter
         )
+
+        # Check for bait-and-switch in presented attribute values vs. proposal
+        if presentation_exchange_record.presentation_proposal_dict:
+            exchange_pres_proposal = PresentationProposal.deserialize(
+                presentation_exchange_record.presentation_proposal_dict
+            )
+            presentation_preview = exchange_pres_proposal.presentation_proposal
+
+            proof_req = presentation_exchange_record.presentation_request
+            for (
+                reft,
+                attr_spec
+            ) in presentation["requested_proof"]["revealed_attrs"].items():
+                name = proof_req["requested_attributes"][reft]["name"]
+                value = attr_spec["raw"]
+                if not presentation_preview.has_attr_spec(
+                    cred_def_id=presentation["identifiers"][
+                        attr_spec["sub_proof_index"]
+                    ]["cred_def_id"],
+                    name=name,
+                    value=value
+                ):
+                    raise PresentationManagerError(
+                        f"Presentation {name}={value} mismatches proposal value"
+                    )
 
         presentation_exchange_record.presentation = presentation
         presentation_exchange_record.state = (
@@ -404,6 +434,58 @@ class PresentationManager:
 
         await presentation_exchange_record.save(
             self.context, reason="verify presentation"
+        )
+
+        await self.send_presentation_ack(presentation_exchange_record)
+        return presentation_exchange_record
+
+    async def send_presentation_ack(
+        self, presentation_exchange_record: V10PresentationExchange
+    ):
+        """
+        Send acknowledgement of presentation receipt.
+
+        Args:
+            presentation_exchange_record: presentation exchange record with thread id
+
+        """
+        responder = await self.context.inject(BaseResponder, required=False)
+
+        if responder:
+            presentation_ack_message = PresentationAck()
+            presentation_ack_message._thread = {
+                "thid": presentation_exchange_record.thread_id
+            }
+
+            await responder.send_reply(presentation_ack_message)
+        else:
+            self._logger.warning(
+                "Configuration has no BaseResponder: cannot ack presentation on %s",
+                presentation_exchange_record.thread_id,
+            )
+
+    async def receive_presentation_ack(self):
+        """
+        Receive a presentation ack, from message in context on manager creation.
+
+        Returns:
+            presentation exchange record, retrieved and updated
+
+        """
+        (
+            presentation_exchange_record
+        ) = await V10PresentationExchange.retrieve_by_tag_filter(
+            self.context,
+            {"thread_id": self.context.message._thread_id},
+            {"connection_id": self.context.connection_record.connection_id}
+        )
+
+        presentation_exchange_record.state = (
+            V10PresentationExchange.STATE_PRESENTATION_ACKED
+        )
+
+        await presentation_exchange_record.save(
+            self.context, reason="receive presentation ack"
         )
 
         return presentation_exchange_record

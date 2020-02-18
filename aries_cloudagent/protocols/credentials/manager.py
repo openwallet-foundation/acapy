@@ -5,7 +5,7 @@ import logging
 
 from ...config.injection_context import InjectionContext
 from ...connections.models.connection_record import ConnectionRecord
-from ...error import BaseError
+from ...core.error import BaseError
 from ...holder.base import BaseHolder
 from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger

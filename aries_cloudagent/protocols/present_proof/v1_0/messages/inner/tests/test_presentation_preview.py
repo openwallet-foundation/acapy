@@ -13,7 +13,7 @@ from .......holder.indy import IndyHolder
 from .......messaging.util import canon, str_to_datetime, str_to_epoch
 
 from ....message_types import PRESENTATION_PREVIEW
-from ....util.indy import Predicate
+from ....util.predicate import Predicate
 
 from ..presentation_preview import (
     PresAttrSpec,
@@ -24,18 +24,23 @@ from ..presentation_preview import (
 
 NOW_8601 = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
 NOW_EPOCH = str_to_epoch(NOW_8601)
-S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
-CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID}:tag1"
+S_ID = {
+    "score": "NcYxiDXkpYi6ov5FcYDi1e:2:score:1.0",
+    "membership": "NcYxiDXkpYi6ov5FcYDi1e:2:membership:1.0"
+}
+CD_ID = {
+    name: f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:{S_ID[name]}:tag1" for name in S_ID
+}
 PRES_PREVIEW = PresentationPreview(
     attributes=[
         PresAttrSpec(
             name="player",
-            cred_def_id=CD_ID,
+            cred_def_id=CD_ID['score'],
             value="Richie Knucklez"
         ),
         PresAttrSpec(
             name="screenCapture",
-            cred_def_id=CD_ID,
+            cred_def_id=CD_ID['score'],
             mime_type="image/png",
             value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl"
         )
@@ -43,9 +48,38 @@ PRES_PREVIEW = PresentationPreview(
     predicates=[
         PresPredSpec(
             name="highScore",
-            cred_def_id=CD_ID,
+            cred_def_id=CD_ID['score'],
             predicate=">=",
             threshold=1000000
+        )
+    ]
+)
+PRES_PREVIEW_ATTR_NAMES = PresentationPreview(
+    attributes=[
+        PresAttrSpec(
+            name="player",
+            cred_def_id=CD_ID['score'],
+            value="Richie Knucklez",
+            referent="reft-0"
+        ),
+        PresAttrSpec(
+            name="screenCapture",
+            cred_def_id=CD_ID['score'],
+            mime_type="image/png",
+            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+            referent="reft-0"
+        ),
+        PresAttrSpec(
+            name="member",
+            cred_def_id=CD_ID['membership'],
+            value="Richard Hand",
+            referent="reft-1"
+        ),
+        PresAttrSpec(
+            name="since",
+            cred_def_id=CD_ID['membership'],
+            value="2020-01-01",
+            referent="reft-1"
         )
     ]
 )
@@ -58,15 +92,15 @@ INDY_PROOF_REQ = json.loads(f"""{{
             "name": "player",
             "restrictions": [
                 {{
-                    "cred_def_id": "{CD_ID}"
+                    "cred_def_id": "{CD_ID['score']}"
                 }}
             ]
         }},
-        "0_screencapture_uuid": {{
+        "1_screencapture_uuid": {{
             "name": "screenCapture",
             "restrictions": [
                 {{
-                    "cred_def_id": "{CD_ID}"
+                    "cred_def_id": "{CD_ID['score']}"
                 }}
             ]
         }}
@@ -78,11 +112,35 @@ INDY_PROOF_REQ = json.loads(f"""{{
             "p_value": 1000000,
             "restrictions": [
                 {{
-                    "cred_def_id": "{CD_ID}"
+                    "cred_def_id": "{CD_ID['score']}"
                 }}
             ]
         }}
     }}
+}}""")
+INDY_PROOF_REQ_ATTR_NAMES = json.loads(f"""{{
+    "name": "proof-req",
+    "version": "1.0",
+    "nonce": "12345",
+    "requested_attributes": {{
+        "0_player_uuid": {{
+            "names": ["player", "screenCapture"],
+            "restrictions": [
+                {{
+                    "cred_def_id": "{CD_ID['score']}"
+                }}
+            ]
+        }},
+        "1_member_uuid": {{
+            "names": ["member", "since"],
+            "restrictions": [
+                {{
+                    "cred_def_id": "{CD_ID['membership']}"
+                }}
+            ]
+        }}
+    }},
+    "requested_predicates": {{}}
 }}""")
 
 
@@ -99,16 +157,19 @@ class TestPresAttrSpec(TestCase):
 
         revealed = PresAttrSpec(
             name="ident",
-            cred_def_id=CD_ID,
+            cred_def_id=CD_ID["score"],
             value="655321"
         )
         assert revealed.posture == PresAttrSpec.Posture.REVEALED_CLAIM
 
         unrevealed = PresAttrSpec(
             name="ident",
-            cred_def_id=CD_ID
+            cred_def_id=CD_ID["score"]
         )
         assert unrevealed.posture == PresAttrSpec.Posture.UNREVEALED_CLAIM
+
+        no_posture = PresAttrSpec(name="no_spec")
+        assert no_posture.posture is None
 
     def test_list_plain(self):
         by_list = PresAttrSpec.list_plain(
@@ -116,18 +177,47 @@ class TestPresAttrSpec(TestCase):
                 "ident": "655321",
                 " Given Name ": "Alexander DeLarge"
             },
-            cred_def_id=CD_ID
+            cred_def_id=CD_ID["score"]
         )
         explicit = [
             PresAttrSpec(
                 name="ident",
-                cred_def_id=CD_ID,
+                cred_def_id=CD_ID["score"],
                 value="655321"
             ),
             PresAttrSpec(
                 name="givenname",
-                cred_def_id=CD_ID,
+                cred_def_id=CD_ID["score"],
                 value="Alexander DeLarge"
+            )
+        ]
+
+        # order could be askew
+        for listp in by_list:
+            assert any(xp == listp for xp in explicit)
+        assert len(explicit) == len(by_list)
+
+    def test_list_plain_share_referent(self):
+        by_list = PresAttrSpec.list_plain(
+            plain={
+                "ident": "655321",
+                " Given Name ": "Alexander DeLarge"
+            },
+            cred_def_id=CD_ID["score"],
+            referent="dummy"
+        )
+        explicit = [
+            PresAttrSpec(
+                name="ident",
+                cred_def_id=CD_ID["score"],
+                value="655321",
+                referent="dummy"
+            ),
+            PresAttrSpec(
+                name="givenname",
+                cred_def_id=CD_ID["score"],
+                value="Alexander DeLarge",
+                referent="dummy"
             )
         ]
 
@@ -178,7 +268,19 @@ class TestPresAttrSpec(TestCase):
                 value="dmFsdWU=",
                 mime_type=None
             ),
-            PresAttrSpec(name="name")
+            PresAttrSpec(name="name"),
+            PresAttrSpec(
+                name="name",
+                value="value",
+                cred_def_id="cred_def_id",
+                referent="reft-0"
+            ),
+            PresAttrSpec(
+                name="name",
+                value="value",
+                cred_def_id="cred_def_id",
+                referent="reft-1"
+            )
         ]
 
         for lhs in attr_specs_none_plain:
@@ -197,8 +299,19 @@ class TestPresAttrSpec(TestCase):
         """Test deserialization."""
         dump = json.dumps({
             "name": "PLAYER",
-            "cred_def_id": CD_ID,
+            "cred_def_id": CD_ID["score"],
             "value": "Richie Knucklez"
+        })
+
+        attr_spec = PresAttrSpec.deserialize(dump)
+        assert type(attr_spec) == PresAttrSpec
+        assert attr_spec.name == "player"
+
+        dump = json.dumps({
+            "name": "PLAYER",
+            "cred_def_id": CD_ID["score"],
+            "value": "Richie Knucklez",
+            "referent": "0"
         })
 
         attr_spec = PresAttrSpec.deserialize(dump)
@@ -211,9 +324,59 @@ class TestPresAttrSpec(TestCase):
         attr_spec_dict = PRES_PREVIEW.attributes[0].serialize()
         assert attr_spec_dict == {
             "name": "player",
-            "cred_def_id": CD_ID,
+            "cred_def_id": CD_ID["score"],
             "value": "Richie Knucklez"
         }
+
+        attr_spec_dict = PRES_PREVIEW_ATTR_NAMES.attributes[0].serialize()
+        assert attr_spec_dict == {
+            "name": "player",
+            "cred_def_id": CD_ID["score"],
+            "value": "Richie Knucklez",
+            "referent": "reft-0"
+        }
+
+
+class TestPredicate(TestCase):
+    """Predicate tests for coverage"""
+
+    def test_get(self):
+        """Get predicate."""
+        assert Predicate.get("LT") == Predicate.get("$lt") == Predicate.get("<")
+        assert Predicate.get("LE") == Predicate.get("$lte") == Predicate.get("<=")
+        assert Predicate.get("GE") == Predicate.get("$gte") == Predicate.get(">=")
+        assert Predicate.get("GT") == Predicate.get("$gt") == Predicate.get(">")
+        assert Predicate.get("!=") is None
+
+    def test_cmp(self):
+        """Test comparison via predicates"""
+        assert Predicate.get("LT").value.yes(0, 1)
+        assert Predicate.get("LT").value.yes("0", "1")
+        assert Predicate.get("LT").value.no(0, 0)
+        assert Predicate.get("LT").value.no(1, 0)
+        assert Predicate.get("LT").value.no("1", "0")
+        assert Predicate.get("LT").value.no("0", "0")
+
+        assert Predicate.get("LE").value.yes(0, 1)
+        assert Predicate.get("LE").value.yes("0", "1")
+        assert Predicate.get("LE").value.yes(0, 0)
+        assert Predicate.get("LE").value.no(1, 0)
+        assert Predicate.get("LE").value.no("1", "0")
+        assert Predicate.get("LE").value.yes("0", "0")
+
+        assert Predicate.get("GE").value.no(0, 1)
+        assert Predicate.get("GE").value.no("0", "1")
+        assert Predicate.get("GE").value.yes(0, 0)
+        assert Predicate.get("GE").value.yes(1, 0)
+        assert Predicate.get("GE").value.yes("1", "0")
+        assert Predicate.get("GE").value.yes("0", "0")
+
+        assert Predicate.get("GT").value.no(0, 1)
+        assert Predicate.get("GT").value.no("0", "1")
+        assert Predicate.get("GT").value.no(0, 0)
+        assert Predicate.get("GT").value.yes(1, 0)
+        assert Predicate.get("GT").value.yes("1", "0")
+        assert Predicate.get("GT").value.no("0", "0")
 
 
 class TestPresPredSpec(TestCase):
@@ -223,7 +386,7 @@ class TestPresPredSpec(TestCase):
         """Test deserialization."""
         dump = json.dumps({
             "name": "HIGH SCORE",
-            "cred_def_id": CD_ID,
+            "cred_def_id": CD_ID["score"],
             "predicate": ">=",
             "threshold": 1000000
         })
@@ -238,10 +401,39 @@ class TestPresPredSpec(TestCase):
         pred_spec_dict = PRES_PREVIEW.predicates[0].serialize()
         assert pred_spec_dict == {
             "name": "highscore",
-            "cred_def_id": CD_ID,
+            "cred_def_id": CD_ID["score"],
             "predicate": ">=",
             "threshold": 1000000
         }
+
+    def test_eq(self):
+        """Test equality operator."""
+
+        pred_spec_a = PresPredSpec(
+            name="a",
+            cred_def_id=CD_ID["score"],
+            predicate=Predicate.GE.value.math,
+            threshold=0,
+        )
+        pred_spec_b = PresPredSpec(
+            name="b",
+            cred_def_id=CD_ID["score"],
+            predicate=Predicate.GE.value.math,
+            threshold=0,
+        )
+
+        assert pred_spec_a != pred_spec_b
+
+        pred_spec_a.name = "b"
+        assert pred_spec_a == pred_spec_b
+
+        pred_spec_a.predicate = Predicate.LE.value.math
+        assert pred_spec_a != pred_spec_b
+        pred_spec_a.predicate = Predicate.GE.value.math
+
+        assert pred_spec_a == pred_spec_b
+        pred_spec_a.threshold = 100
+        assert pred_spec_a != pred_spec_b
 
 
 @pytest.mark.indy
@@ -266,6 +458,22 @@ class TestPresentationPreviewAsync(AsyncTestCase):
 
         assert indy_proof_req == CANON_INDY_PROOF_REQ
 
+    @pytest.mark.asyncio
+    async def test_to_indy_proof_request_attr_names(self):
+        """Test presentation preview to indy proof request."""
+
+        CANON_INDY_PROOF_REQ_ATTR_NAMES = deepcopy(INDY_PROOF_REQ_ATTR_NAMES)
+        for spec in CANON_INDY_PROOF_REQ_ATTR_NAMES["requested_attributes"].values():
+            spec["names"] = [canon(name) for name in spec["names"]]
+
+        pres_preview = deepcopy(PRES_PREVIEW_ATTR_NAMES)
+
+        indy_proof_req = await pres_preview.indy_proof_request(
+            **{k: INDY_PROOF_REQ_ATTR_NAMES[k] for k in ("name", "version", "nonce")}
+        )
+
+        assert indy_proof_req == CANON_INDY_PROOF_REQ_ATTR_NAMES
+
     async def test_to_indy_proof_request_self_attested(self):
         """Test presentation preview to inty proof request with self-attested values."""
 
@@ -288,20 +496,20 @@ class TestPresentationPreviewAsync(AsyncTestCase):
 
         pred_spec = PresPredSpec(
             name="highScore",
-            cred_def_id=CD_ID,
+            cred_def_id=CD_ID["score"],
             predicate=Predicate.GE.value.math,
             threshold=1000000
         )
         attr_spec = PresAttrSpec(
             name="HIGHSCORE",
-            cred_def_id=CD_ID,
+            cred_def_id=CD_ID["score"],
             value=1234567
         )
         assert attr_spec.satisfies(pred_spec)
 
         attr_spec = PresAttrSpec(
             name="HIGHSCORE",
-            cred_def_id=CD_ID,
+            cred_def_id=CD_ID["score"],
             value=985260
         )
         assert not attr_spec.satisfies(pred_spec)
@@ -327,12 +535,12 @@ class TestPresentationPreview(TestCase):
             "attributes": [
                 {
                     "name": "player",
-                    "cred_def_id": CD_ID,
+                    "cred_def_id": CD_ID["score"],
                     "value": "Richie Knucklez"
                 },
                 {
                     "name": "screencapture",
-                    "cred_def_id": CD_ID,
+                    "cred_def_id": CD_ID["score"],
                     "mime-type": "image/png",
                     "value": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl"
                 }
@@ -340,7 +548,7 @@ class TestPresentationPreview(TestCase):
             "predicates": [
                 {
                     "name": "highscore",
-                    "cred_def_id": CD_ID,
+                    "cred_def_id": CD_ID["score"],
                     "predicate": ">=",
                     "threshold": 1000000
                 }
@@ -359,12 +567,12 @@ class TestPresentationPreview(TestCase):
             "attributes": [
                 {
                     "name": "player",
-                    "cred_def_id": CD_ID,
+                    "cred_def_id": CD_ID["score"],
                     "value": "Richie Knucklez"
                 },
                 {
                     "name": "screencapture",
-                    "cred_def_id": CD_ID,
+                    "cred_def_id": CD_ID["score"],
                     "mime-type": "image/png",
                     "value": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl"
                 }
@@ -372,9 +580,16 @@ class TestPresentationPreview(TestCase):
             "predicates": [
                 {
                     "name": "highscore",
-                    "cred_def_id": CD_ID,
+                    "cred_def_id": CD_ID["score"],
                     "predicate": ">=",
                     "threshold": 1000000
                 }
             ]
         }
+
+    def test_eq(self):
+        pres_preview_a = PresentationPreview.deserialize(PRES_PREVIEW.serialize())
+        assert pres_preview_a == PRES_PREVIEW
+
+        pres_preview_a.predicates = []
+        assert pres_preview_a != PRES_PREVIEW

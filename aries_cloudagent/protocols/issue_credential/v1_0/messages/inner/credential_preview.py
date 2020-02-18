@@ -84,6 +84,7 @@ class CredAttrSpecSchema(BaseModelSchema):
         required=False,
         data_key="mime-type",
         example="image/jpeg",
+        allow_none=True,
     )
     value = fields.Str(
         description="Attribute value: base64-encode if MIME type is present",

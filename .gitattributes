@@ -8,3 +8,4 @@
 *.conf text eol=lf
 **/bin/* text eol=lf
 scripts/* text eol=lf
+demo/run_demo text eol=lf

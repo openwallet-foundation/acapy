@@ -8,7 +8,7 @@ CREDENTIAL_PROPOSAL = f"{PROTOCOL_URI}/propose-credential"
 CREDENTIAL_OFFER = f"{PROTOCOL_URI}/offer-credential"
 CREDENTIAL_REQUEST = f"{PROTOCOL_URI}/request-credential"
 CREDENTIAL_ISSUE = f"{PROTOCOL_URI}/issue-credential"
-CREDENTIAL_STORED = f"{PROTOCOL_URI}/credential-stored"
+CREDENTIAL_ACK = f"{PROTOCOL_URI}/ack"
 
 NEW_PROTOCOL_URI = "https://didcomm.org/issue-credential/1.0"
 
@@ -18,7 +18,7 @@ NEW_CREDENTIAL_PROPOSAL = f"{NEW_PROTOCOL_URI}/propose-credential"
 NEW_CREDENTIAL_OFFER = f"{NEW_PROTOCOL_URI}/offer-credential"
 NEW_CREDENTIAL_REQUEST = f"{NEW_PROTOCOL_URI}/request-credential"
 NEW_CREDENTIAL_ISSUE = f"{NEW_PROTOCOL_URI}/issue-credential"
-NEW_CREDENTIAL_STORED = f"{NEW_PROTOCOL_URI}/credential-stored"
+NEW_CREDENTIAL_ACK = f"{NEW_PROTOCOL_URI}/ack"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v1_0"
 
@@ -31,9 +31,7 @@ MESSAGE_TYPES = {
         f"{PROTOCOL_PACKAGE}.messages.credential_request.CredentialRequest"
     ),
     CREDENTIAL_ISSUE: f"{PROTOCOL_PACKAGE}.messages.credential_issue.CredentialIssue",
-    CREDENTIAL_STORED: (
-        f"{PROTOCOL_PACKAGE}.messages.credential_stored.CredentialStored"
-    ),
+    CREDENTIAL_ACK: f"{PROTOCOL_PACKAGE}.messages.credential_ack.CredentialAck",
     NEW_CREDENTIAL_PROPOSAL: (
         f"{PROTOCOL_PACKAGE}.messages.credential_proposal.CredentialProposal"
     ),
@@ -46,9 +44,7 @@ MESSAGE_TYPES = {
     NEW_CREDENTIAL_ISSUE: (
         f"{PROTOCOL_PACKAGE}.messages.credential_issue.CredentialIssue"
     ),
-    NEW_CREDENTIAL_STORED: (
-        f"{PROTOCOL_PACKAGE}.messages.credential_stored.CredentialStored"
-    ),
+    NEW_CREDENTIAL_ACK: f"{PROTOCOL_PACKAGE}.messages.credential_ack.CredentialAck",
 }
 
 # Inner object types

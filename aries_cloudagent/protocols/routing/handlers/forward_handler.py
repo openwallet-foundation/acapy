@@ -1,5 +1,7 @@
 """Handler for incoming forward messages."""
 
+import json
+
 from ....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -19,13 +21,14 @@ class ForwardHandler(BaseHandler):
         self._logger.debug("ForwardHandler called with context %s", context)
         assert isinstance(context.message, Forward)
 
-        if not context.message_delivery.recipient_verkey:
+        if not context.message_receipt.recipient_verkey:
             raise HandlerException("Cannot forward message: unknown recipient")
         self._logger.info(
-            "Received forward for: %s", context.message_delivery.recipient_verkey
+            "Received forward for: %s", context.message_receipt.recipient_verkey
         )
 
-        packed = context.message.msg.encode("ascii")
+        packed = context.message.msg
+        packed = json.dumps(packed).encode("ascii")
         rt_mgr = RoutingManager(context)
         target = context.message.to
 

@@ -5,7 +5,7 @@ import logging
 from uuid import uuid4
 
 from ...config.injection_context import InjectionContext
-from ...error import BaseError
+from ...core.error import BaseError
 from ...holder.base import BaseHolder
 from ...ledger.base import BaseLedger
 from ...verifier.base import BaseVerifier

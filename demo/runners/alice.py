@@ -31,10 +31,10 @@ class AliceAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Alice",
-            extra_args=[
+            extra_args=[] if os.getenv("NO_AUTO") else [
                 "--auto-accept-invites",
                 "--auto-accept-requests",
-                "--auto-store-credential",
+                "--auto-store-credential"
             ],
             seed=None,
             **kwargs,
@@ -77,9 +77,8 @@ class AliceAgent(DemoAgent):
                 "/issue-credential/records/" f"{credential_exchange_id}/send-request"
             )
 
-        elif state == "stored":
-            # elif state == "credential_received": ??
-            self.log("Storing credential in wallet")
+        elif state == "credential_acked":
+            self.log("Stored credential {cred_id} in wallet")
             cred_id = message["credential_id"]
             log_status(f"#18.1 Stored credential {cred_id} in wallet")
             resp = await self.admin_GET(f"/credential/{cred_id}")
@@ -181,6 +180,9 @@ async def input_invitation(agent):
 
         if b64_invite:
             try:
+                padlen = 4 - len(b64_invite) % 4
+                if padlen <= 2:
+                    b64_invite += "=" * padlen
                 invite_json = base64.urlsafe_b64decode(b64_invite)
                 details = invite_json.decode("utf-8")
             except binascii.Error:

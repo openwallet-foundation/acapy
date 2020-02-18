@@ -1,5 +1,7 @@
 """Aries#0037 v1.0 presentation exchange information with non-secrets storage."""
 
+from typing import Any
+
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
@@ -33,6 +35,7 @@ class V10PresentationExchange(BaseRecord):
     STATE_PRESENTATION_SENT = "presentation_sent"
     STATE_PRESENTATION_RECEIVED = "presentation_received"
     STATE_VERIFIED = "verified"
+    STATE_PRESENTATION_ACKED = "presentation_acked"
 
     def __init__(
         self,
@@ -88,6 +91,10 @@ class V10PresentationExchange(BaseRecord):
                 "verified",
             )
         }
+
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
 
 
 class V10PresentationExchangeSchema(BaseRecordSchema):

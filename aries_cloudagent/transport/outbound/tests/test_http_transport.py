@@ -3,8 +3,9 @@ import asyncio
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from aiohttp import web
 
-from ....messaging.outbound_message import OutboundMessage
-from ....stats import Collector
+from ....utils.stats import Collector
+
+from ...outbound.message import OutboundMessage
 
 from ..http import HttpTransport
 
@@ -30,27 +31,27 @@ class TestHttpTransport(AioHTTPTestCase):
     async def test_handle_message(self):
         server_addr = f"http://localhost:{self.server.port}"
 
-        async def send_message(transport, message):
+        async def send_message(transport, payload, endpoint):
             async with transport:
-                await transport.handle_message(message)
+                await transport.handle_message(payload, endpoint)
 
         transport = HttpTransport()
-        message = OutboundMessage("{}", endpoint=server_addr)
-        await asyncio.wait_for(send_message(transport, message), 5.0)
+        await asyncio.wait_for(send_message(transport, "{}", endpoint=server_addr), 5.0)
         assert self.message_results == [{}]
 
     @unittest_run_loop
     async def test_stats(self):
         server_addr = f"http://localhost:{self.server.port}"
 
-        async def send_message(transport, message):
+        async def send_message(transport, payload, endpoint):
             async with transport:
-                await transport.handle_message(message)
+                await transport.handle_message(payload, endpoint)
 
         transport = HttpTransport()
         transport.collector = Collector()
-        message = OutboundMessage(b"{}", endpoint=server_addr)
-        await asyncio.wait_for(send_message(transport, message), 5.0)
+        await asyncio.wait_for(
+            send_message(transport, b"{}", endpoint=server_addr), 5.0
+        )
 
         results = transport.collector.extract()
         assert results["count"] == {

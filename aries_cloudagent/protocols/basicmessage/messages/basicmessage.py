@@ -42,12 +42,13 @@ class BasicMessage(AgentMessage):
             localization: localization
 
         """
-        super(BasicMessage, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if not sent_time:
             sent_time = datetime_now()
+        if localization:
+            self._decorators["l10n"] = localization
         self.sent_time = datetime_to_str(sent_time)
         self.content = content
-        self.localization = localization
 
 
 class BasicMessageSchema(AgentMessageSchema):
@@ -58,9 +59,6 @@ class BasicMessageSchema(AgentMessageSchema):
 
         model_class = BasicMessage
 
-    localization = fields.Str(
-        required=False, description="Localization", example="en-CA", data_key="l10n",
-    )
     sent_time = fields.Str(
         required=False,
         description="Time message was sent, ISO8601 with space date/time separator",

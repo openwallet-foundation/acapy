@@ -25,12 +25,21 @@ if __name__ == "__main__":
         version=VERSION,
         long_description=long_description,
         long_description_content_type="text/markdown",
+        url="https://github.com/hyperledger/aries-cloudagent-python",
         packages=find_packages(),
         include_package_data=True,
         package_data={"aries_cloudagent": ["requirements.txt"]},
         install_requires=parse_requirements("requirements.txt"),
         tests_require=parse_requirements("requirements.dev.txt"),
-        extras_require={"indy": parse_requirements("requirements.indy.txt")},
+        extras_require={
+            "indy": parse_requirements("requirements.indy.txt"),
+            "uvloop": {"uvloop": "^=0.14.0"},
+        },
         python_requires=">=3.6.3",
+        classifiers=[
+            "Programming Language :: Python :: 3",
+            "License :: OSI Approved :: Apache Software License",
+            "Operating System :: OS Independent",
+        ],
         scripts=["bin/aca-py"],
     )

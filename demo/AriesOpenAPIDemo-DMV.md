@@ -54,19 +54,19 @@ In one of the terminal windows, follow the [Running the Network Locally](https:/
 To start the DMV agent, open up a second terminal window and in it change directory to the root of your clone of this repo and execute the following command:
 
 ```bash
-PORTS="5000:5000 10000:10000" ./scripts/run_docker -it http 0.0.0.0 10000 -ot http --admin 0.0.0.0 5000 -e http://`docker run --net=host codenvy/che-ip`:10000 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000000 --admin-insecure-mode --auto-ping-connection --auto-accept-invites --auto-accept-requests --auto-respond-credential-request --auto-verify-presentation --wallet-type indy --label "DMV Agent"
+PORTS="5000:5000 10000:10000" ./scripts/run_docker start -it http 0.0.0.0 10000 -ot http --admin 0.0.0.0 5000 -e http://`docker run --net=host eclipse/che-ip`:10000 --genesis-url http://`docker run --net=host eclipse/che-ip`:9000/genesis --seed 00000000000000000000000000000000 --admin-insecure-mode --auto-ping-connection --auto-accept-invites --auto-accept-requests --auto-respond-credential-request --auto-verify-presentation --wallet-type indy --label "DMV Agent"
 ```
 
 If all goes well, the agent will show a message indicating it is running. Use the second of the browser tabs to navigate to [http://localhost:5000](http://localhost:5000). You should see an OpenAPI user interface with a (long-ish) list of API endpoints. These are the endpoints exposed by the DMV Agent.
 
-The `run_docker` script provides a lot of options for configuring your agent. We’ll cover the meaning of some of those options as we go. One thing you may find odd right off is this - `docker run --net=host codenvy/che-ip`. It is an inline command that invokes docker to run a container that returns the IP of the Docker Host. It’s the most portable way we know to get that information for docker running on MacOS, Windows or Linux.
+The `run_docker` script provides a lot of options for configuring your agent. We’ll cover the meaning of some of those options as we go. One thing you may find odd right off is this - `docker run --net=host eclipse/che-ip`. It is an inline command that invokes docker to run a container that returns the IP of the Docker Host. It’s the most portable way we know to get that information for docker running on MacOS, Windows or Linux.
 
 ### Running Alice’s Agent
 
 To start Alice’s agent, open up a third terminal window and in it change directory to the root of your clone of this repo and execute the following command:
 
 ``` bash
-PORTS="5001:5001 10001:10001" ./scripts/run_docker -it http 0.0.0.0 10001 -ot http --admin 0.0.0.0 5001 -e http://`docker run --net=host codenvy/che-ip`:10001 --genesis-url http://`docker run --net=host codenvy/che-ip`:9000/genesis --seed 00000000000000000000000000000001 --admin-insecure-mode --auto-ping-connection --auto-accept-invites --auto-accept-requests --auto-respond-credential-offer --auto-respond-presentation-request --auto-store-credential --wallet-type indy --label "Alice Agent"
+PORTS="5001:5001 10001:10001" ./scripts/run_docker start -it http 0.0.0.0 10001 -ot http --admin 0.0.0.0 5001 -e http://`docker run --net=host eclipse/che-ip`:10001 --genesis-url http://`docker run --net=host eclipse/che-ip`:9000/genesis --seed 00000000000000000000000000000001 --admin-insecure-mode --auto-ping-connection --auto-accept-invites --auto-accept-requests --auto-respond-credential-offer --auto-respond-presentation-request --auto-store-credential --wallet-type indy --label "Alice Agent"
 ```
 
 If all goes well, the agent will show a message indicating it is running. Use the third tab to navigate to [http://localhost:5001](http://localhost:5001). Again, you should see an OpenAPI user interface with a list of API endpoints, this time the endpoints for Alice’s agent.
@@ -182,7 +182,7 @@ Issuing a credential from the DMV agent to Alice’s agent is easy. In the DMV b
 
 First, scroll back up to the **`GET /connections`** API endpoint and execute it. From the result, find the the `connection_id` and copy the value. Go back to the **`POST /issue-credential/send`** section and paste it as the value for the `connection_id`.
 
-Next, scroll down to the **`POST /credential-definitions`** section that you executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the **`POST /issue-credential/send`** section and paste it as the value for the `credential_defintion_id`.
+Next, scroll down to the **`POST /credential-definitions`** section that you executed in the previous step. Expand it (if necessary) and find and copy the value of the `credential_definition_id`. You could also get it from the Indy Ledger browser tab, or from earlier in this tutorial. Go back to the **`POST /issue-credential/send`** section and paste it as the value for the `cred_def_id`.
 
 Finally, for the credential values, put the following between the `attributes` square brackets:
 
@@ -199,7 +199,7 @@ Finally, for the credential values, put the following between the `attributes` s
 
 Ok, finally, you are ready to click `Execute`. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?
 
-To confirm the issuance worked, scroll up to the top of the `v1.0 issue-credential exchange` section and execute the **`GET /issue-credential/records`** endpoint. You should see a lot of information about the exchange, including the state - `stored`.
+To confirm the issuance worked, scroll up to the top of the `v1.0 issue-credential exchange` section and execute the **`GET /issue-credential/records`** endpoint. You should see a lot of information about the exchange, including the state - `credential_acked`.
 
 Let’s look at it from Alice’s side. Switch to the Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the DMV agent.
 

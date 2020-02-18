@@ -1,9 +1,8 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ...messaging.protocol_registry import ProtocolRegistry
-from ...messaging.serializer import MessageSerializer
+from ...core.protocol_registry import ProtocolRegistry
 from ...storage.base import BaseStorage
-from ...transport.outbound.queue.base import BaseOutboundMessageQueue
+from ...transport.wire_format import BaseWireFormat
 from ...wallet.base import BaseWallet
 
 from ..default_context import DefaultContextBuilder
@@ -19,8 +18,7 @@ class TestDefaultContext(AsyncTestCase):
         assert isinstance(result, InjectionContext)
 
         for cls in (
-            BaseOutboundMessageQueue,
-            MessageSerializer,
+            BaseWireFormat,
             ProtocolRegistry,
             BaseWallet,
             BaseStorage,

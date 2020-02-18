@@ -7,6 +7,7 @@ from argparse import ArgumentParser, Namespace
 from typing import Type
 
 from .error import ArgsParseError
+from .util import ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
@@ -285,7 +286,7 @@ class DebugGroup(ArgumentGroup):
             "--auto-respond-presentation-request",
             action="store_true",
             help="Automatically respond to Indy presentation requests with a\
-            constructed presentation if exactly one credential can be retrieved\
+            constructed presentation if a corresponding credential can be retrieved\
             for every referent in the presentation request. Default: false.",
         )
         parser.add_argument(
@@ -359,6 +360,16 @@ class GeneralGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add general command line arguments to the parser."""
         parser.add_argument(
+            "--plugin",
+            dest="external_plugins",
+            type=str,
+            action="append",
+            required=False,
+            metavar="<module>",
+            help="Load <module> as external plugin module. Multiple\
+            instances of this parameter can be specified.",
+        )
+        parser.add_argument(
             "--storage-type",
             type=str,
             metavar="<storage-type>",
@@ -366,12 +377,41 @@ class GeneralGroup(ArgumentGroup):
             storage engine. This storage interface is used to store internal state.\
             Supported internal storage types are 'basic' (memory) and 'indy'.",
         )
+        parser.add_argument(
+            "-e",
+            "--endpoint",
+            type=str,
+            nargs="+",
+            metavar="<endpoint>",
+            help="Specifies the endpoints to put into DIDDocs\
+            to inform other agents of where they should send messages destined\
+            for this agent. Each endpoint could be one of the specified inbound\
+            transports for this agent, or the endpoint could be that of\
+            another agent (e.g. 'https://example.com/agent-endpoint') if the\
+            routing of messages to this agent by a mediator is configured.\
+            The first endpoint specified will be used in invitations.\
+            The endpoints are used in the formation of a connection\
+            with another agent.",
+        )
+        parser.add_argument(
+            "--read-only-ledger",
+            action="store_true",
+            help="Sets ledger to read-only to prevent updates.\
+            Default: false.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
         settings = {}
+        if args.external_plugins:
+            settings["external_plugins"] = args.external_plugins
         if args.storage_type:
             settings["storage.type"] = args.storage_type
+        if args.endpoint:
+            settings["default_endpoint"] = args.endpoint[0]
+            settings["additional_endpoints"] = args.endpoint[1:]
+        if args.read_only_ledger:
+            settings["read_only_ledger"] = True
         return settings
 
 
@@ -487,16 +527,6 @@ class ProtocolGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add protocol-specific command line arguments to the parser."""
         parser.add_argument(
-            "--protocol",
-            dest="external_protocols",
-            type=str,
-            action="append",
-            required=False,
-            metavar="<module>",
-            help="Load <module> as external protocol module. Multiple\
-            instances of this parameter can be specified.",
-        )
-        parser.add_argument(
             "--auto-ping-connection",
             action="store_true",
             help="Automatically send a trust ping immediately after a\
@@ -510,6 +540,11 @@ class ProtocolGroup(ArgumentGroup):
             help="Base URL to use when formatting connection invitations in URL format."
         )
         parser.add_argument(
+            "--monitor-ping",
+            action="store_true",
+            help="Send a webhook when a ping is sent or received.",
+        )
+        parser.add_argument(
             "--public-invites",
             action="store_true",
             help="Send invitations out, and receive connection requests,\
@@ -520,44 +555,28 @@ class ProtocolGroup(ArgumentGroup):
             action="store_true",
             help="Include timing information in response messages.",
         )
+        parser.add_argument(
+            "--timing-log",
+            type=str,
+            metavar="<log-path>",
+            help="Write timing information to a given log file.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
         settings = {}
-        if args.external_protocols:
-            settings["external_protocols"] = args.external_protocols
         if args.auto_ping_connection:
             settings["auto_ping_connection"] = True
         if args.invite_base_url:
             settings["invite_base_url"] = args.invite_base_url
+        if args.monitor_ping:
+            settings["debug.monitor_ping"] = args.monitor_ping
         if args.public_invites:
             settings["public_invites"] = True
         if args.timing:
             settings["timing.enabled"] = True
-        return settings
-
-
-@group(CAT_START)
-class QueueGroup(ArgumentGroup):
-    """Queue settings."""
-
-    GROUP_NAME = "Queue"
-
-    def add_arguments(self, parser: ArgumentParser):
-        """Add queue-specific command line arguments to the parser."""
-        parser.add_argument(
-            "--enable-undelivered-queue",
-            action="store_true",
-            help="Enable the outbound undelivered queue that enables this agent to hold messages\
-            for delivery to agents without an endpoint. This option will require\
-            additional memory to store messages in the queue.",
-        )
-
-    def get_settings(self, args: Namespace):
-        """Extract queue settings."""
-        settings = {}
-        settings["queue.enable_undelivered_queue"] = args.enable_undelivered_queue
-
+        if args.timing_log:
+            settings["timing.log_file"] = args.timing_log
         return settings
 
 
@@ -581,9 +600,10 @@ class TransportGroup(ArgumentGroup):
             help="REQUIRED. Defines the inbound transport(s) on which the agent\
             listens for receiving messages from other agents. This parameter can\
             be specified multiple times to create multiple interfaces.\
-            Supported inbound transport types are 'http' and 'ws'.",
+            Built-in inbound transport types include 'http' and 'ws'.\
+            However, other transports can be loaded by specifying an absolute\
+            module path.",
         )
-
         parser.add_argument(
             "-ot",
             "--outbound-transport",
@@ -597,21 +617,6 @@ class TransportGroup(ArgumentGroup):
             multiple times to supoort multiple transport types. Supported outbound\
             transport types are 'http' and 'ws'.",
         )
-
-        parser.add_argument(
-            "-e",
-            "--endpoint",
-            type=str,
-            metavar="<endpoint>",
-            help="Specifies the endpoint to put into invitations and DIDDocs\
-            to inform other agents of where they should send messages destined\
-            for this agent. The endpoint could be one of the specified inbound\
-            transports for this agent, or the endpoint could be that of\
-            another agent (e.g. 'https://example.com/agent-endpoint') if the\
-            routing of messages to this agent by a mediator is configured.\
-            The endpoint is used in the formation of a connection with another agent.",
-        )
-
         parser.add_argument(
             "-l",
             "--label",
@@ -620,17 +625,33 @@ class TransportGroup(ArgumentGroup):
             help="Specifies the label for this agent. This label is publicized\
             (self-attested) to other agents as part of forming a connection.",
         )
+        parser.add_argument(
+            "--max-message-size",
+            default=2097152,
+            type=ByteSize(min_size=1024),
+            metavar="<message-size>",
+            help="Set the maximum size in bytes for inbound agent messages.",
+        )
+        parser.add_argument(
+            "--enable-undelivered-queue",
+            action="store_true",
+            help="Enable the outbound undelivered queue that enables this agent\
+            to hold messages for delivery to agents without an endpoint. This\
+            option will require additional memory to store messages in the queue.",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract transport settings."""
         settings = {}
         settings["transport.inbound_configs"] = args.inbound_transports
         settings["transport.outbound_configs"] = args.outbound_transports
+        settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
-        if args.endpoint:
-            settings["default_endpoint"] = args.endpoint
         if args.label:
             settings["default_label"] = args.label
+        if args.max_message_size:
+            settings["transport.max_message_size"] = args.max_message_size
+
         return settings
 
 

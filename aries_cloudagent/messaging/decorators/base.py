@@ -6,7 +6,7 @@ from typing import Mapping, Sequence, Type
 from marshmallow import Schema
 from marshmallow.fields import Field
 
-from ...error import BaseError
+from ...core.error import BaseError
 
 from ..models.base import BaseModel
 

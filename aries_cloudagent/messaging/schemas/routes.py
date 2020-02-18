@@ -10,10 +10,7 @@ from marshmallow import fields, Schema
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ..valid import INDY_SCHEMA_ID, INDY_VERSION
-from .util import SCHEMA_SENT_RECORD_TYPE
-
-
-SCHEMA_SENT_PARMS = ["schema_id", "schema_issuer_did", "schema_name", "schema_version"]
+from .util import SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 
 
 class SchemaSendRequestSchema(Schema):
@@ -74,6 +71,7 @@ class SchemaSchema(Schema):
             example="score",
         ),
         description="Schema attribute names",
+        data_key="attrNames",
     )
     seqNo = fields.Integer(
         description="Schema sequence number",
@@ -137,7 +135,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             "in": "query",
             "schema": {"type": "string"},
             "required": False,
-        } for p in SCHEMA_SENT_PARMS
+        } for p in SCHEMA_TAGS
     ],
     summary="Search for matching schema that agent originated",
 )
@@ -159,7 +157,7 @@ async def schemas_created(request: web.BaseRequest):
     found = await storage.search_records(
         type_filter=SCHEMA_SENT_RECORD_TYPE,
         tag_query={
-            p: request.query[p] for p in SCHEMA_SENT_PARMS if p in request.query
+            p: request.query[p] for p in SCHEMA_TAGS if p in request.query
         }
     ).fetch_all()
 

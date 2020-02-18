@@ -47,9 +47,7 @@ class PresentationProposal(AgentMessage):
         """
         super().__init__(_id, **kwargs)
         self.comment = comment
-        self.presentation_proposal = (
-            presentation_proposal if presentation_proposal else PresentationPreview()
-        )
+        self.presentation_proposal = presentation_proposal
 
 
 class PresentationProposalSchema(AgentMessageSchema):

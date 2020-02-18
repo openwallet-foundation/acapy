@@ -1,5 +1,7 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
+from typing import Any
+
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
@@ -32,9 +34,9 @@ class V10CredentialExchange(BaseRecord):
     STATE_OFFER_RECEIVED = "offer_received"
     STATE_REQUEST_SENT = "request_sent"
     STATE_REQUEST_RECEIVED = "request_received"
-    STATE_ISSUED = "issued"
+    STATE_ISSUED = "credential_issued"
     STATE_CREDENTIAL_RECEIVED = "credential_received"
-    STATE_STORED = "stored"
+    STATE_ACKED = "credential_acked"
 
     def __init__(
         self,
@@ -129,6 +131,10 @@ class V10CredentialExchange(BaseRecord):
             await cls.set_cached_key(context, cache_key, record.credential_exchange_id)
         return record
 
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
+
 
 class V10CredentialExchangeSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of credential exchange records."""
@@ -167,7 +173,7 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
     state = fields.Str(
         required=False,
         description="Issue-credential exchange state",
-        example=V10CredentialExchange.STATE_STORED,
+        example=V10CredentialExchange.STATE_ACKED,
     )
     credential_definition_id = fields.Str(
         required=False,

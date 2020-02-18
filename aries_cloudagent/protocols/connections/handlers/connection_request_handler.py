@@ -24,16 +24,16 @@ class ConnectionRequestHandler(BaseHandler):
 
         mgr = ConnectionManager(context)
         try:
-            await mgr.receive_request(context.message, context.message_delivery)
+            await mgr.receive_request(context.message, context.message_receipt)
         except ConnectionManagerError as e:
             self._logger.exception("Error receiving connection request")
             if e.error_code:
-                target = None
+                targets = None
                 if context.message.connection and context.message.connection.did_doc:
                     try:
-                        target = mgr.diddoc_connection_target(
+                        targets = mgr.diddoc_connection_targets(
                             context.message.connection.did_doc,
-                            context.message_delivery.recipient_verkey,
+                            context.message_receipt.recipient_verkey,
                         )
                     except ConnectionManagerError:
                         self._logger.exception(
@@ -41,5 +41,5 @@ class ConnectionRequestHandler(BaseHandler):
                         )
                 await responder.send_reply(
                     ProblemReport(problem_code=e.error_code, explain=str(e)),
-                    target=target,
+                    target_list=targets,
                 )

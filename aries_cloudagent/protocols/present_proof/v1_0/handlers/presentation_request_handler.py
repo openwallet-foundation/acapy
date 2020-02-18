@@ -1,5 +1,4 @@
-"""Aries#0037 v1.0 Presentation request handler."""
-
+"""Presentation request message handler."""
 
 from .....messaging.base_handler import (
     BaseHandler,
@@ -11,9 +10,10 @@ from .....holder.base import BaseHolder
 from .....storage.error import StorageNotFoundError
 
 from ..manager import PresentationManager
+from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
 from ..models.presentation_exchange import V10PresentationExchange
-from ..util.indy import indy_proof_request2indy_requested_creds
+from ..util.indy import indy_proof_req_preview2indy_requested_creds
 
 
 class PresentationRequestHandler(BaseHandler):
@@ -26,14 +26,13 @@ class PresentationRequestHandler(BaseHandler):
         Args:
             context: request context
             responder: responder callback
+
         """
-        self._logger.debug(f"PresentationRequestHandler called with context {context}")
-
+        self._logger.debug("PresentationRequestHandler called with context %s", context)
         assert isinstance(context.message, PresentationRequest)
-
         self._logger.info(
-            "Received presentation request: %s",
-            context.message.serialize(as_string=True),
+            "Received presentation request message: %s",
+            context.message.serialize(as_string=True)
         )
 
         if not context.connection_ready:
@@ -43,7 +42,7 @@ class PresentationRequestHandler(BaseHandler):
 
         indy_proof_request = context.message.indy_proof_request(0)
 
-        # Get credential exchange record (holder initiated via proposal)
+        # Get presentation exchange record (holder initiated via proposal)
         # or create it (verifier sent request first)
         try:
             (
@@ -58,6 +57,7 @@ class PresentationRequestHandler(BaseHandler):
                 connection_id=context.connection_record.connection_id,
                 thread_id=context.message._thread_id,
                 initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
+                role=V10PresentationExchange.ROLE_PROVER,
                 presentation_request=indy_proof_request,
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
@@ -71,9 +71,18 @@ class PresentationRequestHandler(BaseHandler):
 
         # If auto_present is enabled, respond immediately with presentation
         if presentation_exchange_record.auto_present:
+            presentation_preview = None
+            if presentation_exchange_record.presentation_proposal_dict:
+                exchange_pres_proposal = PresentationProposal.deserialize(
+                    presentation_exchange_record.presentation_proposal_dict
+                )
+                presentation_preview = exchange_pres_proposal.presentation_proposal
+
             try:
-                req_creds = await indy_proof_request2indy_requested_creds(
-                    indy_proof_request, await context.inject(BaseHolder)
+                req_creds = await indy_proof_req_preview2indy_requested_creds(
+                    indy_proof_request,
+                    presentation_preview,
+                    holder=await context.inject(BaseHolder)
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")

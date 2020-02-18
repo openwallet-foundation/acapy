@@ -4,7 +4,7 @@ import json
 from typing import Sequence
 
 from ...config.injection_context import InjectionContext
-from ...error import BaseError
+from ...core.error import BaseError
 from ...messaging.util import time_now
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError, StorageDuplicateError, StorageNotFoundError
@@ -64,7 +64,7 @@ class RoutingManager:
         storage: BaseStorage = await self._context.inject(BaseStorage)
         try:
             record = await storage.search_records(
-                self.RECORD_TYPE, {"recipient_key": recip_verkey}
+                RoutingManager.RECORD_TYPE, {"recipient_key": recip_verkey}
             ).fetch_single()
         except StorageDuplicateError:
             raise RouteNotFoundError(
@@ -114,7 +114,7 @@ class RoutingManager:
 
         results = []
         storage: BaseStorage = await self._context.inject(BaseStorage)
-        async for record in storage.search_records(self.RECORD_TYPE, filters):
+        async for record in storage.search_records(RoutingManager.RECORD_TYPE, filters):
             value = json.loads(record.value)
             value.update(record.tags)
             results.append(RouteRecord(**value))
@@ -140,7 +140,7 @@ class RoutingManager:
             raise RoutingManagerError("Missing recipient_key")
         value = {"created_at": time_now(), "updated_at": time_now()}
         record = StorageRecord(
-            self.RECORD_TYPE,
+            RoutingManager.RECORD_TYPE,
             json.dumps(value),
             {"connection_id": client_connection_id, "recipient_key": recipient_key},
         )
@@ -186,29 +186,29 @@ class RoutingManager:
             )
             recip_key = update.recipient_key
             if not recip_key:
-                result.result = result.RESULT_CLIENT_ERROR
-            elif update.action == update.ACTION_CREATE:
+                result.result = RouteUpdated.RESULT_CLIENT_ERROR
+            elif update.action == RouteUpdate.ACTION_CREATE:
                 if recip_key in exist:
-                    result.result = result.RESULT_NO_CHANGE
+                    result.result = RouteUpdated.RESULT_NO_CHANGE
                 else:
                     try:
                         await self.create_route_record(client_connection_id, recip_key)
                     except RoutingManagerError:
-                        result.result = result.RESULT_SERVER_ERROR
+                        result.result = RouteUpdated.RESULT_SERVER_ERROR
                     else:
-                        result.result = result.RESULT_SUCCESS
-            elif update.action == update.ACTION_DELETE:
+                        result.result = RouteUpdated.RESULT_SUCCESS
+            elif update.action == RouteUpdate.ACTION_DELETE:
                 if recip_key in exist:
                     try:
                         await self.delete_route_record(exist[recip_key])
                     except StorageError:
-                        result.result = result.RESULT_SERVER_ERROR
+                        result.result = RouteUpdated.RESULT_SERVER_ERROR
                     else:
-                        result.result = result.RESULT_SUCCESS
+                        result.result = RouteUpdated.RESULT_SUCCESS
                 else:
-                    result.result = result.RESULT_NO_CHANGE
+                    result.result = RouteUpdated.RESULT_NO_CHANGE
             else:
-                result.result = result.RESULT_CLIENT_ERROR
+                result.result = RouteUpdated.RESULT_CLIENT_ERROR
             updated.append(result)
         return updated
 

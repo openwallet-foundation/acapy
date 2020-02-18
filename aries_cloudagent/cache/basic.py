@@ -1,7 +1,6 @@
 """Basic in-memory cache implementation."""
 
-from datetime import datetime, timedelta
-
+import time
 from typing import Any, Sequence, Text, Union
 
 from .base import BaseCache
@@ -12,17 +11,17 @@ class BasicCache(BaseCache):
 
     def __init__(self):
         """Initialize a `BasicCache` instance."""
-
+        super().__init__()
         # looks like { "key": { "expires": <epoch timestamp>, "value": <val> } }
         self._cache = {}
 
     def _remove_expired_cache_items(self):
         """Remove all expired items from cache."""
-        for key in self._cache.copy():  # iterate copy, del from original
-            cache_item_expiry = self._cache[key]["expires"]
+        for key, val in self._cache.copy().items():  # iterate copy, del from original
+            cache_item_expiry = val["expires"]
             if cache_item_expiry is None:
                 continue
-            now = datetime.now().timestamp()
+            now = time.perf_counter()
             if now >= cache_item_expiry:
                 del self._cache[key]
 
@@ -53,16 +52,9 @@ class BasicCache(BaseCache):
 
         """
         self._remove_expired_cache_items()
-        now = datetime.now()
-        expires_ts = None
-        if ttl:
-            expires = now + timedelta(seconds=ttl)
-            expires_ts = expires.timestamp()
-        for key in ([keys] if isinstance(keys, Text) else keys):
-            self._cache[key] = {
-                "expires": expires_ts,
-                "value": value
-            }
+        expires_ts = time.perf_counter() + ttl if ttl else None
+        for key in [keys] if isinstance(keys, Text) else keys:
+            self._cache[key] = {"expires": expires_ts, "value": value}
 
     async def clear(self, key: Text):
         """

@@ -6,8 +6,8 @@ from typing import Union
 
 from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError
 
-from ...classloader import ClassLoader
-from ...error import BaseError
+from ...core.error import BaseError
+from ...utils.classloader import ClassLoader
 
 LOGGER = logging.getLogger(__name__)
 
@@ -126,8 +126,8 @@ class BaseModel(ABC):
         try:
             return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
         except ValidationError as e:
-            LOGGER.exception("Message validation error:")
-            raise BaseModelError("Schema validation failed") from e
+            LOGGER.exception(f"{cls.__name__} message validation error:")
+            raise BaseModelError(f"{cls.__name__} schema validation failed") from e
 
     def serialize(self, as_string=False) -> dict:
         """
@@ -144,8 +144,10 @@ class BaseModel(ABC):
         try:
             return schema.dumps(self) if as_string else schema.dump(self)
         except ValidationError as e:
-            LOGGER.exception("Message serialization error:")
-            raise BaseModelError("Schema validation failed") from e
+            LOGGER.exception(f"{self.__class__.__name__} message serialization error:")
+            raise BaseModelError(
+                f"{self.__class__.__name__} schema validation failed"
+            ) from e
 
     @classmethod
     def from_json(cls, json_repr: Union[str, bytes]):
@@ -162,8 +164,8 @@ class BaseModel(ABC):
         try:
             parsed = json.loads(json_repr)
         except ValueError as e:
-            LOGGER.exception("Message parse error:")
-            raise BaseModelError("JSON parsing failed") from e
+            LOGGER.exception(f"{cls.__name__} message parse error:")
+            raise BaseModelError(f"{cls.__name__} JSON parsing failed") from e
         return cls.deserialize(parsed)
 
     def to_json(self) -> str:

@@ -2,8 +2,6 @@
 
 from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
-from ...connections.manager import ConnectionManager
-
 from ..messages.ping_response import PingResponse
 
 
@@ -24,14 +22,18 @@ class PingResponseHandler(BaseHandler):
         assert isinstance(context.message, PingResponse)
 
         self._logger.info(
-            "Received trust ping response from: %s", context.message_delivery.sender_did
+            "Received trust ping response from: %s", context.message_receipt.sender_did
         )
+
+        if context.settings.get("debug.monitor_ping"):
+            await responder.send_webhook(
+                "ping",
+                {
+                    "comment": context.message.comment,
+                    "connection_id": context.message_receipt.connection_id,
+                    "state": "response_received",
+                    "thread_id": context.message._thread_id,
+                },
+            )
 
         # Nothing to do, Connection should be automatically promoted to 'active'
-
-        conn_mgr = ConnectionManager(context)
-        await conn_mgr.log_activity(
-            context.connection_record,
-            "ping",
-            context.connection_record.DIRECTION_RECEIVED,
-        )

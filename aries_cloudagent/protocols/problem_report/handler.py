@@ -1,6 +1,6 @@
 """Generic problem report handler."""
 
-from ..base_handler import BaseHandler, BaseResponder, RequestContext
+from ...messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from .message import ProblemReport
 
@@ -17,13 +17,13 @@ class ProblemReportHandler(BaseHandler):
             responder: Responder used to reply
 
         """
-        self._logger.debug(f"ProblemReportHandler called with context {context}")
+        self._logger.debug("ProblemReportHandler called with context %s", context)
         assert isinstance(context.message, ProblemReport)
 
         self._logger.info(
             "Received problem report from: %s, %r",
-            context.message_delivery.sender_did,
+            context.message_receipt.sender_did,
             context.message,
         )
 
-        await responder.send_webhook("problem-report", context.message.serialize())
+        await responder.send_webhook("problem_report", context.message.serialize())

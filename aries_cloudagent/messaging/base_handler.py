@@ -3,7 +3,8 @@
 from abc import ABC, abstractmethod
 import logging
 
-from ..error import BaseError
+from ..core.error import BaseError
+
 from .responder import BaseResponder
 from .request_context import RequestContext
 

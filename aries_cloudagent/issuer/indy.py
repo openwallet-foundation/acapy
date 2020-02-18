@@ -3,12 +3,12 @@
 import json
 import logging
 
-
 import indy.anoncreds
 
-from ..error import BaseError
+from ..core.error import BaseError
+from ..messaging.util import encode
+
 from .base import BaseIssuer
-from .util import encode
 
 
 class IssuerError(BaseError):
@@ -29,7 +29,7 @@ class IndyIssuer(BaseIssuer):
         self.logger = logging.getLogger(__name__)
         self.wallet = wallet
 
-    async def create_credential_offer(self, credential_definition_id):
+    async def create_credential_offer(self, credential_definition_id: str):
         """
         Create a credential offer for the given credential definition id.
 
@@ -74,7 +74,7 @@ class IndyIssuer(BaseIssuer):
                 credential_value = credential_values[attribute]
             except KeyError:
                 raise IssuerError(
-                    "Provided credential values is missed a value "
+                    "Provided credential values are missing a value "
                     + f"for the schema attribute '{attribute}'"
                 )
 

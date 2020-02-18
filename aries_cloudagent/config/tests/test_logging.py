@@ -6,6 +6,7 @@ from .. import logging as test_module
 
 
 class TestLoggingConfigurator:
+    agent_label_arg_value = "Aries Cloud Agent"
     transport_arg_value = "transport"
     host_arg_value = "host"
     port_arg_value = "port"
@@ -36,7 +37,8 @@ class TestLoggingConfigurator:
     def test_banner(self):
         stdout = StringIO()
         with contextlib.redirect_stdout(stdout):
+            test_label = "Aries Cloud Agent"
             test_did = "55GkHamhTU1ZbTbV2ab9DE"
-            test_module.LoggingConfigurator.print_banner([], [], test_did)
+            test_module.LoggingConfigurator.print_banner(test_label, {}, {}, test_did)
         output = stdout.getvalue()
         assert test_did in output

@@ -135,55 +135,44 @@ class TestBasicWallet:
             )
 
     @pytest.mark.asyncio
-    async def test_create_retrieve_pairwise(self, wallet):
-        await wallet.create_local_did(self.test_seed, self.test_did)
-        pair_created = await wallet.create_pairwise(
-            self.test_target_did, self.test_target_verkey, None, self.test_metadata
+    async def test_create_public_did(self, wallet):
+        info = await wallet.create_local_did(
+            self.test_seed, self.test_did, self.test_metadata
         )
-        assert pair_created.their_did == self.test_target_did
-        assert pair_created.their_verkey == self.test_target_verkey
-        assert pair_created.my_did
-        assert pair_created.my_verkey
-        assert pair_created.metadata == self.test_metadata
+        assert not info.metadata.get("public")
 
-        pair_info = await wallet.get_pairwise_for_did(self.test_target_did)
-        assert pair_info == pair_created
+        info_public = await wallet.create_public_did()
+        assert info_public.metadata.get("public")
 
-        pair_info_vk = await wallet.get_pairwise_for_verkey(self.test_target_verkey)
-        assert pair_info_vk == pair_created
-
-        pair_infos = await wallet.get_pairwise_list()
-        found = False
-        for info in pair_infos:
-            if info == pair_created:
-                assert not found
-                found = True
-        assert found
-
-        with pytest.raises(WalletDuplicateError):
-            await wallet.create_pairwise(
-                self.test_target_did, self.test_target_verkey, None, self.test_metadata
-            )
-        with pytest.raises(WalletNotFoundError):
-            await wallet.get_pairwise_for_did(self.missing_did)
+        # test replace
+        info_replace = await wallet.create_public_did()
+        assert info_replace.metadata.get("public")
+        info_check = await wallet.get_local_did(info_public.did)
+        assert not info_check.metadata.get("public")
 
     @pytest.mark.asyncio
-    async def test_pairwise_metadata(self, wallet):
-        await wallet.create_local_did(self.test_seed, self.test_did)
-        _ = await wallet.create_pairwise(
-            self.test_target_did, self.test_target_verkey, None, self.test_metadata
+    async def test_set_public_did(self, wallet):
+        info = await wallet.create_local_did(
+            self.test_seed, self.test_did, self.test_metadata
         )
-
-        await wallet.replace_pairwise_metadata(
-            self.test_target_did, self.test_update_metadata
-        )
-        pair_info = await wallet.get_pairwise_for_did(self.test_target_did)
-        assert pair_info.metadata == self.test_update_metadata
+        assert not info.metadata.get("public")
 
         with pytest.raises(WalletNotFoundError):
-            await wallet.replace_pairwise_metadata(
-                self.missing_did, self.test_update_metadata
-            )
+            await wallet.set_public_did("55GkHamhTU1ZbTbV2ab9DF")
+
+        # test assign
+        info_same = await wallet.set_public_did(info.did)
+        assert info_same.did == info.did
+        assert info_same.metadata.get("public")
+
+        info_new = await wallet.create_local_did()
+        assert info_new.did != info_same.did
+        assert not info_new.metadata.get("public")
+
+        # test replace
+        info_final = await wallet.set_public_did(info_new.did)
+        assert info_final.did == info_new.did
+        assert info_final.metadata.get("public")
 
     @pytest.mark.asyncio
     async def test_sign_verify(self, wallet):
@@ -227,50 +216,6 @@ class TestBasicWallet:
             unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b"bad")
         with pytest.raises(WalletError):
             unpacked_auth, from_verkey, to_verkey = await wallet.unpack_message(b"{}")
-
-    @pytest.mark.asyncio
-    async def test_encrypt_decrypt_dids(self, wallet):
-        await wallet.create_local_did(self.test_seed, self.test_did)
-        encrypted_msg = await wallet.encrypt_message(
-            self.test_message_bytes, self.test_verkey
-        )
-        decrypted_msg, sender_verkey = await wallet.decrypt_message(
-            encrypted_msg, self.test_verkey, False
-        )
-        assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey is None
-
-        await wallet.create_local_did(self.test_target_seed, self.test_target_did)
-        encrypted_msg = await wallet.encrypt_message(
-            self.test_message_bytes, self.test_target_verkey, self.test_verkey
-        )
-        decrypted_msg, sender_verkey = await wallet.decrypt_message(
-            encrypted_msg, self.test_target_verkey, True
-        )
-        assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey == self.test_verkey
-
-    @pytest.mark.asyncio
-    async def test_encrypt_decrypt_keys(self, wallet):
-        key_info = await wallet.create_signing_key()
-        encrypted_msg = await wallet.encrypt_message(
-            self.test_message_bytes, key_info.verkey
-        )
-        decrypted_msg, sender_verkey = await wallet.decrypt_message(
-            encrypted_msg, key_info.verkey, False
-        )
-        assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey is None
-
-        target_key_info = await wallet.create_signing_key()
-        encrypted_msg = await wallet.encrypt_message(
-            self.test_message_bytes, target_key_info.verkey, key_info.verkey
-        )
-        decrypted_msg, sender_verkey = await wallet.decrypt_message(
-            encrypted_msg, target_key_info.verkey, True
-        )
-        assert decrypted_msg == self.test_message_bytes
-        assert sender_verkey == key_info.verkey
 
     @pytest.mark.asyncio
     async def test_signature_round_trip(self, wallet):
