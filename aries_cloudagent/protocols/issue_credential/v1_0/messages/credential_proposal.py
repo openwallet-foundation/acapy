@@ -10,11 +10,7 @@ from .....messaging.valid import (
     INDY_VERSION,
 )
 
-from ..message_types import (
-    CREDENTIAL_PROPOSAL,
-    NEW_CREDENTIAL_PROPOSAL,
-    PROTOCOL_PACKAGE,
-)
+from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
 
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
@@ -34,7 +30,6 @@ class CredentialProposal(AgentMessage):
         handler_class = HANDLER_CLASS
         schema_class = "CredentialProposalSchema"
         message_type = CREDENTIAL_PROPOSAL
-        new_message_type = NEW_CREDENTIAL_PROPOSAL
 
     def __init__(
         self,
@@ -84,36 +79,11 @@ class CredentialProposalSchema(AgentMessageSchema):
 
     comment = fields.Str(required=False, allow_none=False)
     credential_proposal = fields.Nested(
-        CredentialPreviewSchema,
-        required=False,
-        allow_none=False,
+        CredentialPreviewSchema, required=False, allow_none=False
     )
-    schema_id = fields.Str(
-        required=False,
-        allow_none=False,
-        **INDY_SCHEMA_ID
-    )
-    schema_issuer_did = fields.Str(
-        required=False,
-        allow_none=False,
-        **INDY_DID
-    )
-    schema_name = fields.Str(
-        required=False,
-        allow_none=False,
-    )
-    schema_version = fields.Str(
-        required=False,
-        allow_none=False,
-        **INDY_VERSION
-    )
-    cred_def_id = fields.Str(
-        required=False,
-        allow_none=False,
-        **INDY_CRED_DEF_ID
-    )
-    issuer_did = fields.Str(
-        required=False,
-        allow_none=False,
-        **INDY_DID
-    )
+    schema_id = fields.Str(required=False, allow_none=False, **INDY_SCHEMA_ID)
+    schema_issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)
+    schema_name = fields.Str(required=False, allow_none=False)
+    schema_version = fields.Str(required=False, allow_none=False, **INDY_VERSION)
+    cred_def_id = fields.Str(required=False, allow_none=False, **INDY_CRED_DEF_ID)
+    issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)

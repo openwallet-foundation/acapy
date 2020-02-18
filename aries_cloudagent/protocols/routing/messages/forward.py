@@ -8,7 +8,7 @@ from marshmallow import fields, pre_load
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import FORWARD, NEW_FORWARD, PROTOCOL_PACKAGE
+from ..message_types import FORWARD, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.forward_handler.ForwardHandler"
 
@@ -21,7 +21,6 @@ class Forward(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = FORWARD
-        new_message_type = NEW_FORWARD
         schema_class = "ForwardSchema"
 
     def __init__(self, *, to: str = None, msg: Union[dict, str] = None, **kwargs):

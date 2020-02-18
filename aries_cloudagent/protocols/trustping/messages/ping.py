@@ -4,7 +4,7 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import PING, NEW_PING, PROTOCOL_PACKAGE
+from ..message_types import PING, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.ping_handler.PingHandler"
 
@@ -17,7 +17,6 @@ class Ping(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = PING
-        new_message_type = NEW_PING
         schema_class = "PingSchema"
 
     def __init__(

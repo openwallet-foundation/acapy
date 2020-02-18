@@ -4,11 +4,7 @@ from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import (
-    PRESENTATION_PROPOSAL,
-    NEW_PRESENTATION_PROPOSAL,
-    PROTOCOL_PACKAGE,
-)
+from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
 
 from .inner.presentation_preview import PresentationPreview, PresentationPreviewSchema
 
@@ -28,7 +24,6 @@ class PresentationProposal(AgentMessage):
         handler_class = HANDLER_CLASS
         schema_class = "PresentationProposalSchema"
         message_type = PRESENTATION_PROPOSAL
-        new_message_type = NEW_PRESENTATION_PROPOSAL
 
     def __init__(
         self,

@@ -6,11 +6,7 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import (
-    PROTOCOL_PACKAGE,
-    ROUTE_QUERY_RESPONSE,
-    NEW_ROUTE_QUERY_RESPONSE,
-)
+from ..message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_RESPONSE
 from ..models.paginated import Paginated, PaginatedSchema
 from ..models.route_query_result import RouteQueryResult, RouteQueryResultSchema
 
@@ -28,7 +24,6 @@ class RouteQueryResponse(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = ROUTE_QUERY_RESPONSE
-        new_message_type = NEW_ROUTE_QUERY_RESPONSE
         schema_class = "RouteQueryResponseSchema"
 
     def __init__(

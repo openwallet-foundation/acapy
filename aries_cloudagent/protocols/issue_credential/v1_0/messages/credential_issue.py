@@ -10,12 +10,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecoratorSchema,
 )
 
-from ..message_types import (
-    ATTACH_DECO_IDS,
-    CREDENTIAL_ISSUE,
-    NEW_CREDENTIAL_ISSUE,
-    PROTOCOL_PACKAGE,
-)
+from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
 
 
 HANDLER_CLASS = (
@@ -32,7 +27,6 @@ class CredentialIssue(AgentMessage):
         handler_class = HANDLER_CLASS
         schema_class = "CredentialIssueSchema"
         message_type = CREDENTIAL_ISSUE
-        new_message_type = NEW_CREDENTIAL_ISSUE
 
     def __init__(
         self,

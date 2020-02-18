@@ -6,7 +6,7 @@ from marshmallow import fields, validate
 
 from ...messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from .message_types import PROBLEM_REPORT, NEW_PROBLEM_REPORT, PROTOCOL_PACKAGE
+from .message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handler.ProblemReportHandler"
 
@@ -19,7 +19,6 @@ class ProblemReport(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = PROBLEM_REPORT
-        new_message_type = NEW_PROBLEM_REPORT
         schema_class = "ProblemReportSchema"
 
     def __init__(

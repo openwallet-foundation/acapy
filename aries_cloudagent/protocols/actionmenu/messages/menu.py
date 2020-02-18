@@ -6,7 +6,7 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import MENU, NEW_MENU, PROTOCOL_PACKAGE
+from ..message_types import MENU, PROTOCOL_PACKAGE
 from ..models.menu_option import MenuOption, MenuOptionSchema
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.menu_handler.MenuHandler"
@@ -20,7 +20,6 @@ class Menu(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = MENU
-        new_message_type = NEW_MENU
         schema_class = "MenuSchema"
 
     def __init__(

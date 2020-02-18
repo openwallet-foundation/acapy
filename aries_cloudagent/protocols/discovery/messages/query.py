@@ -4,7 +4,7 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import QUERY, NEW_QUERY, PROTOCOL_PACKAGE
+from ..message_types import QUERY, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.query_handler.QueryHandler"
 
@@ -20,7 +20,6 @@ class Query(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = QUERY
-        new_message_type = NEW_QUERY
         schema_class = "QuerySchema"
 
     def __init__(self, *, query: str = None, comment: str = None, **kwargs):
