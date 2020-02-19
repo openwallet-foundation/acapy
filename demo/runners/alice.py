@@ -31,10 +31,12 @@ class AliceAgent(DemoAgent):
             http_port,
             admin_port,
             prefix="Alice",
-            extra_args=[] if os.getenv("NO_AUTO") else [
+            extra_args=[]
+            if os.getenv("NO_AUTO")
+            else [
                 "--auto-accept-invites",
                 "--auto-accept-requests",
-                "--auto-store-credential"
+                "--auto-store-credential",
             ],
             seed=None,
             **kwargs,
@@ -74,12 +76,12 @@ class AliceAgent(DemoAgent):
         if state == "offer_received":
             log_status("#15 After receiving credential offer, send credential request")
             await self.admin_POST(
-                "/issue-credential/records/" f"{credential_exchange_id}/send-request"
+                f"/issue-credential/records/{credential_exchange_id}/send-request"
             )
 
         elif state == "credential_acked":
-            self.log("Stored credential {cred_id} in wallet")
             cred_id = message["credential_id"]
+            self.log(f"Stored credential {cred_id} in wallet")
             log_status(f"#18.1 Stored credential {cred_id} in wallet")
             resp = await self.admin_GET(f"/credential/{cred_id}")
             log_json(resp, label="Credential details:")
