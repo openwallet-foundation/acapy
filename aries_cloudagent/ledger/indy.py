@@ -893,6 +893,26 @@ class IndyLedger(BaseLedger):
         assert found_id == revoc_reg_id
         return json.loads(found_def_json)
 
+    async def get_revoc_reg_delta(self, revoc_reg_id: str, timestamp_from=0, timestamp_to=int(time())) -> (dict, int):
+        """
+        Look up a revocation registry delta by ID.
+        :param revoc_reg_id revocation registry id
+        :param timestamp_from from time. time represented as a total number of seconds from Unix Epoch
+        :param timestamp_to to time. time represented as a total number of seconds from Unix Epoch
+
+        :returns delta response, delta timestamp
+        """
+        public_info = await self.wallet.get_public_did()
+        fetch_req = await indy.ledger.build_get_revoc_reg_delta_request(
+            public_info and public_info.did, revoc_reg_id, timestamp_from, timestamp_to
+        )
+        response_json = await self._submit(fetch_req, sign_did=public_info)
+        (found_id, found_delta_json, delta_timestamp) = await indy.ledger.parse_get_revoc_reg_delta_response(
+            response_json
+        )
+        assert found_id == revoc_reg_id
+        return json.loads(found_delta_json), delta_timestamp
+
     async def send_revoc_reg_def(self, revoc_reg_def: dict, issuer_did: str = None):
         """Publish a revocation registry definition to the ledger."""
         # NOTE - issuer DID could be extracted from the revoc_reg_def ID

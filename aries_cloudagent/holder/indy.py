@@ -301,6 +301,7 @@ class IndyHolder(BaseHolder):
         requested_credentials: dict,
         schemas: dict,
         credential_definitions: dict,
+        rev_states_json: dict
     ):
         """
         Get credentials stored in the wallet.
@@ -310,6 +311,7 @@ class IndyHolder(BaseHolder):
             requested_credentials: Indy format requested_credentials
             schemas: Indy formatted schemas_json
             credential_definitions: Indy formatted schemas_json
+            rev_states_json: Indy format revocation states
 
         """
 
@@ -320,7 +322,7 @@ class IndyHolder(BaseHolder):
             self.wallet.master_secret_id,
             json.dumps(schemas),
             json.dumps(credential_definitions),
-            json.dumps({})  # We don't support revocation currently.
+            json.dumps(rev_states_json)
         )
 
         presentation = json.loads(presentation_json)

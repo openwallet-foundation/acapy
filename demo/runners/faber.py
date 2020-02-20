@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import sys
+import time
 
 from uuid import uuid4
 
@@ -118,7 +119,12 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def main(start_port: int, no_auto: bool = False, show_timing: bool = False):
+async def main(
+    start_port: int,
+    no_auto: bool = False,
+    revocation: bool = False,
+    show_timing: bool = False,
+):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -157,16 +163,26 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
             )
             (
                 _,  # schema id
-                credential_definition_id
+                credential_definition_id,
             ) = await agent.register_schema_and_creddef(
-                "degree schema", version, ["name", "date", "degree", "age"], support_revocation=True
+                "degree schema",
+                version,
+                ["name", "date", "degree", "age"],
+                support_revocation=revocation,
             )
 
-        with log_timer("Publish revocation registry duration:"):
-            log_status("#5/6 Create and publish the revocation registry on the ledger")
-            revocation_registry_id = await agent.create_and_publish_revocation_registry(
-                credential_definition_id, 2
-            )
+        if revocation:
+            with log_timer("Publish revocation registry duration:"):
+                log_status(
+                    "#5/6 Create and publish the revocation registry on the ledger"
+                )
+                revocation_registry_id = await (
+                    agent.create_and_publish_revocation_registry(
+                        credential_definition_id, 2
+                    )
+                )
+        else:
+            revocation_registry_id = None
 
         # TODO add an additional credential for Student ID
 
@@ -217,7 +233,7 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                     "comment": f"Offer on cred def id {credential_definition_id}",
                     "auto_remove": False,
                     "credential_preview": cred_preview,
-                    "revoc_reg_id": revocation_registry_id
+                    "revoc_reg_id": revocation_registry_id,
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
 
@@ -228,18 +244,28 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                 req_attrs = [
                     {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
-                    {"name": "degree", "restrictions": [{"issuer_did": agent.did}]},
-                    # include the following to test self-attested attributes
-                    #{"name": "self_attested_thing"},
                 ]
+                if revocation:
+                    req_attrs.append(
+                        {
+                            "name": "degree",
+                            "restrictions": [{"issuer_did": agent.did}],
+                            "non_revoked": {"to": int(time.time() - 1)},
+                        },
+                    )
+                else:
+                    req_attrs.append(
+                        {"name": "degree", "restrictions": [{"issuer_did": agent.did}]}
+                    )
+                req_attrs.append({"name": "self_attested_thing"},)
                 req_preds = [
-                    # include the following to test zero-knowledge proofs
-                    #{
-                    #    "name": "age",
-                    #    "p_type": ">=",
-                    #    "p_value": 18,
-                    #    "restrictions": [{"issuer_did": agent.did}],
-                    #}
+                    # test zero-knowledge proofs
+                    {
+                        "name": "age",
+                        "p_type": ">=",
+                        "p_value": 18,
+                        "restrictions": [{"issuer_did": agent.did}],
+                    }
                 ]
                 indy_proof_request = {
                     "name": "Proof of Education",
@@ -253,6 +279,8 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                         for req_pred in req_preds
                     },
                 }
+                if revocation:
+                    indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
                     "connection_id": agent.connection_id,
                     "proof_request": indy_proof_request,
@@ -302,22 +330,38 @@ if __name__ == "__main__":
         help="Choose the starting port number to listen on",
     )
     parser.add_argument(
+        "--revocation", action="store_true", help="Enable credential revocation"
+    )
+    parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
-    ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in ("false", "0")
+    ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in (
+        "false",
+        "0",
+    )
     PYDEVD_PYCHARM_HOST = os.getenv("PYDEVD_PYCHARM_HOST", "localhost")
-    PYDEVD_PYCHARM_CONTROLLER_PORT = int(os.getenv("PYDEVD_PYCHARM_CONTROLLER_PORT", 5001))
+    PYDEVD_PYCHARM_CONTROLLER_PORT = int(
+        os.getenv("PYDEVD_PYCHARM_CONTROLLER_PORT", 5001)
+    )
 
     if ENABLE_PYDEVD_PYCHARM:
         try:
             import pydevd_pycharm
 
-            print(f"Faber remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}")
-            pydevd_pycharm.settrace(host=PYDEVD_PYCHARM_HOST, port=PYDEVD_PYCHARM_CONTROLLER_PORT,
-                                    stdoutToServer=True, stderrToServer=True, suspend=False)
+            print(
+                "Faber remote debugging to "
+                f"{PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}"
+            )
+            pydevd_pycharm.settrace(
+                host=PYDEVD_PYCHARM_HOST,
+                port=PYDEVD_PYCHARM_CONTROLLER_PORT,
+                stdoutToServer=True,
+                stderrToServer=True,
+                suspend=False,
+            )
         except ImportError:
             print("pydevd_pycharm library was not found")
 
@@ -325,7 +369,7 @@ if __name__ == "__main__":
 
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, args.no_auto, args.timing)
+            main(args.port, args.no_auto, args.revocation, args.timing)
         )
     except KeyboardInterrupt:
         os._exit(1)

@@ -29,6 +29,7 @@ class RevocationRegistry:
         tails_local_path: str = None,
         tails_public_uri: str = None,
         tails_hash: str = None,
+        reg_def_json: str = None
     ):
         """Initialize the revocation registry instance."""
         self._cred_def_id = cred_def_id
@@ -40,13 +41,14 @@ class RevocationRegistry:
         self._tails_local_path = tails_local_path
         self._tails_public_uri = tails_public_uri
         self._tails_hash = tails_hash
+        self._reg_def_json = reg_def_json
 
     @classmethod
     def from_definition(
         cls, revoc_reg_def: dict, public_def: bool
     ) -> "RevocationRegistry":
         """Initialize a revocation registry instance from a definition."""
-        reg_id = revoc_reg_def.get("id")
+        reg_id = revoc_reg_def["id"]
         tails_location = revoc_reg_def["value"]["tailsLocation"]
         init = {
             "cred_def_id": revoc_reg_def["credDefId"],
@@ -54,6 +56,7 @@ class RevocationRegistry:
             "max_creds": revoc_reg_def["value"]["maxCredNum"],
             "tag": revoc_reg_def["tag"],
             "tails_hash": revoc_reg_def["value"]["tailsHash"],
+            "reg_def_json": json.dumps(revoc_reg_def)
         }
         if public_def:
             init["tails_public_uri"] = tails_location
@@ -123,31 +126,29 @@ class RevocationRegistry:
         """Setter for the tails file public URI."""
         self._tails_public_uri = new_uri
 
-    async def create_tails_reader(self) -> int:
+    async def create_tails_reader(self, context: InjectionContext) -> int:
         """Get a handle for the blob_storage file reader."""
-        if not self.has_local_tail_file():
-            raise RevocationError("Tail file does not exist or not valid.")
+        tail_file_path = Path(self.get_receiving_tails_local_path(context))
 
-        if self._tails_local_path:
-            tails_reader_config = json.dumps(
-                {"base_dir": self.get_temp_dir(), "file": self._tails_local_path}
-            )
-            return await indy.blob_storage.open_reader("default", tails_reader_config)
+        if not tail_file_path.exists():
+            raise FileNotFoundError("Tail file does not exist.")
+
+        tails_reader_config = json.dumps(
+            {"base_dir": str(tail_file_path.parent.absolute()), "file": str(tail_file_path.name)}
+        )
+        return await indy.blob_storage.open_reader("default", tails_reader_config)
 
     def get_receiving_tails_local_path(self, context: InjectionContext):
         """Make the local path to the tail file we download from remote URI"""
+        if self._tails_local_path:
+            return self._tails_local_path
+
         tail_file_dir = context.settings.get("holder.revocation.tail_files.path", "/tmp/indy/revocation/tail_files")
-        return f"{tail_file_dir}/{self.registry_id}"
+        return f"{tail_file_dir}/{self._tails_hash}"
 
-    def has_local_tail_file(self) -> bool:
-        if not self._tails_local_path:
-            return False
-
-        tail_file_path = Path(self._tails_local_path)
-        if not tail_file_path.is_file():
-            return False
-
-        return True
+    def has_local_tail_file(self, context: InjectionContext) -> bool:
+        tail_file_path = Path(self.get_receiving_tails_local_path(context))
+        return tail_file_path.is_file()
 
     async def retrieve_tails(self, context: InjectionContext):
         """Fetch the tails file from the public URI."""
@@ -160,7 +161,7 @@ class RevocationRegistry:
             raise RevocationError("Error retrieving tails file") from e
 
         tails_file_path = Path(self.get_receiving_tails_local_path(context))
-        tails_file_dir =  tails_file_path.parent
+        tails_file_dir = tails_file_path.parent
         if not tails_file_dir.exists():
             tails_file_dir.mkdir(parents=True)
 
@@ -179,6 +180,35 @@ class RevocationRegistry:
 
         self.tails_local_path = tails_file_path
         return self.tails_local_path
+
+    async def create_revocation_state(
+            self,
+            context: InjectionContext,
+            cred_rev_id: str,
+            rev_reg_delta: dict,
+            timestamp: int,
+    ):
+        """
+        Get credentials stored in the wallet.
+
+        Args:
+            cred_rev_id: credential revocation id in revocation registry
+            rev_reg_delta: revocation delta
+            timestamp: delta timestamp
+
+        :param context:
+        :return revocation state
+        """
+
+        tail_file_reader = await self.create_tails_reader(context)
+        rev_state = await indy.anoncreds.create_revocation_state(
+            tail_file_reader,
+            rev_reg_def_json=self._reg_def_json,
+            cred_rev_id=cred_rev_id,
+            rev_reg_delta_json=json.dumps(rev_reg_delta),
+            timestamp=timestamp)
+
+        return json.loads(rev_state)
 
     def __repr__(self) -> str:
         """Return a human readable representation of this class."""

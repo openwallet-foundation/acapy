@@ -500,7 +500,7 @@ class CredentialManager:
                 # FIXME exception on missing
 
                 registry = await registry_record.get_registry()
-                tails_reader = await registry.create_tails_reader()
+                tails_reader = await registry.create_tails_reader(self.context)
             else:
                 tails_reader = None
 
@@ -607,7 +607,7 @@ class CredentialManager:
 
         if raw_credential["rev_reg_id"]:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
-            if not revoc_reg.has_local_tail_file():
+            if not revoc_reg.has_local_tail_file(self.context):
                 self._logger.info(f"Downloading the tail file for the revocation registry: {revoc_reg.registry_id}")
                 await revoc_reg.retrieve_tails(self.context)
 
@@ -692,7 +692,7 @@ class CredentialManager:
         # FIXME exception on missing
 
         registry = await registry_record.get_registry()
-        tails_reader = await registry.create_tails_reader()
+        tails_reader = await registry.create_tails_reader(self.context)
 
         delta = await issuer.revoke_credential(
             registry.registry_id, tails_reader, credential_exchange_record.revocation_id

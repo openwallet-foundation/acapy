@@ -54,7 +54,7 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def create_presentation(self, presentation_request, requested_credentials, schemas, credential_definitions):
+    def create_presentation(self, presentation_request, requested_credentials, schemas, credential_definitions, rev_states_json):
         """
         Get credentials stored in the wallet.
 
@@ -63,7 +63,7 @@ class BaseHolder(ABC, metaclass=ABCMeta):
             requested_credentials: Indy format requested_credentials
             schemas: Indy formatted schemas_json
             credential_definitions: Indy formatted schemas_json
-
+            rev_states_json: Indy format revocation states
         """
         pass
 

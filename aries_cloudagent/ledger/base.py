@@ -140,3 +140,19 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         """
         pass
+
+    @abstractmethod
+    def get_revoc_reg_delta(self, revoc_reg_id, timestamp_from, timestamp_to):
+        """Look up a revocation registry delta by ID."""
+        pass
+
+    @abstractmethod
+    def get_schema(self, schema_id):
+        """
+        Get a schema from the cache if available, otherwise fetch from the ledger.
+
+        Args:
+            schema_id: The schema id (or stringified sequence number) to retrieve
+
+        """
+        pass
