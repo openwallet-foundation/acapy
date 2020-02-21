@@ -333,6 +333,7 @@ class PresentationManager:
                         (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
                             rev_reg_id, non_revoked_timespan['from'], non_revoked_timespan['to'])
                         revoc_reg_deltas[key] = (rev_reg_id, credential_id, delta, delta_timestamp)
+                    referented["timestamp"] = revoc_reg_deltas[key][3]
 
         # Get revocation states to prove non-revoked
         revocation_states = {}
@@ -350,6 +351,14 @@ class PresentationManager:
             except IndyError as e:
                 logging.error(f"Failed to create revocation state: {e.error_code}, {e.message}")
                 raise e
+
+        for (referent, referented) in requested_referents.items():
+            if "timestamp" not in referented:
+                continue
+            if referent in requested_credentials["requested_attributes"]:
+                requested_credentials["requested_attributes"][referent]["timestamp"] = referented["timestamp"]
+            if referent in requested_credentials["requested_predicates"]:
+                requested_credentials["requested_predicates"][referent]["timestamp"] = referented["timestamp"]
 
         indy_proof = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
@@ -459,33 +468,39 @@ class PresentationManager:
         schema_ids = []
         credential_definition_ids = []
 
-        identifiers = indy_proof["identifiers"]
-        for identifier in identifiers:
-            schema_ids.append(identifier["schema_id"])
-            credential_definition_ids.append(identifier["cred_def_id"])
-
         schemas = {}
         credential_definitions = {}
+        rev_reg_defs = {}
+        rev_reg_entries = {}
 
+        identifiers = indy_proof["identifiers"]
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
+            for identifier in identifiers:
+                schema_ids.append(identifier["schema_id"])
+                credential_definition_ids.append(identifier["cred_def_id"])
 
-            # Build schemas for anoncreds
-            for schema_id in schema_ids:
-                schema = await ledger.get_schema(schema_id)
-                schemas[schema_id] = schema
+                # Build schemas for anoncreds
+                if identifier["schema_id"] not in schemas:
+                    schemas[identifier["schema_id"]] = await ledger.get_schema(identifier['schema_id'])
 
-            # Build credential_definitions for anoncreds
-            for credential_definition_id in credential_definition_ids:
-                (credential_definition) = await ledger.get_credential_definition(
-                    credential_definition_id
-                )
-                credential_definitions[credential_definition_id] = credential_definition
+                if identifier["cred_def_id"] not in credential_definitions:
+                    credential_definitions[identifier["cred_def_id"]] = await ledger.get_credential_definition(identifier['cred_def_id'])
+
+                if "rev_reg_id" in identifier and identifier["rev_reg_id"] is not None:
+                    if identifier["rev_reg_id"] not in rev_reg_defs:
+                        rev_reg_defs[identifier["rev_reg_id"]] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+
+                    (found_rev_reg_entry, found_timestamp) = await ledger.get_revoc_reg_entry(identifier["rev_reg_id"], identifier["timestamp"])
+                    if identifier["rev_reg_id"] not in rev_reg_entries:
+                        rev_reg_entries[identifier["rev_reg_id"]] = {found_timestamp: found_rev_reg_entry}
+                    else:
+                        rev_reg_entries[identifier["rev_reg_id"]][found_timestamp] = found_rev_reg_entry
 
         verifier: BaseVerifier = await self.context.inject(BaseVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value
             await verifier.verify_presentation(
-                indy_proof_request, indy_proof, schemas, credential_definitions
+                indy_proof_request, indy_proof, schemas, credential_definitions, rev_reg_defs, rev_reg_entries
             )
         )
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED

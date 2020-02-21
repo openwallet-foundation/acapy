@@ -17,7 +17,8 @@ class BaseVerifier(ABC, metaclass=ABCMeta):
         return "<{}>".format(self.__class__.__name__)
 
     @abstractmethod
-    def verify_presentation(self, presentation_request, presentation, schemas, credential_definitions):
+    def verify_presentation(self, presentation_request, presentation, schemas, credential_definitions, rev_reg_defs,
+                            rev_reg_entries):
         """
         Verify a presentation.
 
@@ -26,5 +27,7 @@ class BaseVerifier(ABC, metaclass=ABCMeta):
             presentation: Presentation data
             schemas: Schema data
             credential_definitions: credential definition data
+            rev_reg_defs: revocation registry definitions
+            rev_reg_entries: revocation states
         """
         pass

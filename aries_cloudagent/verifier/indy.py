@@ -151,7 +151,13 @@ class IndyVerifier(BaseVerifier):
         return (PreVerifyResult.OK, None)
 
     async def verify_presentation(
-        self, presentation_request, presentation, schemas, credential_definitions
+        self,
+        presentation_request,
+        presentation,
+        schemas,
+        credential_definitions,
+        rev_reg_defs,
+        rev_reg_entries,
     ) -> bool:
         """
         Verify a presentation.
@@ -161,6 +167,8 @@ class IndyVerifier(BaseVerifier):
             presentation: Presentation data
             schemas: Schema data
             credential_definitions: credential definition data
+            rev_reg_defs: revocation registry definitions
+            rev_reg_entries: revocation states
         """
 
         (pv_result, pv_msg) = self.pre_verify(presentation_request, presentation)
@@ -177,8 +185,8 @@ class IndyVerifier(BaseVerifier):
                 json.dumps(presentation),
                 json.dumps(schemas),
                 json.dumps(credential_definitions),
-                json.dumps({}),  # no revocation
-                json.dumps({}),
+                json.dumps(rev_reg_defs),
+                json.dumps(rev_reg_entries),
             )
         except IndyError:
             LOGGER.exception(

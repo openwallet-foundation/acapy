@@ -156,3 +156,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         """
         pass
+
+    @abstractmethod
+    def get_revoc_reg_entry(self, revoc_reg_id, timestamp):
+        """Look up a revocation registry entry by revocation registry ID and timestamp."""
+        pass
