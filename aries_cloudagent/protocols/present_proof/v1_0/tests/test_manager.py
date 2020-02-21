@@ -228,6 +228,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME, version=PROOF_REQ_VERSION, nonce=PROOF_REQ_NONCE
         )
 
+        exchange_in.presentation_request = indy_proof_req
         request = async_mock.MagicMock()
         request.indy_proof_request = async_mock.MagicMock()
         request._thread_id = "dummy"

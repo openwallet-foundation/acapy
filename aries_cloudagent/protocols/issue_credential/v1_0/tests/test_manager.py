@@ -784,6 +784,7 @@ class TestCredentialManager(AsyncTestCase):
                 cred_req_meta,
                 mock_preview_deserialize.return_value.mime_types.return_value,
                 credential_id=None,
+                rev_reg_def_json=None,
             )
 
             holder.get_credential.assert_called_once_with(cred_id)
@@ -837,7 +838,12 @@ class TestCredentialManager(AsyncTestCase):
             self.ledger.get_credential_definition.assert_called_once_with(cred_def_id)
 
             holder.store_credential.assert_called_once_with(
-                cred_def, cred, cred_req_meta, None, credential_id=None
+                cred_def,
+                cred,
+                cred_req_meta,
+                None,
+                credential_id=None,
+                rev_reg_def_json=None,
             )
 
             holder.get_credential.assert_called_once_with(cred_id)

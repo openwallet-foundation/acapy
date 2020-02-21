@@ -263,25 +263,25 @@ class PresentationManager:
         # extract credential ids and non_revoked
         requested_referents = {}
         presentation_request = presentation_exchange_record.presentation_request
-        requested_attributes = requested_credentials["requested_attributes"]
-        for referent in requested_attributes:
+        attr_creds = requested_credentials.get("requested_attributes", {})
+        req_attrs = presentation_request.get("requested_attributes", {})
+        for referent in attr_creds:
             requested_referents[referent] = {
-                "cred_id": requested_attributes[referent]["cred_id"]
+                "cred_id": attr_creds[referent]["cred_id"]
             }
-            if "non_revoked" in presentation_request["requested_attributes"][referent]:
-                requested_referents[referent]["non_revoked"] = presentation_request[
-                    "requested_attributes"
-                ][referent]["non_revoked"]
+            if referent in req_attrs and "non_revoked" in req_attrs[referent]:
+                requested_referents[referent]["non_revoked"] = \
+                    req_attrs[referent]["non_revoked"]
 
-        requested_predicates = requested_credentials["requested_predicates"]
-        for referent in requested_predicates:
+        preds_creds = requested_credentials.get("requested_predicates", {})
+        req_preds = presentation_request.get("requested_attributes", {})
+        for referent in preds_creds:
             requested_referents[referent] = {
-                "cred_id": requested_predicates[referent]["cred_id"],
+                "cred_id": preds_creds[referent]["cred_id"],
             }
-            if "non_revoked" in presentation_request["requested_predicates"][referent]:
-                requested_referents[referent]["non_revoked"] = presentation_request[
-                    "requested_predicates"
-                ][referent]["non_revoked"]
+            if referent in req_preds and "non_revoked" in req_preds[referent]:
+                requested_referents[referent]["non_revoked"] = \
+                    req_preds[referent]["non_revoked"]
 
         # extract mapping of presentation referents to credential ids
         for referent in requested_referents:
@@ -307,7 +307,7 @@ class PresentationManager:
                         credential_definition_id
                     ] = await ledger.get_credential_definition(credential_definition_id)
 
-                if credential["rev_reg_id"]:
+                if "rev_reg_id" in credential:
                     revocation_registry_id = credential["rev_reg_id"]
                     if revocation_registry_id not in revocation_registries:
                         revocation_registries[
@@ -326,7 +326,7 @@ class PresentationManager:
         async with ledger:
             for referented in requested_referents.values():
                 credential_id = referented["cred_id"]
-                if not credentials[credential_id]["rev_reg_id"]:
+                if "rev_reg_id" not in credentials[credential_id]:
                     continue
 
                 rev_reg_id = credentials[credential_id]["rev_reg_id"]
@@ -520,32 +520,28 @@ class PresentationManager:
                     )
 
                 if identifier["cred_def_id"] not in credential_definitions:
-                    credential_definitions[
-                        identifier["cred_def_id"]
-                    ] = await ledger.get_credential_definition(
-                        identifier["cred_def_id"]
-                    )
+                    credential_definitions[identifier["cred_def_id"]] = \
+                        await ledger.get_credential_definition(
+                            identifier['cred_def_id'])
 
                 if "rev_reg_id" in identifier and identifier["rev_reg_id"] is not None:
                     if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[
-                            identifier["rev_reg_id"]
-                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+                        rev_reg_defs[identifier["rev_reg_id"]] = \
+                            await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
 
-                    (
-                        found_rev_reg_entry,
-                        found_timestamp,
-                    ) = await ledger.get_revoc_reg_entry(
-                        identifier["rev_reg_id"], identifier["timestamp"]
-                    )
-                    if identifier["rev_reg_id"] not in rev_reg_entries:
-                        rev_reg_entries[identifier["rev_reg_id"]] = {
-                            found_timestamp: found_rev_reg_entry
-                        }
-                    else:
-                        rev_reg_entries[identifier["rev_reg_id"]][
-                            found_timestamp
-                        ] = found_rev_reg_entry
+                    if "timestamp" in identifier \
+                            and identifier["timestamp"] is not None:
+                        (found_rev_reg_entry, found_timestamp) = \
+                            await ledger.get_revoc_reg_entry(
+                                identifier["rev_reg_id"], identifier["timestamp"])
+
+                        if identifier["rev_reg_id"] not in rev_reg_entries:
+                            rev_reg_entries[identifier["rev_reg_id"]] = {
+                                found_timestamp: found_rev_reg_entry
+                            }
+                        else:
+                            rev_reg_entries[identifier["rev_reg_id"]][
+                                found_timestamp] = found_rev_reg_entry
 
         verifier: BaseVerifier = await self.context.inject(BaseVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value

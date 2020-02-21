@@ -580,13 +580,13 @@ class CredentialManager:
 
         """
         raw_credential = credential_exchange_record.raw_credential
-
+        revoc_reg_def = None
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
             credential_definition = await ledger.get_credential_definition(
                 raw_credential["cred_def_id"]
             )
-            if raw_credential["rev_reg_id"]:
+            if "rev_reg_id" in raw_credential:
                 revoc_reg_def = await ledger.get_revoc_reg_def(
                     raw_credential["rev_reg_id"]
                 )
@@ -605,7 +605,7 @@ class CredentialManager:
         else:
             mime_types = None
 
-        if raw_credential["rev_reg_id"]:
+        if revoc_reg_def:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
             if not revoc_reg.has_local_tails_file(self.context):
                 self._logger.info(
