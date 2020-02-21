@@ -132,7 +132,7 @@ async def get_current_registry(request: web.BaseRequest):
               }
           }
       })
-async def get_tail_file(request: web.BaseRequest) -> web.FileResponse:
+async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
     Request handler for getting the tail file of the revocation registry.
 
@@ -223,7 +223,7 @@ async def update_registry(request: web.BaseRequest):
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
-    revoc_registry.set_tail_file_public_uri(tails_public_uri)
+    revoc_registry.set_tails_file_public_uri(tails_public_uri)
     await revoc_registry.save(context, reason="Updating tail file public URI.")
 
     return web.json_response({"result": revoc_registry.serialize()})
@@ -235,7 +235,7 @@ async def register(app: web.Application):
         [
             web.post("/revocation/create-registry", revocation_create_registry),
             web.get("/revocation/registry/{id}", get_current_registry),
-            web.get("/revocation/registry/{id}/tail-file", get_tail_file),
+            web.get("/revocation/registry/{id}/tails-file", get_tails_file),
             web.patch("/revocation/registry/{id}", update_registry),
             web.post("/revocation/registry/{id}/publish", publish_registry),
         ]

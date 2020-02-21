@@ -279,7 +279,7 @@ class PresentationManager:
             if "non_revoked" in presentation_request["requested_predicates"][referent]:
                 requested_referents[referent]["non_revoked"] = presentation_request["requested_predicates"][referent]["non_revoked"]
 
-    # extract mapping of presentation referents to credential ids
+        # extract mapping of presentation referents to credential ids
         for referent in requested_referents:
             credential_id = requested_referents[referent]["cred_id"]
             if credential_id not in credentials:
@@ -308,7 +308,7 @@ class PresentationManager:
                         revocation_registries[revocation_registry_id] = RevocationRegistry.from_definition(
                             await ledger.get_revoc_reg_def(revocation_registry_id), True)
 
-        # TODO: get delta with timespan defined in "non_revoked" of the presentation request or attributes
+        # Get delta with timespan defined in "non_revoked" of the presentation request or attributes
         current_timestamp = int(time.time())
         non_revoked_timespan = presentation_exchange_record.presentation_request.get("non_revoked", None)
 
@@ -334,13 +334,14 @@ class PresentationManager:
                             rev_reg_id, non_revoked_timespan['from'], non_revoked_timespan['to'])
                         revoc_reg_deltas[key] = (rev_reg_id, credential_id, delta, delta_timestamp)
 
+        # Get revocation states to prove non-revoked
         revocation_states = {}
         for (rev_reg_id, credential_id, delta, delta_timestamp) in revoc_reg_deltas.values():
             if rev_reg_id not in revocation_states:
                 revocation_states[rev_reg_id] = {}
 
             rev_reg = revocation_registries[rev_reg_id]
-            if not rev_reg.has_local_tail_file(self.context):
+            if not rev_reg.has_local_tails_file(self.context):
                 await rev_reg.retrieve_tails(self.context)
 
             try:
@@ -349,7 +350,6 @@ class PresentationManager:
             except IndyError as e:
                 logging.error(f"Failed to create revocation state: {e.error_code}, {e.message}")
                 raise e
-
 
         indy_proof = await holder.create_presentation(
             presentation_exchange_record.presentation_request,

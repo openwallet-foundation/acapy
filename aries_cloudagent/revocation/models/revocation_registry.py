@@ -128,13 +128,13 @@ class RevocationRegistry:
 
     async def create_tails_reader(self, context: InjectionContext) -> int:
         """Get a handle for the blob_storage file reader."""
-        tail_file_path = Path(self.get_receiving_tails_local_path(context))
+        tails_file_path = Path(self.get_receiving_tails_local_path(context))
 
-        if not tail_file_path.exists():
+        if not tails_file_path.exists():
             raise FileNotFoundError("Tail file does not exist.")
 
         tails_reader_config = json.dumps(
-            {"base_dir": str(tail_file_path.parent.absolute()), "file": str(tail_file_path.name)}
+            {"base_dir": str(tails_file_path.parent.absolute()), "file": str(tails_file_path.name)}
         )
         return await indy.blob_storage.open_reader("default", tails_reader_config)
 
@@ -143,12 +143,12 @@ class RevocationRegistry:
         if self._tails_local_path:
             return self._tails_local_path
 
-        tail_file_dir = context.settings.get("holder.revocation.tail_files.path", "/tmp/indy/revocation/tail_files")
-        return f"{tail_file_dir}/{self._tails_hash}"
+        tails_file_dir = context.settings.get("holder.revocation.tails_files.path", "/tmp/indy/revocation/tails_files")
+        return f"{tails_file_dir}/{self._tails_hash}"
 
-    def has_local_tail_file(self, context: InjectionContext) -> bool:
-        tail_file_path = Path(self.get_receiving_tails_local_path(context))
-        return tail_file_path.is_file()
+    def has_local_tails_file(self, context: InjectionContext) -> bool:
+        tails_file_path = Path(self.get_receiving_tails_local_path(context))
+        return tails_file_path.is_file()
 
     async def retrieve_tails(self, context: InjectionContext):
         """Fetch the tails file from the public URI."""
@@ -166,16 +166,16 @@ class RevocationRegistry:
             tails_file_dir.mkdir(parents=True)
 
         buffer_size = 65536 # should be multiple of 32 bytes for sha256
-        with open(tails_file_path, "wb", buffer_size) as tail_file:
+        with open(tails_file_path, "wb", buffer_size) as tails_file:
             file_hasher = hashlib.sha256()
             buf = await tails_stream.read(buffer_size)
             while len(buf) > 0:
                 file_hasher.update(buf)
-                tail_file.write(buf)
+                tails_file.write(buf)
                 buf = await tails_stream.read(buffer_size)
 
-            download_tail_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
-            if download_tail_hash != self.tails_hash:
+            download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
+            if download_tails_hash != self.tails_hash:
                 raise RevocationError("The hash of the downloaded tails file does not match.")
 
         self.tails_local_path = tails_file_path
@@ -200,9 +200,9 @@ class RevocationRegistry:
         :return revocation state
         """
 
-        tail_file_reader = await self.create_tails_reader(context)
+        tails_file_reader = await self.create_tails_reader(context)
         rev_state = await indy.anoncreds.create_revocation_state(
-            tail_file_reader,
+            tails_file_reader,
             rev_reg_def_json=self._reg_def_json,
             cred_rev_id=cred_rev_id,
             rev_reg_delta_json=json.dumps(rev_reg_delta),

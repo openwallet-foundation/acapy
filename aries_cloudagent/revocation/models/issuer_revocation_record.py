@@ -151,9 +151,9 @@ class IssuerRevocationRecord(BaseRecord):
         self.tails_local_path = self.revoc_reg_def["value"]["tailsLocation"]
         await self.save(context, reason="Generated registry")
 
-    def set_tail_file_public_uri(self, tail_file_uri):
-        self.tails_public_uri = tail_file_uri
-        self.revoc_reg_def["value"]["tailsLocation"] = tail_file_uri
+    def set_tails_file_public_uri(self, tails_file_uri):
+        self.tails_public_uri = tails_file_uri
+        self.revoc_reg_def["value"]["tailsLocation"] = tails_file_uri
 
     async def publish_registry_definition(self, context: InjectionContext):
         """Send the revocation registry definition to the ledger."""

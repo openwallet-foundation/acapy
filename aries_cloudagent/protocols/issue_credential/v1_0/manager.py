@@ -607,7 +607,7 @@ class CredentialManager:
 
         if raw_credential["rev_reg_id"]:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
-            if not revoc_reg.has_local_tail_file(self.context):
+            if not revoc_reg.has_local_tails_file(self.context):
                 self._logger.info(f"Downloading the tail file for the revocation registry: {revoc_reg.registry_id}")
                 await revoc_reg.retrieve_tails(self.context)
 
