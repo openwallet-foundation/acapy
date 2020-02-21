@@ -168,7 +168,7 @@ class IndyVerifier(BaseVerifier):
             schemas: Schema data
             credential_definitions: credential definition data
             rev_reg_defs: revocation registry definitions
-            rev_reg_entries: revocation states
+            rev_reg_entries: revocation registry entries
         """
 
         (pv_result, pv_msg) = self.pre_verify(presentation_request, presentation)

@@ -28,6 +28,6 @@ class BaseVerifier(ABC, metaclass=ABCMeta):
             schemas: Schema data
             credential_definitions: credential definition data
             rev_reg_defs: revocation registry definitions
-            rev_reg_entries: revocation states
+            rev_reg_entries: revocation registry entries
         """
         pass

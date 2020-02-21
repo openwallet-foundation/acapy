@@ -204,7 +204,7 @@ async def main(
 
         async for option in prompt_loop(
             "(1) Issue Credential, (2) Send Proof Request, "
-            + "(3) Send Message (X) Exit? [1/2/3/X] "
+            + "(3) Send Message (4) Revoke Credential (X) Exit? [1/2/3/X] "
         ):
             if option is None or option in "xX":
                 break
@@ -294,6 +294,9 @@ async def main(
                 await agent.admin_POST(
                     f"/connections/{agent.connection_id}/send-message", {"content": msg}
                 )
+            elif option == "4":
+                revoking_cred_id = await prompt("Enter credential exchange id: ")
+                await agent.admin_POST(f"/issue-credential/records/{revoking_cred_id}/revoke")
 
         if show_timing:
             timing = await agent.fetch_timing()

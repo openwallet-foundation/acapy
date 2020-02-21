@@ -698,9 +698,6 @@ class CredentialManager:
             registry.registry_id, tails_reader, credential_exchange_record.revocation_id
         )
 
-        credential_exchange_record.state = V10CredentialExchange.STATE_REVOKED
-        await credential_exchange_record.save(self.context, reason="Revoked credential")
-
         # create entry and send to ledger
         if delta:
             ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -708,3 +705,7 @@ class CredentialManager:
                 await ledger.send_revoc_reg_entry(
                     registry.registry_id, registry.reg_def_type, delta
                 )
+
+        credential_exchange_record.state = V10CredentialExchange.STATE_REVOKED
+        await credential_exchange_record.save(self.context, reason="Revoked credential")
+
