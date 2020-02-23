@@ -46,7 +46,7 @@ class RouteQueryRequestSchema(AgentMessageSchema):
     filter = fields.Dict(
         keys=fields.Str(description="field"),
         values=fields.List(
-            fields.Str(description="value"), description="List of values",
+            fields.Str(description="value"), description="List of values"
         ),
         required=False,
         allow_none=True,

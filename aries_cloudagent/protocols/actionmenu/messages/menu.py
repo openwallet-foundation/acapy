@@ -54,7 +54,7 @@ class MenuSchema(AgentMessageSchema):
 
         model_class = Menu
 
-    title = fields.Str(required=False, description="Menu title", example="My Menu",)
+    title = fields.Str(required=False, description="Menu title", example="My Menu")
     description = fields.Str(
         required=False,
         description="Introductory text for the menu",

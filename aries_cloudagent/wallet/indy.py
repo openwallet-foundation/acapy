@@ -60,7 +60,7 @@ class IndyWallet(BaseWallet):
         self._master_secret_id = None
 
         if self._storage_type == "postgres_storage":
-            load_postgres_plugin()
+            load_postgres_plugin(self._storage_config, self._storage_creds)
 
     @property
     def handle(self):
