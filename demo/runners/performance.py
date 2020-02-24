@@ -235,7 +235,7 @@ async def main(
     show_timing: bool = False,
     routing: bool = False,
     issue_count: int = 300,
-    revoc: bool = True,
+    revoc: bool = False,
 ):
 
     genesis = await default_genesis_txns()

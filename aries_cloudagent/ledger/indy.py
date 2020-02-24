@@ -15,7 +15,7 @@ import indy.anoncreds
 import indy.blob_storage
 import indy.ledger
 import indy.pool
-from indy.error import IndyError, ErrorCode
+from indy.error import IndyError, ErrorCode, LedgerNotFound
 
 from ..cache.base import BaseCache
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
@@ -883,13 +883,18 @@ class IndyLedger(BaseLedger):
     async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
         """Get revocation registry definition by ID."""
         public_info = await self.wallet.get_public_did()
-        fetch_req = await indy.ledger.build_get_revoc_reg_def_request(
-            public_info and public_info.did, revoc_reg_id
-        )
-        response_json = await self._submit(fetch_req, sign_did=public_info)
-        (found_id, found_def_json) = await indy.ledger.parse_get_revoc_reg_def_response(
-            response_json
-        )
+        try:
+            fetch_req = await indy.ledger.build_get_revoc_reg_def_request(
+                public_info and public_info.did, revoc_reg_id
+            )
+            response_json = await self._submit(fetch_req, sign_did=public_info)
+            (found_id, found_def_json) = await indy.ledger.parse_get_revoc_reg_def_response(
+                response_json
+            )
+        except IndyError as e:
+            logging.error(f"get_revoc_reg_def failed with revoc_reg_id={revoc_reg_id}. {e.error_code}: {e.message}")
+            raise e
+
         assert found_id == revoc_reg_id
         return json.loads(found_def_json)
 

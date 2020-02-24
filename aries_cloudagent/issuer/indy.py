@@ -105,9 +105,6 @@ class IndyIssuer(BaseIssuer):
 
         # may throw AnoncredsRevocationRegistryFullError
 
-        # pass revoc JSON to registry for storage / submission
-        print("delta", json.dumps(revoc_reg_delta_json, indent=2))
-
         return json.loads(credential_json), credential_revocation_id
 
     async def revoke_credential(
@@ -128,7 +125,5 @@ class IndyIssuer(BaseIssuer):
         # may throw AnoncredsInvalidUserRevocId if using ISSUANCE_ON_DEMAND
 
         delta = json.loads(revoc_reg_delta_json)
-        # pass revoc JSON to registry for storage / submission
-        print("delta", json.dumps(revoc_reg_delta_json, indent=2))
 
         return delta
