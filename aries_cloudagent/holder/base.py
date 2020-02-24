@@ -60,7 +60,7 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         requested_credentials,
         schemas,
         credential_definitions,
-        rev_states_json,
+        rev_states_json=None,
     ):
         """
         Get credentials stored in the wallet.
@@ -97,7 +97,7 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         credential_request_metadata,
         credential_attr_mime_types,
         credential_id,
-        rev_reg_def_json,
+        rev_reg_def_json={},
     ):
         """
         Store a credential in the wallet.

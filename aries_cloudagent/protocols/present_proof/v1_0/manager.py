@@ -307,7 +307,7 @@ class PresentationManager:
                         credential_definition_id
                     ] = await ledger.get_credential_definition(credential_definition_id)
 
-                if "rev_reg_id" in credential:
+                if "rev_reg_id" in credential and credential["rev_reg_id"] is not None:
                     revocation_registry_id = credential["rev_reg_id"]
                     if revocation_registry_id not in revocation_registries:
                         revocation_registries[

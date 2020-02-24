@@ -55,12 +55,12 @@ class TestIndyHolder(AsyncTestCase):
         )
 
         mock_store_cred.assert_called_once_with(
-            mock_wallet.handle,
-            None,
-            json.dumps("credential_request_metadata"),
-            json.dumps("credential_data"),
-            json.dumps("credential_definition"),
-            None,
+            wallet_handle=mock_wallet.handle,
+            cred_id=None,
+            cred_req_metadata_json=json.dumps("credential_request_metadata"),
+            cred_json=json.dumps("credential_data"),
+            cred_def_json=json.dumps("credential_definition"),
+            rev_reg_def_json=None
         )
 
         assert cred_id == "cred_id"

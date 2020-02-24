@@ -100,7 +100,7 @@ class IndyHolder(BaseHolder):
             cred_req_metadata_json=json.dumps(credential_request_metadata),
             cred_json=json.dumps(credential_data),
             cred_def_json=json.dumps(credential_definition),
-            rev_reg_def_json=json.dumps(rev_reg_def_json)
+            rev_reg_def_json=json.dumps(rev_reg_def_json) if rev_reg_def_json else None
         )
 
         if credential_attr_mime_types:
@@ -301,7 +301,7 @@ class IndyHolder(BaseHolder):
         requested_credentials: dict,
         schemas: dict,
         credential_definitions: dict,
-        rev_states_json: dict
+        rev_states_json: dict = None
     ):
         """
         Get credentials stored in the wallet.
@@ -322,7 +322,7 @@ class IndyHolder(BaseHolder):
             self.wallet.master_secret_id,
             json.dumps(schemas),
             json.dumps(credential_definitions),
-            json.dumps(rev_states_json)
+            json.dumps(rev_states_json) if rev_states_json else "{}"
         )
 
         presentation = json.loads(presentation_json)

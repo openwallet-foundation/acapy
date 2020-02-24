@@ -3,7 +3,15 @@
 import logging
 from typing import Mapping, Tuple
 
-from ....revocation.models.revocation_registry import RevocationRegistry
+from indy.error import IndyError
+
+from .messages.credential_ack import CredentialAck
+from .messages.credential_issue import CredentialIssue
+from .messages.credential_offer import CredentialOffer
+from .messages.credential_proposal import CredentialProposal
+from .messages.credential_request import CredentialRequest
+from .messages.inner.credential_preview import CredentialPreview
+from .models.credential_exchange import V10CredentialExchange
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
@@ -15,16 +23,9 @@ from ....messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE,
 )
 from ....revocation.indy import IndyRevocation
+from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
-
-from .messages.credential_issue import CredentialIssue
-from .messages.credential_offer import CredentialOffer
-from .messages.credential_proposal import CredentialProposal
-from .messages.credential_request import CredentialRequest
-from .messages.credential_ack import CredentialAck
-from .messages.inner.credential_preview import CredentialPreview
-from .models.credential_exchange import V10CredentialExchange
 
 
 class CredentialManagerError(BaseError):
@@ -586,7 +587,8 @@ class CredentialManager:
             credential_definition = await ledger.get_credential_definition(
                 raw_credential["cred_def_id"]
             )
-            if "rev_reg_id" in raw_credential:
+            if "rev_reg_id" in raw_credential \
+                    and raw_credential["rev_reg_id"] is not None:
                 revoc_reg_def = await ledger.get_revoc_reg_def(
                     raw_credential["rev_reg_id"]
                 )
@@ -614,14 +616,18 @@ class CredentialManager:
                 )
                 await revoc_reg.retrieve_tails(self.context)
 
-        credential_id = await holder.store_credential(
-            credential_definition,
-            raw_credential,
-            credential_exchange_record.credential_request_metadata,
-            mime_types,
-            credential_id=credential_id,
-            rev_reg_def_json=revoc_reg_def,
-        )
+        try:
+            credential_id = await holder.store_credential(
+                credential_definition,
+                raw_credential,
+                credential_exchange_record.credential_request_metadata,
+                mime_types,
+                credential_id=credential_id,
+                rev_reg_def_json=revoc_reg_def,
+            )
+        except IndyError as e:
+            self._logger.error(f"Error storing credential. {e.error_code}: {e.message}")
+            raise e
 
         credential = await holder.get_credential(credential_id)
 
