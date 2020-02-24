@@ -4,6 +4,8 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
 
+from json.decoder import JSONDecodeError
+
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
@@ -41,6 +43,12 @@ class V10CredentialExchangeListResultSchema(Schema):
         fields.Nested(V10CredentialExchangeSchema),
         description="Aries#0036 v1.0 credential exchange records",
     )
+
+
+class V10CredentialStoreRequestSchema(Schema):
+    """Request schema for sending a credential store admin message."""
+
+    credential_id = fields.Str(required=False)
 
 
 class V10CredentialProposalRequestSchemaBase(Schema):
@@ -568,6 +576,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
 
 @docs(tags=["issue-credential"], summary="Store a received credential")
+@request_schema(V10CredentialStoreRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_store(request: web.BaseRequest):
     """
@@ -582,6 +591,12 @@ async def credential_exchange_store(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
+
+    try:
+        body = await request.json() or {}
+        credential_id = body.get("credential_id")
+    except JSONDecodeError:
+        credential_id = None
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
@@ -608,7 +623,9 @@ async def credential_exchange_store(request: web.BaseRequest):
     (
         credential_exchange_record,
         credential_stored_message,
-    ) = await credential_manager.store_credential(credential_exchange_record)
+    ) = await credential_manager.store_credential(
+        credential_exchange_record, credential_id
+    )
 
     await outbound_handler(credential_stored_message, connection_id=connection_id)
     return web.json_response(credential_exchange_record.serialize())
