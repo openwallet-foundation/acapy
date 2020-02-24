@@ -16,6 +16,7 @@ from .indy import IndyRevocation
 from .models.issuer_revocation_record import IssuerRevocationRecordSchema
 from .models.revocation_registry import RevocationRegistry
 
+
 class RevRegCreateRequestSchema(Schema):
     """Request schema for revocation registry creation request."""
 
@@ -23,9 +24,7 @@ class RevRegCreateRequestSchema(Schema):
         description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
 
-    max_cred_num = fields.Int(
-        description="Maximum credential numbers", required=False
-    )
+    max_cred_num = fields.Int(description="Maximum credential numbers", required=False)
 
 
 class RevRegCreateResultSchema(Schema):
@@ -87,12 +86,11 @@ async def revocation_create_registry(request: web.BaseRequest):
     return web.json_response({"result": registry_record.serialize()})
 
 
-@docs(tags=["revocation"], summary="Get current revocation registry",
-      parameters=[{
-          "in": "path",
-          "name": "id",
-          "description": "revocation registry id."
-      }])
+@docs(
+    tags=["revocation"],
+    summary="Get current revocation registry",
+    parameters=[{"in": "path", "name": "id", "description": "revocation registry id."}],
+)
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_current_registry(request: web.BaseRequest):
     """
@@ -117,21 +115,14 @@ async def get_current_registry(request: web.BaseRequest):
 
     return web.json_response({"result": revoc_registry.serialize()})
 
-@docs(tags=["revocation"], summary="Get the tail file of revocation registry",
-      produces="application/octet-stream",
-      parameters=[{
-          "in": "path",
-          "name": "id",
-          "description": "revocation registry id."
-      }],
-      responses={
-          200: {
-              "description": "tail file",
-              "schema": {
-                  "type": "file"
-              }
-          }
-      })
+
+@docs(
+    tags=["revocation"],
+    summary="Get the tail file of revocation registry",
+    produces="application/octet-stream",
+    parameters=[{"in": "path", "name": "id", "description": "revocation registry id."}],
+    responses={200: {"description": "tail file", "schema": {"type": "file"}}},
+)
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
     Request handler for getting the tail file of the revocation registry.
@@ -156,12 +147,11 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     return web.FileResponse(path=revoc_registry.tails_local_path, status=200)
 
 
-@docs(tags=["revocation"], summary="Publish a given revocation registry",
-      parameters=[{
-          "in": "path",
-          "name": "id",
-          "description": "revocation registry id."
-      }])
+@docs(
+    tags=["revocation"],
+    summary="Publish a given revocation registry",
+    parameters=[{"in": "path", "name": "id", "description": "revocation registry id."}],
+)
 @response_schema(RevRegCreateResultSchema(), 200)
 async def publish_registry(request: web.BaseRequest):
     """
@@ -191,12 +181,17 @@ async def publish_registry(request: web.BaseRequest):
     return web.json_response({"result": revoc_registry.serialize()})
 
 
-@docs(tags=["revocation"], summary="Update revocation registry with new public URI to the tail file.",
-      parameters=[{
-          "in": "path",
-          "name": "id",
-          "description": "use credential definition id as the revocation registry id."
-      }])
+@docs(
+    tags=["revocation"],
+    summary="Update revocation registry with new public URI to the tail file.",
+    parameters=[
+        {
+            "in": "path",
+            "name": "id",
+            "description": "use credential definition id as the revocation registry id.",
+        }
+    ],
+)
 @request_schema(RevRegUpdateTailFileUriSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def update_registry(request: web.BaseRequest):

@@ -29,7 +29,7 @@ class RevocationRegistry:
         tails_local_path: str = None,
         tails_public_uri: str = None,
         tails_hash: str = None,
-        reg_def_json: str = None
+        reg_def_json: str = None,
     ):
         """Initialize the revocation registry instance."""
         self._cred_def_id = cred_def_id
@@ -56,7 +56,7 @@ class RevocationRegistry:
             "max_creds": revoc_reg_def["value"]["maxCredNum"],
             "tag": revoc_reg_def["tag"],
             "tails_hash": revoc_reg_def["value"]["tailsHash"],
-            "reg_def_json": json.dumps(revoc_reg_def)
+            "reg_def_json": json.dumps(revoc_reg_def),
         }
         if public_def:
             init["tails_public_uri"] = tails_location
@@ -134,7 +134,10 @@ class RevocationRegistry:
             raise FileNotFoundError("Tail file does not exist.")
 
         tails_reader_config = json.dumps(
-            {"base_dir": str(tails_file_path.parent.absolute()), "file": str(tails_file_path.name)}
+            {
+                "base_dir": str(tails_file_path.parent.absolute()),
+                "file": str(tails_file_path.name),
+            }
         )
         return await indy.blob_storage.open_reader("default", tails_reader_config)
 
@@ -143,7 +146,9 @@ class RevocationRegistry:
         if self._tails_local_path:
             return self._tails_local_path
 
-        tails_file_dir = context.settings.get("holder.revocation.tails_files.path", "/tmp/indy/revocation/tails_files")
+        tails_file_dir = context.settings.get(
+            "holder.revocation.tails_files.path", "/tmp/indy/revocation/tails_files"
+        )
         return f"{tails_file_dir}/{self._tails_hash}"
 
     def has_local_tails_file(self, context: InjectionContext) -> bool:
@@ -165,7 +170,7 @@ class RevocationRegistry:
         if not tails_file_dir.exists():
             tails_file_dir.mkdir(parents=True)
 
-        buffer_size = 65536 # should be multiple of 32 bytes for sha256
+        buffer_size = 65536  # should be multiple of 32 bytes for sha256
         with open(tails_file_path, "wb", buffer_size) as tails_file:
             file_hasher = hashlib.sha256()
             buf = await tails_stream.read(buffer_size)
@@ -176,17 +181,19 @@ class RevocationRegistry:
 
             download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
             if download_tails_hash != self.tails_hash:
-                raise RevocationError("The hash of the downloaded tails file does not match.")
+                raise RevocationError(
+                    "The hash of the downloaded tails file does not match."
+                )
 
         self.tails_local_path = tails_file_path
         return self.tails_local_path
 
     async def create_revocation_state(
-            self,
-            context: InjectionContext,
-            cred_rev_id: str,
-            rev_reg_delta: dict,
-            timestamp: int,
+        self,
+        context: InjectionContext,
+        cred_rev_id: str,
+        rev_reg_delta: dict,
+        timestamp: int,
     ):
         """
         Get credentials stored in the wallet.
@@ -206,7 +213,8 @@ class RevocationRegistry:
             rev_reg_def_json=self._reg_def_json,
             cred_rev_id=cred_rev_id,
             rev_reg_delta_json=json.dumps(rev_reg_delta),
-            timestamp=timestamp)
+            timestamp=timestamp,
+        )
 
         return json.loads(rev_state)
 

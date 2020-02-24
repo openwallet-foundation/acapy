@@ -90,7 +90,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def create_and_send_schema(
-            self, schema_name: str, schema_version: str, attribute_names: Sequence[str]
+        self, schema_name: str, schema_version: str, attribute_names: Sequence[str]
     ) -> Tuple[str, dict]:
         """
         Send schema to ledger.
@@ -113,7 +113,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def send_revoc_reg_entry(self, revoc_reg_id, revoc_def_type, revoc_reg_entry, issuer_did):
+    def send_revoc_reg_entry(
+        self, revoc_reg_id, revoc_def_type, revoc_reg_entry, issuer_did
+    ):
         """Publish a revocation registry entry to the ledger."""
         pass
 

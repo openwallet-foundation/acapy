@@ -608,7 +608,10 @@ class CredentialManager:
         if raw_credential["rev_reg_id"]:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
             if not revoc_reg.has_local_tails_file(self.context):
-                self._logger.info(f"Downloading the tail file for the revocation registry: {revoc_reg.registry_id}")
+                self._logger.info(
+                    "Downloading the tail file for the "
+                    f"revocation registry: {revoc_reg.registry_id}"
+                )
                 await revoc_reg.retrieve_tails(self.context)
 
         credential_id = await holder.store_credential(
@@ -708,4 +711,3 @@ class CredentialManager:
 
         credential_exchange_record.state = V10CredentialExchange.STATE_REVOKED
         await credential_exchange_record.save(self.context, reason="Revoked credential")
-

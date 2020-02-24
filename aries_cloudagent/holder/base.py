@@ -54,7 +54,14 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def create_presentation(self, presentation_request, requested_credentials, schemas, credential_definitions, rev_states_json):
+    def create_presentation(
+        self,
+        presentation_request,
+        requested_credentials,
+        schemas,
+        credential_definitions,
+        rev_states_json,
+    ):
         """
         Get credentials stored in the wallet.
 
@@ -83,8 +90,15 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def store_credential(self, credential_definition, credential_data, credential_request_metadata,
-                         credential_attr_mime_types, credential_id, rev_reg_def_json):
+    def store_credential(
+        self,
+        credential_definition,
+        credential_data,
+        credential_request_metadata,
+        credential_attr_mime_types,
+        credential_id,
+        rev_reg_def_json,
+    ):
         """
         Store a credential in the wallet.
 

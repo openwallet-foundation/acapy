@@ -900,14 +900,17 @@ class IndyLedger(BaseLedger):
             public_info and public_info.did, revoc_reg_id, timestamp
         )
         response_json = await self._submit(fetch_req, sign_did=public_info)
-        (found_id, found_reg_json, timestamp2) = await indy.ledger.parse_get_revoc_reg_response(
-            response_json
-        )
+        (
+            found_id,
+            found_reg_json,
+            timestamp2,
+        ) = await indy.ledger.parse_get_revoc_reg_response(response_json)
         assert found_id == revoc_reg_id
         return json.loads(found_reg_json), timestamp2
 
-
-    async def get_revoc_reg_delta(self, revoc_reg_id: str, timestamp_from=0, timestamp_to=int(time())) -> (dict, int):
+    async def get_revoc_reg_delta(
+        self, revoc_reg_id: str, timestamp_from=0, timestamp_to=int(time())
+    ) -> (dict, int):
         """
         Look up a revocation registry delta by ID.
         :param revoc_reg_id revocation registry id
@@ -921,9 +924,11 @@ class IndyLedger(BaseLedger):
             public_info and public_info.did, revoc_reg_id, timestamp_from, timestamp_to
         )
         response_json = await self._submit(fetch_req, sign_did=public_info)
-        (found_id, found_delta_json, delta_timestamp) = await indy.ledger.parse_get_revoc_reg_delta_response(
-            response_json
-        )
+        (
+            found_id,
+            found_delta_json,
+            delta_timestamp,
+        ) = await indy.ledger.parse_get_revoc_reg_delta_response(response_json)
         assert found_id == revoc_reg_id
         return json.loads(found_delta_json), delta_timestamp
 

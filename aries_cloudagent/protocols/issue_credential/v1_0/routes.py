@@ -784,7 +784,8 @@ async def register(app: web.Application):
                 credential_exchange_store,
             ),
             web.post(
-                "/issue-credential/records/{cred_ex_id}/revoke", credential_exchange_revoke
+                "/issue-credential/records/{cred_ex_id}/revoke",
+                credential_exchange_revoke,
             ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/problem-report",

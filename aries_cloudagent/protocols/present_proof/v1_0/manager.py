@@ -4,7 +4,7 @@ import json
 import logging
 import time
 
-from indy.error import CommonIOError, IndyError
+from indy.error import IndyError
 
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....config.injection_context import InjectionContext
@@ -269,7 +269,9 @@ class PresentationManager:
                 "cred_id": requested_attributes[referent]["cred_id"]
             }
             if "non_revoked" in presentation_request["requested_attributes"][referent]:
-                requested_referents[referent]["non_revoked"] = presentation_request["requested_attributes"][referent]["non_revoked"]
+                requested_referents[referent]["non_revoked"] = presentation_request[
+                    "requested_attributes"
+                ][referent]["non_revoked"]
 
         requested_predicates = requested_credentials["requested_predicates"]
         for referent in requested_predicates:
@@ -277,7 +279,9 @@ class PresentationManager:
                 "cred_id": requested_predicates[referent]["cred_id"],
             }
             if "non_revoked" in presentation_request["requested_predicates"][referent]:
-                requested_referents[referent]["non_revoked"] = presentation_request["requested_predicates"][referent]["non_revoked"]
+                requested_referents[referent]["non_revoked"] = presentation_request[
+                    "requested_predicates"
+                ][referent]["non_revoked"]
 
         # extract mapping of presentation referents to credential ids
         for referent in requested_referents:
@@ -299,18 +303,24 @@ class PresentationManager:
 
                 credential_definition_id = credential["cred_def_id"]
                 if credential_definition_id not in credential_definitions:
-                    credential_definitions[credential_definition_id] = await ledger.get_credential_definition(
-                        credential_definition_id)
+                    credential_definitions[
+                        credential_definition_id
+                    ] = await ledger.get_credential_definition(credential_definition_id)
 
                 if credential["rev_reg_id"]:
                     revocation_registry_id = credential["rev_reg_id"]
                     if revocation_registry_id not in revocation_registries:
-                        revocation_registries[revocation_registry_id] = RevocationRegistry.from_definition(
-                            await ledger.get_revoc_reg_def(revocation_registry_id), True)
+                        revocation_registries[
+                            revocation_registry_id
+                        ] = RevocationRegistry.from_definition(
+                            await ledger.get_revoc_reg_def(revocation_registry_id), True
+                        )
 
         # Get delta with timespan defined in "non_revoked" of the presentation request or attributes
         current_timestamp = int(time.time())
-        non_revoked_timespan = presentation_exchange_record.presentation_request.get("non_revoked", None)
+        non_revoked_timespan = presentation_exchange_record.presentation_request.get(
+            "non_revoked", None
+        )
 
         revoc_reg_deltas = {}
         async with ledger:
@@ -320,7 +330,9 @@ class PresentationManager:
                     continue
 
                 rev_reg_id = credentials[credential_id]["rev_reg_id"]
-                referent_non_revoked_timespan = referented.get("non_revoked", non_revoked_timespan)
+                referent_non_revoked_timespan = referented.get(
+                    "non_revoked", non_revoked_timespan
+                )
 
                 if referent_non_revoked_timespan:
                     if "from" not in non_revoked_timespan:
@@ -331,13 +343,26 @@ class PresentationManager:
                     key = f"{rev_reg_id}_{non_revoked_timespan['from']}_{non_revoked_timespan['to']}"
                     if key not in revoc_reg_deltas:
                         (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
-                            rev_reg_id, non_revoked_timespan['from'], non_revoked_timespan['to'])
-                        revoc_reg_deltas[key] = (rev_reg_id, credential_id, delta, delta_timestamp)
+                            rev_reg_id,
+                            non_revoked_timespan["from"],
+                            non_revoked_timespan["to"],
+                        )
+                        revoc_reg_deltas[key] = (
+                            rev_reg_id,
+                            credential_id,
+                            delta,
+                            delta_timestamp,
+                        )
                     referented["timestamp"] = revoc_reg_deltas[key][3]
 
         # Get revocation states to prove non-revoked
         revocation_states = {}
-        for (rev_reg_id, credential_id, delta, delta_timestamp) in revoc_reg_deltas.values():
+        for (
+            rev_reg_id,
+            credential_id,
+            delta,
+            delta_timestamp,
+        ) in revoc_reg_deltas.values():
             if rev_reg_id not in revocation_states:
                 revocation_states[rev_reg_id] = {}
 
@@ -346,26 +371,35 @@ class PresentationManager:
                 await rev_reg.retrieve_tails(self.context)
 
             try:
-                revocation_states[rev_reg_id][delta_timestamp] = await rev_reg\
-                    .create_revocation_state(self.context, credential["cred_rev_id"], delta, delta_timestamp)
+                revocation_states[rev_reg_id][
+                    delta_timestamp
+                ] = await rev_reg.create_revocation_state(
+                    self.context, credential["cred_rev_id"], delta, delta_timestamp
+                )
             except IndyError as e:
-                logging.error(f"Failed to create revocation state: {e.error_code}, {e.message}")
+                logging.error(
+                    f"Failed to create revocation state: {e.error_code}, {e.message}"
+                )
                 raise e
 
         for (referent, referented) in requested_referents.items():
             if "timestamp" not in referented:
                 continue
             if referent in requested_credentials["requested_attributes"]:
-                requested_credentials["requested_attributes"][referent]["timestamp"] = referented["timestamp"]
+                requested_credentials["requested_attributes"][referent][
+                    "timestamp"
+                ] = referented["timestamp"]
             if referent in requested_credentials["requested_predicates"]:
-                requested_credentials["requested_predicates"][referent]["timestamp"] = referented["timestamp"]
+                requested_credentials["requested_predicates"][referent][
+                    "timestamp"
+                ] = referented["timestamp"]
 
         indy_proof = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
             requested_credentials,
             schemas,
             credential_definitions,
-            revocation_states
+            revocation_states,
         )
 
         presentation_message = Presentation(
@@ -420,10 +454,9 @@ class PresentationManager:
             presentation_preview = exchange_pres_proposal.presentation_proposal
 
             proof_req = presentation_exchange_record.presentation_request
-            for (
-                reft,
-                attr_spec
-            ) in presentation["requested_proof"]["revealed_attrs"].items():
+            for (reft, attr_spec) in presentation["requested_proof"][
+                "revealed_attrs"
+            ].items():
                 name = proof_req["requested_attributes"][reft]["name"]
                 value = attr_spec["raw"]
                 if not presentation_preview.has_attr_spec(
@@ -431,7 +464,7 @@ class PresentationManager:
                         attr_spec["sub_proof_index"]
                     ]["cred_def_id"],
                     name=name,
-                    value=value
+                    value=value,
                 ):
                     raise PresentationManagerError(
                         f"Presentation {name}={value} mismatches proposal value"
@@ -482,25 +515,47 @@ class PresentationManager:
 
                 # Build schemas for anoncreds
                 if identifier["schema_id"] not in schemas:
-                    schemas[identifier["schema_id"]] = await ledger.get_schema(identifier['schema_id'])
+                    schemas[identifier["schema_id"]] = await ledger.get_schema(
+                        identifier["schema_id"]
+                    )
 
                 if identifier["cred_def_id"] not in credential_definitions:
-                    credential_definitions[identifier["cred_def_id"]] = await ledger.get_credential_definition(identifier['cred_def_id'])
+                    credential_definitions[
+                        identifier["cred_def_id"]
+                    ] = await ledger.get_credential_definition(
+                        identifier["cred_def_id"]
+                    )
 
                 if "rev_reg_id" in identifier and identifier["rev_reg_id"] is not None:
                     if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[identifier["rev_reg_id"]] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+                        rev_reg_defs[
+                            identifier["rev_reg_id"]
+                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
 
-                    (found_rev_reg_entry, found_timestamp) = await ledger.get_revoc_reg_entry(identifier["rev_reg_id"], identifier["timestamp"])
+                    (
+                        found_rev_reg_entry,
+                        found_timestamp,
+                    ) = await ledger.get_revoc_reg_entry(
+                        identifier["rev_reg_id"], identifier["timestamp"]
+                    )
                     if identifier["rev_reg_id"] not in rev_reg_entries:
-                        rev_reg_entries[identifier["rev_reg_id"]] = {found_timestamp: found_rev_reg_entry}
+                        rev_reg_entries[identifier["rev_reg_id"]] = {
+                            found_timestamp: found_rev_reg_entry
+                        }
                     else:
-                        rev_reg_entries[identifier["rev_reg_id"]][found_timestamp] = found_rev_reg_entry
+                        rev_reg_entries[identifier["rev_reg_id"]][
+                            found_timestamp
+                        ] = found_rev_reg_entry
 
         verifier: BaseVerifier = await self.context.inject(BaseVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value
             await verifier.verify_presentation(
-                indy_proof_request, indy_proof, schemas, credential_definitions, rev_reg_defs, rev_reg_entries
+                indy_proof_request,
+                indy_proof,
+                schemas,
+                credential_definitions,
+                rev_reg_defs,
+                rev_reg_entries,
             )
         )
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
@@ -550,7 +605,7 @@ class PresentationManager:
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
             self.context,
             {"thread_id": self.context.message._thread_id},
-            {"connection_id": self.context.connection_record.connection_id}
+            {"connection_id": self.context.connection_record.connection_id},
         )
 
         presentation_exchange_record.state = (
