@@ -4,34 +4,30 @@ shopt -s nocasematch
 
 cd $(dirname $0)
 
+AGENT="$1"
+shift
+ARGS=""
+
 for i in "$@"
 do
 	case $i in
 	--events)
 		EVENTS=1
-		shift
+		continue
 	;;
-	--no-auto)
-		NO_AUTO=1
-		shift
-	;;
-	*)
-		AGENT="$i"
-		shift
+	--timing)
+		if [ ! -d "../logs" ]; then
+			mkdir ../logs && chmod -R uga+rws ../logs
+		fi
+		if [ "$(ls -ld ../logs | grep dr..r..rwx)" == "" ]; then
+			echo "Error: To use the --timing parameter, the directory '../logs' must exist and all users must be able to write to it."
+			echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
+			exit 1
+		fi
 	;;
 	esac
+	ARGS="${ARGS:+$ARGS }$i"
 done
-
-case "$@" in *--timing*)
-	if [ ! -d "../logs" ]; then
-		mkdir ../logs && chmod -R uga+rws ../logs
-	fi
-	if [ "$(ls -ld ../logs | grep dr..r..rwx)" == "" ]; then
-		echo "Error: To use the --timing parameter, the directory '../logs' must exist and all users must be able to write to it."
-		echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
-		exit 1
-	fi
-esac
 
 if [ "$AGENT" = "faber" ]; then
 	AGENT_MODULE="faber"
@@ -89,12 +85,8 @@ fi
 if ! [ -z "$GENESIS_URL" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e GENESIS_URL=${GENESIS_URL}"
 fi
-
 if ! [ -z "$EVENTS" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
-fi
-if ! [ -z "$NO_AUTO" ]; then
-	DOCKER_ENV="${DOCKER_ENV} -e NO_AUTO=1"
 fi
 
 # on Windows, docker run needs to be prefixed by winpty
@@ -108,4 +100,4 @@ $DOCKER run --name $AGENT --rm -it \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	-v "/$(pwd)/../logs:/home/indy/logs" \
 	$DOCKER_ENV \
-	faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $@
+	faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $ARGS
