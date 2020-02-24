@@ -188,7 +188,7 @@ async def publish_registry(request: web.BaseRequest):
         {
             "in": "path",
             "name": "id",
-            "description": "use credential definition id as the revocation registry id.",
+            "description": "use credential definition id as the revocation registry id."
         }
     ],
 )

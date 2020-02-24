@@ -881,7 +881,7 @@ class IndyLedger(BaseLedger):
         return acceptance
 
     async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
-        """Look up a revocation registry definition by ID."""
+        """Get revocation registry definition by ID."""
         public_info = await self.wallet.get_public_did()
         fetch_req = await indy.ledger.build_get_revoc_reg_def_request(
             public_info and public_info.did, revoc_reg_id
@@ -894,7 +894,7 @@ class IndyLedger(BaseLedger):
         return json.loads(found_def_json)
 
     async def get_revoc_reg_entry(self, revoc_reg_id: str, timestamp: int):
-        """Look up a revocation registry entry by revocation registry ID and timestamp."""
+        """Get revocation registry entry by revocation registry ID and timestamp."""
         public_info = await self.wallet.get_public_did()
         fetch_req = await indy.ledger.build_get_revoc_reg_request(
             public_info and public_info.did, revoc_reg_id, timestamp
@@ -913,9 +913,10 @@ class IndyLedger(BaseLedger):
     ) -> (dict, int):
         """
         Look up a revocation registry delta by ID.
+
         :param revoc_reg_id revocation registry id
-        :param timestamp_from from time. time represented as a total number of seconds from Unix Epoch
-        :param timestamp_to to time. time represented as a total number of seconds from Unix Epoch
+        :param timestamp_from from time. a total number of seconds from Unix Epoch
+        :param timestamp_to to time. a total number of seconds from Unix Epoch
 
         :returns delta response, delta timestamp
         """

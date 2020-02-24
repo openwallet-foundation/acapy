@@ -587,8 +587,10 @@ class CredentialManager:
             credential_definition = await ledger.get_credential_definition(
                 raw_credential["cred_def_id"]
             )
-            if "rev_reg_id" in raw_credential \
-                    and raw_credential["rev_reg_id"] is not None:
+            if (
+                "rev_reg_id" in raw_credential
+                and raw_credential["rev_reg_id"] is not None
+            ):
                 revoc_reg_def = await ledger.get_revoc_reg_def(
                     raw_credential["rev_reg_id"]
                 )
@@ -611,8 +613,8 @@ class CredentialManager:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
             if not revoc_reg.has_local_tails_file(self.context):
                 self._logger.info(
-                    "Downloading the tail file for the "
-                    f"revocation registry: {revoc_reg.registry_id}"
+                    "Downloading the tails file for the revocation registry: "
+                    f"{revoc_reg.registry_id}"
                 )
                 await revoc_reg.retrieve_tails(self.context)
 

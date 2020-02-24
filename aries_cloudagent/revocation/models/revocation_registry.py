@@ -142,7 +142,7 @@ class RevocationRegistry:
         return await indy.blob_storage.open_reader("default", tails_reader_config)
 
     def get_receiving_tails_local_path(self, context: InjectionContext):
-        """Make the local path to the tail file we download from remote URI"""
+        """Make the local path to the tail file we download from remote URI."""
         if self._tails_local_path:
             return self._tails_local_path
 
@@ -152,6 +152,7 @@ class RevocationRegistry:
         return f"{tails_file_dir}/{self._tails_hash}"
 
     def has_local_tails_file(self, context: InjectionContext) -> bool:
+        """Test if the tails file exists locally."""
         tails_file_path = Path(self.get_receiving_tails_local_path(context))
         return tails_file_path.is_file()
 

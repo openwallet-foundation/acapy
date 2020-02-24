@@ -152,6 +152,7 @@ class IssuerRevocationRecord(BaseRecord):
         await self.save(context, reason="Generated registry")
 
     def set_tails_file_public_uri(self, tails_file_uri):
+        """Update tails file's publicly accessible URI."""
         self.tails_public_uri = tails_file_uri
         self.revoc_reg_def["value"]["tailsLocation"] = tails_file_uri
 

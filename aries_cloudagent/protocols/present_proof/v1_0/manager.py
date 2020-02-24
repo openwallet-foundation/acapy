@@ -266,12 +266,11 @@ class PresentationManager:
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = presentation_request.get("requested_attributes", {})
         for referent in attr_creds:
-            requested_referents[referent] = {
-                "cred_id": attr_creds[referent]["cred_id"]
-            }
+            requested_referents[referent] = {"cred_id": attr_creds[referent]["cred_id"]}
             if referent in req_attrs and "non_revoked" in req_attrs[referent]:
-                requested_referents[referent]["non_revoked"] = \
-                    req_attrs[referent]["non_revoked"]
+                requested_referents[referent]["non_revoked"] = req_attrs[referent][
+                    "non_revoked"
+                ]
 
         preds_creds = requested_credentials.get("requested_predicates", {})
         req_preds = presentation_request.get("requested_attributes", {})
@@ -280,8 +279,9 @@ class PresentationManager:
                 "cred_id": preds_creds[referent]["cred_id"],
             }
             if referent in req_preds and "non_revoked" in req_preds[referent]:
-                requested_referents[referent]["non_revoked"] = \
-                    req_preds[referent]["non_revoked"]
+                requested_referents[referent]["non_revoked"] = req_preds[referent][
+                    "non_revoked"
+                ]
 
         # extract mapping of presentation referents to credential ids
         for referent in requested_referents:
@@ -316,7 +316,8 @@ class PresentationManager:
                             await ledger.get_revoc_reg_def(revocation_registry_id), True
                         )
 
-        # Get delta with timespan defined in "non_revoked" of the presentation request or attributes
+        # Get delta with timespan defined in "non_revoked"
+        # of the presentation request or attributes
         current_timestamp = int(time.time())
         non_revoked_timespan = presentation_exchange_record.presentation_request.get(
             "non_revoked", None
@@ -340,7 +341,8 @@ class PresentationManager:
                     if "to" not in non_revoked_timespan:
                         non_revoked_timespan["to"] = current_timestamp
 
-                    key = f"{rev_reg_id}_{non_revoked_timespan['from']}_{non_revoked_timespan['to']}"
+                    key = f"{rev_reg_id}_{non_revoked_timespan['from']}_" \
+                          f"{non_revoked_timespan['to']}"
                     if key not in revoc_reg_deltas:
                         (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
                             rev_reg_id,
@@ -520,20 +522,28 @@ class PresentationManager:
                     )
 
                 if identifier["cred_def_id"] not in credential_definitions:
-                    credential_definitions[identifier["cred_def_id"]] = \
-                        await ledger.get_credential_definition(
-                            identifier['cred_def_id'])
+                    credential_definitions[
+                        identifier["cred_def_id"]
+                    ] = await ledger.get_credential_definition(
+                        identifier["cred_def_id"]
+                    )
 
                 if "rev_reg_id" in identifier and identifier["rev_reg_id"] is not None:
                     if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[identifier["rev_reg_id"]] = \
-                            await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+                        rev_reg_defs[
+                            identifier["rev_reg_id"]
+                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
 
-                    if "timestamp" in identifier \
-                            and identifier["timestamp"] is not None:
-                        (found_rev_reg_entry, found_timestamp) = \
-                            await ledger.get_revoc_reg_entry(
-                                identifier["rev_reg_id"], identifier["timestamp"])
+                    if (
+                        "timestamp" in identifier
+                        and identifier["timestamp"] is not None
+                    ):
+                        (
+                            found_rev_reg_entry,
+                            found_timestamp,
+                        ) = await ledger.get_revoc_reg_entry(
+                            identifier["rev_reg_id"], identifier["timestamp"]
+                        )
 
                         if identifier["rev_reg_id"] not in rev_reg_entries:
                             rev_reg_entries[identifier["rev_reg_id"]] = {
@@ -541,7 +551,8 @@ class PresentationManager:
                             }
                         else:
                             rev_reg_entries[identifier["rev_reg_id"]][
-                                found_timestamp] = found_rev_reg_entry
+                                found_timestamp
+                            ] = found_rev_reg_entry
 
         verifier: BaseVerifier = await self.context.inject(BaseVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value
