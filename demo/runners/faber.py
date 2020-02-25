@@ -93,16 +93,14 @@ class FaberAgent(DemoAgent):
                 await self.admin_POST(
                     f"/issue-credential/records/{credential_exchange_id}/issue",
                     {
-                        "comment": f"Issuing credential, exchange {credential_exchange_id}",
+                        "comment": (
+                            f"Issuing credential, exchange {credential_exchange_id}"
+                        ),
                         "credential_preview": cred_preview,
                     },
                 )
             except ClientError:
-                log_status("#19 Add another revocation registry")
-                await self.create_and_publish_revocation_registry(
-                    message["credential_definition_id"], 2
-                )
-
+                pass
 
     async def handle_present_proof(self, message):
         state = message["state"]
@@ -176,7 +174,7 @@ async def main(
             ) = await agent.register_schema_and_creddef(
                 "degree schema",
                 version,
-                ["name", "date", "degree", "age"],
+                ["name", "date", "degree", "age", "timestamp"],
                 support_revocation=revocation,
             )
 
@@ -211,10 +209,11 @@ async def main(
         log_msg("Waiting for connection...")
         await agent.detect_connection()
 
-        async for option in prompt_loop(
-            "(1) Issue Credential, (2) Send Proof Request, "
-            + "(3) Send Message (4) Revoke Credential (X) Exit? [1/2/3/X] "
-        ):
+        options = "(1) Issue Credential (2) Send Proof Request (3) Send Message"
+        if revocation:
+            options += " (4) Revoke Credential (5) Add Revocation Registry"
+        options += " (X) Exit? [1/2/3/X] "
+        async for option in prompt_loop(options):
             if option is None or option in "xX":
                 break
 
@@ -227,6 +226,7 @@ async def main(
                     "date": "2018-05-28",
                     "degree": "Maths",
                     "age": "24",
+                    "timestamp": str(int(time.time())),
                 }
 
                 cred_preview = {
@@ -303,9 +303,18 @@ async def main(
                 await agent.admin_POST(
                     f"/connections/{agent.connection_id}/send-message", {"content": msg}
                 )
-            elif option == "4":
+            elif option == "4" and revocation:
                 revoking_cred_id = await prompt("Enter credential exchange id: ")
-                await agent.admin_POST(f"/issue-credential/records/{revoking_cred_id}/revoke")
+                await agent.admin_POST(
+                    f"/issue-credential/records/{revoking_cred_id}/revoke"
+                )
+            elif option == "5" and revocation:
+                log_status("#19 Add another revocation registry")
+                revocation_registry_id = await (
+                    agent.create_and_publish_revocation_registry(
+                        credential_definition_id, 2
+                    )
+                )
 
         if show_timing:
             timing = await agent.fetch_timing()

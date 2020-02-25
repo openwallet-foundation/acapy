@@ -123,7 +123,7 @@ class AliceAgent(DemoAgent):
                 f"/present-proof/records/{presentation_exchange_id}/credentials"
             )
             if credentials:
-                for row in credentials:
+                for row in sorted(credentials, key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]), reverse=True):
                     for referent in row["presentation_referents"]:
                         if referent not in credentials_by_reft:
                             credentials_by_reft[referent] = row
