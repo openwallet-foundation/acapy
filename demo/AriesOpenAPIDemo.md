@@ -6,116 +6,110 @@ Source doc: https://docs.google.com/a/cloudcompass.ca/open?id=12N1KDm1l4Az6bSOJ3
 
 # Aries OpenAPI Demo <!-- omit in toc -->
 
-This demo is for developers comfortable with playing around with APIs using the OpenAPI (Swagger) user interface and JSON. The controller for each of the two agent instances in the demo is you. You drive the API exposed by the agent instances to respond to events received by each agent. The demo covers two agents, Alice and Faber (the usual two suspects). The two agents connect, and then the Faber agent issues an Education credential to Alice, and then asks Alice to prove she possesses the credential. Who knows why Faber needs to get the proof, but it lets us show off more protocols.
+What better way to learn about controllers than by actually being one yourself! In this demo, that’s just what happens&mdash;you are the controller. You have access to the full set of API endpoints exposed by an ACA-Py instance, and you will see the events coming from ACA-Py as they happen. Using that information, you'll help Alice's and Faber's agents connect, Faber's agent issue an education credential to Alice, and then ask Alice to prove she possesses the credential. Who knows why Faber needs to get the proof, but it lets us show off more protocols.
 
-# Table of Contents <!-- omit in toc -->
+# Contents <!-- omit in toc -->
 
+- [Getting Started](#getting-started)
 - [Running in a Browser](#running-in-a-browser)
 - [Running in Docker](#running-in-docker)
-  - [Starting Up](#starting-up)
-  - [Start the VON Network](#start-the-von-network)
-  - [Running the Faber Agent](#running-the-faber-agent)
-  - [Running Alice’s Agent](#running-alices-agent)
   - [Restarting the Docker Containers](#restarting-the-docker-containers)
-- [Using the Swagger User Interface](#using-the-swagger-user-interface)
+- [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface)
 - [Establishing a Connection](#establishing-a-connection)
-  - [Notes](#notes)
 - [Preparing to Issue a Credential](#preparing-to-issue-a-credential)
-  - [Notes](#notes-1)
+  - [Notes](#notes)
 - [Issuing a Credential](#issuing-a-credential)
-  - [Notes](#notes-2)
+  - [Notes](#notes-1)
   - [Bonus Points](#bonus-points)
 - [Requesting/Presenting a Proof](#requestingpresenting-a-proof)
-  - [Notes](#notes-3)
+  - [Notes](#notes-2)
 - [Conclusion](#conclusion)
 
+## Getting Started
+
+We will get started by opening three browser tabs that will be used throughout the lab. Two will be Swagger UIs for the Faber and Alice agent and one for the public ledger (showing the Hyperledger Indy ledger). As well, we'll keep the terminal sessions where we started the demos handy, as we'll be grabbing information from them as well.
+
+Let's start with the ledger browser. For this demo, we're going to use an open public ledger operated by the BC Government's VON Team. In your first browser tab, go to: [http://dev.greenlight.bcovrin.vonx.io](http://dev.greenlight.bcovrin.vonx.io). This will be called the "ledger tab" in the instructions below.
+
+For the rest of the set up, you can choose to run the terminal sessions in your browser (no local resources needed), or you can run it in Docker on your local system. Your choice, each is covered in the next two sections.
+
+> Note: In the following, when we start the agents we use several special demo settings. The command we use is this: `LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo faber --events --no-auto`. In that:
+> 
+> - The `LEDGER_URL` environment variable informs the agent what ledger to use.
+> - The `--events` option indicates that we want the controller to display the webhook events from ACA-Py in the log displayed on the terminal.
+> - The `--no-auto` option indicates that we don't want the ACA-Py agent to automatically handle some events such as connecting. We want the controller (you!) to handle each step of the protocol.
 
 ## Running in a Browser
 
-We will get started by getting three browser tabs ready that will be used throughout the lab. Two will be Swagger UIs for the Faber and Alice Agent and one for the Public Ledger (showing the Hyperledger Indy ledger).
+To run the necessary terminal sessions in your browser, go to the Docker playground service [Play with Docker](https://labs.play-with-docker.com/). Don't know about Play with Docker? Check [this out](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker) to learn more.
 
-In your browser, go to the docker playground service [Play with VON](http://play-with-von.vonx.io) (from the BC Gov). On the title screen, click "Start". On the next screen, click (in the left menu) "+Add a new instance".  That will start up a terminal in your browser. Run the following commands to start the Faber agent. It is not a typo that the last line has "faber" in it.  We're just borrowing that script to get started.
+In a browser, go to the [Play with Docker](https://labs.play-with-docker.com/) home page, Login (if necessary) and click "Start." On the next screen, click (in the left menu) "+Add a new instance."  That will start up a terminal in your browser. Run the following commands to start the Faber agent.
 
 ```bash
 git clone https://github.com/hyperledger/aries-cloudagent-python
 cd aries-cloudagent-python/demo
-LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo faber
+LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo faber --events --no-auto
 ```
 
-Once the Faber agent has started up (with the invite displayed), click the link near the top of the screen `8021`. That will start an instance of the OpenAPI User Interface connected to the Faber instance. Note that the URL on the Swagger instance is `http://ip....8021.direct...`.
+Once the Faber agent has started up (with the invite displayed), click the link near the top of the screen `8021`. That will start an instance of the OpenAPI/Swagger user interface connected to the Faber instance. Note that the URL on the OpenAPI/Swagger instance is: `http://ip....8021.direct...`.
 
-**Remember that the Swagger browser tab with an address containing 8021 is the Faber agent.**
+**Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.**
 
 Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:
 
 ```bash
 git clone https://github.com/hyperledger/aries-cloudagent-python
 cd aries-cloudagent-python/demo
-LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo alice
+LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo alice --events --no-auto
 ```
 
-Once the Alice agent has started up (with the `invite:` prompt displayed), click the link near the top of the screen `8031`. That will start an instance of the OpenAPI User Interface connected to the Alice instance. Note that the URL on the Swagger instance is `http://ip....8031.direct...`.
+Once the Alice agent has started up (with the `invite:` prompt displayed), click the link near the top of the screen `8031`. That will start an instance of the OpenAPI/Swagger User Interface connected to the Alice instance. Note that the URL on the OpenAPI/Swagger instance is: `http://ip....8031.direct...`.
 
-**Remember that the Swagger browser tab with an address containing 8031 is Alice's agent.**
+**Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
 
-Finally, open up a third browser tab and navigate to [http://dev.greenlight.bcovrin.vonx.io](http://dev.greenlight.bcovrin.vonx.io). This will be called the "Ledger tab" in the instructions below.
-
-You are ready to go. Skip down to the [Using the Swagger User Interface](#using-the-swagger-user-interface) section.
+You are ready to go. Skip down to the [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface) section.
 
 ## Running in Docker
 
-We will get started by getting three browser tabs ready that will be used throughout the lab. Two will be Swagger UIs for the Faber and Alice Agent and one for the Public Ledger (showing the Hyperledger Indy ledger).
+To run the demo on your local system, you must have git, a running Docker installation, and terminal windows running bash. Need more information about getting set up? Click [here](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-docker-locally) to learn more.
 
-To run the demo, you must have a system capable of running docker to run containers, and terminal windows running bash. On Windows systems, we highly recommend using git-bash, the Windows Subsystem for Linux (WSL) or a comparable facility. The demo will not work using PowerShell.
+To begin running the demo in Docker, open up two terminal windows, one each for the Faber’s and Alice’s agent.
 
-Before beginning, clone, or fork and clone this repo and the [von-network](https://github.com/bcgov/von-network) repo.
-
-### Starting Up
-
-To begin the running the demo in Docker, open up three terminal windows, one to run a local Indy network (using the VON network) and one each for the Faber’s and Alice’s agent. You’ll also open up three browser tabs, one to allow browsing the Public Ledger (`von-network`), and one for the Swagger user interface for each of the agents.
-
-### Start the VON Network
-
-In one of the terminal windows, follow the [Running the Network Locally](https://github.com/bcgov/von-network#running-the-network-locally) instructions to start (but don’t stop) a local four-node Indy network. In one of the browser tabs, navigate to [http://localhost:9000](http://localhost:9000) to see the Public Ledger user interface and to verify the Indy network is running.
-
-> NOTE: The use of localhost for the Web interfaces is assumed in this tutorial. If your docker setup is atypical, you may use a different address for your docker host.
-
-### Running the Faber Agent
-
-To start the Faber agent, open up a second terminal window and in it change directory to the `demo` folder of your clone of this repo and execute the following command. It is not a typo that the command has "faber" in it.  We're just borrowing that script to get started.
+In the first terminal window, clone the ACA-Py repo, change into the demo folder and start the Faber agent:
 
 ```bash
-./run_demo faber
+git clone https://github.com/hyperledger/aries-cloudagent-python
+cd aries-cloudagent-python/demo
+LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo faber --events --no-auto
 ```
 
-If all goes well, the agent will show a message indicating it is running. Use the second of the browser tabs to navigate to [http://localhost:8021](http://localhost:8021). You should see an OpenAPI user interface with a (long-ish) list of API endpoints. These are the endpoints exposed by the Faber Agent.
+If all goes well, the agent will show a message indicating it is running. Use the second browser tab to navigate to [http://localhost:8021](http://localhost:8021). You should see an OpenAPI/Swagger user interface with a (long-ish) list of API endpoints. These are the endpoints exposed by the Faber agent.
 
-**Remember that the Swagger browser tab with an address containing 8021 is the Faber agent.**
+**Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.**
 
-### Running Alice’s Agent
-
-To start the Alice's agent, open up a third terminal window and in it change directory to the `demo` folder of your clone of this repo and execute the following command.
+To start Alice's agent, open up a second terminal window and in it, change to the same `demo` directory as where Faber's agent was started above. Once there, start Alice's agent:
 
 ``` bash
-./run_demo alice
+LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo alice --events --no-auto
 ```
 
-If all goes well, the agent will show a message indicating it is running. Open a third browser tab to navigate to [http://localhost:8031](http://localhost:8031). Again, you should see the Swagger user interface with a list of API endpoints, this time the endpoints for Alice’s agent.
+If all goes well, the agent will show a message indicating it is running. Open a third browser tab and navigate to [http://localhost:8031](http://localhost:8031). Again, you should see the OpenAPI/Swagger user interface with a list of API endpoints, this time the endpoints for Alice’s agent.
 
-**Remember that the Swagger browser tab with an address containing 8031 is Alice's agent.**
+**Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
 
 ### Restarting the Docker Containers
 
-When you are done, or to stop the demo so you can restart it, carry out the following steps:
+When you are done, or to stop the demo so you can restart it, hit Ctrl-C in the Faber and Alice agent terminal windows to terminate the agents.
 
-1. In the Faber and Alice agent terminal windows, hit Ctrl-C to terminate the agents.
-2. In the `von-network` terminal window, hit Ctrl-C to stop the logging, and then run the command `./manage down` to both stop the network and remove the data on the ledger. 
+## Using the OpenAPI/Swagger User Interface
 
-## Using the Swagger User Interface
+You should configure your screen to be able to see both the Alice and Faber OpenAPI/Swagger tabs, and both (Alice and Faber) terminal sessions at the same time. After you execute an API call in one of the browsers, you will see a webhook event from the ACA-Py instance in the terminal window of the other agent. That's a controller's life. See an event, process it, send a response.
 
-The demo is run entirely in the browser tabs you've already opened - Faber, Alice and the Indy Public Ledger. The agent terminal windows will only show messages if an error occurs in using the REST API. The Indy public ledger terminal window will display a log of messages from the four nodes of the Indy network. In the instructions that follow, we’ll let you know if you need to be in the Faber, Alice or Indy browser tab. We’ll leave it to you to track which is which.
+From time to time you will want to see what's happening on the ledger, so keep that handy as well. As well, if you make an error with one of the commands (e.g. bad data, improperly structured JSON), you will see the errors in the terminals.
 
-Using the OpenAPI user interface is pretty simple. In the steps below, we’ll indicate what API endpoint you need use, such as **`POST /connections/create-invitation`**. That means you must:
+In the instructions that follow, we’ll let you know if you need to be in the Faber, Alice or Indy browser tab. We’ll leave it to you to track which is which.
+
+Using the OpenAPI/Swagger user interface is pretty simple. In the steps below, we’ll indicate what API endpoint you need use, such as **`POST /connections/create-invitation`**. That means you must:
 
 1. scroll to and find that endpoint;
 2. click on the endpoint name to expand its section of the UI;
@@ -130,7 +124,7 @@ Enough with the preliminaries, let’s get started!
 
 ## Establishing a Connection
 
-We’ll start the demo by establishing a connection between the Alice and Faber agents. We’re starting there to demonstrate that you can use agents without having a ledger. We won’t be using the Indy public ledger at all for this step. Since the agents communicate using DIDcomm messaging and connect by exchanging pairwise DIDs and DIDDocs based on the `did:peer` DID method, a public ledger is not needed.
+We’ll start the demo by establishing a connection between the Alice and Faber agents. We’re starting there to demonstrate that you can use agents without having a ledger. We won’t be using the Indy public ledger at all for this step. Since the agents communicate using DIDcomm messaging and connect by exchanging pairwise DIDs and DIDDocs based on (an early version of) the `did:peer` DID method, a public ledger is not needed.
 
 In the Faber browser tab, execute the **`POST /connections/create-invitation`** endpoint. No input data is needed to be added for this call. If successful, you should see a connection ID, an invitation, and the invitation URL. The IDs will be different on each run.
 
@@ -140,27 +134,21 @@ Before switching over to the Alice browser tab, scroll to and execute  the **`GE
 
 Switch to the Alice browser tab and get ready to execute the **`POST /connections/receive-invitation`** endpoint. Select all of the pre-populated text and replace it with the invitation object from the Faber tab. When you click `Execute` you should get back a connection response with a connection ID, an invitation key, and the state of the connection, which should be `request`.
 
-> **Establishing connections with `--no-auto`**
+> A key observation to make here. The "copy and paste" we are doing here from Faber's agent to Alice's agent is what is called an "out of band" message. Because we don't yet have a DIDComm connection between the two agents, we have to convey the invitation in plaintext (we can't encrypt it - no channel) using some other mechanism than DIDComm. With mobile agents, that's where QR codes often come in. Once we have the invitation in the receivers agent, we can get back to using DIDComm.
 
-> If you started agents with the `--no-auto` option there are few more steps required to complete the connection between Alice and Faber. _If you started agents with the default options, skip this section, these intermediate steps are automated (see the [notes](#notes) below for what is actually happening behind the scenes)._
+The connection response returned from the previous **`POST /connections/receive-invitation`** endpoint call will currently show a connection state of `invitation` rather than `request`.
 
-> The connection response returned from the previous **`POST /connections/receive-invitation`** endpoint call will currently show a connection state of `invitation` rather than `request`.
+At this point Alice has simply stored the invitation in her wallet. To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
 
-> At this point Alice has simply stored the invitation in her wallet. To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
+Switch over to the Faber broswer tab, scroll to and execute the **`GET /connections`** endpoint. Note the connection that was previously created. It's state is now `request`, which indicates that Alice has accepted the invitation and has sent a corresponding connection request to Faber. Copy the `connection_id` for the next step.
 
-> Switch over to the Faber broswer tab, scroll to and execute the **`GET /connections`** endpoint. Note the connection that was previously created. It's state is now `request`, which indicates that Alice has accepted the invitation and has sent a corresponding connection request to Faber. Copy the `connection_id` for the next step.
+To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the **`POST /connections/{id}/accept-request`** endpint and paste the `connection_id` you previously copied into the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking the `Execute` button should show that the connection has a state of `response`, which indicates that Faber has accepted Alice's connection request.
 
-> To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the **`POST /connections/{id}/accept-request`** endpint and paste the `connection_id` you previously copied into the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking the `Execute` button should show that the connection has a state of `response`, which indicates that Faber has accepted Alice's connection request.
-
-> Switch over the the Alice browser tab.
+Switch over the the Alice browser tab.
 
 Scroll to and execute **`GET /connections`** to see a list of Alice's connections, and the information tracked about each connection. You should see the one connection Alice’s agent has, that it is with the Faber agent, and that its state is `active`.
 
 You are connected! Switch to the Faber browser tab and run the same **`GET /connections`** endpoint to see Faber's view of the connection. Its state is also `active`. Note the `connection_id`, you’ll need it later in the tutorial.
-
-### Notes
-
-For those familiar with the `Establish Connection` DIDcomm protocol, you might wonder why there was not an `accept-request` sent by the Faber agent. That is because in the start up parameters for the Faber agent, we used some special options, notably `--auto-accept-invites --auto-accept-requests`. With those set, the Faber agent accepts invites and requests automatically, without notifying the controller or waiting on an API call from the controller before proceeding. Had those not been set, the Faber controller (in this case - you), would have had to dig through the protocol state, requested a new connection be created (generating a new pairwise DID in the process) and constructed a response to the request to accept the invitation. Easily done with a controller program, but a bit of a pain when the controller is a person. Alice’s agent used similar settings to simplify the process on her side.
 
 ## Preparing to Issue a Credential
 
@@ -245,7 +233,7 @@ To confirm the issuance worked, scroll up to the top of the `v1.0 issue-credenti
 
 Let’s look at it from Alice’s side. Switch to the Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element `referent` is the value of the `credential_id` element used in other calls. `referent` is the name returned in the `indy-sdk` call to get the set of credentials for the wallet and ACA-Py code is not changing it in the response.
 
-You’ve done it, issued a credential!  W00t!
+You’ve done it, issued a credential!  w00t!
 
 ### Notes
 
