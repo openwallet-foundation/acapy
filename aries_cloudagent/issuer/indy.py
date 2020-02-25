@@ -16,6 +16,10 @@ class IssuerError(BaseError):
     """Generic issuer error."""
 
 
+class IssuerRevocationRegistryFullError(IssuerError):
+    """Revocation registry is full when issuing a new credential."""
+
+
 class IndyIssuer(BaseIssuer):
     """Indy issuer class."""
 
@@ -104,8 +108,9 @@ class IndyIssuer(BaseIssuer):
                 revoc_reg_id,
                 tails_reader_handle,
             )
-        except AnoncredsRevocationRegistryFullError as e:
-            raise IssuerError("Revocation registry full")
+        except AnoncredsRevocationRegistryFullError:
+            self.logger.error("Revocation registry is full when creating a credential.")
+            raise IssuerRevocationRegistryFullError("Revocation registry full")
 
         return json.loads(credential_json), credential_revocation_id
 

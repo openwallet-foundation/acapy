@@ -2,12 +2,12 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
-from marshmallow import fields, Schema
-
 from json.decoder import JSONDecodeError
+from marshmallow import fields, Schema
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
+from ....issuer.indy import IssuerRevocationRegistryFullError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
@@ -583,14 +583,17 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     credential_manager = CredentialManager(context)
 
-    (
-        cred_exch_record,
-        credential_issue_message,
-    ) = await credential_manager.issue_credential(
-        cred_exch_record,
-        comment=comment,
-        credential_values=credential_preview.attr_dict(decode=False),
-    )
+    try:
+        (
+            cred_exch_record,
+            credential_issue_message,
+        ) = await credential_manager.issue_credential(
+            cred_exch_record,
+            comment=comment,
+            credential_values=credential_preview.attr_dict(decode=False),
+        )
+    except IssuerRevocationRegistryFullError:
+        raise web.HTTPBadRequest(reason="Revocation registry is full.")
 
     await outbound_handler(credential_issue_message, connection_id=connection_id)
     return web.json_response(cred_exch_record.serialize())

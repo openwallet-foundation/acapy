@@ -517,7 +517,6 @@ class CredentialManager:
                 credential_exchange_record.revoc_reg_id,
                 tails_reader,
             )
-            # FIXME - exception if registry is full?
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(self.context, reason="issue credential")

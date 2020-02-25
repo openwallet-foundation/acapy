@@ -8,6 +8,8 @@ import time
 
 from uuid import uuid4
 
+from aiohttp import ClientError
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from runners.support.agent import DemoAgent, default_genesis_txns
@@ -87,13 +89,20 @@ class FaberAgent(DemoAgent):
                     {"name": n, "value": v} for (n, v) in cred_attrs.items()
                 ],
             }
-            await self.admin_POST(
-                f"/issue-credential/records/{credential_exchange_id}/issue",
-                {
-                    "comment": f"Issuing credential, exchange {credential_exchange_id}",
-                    "credential_preview": cred_preview,
-                },
-            )
+            try:
+                await self.admin_POST(
+                    f"/issue-credential/records/{credential_exchange_id}/issue",
+                    {
+                        "comment": f"Issuing credential, exchange {credential_exchange_id}",
+                        "credential_preview": cred_preview,
+                    },
+                )
+            except ClientError:
+                log_status("#19 Add another revocation registry")
+                await self.create_and_publish_revocation_registry(
+                    message["credential_definition_id"], 2
+                )
+
 
     async def handle_present_proof(self, message):
         state = message["state"]
