@@ -515,7 +515,8 @@ class CredentialManager:
         return credential_exchange_record
 
     async def store_credential(
-        self, credential_exchange_record: V10CredentialExchange
+        self, credential_exchange_record: V10CredentialExchange,
+        credential_id: str = None
     ) -> Tuple[V10CredentialExchange, CredentialAck]:
         """
         Store a credential in holder wallet; send ack to issuer.
@@ -553,7 +554,8 @@ class CredentialManager:
             credential_definition,
             raw_credential,
             credential_exchange_record.credential_request_metadata,
-            mime_types
+            mime_types,
+            credential_id=credential_id
         )
 
         credential = await holder.get_credential(credential_id)

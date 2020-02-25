@@ -775,6 +775,7 @@ class TestCredentialManager(AsyncTestCase):
                 cred,
                 cred_req_meta,
                 mock_preview_deserialize.return_value.mime_types.return_value,
+                credential_id=None,
             )
 
             holder.get_credential.assert_called_once_with(cred_id)
@@ -831,7 +832,8 @@ class TestCredentialManager(AsyncTestCase):
                 cred_def,
                 cred,
                 cred_req_meta,
-                None
+                None,
+                credential_id=None
             )
 
             holder.get_credential.assert_called_once_with(cred_id)
