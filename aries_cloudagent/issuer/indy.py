@@ -4,6 +4,7 @@ import json
 import logging
 
 import indy.anoncreds
+from indy.error import AnoncredsRevocationRegistryFullError
 
 from ..core.error import BaseError
 from ..messaging.util import encode
@@ -90,20 +91,21 @@ class IndyIssuer(BaseIssuer):
             encoded_values[attribute]["raw"] = str(credential_value)
             encoded_values[attribute]["encoded"] = encode(credential_value)
 
-        (
-            credential_json,
-            credential_revocation_id,
-            revoc_reg_delta_json,
-        ) = await indy.anoncreds.issuer_create_credential(
-            self.wallet.handle,
-            json.dumps(credential_offer),
-            json.dumps(credential_request),
-            json.dumps(encoded_values),
-            revoc_reg_id,
-            tails_reader_handle,
-        )
-
-        # may throw AnoncredsRevocationRegistryFullError
+        try:
+            (
+                credential_json,
+                credential_revocation_id,
+                revoc_reg_delta_json,
+            ) = await indy.anoncreds.issuer_create_credential(
+                self.wallet.handle,
+                json.dumps(credential_offer),
+                json.dumps(credential_request),
+                json.dumps(encoded_values),
+                revoc_reg_id,
+                tails_reader_handle,
+            )
+        except AnoncredsRevocationRegistryFullError as e:
+            raise IssuerError("Revocation registry full")
 
         return json.loads(credential_json), credential_revocation_id
 
