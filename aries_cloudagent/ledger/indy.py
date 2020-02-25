@@ -221,7 +221,7 @@ class IndyLedger(BaseLedger):
         self,
         request_json: str,
         sign: bool = None,
-        taa_accept: bool = False,
+        taa_accept: bool = None,
         public_did: str = "",
     ) -> str:
         """
@@ -248,6 +248,9 @@ class IndyLedger(BaseLedger):
                 public_did = did_info.did
         if public_did and sign is None:
             sign = True
+
+        if taa_accept is None and sign:
+            taa_accept = True
 
         if sign:
             if not public_did:
