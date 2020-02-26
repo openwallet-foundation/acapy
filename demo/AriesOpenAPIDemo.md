@@ -43,6 +43,8 @@ For the rest of the set up, you can choose to run the terminal sessions in your 
 
 To run the necessary terminal sessions in your browser, go to the Docker playground service [Play with Docker](https://labs.play-with-docker.com/). Don't know about Play with Docker? Check [this out](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker) to learn more.
 
+### Start the Faber Agent
+
 In a browser, go to the [Play with Docker](https://labs.play-with-docker.com/) home page, Login (if necessary) and click "Start." On the next screen, click (in the left menu) "+Add a new instance."  That will start up a terminal in your browser. Run the following commands to start the Faber agent.
 
 ```bash
@@ -54,6 +56,10 @@ LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo faber --events --no-
 Once the Faber agent has started up (with the invite displayed), click the link near the top of the screen `8021`. That will start an instance of the OpenAPI/Swagger user interface connected to the Faber instance. Note that the URL on the OpenAPI/Swagger instance is: `http://ip....8021.direct...`.
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.**
+
+<<TODO pic of the Faber swagger page >>
+
+### Start the Alice Agent
 
 Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:
 
@@ -67,11 +73,15 @@ Once the Alice agent has started up (with the `invite:` prompt displayed), click
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
 
+<<TODO pic of the Alice swagger page >>
+
 You are ready to go. Skip down to the [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface) section.
 
 ## Running in Docker
 
 To run the demo on your local system, you must have git, a running Docker installation, and terminal windows running bash. Need more information about getting set up? Click [here](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-docker-locally) to learn more.
+
+### Start the Faber Agent
 
 To begin running the demo in Docker, open up two terminal windows, one each for the Faber’s and Alice’s agent.
 
@@ -87,6 +97,10 @@ If all goes well, the agent will show a message indicating it is running. Use th
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.**
 
+<<TODO pic of the Faber swagger page >>
+
+### Start the Alice Agent
+
 To start Alice's agent, open up a second terminal window and in it, change to the same `demo` directory as where Faber's agent was started above. Once there, start Alice's agent:
 
 ``` bash
@@ -96,6 +110,8 @@ LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo alice --events --no-
 If all goes well, the agent will show a message indicating it is running. Open a third browser tab and navigate to [http://localhost:8031](http://localhost:8031). Again, you should see the OpenAPI/Swagger user interface with a list of API endpoints, this time the endpoints for Alice’s agent.
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
+
+<<TODO pic of the Alice swagger page >>
 
 ### Restarting the Docker Containers
 
@@ -126,27 +142,55 @@ Enough with the preliminaries, let’s get started!
 
 We’ll start the demo by establishing a connection between the Alice and Faber agents. We’re starting there to demonstrate that you can use agents without having a ledger. We won’t be using the Indy public ledger at all for this step. Since the agents communicate using DIDcomm messaging and connect by exchanging pairwise DIDs and DIDDocs based on (an early version of) the `did:peer` DID method, a public ledger is not needed.
 
+### Use the Faber Agent to Create an Invitation
+
 In the Faber browser tab, execute the **`POST /connections/create-invitation`** endpoint. No input data is needed to be added for this call. If successful, you should see a connection ID, an invitation, and the invitation URL. The IDs will be different on each run.
+
+**Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on**
+
+<<TODO picture of the Faber web service call>>
+
+### Copy the Invitation created by the Faber Agent
 
 Copy the entire block of the `invitation` object, from the curly brackets `{}`, excluding the trailing comma.
 
+<<TODO picture of the invitation>>
+
 Before switching over to the Alice browser tab, scroll to and execute  the **`GET /connections`** endpoint to see the list of Faber's connections. You should see a connection with a `connection_id` that is identical to the invitation you just created, and that its state is `invitation`.
 
+### Use the Alice Agent to Receive Faber's Invitation
+
 Switch to the Alice browser tab and get ready to execute the **`POST /connections/receive-invitation`** endpoint. Select all of the pre-populated text and replace it with the invitation object from the Faber tab. When you click `Execute` you should get back a connection response with a connection ID, an invitation key, and the state of the connection, which should be `request`.
+
+**Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on**
+
+<<TODO picture of Alice's swagger with the invitation from Faber>>
 
 > A key observation to make here. The "copy and paste" we are doing here from Faber's agent to Alice's agent is what is called an "out of band" message. Because we don't yet have a DIDComm connection between the two agents, we have to convey the invitation in plaintext (we can't encrypt it - no channel) using some other mechanism than DIDComm. With mobile agents, that's where QR codes often come in. Once we have the invitation in the receivers agent, we can get back to using DIDComm.
 
 The connection response returned from the previous **`POST /connections/receive-invitation`** endpoint call will currently show a connection state of `invitation` rather than `request`.
 
+### Tell Alice's Agent to *Accept* the Invitation
+
 At this point Alice has simply stored the invitation in her wallet. To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
+
+<<TODO picture of the accepted connection>>
+
+### Review Faber's Connection Status
 
 Switch over to the Faber broswer tab, scroll to and execute the **`GET /connections`** endpoint. Note the connection that was previously created. It's state is now `request`, which indicates that Alice has accepted the invitation and has sent a corresponding connection request to Faber. Copy the `connection_id` for the next step.
 
+### Tell the Faber Agent to Accept the Connection Request from Alice
+
 To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the **`POST /connections/{id}/accept-request`** endpint and paste the `connection_id` you previously copied into the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking the `Execute` button should show that the connection has a state of `response`, which indicates that Faber has accepted Alice's connection request.
+
+### Review the Connection Status in Alice's Agent
 
 Switch over the the Alice browser tab.
 
 Scroll to and execute **`GET /connections`** to see a list of Alice's connections, and the information tracked about each connection. You should see the one connection Alice’s agent has, that it is with the Faber agent, and that its state is `active`.
+
+### Review the Connection Status in Faber's Agent
 
 You are connected! Switch to the Faber browser tab and run the same **`GET /connections`** endpoint to see Faber's view of the connection. Its state is also `active`. Note the `connection_id`, you’ll need it later in the tutorial.
 
