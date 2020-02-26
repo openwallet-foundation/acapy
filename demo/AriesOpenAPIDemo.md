@@ -57,7 +57,7 @@ Once the Faber agent has started up (with the invite displayed), click the link 
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.**
 
-<<TODO pic of the Faber swagger page >>
+![Swagger Page for Faber Agent](assets/Faber-Agent.png "Swagger Page for Faber Agent")
 
 ### Start the Alice Agent
 
@@ -73,7 +73,7 @@ Once the Alice agent has started up (with the `invite:` prompt displayed), click
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
 
-<<TODO pic of the Alice swagger page >>
+![Swagger Page for Alice Agent](assets/Faber-Agent.png "Swagger Page for Alice Agent")
 
 You are ready to go. Skip down to the [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface) section.
 
