@@ -88,6 +88,7 @@ class IndyLedger(BaseLedger):
         keepalive: int = 0,
         cache: BaseCache = None,
         cache_duration: int = 600,
+        read_only: bool = False,
     ):
         """
         Initialize an IndyLedger instance.
@@ -113,6 +114,7 @@ class IndyLedger(BaseLedger):
         self.pool_name = pool_name
         self.taa_acceptance = None
         self.taa_cache = None
+        self.read_only = read_only
 
         if wallet.WALLET_TYPE != "indy":
             raise LedgerConfigError("Wallet type is not 'indy'")
@@ -219,7 +221,7 @@ class IndyLedger(BaseLedger):
         self,
         request_json: str,
         sign: bool = None,
-        taa_accept: bool = False,
+        taa_accept: bool = None,
         public_did: str = "",
     ) -> str:
         """
@@ -246,6 +248,9 @@ class IndyLedger(BaseLedger):
                 public_did = did_info.did
         if public_did and sign is None:
             sign = True
+
+        if taa_accept is None and sign:
+            taa_accept = True
 
         if sign:
             if not public_did:
@@ -314,6 +319,11 @@ class IndyLedger(BaseLedger):
         if schema_id:
             self.logger.warning("Schema already exists on ledger. Returning ID.")
         else:
+            if self.read_only:
+                raise LedgerError(
+                    "Error cannot write schema when ledger is in read only mode"
+                )
+
             with IndyErrorHandler("Exception when creating schema definition"):
                 schema_id, schema_json = await indy.anoncreds.issuer_create_schema(
                     public_info.did,
@@ -556,6 +566,11 @@ class IndyLedger(BaseLedger):
             except IndyError as error:
                 raise IndyErrorHandler.wrap_error(error) from error
             else:  # created cred def in wallet OK
+                if self.read_only:
+                    raise LedgerError(
+                        "Error cannot write cred def when ledger is in read only mode"
+                    )
+
                 wallet_cred_def = json.loads(credential_definition_json)
                 with IndyErrorHandler("Exception when building cred def request"):
                     request_json = await indy.ledger.build_cred_def_request(
@@ -714,6 +729,11 @@ class IndyLedger(BaseLedger):
         """
         exist_endpoint = await self.get_endpoint_for_did(did)
         if exist_endpoint != endpoint:
+            if self.read_only:
+                raise LedgerError(
+                    "Error cannot update endpoint when ledger is in read only mode"
+                )
+
             nym = self.did_to_nym(did)
             attr_json = json.dumps({"endpoint": {"endpoint": endpoint}})
             with IndyErrorHandler("Exception when building attribute request"):
@@ -736,6 +756,11 @@ class IndyLedger(BaseLedger):
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
         """
+        if self.read_only:
+            raise LedgerError(
+                "Error cannot register nym when ledger is in read only mode"
+            )
+
         public_info = await self.wallet.get_public_did()
         public_did = public_info.did if public_info else None
         r = await indy.ledger.build_nym_request(public_did, did, verkey, alias, role)

@@ -48,6 +48,10 @@ def execute(argv: Sequence[str] = None):
     settings = get_settings(args)
     common_config(settings)
 
+    # provision needs write access to the ledger
+    # (override if specified otherwise)
+    settings["ledger.read_only"] = False
+
     loop = asyncio.get_event_loop()
     loop.run_until_complete(provision(settings))
 

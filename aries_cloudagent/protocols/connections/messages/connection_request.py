@@ -51,7 +51,7 @@ class ConnectionRequestSchema(AgentMessageSchema):
 
         model_class = ConnectionRequest
 
-    connection = fields.Nested(ConnectionDetailSchema, required=True,)
+    connection = fields.Nested(ConnectionDetailSchema, required=True)
     label = fields.Str(
         required=True,
         description="Label for connection request",

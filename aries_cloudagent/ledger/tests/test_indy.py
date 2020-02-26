@@ -207,7 +207,7 @@ class TestIndyLedger(AsyncTestCase):
             mock_did = mock_wallet.get_public_did.return_value
             mock_did.did = self.test_did
 
-            await ledger._submit("{}", True)
+            await ledger._submit("{}", True, False)
 
             mock_wallet.get_public_did.assert_called_once_with()
 

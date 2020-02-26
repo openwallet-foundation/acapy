@@ -21,6 +21,15 @@ from .utils import flatten, log_json, log_msg, log_timer, output_reader
 
 LOGGER = logging.getLogger(__name__)
 
+event_stream_handler = logging.StreamHandler()
+event_stream_handler.setFormatter(logging.Formatter("\nEVENT: %(message)s"))
+
+DEBUG_EVENTS = os.getenv("EVENTS")
+EVENT_LOGGER = logging.getLogger("event")
+EVENT_LOGGER.setLevel(logging.DEBUG if DEBUG_EVENTS else logging.NOTSET)
+EVENT_LOGGER.addHandler(event_stream_handler)
+EVENT_LOGGER.propagate = False
+
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
@@ -45,6 +54,16 @@ elif RUN_MODE == "pwd":
     DEFAULT_EXTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
     DEFAULT_BIN_PATH = "./bin"
     DEFAULT_PYTHON_PATH = "."
+
+
+class repr_json:
+    def __init__(self, val):
+        self.val = val
+
+    def __repr__(self) -> str:
+        if isinstance(self.val, str):
+            return self.val
+        return json.dumps(self.val, indent=4)
 
 
 async def default_genesis_txns():
@@ -330,6 +349,11 @@ class DemoAgent:
             handler = f"handle_{topic}"
             method = getattr(self, handler, None)
             if method:
+                EVENT_LOGGER.debug(
+                    "Agent called controller webhook: %s%s",
+                    handler,
+                    (f" with payload: \n{repr_json(payload)}" if payload else ""),
+                )
                 asyncio.get_event_loop().create_task(method(payload))
             else:
                 log_msg(
@@ -358,7 +382,12 @@ class DemoAgent:
 
     async def admin_GET(self, path, text=False, params=None) -> ClientResponse:
         try:
-            return await self.admin_request("GET", path, None, text, params)
+            EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
+            response = await self.admin_request("GET", path, None, text, params)
+            EVENT_LOGGER.debug(
+                "Response from GET %s received: \n%s", path, repr_json(response),
+            )
+            return response
         except ClientError as e:
             self.log(f"Error during GET {path}: {str(e)}")
             raise
@@ -367,7 +396,16 @@ class DemoAgent:
         self, path, data=None, text=False, params=None
     ) -> ClientResponse:
         try:
-            return await self.admin_request("POST", path, data, text, params)
+            EVENT_LOGGER.debug(
+                "Controller POST %s request to Agent%s",
+                path,
+                (" with data: \n{}".format(repr_json(data)) if data else ""),
+            )
+            response = await self.admin_request("POST", path, data, text, params)
+            EVENT_LOGGER.debug(
+                "Response from POST %s received: \n%s", path, repr_json(response),
+            )
+            return response
         except ClientError as e:
             self.log(f"Error during POST {path}: {str(e)}")
             raise

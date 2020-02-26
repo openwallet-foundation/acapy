@@ -28,13 +28,17 @@ LOGGER = logging.getLogger(__name__)
 
 
 class FaberAgent(DemoAgent):
-    def __init__(self, http_port: int, admin_port: int, **kwargs):
+    def __init__(
+        self, http_port: int, admin_port: int, no_auto: bool = False, **kwargs
+    ):
         super().__init__(
             "Faber Agent",
             http_port,
             admin_port,
             prefix="Faber",
-            extra_args=["--auto-accept-invites", "--auto-accept-requests"],
+            extra_args=[]
+            if no_auto
+            else ["--auto-accept-invites", "--auto-accept-requests"],
             **kwargs,
         )
         self.connection_id = None
@@ -114,7 +118,7 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def main(start_port: int, show_timing: bool = False):
+async def main(start_port: int, no_auto: bool = False, show_timing: bool = False):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -126,7 +130,11 @@ async def main(start_port: int, show_timing: bool = False):
     try:
         log_status("#1 Provision an agent and wallet, get back configuration details")
         agent = FaberAgent(
-            start_port, start_port + 1, genesis_data=genesis, timing=show_timing
+            start_port,
+            start_port + 1,
+            genesis_data=genesis,
+            no_auto=no_auto,
+            timing=show_timing,
         )
         await agent.listen_webhooks(start_port + 2)
         await agent.register_did()
@@ -274,6 +282,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Runs a Faber demo agent.")
+    parser.add_argument("--no-auto", action="store_true", help="Disable auto issuance")
     parser.add_argument(
         "-p",
         "--port",
@@ -290,6 +299,8 @@ if __name__ == "__main__":
     require_indy()
 
     try:
-        asyncio.get_event_loop().run_until_complete(main(args.port, args.timing))
+        asyncio.get_event_loop().run_until_complete(
+            main(args.port, args.no_auto, args.timing)
+        )
     except KeyboardInterrupt:
         os._exit(1)
