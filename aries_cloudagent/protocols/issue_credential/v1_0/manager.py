@@ -571,8 +571,9 @@ class CredentialManager:
             credential_exchange_record.parent_thread_id,
         )
 
-        # Delete the exchange record since we're done with it
-        await credential_exchange_record.delete_record(self.context)
+        if not self.context.settings.get("preserve_exchange_records"):
+            # Delete the exchange record since we're done with it
+            await credential_exchange_record.delete_record(self.context)
         return (credential_exchange_record, credential_ack_message)
 
     async def receive_credential_ack(self) -> V10CredentialExchange:
@@ -595,7 +596,8 @@ class CredentialManager:
         credential_exchange_record.state = V10CredentialExchange.STATE_ACKED
         await credential_exchange_record.save(self.context, reason="credential acked")
 
-        # We're done with the exchange so delete
-        await credential_exchange_record.delete_record(self.context)
+        if not self.context.settings.get("preserve_exchange_records"):
+            # We're done with the exchange so delete
+            await credential_exchange_record.delete_record(self.context)
 
         return credential_exchange_record
