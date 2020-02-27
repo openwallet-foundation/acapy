@@ -212,6 +212,32 @@ You are connected! Switch to the Faber browser tab and run the same **`GET /conn
 
 ![Accept Connection Request](assets/3-Faber-Connection-4.png "Accept Connection Request")
 
+## Basic Messaging Between Agents
+
+Once you have a connection between two agents, you have a channel to exchange secure, encrypted messsages. In fact these basic messages are the foundation of all other protocols, such as issuing Credentials and providing Proofs. So, let's send a couple of messages.
+
+### Sending a message from Alice to Faber
+
+In Alice's swagger page, scroll to the **`POST /connections/{id}/send-message`** endpoint.  Click on `Try it Out` and enter a message in the body provided (for example `{"content": "Hello Faber"}`).  Enter the connection id of Alice's connection in the field provided.  Then click on `Execute`.
+
+<<TODO Picture of Alice's screen>>
+
+### Receiving a Basic Message (Faber)
+
+How does Faber know that a message was sent? If you take a look at Faber's console window, you can see that Faber's agent has raised an Event that the message was received:
+
+<<TODO picture of Faber's console window>>
+
+Faber's controller application can take whatever action is necessary to process this message. It could trigger some applicaiton code, or it might just be something the Faber application needs to display to its user (for example a reminder about some action the user needs to take).
+
+### Alice Agent Verifies that Faber has Received the Message
+
+How does Alice get feedback that Faber has received the message? The same way - when Faber's agent acknowledges receipt of the message, Alice's agent raises an Event to let the Alice controller know:
+
+<<TODO picture of Alice's console window>>
+
+Again, Alice's agent can take whatever action is necessary, possibly just flagging the message as having been `received`.
+
 ## Preparing to Issue a Credential
 
 The next thing we want to do in the demo is have the Faber agent issue a credential to Alice’s agent. To this point, we have not used the Indy ledger at all. Establishing the connection and all the messaging has been done with pairwise DIDs based on the `did:peer` method. Verifiable credentials must be rooted in a public DID ledger to enable the presentation of proofs.
@@ -224,11 +250,40 @@ Before the Faber agent can issue a credential, it must register a DID on the Ind
 
 The schema and credential definition could also be created through this swagger interface.
 
-You can confirm the schema and credential definition were published by going back to the Indy ledger browser tab.  You can view the `Domain` page, refresh, scroll to the bottom and you should see transactions for the new schema and credential definition. 
+### Confirming your Schema and Credential Definition
+
+You can confirm the schema and credential definition were published by going back to the Indy ledger browser tab.
+
+First confirm the DID you used to write to the ledger. Open Faber's swagger page and scroll to the **`GET /wallet/did/public`** endpoint.  Click on `Try it Out` and `Execute` and you will see your public DID.
+
+<<TODO screenshot of the DID>>
+
+On the BCovrin ledger browser, view the `Domain` page, refresh, and paste your DID into the `Filter:` field:
+
+<<TODO show filter>>
+
+The ledger browser whould refresh and display the four (4) transactions on the ledger related to this DID:
+
+- the initial DID registration
+- registration of the DID endpoint (Faber is an issuer so it has a public endpoint)
+- the registered schema
+- the registered credential definition
+
+<<TODO show a screen shot of the BCovrin ledger browser>>
+
+You can also look up the Schema and Credential Definition information using Faber's swagger page.
+
+You can use the **`GET /schemas/created`** endpoint to get a list of schema id's created by this agent, and then **`GET /schemas/{id}`** to get details on a specific schema.
+
+Likewise you can use the **`GET /credential-definitions/created`** endpoint ot get a list of credential definition id's, and then use the **`GET /credential-definitions/{id}`** endpoint to get informaiton on a specific credential definition.
+
+Either way, you will need information on the schema and credential definition in order to issue a Credential, which is what we will do next!
+
+(You can use the **`POST`** endpoints to create a new schema and credential definition if you like.)
 
 ### Notes
 
-OK, the one time setup work for issuing a credential complete. We can now issue 1 or a million credentials without having to do those steps again. Astute readers might note that we did not setup a revocation registry, so we cannot revoke the credentials we issue with that credential definition. You can’t have everything in an easy demo (and we’re still working on enabling that).
+The one time setup work for issuing a credential complete. We can now issue 1 or a million credentials without having to do those steps again. Astute readers might note that we did not setup a revocation registry, so we cannot revoke the credentials we issue with that credential definition. You can’t have everything in an easy demo (and we’re still working on enabling that).
 
 ## Issuing a Credential
 
