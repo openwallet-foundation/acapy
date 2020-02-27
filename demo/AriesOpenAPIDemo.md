@@ -180,15 +180,23 @@ The connection response returned from the previous **`POST /connections/receive-
 
 At this point Alice has simply stored the invitation in her wallet. To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
 
-<<TODO picture of the accepted connection>>
+![Accept Invitation Request](assets/2-Alice-Invitation-3.png "Accept Invitation Request")
+
+![Accept Invitation Response](assets/2-Alice-Invitation-4.png "Accept Invitation Response")
 
 ### Review Faber's Connection Status
 
 Switch over to the Faber broswer tab, scroll to and execute the **`GET /connections`** endpoint. Note the connection that was previously created. It's state is now `request`, which indicates that Alice has accepted the invitation and has sent a corresponding connection request to Faber. Copy the `connection_id` for the next step.
 
+![Accept Connection Request](assets/3-Faber-Connection-1.png "Accept Connection Request")
+
 ### Tell the Faber Agent to Accept the Connection Request from Alice
 
 To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the **`POST /connections/{id}/accept-request`** endpint and paste the `connection_id` you previously copied into the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking the `Execute` button should show that the connection has a state of `response`, which indicates that Faber has accepted Alice's connection request.
+
+![Accept Connection Request](assets/3-Faber-Connection-2.png "Accept Connection Request")
+
+![Accept Connection Request](assets/3-Faber-Connection-3.png "Accept Connection Request")
 
 ### Review the Connection Status in Alice's Agent
 
@@ -196,9 +204,13 @@ Switch over the the Alice browser tab.
 
 Scroll to and execute **`GET /connections`** to see a list of Alice's connections, and the information tracked about each connection. You should see the one connection Alice’s agent has, that it is with the Faber agent, and that its state is `active`.
 
+<<TODO Alice connection state>>
+
 ### Review the Connection Status in Faber's Agent
 
 You are connected! Switch to the Faber browser tab and run the same **`GET /connections`** endpoint to see Faber's view of the connection. Its state is also `active`. Note the `connection_id`, you’ll need it later in the tutorial.
+
+![Accept Connection Request](assets/3-Faber-Connection-4.png "Accept Connection Request")
 
 ## Preparing to Issue a Credential
 
