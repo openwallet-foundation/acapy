@@ -221,7 +221,8 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                     {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "degree", "restrictions": [{"issuer_did": agent.did}]},
-                    {"name": "self_attested_thing"},
+                    # add the following to test self-attested attributes
+                    #{"name": "self_attested_thing"},
                 ]
                 req_preds = [
                     {

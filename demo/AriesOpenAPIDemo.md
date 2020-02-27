@@ -456,6 +456,50 @@ If you would like to perform all of the proof request/response steps manually ..
 
 <<TODO list the events, and the corresponding API calls to move to the next step>>
 
+## Issuing Credentials to a Mobile Agent
+
+TODO ... overview
+
+### Introduction to the Streetcred Agent
+
+installing the iOS or Android app
+
+make sure to use the BCovrin test network
+
+enable notifications
+
+### Setting up your Issuing Agent on a Public Port
+
+(or else use ngrok and then set your agent's endpoint to the ngrok url)
+
+start your agent using the BCovrin Test network:
+
+LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events
+
+### Creating an Invitation
+
+use the invitation created automatically when Faber starts up ...
+
+### Converting the Invitation to a QR Code
+
+your application can do this, for this demo we will use https://www.the-qrcode-generator.com/
+
+### Accepting the Invitation with Streetcred
+
+### Accepting Streetcred's connection request
+
+- accept-request
+
+Note - if the connection status does not update to `active`, try sending a `trust-ping` or `basic-message` on the connection.
+
+### Issuing a Credential
+
+### Accepting the Credential with Streetcred
+
+### Issuing a Proof Request
+
+### Responding to the Proof Request with Streetcred
+
 ## Conclusion
 
 That’s the OpenAPI-based tutorial. Feel free to play with the API and learn how it works. More importantly, as you implement a controller, use the OpenAPI user interface to test out the calls you will be using as you go. The list of API calls is grouped by protocol and if you are familiar with the protocols (Aries RFCs) the API call names should be pretty obvious.
