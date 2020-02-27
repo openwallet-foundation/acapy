@@ -73,7 +73,7 @@ Once the Alice agent has started up (with the `invite:` prompt displayed), click
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
 
-![Swagger Page for Alice Agent](assets/Faber-Agent.png "Swagger Page for Alice Agent")
+![Swagger Page for Alice Agent](assets/Alice-Agent.png "Swagger Page for Alice Agent")
 
 You are ready to go. Skip down to the [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface) section.
 
@@ -97,7 +97,7 @@ If all goes well, the agent will show a message indicating it is running. Use th
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.**
 
-<<TODO pic of the Faber swagger page >>
+![Swagger Page for Faber Agent](assets/Faber-Agent-Local.png "Swagger Page for Faber Agent")
 
 ### Start the Alice Agent
 
@@ -111,7 +111,7 @@ If all goes well, the agent will show a message indicating it is running. Open a
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
 
-<<TODO pic of the Alice swagger page >>
+![Swagger Page for Alice Agent](assets/Alice-Agent-Local.png "Swagger Page for Alice Agent")
 
 ### Restarting the Docker Containers
 
@@ -148,7 +148,9 @@ In the Faber browser tab, execute the **`POST /connections/create-invitation`** 
 
 **Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on**
 
-<<TODO picture of the Faber web service call>>
+![Create Invitation Request](assets/1-Faber-Invitation-1.png "Create Invitation Request")
+
+![Create Invitation Response](assets/1-Faber-Invitation-2.png "Create Invitation Response")
 
 ### Copy the Invitation created by the Faber Agent
 
