@@ -156,9 +156,11 @@ In the Faber browser tab, execute the **`POST /connections/create-invitation`** 
 
 Copy the entire block of the `invitation` object, from the curly brackets `{}`, excluding the trailing comma.
 
-<<TODO picture of the invitation>>
+![Create Invitation Response](assets/1-Faber-Invitation-3.png "Create Invitation Response")
 
 Before switching over to the Alice browser tab, scroll to and execute  the **`GET /connections`** endpoint to see the list of Faber's connections. You should see a connection with a `connection_id` that is identical to the invitation you just created, and that its state is `invitation`.
+
+![Faber Connection Status](assets/1-Faber-Invitation-4.png "Faber Connection Status")
 
 ### Use the Alice Agent to Receive Faber's Invitation
 
@@ -166,7 +168,9 @@ Switch to the Alice browser tab and get ready to execute the **`POST /connection
 
 **Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on**
 
-<<TODO picture of Alice's swagger with the invitation from Faber>>
+![Receive Invitation Request](assets/2-Alice-Invitation-1.png "Receive Invitation Request")
+
+![Receive Invitation Response](assets/2-Alice-Invitation-2.png "Receive Invitation Response")
 
 > A key observation to make here. The "copy and paste" we are doing here from Faber's agent to Alice's agent is what is called an "out of band" message. Because we don't yet have a DIDComm connection between the two agents, we have to convey the invitation in plaintext (we can't encrypt it - no channel) using some other mechanism than DIDComm. With mobile agents, that's where QR codes often come in. Once we have the invitation in the receivers agent, we can get back to using DIDComm.
 
