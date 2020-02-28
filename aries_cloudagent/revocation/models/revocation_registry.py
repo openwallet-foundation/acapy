@@ -131,7 +131,7 @@ class RevocationRegistry:
         tails_file_path = Path(self.get_receiving_tails_local_path(context))
 
         if not tails_file_path.exists():
-            raise FileNotFoundError("Tail file does not exist.")
+            raise FileNotFoundError("Tails file does not exist.")
 
         tails_reader_config = json.dumps(
             {
@@ -142,7 +142,7 @@ class RevocationRegistry:
         return await indy.blob_storage.open_reader("default", tails_reader_config)
 
     def get_receiving_tails_local_path(self, context: InjectionContext):
-        """Make the local path to the tail file we download from remote URI."""
+        """Make the local path to the tails file we download from remote URI."""
         if self._tails_local_path:
             return self._tails_local_path
 
@@ -159,7 +159,7 @@ class RevocationRegistry:
     async def retrieve_tails(self, context: InjectionContext):
         """Fetch the tails file from the public URI."""
         if not self._tails_public_uri:
-            raise RevocationError("Tail file public uri is empty")
+            raise RevocationError("Tails file public URI is empty")
 
         try:
             tails_stream = await fetch_stream(self._tails_public_uri)

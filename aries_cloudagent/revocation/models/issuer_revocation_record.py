@@ -1,6 +1,7 @@
 """Issuer revocation registry storage handling."""
 
 import json
+import logging
 import uuid
 from typing import Sequence
 
@@ -18,6 +19,8 @@ from ..error import RevocationError
 from .revocation_registry import RevocationRegistry
 
 DEFAULT_REGISTRY_SIZE = 100
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IssuerRevocationRecord(BaseRecord):
@@ -125,7 +128,7 @@ class IssuerRevocationRecord(BaseRecord):
             "default", tails_writer_config
         )
 
-        print("create revocation registry with size:", self.max_cred_num)
+        LOGGER.debug("create revocation registry with size:", self.max_cred_num)
 
         (
             revoc_reg_id,

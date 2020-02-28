@@ -5,6 +5,8 @@ from asyncio import shield
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
+import logging
+
 from marshmallow import fields, Schema
 
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
@@ -15,6 +17,8 @@ from .error import RevocationNotSupportedError
 from .indy import IndyRevocation
 from .models.issuer_revocation_record import IssuerRevocationRecordSchema
 from .models.revocation_registry import RevocationRegistry
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RevRegCreateRequestSchema(Schema):
@@ -34,10 +38,10 @@ class RevRegCreateResultSchema(Schema):
 
 
 class RevRegUpdateTailFileUriSchema(Schema):
-    """Request schema for updating tail file URI."""
+    """Request schema for updating tails file URI."""
 
     tails_public_uri = fields.Url(
-        description="Public URI to the tail file", required=True
+        description="Public URI to the tails file", required=True
     )
 
 
@@ -118,20 +122,20 @@ async def get_current_registry(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Get the tail file of revocation registry",
+    summary="Download the tails file of revocation registry",
     produces="application/octet-stream",
     parameters=[{"in": "path", "name": "id", "description": "revocation registry id."}],
-    responses={200: {"description": "tail file", "schema": {"type": "file"}}},
+    responses={200: {"description": "tails file", "schema": {"type": "file"}}},
 )
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
-    Request handler for getting the tail file of the revocation registry.
+    Request handler for downloading the tails file of the revocation registry.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The tail file in FileResponse
+        The tails file in FileResponse
 
     """
     context = request.app["request_context"]
@@ -174,21 +178,23 @@ async def publish_registry(request: web.BaseRequest):
         raise web.HTTPNotFound() from e
 
     await revoc_registry.publish_registry_definition(context)
-    print("published registry definition")
+    LOGGER.debug("published registry definition: %s", registry_id)
     await revoc_registry.publish_registry_entry(context)
-    print("published registry entry")
+    LOGGER.debug("published registry entry: %s", registry_id)
 
     return web.json_response({"result": revoc_registry.serialize()})
 
 
 @docs(
     tags=["revocation"],
-    summary="Update revocation registry with new public URI to the tail file.",
+    summary="Update revocation registry with new public URI to the tails file.",
     parameters=[
         {
             "in": "path",
             "name": "id",
-            "description": "use credential definition id as the revocation registry id."
+            "description": (
+                "use credential definition id as the revocation registry id."
+            ),
         }
     ],
 )
@@ -219,7 +225,7 @@ async def update_registry(request: web.BaseRequest):
         raise web.HTTPNotFound() from e
 
     revoc_registry.set_tails_file_public_uri(tails_public_uri)
-    await revoc_registry.save(context, reason="Updating tail file public URI.")
+    await revoc_registry.save(context, reason="Updating tails file public URI")
 
     return web.json_response({"result": revoc_registry.serialize()})
 
