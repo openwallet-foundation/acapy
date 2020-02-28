@@ -1,3 +1,16 @@
+# 0.4.3
+
+## February 26, 2020
+
+- Fix the application of transaction author agreement acceptance to signed ledger requests [#385](https://github.com/hyperledger/aries-cloudagent-python/pull/385)
+- Add a command line argument to preserve connection exchange records [#355](https://github.com/hyperledger/aries-cloudagent-python/pull/355)
+- Allow custom credential IDs to be specified by the controller in the issue-credential protocol [#384](https://github.com/hyperledger/aries-cloudagent-python/pull/384)
+- Handle send timeouts in the admin server websocket implementation [#377](https://github.com/hyperledger/aries-cloudagent-python/pull/377)
+- [Aries RFC 0348](https://github.com/hyperledger/aries-rfcs/tree/master/features/0348-transition-msg-type-to-https): Support the 'didcomm.org' message type prefix for incoming messages [#379](https://github.com/hyperledger/aries-cloudagent-python/pull/379)
+- Add support for additional postgres wallet schemes such as "MultiWalletDatabase" [#378](https://github.com/hyperledger/aries-cloudagent-python/pull/378)
+- Updates to the demo agents and documentation to support demos using the OpenAPI interface [#371](https://github.com/hyperledger/aries-cloudagent-python/pull/371), [#375](https://github.com/hyperledger/aries-cloudagent-python/pull/375), [#376](https://github.com/hyperledger/aries-cloudagent-python/pull/376), [#382](https://github.com/hyperledger/aries-cloudagent-python/pull/382), [#383](https://github.com/hyperledger/aries-cloudagent-python/pull/376), [#382](https://github.com/hyperledger/aries-cloudagent-python/pull/383)
+- Add a new flag for preventing writes to the ledger [#364](https://github.com/hyperledger/aries-cloudagent-python/pull/364)
+
 # 0.4.2
 
 ## February 8, 2020
@@ -7,7 +20,6 @@
 - Avoid throwing exceptions on invalid or incomplete received presentations [#359](https://github.com/hyperledger/aries-cloudagent-python/pull/359)
 - Restore the `present-proof/create-request` admin endpoint for creating connectionless presentation requests [#356](https://github.com/hyperledger/aries-cloudagent-python/pull/356)
 - Activate the `connections/create-static` admin endpoint for creating static connections [#354](https://github.com/hyperledger/aries-cloudagent-python/pull/354)
-
 
 # 0.4.1
 
@@ -21,7 +33,6 @@
 - Handle proofs with repeated credential definition IDs [#330](https://github.com/hyperledger/aries-cloudagent-python/pull/330)
 - Allow side-loading of alternative inbound transports [#322](https://github.com/hyperledger/aries-cloudagent-python/pull/322)
 - Various fixes to documentation and message schemas, and improved unit test coverage
-
 
 # 0.4.0
 

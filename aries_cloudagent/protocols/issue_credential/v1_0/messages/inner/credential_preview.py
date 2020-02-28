@@ -6,7 +6,6 @@ from typing import Sequence
 from marshmallow import fields, validate
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.util import canon
 from ......wallet.util import b64_to_str
 
 from ...message_types import CREDENTIAL_PREVIEW
@@ -33,7 +32,7 @@ class CredAttrSpec(BaseModel):
         """
         super().__init__(**kwargs)
 
-        self.name = canon(name)
+        self.name = name
         self.value = value
         self.mime_type = mime_type.lower() if mime_type else None
 
