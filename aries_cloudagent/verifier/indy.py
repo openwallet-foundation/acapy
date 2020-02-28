@@ -100,7 +100,7 @@ class IndyVerifier(BaseVerifier):
                 if primary_enco != encode(spec["raw"]):
                     return PreVerifyResult.ENCODING_MISMATCH
 
-            return PreVerifyResult.OK
+        return PreVerifyResult.OK
 
     async def verify_presentation(
         self, presentation_request, presentation, schemas, credential_definitions
