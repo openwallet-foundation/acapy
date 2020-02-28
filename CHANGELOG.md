@@ -1,3 +1,11 @@
+# 0.4.4
+
+## February 28, 2020
+
+- Update docker image used in demo and test containers [#391](https://github.com/hyperledger/aries-cloudagent-python/pull/391)
+- Fix pre-verify check on received presentations [#390](https://github.com/hyperledger/aries-cloudagent-python/pull/390)
+- Do not canonicalize attribute names in credential previews [#389](https://github.com/hyperledger/aries-cloudagent-python/pull/389)
+
 # 0.4.3
 
 ## February 26, 2020
