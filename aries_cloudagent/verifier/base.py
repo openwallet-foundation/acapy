@@ -30,7 +30,7 @@ class BaseVerifier(ABC, metaclass=ABCMeta):
         Verify a presentation.
 
         Args:
-            presentation_request: Presentation request datßa
+            presentation_request: Presentation request data
             presentation: Presentation data
             schemas: Schema data
             credential_definitions: credential definition data
