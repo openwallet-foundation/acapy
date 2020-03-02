@@ -1,9 +1,3 @@
-<!----- Conversion time: 3.631 seconds.
-
-Source doc: https://docs.google.com/a/cloudcompass.ca/open?id=12N1KDm1l4Az6bSOJ3DVnBs4HC3_TWz9VpIQ6WTEeykw
-
------>
-
 # Aries OpenAPI Demo <!-- omit in toc -->
 
 What better way to learn about controllers than by actually being one yourself! In this demo, that’s just what happens&mdash;you are the controller. You have access to the full set of API endpoints exposed by an ACA-Py instance, and you will see the events coming from ACA-Py as they happen. Using that information, you'll help Alice's and Faber's agents connect, Faber's agent issue an education credential to Alice, and then ask Alice to prove she possesses the credential. Who knows why Faber needs to get the proof, but it lets us show off more protocols.
@@ -148,19 +142,31 @@ In the Faber browser tab, execute the **`POST /connections/create-invitation`** 
 
 **Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on**
 
-![Create Invitation Request](assets/1-Faber-Invitation-1.png "Create Invitation Request")
+<details>
+    <summary>Show me a screenshot - Create Invitation Request</summary>
+    <img src="./assets/1-Faber-Invitation-1.png" alt="Create Invitation Request">
+</details>
 
-![Create Invitation Response](assets/1-Faber-Invitation-2.png "Create Invitation Response")
+<details>
+    <summary>Show me a screenshot - Create Invitation Response</summary>
+    <img src="./assets/1-Faber-Invitation-2.png" alt="Create Invitation Response">
+</details>
 
 ### Copy the Invitation created by the Faber Agent
 
 Copy the entire block of the `invitation` object, from the curly brackets `{}`, excluding the trailing comma.
 
-![Create Invitation Response](assets/1-Faber-Invitation-3.png "Create Invitation Response")
+<details>
+    <summary>Show me a screenshot - Create Invitation Response</summary>
+    <img src="./assets/1-Faber-Invitation-3.png" alt="Create Invitation Response">
+</details>
 
 Before switching over to the Alice browser tab, scroll to and execute  the **`GET /connections`** endpoint to see the list of Faber's connections. You should see a connection with a `connection_id` that is identical to the invitation you just created, and that its state is `invitation`.
 
-![Faber Connection Status](assets/1-Faber-Invitation-4.png "Faber Connection Status")
+<details>
+    <summary>Show me a screenshot - Faber Connection Status</summary>
+    <img src="./assets/1-Faber-Invitation-4.png" alt="Faber Connection Status">
+</details>
 
 ### Use the Alice Agent to Receive Faber's Invitation
 
@@ -168,9 +174,15 @@ Switch to the Alice browser tab and get ready to execute the **`POST /connection
 
 **Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on**
 
-![Receive Invitation Request](assets/2-Alice-Invitation-1.png "Receive Invitation Request")
+<details>
+    <summary>Show me a screenshot - Receive Invitation Request</summary>
+    <img src="./assets/2-Alice-Invitation-1.png" alt="Receive Invitation Request">
+</details>
 
-![Receive Invitation Response](assets/2-Alice-Invitation-2.png "Receive Invitation Response")
+<details>
+    <summary>Show me a screenshot - Receive Invitation Response</summary>
+    <img src="./assets/2-Alice-Invitation-2.png" alt="Receive Invitation Request">
+</details>
 
 > A key observation to make here. The "copy and paste" we are doing here from Faber's agent to Alice's agent is what is called an "out of band" message. Because we don't yet have a DIDComm connection between the two agents, we have to convey the invitation in plaintext (we can't encrypt it - no channel) using some other mechanism than DIDComm. With mobile agents, that's where QR codes often come in. Once we have the invitation in the receivers agent, we can get back to using DIDComm.
 
@@ -180,23 +192,38 @@ The connection response returned from the previous **`POST /connections/receive-
 
 At this point Alice has simply stored the invitation in her wallet. To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
 
-![Accept Invitation Request](assets/2-Alice-Invitation-3.png "Accept Invitation Request")
+<details>
+    <summary>Show me a screenshot - Accept Invitation Request</summary>
+    <img src="./assets/2-Alice-Invitation-3.png" alt="Receive Invitation Request">
+</details>
 
-![Accept Invitation Response](assets/2-Alice-Invitation-4.png "Accept Invitation Response")
+<details>
+    <summary>Show me a screenshot - Accept Invitation Response</summary>
+    <img src="./assets/2-Alice-Invitation-4.png" alt="Receive Invitation Response">
+</details>
 
 ### Review Faber's Connection Status
 
 Switch over to the Faber broswer tab, scroll to and execute the **`GET /connections`** endpoint. Note the connection that was previously created. It's state is now `request`, which indicates that Alice has accepted the invitation and has sent a corresponding connection request to Faber. Copy the `connection_id` for the next step.
 
-![Accept Connection Request](assets/3-Faber-Connection-1.png "Accept Connection Request")
+<details>
+    <summary>Show me a screenshot - Accept Connection Request</summary>
+    <img src="./assets/3-Faber-Connection-1.png" alt="Accept Connection Request">
+</details>
 
 ### Tell the Faber Agent to Accept the Connection Request from Alice
 
 To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the **`POST /connections/{id}/accept-request`** endpint and paste the `connection_id` you previously copied into the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking the `Execute` button should show that the connection has a state of `response`, which indicates that Faber has accepted Alice's connection request.
 
-![Accept Connection Request](assets/3-Faber-Connection-2.png "Accept Connection Request")
+<details>
+    <summary>Show me a screenshot - Accept Connection Request</summary>
+    <img src="./assets/3-Faber-Connection-2.png" alt="Accept Connection Request">
+</details>
 
-![Accept Connection Request](assets/3-Faber-Connection-3.png "Accept Connection Request")
+<details>
+    <summary>Show me a screenshot - Accept Connection Request</summary>
+    <img src="./assets/3-Faber-Connection-3.png" alt="Accept Connection Request">
+</details>
 
 ### Review the Connection Status in Alice's Agent
 
@@ -204,13 +231,16 @@ Switch over the the Alice browser tab.
 
 Scroll to and execute **`GET /connections`** to see a list of Alice's connections, and the information tracked about each connection. You should see the one connection Alice’s agent has, that it is with the Faber agent, and that its state is `active`.
 
-<<TODO Alice connection state>>
+<< TODO Alice connection state >>
 
 ### Review the Connection Status in Faber's Agent
 
 You are connected! Switch to the Faber browser tab and run the same **`GET /connections`** endpoint to see Faber's view of the connection. Its state is also `active`. Note the `connection_id`, you’ll need it later in the tutorial.
 
-![Accept Connection Request](assets/3-Faber-Connection-4.png "Accept Connection Request")
+<details>
+    <summary>Show me a screenshot - Accept Connection Request</summary>
+    <img src="./assets/3-Faber-Connection-4.png" alt="Accept Connection Request">
+</details>
 
 ## Basic Messaging Between Agents
 
@@ -220,13 +250,13 @@ Once you have a connection between two agents, you have a channel to exchange se
 
 In Alice's swagger page, scroll to the **`POST /connections/{id}/send-message`** endpoint.  Click on `Try it Out` and enter a message in the body provided (for example `{"content": "Hello Faber"}`).  Enter the connection id of Alice's connection in the field provided.  Then click on `Execute`.
 
-<<TODO Picture of Alice's screen>>
+<< TODO Picture of Alice's screen >>
 
 ### Receiving a Basic Message (Faber)
 
 How does Faber know that a message was sent? If you take a look at Faber's console window, you can see that Faber's agent has raised an Event that the message was received:
 
-<<TODO picture of Faber's console window>>
+<< TODO picture of Faber's console window >>
 
 Faber's controller application can take whatever action is necessary to process this message. It could trigger some applicaiton code, or it might just be something the Faber application needs to display to its user (for example a reminder about some action the user needs to take).
 
@@ -234,7 +264,7 @@ Faber's controller application can take whatever action is necessary to process 
 
 How does Alice get feedback that Faber has received the message? The same way - when Faber's agent acknowledges receipt of the message, Alice's agent raises an Event to let the Alice controller know:
 
-<<TODO picture of Alice's console window>>
+<< TODO picture of Alice's console window >>
 
 Again, Alice's agent can take whatever action is necessary, possibly just flagging the message as having been `received`.
 
@@ -580,23 +610,27 @@ Note - if the connection status does not update to `active`, try sending a `trus
 
 ### Issuing a Credential
 
-We will use the Faber console to issue a credential.  This could be done using the REST API as we have done above, this will be left as an exercise to the user.
+We will use the Faber console to issue a credential.  (This could be done using the REST API as we have done above, this will be left as an exercise to the user.)
 
-TODO
+In the Faber console, select option `1` to send a credential to streetcred.
 
 ### Accepting the Credential with Streetcred
 
-TODO
+The credential should automatically show up in streetcred - accept the offered credential.
 
 ### Issuing a Proof Request
 
-We will use the Faber console to ask Streetcred for a proof.  This could be done using the REST API as we have done above, this will be left as an exercise to the user.
+We will use the Faber console to ask Streetcred for a proof.  (This could be done using the REST API as we have done above, this will be left as an exercise to the user.)
 
-TODO
+In the Faber console, select option `2` to send a proof request to streetcred.
 
 ### Responding to the Proof Request with Streetcred
 
-TODO
+In streetcred, respond to the proof
+
+### Review the Received Proof
+
+In the Faber console window, the proof should be received as validated.
 
 ## Conclusion
 
