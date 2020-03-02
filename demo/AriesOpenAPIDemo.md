@@ -458,47 +458,145 @@ If you would like to perform all of the proof request/response steps manually ..
 
 ## Issuing Credentials to a Mobile Agent
 
-TODO ... overview
+You can use the Faber aca-py agent to issue credentials to a mobile wallet.  To do this you need to run the Faber agent on a publicly accessible port (for example you can run the agent on Play With Docker), and you need a compatible wallet.  One available wallet is the Streetcred Identity Agent, which is available on both iOS and Android, and you can read about it [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
 
 ### Introduction to the Streetcred Agent
 
-installing the iOS or Android app
+Search for "Streetcred Identity Wallet" on the App Store or Google Play.
 
-make sure to use the BCovrin test network
+<details>
+    <summary>Click here to view screenshot (iOS)</summary>
+    <img src="./assets/ios1-install-app.jpg" alt="App Store">
+</details>
 
-enable notifications
+Start the app and accept the terms of service to create an Agent.
+
+<details>
+    <summary>Click here to view screenshot (iOS)</summary>
+    <img src="./assets/ios2-create-agent.jpg" alt="Create Agent">
+</details>
+
+Enble Face ID (or Android equivalent) to secure the Agent.
+
+<details>
+    <summary>Click here to view screenshot (iOS)</summary>
+    <img src="./assets/ios3-enable-security.jpg" alt="Enable Security">
+</details>
+
+Enable notifications (or else you will have to continually refresh the Agent to get updates).
+
+<details>
+    <summary>Click here to view screenshot (iOS)</summary>
+    <img src="./assets/ios4-enable-notifications.jpg" alt="Enable Notifications">
+</details>
+
+Before continuing with the BC Gov applications, you must do some additional setup, as follows:
+
+- Go to settings by clicking the menu icon in the top right (the "hamburger" icon—three stacked horizontal lines)
+- Click on the "Network" item and from the subsequent list select "BCovrin Test" network.
+- Click the back arrow to return to the settings and again to return to the main menu.Streetcred app screen.
+
+<details>
+    <summary>Click here to view screenshot (iOS)</summary>
+    <img src="./assets/ios5-select-network.jpg" alt="Select BCovrin Network">
+</details>
 
 ### Setting up your Issuing Agent on a Public Port
 
-(or else use ngrok and then set your agent's endpoint to the ngrok url)
+Run Play With Docker and start your agent using the BCovrin Test network:
 
-start your agent using the BCovrin Test network:
-
+```bash
+git clone https://github.com/hyperledger/aries-cloudagent-python
+cd aries-cloudagent-python/demo
 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events
+```
+
+This is similar to the instructions in the prior "Play with Docker" section, except not that:
+
+- We are using the BCovrin Test network (it has to use the same network as the mobile app)
+- We are running in "auto" mode, so we will have to do fewer manual acknowledgements
+- Play with Docker exposes the Agent's' port (in this case port 8021 of the container) on a public URL that the mobile app can access
+
+(An alternative for running locally - left as an excercise for the user - is to use ngrok and then set your agent's endpoint to the ngrok url.)
 
 ### Creating an Invitation
 
-use the invitation created automatically when Faber starts up ...
+When the Faber agent starts up it automatically creates an invitation, we will copy the "url" format of the invitation for the next step.  Copy all the text between the quotes (do not include the quotes) - the copied text should be a properly formatted URL.
+
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./assets/foo.png" alt="Select Invitation URL">
+</details>
 
 ### Converting the Invitation to a QR Code
 
-your application can do this, for this demo we will use https://www.the-qrcode-generator.com/
+To send the invitation to the agent, we need to convert the URl into a QR code.  Your application can do this, but for this demo we will use https://www.the-qrcode-generator.com/
+
+Open up https://www.the-qrcode-generator.com/ in a new browser window, and:
+
+- Select the "URL" option
+- Paste your invitation url into the provided input field
+
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./assets/foo.png" alt="Generate QR Code">
+</details>
 
 ### Accepting the Invitation with Streetcred
 
+On the Streetcred mobile app, select "SCAN CODE" and point your camera at the generated QR code.  Streetcred should automatically capture the code and ask you to confirm the connection.  GO ahead and confirm.
+
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./assets/foo.png" alt="Generate QR Code">
+</details>
+
+Streetcred will then give you a message that "A connection was added to your wallet".
+
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./assets/foo.png" alt="Generate QR Code">
+</details>
+
 ### Accepting Streetcred's connection request
 
-- accept-request
+At this point Faber has issued an invitation, and you have accpted the invitation and asked Faber to establish a connection to your agent.  Faber must now accept this request.  You can see the Event in the Faber console window.  Find this event, and select and copy the "connection id".
 
-Note - if the connection status does not update to `active`, try sending a `trust-ping` or `basic-message` on the connection.
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./assets/foo.png" alt="Generate QR Code">
+</details>
+
+Now, in Faber's swagger page (at the top of the console window, click on port `8021` to open the swagger page in a new window) scroll down to the **`POST /connections/{id}/accept-request`** endpoint, paste the connection id and click on "Execute".
+
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./assets/foo.png" alt="Generate QR Code">
+</details>
+
+Scroll to the **`GET /connections`** endpoint to check the status of the connection.
+
+Note - if the connection status does not update to `active`, try sending a `trust-ping` or `basic-message` on the connection.  This will force a handshake between the agents that whould upate the connection status.
 
 ### Issuing a Credential
 
+We will use the Faber console to issue a credential.  This could be done using the REST API as we have done above, this will be left as an exercise to the user.
+
+TODO
+
 ### Accepting the Credential with Streetcred
+
+TODO
 
 ### Issuing a Proof Request
 
+We will use the Faber console to ask Streetcred for a proof.  This could be done using the REST API as we have done above, this will be left as an exercise to the user.
+
+TODO
+
 ### Responding to the Proof Request with Streetcred
+
+TODO
 
 ## Conclusion
 
