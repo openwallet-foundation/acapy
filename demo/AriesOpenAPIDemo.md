@@ -292,7 +292,7 @@ On the BCovrin ledger browser, view the `Domain` page, refresh, and paste your D
 
 <<TODO show filter>>
 
-The ledger browser whould refresh and display the four (4) transactions on the ledger related to this DID:
+The ledger browser should refresh and display the four (4) transactions on the ledger related to this DID:
 
 - the initial DID registration
 - registration of the DID endpoint (Faber is an issuer so it has a public endpoint)
@@ -614,23 +614,35 @@ We will use the Faber console to issue a credential.  (This could be done using 
 
 In the Faber console, select option `1` to send a credential to streetcred.
 
+<< TODO screenshot >>
+
 ### Accepting the Credential with Streetcred
 
 The credential should automatically show up in streetcred - accept the offered credential.
+
+<< TODO screenshot >>
 
 ### Issuing a Proof Request
 
 We will use the Faber console to ask Streetcred for a proof.  (This could be done using the REST API as we have done above, this will be left as an exercise to the user.)
 
+<< TODO screenshot >>
+
 In the Faber console, select option `2` to send a proof request to streetcred.
+
+<< TODO screenshot >>
 
 ### Responding to the Proof Request with Streetcred
 
 In streetcred, respond to the proof
 
+<< TODO screenshot >>
+
 ### Review the Received Proof
 
 In the Faber console window, the proof should be received as validated.
+
+<< TODO screenshot >>
 
 ## Conclusion
 
