@@ -9,6 +9,8 @@ import indy.anoncreds
 from ..messaging.util import canon, encode
 from .base import BaseVerifier
 
+LOGGER = logging.getLogger(__name__)
+
 
 class PreVerifyResult(Enum):
     """Represent the result of IndyVerifier.pre_verify."""
@@ -29,7 +31,6 @@ class IndyVerifier(BaseVerifier):
             wallet: IndyWallet instance
 
         """
-        self.logger = logging.getLogger(__name__)
         self.wallet = wallet
 
     @staticmethod
@@ -48,7 +49,14 @@ class IndyVerifier(BaseVerifier):
             An instance of `PreVerifyResult` representing the validation result
 
         """
-        if not pres or "requested_proof" not in pres or "proof" not in pres:
+        if not pres:
+            LOGGER.debug("No proof provided")
+            return PreVerifyResult.INCOMPLETE
+        if "requested_proof" not in pres:
+            LOGGER.debug("Missing 'requested_proof'")
+            return PreVerifyResult.INCOMPLETE
+        if "proof" not in pres:
+            LOGGER.debug("Missing 'proof'")
             return PreVerifyResult.INCOMPLETE
 
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
@@ -60,25 +68,36 @@ class IndyVerifier(BaseVerifier):
                     pred = ge_proof["predicate"]
                     if pred["attr_name"] == canon_attr:
                         if pred["value"] != req_pred["p_value"]:
+                            LOGGER.debug("Predicate value != p_value")
                             return PreVerifyResult.INCOMPLETE
                         break
                 else:
+                    LOGGER.debug("Missing requested predicate '%s'", uuid)
                     return PreVerifyResult.INCOMPLETE
             except (KeyError, TypeError):
+                LOGGER.debug("Missing requested predicate '%s'", uuid)
                 return PreVerifyResult.INCOMPLETE
 
         revealed_attrs = pres["requested_proof"].get("revealed_attrs", {})
         revealed_groups = pres["requested_proof"].get("revealed_attr_groups", {})
+        self_attested = pres["requested_proof"].get("self_attested_attrs", {})
         for (uuid, req_attr) in pres_req["requested_attributes"].items():
             if "name" in req_attr:
-                pres_req_attr_spec = {req_attr["name"]: revealed_attrs.get(uuid)}
-            else:
+                if uuid in revealed_attrs:
+                    pres_req_attr_spec = {req_attr["name"]: revealed_attrs[uuid]}
+                elif uuid in self_attested:
+                    continue
+                else:
+                    LOGGER.debug("Missing requested attribute '%s'", req_attr["name"])
+                    return PreVerifyResult.INCOMPLETE
+            elif "names" in req_attr:
                 group_spec = revealed_groups.get(uuid)
                 if (
                     group_spec is None
                     or "sub_proof_index" not in group_spec
                     or "values" not in group_spec
                 ):
+                    LOGGER.debug("Missing requested attribute group '%s'", uuid)
                     return PreVerifyResult.INCOMPLETE
                 pres_req_attr_spec = {
                     attr: {
@@ -87,6 +106,9 @@ class IndyVerifier(BaseVerifier):
                     }
                     for attr in req_attr["names"]
                 }
+            else:
+                LOGGER.debug("Request attribute missing 'name' and 'names'")
+                return PreVerifyResult.INCOMPLETE
 
             for (attr, spec) in pres_req_attr_spec.items():
                 try:
@@ -96,8 +118,10 @@ class IndyVerifier(BaseVerifier):
                 except (KeyError, TypeError):
                     return PreVerifyResult.INCOMPLETE
                 if primary_enco != spec["encoded"]:
+                    LOGGER.debug("Encoded representation mismatch for '%s'", attr)
                     return PreVerifyResult.ENCODING_MISMATCH
                 if primary_enco != encode(spec["raw"]):
+                    LOGGER.debug("Encoded representation mismatch for '%s'", attr)
                     return PreVerifyResult.ENCODING_MISMATCH
 
         return PreVerifyResult.OK
@@ -117,7 +141,7 @@ class IndyVerifier(BaseVerifier):
 
         pv_result = self.pre_verify(presentation_request, presentation)
         if pv_result != PreVerifyResult.OK:
-            self.logger.error(
+            LOGGER.error(
                 f"Presentation on nonce={presentation_request['nonce']} "
                 f"cannot be validated: {pv_result.value}"
             )
