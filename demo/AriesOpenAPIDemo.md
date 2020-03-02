@@ -331,18 +331,16 @@ You can confirm the schema and credential definition were published by going bac
 
 First confirm the DID you used to write to the ledger. Open Faber's swagger page and scroll to the **`GET /wallet/did/public`** endpoint.  Click on `Try it Out` and `Execute` and you will see your public DID.
 
-<<TODO screenshot of the DID>>
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-1-Faber-DID-Public.png" alt="">
+    <img src="./assets/C-1-Faber-DID-Public.png" alt="Faber Public DID">
 </details>
 
 On the BCovrin ledger browser, view the `Domain` page, refresh, and paste your DID into the `Filter:` field:
 
-<<TODO show filter>>
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-2-Faber-Ledger-Search-0.png" alt="">
+    <img src="./assets/C-2-Faber-Ledger-Search-0.png" alt="Search Ledger by DID">
 </details>
 
 The ledger browser should refresh and display the four (4) transactions on the ledger related to this DID:
@@ -353,11 +351,11 @@ The ledger browser should refresh and display the four (4) transactions on the l
 - the registered credential definition
 
 <details>
-    <summary>Show me a screenshot</summary>
-    <img src="./assets/C-2-Faber-Ledger-Search-1.png" alt="">
-    <img src="./assets/C-2-Faber-Ledger-Search-2.png" alt="">
-    <img src="./assets/C-2-Faber-Ledger-Search-3.png" alt="">
-    <img src="./assets/C-2-Faber-Ledger-Search-4.png" alt="">
+    <summary>Show me the ledger transactions</summary>
+    <img src="./assets/C-2-Faber-Ledger-Search-1.png" alt="DID Transaction">
+    <img src="./assets/C-2-Faber-Ledger-Search-2.png" alt="DID Endpoint Transaction">
+    <img src="./assets/C-2-Faber-Ledger-Search-3.png" alt="Schema Transaction">
+    <img src="./assets/C-2-Faber-Ledger-Search-4.png" alt="Credential Definition Transaction">
 </details>
 
 You can also look up the Schema and Credential Definition information using Faber's swagger page.
@@ -366,16 +364,16 @@ You can use the **`GET /schemas/created`** endpoint to get a list of schema id's
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-3-Faber-Info-2.png" alt="">
-    <img src="./assets/C-3-Faber-Info-3.png" alt="">
+    <img src="./assets/C-3-Faber-Info-2.png" alt="Search Schemas">
+    <img src="./assets/C-3-Faber-Info-3.png" alt="Search Schemas">
 </details>
 
 Likewise you can use the **`GET /credential-definitions/created`** endpoint ot get a list of credential definition id's, and then use the **`GET /credential-definitions/{id}`** endpoint to get informaiton on a specific credential definition.
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-3-Faber-Info-4.png" alt="">
-    <img src="./assets/C-3-Faber-Info-5.png" alt="">
+    <img src="./assets/C-3-Faber-Info-4.png" alt="Search Credential Definitions">
+    <img src="./assets/C-3-Faber-Info-5.png" alt="Search Credential Definitions">
 </details>
 
 Either way, you will need information on the schema and credential definition in order to issue a Credential, which is what we will do next!
@@ -399,7 +397,7 @@ First, scroll back up to the **`GET /connections`** API endpoint and execute it.
     <img src="./assets/C-3-Faber-Info-1.png" alt="Connection ID">
 </details>
 
-A little trickier to find is the `cred_def_id`. Go back to the terminal where you started the Faber agent, and scroll back until you see the text `#3/4 Create a new schema/cred def on the ledger` and then just below that `Cred def ID:`. Copy the text following that label. While you are at it, copy the text following the label `Schema ID:` as well. 
+A little trickier to find is the `cred_def_id`. (We'll look up the schema and credential definition information in our Faber terminal window.)  Go back to the terminal where you started the Faber agent, and scroll back until you see the text `#3/4 Create a new schema/cred def on the ledger` and then just below that `Cred def ID:`. Copy the text following that label. While you are at it, copy the text following the label `Schema ID:` as well. 
 
 <details>
     <summary>Show me a screenshot!</summary>
@@ -451,35 +449,29 @@ Now we need put into the JSON the data values for the credential. Copy and paste
 
 Ok, finally, you are ready to click `Execute`. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?
 
-<<TODO screenshot of the completed JSON>>
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-4-Faber-Credential-Offer-1.png" alt="">
-    <img src="./assets/C-4-Faber-Credential-Offer-2.png" alt="">
+    <img src="./assets/C-4-Faber-Credential-Offer-1.png" alt="Faber Submit Credential Offer">
+    <img src="./assets/C-4-Faber-Credential-Offer-2.png" alt="Faber Submit Credential Offer">
 </details>
 
 To confirm the issuance worked, scroll up to the top of the `v1.0 issue-credential exchange` section and execute the **`GET /issue-credential/records`** endpoint. You should see a lot of information about the exchange, including the state - `credential_acked`.
 
 ### Alice Receives Credential
 
-Let’s look at it from Alice’s side. Switch to the Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element `referent` is the value of the `credential_id` element used in other calls. `referent` is the name returned in the `indy-sdk` call to get the set of credentials for the wallet and ACA-Py code is not changing it in the response.
+Let’s look at it from Alice’s side.  We have started up our agents in "auto" mode, so a lot of the messages have been automatically handled and responded.
+
+Alice's agent first received a notification of a Credetial Offer, to which it responded with a Credential Request.  Faber received the Credential Request and responded in turn with an Issue Credential message.
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-5-Alice-Credential-Offer-1.png" alt="">
-    <img src="./assets/C-5-Alice-Credential-Offer-2.png" alt="">
-</details>
-
-Faber has also received some events ...
-
-<details>
-    <summary>Show me a screenshot</summary>
-    <img src="./assets/C-6-Faber-Credential-Request.png" alt="">
+    <img src="./assets/C-5-Alice-Credential-Offer-1.png" alt="Issue Credential">
+    <img src="./assets/C-5-Alice-Credential-Offer-2.png" alt="Issue Credential">
 </details>
 
 ### Alice Stores Credential in her Wallet
 
-Because we have turned "auto-off", we need to explicitely tell the agent to store the credential in the wallet.
+Because we are not fully "auto", we need to explicitely tell the agent to store the credential in the wallet.
 
 <details>
     <summary>Show me a screenshot</summary>
@@ -493,7 +485,16 @@ Because we have turned "auto-off", we need to explicitely tell the agent to stor
     <img src="./assets/C-7-Alice-Store-Credential-4.png" alt="">
 </details>
 
+Now, in Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element `referent` is the value of the `credential_id` element used in other calls. `referent` is the name returned in the `indy-sdk` call to get the set of credentials for the wallet and ACA-Py code is not changing it in the response.
+
 ### Faber Receives Acknowledgment that the Credential was Received
+
+Faber has also received some events ...
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-6-Faber-Credential-Request.png" alt="">
+</details>
 
 Faber has received some events:
 
@@ -512,10 +513,6 @@ Those that know something about the Indy process for issuing a credential and th
 
 * On the Faber agent side, this is because we used the **`POST /issue-credential/send`** administrative message, which handles the back and forth for the issuer automatically. We could have used the other `/issue-credential/` endpoints to allow the controller to handle each step of the protocol.
 * On Alice's agent side, this is because in the startup options for the agent, we used the `--auto-respond-credential-offer` and `--auto-store-credential` parameters.
-
-### Review of Console Events
-
-<< TODO review the Alice and Faber Events in their Console Windows >>
 
 ### Bonus Points
 
@@ -586,37 +583,39 @@ Notice that the proof request is using a predicate to check if Alice is older th
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/P-1-Faber-Proof-Request-1.png" alt="">
-    <img src="./assets/P-1-Faber-Proof-Request-2.png" alt="">
+    <img src="./assets/P-1-Faber-Proof-Request-1.png" alt="Send Proof Request">
+    <img src="./assets/P-1-Faber-Proof-Request-2.png" alt="Send Proof Request">
 </details>
 
 ### Alice - Responding to the Proof Request
 
+As before, Alice receives a notification event from her agent telling her she ahs received a Proof Request.  In our scenario, the agent automatically selects a matching credential and responds with a Proof.
+
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/P-2-Alice-Proof-Request-1.png" alt="">
-    <img src="./assets/P-2-Alice-Proof-Request-2.png" alt="">
+    <img src="./assets/P-2-Alice-Proof-Request-1.png" alt="Proof Request">
+    <img src="./assets/P-2-Alice-Proof-Request-2.png" alt="Proof Request">
 </details>
+
+(In real life, for example if Alice had a mogile agent on her smartphone, the agent would prompt Alice whether she wanted to respond or not.  We'll see this scenario in a bit ...)
 
 ### Faber - Verifying the Proof
 
 Note that in the response, the state is `request_sent`. That is because when the HTTP response was generated (immediately after sending the request), Alice’s agent had not yet responded to the request. We’ll have to do another request to verify the presentation worked. Copy the value of the `presentation_exchange_id` field from the response and use it in executing the **`GET /present-proof/records/{pres_ex_id}`** endpoint. That should return a result showing the state as `verified` and `verified` as `true`. Proof positive!
 
+You can see some of Faber's activity below:
+
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/P-3-Faber-Proof-1.png" alt="">
-    <img src="./assets/P-3-Faber-Proof-2.png" alt="">
-    <img src="./assets/P-3-Faber-Proof-3.png" alt="">
-    <img src="./assets/P-3-Faber-Proof-4.png" alt="">
+    <img src="./assets/P-3-Faber-Proof-1.png" alt="Receive and Verify Proof">
+    <img src="./assets/P-3-Faber-Proof-2.png" alt="Receive and Verify Proof">
+    <img src="./assets/P-3-Faber-Proof-3.png" alt="Receive and Verify Proof">
+    <img src="./assets/P-3-Faber-Proof-4.png" alt="Receive and Verify Proof">
 </details>
 
 ### Notes
 
 As with the issue credential process, the agents handled some of the presentation steps without bothering the controller.  In this case, Alice’s agent processed the presentation request automatically because it was started with the `--auto-respond-presentation-request` parameter set, and her wallet contained exactly one credential that satisfied the presentation-request from the Faber agent. Similarly, the Faber agent was started with the `--auto-verify-presentation` parameter and so on receipt of the presentation, it verified the presentation and updated the status accordingly.
-
-### Review of Console Events
-
-<<TODO review the Alice and Faber Events in their Console Windows>>
 
 ### Bonus Points
 
