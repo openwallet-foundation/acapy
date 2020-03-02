@@ -715,15 +715,15 @@ On the Streetcred mobile app, select "SCAN CODE" and point your camera at the ge
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-1-connect-1.png" alt="Accept Invitation">
+    <img src="./collateral/S-1-connect-1.jpg" alt="Accept Invitation">
 </details>
 
 Streetcred will then give you a message that "A connection was added to your wallet".
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-1-connect-2.png" alt="Add Connection to Wallet">
-    <img src="./collateral/S-1-connect-3.png" alt="Add Connection to Wallet">
+    <img src="./collateral/S-1-connect-2.jpg" alt="Add Connection to Wallet">
+    <img src="./collateral/S-1-connect-3.jpg" alt="Add Connection to Wallet">
 </details>
 
 ### Accepting Streetcred's connection request
@@ -769,9 +769,9 @@ The credential should automatically show up in streetcred - accept the offered c
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-3-credential-1.png" alt="View Connection Status">
-    <img src="./collateral/S-3-credential-2.png" alt="View Connection Status">
-    <img src="./collateral/S-3-credential-3.png" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-1.jpg" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-2.jpg" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-3.jpg" alt="View Connection Status">
 </details>
 
 ### Issuing a Proof Request
@@ -791,9 +791,9 @@ In streetcred, respond to the proof
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-4-proof-1.png" alt="View Connection Status">
-    <img src="./collateral/S-4-proof-2.png" alt="View Connection Status">
-    <img src="./collateral/S-4-proof-3.png" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-1.jpg" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-2.jpg" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-3.jpg" alt="View Connection Status">
 </details>
 
 ### Review the Received Proof
