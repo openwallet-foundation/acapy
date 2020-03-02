@@ -51,7 +51,10 @@ Once the Faber agent has started up (with the invite displayed), click the link 
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.**
 
-![Swagger Page for Faber Agent](assets/Faber-Agent.png "Swagger Page for Faber Agent")
+<details>
+    <summary>Show me a screenshot!</summary>
+    <img src="./assets/Faber-Agent.png" alt="Swagger Page for Faber Agent">
+</details>
 
 ### Start the Alice Agent
 
@@ -67,7 +70,10 @@ Once the Alice agent has started up (with the `invite:` prompt displayed), click
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
 
-![Swagger Page for Alice Agent](assets/Alice-Agent.png "Swagger Page for Alice Agent")
+<details>
+    <summary>Show me a screenshot!</summary>
+    <img src="./assets/Alice-Agent.png" alt="Swagger Page for Alice Agent">
+</details>
 
 You are ready to go. Skip down to the [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface) section.
 
@@ -91,7 +97,10 @@ If all goes well, the agent will show a message indicating it is running. Use th
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.**
 
-![Swagger Page for Faber Agent](assets/Faber-Agent-Local.png "Swagger Page for Faber Agent")
+<details>
+    <summary>Show me a screenshot!</summary>
+    <img src="./assets/Faber-Agent-Local.png" alt="Swagger Page for Faber Agent">
+</details>
 
 ### Start the Alice Agent
 
@@ -105,7 +114,10 @@ If all goes well, the agent will show a message indicating it is running. Open a
 
 **Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.**
 
-![Swagger Page for Alice Agent](assets/Alice-Agent-Local.png "Swagger Page for Alice Agent")
+<details>
+    <summary>Show me a screenshot!</summary>
+    <img src="./assets/Alice-Agent-Local.png" alt="Swagger Page for Alice Agent">
+</details>
 
 ### Restarting the Docker Containers
 

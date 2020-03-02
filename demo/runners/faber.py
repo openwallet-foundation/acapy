@@ -221,16 +221,17 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                     {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "degree", "restrictions": [{"issuer_did": agent.did}]},
-                    # add the following to test self-attested attributes
+                    # include the following to test self-attested attributes
                     #{"name": "self_attested_thing"},
                 ]
                 req_preds = [
-                    {
-                        "name": "age",
-                        "p_type": ">=",
-                        "p_value": 18,
-                        "restrictions": [{"issuer_did": agent.did}],
-                    }
+                    # include the following to test zero-knowledge proofs
+                    #{
+                    #    "name": "age",
+                    #    "p_type": ">=",
+                    #    "p_value": 18,
+                    #    "restrictions": [{"issuer_did": agent.did}],
+                    #}
                 ]
                 indy_proof_request = {
                     "name": "Proof of Education",
