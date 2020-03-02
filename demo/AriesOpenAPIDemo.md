@@ -202,16 +202,23 @@ The connection response returned from the previous **`POST /connections/receive-
 
 ### Tell Alice's Agent to *Accept* the Invitation
 
-At this point Alice has simply stored the invitation in her wallet. To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
+At this point Alice has simply stored the invitation in her wallet.  You can see the status using the **`GET /connections`** endpoing.
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/2-Alice-Invitation-3.png" alt="Invitation Status">
+</details>
+
+To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
 
 <details>
     <summary>Show me a screenshot - Accept Invitation Request</summary>
-    <img src="./assets/2-Alice-Invitation-3.png" alt="Receive Invitation Request">
+    <img src="./assets/2-Alice-Invitation-4.png" alt="Receive Invitation Request">
 </details>
 
 <details>
     <summary>Show me a screenshot - Accept Invitation Response</summary>
-    <img src="./assets/2-Alice-Invitation-4.png" alt="Receive Invitation Response">
+    <img src="./assets/2-Alice-Invitation-5.png" alt="Receive Invitation Response">
 </details>
 
 ### Review Faber's Connection Status
@@ -223,18 +230,25 @@ Switch over to the Faber broswer tab, scroll to and execute the **`GET /connecti
     <img src="./assets/3-Faber-Connection-1.png" alt="Accept Connection Request">
 </details>
 
+We were notified that Alice received our invition and requested a connection through an EVENT, a web service callback from the agent to our controller:
+
+<details>
+    <summary>Show me the event</summary>
+    <img src="./assets/3-Faber-Connection-2.png" alt="Connection Request Event">
+</details>
+
 ### Tell the Faber Agent to Accept the Connection Request from Alice
 
 To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the **`POST /connections/{id}/accept-request`** endpint and paste the `connection_id` you previously copied into the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking the `Execute` button should show that the connection has a state of `response`, which indicates that Faber has accepted Alice's connection request.
 
 <details>
     <summary>Show me a screenshot - Accept Connection Request</summary>
-    <img src="./assets/3-Faber-Connection-2.png" alt="Accept Connection Request">
+    <img src="./assets/3-Faber-Connection-3.png" alt="Accept Connection Request">
 </details>
 
 <details>
     <summary>Show me a screenshot - Accept Connection Request</summary>
-    <img src="./assets/3-Faber-Connection-3.png" alt="Accept Connection Request">
+    <img src="./assets/3-Faber-Connection-4.png" alt="Accept Connection Request">
 </details>
 
 ### Review the Connection Status in Alice's Agent
@@ -243,15 +257,25 @@ Switch over the the Alice browser tab.
 
 Scroll to and execute **`GET /connections`** to see a list of Alice's connections, and the information tracked about each connection. You should see the one connection Alice’s agent has, that it is with the Faber agent, and that its state is `active`.
 
-<< TODO Alice connection state >>
+<details>
+    <summary>Show me a screenshot - Alice Connection Status</summary>
+    <img src="./assets/4-Alice-Connection-1.png" alt="Alice Connection Status">
+</details>
+
+As with Faber's side of the connection, Alice received a notification that Faber had accepted her connection request.
+
+<details>
+    <summary>Show me a the event</summary>
+    <img src="./assets/4-Alice-Connection-2.png" alt="Alice Connection Event">
+</details>
 
 ### Review the Connection Status in Faber's Agent
 
 You are connected! Switch to the Faber browser tab and run the same **`GET /connections`** endpoint to see Faber's view of the connection. Its state is also `active`. Note the `connection_id`, you’ll need it later in the tutorial.
 
 <details>
-    <summary>Show me a screenshot - Accept Connection Request</summary>
-    <img src="./assets/3-Faber-Connection-4.png" alt="Accept Connection Request">
+    <summary>Show me a screenshot - Faber Connection Status</summary>
+    <img src="./assets/5-Faber-Connection-1.png" alt="Faber Connection Status">
 </details>
 
 ## Basic Messaging Between Agents
@@ -262,13 +286,19 @@ Once you have a connection between two agents, you have a channel to exchange se
 
 In Alice's swagger page, scroll to the **`POST /connections/{id}/send-message`** endpoint.  Click on `Try it Out` and enter a message in the body provided (for example `{"content": "Hello Faber"}`).  Enter the connection id of Alice's connection in the field provided.  Then click on `Execute`.
 
-<< TODO Picture of Alice's screen >>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/6-Alice-Basic-Msg.png" alt="Alice Send Message">
+</details>
 
 ### Receiving a Basic Message (Faber)
 
 How does Faber know that a message was sent? If you take a look at Faber's console window, you can see that Faber's agent has raised an Event that the message was received:
 
-<< TODO picture of Faber's console window >>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/7-Faber-Basic-Msg.png" alt="Faber Receive Message">
+</details>
 
 Faber's controller application can take whatever action is necessary to process this message. It could trigger some applicaiton code, or it might just be something the Faber application needs to display to its user (for example a reminder about some action the user needs to take).
 
@@ -276,7 +306,10 @@ Faber's controller application can take whatever action is necessary to process 
 
 How does Alice get feedback that Faber has received the message? The same way - when Faber's agent acknowledges receipt of the message, Alice's agent raises an Event to let the Alice controller know:
 
-<< TODO picture of Alice's console window >>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/8-Alice-Basic-Msg.png" alt="Alice Receive Message Confirmation">
+</details>
 
 Again, Alice's agent can take whatever action is necessary, possibly just flagging the message as having been `received`.
 
@@ -299,10 +332,18 @@ You can confirm the schema and credential definition were published by going bac
 First confirm the DID you used to write to the ledger. Open Faber's swagger page and scroll to the **`GET /wallet/did/public`** endpoint.  Click on `Try it Out` and `Execute` and you will see your public DID.
 
 <<TODO screenshot of the DID>>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-1-Faber-DID-Public.png" alt="">
+</details>
 
 On the BCovrin ledger browser, view the `Domain` page, refresh, and paste your DID into the `Filter:` field:
 
 <<TODO show filter>>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-2-Faber-Ledger-Search-0.png" alt="">
+</details>
 
 The ledger browser should refresh and display the four (4) transactions on the ledger related to this DID:
 
@@ -311,13 +352,31 @@ The ledger browser should refresh and display the four (4) transactions on the l
 - the registered schema
 - the registered credential definition
 
-<<TODO show a screen shot of the BCovrin ledger browser>>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-2-Faber-Ledger-Search-1.png" alt="">
+    <img src="./assets/C-2-Faber-Ledger-Search-2.png" alt="">
+    <img src="./assets/C-2-Faber-Ledger-Search-3.png" alt="">
+    <img src="./assets/C-2-Faber-Ledger-Search-4.png" alt="">
+</details>
 
 You can also look up the Schema and Credential Definition information using Faber's swagger page.
 
 You can use the **`GET /schemas/created`** endpoint to get a list of schema id's created by this agent, and then **`GET /schemas/{id}`** to get details on a specific schema.
 
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-3-Faber-Info-2.png" alt="">
+    <img src="./assets/C-3-Faber-Info-3.png" alt="">
+</details>
+
 Likewise you can use the **`GET /credential-definitions/created`** endpoint ot get a list of credential definition id's, and then use the **`GET /credential-definitions/{id}`** endpoint to get informaiton on a specific credential definition.
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-3-Faber-Info-4.png" alt="">
+    <img src="./assets/C-3-Faber-Info-5.png" alt="">
+</details>
 
 Either way, you will need information on the schema and credential definition in order to issue a Credential, which is what we will do next!
 
@@ -337,7 +396,7 @@ First, scroll back up to the **`GET /connections`** API endpoint and execute it.
 
 <details>
     <summary>Click here to see a screenshot</summary>
-    <img src="./collateral/conn-id.png" alt="Connection ID">
+    <img src="./assets/C-3-Faber-Info-1.png" alt="Connection ID">
 </details>
 
 A little trickier to find is the `cred_def_id`. Go back to the terminal where you started the Faber agent, and scroll back until you see the text `#3/4 Create a new schema/cred def on the ledger` and then just below that `Cred def ID:`. Copy the text following that label. While you are at it, copy the text following the label `Schema ID:` as well. 
@@ -393,12 +452,57 @@ Now we need put into the JSON the data values for the credential. Copy and paste
 Ok, finally, you are ready to click `Execute`. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?
 
 <<TODO screenshot of the completed JSON>>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-4-Faber-Credential-Offer-1.png" alt="">
+    <img src="./assets/C-4-Faber-Credential-Offer-2.png" alt="">
+</details>
 
 To confirm the issuance worked, scroll up to the top of the `v1.0 issue-credential exchange` section and execute the **`GET /issue-credential/records`** endpoint. You should see a lot of information about the exchange, including the state - `credential_acked`.
 
 ### Alice Receives Credential
 
 Let’s look at it from Alice’s side. Switch to the Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element `referent` is the value of the `credential_id` element used in other calls. `referent` is the name returned in the `indy-sdk` call to get the set of credentials for the wallet and ACA-Py code is not changing it in the response.
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-5-Alice-Credential-Offer-1.png" alt="">
+    <img src="./assets/C-5-Alice-Credential-Offer-2.png" alt="">
+</details>
+
+Faber has also received some events ...
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-6-Faber-Credential-Request.png" alt="">
+</details>
+
+### Alice Stores Credential in her Wallet
+
+Because we have turned "auto-off", we need to explicitely tell the agent to store the credential in the wallet.
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-7-Alice-Store-Credential-1.png" alt="">
+    <img src="./assets/C-7-Alice-Store-Credential-2.png" alt="">
+</details>
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-7-Alice-Store-Credential-3.png" alt="">
+    <img src="./assets/C-7-Alice-Store-Credential-4.png" alt="">
+</details>
+
+### Faber Receives Acknowledgment that the Credential was Received
+
+Faber has received some events:
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/C-8-Faber-Credential-Ack-0.png" alt="">
+    <img src="./assets/C-8-Faber-Credential-Ack-1.png" alt="">
+    <img src="./assets/C-8-Faber-Credential-Ack-2.png" alt="">
+</details>
 
 You’ve done it, issued a credential!  w00t!
 
@@ -411,13 +515,13 @@ Those that know something about the Indy process for issuing a credential and th
 
 ### Review of Console Events
 
-<<TODO review the Alice and Faber Events in their Console Windows>>
+<< TODO review the Alice and Faber Events in their Console Windows >>
 
 ### Bonus Points
 
 If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other `/issue-credential/` messages. Use the **`GET /issue-credential/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.
 
-<<TODO list the events, and the corresponding API calls to move to the next step>>
+<< TODO list the events, and the corresponding API calls to move to the next step >>
 
 ## Requesting/Presenting a Proof
 
@@ -480,9 +584,31 @@ From the Faber browser tab, get ready to execute the **`POST /present-proof/send
 
 Notice that the proof request is using a predicate to check if Alice is older than 18 without asking for her age. (Not sure what this has to do with her education level!) Click `Execute` and cross your fingers. If the request fails check your JSON!
 
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/P-1-Faber-Proof-Request-1.png" alt="">
+    <img src="./assets/P-1-Faber-Proof-Request-2.png" alt="">
+</details>
+
+### Alice - Responding to the Proof Request
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/P-2-Alice-Proof-Request-1.png" alt="">
+    <img src="./assets/P-2-Alice-Proof-Request-2.png" alt="">
+</details>
+
 ### Faber - Verifying the Proof
 
 Note that in the response, the state is `request_sent`. That is because when the HTTP response was generated (immediately after sending the request), Alice’s agent had not yet responded to the request. We’ll have to do another request to verify the presentation worked. Copy the value of the `presentation_exchange_id` field from the response and use it in executing the **`GET /present-proof/records/{pres_ex_id}`** endpoint. That should return a result showing the state as `verified` and `verified` as `true`. Proof positive!
+
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="./assets/P-3-Faber-Proof-1.png" alt="">
+    <img src="./assets/P-3-Faber-Proof-2.png" alt="">
+    <img src="./assets/P-3-Faber-Proof-3.png" alt="">
+    <img src="./assets/P-3-Faber-Proof-4.png" alt="">
+</details>
 
 ### Notes
 
