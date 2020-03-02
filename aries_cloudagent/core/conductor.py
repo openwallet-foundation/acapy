@@ -208,7 +208,7 @@ class Conductor:
                 base_url = context.settings.get("invite_base_url")
                 invite_url = invitation.to_url(base_url)
                 print("Invitation URL:")
-                print(invite_url)
+                print(invite_url, flush=True)
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
