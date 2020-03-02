@@ -53,7 +53,7 @@ Once the Faber agent has started up (with the invite displayed), click the link 
 
 <details>
     <summary>Show me a screenshot!</summary>
-    <img src="./assets/Faber-Agent.png" alt="Swagger Page for Faber Agent">
+    <img src="./collateral/Faber-Agent.png" alt="Swagger Page for Faber Agent">
 </details>
 
 ### Start the Alice Agent
@@ -72,7 +72,7 @@ Once the Alice agent has started up (with the `invite:` prompt displayed), click
 
 <details>
     <summary>Show me a screenshot!</summary>
-    <img src="./assets/Alice-Agent.png" alt="Swagger Page for Alice Agent">
+    <img src="./collateral/Alice-Agent.png" alt="Swagger Page for Alice Agent">
 </details>
 
 You are ready to go. Skip down to the [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface) section.
@@ -99,7 +99,7 @@ If all goes well, the agent will show a message indicating it is running. Use th
 
 <details>
     <summary>Show me a screenshot!</summary>
-    <img src="./assets/Faber-Agent-Local.png" alt="Swagger Page for Faber Agent">
+    <img src="./collateral/Faber-Agent-Local.png" alt="Swagger Page for Faber Agent">
 </details>
 
 ### Start the Alice Agent
@@ -116,7 +116,7 @@ If all goes well, the agent will show a message indicating it is running. Open a
 
 <details>
     <summary>Show me a screenshot!</summary>
-    <img src="./assets/Alice-Agent-Local.png" alt="Swagger Page for Alice Agent">
+    <img src="./collateral/Alice-Agent-Local.png" alt="Swagger Page for Alice Agent">
 </details>
 
 ### Restarting the Docker Containers
@@ -156,12 +156,12 @@ In the Faber browser tab, execute the **`POST /connections/create-invitation`** 
 
 <details>
     <summary>Show me a screenshot - Create Invitation Request</summary>
-    <img src="./assets/1-Faber-Invitation-1.png" alt="Create Invitation Request">
+    <img src="./collateral/1-Faber-Invitation-1.png" alt="Create Invitation Request">
 </details>
 
 <details>
     <summary>Show me a screenshot - Create Invitation Response</summary>
-    <img src="./assets/1-Faber-Invitation-2.png" alt="Create Invitation Response">
+    <img src="./collateral/1-Faber-Invitation-2.png" alt="Create Invitation Response">
 </details>
 
 ### Copy the Invitation created by the Faber Agent
@@ -170,14 +170,14 @@ Copy the entire block of the `invitation` object, from the curly brackets `{}`, 
 
 <details>
     <summary>Show me a screenshot - Create Invitation Response</summary>
-    <img src="./assets/1-Faber-Invitation-3.png" alt="Create Invitation Response">
+    <img src="./collateral/1-Faber-Invitation-3.png" alt="Create Invitation Response">
 </details>
 
 Before switching over to the Alice browser tab, scroll to and execute  the **`GET /connections`** endpoint to see the list of Faber's connections. You should see a connection with a `connection_id` that is identical to the invitation you just created, and that its state is `invitation`.
 
 <details>
     <summary>Show me a screenshot - Faber Connection Status</summary>
-    <img src="./assets/1-Faber-Invitation-4.png" alt="Faber Connection Status">
+    <img src="./collateral/1-Faber-Invitation-4.png" alt="Faber Connection Status">
 </details>
 
 ### Use the Alice Agent to Receive Faber's Invitation
@@ -188,12 +188,12 @@ Switch to the Alice browser tab and get ready to execute the **`POST /connection
 
 <details>
     <summary>Show me a screenshot - Receive Invitation Request</summary>
-    <img src="./assets/2-Alice-Invitation-1.png" alt="Receive Invitation Request">
+    <img src="./collateral/2-Alice-Invitation-1.png" alt="Receive Invitation Request">
 </details>
 
 <details>
     <summary>Show me a screenshot - Receive Invitation Response</summary>
-    <img src="./assets/2-Alice-Invitation-2.png" alt="Receive Invitation Request">
+    <img src="./collateral/2-Alice-Invitation-2.png" alt="Receive Invitation Request">
 </details>
 
 > A key observation to make here. The "copy and paste" we are doing here from Faber's agent to Alice's agent is what is called an "out of band" message. Because we don't yet have a DIDComm connection between the two agents, we have to convey the invitation in plaintext (we can't encrypt it - no channel) using some other mechanism than DIDComm. With mobile agents, that's where QR codes often come in. Once we have the invitation in the receivers agent, we can get back to using DIDComm.
@@ -206,19 +206,19 @@ At this point Alice has simply stored the invitation in her wallet.  You can see
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/2-Alice-Invitation-3.png" alt="Invitation Status">
+    <img src="./collateral/2-Alice-Invitation-3.png" alt="Invitation Status">
 </details>
 
 To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the `connection_id` in the connection response from the previous **`POST /connections/receive-invitation`** endpoint call. Scroll to the **`POST /connections/{id}/accept-invitation`** endpoint and paste the `connection_id` in the `id` parameter field (you will have to click the `Try it out` button to see the available URL parameters). The response from clicking `Execute` should show that the connection has a state of `request`.
 
 <details>
     <summary>Show me a screenshot - Accept Invitation Request</summary>
-    <img src="./assets/2-Alice-Invitation-4.png" alt="Receive Invitation Request">
+    <img src="./collateral/2-Alice-Invitation-4.png" alt="Receive Invitation Request">
 </details>
 
 <details>
     <summary>Show me a screenshot - Accept Invitation Response</summary>
-    <img src="./assets/2-Alice-Invitation-5.png" alt="Receive Invitation Response">
+    <img src="./collateral/2-Alice-Invitation-5.png" alt="Receive Invitation Response">
 </details>
 
 ### Review Faber's Connection Status
@@ -227,14 +227,14 @@ Switch over to the Faber broswer tab, scroll to and execute the **`GET /connecti
 
 <details>
     <summary>Show me a screenshot - Accept Connection Request</summary>
-    <img src="./assets/3-Faber-Connection-1.png" alt="Accept Connection Request">
+    <img src="./collateral/3-Faber-Connection-1.png" alt="Accept Connection Request">
 </details>
 
 We were notified that Alice received our invition and requested a connection through an EVENT, a web service callback from the agent to our controller:
 
 <details>
     <summary>Show me the event</summary>
-    <img src="./assets/3-Faber-Connection-2.png" alt="Connection Request Event">
+    <img src="./collateral/3-Faber-Connection-2.png" alt="Connection Request Event">
 </details>
 
 ### Tell the Faber Agent to Accept the Connection Request from Alice
@@ -243,12 +243,12 @@ To complete the connection process, Faber will respond to the connection request
 
 <details>
     <summary>Show me a screenshot - Accept Connection Request</summary>
-    <img src="./assets/3-Faber-Connection-3.png" alt="Accept Connection Request">
+    <img src="./collateral/3-Faber-Connection-3.png" alt="Accept Connection Request">
 </details>
 
 <details>
     <summary>Show me a screenshot - Accept Connection Request</summary>
-    <img src="./assets/3-Faber-Connection-4.png" alt="Accept Connection Request">
+    <img src="./collateral/3-Faber-Connection-4.png" alt="Accept Connection Request">
 </details>
 
 ### Review the Connection Status in Alice's Agent
@@ -259,14 +259,14 @@ Scroll to and execute **`GET /connections`** to see a list of Alice's connection
 
 <details>
     <summary>Show me a screenshot - Alice Connection Status</summary>
-    <img src="./assets/4-Alice-Connection-1.png" alt="Alice Connection Status">
+    <img src="./collateral/4-Alice-Connection-1.png" alt="Alice Connection Status">
 </details>
 
 As with Faber's side of the connection, Alice received a notification that Faber had accepted her connection request.
 
 <details>
     <summary>Show me a the event</summary>
-    <img src="./assets/4-Alice-Connection-2.png" alt="Alice Connection Event">
+    <img src="./collateral/4-Alice-Connection-2.png" alt="Alice Connection Event">
 </details>
 
 ### Review the Connection Status in Faber's Agent
@@ -275,7 +275,7 @@ You are connected! Switch to the Faber browser tab and run the same **`GET /conn
 
 <details>
     <summary>Show me a screenshot - Faber Connection Status</summary>
-    <img src="./assets/5-Faber-Connection-1.png" alt="Faber Connection Status">
+    <img src="./collateral/5-Faber-Connection-1.png" alt="Faber Connection Status">
 </details>
 
 ## Basic Messaging Between Agents
@@ -288,7 +288,7 @@ In Alice's swagger page, scroll to the **`POST /connections/{id}/send-message`**
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/6-Alice-Basic-Msg.png" alt="Alice Send Message">
+    <img src="./collateral/6-Alice-Basic-Msg.png" alt="Alice Send Message">
 </details>
 
 ### Receiving a Basic Message (Faber)
@@ -297,7 +297,7 @@ How does Faber know that a message was sent? If you take a look at Faber's conso
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/7-Faber-Basic-Msg.png" alt="Faber Receive Message">
+    <img src="./collateral/7-Faber-Basic-Msg.png" alt="Faber Receive Message">
 </details>
 
 Faber's controller application can take whatever action is necessary to process this message. It could trigger some applicaiton code, or it might just be something the Faber application needs to display to its user (for example a reminder about some action the user needs to take).
@@ -308,7 +308,7 @@ How does Alice get feedback that Faber has received the message? The same way - 
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/8-Alice-Basic-Msg.png" alt="Alice Receive Message Confirmation">
+    <img src="./collateral/8-Alice-Basic-Msg.png" alt="Alice Receive Message Confirmation">
 </details>
 
 Again, Alice's agent can take whatever action is necessary, possibly just flagging the message as having been `received`.
@@ -333,14 +333,14 @@ First confirm the DID you used to write to the ledger. Open Faber's swagger page
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-1-Faber-DID-Public.png" alt="Faber Public DID">
+    <img src="./collateral/C-1-Faber-DID-Public.png" alt="Faber Public DID">
 </details>
 
 On the BCovrin ledger browser, view the `Domain` page, refresh, and paste your DID into the `Filter:` field:
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-2-Faber-Ledger-Search-0.png" alt="Search Ledger by DID">
+    <img src="./collateral/C-2-Faber-Ledger-Search-0.png" alt="Search Ledger by DID">
 </details>
 
 The ledger browser should refresh and display the four (4) transactions on the ledger related to this DID:
@@ -352,10 +352,10 @@ The ledger browser should refresh and display the four (4) transactions on the l
 
 <details>
     <summary>Show me the ledger transactions</summary>
-    <img src="./assets/C-2-Faber-Ledger-Search-1.png" alt="DID Transaction">
-    <img src="./assets/C-2-Faber-Ledger-Search-2.png" alt="DID Endpoint Transaction">
-    <img src="./assets/C-2-Faber-Ledger-Search-3.png" alt="Schema Transaction">
-    <img src="./assets/C-2-Faber-Ledger-Search-4.png" alt="Credential Definition Transaction">
+    <img src="./collateral/C-2-Faber-Ledger-Search-1.png" alt="DID Transaction">
+    <img src="./collateral/C-2-Faber-Ledger-Search-2.png" alt="DID Endpoint Transaction">
+    <img src="./collateral/C-2-Faber-Ledger-Search-3.png" alt="Schema Transaction">
+    <img src="./collateral/C-2-Faber-Ledger-Search-4.png" alt="Credential Definition Transaction">
 </details>
 
 You can also look up the Schema and Credential Definition information using Faber's swagger page.
@@ -364,16 +364,16 @@ You can use the **`GET /schemas/created`** endpoint to get a list of schema id's
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-3-Faber-Info-2.png" alt="Search Schemas">
-    <img src="./assets/C-3-Faber-Info-3.png" alt="Search Schemas">
+    <img src="./collateral/C-3-Faber-Info-2.png" alt="Search Schemas">
+    <img src="./collateral/C-3-Faber-Info-3.png" alt="Search Schemas">
 </details>
 
 Likewise you can use the **`GET /credential-definitions/created`** endpoint ot get a list of credential definition id's, and then use the **`GET /credential-definitions/{id}`** endpoint to get informaiton on a specific credential definition.
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-3-Faber-Info-4.png" alt="Search Credential Definitions">
-    <img src="./assets/C-3-Faber-Info-5.png" alt="Search Credential Definitions">
+    <img src="./collateral/C-3-Faber-Info-4.png" alt="Search Credential Definitions">
+    <img src="./collateral/C-3-Faber-Info-5.png" alt="Search Credential Definitions">
 </details>
 
 Either way, you will need information on the schema and credential definition in order to issue a Credential, which is what we will do next!
@@ -394,7 +394,7 @@ First, scroll back up to the **`GET /connections`** API endpoint and execute it.
 
 <details>
     <summary>Click here to see a screenshot</summary>
-    <img src="./assets/C-3-Faber-Info-1.png" alt="Connection ID">
+    <img src="./collateral/C-3-Faber-Info-1.png" alt="Connection ID">
 </details>
 
 A little trickier to find is the `cred_def_id`. (We'll look up the schema and credential definition information in our Faber terminal window.)  Go back to the terminal where you started the Faber agent, and scroll back until you see the text `#3/4 Create a new schema/cred def on the ledger` and then just below that `Cred def ID:`. Copy the text following that label. While you are at it, copy the text following the label `Schema ID:` as well. 
@@ -451,8 +451,8 @@ Ok, finally, you are ready to click `Execute`. The request should work, but if i
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-4-Faber-Credential-Offer-1.png" alt="Faber Submit Credential Offer">
-    <img src="./assets/C-4-Faber-Credential-Offer-2.png" alt="Faber Submit Credential Offer">
+    <img src="./collateral/C-4-Faber-Credential-Offer-1.png" alt="Faber Submit Credential Offer">
+    <img src="./collateral/C-4-Faber-Credential-Offer-2.png" alt="Faber Submit Credential Offer">
 </details>
 
 To confirm the issuance worked, scroll up to the top of the `v1.0 issue-credential exchange` section and execute the **`GET /issue-credential/records`** endpoint. You should see a lot of information about the exchange, including the state - `credential_acked`.
@@ -465,8 +465,8 @@ Alice's agent first received a notification of a Credetial Offer, to which it re
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-5-Alice-Credential-Offer-1.png" alt="Issue Credential">
-    <img src="./assets/C-5-Alice-Credential-Offer-2.png" alt="Issue Credential">
+    <img src="./collateral/C-5-Alice-Credential-Offer-1.png" alt="Issue Credential">
+    <img src="./collateral/C-5-Alice-Credential-Offer-2.png" alt="Issue Credential">
 </details>
 
 ### Alice Stores Credential in her Wallet
@@ -475,14 +475,14 @@ Because we are not fully "auto", we need to explicitely tell the agent to store 
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-7-Alice-Store-Credential-1.png" alt="">
-    <img src="./assets/C-7-Alice-Store-Credential-2.png" alt="">
+    <img src="./collateral/C-7-Alice-Store-Credential-1.png" alt="">
+    <img src="./collateral/C-7-Alice-Store-Credential-2.png" alt="">
 </details>
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-7-Alice-Store-Credential-3.png" alt="">
-    <img src="./assets/C-7-Alice-Store-Credential-4.png" alt="">
+    <img src="./collateral/C-7-Alice-Store-Credential-3.png" alt="">
+    <img src="./collateral/C-7-Alice-Store-Credential-4.png" alt="">
 </details>
 
 Now, in Alice’s agent browser tab, find the `credentials` section and within that, execute the **`GET /credentials`** endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element `referent` is the value of the `credential_id` element used in other calls. `referent` is the name returned in the `indy-sdk` call to get the set of credentials for the wallet and ACA-Py code is not changing it in the response.
@@ -493,16 +493,16 @@ Faber has also received some events ...
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-6-Faber-Credential-Request.png" alt="">
+    <img src="./collateral/C-6-Faber-Credential-Request.png" alt="">
 </details>
 
 Faber has received some events:
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/C-8-Faber-Credential-Ack-0.png" alt="">
-    <img src="./assets/C-8-Faber-Credential-Ack-1.png" alt="">
-    <img src="./assets/C-8-Faber-Credential-Ack-2.png" alt="">
+    <img src="./collateral/C-8-Faber-Credential-Ack-0.png" alt="">
+    <img src="./collateral/C-8-Faber-Credential-Ack-1.png" alt="">
+    <img src="./collateral/C-8-Faber-Credential-Ack-2.png" alt="">
 </details>
 
 You’ve done it, issued a credential!  w00t!
@@ -583,8 +583,8 @@ Notice that the proof request is using a predicate to check if Alice is older th
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/P-1-Faber-Proof-Request-1.png" alt="Send Proof Request">
-    <img src="./assets/P-1-Faber-Proof-Request-2.png" alt="Send Proof Request">
+    <img src="./collateral/P-1-Faber-Proof-Request-1.png" alt="Send Proof Request">
+    <img src="./collateral/P-1-Faber-Proof-Request-2.png" alt="Send Proof Request">
 </details>
 
 ### Alice - Responding to the Proof Request
@@ -593,8 +593,8 @@ As before, Alice receives a notification event from her agent telling her she ah
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/P-2-Alice-Proof-Request-1.png" alt="Proof Request">
-    <img src="./assets/P-2-Alice-Proof-Request-2.png" alt="Proof Request">
+    <img src="./collateral/P-2-Alice-Proof-Request-1.png" alt="Proof Request">
+    <img src="./collateral/P-2-Alice-Proof-Request-2.png" alt="Proof Request">
 </details>
 
 (In real life, for example if Alice had a mogile agent on her smartphone, the agent would prompt Alice whether she wanted to respond or not.  We'll see this scenario in a bit ...)
@@ -607,10 +607,10 @@ You can see some of Faber's activity below:
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./assets/P-3-Faber-Proof-1.png" alt="Receive and Verify Proof">
-    <img src="./assets/P-3-Faber-Proof-2.png" alt="Receive and Verify Proof">
-    <img src="./assets/P-3-Faber-Proof-3.png" alt="Receive and Verify Proof">
-    <img src="./assets/P-3-Faber-Proof-4.png" alt="Receive and Verify Proof">
+    <img src="./collateral/P-3-Faber-Proof-1.png" alt="Receive and Verify Proof">
+    <img src="./collateral/P-3-Faber-Proof-2.png" alt="Receive and Verify Proof">
+    <img src="./collateral/P-3-Faber-Proof-3.png" alt="Receive and Verify Proof">
+    <img src="./collateral/P-3-Faber-Proof-4.png" alt="Receive and Verify Proof">
 </details>
 
 ### Notes
@@ -633,31 +633,31 @@ Search for "Streetcred Identity Wallet" on the App Store or Google Play.
 
 <details>
     <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./assets/ios1-install-app.jpg" alt="App Store">
+    <img src="./collateral/ios1-install-app.jpg" alt="App Store">
 </details>
 
 Start the app and accept the terms of service to create an Agent.
 
 <details>
     <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./assets/ios2-create-agent.jpg" alt="Create Agent">
+    <img src="./collateral/ios2-create-agent.jpg" alt="Create Agent">
 </details>
 
 Enble Face ID (or Android equivalent) to secure the Agent.
 
 <details>
     <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./assets/ios3-enable-security.jpg" alt="Enable Security">
+    <img src="./collateral/ios3-enable-security.jpg" alt="Enable Security">
 </details>
 
 Enable notifications (or else you will have to continually refresh the Agent to get updates).
 
 <details>
     <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./assets/ios4-enable-notifications.jpg" alt="Enable Notifications">
+    <img src="./collateral/ios4-enable-notifications.jpg" alt="Enable Notifications">
 </details>
 
-Before continuing with the BC Gov applications, you must do some additional setup, as follows:
+Before connecting with the BC Government applications, you must do some additional setup, as follows:
 
 - Go to settings by clicking the menu icon in the top right (the "hamburger" icon—three stacked horizontal lines)
 - Click on the "Network" item and from the subsequent list select "BCovrin Test" network.
@@ -665,7 +665,7 @@ Before continuing with the BC Gov applications, you must do some additional setu
 
 <details>
     <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./assets/ios5-select-network.jpg" alt="Select BCovrin Network">
+    <img src="./collateral/ios5-select-network.jpg" alt="Select BCovrin Network">
 </details>
 
 ### Setting up your Issuing Agent on a Public Port
@@ -692,7 +692,7 @@ When the Faber agent starts up it automatically creates an invitation, we will c
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./assets/foo.png" alt="Select Invitation URL">
+    <img src="./collateral/S-0-invitation-1.png" alt="Select Invitation URL">
 </details>
 
 ### Converting the Invitation to a QR Code
@@ -706,7 +706,7 @@ Open up https://www.the-qrcode-generator.com/ in a new browser window, and:
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./assets/foo.png" alt="Generate QR Code">
+    <img src="./collateral/S-0-invitation-2.png" alt="Generate QR Code">
 </details>
 
 ### Accepting the Invitation with Streetcred
@@ -715,14 +715,15 @@ On the Streetcred mobile app, select "SCAN CODE" and point your camera at the ge
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./assets/foo.png" alt="Generate QR Code">
+    <img src="./collateral/S-1-connect-1.png" alt="Accept Invitation">
 </details>
 
 Streetcred will then give you a message that "A connection was added to your wallet".
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./assets/foo.png" alt="Generate QR Code">
+    <img src="./collateral/S-1-connect-2.png" alt="Add Connection to Wallet">
+    <img src="./collateral/S-1-connect-3.png" alt="Add Connection to Wallet">
 </details>
 
 ### Accepting Streetcred's connection request
@@ -731,17 +732,23 @@ At this point Faber has issued an invitation, and you have accpted the invitatio
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./assets/foo.png" alt="Generate QR Code">
+    <img src="./collateral/S-2-connect-1.png" alt="Accept Connection Request">
 </details>
 
 Now, in Faber's swagger page (at the top of the console window, click on port `8021` to open the swagger page in a new window) scroll down to the **`POST /connections/{id}/accept-request`** endpoint, paste the connection id and click on "Execute".
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./assets/foo.png" alt="Generate QR Code">
+    <img src="./collateral/S-2-connect-2.png" alt="Accept Connection Request">
+    <img src="./collateral/S-2-connect-3.png" alt="Accept Connection Request">
 </details>
 
 Scroll to the **`GET /connections`** endpoint to check the status of the connection.
+
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./collateral/S-2-connect-4.png" alt="View Connection Status">
+</details>
 
 Note - if the connection status does not update to `active`, try sending a `trust-ping` or `basic-message` on the connection.  This will force a handshake between the agents that whould upate the connection status.
 
@@ -751,35 +758,52 @@ We will use the Faber console to issue a credential.  (This could be done using 
 
 In the Faber console, select option `1` to send a credential to streetcred.
 
-<< TODO screenshot >>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./collateral/S-3-credential-0.png" alt="View Connection Status">
+</details>
 
 ### Accepting the Credential with Streetcred
 
 The credential should automatically show up in streetcred - accept the offered credential.
 
-<< TODO screenshot >>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./collateral/S-3-credential-1.png" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-2.png" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-3.png" alt="View Connection Status">
+</details>
 
 ### Issuing a Proof Request
 
 We will use the Faber console to ask Streetcred for a proof.  (This could be done using the REST API as we have done above, this will be left as an exercise to the user.)
 
-<< TODO screenshot >>
-
 In the Faber console, select option `2` to send a proof request to streetcred.
 
-<< TODO screenshot >>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./collateral/S-4-proof-0.png" alt="View Connection Status">
+</details>
 
 ### Responding to the Proof Request with Streetcred
 
 In streetcred, respond to the proof
 
-<< TODO screenshot >>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./collateral/S-4-proof-1.png" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-2.png" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-3.png" alt="View Connection Status">
+</details>
 
 ### Review the Received Proof
 
 In the Faber console window, the proof should be received as validated.
 
-<< TODO screenshot >>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./collateral/S-4-proof-4.png" alt="View Connection Status">
+</details>
 
 ## Conclusion
 
