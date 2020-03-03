@@ -306,7 +306,7 @@ class TestIndyVerifier(AsyncTestCase):
 
         verifier = IndyVerifier("wallet")
         with async_mock.patch.object(
-            verifier, "pre_verify", return_value=PreVerifyResult.OK
+            verifier, "pre_verify", return_value=(PreVerifyResult.OK, None)
         ):
             verified = await verifier.verify_presentation(
                 "presentation_request",
