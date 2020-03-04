@@ -19,7 +19,7 @@ What better way to learn about controllers than by actually being one yourself! 
 - [Requesting/Presenting a Proof](#requestingpresenting-a-proof)
   - [Notes](#notes-2)
   - [Bonus Points](#bonus-points-1)
-- [Issuing Credentials to a Mobile Agent](#issuing-credentials-to-a-mobile-gent)
+- [Issuing Credentials to a Mobile Agent](#issuing-credentials-to-a-mobile-agent)
 - [Conclusion](#conclusion)
 
 ## Getting Started
@@ -205,7 +205,7 @@ The connection response returned from the previous **`POST /connections/receive-
 
 ### Tell Alice's Agent to *Accept* the Invitation
 
-At this point Alice has simply stored the invitation in her wallet.  You can see the status using the **`GET /connections`** endpoing.
+At this point Alice has simply stored the invitation in her wallet.  You can see the status using the **`GET /connections`** endpoint.
 
 <details>
     <summary>Show me a screenshot</summary>
@@ -262,14 +262,14 @@ Scroll to and execute **`GET /connections`** to see a list of Alice's connection
 
 <details>
     <summary>Show me a screenshot - Alice Connection Status</summary>
-    <img src="./collateral/4-Alice-Connection-1.png" alt="Alice Connection Status">
+    <img src="./collateral/4-Alice-Connection-2.png" alt="Alice Connection Event">
 </details>
 
 As with Faber's side of the connection, Alice received a notification that Faber had accepted her connection request.
 
 <details>
     <summary>Show me a the event</summary>
-    <img src="./collateral/4-Alice-Connection-2.png" alt="Alice Connection Event">
+    <img src="./collateral/4-Alice-Connection-1.png" alt="Alice Connection Status">
 </details>
 
 ### Review the Connection Status in Faber's Agent
@@ -453,7 +453,7 @@ Now we need put into the JSON the data values for the credential. Copy and paste
 Ok, finally, you are ready to click `Execute`. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?
 
 <details>
-    <summary>Show me a screenshot</summary>
+    <summary>Show me a screenshot - credential offer</summary>
     <img src="./collateral/C-4-Faber-Credential-Offer-1.png" alt="Faber Submit Credential Offer">
     <img src="./collateral/C-4-Faber-Credential-Offer-2.png" alt="Faber Submit Credential Offer">
 </details>
@@ -467,7 +467,7 @@ Let’s look at it from Alice’s side.  We have started up our agents in "auto"
 Alice's agent first received a notification of a Credetial Offer, to which it responded with a Credential Request.  Faber received the Credential Request and responded in turn with an Issue Credential message.
 
 <details>
-    <summary>Show me a screenshot</summary>
+    <summary>Show me a screenshot - issue credential</summary>
     <img src="./collateral/C-5-Alice-Credential-Offer-1.png" alt="Issue Credential">
     <img src="./collateral/C-5-Alice-Credential-Offer-2.png" alt="Issue Credential">
 </details>
@@ -476,14 +476,18 @@ Alice's agent first received a notification of a Credetial Offer, to which it re
 
 Because we are not fully "auto", we need to explicitely tell the agent to store the credential in the wallet.
 
+If we check the credential exchange status (the "credential exchange" is the overall protocol) by calling the **`GET /issue-credential/records`** endpoint, we can see the overall protocol status:
+
 <details>
-    <summary>Show me a screenshot</summary>
+    <summary>Show me a screenshot - check credential exchange status</summary>
     <img src="./collateral/C-7-Alice-Store-Credential-1.png" alt="">
     <img src="./collateral/C-7-Alice-Store-Credential-2.png" alt="">
 </details>
 
+Note in the above that the credential status is "credential_received", but not yet "stored".  We can use the credential_exchange id in the following endpoint **`POST /credential-exchange/records/{id}/store`** and this will explicitely tell our agent to store the credential in the wallet.  We can provide a unique wallet record id if we like.
+
 <details>
-    <summary>Show me a screenshot</summary>
+    <summary>Show me a screenshot - store credential</summary>
     <img src="./collateral/C-7-Alice-Store-Credential-3.png" alt="">
     <img src="./collateral/C-7-Alice-Store-Credential-4.png" alt="">
 </details>
@@ -492,18 +496,18 @@ Now, in Alice’s agent browser tab, find the `credentials` section and within t
 
 ### Faber Receives Acknowledgment that the Credential was Received
 
-Faber has also received some events ...
+Faber receives an event to notify that the credential was issued and then accepted.
 
 <details>
-    <summary>Show me a screenshot</summary>
+    <summary>Show me Faber's event activity</summary>
     <img src="./collateral/C-6-Faber-Credential-Request.png" alt="">
+    <img src="./collateral/C-8-Faber-Credential-Ack-0.png" alt="">
 </details>
 
-Faber has received some events:
+Note that once the credential processing completed, Faber's agent deleted the credential exchange record from its wallet:
 
 <details>
     <summary>Show me a screenshot</summary>
-    <img src="./collateral/C-8-Faber-Credential-Ack-0.png" alt="">
     <img src="./collateral/C-8-Faber-Credential-Ack-1.png" alt="">
     <img src="./collateral/C-8-Faber-Credential-Ack-2.png" alt="">
 </details>
@@ -520,6 +524,8 @@ Those that know something about the Indy process for issuing a credential and th
 ### Bonus Points
 
 If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other `/issue-credential/` messages. Use the **`GET /issue-credential/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.
+
+The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to.
 
 | Protocol Step        | Faber (Issuer)         | Alice (Holder)     | Notes |
 | -------------------- | ---------------------- | ------------------ | ----- |
@@ -595,7 +601,7 @@ From the Faber browser tab, get ready to execute the **`POST /present-proof/send
 Notice that the proof request is using a predicate to check if Alice is older than 18 without asking for her age. (Not sure what this has to do with her education level!) Click `Execute` and cross your fingers. If the request fails check your JSON!
 
 <details>
-    <summary>Show me a screenshot</summary>
+    <summary>Show me a screenshot - send proof request</summary>
     <img src="./collateral/P-1-Faber-Proof-Request-1.png" alt="Send Proof Request">
     <img src="./collateral/P-1-Faber-Proof-Request-2.png" alt="Send Proof Request">
 </details>
@@ -605,7 +611,7 @@ Notice that the proof request is using a predicate to check if Alice is older th
 As before, Alice receives a notification event from her agent telling her she ahs received a Proof Request.  In our scenario, the agent automatically selects a matching credential and responds with a Proof.
 
 <details>
-    <summary>Show me a screenshot</summary>
+    <summary>Show me Alice's event activity</summary>
     <img src="./collateral/P-2-Alice-Proof-Request-1.png" alt="Proof Request">
     <img src="./collateral/P-2-Alice-Proof-Request-2.png" alt="Proof Request">
 </details>
@@ -619,7 +625,7 @@ Note that in the response, the state is `request_sent`. That is because when the
 You can see some of Faber's activity below:
 
 <details>
-    <summary>Show me a screenshot</summary>
+    <summary>Show me Faber's event activity</summary>
     <img src="./collateral/P-3-Faber-Proof-1.png" alt="Receive and Verify Proof">
     <img src="./collateral/P-3-Faber-Proof-2.png" alt="Receive and Verify Proof">
     <img src="./collateral/P-3-Faber-Proof-3.png" alt="Receive and Verify Proof">
@@ -632,7 +638,10 @@ As with the issue credential process, the agents handled some of the presentatio
 
 ### Bonus Points
 
-If you would like to perform all of the proof request/response steps manually:
+If you would like to perform all of the proof request/response steps manually, you cal call all of the individual `/present-proof` messages.
+
+The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to.
+
 
 | Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
 | -------------------- | ---------------------- | ------------------------- | ----- |
@@ -649,7 +658,7 @@ If you would like to perform all of the proof request/response steps manually:
 
 You can use the Faber aca-py agent to issue credentials to a mobile wallet.  To do this you need to run the Faber agent on a publicly accessible port (for example you can run the agent on Play With Docker), and you need a compatible wallet.  One available wallet is the Streetcred Identity Agent, which is available on both iOS and Android, and you can read about it [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
 
-### Introduction to the Streetcred Agent
+### Installing the Streetcred Agent
 
 Search for "Streetcred Identity Wallet" on the App Store or Google Play.
 
@@ -700,7 +709,7 @@ cd aries-cloudagent-python/demo
 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events
 ```
 
-This is similar to the instructions in the prior "Play with Docker" section, except not that:
+This is similar to the instructions in the prior "Play with Docker" section, except note that:
 
 - We are using the BCovrin Test network (it has to use the same network as the mobile app)
 - We are running in "auto" mode, so we will have to do fewer manual acknowledgements
@@ -710,7 +719,7 @@ This is similar to the instructions in the prior "Play with Docker" section, exc
 
 ### Creating an Invitation
 
-When the Faber agent starts up it automatically creates an invitation, we will copy the "url" format of the invitation for the next step.  Copy all the text between the quotes (do not include the quotes) - the copied text should be a properly formatted URL.
+When the Faber agent starts up it automatically creates an invitation.  We will copy the "url" format of the invitation for the next step.  Copy all the text between the quotes (do not include the quotes) - the copied text should be a properly formatted URL.
 
 <details>
     <summary>Click here to view screenshot</summary>
@@ -745,6 +754,9 @@ Streetcred will then give you a message that "A connection was added to your wal
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-1-connect-2.jpg" alt="Add Connection to Wallet">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-1-connect-3.jpg" alt="Add Connection to Wallet">
 </details>
 
@@ -762,6 +774,9 @@ Now, in Faber's swagger page (at the top of the console window, click on port `8
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-2-connect-2.png" alt="Accept Connection Request">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-2-connect-3.png" alt="Accept Connection Request">
 </details>
 
@@ -792,7 +807,13 @@ The credential should automatically show up in streetcred - accept the offered c
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-3-credential-1.jpg" alt="View Connection Status">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-3-credential-2.jpg" alt="View Connection Status">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-3-credential-3.jpg" alt="View Connection Status">
 </details>
 
@@ -814,7 +835,13 @@ In streetcred, respond to the proof
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-4-proof-1.jpg" alt="View Connection Status">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-4-proof-2.jpg" alt="View Connection Status">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-4-proof-3.jpg" alt="View Connection Status">
 </details>
 
