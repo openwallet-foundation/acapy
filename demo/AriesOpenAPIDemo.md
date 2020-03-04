@@ -10,6 +10,7 @@ What better way to learn about controllers than by actually being one yourself! 
   - [Restarting the Docker Containers](#restarting-the-docker-containers)
 - [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface)
 - [Establishing a Connection](#establishing-a-connection)
+- [Basic Messaging Between Agents](#basic-messaging-between-agents)
 - [Preparing to Issue a Credential](#preparing-to-issue-a-credential)
   - [Notes](#notes)
 - [Issuing a Credential](#issuing-a-credential)
@@ -17,6 +18,8 @@ What better way to learn about controllers than by actually being one yourself! 
   - [Bonus Points](#bonus-points)
 - [Requesting/Presenting a Proof](#requestingpresenting-a-proof)
   - [Notes](#notes-2)
+  - [Bonus Points](#bonus-points-1)
+- [Issuing Credentials to a Mobile Agent](#issuing-credentials-to-a-mobile-gent)
 - [Conclusion](#conclusion)
 
 ## Getting Started
@@ -520,6 +523,12 @@ If you would like to perform all of the issuance steps manually on the Faber age
 
 << TODO list the events, and the corresponding API calls to move to the next step >>
 
+| Protocol Step        | Faber (Issuer)         | Alice (Holder)     |
+| -------------------- | ---------------------- | ------------------ |
+| | |
+| | |
+| | |
+
 ## Requesting/Presenting a Proof
 
 Alice now has her Faber credential. Let’s have the Faber agent send a request for a presentation (a proof) using that credential. This should be pretty easy for you at this point.
@@ -622,6 +631,12 @@ As with the issue credential process, the agents handled some of the presentatio
 If you would like to perform all of the proof request/response steps manually ... <TODO>>
 
 <<TODO list the events, and the corresponding API calls to move to the next step>>
+
+| Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     |
+| -------------------- | ---------------------- | ------------------------- |
+| | |
+| | |
+| | |
 
 ## Issuing Credentials to a Mobile Agent
 
