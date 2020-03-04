@@ -205,7 +205,7 @@ The connection response returned from the previous **`POST /connections/receive-
 
 ### Tell Alice's Agent to *Accept* the Invitation
 
-At this point Alice has simply stored the invitation in her wallet.  You can see the status using the **`GET /connections`** endpoing.
+At this point Alice has simply stored the invitation in her wallet.  You can see the status using the **`GET /connections`** endpoint.
 
 <details>
     <summary>Show me a screenshot</summary>
@@ -262,14 +262,14 @@ Scroll to and execute **`GET /connections`** to see a list of Alice's connection
 
 <details>
     <summary>Show me a screenshot - Alice Connection Status</summary>
-    <img src="./collateral/4-Alice-Connection-1.png" alt="Alice Connection Status">
+    <img src="./collateral/4-Alice-Connection-2.png" alt="Alice Connection Event">
 </details>
 
 As with Faber's side of the connection, Alice received a notification that Faber had accepted her connection request.
 
 <details>
     <summary>Show me a the event</summary>
-    <img src="./collateral/4-Alice-Connection-2.png" alt="Alice Connection Event">
+    <img src="./collateral/4-Alice-Connection-1.png" alt="Alice Connection Status">
 </details>
 
 ### Review the Connection Status in Faber's Agent
@@ -476,13 +476,15 @@ Alice's agent first received a notification of a Credetial Offer, to which it re
 
 Because we are not fully "auto", we need to explicitely tell the agent to store the credential in the wallet.
 
+If we check the credential exchange status (the "credential exchange" is the overall protocol) by calling the **`GET /issue-credential/records`** endpoint, we can see the overall protocol status:
+
 <details>
     <summary>Show me a screenshot - check credential exchange status</summary>
     <img src="./collateral/C-7-Alice-Store-Credential-1.png" alt="">
     <img src="./collateral/C-7-Alice-Store-Credential-2.png" alt="">
 </details>
 
-Note in the above that the credential status is "credential_received", but not yet "stored".
+Note in the above that the credential status is "credential_received", but not yet "stored".  We can use the credential_exchange id in the following endpoint **`POST /credential-exchange/records/{id}/store`** and this will explicitely tell our agent to store the credential in the wallet.  We can provide a unique wallet record id if we like.
 
 <details>
     <summary>Show me a screenshot - store credential</summary>
@@ -502,7 +504,7 @@ Faber receives an event to notify that the credential was issued and then accept
     <img src="./collateral/C-8-Faber-Credential-Ack-0.png" alt="">
 </details>
 
-Note that once the credential processing completed Faber's agent deleted the credential exchange record from its wallet:
+Note that once the credential processing completed, Faber's agent deleted the credential exchange record from its wallet:
 
 <details>
     <summary>Show me a screenshot</summary>
@@ -522,6 +524,8 @@ Those that know something about the Indy process for issuing a credential and th
 ### Bonus Points
 
 If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other `/issue-credential/` messages. Use the **`GET /issue-credential/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.
+
+The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to.
 
 | Protocol Step        | Faber (Issuer)         | Alice (Holder)     | Notes |
 | -------------------- | ---------------------- | ------------------ | ----- |
@@ -634,7 +638,10 @@ As with the issue credential process, the agents handled some of the presentatio
 
 ### Bonus Points
 
-If you would like to perform all of the proof request/response steps manually:
+If you would like to perform all of the proof request/response steps manually, you cal call all of the individual `/present-proof` messages.
+
+The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to.
+
 
 | Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
 | -------------------- | ---------------------- | ------------------------- | ----- |
@@ -651,7 +658,7 @@ If you would like to perform all of the proof request/response steps manually:
 
 You can use the Faber aca-py agent to issue credentials to a mobile wallet.  To do this you need to run the Faber agent on a publicly accessible port (for example you can run the agent on Play With Docker), and you need a compatible wallet.  One available wallet is the Streetcred Identity Agent, which is available on both iOS and Android, and you can read about it [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
 
-### Introduction to the Streetcred Agent
+### Installing the Streetcred Agent
 
 Search for "Streetcred Identity Wallet" on the App Store or Google Play.
 
@@ -702,7 +709,7 @@ cd aries-cloudagent-python/demo
 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events
 ```
 
-This is similar to the instructions in the prior "Play with Docker" section, except not that:
+This is similar to the instructions in the prior "Play with Docker" section, except note that:
 
 - We are using the BCovrin Test network (it has to use the same network as the mobile app)
 - We are running in "auto" mode, so we will have to do fewer manual acknowledgements
@@ -712,7 +719,7 @@ This is similar to the instructions in the prior "Play with Docker" section, exc
 
 ### Creating an Invitation
 
-When the Faber agent starts up it automatically creates an invitation, we will copy the "url" format of the invitation for the next step.  Copy all the text between the quotes (do not include the quotes) - the copied text should be a properly formatted URL.
+When the Faber agent starts up it automatically creates an invitation.  We will copy the "url" format of the invitation for the next step.  Copy all the text between the quotes (do not include the quotes) - the copied text should be a properly formatted URL.
 
 <details>
     <summary>Click here to view screenshot</summary>
