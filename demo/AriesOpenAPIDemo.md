@@ -10,6 +10,7 @@ What better way to learn about controllers than by actually being one yourself! 
   - [Restarting the Docker Containers](#restarting-the-docker-containers)
 - [Using the OpenAPI/Swagger User Interface](#using-the-openapiswagger-user-interface)
 - [Establishing a Connection](#establishing-a-connection)
+- [Basic Messaging Between Agents](#basic-messaging-between-agents)
 - [Preparing to Issue a Credential](#preparing-to-issue-a-credential)
   - [Notes](#notes)
 - [Issuing a Credential](#issuing-a-credential)
@@ -17,6 +18,8 @@ What better way to learn about controllers than by actually being one yourself! 
   - [Bonus Points](#bonus-points)
 - [Requesting/Presenting a Proof](#requestingpresenting-a-proof)
   - [Notes](#notes-2)
+  - [Bonus Points](#bonus-points-1)
+- [Issuing Credentials to a Mobile Agent](#issuing-credentials-to-a-mobile-gent)
 - [Conclusion](#conclusion)
 
 ## Getting Started
@@ -518,7 +521,17 @@ Those that know something about the Indy process for issuing a credential and th
 
 If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other `/issue-credential/` messages. Use the **`GET /issue-credential/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.
 
-<< TODO list the events, and the corresponding API calls to move to the next step >>
+| Protocol Step        | Faber (Issuer)         | Alice (Holder)     | Notes |
+| -------------------- | ---------------------- | ------------------ | ----- |
+| Send Credential Offer | **`POST /issue-credential/send-offer`** | | REST service |
+| Receive Offer | | <agent_cb>/issue_credential/ | callback |
+| Send Credential Request | | **`POST /issue-credential/{id}/send-request`** | REST service |
+| Receive Request | <agent_cb>/issue_credential/ | | callback |
+| Issue Credential | **`POST /issue-credential/{id}/issue`** | | REST service |
+| Receive Credential | | <agent_cb>/issue_credential/ | callback |
+| Store Credential | | **`POST /issue-credential/{id}/store`** | REST service |
+| Receive Acknowledgement | <agent_cb>/issue_credential/ | | callback |
+| Store Credential Id | | | application function |
 
 ## Requesting/Presenting a Proof
 
@@ -619,9 +632,18 @@ As with the issue credential process, the agents handled some of the presentatio
 
 ### Bonus Points
 
-If you would like to perform all of the proof request/response steps manually ... <TODO>>
+If you would like to perform all of the proof request/response steps manually:
 
-<<TODO list the events, and the corresponding API calls to move to the next step>>
+| Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
+| -------------------- | ---------------------- | ------------------------- | ----- |
+| Send Proof Request | **`POST /present-proof/send-request`** | | REST service |
+| Receive Proof Request | | <agent_cb>/present_proof | callback |
+| Find Credentials | | **`GET /present-proof/records/{id}/credentials`** | REST service |
+| Select Credentials | | | application or user function |
+| Send Proof | | **`POST /present-proof/records/{id}/send-presentation`** | REST service |
+| Receive Proof | <agent_cb>/present_proof | | callback |
+| Validate Proof | **`POST /present-proof/records/{id}/verify-presentation`** | | REST service |
+| Save Proof | | | application data |
 
 ## Issuing Credentials to a Mobile Agent
 
