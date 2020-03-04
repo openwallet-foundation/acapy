@@ -31,14 +31,14 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def create_credential(
+    async def create_credential(
         self,
         schema,
         credential_offer,
         credential_request,
         credential_values,
-        revoc_reg_id,
-        tails_reader_handle,
+        revoc_reg_id: str = None,
+        tails_reader_handle: int = None,
     ):
         """
         Create a credential.

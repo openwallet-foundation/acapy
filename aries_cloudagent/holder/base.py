@@ -1,6 +1,7 @@
 """Base holder class."""
 
 from abc import ABC, ABCMeta, abstractmethod
+from typing import Union
 
 
 class BaseHolder(ABC, metaclass=ABCMeta):
@@ -17,7 +18,7 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         return "<{}>".format(self.__class__.__name__)
 
     @abstractmethod
-    def get_credential(self, credential_id):
+    async def get_credential(self, credential_id: str):
         """
         Get a credential stored in the wallet.
 
@@ -25,10 +26,9 @@ class BaseHolder(ABC, metaclass=ABCMeta):
             credential_id: Credential id to retrieve
 
         """
-        pass
 
     @abstractmethod
-    def delete_credential(self, credential_id):
+    async def delete_credential(self, credential_id: str):
         """
         Remove a credential stored in the wallet.
 
@@ -36,10 +36,11 @@ class BaseHolder(ABC, metaclass=ABCMeta):
             credential_id: Credential id to remove
 
         """
-        pass
 
     @abstractmethod
-    def get_mime_type(self, credential_id, attr):
+    async def get_mime_type(
+        self, credential_id: str, attr: str = None
+    ) -> Union[dict, str]:
         """
         Get MIME type per attribute (or for all attributes).
 
@@ -51,16 +52,15 @@ class BaseHolder(ABC, metaclass=ABCMeta):
             attr_meta_json = all_meta.tags.get(attr)
 
         """
-        pass
 
     @abstractmethod
-    def create_presentation(
+    async def create_presentation(
         self,
-        presentation_request,
-        requested_credentials,
-        schemas,
-        credential_definitions,
-        rev_states_json=None,
+        presentation_request: dict,
+        requested_credentials: dict,
+        schemas: dict,
+        credential_definitions: dict,
+        rev_states_json: dict = None,
     ):
         """
         Get credentials stored in the wallet.
@@ -72,32 +72,33 @@ class BaseHolder(ABC, metaclass=ABCMeta):
             credential_definitions: Indy formatted schemas_json
             rev_states_json: Indy format revocation states
         """
-        pass
 
     @abstractmethod
-    def create_credential_request(self, credential_offer, credential_definition, did):
+    async def create_credential_request(
+        self, credential_offer, credential_definition, holder_did: str
+    ):
         """
         Create a credential offer for the given credential definition id.
 
         Args:
             credential_offer: The credential offer to create request for
             credential_definition: The credential definition to create an offer for
+            holder_did: the DID of the agent making the request
 
         Returns:
             A credential request
 
         """
-        pass
 
     @abstractmethod
-    def store_credential(
+    async def store_credential(
         self,
         credential_definition,
         credential_data,
         credential_request_metadata,
-        credential_attr_mime_types,
-        credential_id,
-        rev_reg_def_json={},
+        credential_attr_mime_types=None,
+        credential_id=None,
+        rev_reg_def_json=None,
     ):
         """
         Store a credential in the wallet.
@@ -109,8 +110,7 @@ class BaseHolder(ABC, metaclass=ABCMeta):
                 by the issuer
             credential_attr_mime_types: dict mapping attribute names to (optional)
                 MIME types to store as non-secret record, if specified
-            credential_id: credential id
-            rev_reg_def_json: revocation registry definition in json
+            credential_id: optionally override the stored credential id
+            rev_reg_def_json: optional revocation registry definition in json
 
         """
-        pass

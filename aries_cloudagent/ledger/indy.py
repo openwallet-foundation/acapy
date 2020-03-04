@@ -918,7 +918,7 @@ class IndyLedger(BaseLedger):
         return json.loads(found_reg_json), timestamp2
 
     async def get_revoc_reg_delta(
-        self, revoc_reg_id: str, timestamp_from=0, timestamp_to=int(time())
+        self, revoc_reg_id: str, timestamp_from=0, timestamp_to=None
     ) -> (dict, int):
         """
         Look up a revocation registry delta by ID.
@@ -929,6 +929,8 @@ class IndyLedger(BaseLedger):
 
         :returns delta response, delta timestamp
         """
+        if timestamp_to is None:
+            timestamp_to = int(time())
         public_info = await self.wallet.get_public_did()
         fetch_req = await indy.ledger.build_get_revoc_reg_delta_request(
             public_info and public_info.did, revoc_reg_id, timestamp_from, timestamp_to

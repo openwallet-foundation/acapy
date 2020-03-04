@@ -103,24 +103,27 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_revoc_reg_def(self, revoc_reg_id):
+    async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
         """Look up a revocation registry definition by ID."""
-        pass
 
     @abstractmethod
-    def send_revoc_reg_def(self, revoc_reg_def, issuer_did):
+    async def send_revoc_reg_def(self, revoc_reg_def: dict, issuer_did: str = None):
         """Publish a revocation registry definition to the ledger."""
-        pass
 
     @abstractmethod
-    def send_revoc_reg_entry(
-        self, revoc_reg_id, revoc_def_type, revoc_reg_entry, issuer_did
+    async def send_revoc_reg_entry(
+        self,
+        revoc_reg_id: str,
+        revoc_def_type: str,
+        revoc_reg_entry: dict,
+        issuer_did: str = None,
     ):
         """Publish a revocation registry entry to the ledger."""
-        pass
 
     @abstractmethod
-    def create_and_send_credential_definition(self, schema_id, tag, support_revocation):
+    async def create_and_send_credential_definition(
+        self, schema_id: str, tag: str = None, support_revocation: bool = False
+    ) -> Tuple[str, dict]:
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -130,10 +133,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             support_revocation: Optional flag to enable revocation for this cred def
 
         """
-        pass
 
     @abstractmethod
-    def get_credential_definition(self, credential_definition_id):
+    async def get_credential_definition(self, credential_definition_id: str) -> dict:
         """
         Get a credential definition from the cache if available, otherwise the ledger.
 
@@ -141,15 +143,15 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             credential_definition_id: The schema id of the schema to fetch cred def for
 
         """
-        pass
 
     @abstractmethod
-    def get_revoc_reg_delta(self, revoc_reg_id, timestamp_from, timestamp_to):
+    async def get_revoc_reg_delta(
+        self, revoc_reg_id: str, timestamp_from=0, timestamp_to=None
+    ) -> (dict, int):
         """Look up a revocation registry delta by ID."""
-        pass
 
     @abstractmethod
-    def get_schema(self, schema_id):
+    async def get_schema(self, schema_id: str) -> dict:
         """
         Get a schema from the cache if available, otherwise fetch from the ledger.
 
@@ -157,9 +159,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             schema_id: The schema id (or stringified sequence number) to retrieve
 
         """
-        pass
 
     @abstractmethod
-    def get_revoc_reg_entry(self, revoc_reg_id, timestamp):
+    async def get_revoc_reg_entry(self, revoc_reg_id: str, timestamp: int):
         """Get revocation registry entry by revocation registry ID and timestamp."""
-        pass
