@@ -521,19 +521,16 @@ Those that know something about the Indy process for issuing a credential and th
 
 If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other `/issue-credential/` messages. Use the **`GET /issue-credential/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.
 
-<< TODO list the events, and the corresponding API calls to move to the next step >>
-
 | Protocol Step        | Faber (Issuer)         | Alice (Holder)     | Notes |
 | -------------------- | ---------------------- | ------------------ | ----- |
-| Send Credential Offer | **`POST /issue-credential/<cmd>`** | | REST service |
-| Receive Offer | | <agent_cb>/<topic> | callback |
-| Send Credential Request | | **`POST /issue-credential/<cmd>`** | REST service |
-| Receive Request | <agent_cb>/<topic> | | callback |
-| Issue Credential | **`POST /issue-credential/<cmd>`** | | REST service |
-| Receive Credential | | <agent_cb>/<topic> | callback |
-| Store Credential | | **`POST /issue-credential/<cmd>`** | REST service |
-| Acknowledge Credential Receipt | | **`POST /issue-credential/<cmd>`** | REST service |
-| Receive Acknowledgement | <agent_cb>/<topic> | | callback |
+| Send Credential Offer | **`POST /issue-credential/send-offer`** | | REST service |
+| Receive Offer | | <agent_cb>/issue_credential/ | callback |
+| Send Credential Request | | **`POST /issue-credential/{id}/send-request`** | REST service |
+| Receive Request | <agent_cb>/issue_credential/ | | callback |
+| Issue Credential | **`POST /issue-credential/{id}/issue`** | | REST service |
+| Receive Credential | | <agent_cb>/issue_credential/ | callback |
+| Store Credential | | **`POST /issue-credential/{id}/store`** | REST service |
+| Receive Acknowledgement | <agent_cb>/issue_credential/ | | callback |
 | Store Credential Id | | | application function |
 
 ## Requesting/Presenting a Proof
@@ -635,18 +632,16 @@ As with the issue credential process, the agents handled some of the presentatio
 
 ### Bonus Points
 
-If you would like to perform all of the proof request/response steps manually ... <TODO>>
-
-<<TODO list the events, and the corresponding API calls to move to the next step>>
+If you would like to perform all of the proof request/response steps manually:
 
 | Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
 | -------------------- | ---------------------- | ------------------------- | ----- |
 | Send Proof Request | **`POST /present-proof/<cmd>`** | | REST service |
-| Receive Proof Request | | <agent_cb>/<topic> | callback |
+| Receive Proof Request | | <agent_cb>/present_proof | callback |
 | Find Credentials | | **`POST /present-proof/<cmd>`** | REST service |
 | Select Credentials | | | application or user function |
 | Send Proof | | **`POST /present-proof/<cmd>`** | REST service |
-| Receive Proof | <agent_cb>/<topic> | | callback |
+| Receive Proof | <agent_cb>/present_proof | | callback |
 | Validate Proof | **`POST /present-proof/<cmd>`** | | REST service |
 | Save Proof | | | application data |
 
