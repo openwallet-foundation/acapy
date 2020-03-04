@@ -523,11 +523,18 @@ If you would like to perform all of the issuance steps manually on the Faber age
 
 << TODO list the events, and the corresponding API calls to move to the next step >>
 
-| Protocol Step        | Faber (Issuer)         | Alice (Holder)     |
-| -------------------- | ---------------------- | ------------------ |
-| | |
-| | |
-| | |
+| Protocol Step        | Faber (Issuer)         | Alice (Holder)     | Notes |
+| -------------------- | ---------------------- | ------------------ | ----- |
+| Send Credential Offer | **`POST /issue-credential/<cmd>`** | | REST service |
+| Receive Offer | | <agent_cb>/<topic> | callback |
+| Send Credential Request | | **`POST /issue-credential/<cmd>`** | REST service |
+| Receive Request | <agent_cb>/<topic> | | callback |
+| Issue Credential | **`POST /issue-credential/<cmd>`** | | REST service |
+| Receive Credential | | <agent_cb>/<topic> | callback |
+| Store Credential | | **`POST /issue-credential/<cmd>`** | REST service |
+| Acknowledge Credential Receipt | | **`POST /issue-credential/<cmd>`** | REST service |
+| Receive Acknowledgement | <agent_cb>/<topic> | | callback |
+| Store Credential Id | | | application function |
 
 ## Requesting/Presenting a Proof
 
@@ -632,11 +639,16 @@ If you would like to perform all of the proof request/response steps manually ..
 
 <<TODO list the events, and the corresponding API calls to move to the next step>>
 
-| Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     |
-| -------------------- | ---------------------- | ------------------------- |
-| | |
-| | |
-| | |
+| Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
+| -------------------- | ---------------------- | ------------------------- | ----- |
+| Send Proof Request | **`POST /present-proof/<cmd>`** | | REST service |
+| Receive Proof Request | | <agent_cb>/<topic> | callback |
+| Find Credentials | | **`POST /present-proof/<cmd>`** | REST service |
+| Select Credentials | | | application or user function |
+| Send Proof | | **`POST /present-proof/<cmd>`** | REST service |
+| Receive Proof | <agent_cb>/<topic> | | callback |
+| Validate Proof | **`POST /present-proof/<cmd>`** | | REST service |
+| Save Proof | | | application data |
 
 ## Issuing Credentials to a Mobile Agent
 
