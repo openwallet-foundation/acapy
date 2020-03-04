@@ -636,13 +636,13 @@ If you would like to perform all of the proof request/response steps manually:
 
 | Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
 | -------------------- | ---------------------- | ------------------------- | ----- |
-| Send Proof Request | **`POST /present-proof/<cmd>`** | | REST service |
+| Send Proof Request | **`POST /present-proof/send-request`** | | REST service |
 | Receive Proof Request | | <agent_cb>/present_proof | callback |
-| Find Credentials | | **`POST /present-proof/<cmd>`** | REST service |
+| Find Credentials | | **`GET /present-proof/records/{id}/credentials`** | REST service |
 | Select Credentials | | | application or user function |
-| Send Proof | | **`POST /present-proof/<cmd>`** | REST service |
+| Send Proof | | **`POST /present-proof/records/{id}/send-presentation`** | REST service |
 | Receive Proof | <agent_cb>/present_proof | | callback |
-| Validate Proof | **`POST /present-proof/<cmd>`** | | REST service |
+| Validate Proof | **`POST /present-proof/records/{id}/verify-presentation`** | | REST service |
 | Save Proof | | | application data |
 
 ## Issuing Credentials to a Mobile Agent
