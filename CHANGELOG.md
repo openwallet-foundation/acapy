@@ -1,3 +1,11 @@
+# 0.4.5
+
+## March 3, 2020
+
+- Added NOTICES file with license information for dependencies [#398](https://github.com/hyperledger/aries-cloudagent-python/pull/398)
+- Updated documentation for administration API demo [#397](https://github.com/hyperledger/aries-cloudagent-python/pull/397)
+- Accept self-attested attributes in presentation verification, only when no restrictions are present on the requested attribute [#394](https://github.com/hyperledger/aries-cloudagent-python/pull/394), [#396](https://github.com/hyperledger/aries-cloudagent-python/pull/396)
+
 # 0.4.4
 
 ## February 28, 2020
