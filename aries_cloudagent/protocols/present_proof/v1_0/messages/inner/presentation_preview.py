@@ -385,7 +385,7 @@ class PresentationPreview(BaseModel):
                 and await ledger.get_credential_definition(cd_id)["value"]["revocation"]
             )
 
-            timestamp = non_revo(attr_spec.cred_def_id)
+            timestamp = non_revo(pred_spec.cred_def_id)
             proof_req["requested_predicates"][
                 "{}_{}_{}_uuid".format(
                     len(proof_req["requested_predicates"]),
