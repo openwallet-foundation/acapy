@@ -3,6 +3,12 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Union
 
+from ..core.error import BaseError
+
+
+class HolderError(BaseError):
+    """Base class for holder exceptions."""
+
 
 class BaseHolder(ABC, metaclass=ABCMeta):
     """Base class for holder."""

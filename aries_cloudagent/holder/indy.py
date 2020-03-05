@@ -9,13 +9,14 @@ from typing import Sequence, Union
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
+from ..indy.error import IndyErrorHandler
 from ..storage.indy import IndyStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord
 
 from ..wallet.error import WalletNotFoundError
 
-from .base import BaseHolder
+from .base import BaseHolder, HolderError
 
 
 class IndyHolder(BaseHolder):
@@ -50,21 +51,23 @@ class IndyHolder(BaseHolder):
 
         """
 
-        (
-            credential_request_json,
-            credential_request_metadata_json,
-        ) = await indy.anoncreds.prover_create_credential_req(
-            self.wallet.handle,
-            holder_did,
-            json.dumps(credential_offer),
-            json.dumps(credential_definition),
-            self.wallet.master_secret_id,
-        )
+        with IndyErrorHandler("Error when creating credential request", HolderError):
+            (
+                credential_request_json,
+                credential_request_metadata_json,
+            ) = await indy.anoncreds.prover_create_credential_req(
+                self.wallet.handle,
+                holder_did,
+                json.dumps(credential_offer),
+                json.dumps(credential_definition),
+                self.wallet.master_secret_id,
+            )
 
         self.logger.debug(
             "Created credential request. "
-            + f"credential_request_json={credential_request_json} "
-            + f"credential_request_metadata_json={credential_request_metadata_json}"
+            "credential_request_json=%s credential_request_metadata_json=%s",
+            credential_request_json,
+            credential_request_metadata_json,
         )
 
         credential_request = json.loads(credential_request_json)
@@ -95,14 +98,17 @@ class IndyHolder(BaseHolder):
             rev_reg_def_json: revocation registry definition in json
 
         """
-        credential_id = await indy.anoncreds.prover_store_credential(
-            wallet_handle=self.wallet.handle,
-            cred_id=credential_id,
-            cred_req_metadata_json=json.dumps(credential_request_metadata),
-            cred_json=json.dumps(credential_data),
-            cred_def_json=json.dumps(credential_definition),
-            rev_reg_def_json=json.dumps(rev_reg_def_json) if rev_reg_def_json else None,
-        )
+        with IndyErrorHandler("Error when storing credential in wallet", HolderError):
+            credential_id = await indy.anoncreds.prover_store_credential(
+                wallet_handle=self.wallet.handle,
+                cred_id=credential_id,
+                cred_req_metadata_json=json.dumps(credential_request_metadata),
+                cred_json=json.dumps(credential_data),
+                cred_def_json=json.dumps(credential_definition),
+                rev_reg_def_json=json.dumps(rev_reg_def_json)
+                if rev_reg_def_json
+                else None,
+            )
 
         if credential_attr_mime_types:
             mime_types = {
@@ -132,9 +138,15 @@ class IndyHolder(BaseHolder):
             wql: wql query dict
 
         """
-        search_handle, record_count = await indy.anoncreds.prover_search_credentials(
-            self.wallet.handle, json.dumps(wql)
-        )
+        with IndyErrorHandler(
+            "Error when constructing wallet credential query", HolderError
+        ):
+            (
+                search_handle,
+                record_count,
+            ) = await indy.anoncreds.prover_search_credentials(
+                self.wallet.handle, json.dumps(wql)
+            )
 
         # We need to move the database cursor position manually...
         if start > 0:
@@ -169,11 +181,16 @@ class IndyHolder(BaseHolder):
 
         """
 
-        search_handle = await indy.anoncreds.prover_search_credentials_for_proof_req(
-            self.wallet.handle,
-            json.dumps(presentation_request),
-            json.dumps(extra_query),
-        )
+        with IndyErrorHandler(
+            "Error when constructing wallet credential query", HolderError
+        ):
+            search_handle = await (
+                indy.anoncreds.prover_search_credentials_for_proof_req(
+                    self.wallet.handle,
+                    json.dumps(presentation_request),
+                    json.dumps(extra_query),
+                )
+            )
 
         if not referents:
             referents = (
@@ -233,7 +250,9 @@ class IndyHolder(BaseHolder):
                     "Credential not found in the wallet: {}".format(credential_id)
                 )
             else:
-                raise
+                raise IndyErrorHandler.wrap_error(
+                    e, "Error when fetching credential", HolderError
+                ) from e
 
         credential = json.loads(credential_json)
         return credential
@@ -266,7 +285,9 @@ class IndyHolder(BaseHolder):
                     "Credential not found in the wallet: {}".format(credential_id)
                 )
             else:
-                raise
+                raise IndyErrorHandler.wrap_error(
+                    e, "Error when deleting credential", HolderError
+                ) from e
 
     async def get_mime_type(
         self, credential_id: str, attr: str = None
@@ -312,15 +333,16 @@ class IndyHolder(BaseHolder):
 
         """
 
-        presentation_json = await indy.anoncreds.prover_create_proof(
-            self.wallet.handle,
-            json.dumps(presentation_request),
-            json.dumps(requested_credentials),
-            self.wallet.master_secret_id,
-            json.dumps(schemas),
-            json.dumps(credential_definitions),
-            json.dumps(rev_states_json) if rev_states_json else "{}",
-        )
+        with IndyErrorHandler("Error when constructing proof", HolderError):
+            presentation_json = await indy.anoncreds.prover_create_proof(
+                self.wallet.handle,
+                json.dumps(presentation_request),
+                json.dumps(requested_credentials),
+                self.wallet.master_secret_id,
+                json.dumps(schemas),
+                json.dumps(credential_definitions),
+                json.dumps(rev_states_json) if rev_states_json else "{}",
+            )
 
         presentation = json.loads(presentation_json)
         return presentation

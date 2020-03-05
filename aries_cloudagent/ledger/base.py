@@ -122,13 +122,18 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def create_and_send_credential_definition(
-        self, schema_id: str, tag: str = None, support_revocation: bool = False
+        self,
+        schema_id: str,
+        signature_type: str = None,
+        tag: str = None,
+        support_revocation: bool = False,
     ) -> Tuple[str, dict]:
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
         Args:
             schema_id: The schema id of the schema to create cred def for
+            signature_type: The signature type to use on the credential definition
             tag: Optional tag to distinguish multiple credential definitions
             support_revocation: Optional flag to enable revocation for this cred def
 
