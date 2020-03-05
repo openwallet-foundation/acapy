@@ -37,7 +37,7 @@ class RevRegCreateResultSchema(Schema):
     result = IssuerRevocationRecordSchema()
 
 
-class RevRegUpdateTailFileUriSchema(Schema):
+class RevRegUpdateTailsFileUriSchema(Schema):
     """Request schema for updating tails file URI."""
 
     tails_public_uri = fields.Url(
@@ -198,7 +198,7 @@ async def publish_registry(request: web.BaseRequest):
         }
     ],
 )
-@request_schema(RevRegUpdateTailFileUriSchema())
+@request_schema(RevRegUpdateTailsFileUriSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def update_registry(request: web.BaseRequest):
     """

@@ -75,22 +75,20 @@ class IndyRevocation:
     async def get_issuer_revocation_record(
         self, revoc_reg_id: str
     ) -> "IssuerRevocationRecord":
-        """Return the current active registry for issuing a given credential definition.
+        """Return the current active revocation record for a given registry ID.
 
         If no registry exists, then a new one will be created.
 
         Args:
-            cred_def_id: ID of the base credential definition
-            await_create: Wait for the registry and tails file to be created, if needed
+            revoc_reg_id: ID of the base revocation registry
         """
-        # FIXME handle exception
         return await IssuerRevocationRecord.retrieve_by_revoc_reg_id(
             self._context, revoc_reg_id
         )
 
     async def list_issuer_registries(self) -> Sequence["IssuerRevocationRecord"]:
         """List the current revocation registries."""
-        # return list of records (need filters)
+        return await IssuerRevocationRecord.query(self._context)
 
     async def get_ledger_registry(self, revoc_reg_id: str) -> "RevocationRegistry":
         """Get a revocation registry from the ledger, fetching as necessary."""
