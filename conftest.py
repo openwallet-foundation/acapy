@@ -32,6 +32,7 @@ def pytest_sessionstart(session):
         modules[package_name] = mock.MagicMock()
         for mod in [
             "anoncreds",
+            "blob_storage",
             "crypto",
             "did",
             "error",

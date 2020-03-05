@@ -35,7 +35,7 @@ class IndyHolder(BaseHolder):
         self.wallet = wallet
 
     async def create_credential_request(
-        self, credential_offer, credential_definition, did
+        self, credential_offer, credential_definition, holder_did: str
     ):
         """
         Create a credential offer for the given credential definition id.
@@ -43,6 +43,7 @@ class IndyHolder(BaseHolder):
         Args:
             credential_offer: The credential offer to create request for
             credential_definition: The credential definition to create an offer for
+            holder_did: the DID of the agent making the request
 
         Returns:
             A credential request
@@ -54,7 +55,7 @@ class IndyHolder(BaseHolder):
             credential_request_metadata_json,
         ) = await indy.anoncreds.prover_create_credential_req(
             self.wallet.handle,
-            did,
+            holder_did,
             json.dumps(credential_offer),
             json.dumps(credential_definition),
             self.wallet.master_secret_id,
@@ -77,7 +78,8 @@ class IndyHolder(BaseHolder):
         credential_data,
         credential_request_metadata,
         credential_attr_mime_types=None,
-        credential_id=None
+        credential_id=None,
+        rev_reg_def_json=None,
     ):
         """
         Store a credential in the wallet.
@@ -89,15 +91,17 @@ class IndyHolder(BaseHolder):
                 by the issuer
             credential_attr_mime_types: dict mapping attribute names to (optional)
                 MIME types to store as non-secret record, if specified
+            credential_id: optionally override the stored credential id
+            rev_reg_def_json: revocation registry definition in json
 
         """
         credential_id = await indy.anoncreds.prover_store_credential(
-            self.wallet.handle,
-            credential_id,
-            json.dumps(credential_request_metadata),
-            json.dumps(credential_data),
-            json.dumps(credential_definition),
-            None,  # We don't support revocation yet
+            wallet_handle=self.wallet.handle,
+            cred_id=credential_id,
+            cred_req_metadata_json=json.dumps(credential_request_metadata),
+            cred_json=json.dumps(credential_data),
+            cred_def_json=json.dumps(credential_definition),
+            rev_reg_def_json=json.dumps(rev_reg_def_json) if rev_reg_def_json else None,
         )
 
         if credential_attr_mime_types:
@@ -111,7 +115,7 @@ class IndyHolder(BaseHolder):
                     type=IndyHolder.RECORD_TYPE_MIME_TYPES,
                     value=credential_id,
                     tags=mime_types,
-                    id=f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}"
+                    id=f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}",
                 )
                 indy_stor = IndyStorage(self.wallet)
                 await indy_stor.add_record(record)
@@ -129,8 +133,7 @@ class IndyHolder(BaseHolder):
 
         """
         search_handle, record_count = await indy.anoncreds.prover_search_credentials(
-            self.wallet.handle,
-            json.dumps(wql)
+            self.wallet.handle, json.dumps(wql)
         )
 
         # We need to move the database cursor position manually...
@@ -139,8 +142,7 @@ class IndyHolder(BaseHolder):
             await indy.anoncreds.prover_fetch_credentials(search_handle, start)
 
         credentials_json = await indy.anoncreds.prover_fetch_credentials(
-            search_handle,
-            count
+            search_handle, count
         )
         await indy.anoncreds.prover_close_credentials_search(search_handle)
 
@@ -248,7 +250,7 @@ class IndyHolder(BaseHolder):
             indy_stor = IndyStorage(self.wallet)
             mime_types_record = await indy_stor.get_record(
                 IndyHolder.RECORD_TYPE_MIME_TYPES,
-                f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}"
+                f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}",
             )
             await indy_stor.delete_record(mime_types_record)
         except StorageNotFoundError:
@@ -267,9 +269,7 @@ class IndyHolder(BaseHolder):
                 raise
 
     async def get_mime_type(
-        self,
-        credential_id: str,
-        attr: str = None
+        self, credential_id: str, attr: str = None
     ) -> Union[dict, str]:
         """
         Get MIME type per attribute (or for all attributes).
@@ -285,7 +285,7 @@ class IndyHolder(BaseHolder):
         try:
             mime_types_record = await IndyStorage(self.wallet).get_record(
                 IndyHolder.RECORD_TYPE_MIME_TYPES,
-                f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}"
+                f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{credential_id}",
             )
         except StorageError:
             return None  # no MIME types: not an error
@@ -298,6 +298,7 @@ class IndyHolder(BaseHolder):
         requested_credentials: dict,
         schemas: dict,
         credential_definitions: dict,
+        rev_states_json: dict = None,
     ):
         """
         Get credentials stored in the wallet.
@@ -307,6 +308,7 @@ class IndyHolder(BaseHolder):
             requested_credentials: Indy format requested_credentials
             schemas: Indy formatted schemas_json
             credential_definitions: Indy formatted schemas_json
+            rev_states_json: Indy format revocation states
 
         """
 
@@ -317,7 +319,7 @@ class IndyHolder(BaseHolder):
             self.wallet.master_secret_id,
             json.dumps(schemas),
             json.dumps(credential_definitions),
-            json.dumps({})  # We don't support revocation currently.
+            json.dumps(rev_states_json) if rev_states_json else "{}",
         )
 
         presentation = json.loads(presentation_json)

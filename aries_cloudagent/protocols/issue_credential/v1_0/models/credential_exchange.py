@@ -37,6 +37,7 @@ class V10CredentialExchange(BaseRecord):
     STATE_ISSUED = "credential_issued"
     STATE_CREDENTIAL_RECEIVED = "credential_received"
     STATE_ACKED = "credential_acked"
+    STATE_REVOKED = "credential_revoked"
 
     def __init__(
         self,
@@ -57,8 +58,11 @@ class V10CredentialExchange(BaseRecord):
         credential_id: str = None,
         raw_credential: dict = None,  # indy credential as received
         credential: dict = None,  # indy credential as stored
+        revoc_reg_id: str = None,
+        revocation_id: str = None,
         auto_offer: bool = False,
         auto_issue: bool = False,
+        auto_remove: bool = True,
         error_msg: str = None,
         **kwargs,
     ):
@@ -80,8 +84,11 @@ class V10CredentialExchange(BaseRecord):
         self.credential_id = credential_id
         self.raw_credential = raw_credential
         self.credential = credential
+        self.revoc_reg_id = revoc_reg_id
+        self.revocation_id = revocation_id
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
+        self.auto_remove = auto_remove
         self.error_msg = error_msg
 
     @property
@@ -103,6 +110,7 @@ class V10CredentialExchange(BaseRecord):
                 "error_msg",
                 "auto_offer",
                 "auto_issue",
+                "auto_remove",
                 "raw_credential",
                 "credential",
                 "parent_thread_id",
@@ -110,6 +118,8 @@ class V10CredentialExchange(BaseRecord):
                 "credential_definition_id",
                 "schema_id",
                 "credential_id",
+                "revoc_reg_id",
+                "revocation_id",
                 "role",
                 "state",
             )
@@ -213,8 +223,22 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
         description="Issuer choice to issue to request in this credential exchange",
         example=False,
     )
+    auto_remove = fields.Bool(
+        required=False,
+        default=True,
+        description=(
+            "Issuer choice to remove this credential exchange record when complete"
+        ),
+        example=False,
+    )
     error_msg = fields.Str(
         required=False,
         description="Error message",
         example="credential definition identifier is not set in proposal",
+    )
+    revoc_reg_id = fields.Str(
+        required=False, description="Revocation registry identifier"
+    )
+    revocation_id = fields.Str(
+        required=False, description="Credential identifier within revocation registry"
     )
