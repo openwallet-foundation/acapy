@@ -473,6 +473,7 @@ class IndyLedger(BaseLedger):
         Send credential definition to ledger and store relevant key matter in wallet.
 
         Args:
+            issuer: The issuer instance to use for credential definition creation
             schema_id: The schema id of the schema to create cred def for
             signature_type: The signature type to use on the credential definition
             tag: Optional tag to distinguish multiple credential definitions

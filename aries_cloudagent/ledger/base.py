@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod, ABCMeta
 import re
 from typing import Tuple, Sequence
 
+from ..issuer.base import BaseIssuer
+
 
 class BaseLedger(ABC, metaclass=ABCMeta):
     """Base class for ledger."""
@@ -90,12 +92,17 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def create_and_send_schema(
-        self, schema_name: str, schema_version: str, attribute_names: Sequence[str]
+        self,
+        issuer: BaseIssuer,
+        schema_name: str,
+        schema_version: str,
+        attribute_names: Sequence[str],
     ) -> Tuple[str, dict]:
         """
         Send schema to ledger.
 
         Args:
+            issuer: The issuer instance to use for schema creation
             schema_name: The schema name
             schema_version: The schema version
             attribute_names: A list of schema attributes
@@ -123,6 +130,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def create_and_send_credential_definition(
         self,
+        issuer: BaseIssuer,
         schema_id: str,
         signature_type: str = None,
         tag: str = None,
@@ -132,6 +140,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         Send credential definition to ledger and store relevant key matter in wallet.
 
         Args:
+            issuer: The issuer instance to use for credential definition creation
             schema_id: The schema id of the schema to create cred def for
             signature_type: The signature type to use on the credential definition
             tag: Optional tag to distinguish multiple credential definitions
