@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from typing import Sequence
+from typing import Any, Sequence
 
 import indy.anoncreds
 import indy.blob_storage
@@ -223,6 +223,10 @@ class IssuerRevocationRecord(BaseRecord):
         """Change the registry state to full."""
         self.state = self.STATE_FULL
         await self.save(context)
+
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
 
 
 class IssuerRevocationRecordSchema(BaseRecordSchema):
