@@ -1,4 +1,4 @@
-# Aries OpenAPI Demo <!-- omit in toc -->
+# Aries OpenAPI Mobile Demo <!-- omit in toc -->
 
 You can use the Faber aca-py agent to issue credentials to a mobile wallet.  To do this you need to run the Faber agent on a publicly accessible port (for example you can run the agent on Play With Docker), and you need a compatible wallet.  One available wallet is the Streetcred Identity Agent, which is available on both iOS and Android, and you can read about it [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
 
