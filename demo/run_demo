@@ -10,11 +10,33 @@ ARGS=""
 
 for i in "$@"
 do
+    if [ ! -z "$SKIP" ]; then
+        SKIP=""
+        continue
+    fi
 	case $i in
 	--events)
 		EVENTS=1
 		continue
 	;;
+    --debug-ptvsd)
+        ENABLE_PTVSD=1
+        continue
+        ;;
+    --debug-pycharm)
+        ENABLE_PYDEVD_PYCHARM=1
+        continue
+        ;;
+    --debug-pycharm-controller-port)
+        PYDEVD_PYCHARM_CONTROLLER_PORT=$2
+        SKIP=1
+        continue
+        ;;
+    --debug-pycharm-agent-port)
+        PYDEVD_PYCHARM_AGENT_PORT=$2
+        SKIP=1
+        continue
+        ;;
 	--timing)
 		if [ ! -d "../logs" ]; then
 			mkdir ../logs && chmod -R uga+rws ../logs
@@ -87,6 +109,10 @@ if ! [ -z "$GENESIS_URL" ]; then
 fi
 if ! [ -z "$EVENTS" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
+fi
+
+if ! [[ -z "${ENABLE_PYDEVD_PYCHARM}" ]]; then
+    DOCKER_ENV="${DOCKER_ENV} -e ENABLE_PYDEVD_PYCHARM=${ENABLE_PYDEVD_PYCHARM} -e PYDEVD_PYCHARM_CONTROLLER_PORT=${PYDEVD_PYCHARM_CONTROLLER_PORT} -e PYDEVD_PYCHARM_AGENT_PORT=${PYDEVD_PYCHARM_AGENT_PORT}"
 fi
 
 # on Windows, docker run needs to be prefixed by winpty

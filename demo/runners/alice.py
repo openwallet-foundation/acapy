@@ -123,7 +123,7 @@ class AliceAgent(DemoAgent):
                 f"/present-proof/records/{presentation_exchange_id}/credentials"
             )
             if credentials:
-                for row in credentials:
+                for row in sorted(credentials, key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]), reverse=True):
                     for referent in row["presentation_referents"]:
                         if referent not in credentials_by_reft:
                             credentials_by_reft[referent] = row
@@ -292,6 +292,21 @@ if __name__ == "__main__":
         "--timing", action="store_true", help="Enable timing information"
     )
     args = parser.parse_args()
+
+    ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
+    ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in ("false", "0")
+    PYDEVD_PYCHARM_HOST = os.getenv("PYDEVD_PYCHARM_HOST", "localhost")
+    PYDEVD_PYCHARM_CONTROLLER_PORT = int(os.getenv("PYDEVD_PYCHARM_CONTROLLER_PORT", 5001))
+
+    if ENABLE_PYDEVD_PYCHARM:
+        try:
+            import pydevd_pycharm
+
+            print(f"Alice remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}")
+            pydevd_pycharm.settrace(host=PYDEVD_PYCHARM_HOST, port=PYDEVD_PYCHARM_CONTROLLER_PORT,
+                                    stdoutToServer=True, stderrToServer=True, suspend=False)
+        except ImportError:
+            print("pydevd_pycharm library was not found")
 
     require_indy()
 

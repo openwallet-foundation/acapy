@@ -82,10 +82,10 @@ class DefaultContextBuilder(ContextBuilder):
                 StatsProvider(
                     LedgerProvider(),
                     (
+                        "create_and_send_credential_definition",
+                        "create_and_send_schema",
                         "get_credential_definition",
                         "get_schema",
-                        "send_credential_definition",
-                        "send_schema",
                     ),
                 )
             ),
@@ -154,6 +154,7 @@ class DefaultContextBuilder(ContextBuilder):
             "aries_cloudagent.messaging.credential_definitions"
         )
         plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
+        plugin_registry.register_plugin("aries_cloudagent.revocation")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
 
         # Register external plugins

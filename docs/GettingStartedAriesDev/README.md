@@ -20,5 +20,6 @@ Note that in the guidance we have here, we include not only the links to look at
 * [Deeper Dive: DIDcomm Message Routing and Encryption](RoutingEncryption.md)
 * [Deeper Dive: Routing Example](AriesRoutingExample.md)
 * To Do: [Deeper Dive: Running and Connecting to an Indy Network](ConnectIndyNetwork.md)
+* [Steps and APIs to support credential revocation with Aries agent](CredentialRevocation.md)
 
 Want to help with this guide? Please add issues or submit a pull request to improve the document. Point out things that are missing, things to improve and especially things that are wrong.

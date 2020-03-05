@@ -4,6 +4,7 @@ import json
 import logging
 
 import indy.anoncreds
+from indy.error import AnoncredsRevocationRegistryFullError
 
 from ..core.error import BaseError
 from ..messaging.util import encode
@@ -15,12 +16,16 @@ class IssuerError(BaseError):
     """Generic issuer error."""
 
 
+class IssuerRevocationRegistryFullError(IssuerError):
+    """Revocation registry is full when issuing a new credential."""
+
+
 class IndyIssuer(BaseIssuer):
     """Indy issuer class."""
 
     def __init__(self, wallet):
         """
-        Initialize an IndyLedger instance.
+        Initialize an IndyIssuer instance.
 
         Args:
             wallet: IndyWallet instance
@@ -49,7 +54,13 @@ class IndyIssuer(BaseIssuer):
         return credential_offer
 
     async def create_credential(
-        self, schema, credential_offer, credential_request, credential_values
+        self,
+        schema,
+        credential_offer,
+        credential_request,
+        credential_values,
+        revoc_reg_id: str = None,
+        tails_reader_handle: int = None,
     ):
         """
         Create a credential.
@@ -59,6 +70,8 @@ class IndyIssuer(BaseIssuer):
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
+            revoc_reg_id: ID of the revocation registry
+            tails_reader_handle: Handle for the tails file blob reader
 
         Returns:
             A tuple of created credential, revocation id
@@ -82,17 +95,42 @@ class IndyIssuer(BaseIssuer):
             encoded_values[attribute]["raw"] = str(credential_value)
             encoded_values[attribute]["encoded"] = encode(credential_value)
 
-        (
-            credential_json,
-            credential_revocation_id,
-            _,
-        ) = await indy.anoncreds.issuer_create_credential(
-            self.wallet.handle,
-            json.dumps(credential_offer),
-            json.dumps(credential_request),
-            json.dumps(encoded_values),
-            None,
-            None,
-        )
+        try:
+            (
+                credential_json,
+                credential_revocation_id,
+                revoc_reg_delta_json,
+            ) = await indy.anoncreds.issuer_create_credential(
+                self.wallet.handle,
+                json.dumps(credential_offer),
+                json.dumps(credential_request),
+                json.dumps(encoded_values),
+                revoc_reg_id,
+                tails_reader_handle,
+            )
+        except AnoncredsRevocationRegistryFullError:
+            self.logger.error("Revocation registry is full when creating a credential.")
+            raise IssuerRevocationRegistryFullError("Revocation registry full")
 
         return json.loads(credential_json), credential_revocation_id
+
+    async def revoke_credential(
+        self, revoc_reg_id: str, tails_reader_handle: int, cred_revoc_id: str
+    ) -> dict:
+        """
+        Revoke a credential.
+
+        Args
+            revoc_reg_id: ID of the revocation registry
+            tails_reader_handle: handle for the registry tails file
+            cred_revoc_id: index of the credential in the revocation registry
+
+        """
+        revoc_reg_delta_json = await indy.anoncreds.issuer_revoke_credential(
+            self.wallet.handle, tails_reader_handle, revoc_reg_id, cred_revoc_id
+        )
+        # may throw AnoncredsInvalidUserRevocId if using ISSUANCE_ON_DEMAND
+
+        delta = json.loads(revoc_reg_delta_json)
+
+        return delta
