@@ -22,11 +22,11 @@ class PreVerifyResult(Enum):
 
 
 class IndyVerifier(BaseVerifier):
-    """Indy holder class."""
+    """Indy verifier class."""
 
     def __init__(self, wallet):
         """
-        Initialize an IndyHolder instance.
+        Initialize an IndyVerifier instance.
 
         Args:
             wallet: IndyWallet instance
