@@ -377,10 +377,13 @@ class CredentialManager:
                 )
 
             holder: BaseHolder = await self.context.inject(BaseHolder)
-            request, metadata = await holder.create_credential_request(
+            request_json, metadata_json = await holder.create_credential_request(
                 credential_offer, credential_definition, holder_did
             )
-            return {"request": request, "metadata": metadata}
+            return {
+                "request": json.loads(request_json),
+                "metadata": json.loads(metadata_json),
+            }
 
         if credential_exchange_record.credential_request:
             self._logger.warning(
@@ -627,13 +630,14 @@ class CredentialManager:
                 credential_exchange_record.credential_request_metadata,
                 mime_types,
                 credential_id=credential_id,
-                rev_reg_def_json=revoc_reg_def,
+                rev_reg_def=revoc_reg_def,
             )
         except IndyError as e:
             self._logger.error(f"Error storing credential. {e.error_code}: {e.message}")
             raise e
 
-        credential = await holder.get_credential(credential_id)
+        credential_json = await holder.get_credential(credential_id)
+        credential = json.loads(credential_json)
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ACKED
         credential_exchange_record.credential_id = credential_id

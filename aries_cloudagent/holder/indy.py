@@ -1,10 +1,10 @@
-"""Indy issuer implementation."""
+"""Indy holder implementation."""
 
 import json
 import logging
 
 from collections import OrderedDict
-from typing import Sequence, Union
+from typing import Sequence, Tuple, Union
 
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
@@ -36,10 +36,10 @@ class IndyHolder(BaseHolder):
         self.wallet = wallet
 
     async def create_credential_request(
-        self, credential_offer, credential_definition, holder_did: str
-    ):
+        self, credential_offer: dict, credential_definition: dict, holder_did: str
+    ) -> Tuple[str, str]:
         """
-        Create a credential offer for the given credential definition id.
+        Create a credential request for the given credential offer.
 
         Args:
             credential_offer: The credential offer to create request for
@@ -47,7 +47,7 @@ class IndyHolder(BaseHolder):
             holder_did: the DID of the agent making the request
 
         Returns:
-            A credential request
+            A tuple of the credential request and credential request metadata
 
         """
 
@@ -70,20 +70,17 @@ class IndyHolder(BaseHolder):
             credential_request_metadata_json,
         )
 
-        credential_request = json.loads(credential_request_json)
-        credential_request_metadata = json.loads(credential_request_metadata_json)
-
-        return credential_request, credential_request_metadata
+        return credential_request_json, credential_request_metadata_json
 
     async def store_credential(
         self,
-        credential_definition,
-        credential_data,
-        credential_request_metadata,
+        credential_definition: dict,
+        credential_data: dict,
+        credential_request_metadata: dict,
         credential_attr_mime_types=None,
-        credential_id=None,
-        rev_reg_def_json=None,
-    ):
+        credential_id: str = None,
+        rev_reg_def: dict = None,
+    ) -> str:
         """
         Store a credential in the wallet.
 
@@ -95,7 +92,10 @@ class IndyHolder(BaseHolder):
             credential_attr_mime_types: dict mapping attribute names to (optional)
                 MIME types to store as non-secret record, if specified
             credential_id: optionally override the stored credential id
-            rev_reg_def_json: revocation registry definition in json
+            rev_reg_def: revocation registry definition in json
+
+        Returns:
+            the ID of the stored credential
 
         """
         with IndyErrorHandler("Error when storing credential in wallet", HolderError):
@@ -105,9 +105,7 @@ class IndyHolder(BaseHolder):
                 cred_req_metadata_json=json.dumps(credential_request_metadata),
                 cred_json=json.dumps(credential_data),
                 cred_def_json=json.dumps(credential_definition),
-                rev_reg_def_json=json.dumps(rev_reg_def_json)
-                if rev_reg_def_json
-                else None,
+                rev_reg_def_json=json.dumps(rev_reg_def) if rev_reg_def else None,
             )
 
         if credential_attr_mime_types:
@@ -232,7 +230,7 @@ class IndyHolder(BaseHolder):
 
         return tuple(creds_dict.values())[:count]
 
-    async def get_credential(self, credential_id: str):
+    async def get_credential(self, credential_id: str) -> str:
         """
         Get a credential stored in the wallet.
 
@@ -254,8 +252,7 @@ class IndyHolder(BaseHolder):
                     e, "Error when fetching credential", HolderError
                 ) from e
 
-        credential = json.loads(credential_json)
-        return credential
+        return credential_json
 
     async def delete_credential(self, credential_id: str):
         """
@@ -320,7 +317,7 @@ class IndyHolder(BaseHolder):
         schemas: dict,
         credential_definitions: dict,
         rev_states_json: dict = None,
-    ):
+    ) -> str:
         """
         Get credentials stored in the wallet.
 
@@ -344,5 +341,4 @@ class IndyHolder(BaseHolder):
                 json.dumps(rev_states_json) if rev_states_json else "{}",
             )
 
-        presentation = json.loads(presentation_json)
-        return presentation
+        return presentation_json

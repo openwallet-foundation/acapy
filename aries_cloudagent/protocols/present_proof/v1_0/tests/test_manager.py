@@ -1,3 +1,5 @@
+import json
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -77,11 +79,9 @@ class TestPresentationManager(AsyncTestCase):
             )
         )
         self.holder.get_credential = async_mock.CoroutineMock(
-            return_value={"schema_id": S_ID, "cred_def_id": CD_ID}
+            return_value=json.dumps({"schema_id": S_ID, "cred_def_id": CD_ID})
         )
-        self.holder.create_presentation = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock()
-        )
+        self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.context.injector.bind_instance(BaseHolder, self.holder)
 
         Verifier = async_mock.MagicMock(IndyVerifier, autospec=True)
@@ -98,24 +98,24 @@ class TestPresentationManager(AsyncTestCase):
             V10PresentationExchange(
                 presentation_exchange_id="dummy-0",
                 thread_id="thread-0",
-                role=V10PresentationExchange.ROLE_PROVER
+                role=V10PresentationExchange.ROLE_PROVER,
             )
         ] * 2
         diff = [
             V10PresentationExchange(
                 presentation_exchange_id="dummy-1",
-                role=V10PresentationExchange.ROLE_PROVER
+                role=V10PresentationExchange.ROLE_PROVER,
             ),
             V10PresentationExchange(
                 presentation_exchange_id="dummy-0",
                 thread_id="thread-1",
-                role=V10PresentationExchange.ROLE_PROVER
+                role=V10PresentationExchange.ROLE_PROVER,
             ),
             V10PresentationExchange(
                 presentation_exchange_id="dummy-1",
                 thread_id="thread-0",
-                role=V10PresentationExchange.ROLE_VERIFIER
-            )
+                role=V10PresentationExchange.ROLE_VERIFIER,
+            ),
         ]
 
         for i in range(len(same) - 1):
@@ -244,8 +244,7 @@ class TestPresentationManager(AsyncTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req,
-                holder=self.holder
+                indy_proof_req, holder=self.holder
             )
 
             (exchange_out, pres_msg) = await self.manager.create_presentation(
@@ -263,8 +262,7 @@ class TestPresentationManager(AsyncTestCase):
 
         with self.assertRaises(ValueError):
             await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req,
-                holder=self.holder
+                indy_proof_req, holder=self.holder
             )
 
         self.holder.get_credentials_for_presentation_request_by_referent.return_value = (
@@ -285,18 +283,10 @@ class TestPresentationManager(AsyncTestCase):
                         "spec/present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
-                        {
-                            "name": "favourite",
-                            "cred_def_id": CD_ID,
-                            "value": "potato"
-                        },
-                        {
-                            "name": "icon",
-                            "cred_def_id": CD_ID,
-                            "value": "cG90YXRv"
-                        }
+                        {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
+                        {"name": "icon", "cred_def_id": CD_ID, "value": "cG90YXRv"},
                     ],
-                    "predicates": []
+                    "predicates": [],
                 }
             },
             presentation_request={
@@ -306,21 +296,13 @@ class TestPresentationManager(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
-                    }
-                }
+                        "restrictions": [{"cred_def_id": CD_ID,}],
+                    },
+                },
             },
             presentation={
                 "proof": {
@@ -330,35 +312,34 @@ class TestPresentationManager(AsyncTestCase):
                             "0_favourite_uuid": {
                                 "sub_proof_index": 0,
                                 "raw": "potato",
-                                "encoded": "12345678901234567890"
+                                "encoded": "12345678901234567890",
                             },
                             "1_icon_uuid": {
                                 "sub_proof_index": 1,
                                 "raw": "cG90YXRv",
-                                "encoded": "12345678901234567890"
-                            }
+                                "encoded": "12345678901234567890",
+                            },
                         },
                         "self_attested_attrs": {},
                         "unrevealed_attrs": {},
-                        "predicates": {
-                        }
-                    }
+                        "predicates": {},
+                    },
                 },
                 "identifiers": [
                     {
                         "schema_id": S_ID,
                         "cred_def_id": CD_ID,
                         "rev_reg_id": None,
-                        "timestamp": None
+                        "timestamp": None,
                     },
                     {
                         "schema_id": S_ID,
                         "cred_def_id": CD_ID,
                         "rev_reg_id": None,
-                        "timestamp": None
-                    }
-                ]
-            }
+                        "timestamp": None,
+                    },
+                ],
+            },
         )
         self.context.message = async_mock.MagicMock()
 
@@ -395,15 +376,11 @@ class TestPresentationManager(AsyncTestCase):
                         {
                             "name": "favourite",
                             "cred_def_id": CD_ID,
-                            "value": "no potato"
+                            "value": "no potato",
                         },
-                        {
-                            "name": "icon",
-                            "cred_def_id": CD_ID,
-                            "value": "cG90YXRv"
-                        }
+                        {"name": "icon", "cred_def_id": CD_ID, "value": "cG90YXRv"},
                     ],
-                    "predicates": []
+                    "predicates": [],
                 }
             },
             presentation_request={
@@ -413,61 +390,50 @@ class TestPresentationManager(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
-                    }
-                }
-            }
+                        "restrictions": [{"cred_def_id": CD_ID,}],
+                    },
+                },
+            },
         )
         self.context.message = async_mock.MagicMock()
         self.context.message.indy_proof = async_mock.MagicMock(
             return_value={
-                "proof": {
-                    "proofs": [],
-                },
+                "proof": {"proofs": [],},
                 "requested_proof": {
                     "revealed_attrs": {
                         "0_favourite_uuid": {
                             "sub_proof_index": 0,
                             "raw": "potato",
-                            "encoded": "12345678901234567890"
+                            "encoded": "12345678901234567890",
                         },
                         "1_icon_uuid": {
                             "sub_proof_index": 1,
                             "raw": "cG90YXRv",
-                            "encoded": "23456789012345678901"
-                        }
+                            "encoded": "23456789012345678901",
+                        },
                     },
                     "self_attested_attrs": {},
                     "unrevealed_attrs": {},
-                    "predicates": {
-                    }
+                    "predicates": {},
                 },
                 "identifiers": [
                     {
                         "schema_id": S_ID,
                         "cred_def_id": CD_ID,
                         "rev_reg_id": None,
-                        "timestamp": None
+                        "timestamp": None,
                     },
                     {
                         "schema_id": S_ID,
                         "cred_def_id": CD_ID,
                         "rev_reg_id": None,
-                        "timestamp": None
-                    }
-                ]
+                        "timestamp": None,
+                    },
+                ],
             }
         )
 
@@ -492,9 +458,7 @@ class TestPresentationManager(AsyncTestCase):
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation()
             retrieve_ex.assert_called_once_with(
-                self.context,
-                {"thread_id": self.context.message._thread_id},
-                None,
+                self.context, {"thread_id": self.context.message._thread_id}, None,
             )
             save_ex.assert_called_once()
 

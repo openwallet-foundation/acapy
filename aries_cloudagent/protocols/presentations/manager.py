@@ -167,7 +167,7 @@ class PresentationManager:
         credential_definition_ids = []
         holder: BaseHolder = await self.context.inject(BaseHolder)
         for credential_id in credential_ids:
-            credential = await holder.get_credential(credential_id)
+            credential = json.loads(await holder.get_credential(credential_id))
             schema_id = credential["schema_id"]
             credential_definition_id = credential["cred_def_id"]
             schema_ids.append(schema_id)
@@ -192,16 +192,14 @@ class PresentationManager:
                 credential_definitions[credential_definition_id] = credential_definition
 
         holder: BaseHolder = await self.context.inject(BaseHolder)
-        presentation = await holder.create_presentation(
+        presentation_json = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
             requested_credentials,
             schemas,
             credential_definitions,
         )
 
-        presentation_message = CredentialPresentation(
-            presentation=json.dumps(presentation)
-        )
+        presentation_message = CredentialPresentation(presentation=presentation_json)
 
         # TODO: Find a more elegant way to do this
         presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
@@ -210,7 +208,7 @@ class PresentationManager:
         presentation_exchange_record.state = (
             PresentationExchange.STATE_PRESENTATION_SENT
         )
-        presentation_exchange_record.presentation = presentation
+        presentation_exchange_record.presentation = json.loads(presentation_json)
         await presentation_exchange_record.save(
             self.context,
             reason="Create presentation",

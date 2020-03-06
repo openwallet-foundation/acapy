@@ -287,7 +287,9 @@ class PresentationManager:
         for referent in requested_referents:
             credential_id = requested_referents[referent]["cred_id"]
             if credential_id not in credentials:
-                credentials[credential_id] = await holder.get_credential(credential_id)
+                credentials[credential_id] = json.loads(
+                    await holder.get_credential(credential_id)
+                )
 
         # Get all schema, credential definition, and revocation registry in use
         ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -341,8 +343,10 @@ class PresentationManager:
                     if "to" not in non_revoked_timespan:
                         non_revoked_timespan["to"] = current_timestamp
 
-                    key = f"{rev_reg_id}_{non_revoked_timespan['from']}_" \
-                          f"{non_revoked_timespan['to']}"
+                    key = (
+                        f"{rev_reg_id}_{non_revoked_timespan['from']}_"
+                        f"{non_revoked_timespan['to']}"
+                    )
                     if key not in revoc_reg_deltas:
                         (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
                             rev_reg_id,
@@ -396,13 +400,14 @@ class PresentationManager:
                     "timestamp"
                 ] = referented["timestamp"]
 
-        indy_proof = await holder.create_presentation(
+        indy_proof_json = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
             requested_credentials,
             schemas,
             credential_definitions,
             revocation_states,
         )
+        indy_proof = json.loads(indy_proof_json)
 
         presentation_message = Presentation(
             comment=comment,
