@@ -1,3 +1,4 @@
+import json
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from time import time
@@ -241,7 +242,7 @@ class TestCredentialManager(AsyncTestCase):
             cred_offer = {"cred_def_id": cred_def_id, "schema_id": schema_id}
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=cred_offer
+                return_value=json.dumps(cred_offer)
             )
             self.context.injector.bind_instance(BaseIssuer, issuer)
 
@@ -296,7 +297,7 @@ class TestCredentialManager(AsyncTestCase):
             cred_offer = {"cred_def_id": cred_def_id, "schema_id": schema_id}
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=cred_offer
+                return_value=json.dumps(cred_offer)
             )
             self.context.injector.bind_instance(BaseIssuer, issuer)
 
@@ -663,7 +664,7 @@ class TestCredentialManager(AsyncTestCase):
         cred = {"indy": "credential"}
         cred_revoc = object()
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(cred, cred_revoc)
+            return_value=(json.dumps(cred), cred_revoc)
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
 

@@ -1,5 +1,6 @@
 """Classes to manage credentials."""
 
+import json
 import logging
 from typing import Mapping, Tuple
 
@@ -254,7 +255,8 @@ class CredentialManager:
                 )
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-            return await issuer.create_credential_offer(cred_def_id)
+            offer_json = await issuer.create_credential_offer(cred_def_id)
+            return json.loads(offer_json)
 
         credential_offer = None
         cache_key = f"credential_offer::{cred_def_id}"
@@ -507,7 +509,7 @@ class CredentialManager:
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             (
-                credential_exchange_record.credential,
+                credential_json,
                 credential_exchange_record.revocation_id,
             ) = await issuer.create_credential(
                 schema,
@@ -517,6 +519,7 @@ class CredentialManager:
                 credential_exchange_record.revoc_reg_id,
                 tails_reader,
             )
+            credential_exchange_record.credential = json.loads(credential_json)
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(self.context, reason="issue credential")
@@ -704,9 +707,10 @@ class CredentialManager:
         registry = await registry_record.get_registry()
         tails_reader = await registry.create_tails_reader(self.context)
 
-        delta = await issuer.revoke_credential(
+        delta_json = await issuer.revoke_credential(
             registry.registry_id, tails_reader, credential_exchange_record.revocation_id
         )
+        delta = json.loads(delta_json)
 
         # create entry and send to ledger
         if delta:

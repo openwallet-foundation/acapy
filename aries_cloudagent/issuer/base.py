@@ -102,7 +102,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def create_credential_offer(self, credential_definition_id):
+    def create_credential_offer(self, credential_definition_id) -> str:
         """
         Create a credential offer for the given credential definition id.
 
@@ -110,20 +110,20 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
             credential_definition_id: The credential definition to create an offer for
 
         Returns:
-            A credential offer
+            The created credential offer
 
         """
 
     @abstractmethod
     async def create_credential(
         self,
-        schema,
-        credential_offer,
-        credential_request,
-        credential_values,
+        schema: dict,
+        credential_offer: dict,
+        credential_request: dict,
+        credential_values: dict,
         revoc_reg_id: str = None,
         tails_reader_handle: int = None,
-    ):
+    ) -> Tuple[str, str]:
         """
         Create a credential.
 
@@ -136,19 +136,24 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
             tails_reader_handle: Handle for the tails file blob reader
 
         Returns:
-            A tuple of created credential, revocation id
+            A tuple of created credential and revocation id
 
         """
 
     @abstractmethod
-    def revoke_credential(self, revoc_reg_id, tails_reader_handle, cred_revoc_id):
+    def revoke_credential(
+        self, revoc_reg_id, tails_reader_handle, cred_revoc_id
+    ) -> str:
         """
         Revoke a credential.
 
-        Args
+        Args:
             revoc_reg_id: ID of the revocation registry
             tails_reader_handle: handle for the registry tails file
             cred_revoc_id: index of the credential in the revocation registry
+
+        Returns:
+            the revocation delta
 
         """
 

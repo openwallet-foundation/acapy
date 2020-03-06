@@ -406,6 +406,10 @@ class TestIndyLedger(AsyncTestCase):
         mock_fetch_schema_by_id.return_value = None
         mock_fetch_schema_by_seq_no.return_value = None
 
+        mock_submit.return_value = (
+            r'{"op":"REPLY","result":{"txnMetadata":{"seqNo": 1}}}'
+        )
+
         async with ledger:
             mock_wallet.get_public_did = async_mock.CoroutineMock()
             mock_wallet.get_public_did.return_value = None

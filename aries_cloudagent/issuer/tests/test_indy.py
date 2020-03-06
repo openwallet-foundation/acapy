@@ -25,8 +25,8 @@ class TestIndyIssuer(AsyncTestCase):
         mock_create_offer.return_value = json.dumps(test_offer)
         mock_wallet = async_mock.MagicMock()
         issuer = IndyIssuer(mock_wallet)
-        offer = await issuer.create_credential_offer(test_cred_def_id)
-        assert offer == test_offer
+        offer_json = await issuer.create_credential_offer(test_cred_def_id)
+        assert json.loads(offer_json) == test_offer
         mock_create_offer.assert_awaited_once_with(mock_wallet.handle, test_cred_def_id)
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
@@ -46,10 +46,10 @@ class TestIndyIssuer(AsyncTestCase):
             None,
         )
 
-        cred, revoc_id = await issuer.create_credential(
+        cred_json, revoc_id = await issuer.create_credential(
             test_schema, test_offer, test_request, test_values
         )
-        assert cred == test_credential
+        assert json.loads(cred_json) == test_credential
         assert revoc_id == test_revoc_id
         mock_create_credential.assert_awaited_once()
         (
@@ -68,6 +68,6 @@ class TestIndyIssuer(AsyncTestCase):
 
         with self.assertRaises(IssuerError):
             # missing attribute
-            cred, revoc_id = await issuer.create_credential(
+            cred_json, revoc_id = await issuer.create_credential(
                 test_schema, test_offer, test_request, {}
             )

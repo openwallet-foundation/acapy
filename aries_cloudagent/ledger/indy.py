@@ -312,7 +312,15 @@ class IndyLedger(BaseLedger):
                 )
 
             try:
-                await self._submit(request_json, True, sign_did=public_info)
+                resp = await self._submit(request_json, True, sign_did=public_info)
+                try:
+                    # parse sequence number out of response
+                    seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
+                    schema_def["seqNo"] = seq_no
+                except KeyError:
+                    self.logger.warning(
+                        "Failed to parse schema sequence number from ledger response"
+                    )
             except LedgerTransactionError as e:
                 # Identify possible duplicate schema errors on indy-node < 1.9 and > 1.9
                 if (
@@ -327,7 +335,7 @@ class IndyLedger(BaseLedger):
                     if schema_info:
                         self.logger.warning(
                             "Schema already exists on ledger. Returning details."
-                            + " Error: %s",
+                            " Error: %s",
                             e,
                         )
                         schema_id, schema_def = schema_info

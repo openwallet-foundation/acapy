@@ -140,7 +140,7 @@ class IndyIssuer(BaseIssuer):
             )
         return (credential_definition_id, credential_definition_json)
 
-    async def create_credential_offer(self, credential_definition_id: str):
+    async def create_credential_offer(self, credential_definition_id: str) -> str:
         """
         Create a credential offer for the given credential definition id.
 
@@ -148,7 +148,7 @@ class IndyIssuer(BaseIssuer):
             credential_definition_id: The credential definition to create an offer for
 
         Returns:
-            A credential offer
+            The created credential offer
 
         """
         with IndyErrorHandler("Exception when creating credential offer", IssuerError):
@@ -156,19 +156,17 @@ class IndyIssuer(BaseIssuer):
                 self.wallet.handle, credential_definition_id
             )
 
-        credential_offer = json.loads(credential_offer_json)
-
-        return credential_offer
+        return credential_offer_json
 
     async def create_credential(
         self,
-        schema,
-        credential_offer,
-        credential_request,
-        credential_values,
+        schema: dict,
+        credential_offer: dict,
+        credential_request: dict,
+        credential_values: dict,
         revoc_reg_id: str = None,
         tails_reader_handle: int = None,
-    ):
+    ) -> Tuple[str, str]:
         """
         Create a credential.
 
@@ -181,7 +179,7 @@ class IndyIssuer(BaseIssuer):
             tails_reader_handle: Handle for the tails file blob reader
 
         Returns:
-            A tuple of created credential, revocation id
+            A tuple of created credential and revocation id
 
         """
 
@@ -223,18 +221,21 @@ class IndyIssuer(BaseIssuer):
                 error, "Error when issuing credential", IssuerError
             ) from error
 
-        return json.loads(credential_json), credential_revocation_id
+        return credential_json, credential_revocation_id
 
     async def revoke_credential(
         self, revoc_reg_id: str, tails_reader_handle: int, cred_revoc_id: str
-    ) -> dict:
+    ) -> str:
         """
         Revoke a credential.
 
-        Args
+        Args:
             revoc_reg_id: ID of the revocation registry
             tails_reader_handle: handle for the registry tails file
             cred_revoc_id: index of the credential in the revocation registry
+
+        Returns:
+            the revocation delta
 
         """
         with IndyErrorHandler("Exception when revoking credential", IssuerError):
@@ -243,9 +244,7 @@ class IndyIssuer(BaseIssuer):
             )
             # may throw AnoncredsInvalidUserRevocId if using ISSUANCE_ON_DEMAND
 
-        delta = json.loads(revoc_reg_delta_json)
-
-        return delta
+        return revoc_reg_delta_json
 
     async def create_and_store_revocation_registry(
         self,

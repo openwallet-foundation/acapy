@@ -70,9 +70,10 @@ class CredentialManager:
             credential_offer = cached["offer"]
         else:
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-            credential_offer = await issuer.create_credential_offer(
+            credential_offer_json = await issuer.create_credential_offer(
                 credential_definition_id
             )
+            credential_offer = json.loads(credential_offer_json)
             await CredentialExchange.set_cached_key(
                 self.context, cache_key, {"offer": credential_offer}, 3600
             )
@@ -259,11 +260,12 @@ class CredentialManager:
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             (
-                credential_exchange_record.credential,
-                _,  # credential_revocation_id
+                credential_json,
+                credential_exchange_record.revocation_id,
             ) = await issuer.create_credential(
                 schema, credential_offer, credential_request, credential_values
             )
+            credential_exchange_record.credential = json.loads(credential_json)
 
         credential_exchange_record.state = CredentialExchange.STATE_ISSUED
 
