@@ -60,7 +60,7 @@ class TestIndyHolder(AsyncTestCase):
             cred_req_metadata_json=json.dumps("credential_request_metadata"),
             cred_json=json.dumps("credential_data"),
             cred_def_json=json.dumps("credential_definition"),
-            rev_reg_def=None,
+            rev_reg_def_json=None,
         )
 
         assert cred_id == "cred_id"
