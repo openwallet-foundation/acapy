@@ -9,7 +9,7 @@ from typing import Sequence, Tuple, Union
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
-from ..indy.error import IndyErrorHandler
+from ..indy import IndyErrorHandler, create_tails_reader
 from ..storage.indy import IndyStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord
@@ -342,3 +342,36 @@ class IndyHolder(BaseHolder):
             )
 
         return presentation_json
+
+    async def create_revocation_state(
+        self,
+        cred_rev_id: str,
+        rev_reg_def: dict,
+        rev_reg_delta: dict,
+        timestamp: int,
+        tails_file_path: str,
+    ) -> str:
+        """
+        Get credentials stored in the wallet.
+
+        Args:
+            cred_rev_id: credential revocation id in revocation registry
+            rev_reg_def: revocation registry definition
+            rev_reg_delta: revocation delta
+            timestamp: delta timestamp
+
+        Returns:
+            the revocation state
+
+        """
+
+        tails_file_reader = await create_tails_reader(tails_file_path)
+        rev_state_json = await indy.anoncreds.create_revocation_state(
+            tails_file_reader,
+            rev_reg_def_json=json.dumps(rev_reg_def),
+            cred_rev_id=cred_rev_id,
+            rev_reg_delta_json=json.dumps(rev_reg_delta),
+            timestamp=timestamp,
+        )
+
+        return rev_state_json

@@ -123,3 +123,26 @@ class BaseHolder(ABC, metaclass=ABCMeta):
             the ID of the stored credential
 
         """
+
+    @abstractmethod
+    async def create_revocation_state(
+        self,
+        cred_rev_id: str,
+        rev_reg_def: dict,
+        rev_reg_delta: dict,
+        timestamp: int,
+        tails_file_path: str,
+    ) -> str:
+        """
+        Get credentials stored in the wallet.
+
+        Args:
+            cred_rev_id: credential revocation id in revocation registry
+            rev_reg_def: revocation registry definition
+            rev_reg_delta: revocation delta
+            timestamp: delta timestamp
+
+        Returns:
+            the revocation state
+
+        """

@@ -18,7 +18,7 @@ from .base import (
     DEFAULT_ISSUANCE_TYPE,
     DEFAULT_SIGNATURE_TYPE,
 )
-from ..indy.error import IndyErrorHandler
+from ..indy import create_tails_reader, create_tails_writer, IndyErrorHandler
 
 
 class IndyIssuer(BaseIssuer):
@@ -165,7 +165,7 @@ class IndyIssuer(BaseIssuer):
         credential_request: dict,
         credential_values: dict,
         revoc_reg_id: str = None,
-        tails_reader_handle: int = None,
+        tails_file_path: str = None,
     ) -> Tuple[str, str]:
         """
         Create a credential.
@@ -176,7 +176,7 @@ class IndyIssuer(BaseIssuer):
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
             revoc_reg_id: ID of the revocation registry
-            tails_reader_handle: Handle for the tails file blob reader
+            tails_file_path: Path to the local tails file
 
         Returns:
             A tuple of created credential and revocation id
@@ -199,6 +199,12 @@ class IndyIssuer(BaseIssuer):
             encoded_values[attribute] = {}
             encoded_values[attribute]["raw"] = str(credential_value)
             encoded_values[attribute]["encoded"] = encode(credential_value)
+
+        tails_reader_handle = (
+            await create_tails_reader(tails_file_path)
+            if tails_file_path is not None
+            else None
+        )
 
         try:
             (
@@ -224,20 +230,21 @@ class IndyIssuer(BaseIssuer):
         return credential_json, credential_revocation_id
 
     async def revoke_credential(
-        self, revoc_reg_id: str, tails_reader_handle: int, cred_revoc_id: str
+        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_id: str
     ) -> str:
         """
         Revoke a credential.
 
         Args:
             revoc_reg_id: ID of the revocation registry
-            tails_reader_handle: handle for the registry tails file
+            tails_file_path: path to the local tails file
             cred_revoc_id: index of the credential in the revocation registry
 
         Returns:
             the revocation delta
 
         """
+        tails_reader_handle = await create_tails_reader(tails_file_path)
         with IndyErrorHandler("Exception when revoking credential", IssuerError):
             revoc_reg_delta_json = await indy.anoncreds.issuer_revoke_credential(
                 self.wallet.handle, tails_reader_handle, revoc_reg_id, cred_revoc_id
@@ -273,12 +280,7 @@ class IndyIssuer(BaseIssuer):
 
         """
 
-        tails_writer_config = json.dumps(
-            {"base_dir": tails_base_path, "uri_pattern": ""}
-        )
-        tails_writer = await indy.blob_storage.open_writer(
-            "default", tails_writer_config
-        )
+        tails_writer = await create_tails_writer(tails_base_path)
 
         with IndyErrorHandler(
             "Exception when creating revocation registry", IssuerError

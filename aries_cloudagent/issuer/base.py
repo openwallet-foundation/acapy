@@ -142,14 +142,14 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     def revoke_credential(
-        self, revoc_reg_id, tails_reader_handle, cred_revoc_id
+        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_id: str
     ) -> str:
         """
         Revoke a credential.
 
         Args:
             revoc_reg_id: ID of the revocation registry
-            tails_reader_handle: handle for the registry tails file
+            tails_file_path: path to the local tails file
             cred_revoc_id: index of the credential in the revocation registry
 
         Returns:

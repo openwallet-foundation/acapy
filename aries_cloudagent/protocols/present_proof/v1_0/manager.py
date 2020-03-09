@@ -373,17 +373,20 @@ class PresentationManager:
                 revocation_states[rev_reg_id] = {}
 
             rev_reg = revocation_registries[rev_reg_id]
-            if not rev_reg.has_local_tails_file(self.context):
-                await rev_reg.retrieve_tails(self.context)
+            tails_local_path = await rev_reg.get_or_fetch_local_tails_path(self.context)
 
             try:
-                revocation_states[rev_reg_id][
-                    delta_timestamp
-                ] = await rev_reg.create_revocation_state(
-                    self.context, credential["cred_rev_id"], delta, delta_timestamp
+                revocation_states[rev_reg_id][delta_timestamp] = json.loads(
+                    await holder.create_revocation_state(
+                        credential["cred_rev_id"],
+                        rev_reg.reg_def,
+                        delta,
+                        delta_timestamp,
+                        tails_local_path,
+                    )
                 )
             except IndyError as e:
-                logging.error(
+                self._logger.error(
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )
                 raise e

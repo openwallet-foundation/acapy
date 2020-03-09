@@ -506,9 +506,9 @@ class CredentialManager:
                 # FIXME exception on missing
 
                 registry = await registry_record.get_registry()
-                tails_reader = await registry.create_tails_reader(self.context)
+                tails_path = registry.tails_local_path
             else:
-                tails_reader = None
+                tails_path = None
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             (
@@ -520,7 +520,7 @@ class CredentialManager:
                 credential_request,
                 credential_values,
                 credential_exchange_record.revoc_reg_id,
-                tails_reader,
+                tails_path,
             )
             credential_exchange_record.credential = json.loads(credential_json)
 
@@ -617,10 +617,6 @@ class CredentialManager:
         if revoc_reg_def:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
             if not revoc_reg.has_local_tails_file(self.context):
-                self._logger.info(
-                    "Downloading the tails file for the revocation registry: "
-                    f"{revoc_reg.registry_id}"
-                )
                 await revoc_reg.retrieve_tails(self.context)
 
         try:
@@ -709,10 +705,11 @@ class CredentialManager:
         # FIXME exception on missing
 
         registry = await registry_record.get_registry()
-        tails_reader = await registry.create_tails_reader(self.context)
 
         delta_json = await issuer.revoke_credential(
-            registry.registry_id, tails_reader, credential_exchange_record.revocation_id
+            registry.registry_id,
+            registry.tails_local_path,
+            credential_exchange_record.revocation_id,
         )
         delta = json.loads(delta_json)
 
