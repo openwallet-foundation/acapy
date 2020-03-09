@@ -6,10 +6,6 @@ from pathlib import Path
 
 import indy.blob_storage
 
-from .error import IndyErrorHandler
-
-__all__ = ["IndyErrorHandler", "create_tails_reader", "create_tails_writer"]
-
 
 async def create_tails_reader(tails_file_path: str) -> int:
     """Get a handle for the blob_storage file reader."""

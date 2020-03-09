@@ -9,7 +9,8 @@ from typing import Sequence, Tuple, Union
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
-from ..indy import IndyErrorHandler, create_tails_reader
+from ..indy import create_tails_reader
+from ..indy.error import IndyErrorHandler
 from ..storage.indy import IndyStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord

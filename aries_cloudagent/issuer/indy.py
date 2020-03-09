@@ -18,7 +18,8 @@ from .base import (
     DEFAULT_ISSUANCE_TYPE,
     DEFAULT_SIGNATURE_TYPE,
 )
-from ..indy import create_tails_reader, create_tails_writer, IndyErrorHandler
+from ..indy import create_tails_reader, create_tails_writer
+from ..indy.error import IndyErrorHandler
 
 
 class IndyIssuer(BaseIssuer):
