@@ -398,7 +398,7 @@ class OutboundTransportManager:
         """Kick off delivery of a queued message."""
         transport = self.get_transport_instance(queued.transport_id)
         queued.task = self.task_queue.run(
-            transport.handle_message(queued.payload, queued.endpoint),
+            transport.handle_message(queued.context, queued.payload, queued.endpoint),
             lambda completed: self.finished_deliver(queued, completed),
         )
         return queued.task
@@ -411,15 +411,14 @@ class OutboundTransportManager:
             if queued.retries:
                 LOGGER.error(
                     ">>> Posting error: %s; Re-queue failed message ...",
-                    queued.endpoint
+                    queued.endpoint,
                 )
                 queued.retries -= 1
                 queued.state = QueuedOutboundMessage.STATE_RETRY
                 queued.retry_at = time.perf_counter() + 10
             else:
                 LOGGER.exception(
-                    "Outbound message could not be delivered",
-                    exc_info=queued.error,
+                    "Outbound message could not be delivered", exc_info=queued.error,
                 )
                 LOGGER.error(">>> NOT Re-queued, state is DONE, failed to deliver msg.")
                 queued.state = QueuedOutboundMessage.STATE_DONE
