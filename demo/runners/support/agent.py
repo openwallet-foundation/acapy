@@ -125,13 +125,17 @@ class DemoAgent:
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.extra_args = extra_args
 
+        self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if RUN_MODE == "pwd":
             self.endpoint = f"http://{self.external_host}".replace(
                 "{PORT}", str(http_port)
             )
+            self.public_admin_url = f"http://{self.external_host}".replace(
+                "{PORT}", str(admin_port)
+            )
         else:
             self.endpoint = f"http://{self.external_host}:{http_port}"
-        self.admin_url = f"http://{self.internal_host}:{admin_port}"
+            self.public_admin_url = self.admin_url
         self.webhook_port = None
         self.webhook_url = None
         self.webhook_site = None
@@ -202,7 +206,7 @@ class DemoAgent:
         # Real app should publish tails file somewhere and update the revocation registry with the URI.
         # But for the demo, assume the agent's admin end-points are accessible to the other agents
         # Update the revocation registry with the public URL to the tails file
-        tails_file_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        tails_file_url = f"{self.public_admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
         revoc_updated_response = await self.admin_PATCH(
             f"/revocation/registry/{revocation_registry_id}",
             {
