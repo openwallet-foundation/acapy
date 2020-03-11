@@ -12,7 +12,6 @@ from aries_cloudagent.ledger.indy import (
     ClosedPoolError,
     ErrorCode,
     IndyErrorHandler,
-    IndyError,
     IndyLedger,
     GENESIS_TRANSACTION_PATH,
     LedgerConfigError,
@@ -23,6 +22,7 @@ from aries_cloudagent.ledger.indy import (
 from aries_cloudagent.storage.indy import IndyStorage
 from aries_cloudagent.storage.record import StorageRecord
 from aries_cloudagent.wallet.base import DIDInfo
+from indy.error import IndyError, CommonInvalidStructure
 
 
 @pytest.mark.indy
@@ -1843,3 +1843,8 @@ class TestIndyLedger(AsyncTestCase):
         with self.assertRaises(LedgerTransactionError):
             with IndyErrorHandler("message", LedgerTransactionError):
                 raise IndyError(error_code=1)
+
+    def test_error_handler_with_subclass_of_indyerror(self):
+        with self.assertRaises(LedgerTransactionError):
+            with IndyErrorHandler("message", LedgerTransactionError):
+                raise CommonInvalidStructure(error_code=1)
