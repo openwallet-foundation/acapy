@@ -130,12 +130,16 @@ class DemoAgent:
             self.endpoint = f"http://{self.external_host}".replace(
                 "{PORT}", str(http_port)
             )
-            self.public_admin_url = f"http://{self.external_host}".replace(
+        else:
+            self.endpoint = f"http://{self.external_host}:{http_port}"
+        if os.getenv("PUBLIC_TAILS_URL"):
+            self.public_tails_url = os.getenv("PUBLIC_TAILS_URL")
+        elif RUN_MODE == "pwd":
+            self.public_tails_url = f"http://{self.external_host}".replace(
                 "{PORT}", str(admin_port)
             )
         else:
-            self.endpoint = f"http://{self.external_host}:{http_port}"
-            self.public_admin_url = self.admin_url
+            self.public_tails_url = self.admin_url
         self.webhook_port = None
         self.webhook_url = None
         self.webhook_site = None
@@ -206,7 +210,8 @@ class DemoAgent:
         # Real app should publish tails file somewhere and update the revocation registry with the URI.
         # But for the demo, assume the agent's admin end-points are accessible to the other agents
         # Update the revocation registry with the public URL to the tails file
-        tails_file_url = f"{self.public_admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        tails_file_admin_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
         revoc_updated_response = await self.admin_PATCH(
             f"/revocation/registry/{revocation_registry_id}",
             {
@@ -214,7 +219,12 @@ class DemoAgent:
             }
         )
         tails_public_uri = revoc_updated_response["result"]["tails_public_uri"]
+        log_msg(f"Revocation Registry Tails File Admin URL: {tails_file_admin_url}")
         log_msg(f"Revocation Registry Tails File URL: {tails_public_uri}")
+        log_msg(f"================")
+        log_msg(f"mkdir -p /tmp/tails-files/revocation/registry/{revocation_registry_id}/")
+        log_msg(f"curl -X GET \"{tails_file_admin_url}\" --output /tmp/tails-files/revocation/registry/{revocation_registry_id}/tails-file")
+        log_msg(f"================")
         assert tails_public_uri == tails_file_url
 
         revoc_publish_response = await self.admin_POST(
