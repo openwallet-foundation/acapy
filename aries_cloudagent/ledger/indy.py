@@ -58,7 +58,7 @@ class IndyErrorHandler:
 
     def __exit__(self, err_type, err_value, err_traceback):
         """Exit the context manager."""
-        if err_type is IndyError:
+        if isinstance(err_value, IndyError):
             raise self.wrap_error(
                 err_value, self.message, self.error_cls
             ) from err_value
