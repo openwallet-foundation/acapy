@@ -1,8 +1,12 @@
 """Classes for managing a revocation registry."""
 
 import json
-from pathlib import Path
+import re
 
+from pathlib import Path
+from tempfile import gettempdir
+
+import indy.anoncreds
 import indy.blob_storage
 
 from ...config.injection_context import InjectionContext
@@ -50,8 +54,11 @@ class RevocationRegistry:
         """Initialize a revocation registry instance from a definition."""
         reg_id = revoc_reg_def["id"]
         tails_location = revoc_reg_def["value"]["tailsLocation"]
+        issuer_did_match = re.match(r"^.*?([^:]*):3:CL:.*", revoc_reg_def["credDefId"])
+        issuer_did = issuer_did_match.group(1) if issuer_did_match else None
         init = {
             "cred_def_id": revoc_reg_def["credDefId"],
+            "issuer_did": issuer_did,
             "reg_def_type": revoc_reg_def["revocDefType"],
             "max_creds": revoc_reg_def["value"]["maxCredNum"],
             "tag": revoc_reg_def["tag"],
@@ -147,9 +154,10 @@ class RevocationRegistry:
             return self._tails_local_path
 
         tails_file_dir = context.settings.get(
-            "holder.revocation.tails_files.path", "/tmp/indy/revocation/tails_files"
+            "holder.revocation.tails_files.path",
+            Path(gettempdir(), "indy", "revocation", "tails_files")
         )
-        return f"{tails_file_dir}/{self._tails_hash}"
+        return str(Path(tails_file_dir).joinpath(self._tails_hash))
 
     def has_local_tails_file(self, context: InjectionContext) -> bool:
         """Test if the tails file exists locally."""
@@ -197,12 +205,13 @@ class RevocationRegistry:
         timestamp: int,
     ):
         """
-        Get credentials stored in the wallet.
+        Create a revocation state.
 
         Args:
+            context: configuration context with holder's path to revocation tails files
             cred_rev_id: credential revocation id in revocation registry
             rev_reg_delta: revocation delta
-            timestamp: delta timestamp
+            timestamp: delta ('to') timestamp
 
         :param context:
         :return revocation state
