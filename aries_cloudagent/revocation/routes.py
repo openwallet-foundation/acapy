@@ -68,6 +68,7 @@ async def revocation_create_registry(request: web.BaseRequest):
 
     # check we published this cred def
     storage = await context.inject(BaseStorage)
+
     found = await storage.search_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
         tag_query={"cred_def_id": credential_definition_id},
