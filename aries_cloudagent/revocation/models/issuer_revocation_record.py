@@ -7,10 +7,17 @@ from typing import Any, Sequence
 
 import indy.anoncreds
 import indy.blob_storage
-from marshmallow import fields
+from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
+from ...messaging.valid import (
+    BASE58_SHA256_HASH,
+    INDY_CRED_DEF_ID,
+    INDY_DID,
+    INDY_REV_REG_ID,
+    UUIDFour
+)
 from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet
 
@@ -77,7 +84,7 @@ class IssuerRevocationRecord(BaseRecord):
     ):
         """Initialize the issuer revocation registry record."""
         super(IssuerRevocationRecord, self).__init__(
-            record_id, state=state or self.STATE_INIT, **kwargs
+            record_id, state=state or IssuerRevocationRecord.STATE_INIT, **kwargs
         )
         self.cred_def_id = cred_def_id
         self.error_msg = error_msg
@@ -149,24 +156,41 @@ class IssuerRevocationRecord(BaseRecord):
         self.revoc_reg_id = revoc_reg_id
         self.revoc_reg_def = json.loads(revoc_reg_def_json)
         self.revoc_reg_entry = json.loads(revoc_reg_entry_json)
-        self.state = self.STATE_GENERATED
+        self.state = IssuerRevocationRecord.STATE_GENERATED
         self.tails_hash = self.revoc_reg_def["value"]["tailsHash"]
         self.tails_local_path = self.revoc_reg_def["value"]["tailsLocation"]
         await self.save(context, reason="Generated registry")
 
     def set_tails_file_public_uri(self, tails_file_uri):
         """Update tails file's publicly accessible URI."""
+        if not (
+            self.revoc_reg_def and
+            self.revoc_reg_def.get("value", {}).get("tailsLocation")
+        ):
+            raise RevocationError("Revocation registry undefined")
+
         self.tails_public_uri = tails_file_uri
         self.revoc_reg_def["value"]["tailsLocation"] = tails_file_uri
 
     async def publish_registry_definition(self, context: InjectionContext):
         """Send the revocation registry definition to the ledger."""
+        if not (self.revoc_reg_def and self.issuer_did):
+            raise RevocationError("Revocation registry undefined")
+
         ledger: BaseLedger = await context.inject(BaseLedger)
         async with ledger:
             await ledger.send_revoc_reg_def(self.revoc_reg_def, self.issuer_did)
 
     async def publish_registry_entry(self, context: InjectionContext):
         """Send a registry entry to the ledger."""
+        if not (
+            self.revoc_reg_id
+            and self.revoc_def_type
+            and self.revoc_reg_entry
+            and self.issuer_did
+        ):
+            raise RevocationError("Revocation registry undefined")
+
         ledger: BaseLedger = await context.inject(BaseLedger)
         async with ledger:
             await ledger.send_revoc_reg_entry(
@@ -221,7 +245,7 @@ class IssuerRevocationRecord(BaseRecord):
 
     async def mark_full(self, context: InjectionContext):
         """Change the registry state to full."""
-        self.state = self.STATE_FULL
+        self.state = IssuerRevocationRecord.STATE_FULL
         await self.save(context)
 
     def __eq__(self, other: Any) -> bool:
@@ -237,16 +261,75 @@ class IssuerRevocationRecordSchema(BaseRecordSchema):
 
         model_class = IssuerRevocationRecord
 
-    record_id = fields.Str(required=False)
-    cred_def_id = fields.Str(required=False)
-    error_msg = fields.Str(required=False)
-    issuance_type = fields.Str(required=False)
-    issuer_did = fields.Str(required=False)
-    max_cred_num = fields.Int(required=False)
-    revoc_def_type = fields.Str(required=False)
-    revoc_reg_id = fields.Str(required=False)
-    revoc_reg_def = fields.Dict(required=False)
-    revoc_reg_entry = fields.Dict(required=False)
-    tag = fields.Str(required=False)
-    tails_hash = fields.Str(required=False)
-    tails_public_uri = fields.Str(required=False)
+    record_id = fields.Str(
+        required=False,
+        description="Issuer revocation record identifier",
+        example=UUIDFour.EXAMPLE
+    )
+    cred_def_id = fields.Str(
+        required=False,
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID
+    )
+    error_msg = fields.Str(
+        required=False,
+        description="Error message",
+        example="Revocation registry undefined",
+    )
+    issuance_type = fields.Str(
+        required=False,
+        description="Issuance type (ISSUANCE_BY_DEFAULT or ISSUANCE_ON_DEMAND)",
+        example=IssuerRevocationRecord.ISSUANCE_BY_DEFAULT,
+        validate=validate.OneOf(
+            [
+                IssuerRevocationRecord.ISSUANCE_BY_DEFAULT,
+                IssuerRevocationRecord.ISSUANCE_ON_DEMAND
+            ]
+        )
+    )
+    issuer_did = fields.Str(
+        required=False,
+        description="Issuer DID",
+        **INDY_DID
+    )
+    max_cred_num = fields.Int(
+        required=False,
+        description="Maximum number of credentials for revocation registry",
+        example=1000
+    )
+    revoc_def_type = fields.Str(
+        required=False,
+        description="Revocation registry type (specify CL_ACCUM)",
+        example="CL_ACCUM",
+        validate=validate.Equal("CL_ACCUM")
+    )
+    revoc_reg_id = fields.Str(
+        required=False,
+        description="Revocation registry identifier",
+        **INDY_REV_REG_ID
+    )
+    revoc_reg_def = fields.Dict(
+        required=False,
+        description="Revocation registry definition"
+    )
+    revoc_reg_entry = fields.Dict(
+        required=False,
+        description="Revocation registry entry"
+    )
+    tag = fields.Str(
+        required=False,
+        description="Tag within issuer revocation registry identifier"
+    )
+    tails_hash = fields.Str(
+        required=False,
+        description="Tails hash",
+        **BASE58_SHA256_HASH
+    )
+    tails_public_uri = fields.Str(
+        required=False,
+        description="Public URI for tails file"
+    )
+    tails_local_path = fields.Str(
+        required=False,
+        description="Local path to tails file"
+    )
