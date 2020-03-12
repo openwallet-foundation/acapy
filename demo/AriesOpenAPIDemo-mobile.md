@@ -7,6 +7,7 @@ You can use the Faber aca-py agent to issue credentials to a mobile wallet.  To 
 - [Getting Started](#getting-started)
 - [Running in a Browser](#running-in-a-browser)
 - [Running in Docker](#running-in-docker)
+- [Enabling Revocation](#enabling-revocation)
 - [Installing the Streetcred Agent](#installing-the-streetcred-agent)
 - [Creating an Invitation](#creating-an-invitation)
 - [Converting the Invitation to a QR Code](#converting-the-invitation-to-a-qr-code)
@@ -17,6 +18,7 @@ You can use the Faber aca-py agent to issue credentials to a mobile wallet.  To 
 - [Issuing a Proof Request](#issuing-a-proof-request)
 - [Responding to the Proof Request with Streetcred](#responding-to-the-proof-request-with-streetcred)
 - [Review the Received Proof](#review-the-received-proof)
+- [Revoke the Credential and Send Another Proof Request](#revoke-the-credential-and-send-another-proof-request)
 - [Conclusion](#conclusion)
 
 ## Getting Started
@@ -39,9 +41,99 @@ This is similar to the instructions in the prior "Play with Docker" section, exc
 - We are running in "auto" mode, so we will have to do fewer manual acknowledgements
 - Play with Docker exposes the Agent's' port (in this case port 8021 of the container) on a public URL that the mobile app can access
 
-Running in Docker
+## Running in Docker
 
 An alternative for running locally - left as an excercise for the user - is to use ngrok and then set your agent's endpoint to the ngrok url.
+
+## Enabling Revocation
+
+There are two things you need to do to run with revocation enabled:
+
+1. Setup a public `https` repository to publish the tails files (in this example we will publish to github)
+2. Run `faber` with a few extra parameters
+
+Note that the `https` step is required to enable revocation on a mobile wallet, such as StreetCred.
+
+### Setup a Public HTTPS Tails Server (e.g. github)
+
+Create yourself a public github repository called `tails-files` (actually you can use any name but this will be the least friction)
+
+<details>
+    <summary>Click here to view screenshot (github.com)</summary>
+    <img src="./collateral/revocation-1-github-repo.png" alt="Github repo">
+</details>
+
+Clone this repo in your local `/tmp` directory
+
+```bash
+$ cd /tmp/
+$ git clone https://github.com/ianco/tails-files.git
+```
+
+That's it!  You will manually copy tails files here and then commit them to github.
+
+### Run `faber` with a few extra parameters
+
+You have to tell `faber` (a) to enable revocation, and (b) to advertise the location of the tails files in github.
+
+You acomplish both as follows:
+
+```bash
+PUBLIC_TAILS_URL=https://github.com/ianco/tails-files/raw/master TAILS_FILE_COUNT=10 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events --revocation
+```
+
+The `--revocation` flag tells faber to enable revocation and create a revocation registry and tails file.
+
+For `PUBLIC_TAILS_URL`, substitute the location of your own github repository.  You can see this URL in the ledger transaction for the revocation registry.  If you copy & paste the `Tails file location:` url into your browser it should download the tails file.
+
+<details>
+    <summary>Click here to view screenshot (ledger)</summary>
+    <img src="./collateral/revocation-2-ledger.png" alt="Ledger">
+</details>
+
+For `TAILS_FILE_COUNT`, enter the size of your tails file.  Use a small number to keep things quick!  10 or 20 is fine for this demo.
+
+Note that the tails file is published by the agent itself, you need to manually copy it to github to make it available via https.  More on that step later!
+
+### Copying your tails file to github.com
+
+OK we are now "later" and we will copy our tails file over to our github repo.
+
+On faber startup, look for the following in the logs:
+
+```
+Revocation Registry ID: EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2
+Revocation Registry Tails File Admin URL: http://127.0.0.1:8021/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file
+Revocation Registry Tails File URL: https://github.com/ianco/tails-files/raw/master/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file
+================
+mkdir -p /tmp/tails-files/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/
+curl -X GET "http://127.0.0.1:8021/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file" --output /tmp/tails-files/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file
+================
+```
+
+There are two commands in between the "================" markers:
+
+1. Run this to create the folder in your local github repo clone:
+
+```bash
+$mkdir -p /tmp/tails-files/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/
+```
+
+2. Run this to download the tails file to your local dir (note you will need to "patch in" the server name - it will be the PWD host name for port 8021):
+
+```bash
+curl -X GET "http://ip10-0-77-4-bpl64sjschj0j6gkkr60-8021.direct.play-with-von.vonx.io/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file" --output /tmp/tails-files/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file
+```
+
+3. Commit this file!
+
+```bash
+$ git add .
+$ git commit -m "New tails file"
+$ git push
+```
+
+That's it!  You are now serving your tails file on a secure https connection.
 
 ## Installing the Streetcred Agent
 
@@ -220,6 +312,14 @@ In the Faber console window, the proof should be received as validated.
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-4-proof-4.png" alt="View Connection Status">
 </details>
+
+## Revoke the Credential and Send Another Proof Request
+
+If you have enabled revocation, you can try revoking the credential (`faber` option `4`) - you will need the credential exchnage id from the original credential issuance.
+
+Then try sending another proof request and see what happens in StreetCred!
+
+Note - screenshots not yet provided for this last step.
 
 ## Conclusion
 
