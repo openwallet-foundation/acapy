@@ -108,7 +108,13 @@ if ! [ -z "$GENESIS_URL" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e GENESIS_URL=${GENESIS_URL}"
 fi
 if ! [ -z "$EVENTS" ]; then
-	DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
+    DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
+fi
+if ! [ -z "$PUBLIC_TAILS_URL" ]; then
+    DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"
+fi
+if ! [ -z "$TAILS_FILE_COUNT" ]; then
+    DOCKER_ENV="${DOCKER_ENV} -e TAILS_FILE_COUNT=${TAILS_FILE_COUNT}"
 fi
 
 if ! [[ -z "${ENABLE_PYDEVD_PYCHARM}" ]]; then

@@ -29,6 +29,8 @@ CRED_PREVIEW_TYPE = (
 
 LOGGER = logging.getLogger(__name__)
 
+TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 20))
+
 
 class FaberAgent(DemoAgent):
     def __init__(
@@ -185,7 +187,7 @@ async def main(
                 )
                 revocation_registry_id = await (
                     agent.create_and_publish_revocation_registry(
-                        credential_definition_id, 2
+                        credential_definition_id, TAILS_FILE_COUNT
                     )
                 )
         else:
@@ -266,6 +268,7 @@ async def main(
                     req_attrs.append(
                         {"name": "degree", "restrictions": [{"issuer_did": agent.did}]}
                     )
+                # test self-attested claims
                 req_attrs.append({"name": "self_attested_thing"},)
                 req_preds = [
                     # test zero-knowledge proofs
@@ -312,7 +315,7 @@ async def main(
                 log_status("#19 Add another revocation registry")
                 revocation_registry_id = await (
                     agent.create_and_publish_revocation_registry(
-                        credential_definition_id, 2
+                        credential_definition_id, TAILS_FILE_COUNT
                     )
                 )
 
