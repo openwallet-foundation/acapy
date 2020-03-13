@@ -287,7 +287,9 @@ class PresentationManager:
         for referent in requested_referents:
             credential_id = requested_referents[referent]["cred_id"]
             if credential_id not in credentials:
-                credentials[credential_id] = await holder.get_credential(credential_id)
+                credentials[credential_id] = json.loads(
+                    await holder.get_credential(credential_id)
+                )
 
         # Get all schema, credential definition, and revocation registry in use
         ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -341,8 +343,10 @@ class PresentationManager:
                     if "to" not in non_revoked_timespan:
                         non_revoked_timespan["to"] = current_timestamp
 
-                    key = f"{rev_reg_id}_{non_revoked_timespan['from']}_" \
-                          f"{non_revoked_timespan['to']}"
+                    key = (
+                        f"{rev_reg_id}_{non_revoked_timespan['from']}_"
+                        f"{non_revoked_timespan['to']}"
+                    )
                     if key not in revoc_reg_deltas:
                         (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
                             rev_reg_id,
@@ -369,17 +373,20 @@ class PresentationManager:
                 revocation_states[rev_reg_id] = {}
 
             rev_reg = revocation_registries[rev_reg_id]
-            if not rev_reg.has_local_tails_file(self.context):
-                await rev_reg.retrieve_tails(self.context)
+            tails_local_path = await rev_reg.get_or_fetch_local_tails_path(self.context)
 
             try:
-                revocation_states[rev_reg_id][
-                    delta_timestamp
-                ] = await rev_reg.create_revocation_state(
-                    self.context, credential["cred_rev_id"], delta, delta_timestamp
+                revocation_states[rev_reg_id][delta_timestamp] = json.loads(
+                    await holder.create_revocation_state(
+                        credential["cred_rev_id"],
+                        rev_reg.reg_def,
+                        delta,
+                        delta_timestamp,
+                        tails_local_path,
+                    )
                 )
             except IndyError as e:
-                logging.error(
+                self._logger.error(
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )
                 raise e
@@ -396,13 +403,14 @@ class PresentationManager:
                     "timestamp"
                 ] = referented["timestamp"]
 
-        indy_proof = await holder.create_presentation(
+        indy_proof_json = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
             requested_credentials,
             schemas,
             credential_definitions,
             revocation_states,
         )
+        indy_proof = json.loads(indy_proof_json)
 
         presentation_message = Presentation(
             comment=comment,

@@ -7,6 +7,7 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
+from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 
@@ -106,10 +107,15 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
 
     ledger: BaseLedger = await context.inject(BaseLedger)
+    issuer: BaseIssuer = await context.inject(BaseIssuer)
     async with ledger:
         credential_definition_id, credential_definition = await shield(
             ledger.create_and_send_credential_definition(
-                schema_id, tag=tag, support_revocation=support_revocation
+                issuer,
+                schema_id,
+                signature_type=None,
+                tag=tag,
+                support_revocation=support_revocation,
             )
         )
 
