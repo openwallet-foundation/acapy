@@ -90,13 +90,29 @@ class TestRevocationRegistry(AsyncTestCase):
         assert rev_reg.tails_local_path == "dummy"
         rev_reg.tails_public_uri = "dummy"
         assert rev_reg.tails_public_uri == "dummy"
+        return rev_reg.reg_def == REV_REG_DEF
 
     async def test_tails_local_path(self):
         rr_def_public = deepcopy(REV_REG_DEF)
         rr_def_public["value"]["tailsLocation"] = "http://sample.ca:8088/path"
-        rev_reg = RevocationRegistry.from_definition(rr_def_public, public_def=True)
+        rev_reg_pub = RevocationRegistry.from_definition(rr_def_public, public_def=True)
 
-        assert rev_reg.get_receiving_tails_local_path(self.context) == TAILS_LOCAL
+        assert rev_reg_pub.get_receiving_tails_local_path(self.context) == TAILS_LOCAL
+
+        rev_reg_loc = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
+        assert rev_reg_loc.get_receiving_tails_local_path(self.context) == TAILS_LOCAL
+
+        with async_mock.patch.object(
+            Path, "is_file", autospec=True
+        ) as mock_is_file:
+            mock_is_file.return_value = True
+
+            assert await rev_reg_loc.get_or_fetch_local_tails_path(
+                self.context
+            ) == TAILS_LOCAL
+
+        rmtree(TAILS_DIR, ignore_errors=True)
+        assert not rev_reg_loc.has_local_tails_file(self.context)
 
     async def test_retrieve_tails(self):
         rev_reg = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
@@ -108,39 +124,69 @@ class TestRevocationRegistry(AsyncTestCase):
         rr_def_public["value"]["tailsLocation"] = "http://sample.ca:8088/path"
         rev_reg = RevocationRegistry.from_definition(rr_def_public, public_def=True)
 
+        more_magic = async_mock.MagicMock()
         with async_mock.patch.object(
-            test_module, "fetch_stream", async_mock.CoroutineMock()
-        ) as mock_fetch:
-            mock_fetch.side_effect = test_module.FetchError()
+            test_module, "Session", autospec=True
+        ) as mock_session:
+            mock_session.return_value.__enter__=async_mock.MagicMock(
+                return_value=more_magic
+            )
+            more_magic.get=async_mock.MagicMock(
+                side_effect=test_module.RequestException('Not this time')
+            )
 
             with self.assertRaises(RevocationError) as x_retrieve:
                 await rev_reg.retrieve_tails(self.context)
                 assert x_retrieve.message.contains("Error retrieving tails file")
 
-        rmtree(TAILS_DIR, ignore_errors=True)
+            rmtree(TAILS_DIR, ignore_errors=True)
 
+        more_magic = async_mock.MagicMock()
         with async_mock.patch.object(
-            test_module, "fetch_stream", async_mock.CoroutineMock()
-        ) as mock_fetch:
-            mock_fetch.return_value = async_mock.CoroutineMock(
-                read=async_mock.CoroutineMock(side_effect=[b"abcd1234", b""])
+            test_module, "Session", autospec=True
+        ) as mock_session:
+            mock_session.return_value.__enter__=async_mock.MagicMock(
+                return_value=more_magic
             )
+            more_magic.get=async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    iter_content=async_mock.MagicMock(
+                        side_effect=[(b"abcd1234",), (b"", )]
+                    )
+                )
+            )
+
             with self.assertRaises(RevocationError) as x_retrieve:
                 await rev_reg.retrieve_tails(self.context)
                 assert x_retrieve.message.contains(
-                    "The has of the downloaded tails file does not match."
+                    "The hash of the downloaded tails file does not match."
                 )
 
+            rmtree(TAILS_DIR, ignore_errors=True)
+
+        more_magic = async_mock.MagicMock()
         with async_mock.patch.object(
-            test_module, "fetch_stream", async_mock.CoroutineMock()
-        ) as mock_fetch, async_mock.patch.object(
+            test_module, "Session", autospec=True
+        ) as mock_session, async_mock.patch.object(
             base58, "b58encode", async_mock.MagicMock()
-        ) as mock_b58enc:
-            mock_fetch.return_value = async_mock.CoroutineMock(
-                read=async_mock.CoroutineMock(side_effect=[b"abcd1234", b""])
+        ) as mock_b58enc, async_mock.patch.object(
+            Path, "is_file", autospec=True
+        ) as mock_is_file:
+            mock_session.return_value.__enter__=async_mock.MagicMock(
+                return_value=more_magic
             )
+            more_magic.get=async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    iter_content=async_mock.MagicMock(
+                        side_effect=[(b"abcd1234",), (b"", )]
+                    )
+                )
+            )
+            mock_is_file.return_value = False
+
             mock_b58enc.return_value = async_mock.MagicMock(
                 decode=async_mock.MagicMock(return_value=TAILS_HASH)
             )
-            await rev_reg.retrieve_tails(self.context)
-            assert Path(TAILS_LOCAL).is_file()
+            await rev_reg.get_or_fetch_local_tails_path(self.context)
+
+            rmtree(TAILS_DIR, ignore_errors=True)

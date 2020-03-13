@@ -8,7 +8,7 @@ import pytest
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....config.injection_context import InjectionContext
-from ....issuer.base import BaseIssuer
+from ....issuer.base import BaseIssuer, IssuerError
 from ....issuer.indy import IndyIssuer
 from ....ledger.base import BaseLedger
 from ....storage.base import BaseStorage
@@ -49,6 +49,14 @@ class TestRecord(AsyncTestCase):
         )
         issuer = async_mock.MagicMock(BaseIssuer)
         self.context.injector.bind_instance(BaseIssuer, issuer)
+
+        with async_mock.patch.object(
+            issuer, "create_and_store_revocation_registry", async_mock.CoroutineMock()
+        ) as mock_create_store_rr:
+            mock_create_store_rr.side_effect = IssuerError("Not this time")
+
+            with self.assertRaises(RevocationError):
+                await rec.generate_registry(self.context, None)
 
         issuer.create_and_store_revocation_registry.return_value = (
             REV_REG_ID,
