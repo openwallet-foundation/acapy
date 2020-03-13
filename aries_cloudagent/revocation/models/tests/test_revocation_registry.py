@@ -1,13 +1,9 @@
 import json
 
-import indy.anoncreds
-import indy.blob_storage
-
 import pytest
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from copy import deepcopy
-from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 
@@ -27,7 +23,7 @@ from .. import revocation_registry as test_module
 
 TEST_DID = "FkjWznKwA4N1JEp2iPiKPG"
 CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
-REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag1",
+REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag1"
 TAILS_DIR = "/tmp/indy/revocation/tails_files"
 TAILS_HASH = "8UW1Sz5cqoUnK9hqQk7nvtKK65t7Chu3ui866J23sFyJ"
 TAILS_LOCAL = f"{TAILS_DIR}/{TAILS_HASH}"
@@ -46,19 +42,16 @@ REV_REG_DEF = {
             }
         },
         "tailsHash": TAILS_HASH,
-        "tailsLocation": TAILS_LOCAL
-    }
+        "tailsLocation": TAILS_LOCAL,
+    },
 }
 
 
 class TestRevocationRegistry(AsyncTestCase):
-
     def setUp(self):
         self.context = InjectionContext(
-            settings={
-                "holder.revocation.tails_files.path": TAILS_DIR
-            },
-            enforce_typing=False
+            settings={"holder.revocation.tails_files.path": TAILS_DIR},
+            enforce_typing=False,
         )
 
         self.storage = BasicStorage()
@@ -72,10 +65,7 @@ class TestRevocationRegistry(AsyncTestCase):
         assert str(rev_reg).startswith("<RevocationRegistry")
 
         for public in (True, False):
-            rev_reg = RevocationRegistry.from_definition(
-                REV_REG_DEF,
-                public_def=public
-            )
+            rev_reg = RevocationRegistry.from_definition(REV_REG_DEF, public_def=public)
             if public:
                 assert not rev_reg.tails_local_path
                 assert rev_reg.tails_public_uri
@@ -87,10 +77,7 @@ class TestRevocationRegistry(AsyncTestCase):
         assert RevocationRegistry.get_temp_dir()
 
     async def test_properties(self):
-        rev_reg = RevocationRegistry.from_definition(
-            REV_REG_DEF,
-            public_def=False
-        )
+        rev_reg = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
 
         assert rev_reg.cred_def_id == REV_REG_DEF["credDefId"]
         assert rev_reg.issuer_did == TEST_DID
@@ -104,52 +91,22 @@ class TestRevocationRegistry(AsyncTestCase):
         rev_reg.tails_public_uri = "dummy"
         assert rev_reg.tails_public_uri == "dummy"
 
-    async def test_tails_reader(self):
-        makedirs(TAILS_DIR, exist_ok=True)
-        with open(TAILS_LOCAL, "a") as f:
-            print("1234123412431234", file=f)
-
-        rev_reg = RevocationRegistry.from_definition(
-            REV_REG_DEF,
-            public_def=False
-        )
-
-        with async_mock.patch.object(
-            indy.blob_storage, "open_reader", async_mock.CoroutineMock()
-        ) as mock_blob_open_reader:
-            result = await rev_reg.create_tails_reader(self.context)
-            assert result == mock_blob_open_reader.return_value
-            assert rev_reg.has_local_tails_file(self.context)
-
-        rmtree(TAILS_DIR, ignore_errors=True)
-        with self.assertRaises(FileNotFoundError):
-            await rev_reg.create_tails_reader(self.context)
-
     async def test_tails_local_path(self):
         rr_def_public = deepcopy(REV_REG_DEF)
         rr_def_public["value"]["tailsLocation"] = "http://sample.ca:8088/path"
-        rev_reg = RevocationRegistry.from_definition(
-            rr_def_public,
-            public_def=True
-        )
+        rev_reg = RevocationRegistry.from_definition(rr_def_public, public_def=True)
 
         assert rev_reg.get_receiving_tails_local_path(self.context) == TAILS_LOCAL
 
     async def test_retrieve_tails(self):
-        rev_reg = RevocationRegistry.from_definition(
-            REV_REG_DEF,
-            public_def=False
-        )
+        rev_reg = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
         with self.assertRaises(RevocationError) as x_retrieve:
             await rev_reg.retrieve_tails(self.context)
             assert x_retrieve.message.contains("Tails file public URI is empty")
 
         rr_def_public = deepcopy(REV_REG_DEF)
         rr_def_public["value"]["tailsLocation"] = "http://sample.ca:8088/path"
-        rev_reg = RevocationRegistry.from_definition(
-            rr_def_public,
-            public_def=True
-        )
+        rev_reg = RevocationRegistry.from_definition(rr_def_public, public_def=True)
 
         with async_mock.patch.object(
             test_module, "fetch_stream", async_mock.CoroutineMock()
@@ -166,12 +123,7 @@ class TestRevocationRegistry(AsyncTestCase):
             test_module, "fetch_stream", async_mock.CoroutineMock()
         ) as mock_fetch:
             mock_fetch.return_value = async_mock.CoroutineMock(
-                read=async_mock.CoroutineMock(
-                    side_effect=[
-                        b"abcd1234",
-                        b""
-                    ]
-                )
+                read=async_mock.CoroutineMock(side_effect=[b"abcd1234", b""])
             )
             with self.assertRaises(RevocationError) as x_retrieve:
                 await rev_reg.retrieve_tails(self.context)
@@ -185,47 +137,10 @@ class TestRevocationRegistry(AsyncTestCase):
             base58, "b58encode", async_mock.MagicMock()
         ) as mock_b58enc:
             mock_fetch.return_value = async_mock.CoroutineMock(
-                read=async_mock.CoroutineMock(
-                    side_effect=[
-                        b"abcd1234",
-                        b""
-                    ]
-                )
+                read=async_mock.CoroutineMock(side_effect=[b"abcd1234", b""])
             )
             mock_b58enc.return_value = async_mock.MagicMock(
-                decode=async_mock.MagicMock(
-                    return_value=TAILS_HASH
-                )
+                decode=async_mock.MagicMock(return_value=TAILS_HASH)
             )
             await rev_reg.retrieve_tails(self.context)
             assert Path(TAILS_LOCAL).is_file()
-
-    async def test_create_revocation_state(self):
-        rev_reg = RevocationRegistry.from_definition(
-            REV_REG_DEF,
-            public_def=False
-        )
-        rr_state = {
-            "witness": {
-                "omega": "1 ..."
-            },
-            "rev_reg": {
-                "accum": "21 ..."
-            },
-            "timestamp": 1234567890
-        }
-
-        with async_mock.patch.object(
-            rev_reg, "create_tails_reader", async_mock.CoroutineMock()
-        ) as mock_create_tails_reader, async_mock.patch.object(
-            indy.anoncreds, "create_revocation_state", async_mock.CoroutineMock()
-        ) as mock_create_rr_state:
-            mock_create_rr_state.return_value = json.dumps(rr_state)
-
-            result = await rev_reg.create_revocation_state(
-                self.context,
-                None,
-                None,
-                None
-            )
-            assert result == rr_state

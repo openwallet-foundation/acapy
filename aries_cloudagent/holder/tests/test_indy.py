@@ -5,8 +5,10 @@ import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+import indy.anoncreds
 from indy.error import IndyError, ErrorCode
 
+import aries_cloudagent.holder.indy as test_module
 from aries_cloudagent.holder.indy import IndyHolder
 from aries_cloudagent.storage.error import StorageError
 from aries_cloudagent.storage.record import StorageRecord
@@ -269,3 +271,38 @@ class TestIndyHolder(AsyncTestCase):
         )
 
         assert json.loads(presentation_json) == {}
+
+    async def test_create_revocation_state(self):
+        rr_state = {
+            "witness": {"omega": "1 ..."},
+            "rev_reg": {"accum": "21 ..."},
+            "timestamp": 1234567890,
+        }
+        holder = IndyHolder("wallet")
+
+        with async_mock.patch.object(
+            test_module, "create_tails_reader", async_mock.CoroutineMock()
+        ) as mock_create_tails_reader, async_mock.patch.object(
+            indy.anoncreds, "create_revocation_state", async_mock.CoroutineMock()
+        ) as mock_create_rr_state:
+            mock_create_rr_state.return_value = json.dumps(rr_state)
+
+            cred_rev_id = "1"
+            rev_reg_def = {"def": 1}
+            rev_reg_delta = {"delta": 1}
+            timestamp = 1234567890
+            tails_path = "/tmp/some.tails"
+
+            result = await holder.create_revocation_state(
+                cred_rev_id, rev_reg_def, rev_reg_delta, timestamp, tails_path
+            )
+            assert json.loads(result) == rr_state
+
+            mock_create_rr_state.assert_awaited_once_with(
+                mock_create_tails_reader.return_value,
+                rev_reg_def_json=json.dumps(rev_reg_def),
+                cred_rev_id=cred_rev_id,
+                rev_reg_delta_json=json.dumps(rev_reg_delta),
+                timestamp=timestamp,
+            )
+
