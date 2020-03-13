@@ -1,7 +1,13 @@
 """Base holder class."""
 
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Union
+from typing import Tuple, Union
+
+from ..core.error import BaseError
+
+
+class HolderError(BaseError):
+    """Base class for holder exceptions."""
 
 
 class BaseHolder(ABC, metaclass=ABCMeta):
@@ -18,7 +24,7 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         return "<{}>".format(self.__class__.__name__)
 
     @abstractmethod
-    async def get_credential(self, credential_id: str):
+    async def get_credential(self, credential_id: str) -> str:
         """
         Get a credential stored in the wallet.
 
@@ -61,7 +67,7 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         schemas: dict,
         credential_definitions: dict,
         rev_states_json: dict = None,
-    ):
+    ) -> str:
         """
         Get credentials stored in the wallet.
 
@@ -75,10 +81,10 @@ class BaseHolder(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def create_credential_request(
-        self, credential_offer, credential_definition, holder_did: str
-    ):
+        self, credential_offer: dict, credential_definition: dict, holder_did: str
+    ) -> Tuple[str, str]:
         """
-        Create a credential offer for the given credential definition id.
+        Create a credential request for the given credential offer.
 
         Args:
             credential_offer: The credential offer to create request for
@@ -86,19 +92,19 @@ class BaseHolder(ABC, metaclass=ABCMeta):
             holder_did: the DID of the agent making the request
 
         Returns:
-            A credential request
+            A tuple of the credential request and credential request metadata
 
         """
 
     @abstractmethod
     async def store_credential(
         self,
-        credential_definition,
-        credential_data,
-        credential_request_metadata,
+        credential_definition: dict,
+        credential_data: dict,
+        credential_request_metadata: dict,
         credential_attr_mime_types=None,
-        credential_id=None,
-        rev_reg_def_json=None,
+        credential_id: str = None,
+        rev_reg_def: dict = None,
     ):
         """
         Store a credential in the wallet.
@@ -111,6 +117,32 @@ class BaseHolder(ABC, metaclass=ABCMeta):
             credential_attr_mime_types: dict mapping attribute names to (optional)
                 MIME types to store as non-secret record, if specified
             credential_id: optionally override the stored credential id
-            rev_reg_def_json: optional revocation registry definition in json
+            rev_reg_def: revocation registry definition in json
+
+        Returns:
+            the ID of the stored credential
+
+        """
+
+    @abstractmethod
+    async def create_revocation_state(
+        self,
+        cred_rev_id: str,
+        rev_reg_def: dict,
+        rev_reg_delta: dict,
+        timestamp: int,
+        tails_file_path: str,
+    ) -> str:
+        """
+        Get credentials stored in the wallet.
+
+        Args:
+            cred_rev_id: credential revocation id in revocation registry
+            rev_reg_def: revocation registry definition
+            rev_reg_delta: revocation delta
+            timestamp: delta timestamp
+
+        Returns:
+            the revocation state
 
         """

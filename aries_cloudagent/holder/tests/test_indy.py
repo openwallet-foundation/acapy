@@ -5,8 +5,10 @@ import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+import indy.anoncreds
 from indy.error import IndyError, ErrorCode
 
+import aries_cloudagent.holder.indy as test_module
 from aries_cloudagent.holder.indy import IndyHolder
 from aries_cloudagent.storage.error import StorageError
 from aries_cloudagent.storage.record import StorageRecord
@@ -25,11 +27,11 @@ class TestIndyHolder(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.prover_create_credential_req")
     async def test_create_credential_request(self, mock_create_credential_req):
-        mock_create_credential_req.return_value = ("{}", "{}")
+        mock_create_credential_req.return_value = ("{}", "[]")
         mock_wallet = async_mock.MagicMock()
 
         holder = IndyHolder(mock_wallet)
-        cred_req = await holder.create_credential_request(
+        cred_req_json, cred_req_meta_json = await holder.create_credential_request(
             "credential_offer", "credential_definition", "did"
         )
 
@@ -41,7 +43,7 @@ class TestIndyHolder(AsyncTestCase):
             mock_wallet.master_secret_id,
         )
 
-        assert cred_req == ({}, {})
+        assert (json.loads(cred_req_json), json.loads(cred_req_meta_json)) == ({}, [])
 
     @async_mock.patch("indy.anoncreds.prover_store_credential")
     async def test_store_credential(self, mock_store_cred):
@@ -60,7 +62,7 @@ class TestIndyHolder(AsyncTestCase):
             cred_req_metadata_json=json.dumps("credential_request_metadata"),
             cred_json=json.dumps("credential_data"),
             cred_def_json=json.dumps("credential_definition"),
-            rev_reg_def_json=None
+            rev_reg_def_json=None,
         )
 
         assert cred_id == "cred_id"
@@ -212,11 +214,11 @@ class TestIndyHolder(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         holder = IndyHolder(mock_wallet)
 
-        credential = await holder.get_credential("credential_id")
+        credential_json = await holder.get_credential("credential_id")
 
         mock_get_cred.assert_called_once_with(mock_wallet.handle, "credential_id")
 
-        assert credential == json.loads("{}")
+        assert json.loads(credential_json) == {}
 
     @async_mock.patch("indy.anoncreds.prover_delete_credential")
     @async_mock.patch("indy.non_secrets.get_wallet_record")
@@ -251,7 +253,7 @@ class TestIndyHolder(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         holder = IndyHolder(mock_wallet)
 
-        presentation = await holder.create_presentation(
+        presentation_json = await holder.create_presentation(
             "presentation_request",
             "requested_credentials",
             "schemas",
@@ -268,4 +270,39 @@ class TestIndyHolder(AsyncTestCase):
             json.dumps({}),
         )
 
-        assert presentation == json.loads("{}")
+        assert json.loads(presentation_json) == {}
+
+    async def test_create_revocation_state(self):
+        rr_state = {
+            "witness": {"omega": "1 ..."},
+            "rev_reg": {"accum": "21 ..."},
+            "timestamp": 1234567890,
+        }
+        holder = IndyHolder("wallet")
+
+        with async_mock.patch.object(
+            test_module, "create_tails_reader", async_mock.CoroutineMock()
+        ) as mock_create_tails_reader, async_mock.patch.object(
+            indy.anoncreds, "create_revocation_state", async_mock.CoroutineMock()
+        ) as mock_create_rr_state:
+            mock_create_rr_state.return_value = json.dumps(rr_state)
+
+            cred_rev_id = "1"
+            rev_reg_def = {"def": 1}
+            rev_reg_delta = {"delta": 1}
+            timestamp = 1234567890
+            tails_path = "/tmp/some.tails"
+
+            result = await holder.create_revocation_state(
+                cred_rev_id, rev_reg_def, rev_reg_delta, timestamp, tails_path
+            )
+            assert json.loads(result) == rr_state
+
+            mock_create_rr_state.assert_awaited_once_with(
+                mock_create_tails_reader.return_value,
+                rev_reg_def_json=json.dumps(rev_reg_def),
+                cred_rev_id=cred_rev_id,
+                rev_reg_delta_json=json.dumps(rev_reg_delta),
+                timestamp=timestamp,
+            )
+

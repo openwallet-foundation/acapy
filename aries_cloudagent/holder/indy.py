@@ -1,21 +1,23 @@
-"""Indy issuer implementation."""
+"""Indy holder implementation."""
 
 import json
 import logging
 
 from collections import OrderedDict
-from typing import Sequence, Union
+from typing import Sequence, Tuple, Union
 
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
+from ..indy import create_tails_reader
+from ..indy.error import IndyErrorHandler
 from ..storage.indy import IndyStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord
 
 from ..wallet.error import WalletNotFoundError
 
-from .base import BaseHolder
+from .base import BaseHolder, HolderError
 
 
 class IndyHolder(BaseHolder):
@@ -35,10 +37,10 @@ class IndyHolder(BaseHolder):
         self.wallet = wallet
 
     async def create_credential_request(
-        self, credential_offer, credential_definition, holder_did: str
-    ):
+        self, credential_offer: dict, credential_definition: dict, holder_did: str
+    ) -> Tuple[str, str]:
         """
-        Create a credential offer for the given credential definition id.
+        Create a credential request for the given credential offer.
 
         Args:
             credential_offer: The credential offer to create request for
@@ -46,41 +48,40 @@ class IndyHolder(BaseHolder):
             holder_did: the DID of the agent making the request
 
         Returns:
-            A credential request
+            A tuple of the credential request and credential request metadata
 
         """
 
-        (
-            credential_request_json,
-            credential_request_metadata_json,
-        ) = await indy.anoncreds.prover_create_credential_req(
-            self.wallet.handle,
-            holder_did,
-            json.dumps(credential_offer),
-            json.dumps(credential_definition),
-            self.wallet.master_secret_id,
-        )
+        with IndyErrorHandler("Error when creating credential request", HolderError):
+            (
+                credential_request_json,
+                credential_request_metadata_json,
+            ) = await indy.anoncreds.prover_create_credential_req(
+                self.wallet.handle,
+                holder_did,
+                json.dumps(credential_offer),
+                json.dumps(credential_definition),
+                self.wallet.master_secret_id,
+            )
 
         self.logger.debug(
             "Created credential request. "
-            + f"credential_request_json={credential_request_json} "
-            + f"credential_request_metadata_json={credential_request_metadata_json}"
+            "credential_request_json=%s credential_request_metadata_json=%s",
+            credential_request_json,
+            credential_request_metadata_json,
         )
 
-        credential_request = json.loads(credential_request_json)
-        credential_request_metadata = json.loads(credential_request_metadata_json)
-
-        return credential_request, credential_request_metadata
+        return credential_request_json, credential_request_metadata_json
 
     async def store_credential(
         self,
-        credential_definition,
-        credential_data,
-        credential_request_metadata,
+        credential_definition: dict,
+        credential_data: dict,
+        credential_request_metadata: dict,
         credential_attr_mime_types=None,
-        credential_id=None,
-        rev_reg_def_json=None,
-    ):
+        credential_id: str = None,
+        rev_reg_def: dict = None,
+    ) -> str:
         """
         Store a credential in the wallet.
 
@@ -92,17 +93,21 @@ class IndyHolder(BaseHolder):
             credential_attr_mime_types: dict mapping attribute names to (optional)
                 MIME types to store as non-secret record, if specified
             credential_id: optionally override the stored credential id
-            rev_reg_def_json: revocation registry definition in json
+            rev_reg_def: revocation registry definition in json
+
+        Returns:
+            the ID of the stored credential
 
         """
-        credential_id = await indy.anoncreds.prover_store_credential(
-            wallet_handle=self.wallet.handle,
-            cred_id=credential_id,
-            cred_req_metadata_json=json.dumps(credential_request_metadata),
-            cred_json=json.dumps(credential_data),
-            cred_def_json=json.dumps(credential_definition),
-            rev_reg_def_json=json.dumps(rev_reg_def_json) if rev_reg_def_json else None,
-        )
+        with IndyErrorHandler("Error when storing credential in wallet", HolderError):
+            credential_id = await indy.anoncreds.prover_store_credential(
+                wallet_handle=self.wallet.handle,
+                cred_id=credential_id,
+                cred_req_metadata_json=json.dumps(credential_request_metadata),
+                cred_json=json.dumps(credential_data),
+                cred_def_json=json.dumps(credential_definition),
+                rev_reg_def_json=json.dumps(rev_reg_def) if rev_reg_def else None,
+            )
 
         if credential_attr_mime_types:
             mime_types = {
@@ -132,9 +137,15 @@ class IndyHolder(BaseHolder):
             wql: wql query dict
 
         """
-        search_handle, record_count = await indy.anoncreds.prover_search_credentials(
-            self.wallet.handle, json.dumps(wql)
-        )
+        with IndyErrorHandler(
+            "Error when constructing wallet credential query", HolderError
+        ):
+            (
+                search_handle,
+                record_count,
+            ) = await indy.anoncreds.prover_search_credentials(
+                self.wallet.handle, json.dumps(wql)
+            )
 
         # We need to move the database cursor position manually...
         if start > 0:
@@ -169,11 +180,16 @@ class IndyHolder(BaseHolder):
 
         """
 
-        search_handle = await indy.anoncreds.prover_search_credentials_for_proof_req(
-            self.wallet.handle,
-            json.dumps(presentation_request),
-            json.dumps(extra_query),
-        )
+        with IndyErrorHandler(
+            "Error when constructing wallet credential query", HolderError
+        ):
+            search_handle = await (
+                indy.anoncreds.prover_search_credentials_for_proof_req(
+                    self.wallet.handle,
+                    json.dumps(presentation_request),
+                    json.dumps(extra_query),
+                )
+            )
 
         if not referents:
             referents = (
@@ -215,7 +231,7 @@ class IndyHolder(BaseHolder):
 
         return tuple(creds_dict.values())[:count]
 
-    async def get_credential(self, credential_id: str):
+    async def get_credential(self, credential_id: str) -> str:
         """
         Get a credential stored in the wallet.
 
@@ -233,10 +249,11 @@ class IndyHolder(BaseHolder):
                     "Credential not found in the wallet: {}".format(credential_id)
                 )
             else:
-                raise
+                raise IndyErrorHandler.wrap_error(
+                    e, "Error when fetching credential", HolderError
+                ) from e
 
-        credential = json.loads(credential_json)
-        return credential
+        return credential_json
 
     async def delete_credential(self, credential_id: str):
         """
@@ -266,7 +283,9 @@ class IndyHolder(BaseHolder):
                     "Credential not found in the wallet: {}".format(credential_id)
                 )
             else:
-                raise
+                raise IndyErrorHandler.wrap_error(
+                    e, "Error when deleting credential", HolderError
+                ) from e
 
     async def get_mime_type(
         self, credential_id: str, attr: str = None
@@ -299,7 +318,7 @@ class IndyHolder(BaseHolder):
         schemas: dict,
         credential_definitions: dict,
         rev_states_json: dict = None,
-    ):
+    ) -> str:
         """
         Get credentials stored in the wallet.
 
@@ -312,15 +331,48 @@ class IndyHolder(BaseHolder):
 
         """
 
-        presentation_json = await indy.anoncreds.prover_create_proof(
-            self.wallet.handle,
-            json.dumps(presentation_request),
-            json.dumps(requested_credentials),
-            self.wallet.master_secret_id,
-            json.dumps(schemas),
-            json.dumps(credential_definitions),
-            json.dumps(rev_states_json) if rev_states_json else "{}",
+        with IndyErrorHandler("Error when constructing proof", HolderError):
+            presentation_json = await indy.anoncreds.prover_create_proof(
+                self.wallet.handle,
+                json.dumps(presentation_request),
+                json.dumps(requested_credentials),
+                self.wallet.master_secret_id,
+                json.dumps(schemas),
+                json.dumps(credential_definitions),
+                json.dumps(rev_states_json) if rev_states_json else "{}",
+            )
+
+        return presentation_json
+
+    async def create_revocation_state(
+        self,
+        cred_rev_id: str,
+        rev_reg_def: dict,
+        rev_reg_delta: dict,
+        timestamp: int,
+        tails_file_path: str,
+    ) -> str:
+        """
+        Get credentials stored in the wallet.
+
+        Args:
+            cred_rev_id: credential revocation id in revocation registry
+            rev_reg_def: revocation registry definition
+            rev_reg_delta: revocation delta
+            timestamp: delta timestamp
+
+        Returns:
+            the revocation state
+
+        """
+
+        tails_file_reader = await create_tails_reader(tails_file_path)
+        rev_state_json = await indy.anoncreds.create_revocation_state(
+            tails_file_reader,
+            rev_reg_def_json=json.dumps(rev_reg_def),
+            cred_rev_id=cred_rev_id,
+            rev_reg_delta_json=json.dumps(rev_reg_delta),
+            timestamp=timestamp,
         )
 
-        presentation = json.loads(presentation_json)
-        return presentation
+        return rev_state_json

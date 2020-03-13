@@ -1,5 +1,6 @@
 """Classes to manage credentials."""
 
+import json
 import logging
 from typing import Mapping, Tuple
 
@@ -254,7 +255,8 @@ class CredentialManager:
                 )
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-            return await issuer.create_credential_offer(cred_def_id)
+            offer_json = await issuer.create_credential_offer(cred_def_id)
+            return json.loads(offer_json)
 
         credential_offer = None
         cache_key = f"credential_offer::{cred_def_id}"
@@ -375,10 +377,13 @@ class CredentialManager:
                 )
 
             holder: BaseHolder = await self.context.inject(BaseHolder)
-            request, metadata = await holder.create_credential_request(
+            request_json, metadata_json = await holder.create_credential_request(
                 credential_offer, credential_definition, holder_did
             )
-            return {"request": request, "metadata": metadata}
+            return {
+                "request": json.loads(request_json),
+                "metadata": json.loads(metadata_json),
+            }
 
         if credential_exchange_record.credential_request:
             self._logger.warning(
@@ -501,13 +506,13 @@ class CredentialManager:
                 # FIXME exception on missing
 
                 registry = await registry_record.get_registry()
-                tails_reader = await registry.create_tails_reader(self.context)
+                tails_path = registry.tails_local_path
             else:
-                tails_reader = None
+                tails_path = None
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             (
-                credential_exchange_record.credential,
+                credential_json,
                 credential_exchange_record.revocation_id,
             ) = await issuer.create_credential(
                 schema,
@@ -515,8 +520,9 @@ class CredentialManager:
                 credential_request,
                 credential_values,
                 credential_exchange_record.revoc_reg_id,
-                tails_reader,
+                tails_path,
             )
+            credential_exchange_record.credential = json.loads(credential_json)
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
         await credential_exchange_record.save(self.context, reason="issue credential")
@@ -611,10 +617,6 @@ class CredentialManager:
         if revoc_reg_def:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
             if not revoc_reg.has_local_tails_file(self.context):
-                self._logger.info(
-                    "Downloading the tails file for the revocation registry: "
-                    f"{revoc_reg.registry_id}"
-                )
                 await revoc_reg.retrieve_tails(self.context)
 
         try:
@@ -624,13 +626,14 @@ class CredentialManager:
                 credential_exchange_record.credential_request_metadata,
                 mime_types,
                 credential_id=credential_id,
-                rev_reg_def_json=revoc_reg_def,
+                rev_reg_def=revoc_reg_def,
             )
         except IndyError as e:
             self._logger.error(f"Error storing credential. {e.error_code}: {e.message}")
             raise e
 
-        credential = await holder.get_credential(credential_id)
+        credential_json = await holder.get_credential(credential_id)
+        credential = json.loads(credential_json)
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ACKED
         credential_exchange_record.credential_id = credential_id
@@ -702,11 +705,13 @@ class CredentialManager:
         # FIXME exception on missing
 
         registry = await registry_record.get_registry()
-        tails_reader = await registry.create_tails_reader(self.context)
 
-        delta = await issuer.revoke_credential(
-            registry.registry_id, tails_reader, credential_exchange_record.revocation_id
+        delta_json = await issuer.revoke_credential(
+            registry.registry_id,
+            registry.tails_local_path,
+            credential_exchange_record.revocation_id,
         )
+        delta = json.loads(delta_json)
 
         # create entry and send to ledger
         if delta:

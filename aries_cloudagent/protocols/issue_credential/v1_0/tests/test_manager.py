@@ -1,3 +1,4 @@
+import json
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from time import time
@@ -241,7 +242,7 @@ class TestCredentialManager(AsyncTestCase):
             cred_offer = {"cred_def_id": cred_def_id, "schema_id": schema_id}
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=cred_offer
+                return_value=json.dumps(cred_offer)
             )
             self.context.injector.bind_instance(BaseIssuer, issuer)
 
@@ -296,7 +297,7 @@ class TestCredentialManager(AsyncTestCase):
             cred_offer = {"cred_def_id": cred_def_id, "schema_id": schema_id}
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=cred_offer
+                return_value=json.dumps(cred_offer)
             )
             self.context.injector.bind_instance(BaseIssuer, issuer)
 
@@ -494,10 +495,10 @@ class TestCredentialManager(AsyncTestCase):
                 return_value=cred_def
             )
 
-            cred_req_meta = object()
+            cred_req_meta = {}
             holder = async_mock.MagicMock()
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(indy_cred_req, cred_req_meta)
+                return_value=(json.dumps(indy_cred_req), json.dumps(cred_req_meta))
             )
             self.context.injector.bind_instance(BaseHolder, holder)
 
@@ -559,10 +560,10 @@ class TestCredentialManager(AsyncTestCase):
                 return_value=cred_def
             )
 
-            cred_req_meta = object()
+            cred_req_meta = {}
             holder = async_mock.MagicMock()
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(indy_cred_req, cred_req_meta)
+                return_value=(json.dumps(indy_cred_req), json.dumps(cred_req_meta))
             )
             self.context.injector.bind_instance(BaseHolder, holder)
 
@@ -663,7 +664,7 @@ class TestCredentialManager(AsyncTestCase):
         cred = {"indy": "credential"}
         cred_revoc = object()
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(cred, cred_revoc)
+            return_value=(json.dumps(cred), cred_revoc)
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
@@ -761,7 +762,9 @@ class TestCredentialManager(AsyncTestCase):
         holder = async_mock.MagicMock()
         holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
         stored_cred = {"stored": "cred"}
-        holder.get_credential = async_mock.CoroutineMock(return_value=stored_cred)
+        holder.get_credential = async_mock.CoroutineMock(
+            return_value=json.dumps(stored_cred)
+        )
         self.context.injector.bind_instance(BaseHolder, holder)
 
         with async_mock.patch.object(
@@ -784,7 +787,7 @@ class TestCredentialManager(AsyncTestCase):
                 cred_req_meta,
                 mock_preview_deserialize.return_value.mime_types.return_value,
                 credential_id=None,
-                rev_reg_def_json=None,
+                rev_reg_def=None,
             )
 
             holder.get_credential.assert_called_once_with(cred_id)
@@ -822,7 +825,9 @@ class TestCredentialManager(AsyncTestCase):
         holder = async_mock.MagicMock()
         holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
         stored_cred = {"stored": "cred"}
-        holder.get_credential = async_mock.CoroutineMock(return_value=stored_cred)
+        holder.get_credential = async_mock.CoroutineMock(
+            return_value=json.dumps(stored_cred)
+        )
         self.context.injector.bind_instance(BaseHolder, holder)
 
         with async_mock.patch.object(
@@ -843,7 +848,7 @@ class TestCredentialManager(AsyncTestCase):
                 cred_req_meta,
                 None,
                 credential_id=None,
-                rev_reg_def_json=None,
+                rev_reg_def=None,
             )
 
             holder.get_credential.assert_called_once_with(cred_id)

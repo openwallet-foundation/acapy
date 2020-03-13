@@ -7,6 +7,7 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
+from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ..valid import INDY_SCHEMA_ID, INDY_VERSION
@@ -88,9 +89,12 @@ async def schemas_send_schema(request: web.BaseRequest):
     attributes = body.get("attributes")
 
     ledger: BaseLedger = await context.inject(BaseLedger)
+    issuer: BaseIssuer = await context.inject(BaseIssuer)
     async with ledger:
         schema_id, schema_def = await shield(
-            ledger.create_and_send_schema(schema_name, schema_version, attributes)
+            ledger.create_and_send_schema(
+                issuer, schema_name, schema_version, attributes
+            )
         )
 
     return web.json_response({"schema_id": schema_id, "schema": schema_def})

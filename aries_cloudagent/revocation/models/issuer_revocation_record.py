@@ -5,21 +5,19 @@ import logging
 import uuid
 from typing import Any, Sequence
 
-import indy.anoncreds
-import indy.blob_storage
 from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext
+from ...issuer.base import BaseIssuer, IssuerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
     BASE58_SHA256_HASH,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_REV_REG_ID,
-    UUIDFour
+    UUIDFour,
 )
 from ...ledger.base import BaseLedger
-from ...wallet.base import BaseWallet
 
 from ..error import RevocationError
 
@@ -124,34 +122,29 @@ class IssuerRevocationRecord(BaseRecord):
 
     async def generate_registry(self, context: InjectionContext, base_dir: str):
         """Create the credential registry definition and tails file."""
-        wallet = await context.inject(BaseWallet, required=False)
-        if not wallet or wallet.WALLET_TYPE != "indy":
-            raise RevocationError("Wallet type of 'indy' must be provided")
         if not self.tag:
             self.tag = self._id or str(uuid.uuid4())
 
-        tails_writer_config = json.dumps({"base_dir": base_dir, "uri_pattern": ""})
-        tails_writer = await indy.blob_storage.open_writer(
-            "default", tails_writer_config
-        )
+        issuer: BaseIssuer = await context.inject(BaseIssuer)
 
         LOGGER.debug("create revocation registry with size:", self.max_cred_num)
 
-        (
-            revoc_reg_id,
-            revoc_reg_def_json,
-            revoc_reg_entry_json,
-        ) = await indy.anoncreds.issuer_create_and_store_revoc_reg(
-            wallet.handle,
-            self.issuer_did,
-            self.revoc_def_type,
-            self.tag,
-            self.cred_def_id,
-            json.dumps(
-                {"max_cred_num": self.max_cred_num, "issuance_type": self.issuance_type}
-            ),
-            tails_writer,
-        )
+        try:
+            (
+                revoc_reg_id,
+                revoc_reg_def_json,
+                revoc_reg_entry_json,
+            ) = await issuer.create_and_store_revocation_registry(
+                self.issuer_did,
+                self.cred_def_id,
+                self.revoc_def_type,
+                self.tag,
+                self.max_cred_num,
+                base_dir,
+                self.issuance_type,
+            )
+        except IssuerError as err:
+            raise RevocationError() from err
 
         self.revoc_reg_id = revoc_reg_id
         self.revoc_reg_def = json.loads(revoc_reg_def_json)
@@ -164,8 +157,8 @@ class IssuerRevocationRecord(BaseRecord):
     def set_tails_file_public_uri(self, tails_file_uri):
         """Update tails file's publicly accessible URI."""
         if not (
-            self.revoc_reg_def and
-            self.revoc_reg_def.get("value", {}).get("tailsLocation")
+            self.revoc_reg_def
+            and self.revoc_reg_def.get("value", {}).get("tailsLocation")
         ):
             raise RevocationError("Revocation registry undefined")
 
@@ -264,12 +257,12 @@ class IssuerRevocationRecordSchema(BaseRecordSchema):
     record_id = fields.Str(
         required=False,
         description="Issuer revocation record identifier",
-        example=UUIDFour.EXAMPLE
+        example=UUIDFour.EXAMPLE,
     )
     cred_def_id = fields.Str(
         required=False,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID
+        **INDY_CRED_DEF_ID,
     )
     error_msg = fields.Str(
         required=False,
@@ -283,53 +276,40 @@ class IssuerRevocationRecordSchema(BaseRecordSchema):
         validate=validate.OneOf(
             [
                 IssuerRevocationRecord.ISSUANCE_BY_DEFAULT,
-                IssuerRevocationRecord.ISSUANCE_ON_DEMAND
+                IssuerRevocationRecord.ISSUANCE_ON_DEMAND,
             ]
-        )
+        ),
     )
-    issuer_did = fields.Str(
-        required=False,
-        description="Issuer DID",
-        **INDY_DID
-    )
+    issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
     max_cred_num = fields.Int(
         required=False,
         description="Maximum number of credentials for revocation registry",
-        example=1000
+        example=1000,
     )
     revoc_def_type = fields.Str(
         required=False,
         description="Revocation registry type (specify CL_ACCUM)",
         example="CL_ACCUM",
-        validate=validate.Equal("CL_ACCUM")
+        validate=validate.Equal("CL_ACCUM"),
     )
     revoc_reg_id = fields.Str(
-        required=False,
-        description="Revocation registry identifier",
-        **INDY_REV_REG_ID
+        required=False, description="Revocation registry identifier", **INDY_REV_REG_ID
     )
     revoc_reg_def = fields.Dict(
-        required=False,
-        description="Revocation registry definition"
+        required=False, description="Revocation registry definition"
     )
     revoc_reg_entry = fields.Dict(
-        required=False,
-        description="Revocation registry entry"
+        required=False, description="Revocation registry entry"
     )
     tag = fields.Str(
-        required=False,
-        description="Tag within issuer revocation registry identifier"
+        required=False, description="Tag within issuer revocation registry identifier"
     )
     tails_hash = fields.Str(
-        required=False,
-        description="Tails hash",
-        **BASE58_SHA256_HASH
+        required=False, description="Tails hash", **BASE58_SHA256_HASH
     )
     tails_public_uri = fields.Str(
-        required=False,
-        description="Public URI for tails file"
+        required=False, description="Public URI for tails file"
     )
     tails_local_path = fields.Str(
-        required=False,
-        description="Local path to tails file"
+        required=False, description="Local path to tails file"
     )
