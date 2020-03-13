@@ -5,6 +5,8 @@ from typing import Union
 
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector
 
+from ...config.injection_context import InjectionContext
+
 from ..stats import StatsTracer
 
 from .base import BaseOutboundTransport, OutboundTransportError
@@ -40,12 +42,16 @@ class HttpTransport(BaseOutboundTransport):
         await self.client_session.close()
         self.client_session = None
 
-    async def handle_message(self, payload: Union[str, bytes], endpoint: str):
+    async def handle_message(
+        self, context: InjectionContext, payload: Union[str, bytes], endpoint: str
+    ):
         """
         Handle message from queue.
 
         Args:
-            message: `OutboundMessage` to send over transport implementation
+            context: the context that produced the message
+            payload: message payload in string or byte format
+            endpoint: URI endpoint for delivery
         """
         if not endpoint:
             raise OutboundTransportError("No endpoint provided")

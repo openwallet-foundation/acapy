@@ -3,6 +3,7 @@ import asyncio
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from aiohttp import web
 
+from ....config.injection_context import InjectionContext
 from ....utils.stats import Collector
 
 from ...outbound.message import OutboundMessage
@@ -12,6 +13,7 @@ from ..http import HttpTransport
 
 class TestHttpTransport(AioHTTPTestCase):
     async def setUpAsync(self):
+        self.context = InjectionContext()
         self.message_results = []
 
     async def receive_message(self, request):
@@ -33,7 +35,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
         async def send_message(transport, payload, endpoint):
             async with transport:
-                await transport.handle_message(payload, endpoint)
+                await transport.handle_message(self.context, payload, endpoint)
 
         transport = HttpTransport()
         await asyncio.wait_for(send_message(transport, "{}", endpoint=server_addr), 5.0)
@@ -45,7 +47,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
         async def send_message(transport, payload, endpoint):
             async with transport:
-                await transport.handle_message(payload, endpoint)
+                await transport.handle_message(self.context, payload, endpoint)
 
         transport = HttpTransport()
         transport.collector = Collector()
