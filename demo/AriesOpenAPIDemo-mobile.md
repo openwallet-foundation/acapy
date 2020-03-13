@@ -1,33 +1,36 @@
 # Aries OpenAPI Mobile Demo <!-- omit in toc -->
 
-You can use the Faber aca-py agent to issue credentials to a mobile wallet.  To do this you need to run the Faber agent on a publicly accessible port (for example you can run the agent on Play With Docker), and you need a compatible wallet.  One available wallet is the Streetcred Identity Agent, which is available on both iOS and Android, and you can read about it [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
+You can use the Faber aca-py agent to issue credentials to a mobile wallet.  To do this you need to run the Faber agent on a publicly accessible port (for example you can run the agent on Play With Docker), and you need a compatible wallet.  One available wallet is the Streetcred Identity Agent, which is available on both iOS and Android. Installation and setup instructions are available [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
 
 # Contents <!-- omit in toc -->
 
 - [Getting Started](#getting-started)
 - [Running in a Browser](#running-in-a-browser)
-- [Running in Docker](#running-in-docker)
-- [Enabling Revocation](#enabling-revocation)
-- [Installing the Streetcred Agent](#installing-the-streetcred-agent)
-- [Creating an Invitation](#creating-an-invitation)
-- [Converting the Invitation to a QR Code](#converting-the-invitation-to-a-qr-code)
-- [Accepting the Invitation with Streetcred](#accepting-the-invitation-with-streetcred)
-- [Accepting Streetcred's connection request](#accepting-streetcreds-connection-request)
-- [Issuing a Credential](#issuing-a-credential)
-- [Accepting the Credential with Streetcred](#accepting-the-credential-with-streetcred)
-- [Issuing a Proof Request](#issuing-a-proof-request)
-- [Responding to the Proof Request with Streetcred](#responding-to-the-proof-request-with-streetcred)
-- [Review the Received Proof](#review-the-received-proof)
+- [Running Locally in Docker](#running-locally-in-docker)
+- [Testing with Revocation](#testing-with-revocation)
+  - [Set up a Public GitHub Tails Server](#set-up-a-public-github-tails-server)
+  - [Run `faber` With Extra Parameters](#run-faber-with-extra-parameters)
+  - [Copy the Tails File to GitHub](#copy-the-tails-file-to-github)
+- [Install a Mobile Agent](#install-a-mobile-agent)
+- [Copy the Faber Invitation](#copy-the-faber-invitation)
+- [Create a QR Code from the Invitation](#create-a-qr-code-from-the-invitation)
+- [Accept the Invitation](#accept-the-invitation)
+- [Accept the Mobile Agent's Connection Request](#accept-the-mobile-agents-connection-request)
+- [Issue a Credential](#issue-a-credential)
+  - [Accept the Credential](#accept-the-credential)
+- [Issue a Presentation Request](#issue-a-presentation-request)
+- [Present the Proof](#present-the-proof)
+- [Review the Proof](#review-the-proof)
 - [Revoke the Credential and Send Another Proof Request](#revoke-the-credential-and-send-another-proof-request)
 - [Conclusion](#conclusion)
 
 ## Getting Started
 
-Make sure you've gone through the [Aries OpenAPI Demo](./AriesOpenAPIDemo.md), as this will give you the background on how to run and interact with an Aries agent.
+This is an add-on workshop to the [Aries OpenAPI Demo](./AriesOpenAPIDemo.md) activity, which includes more background on how to use the API user interface (Swagger) and interact with an Aries agent. If aren't familiar with the Swagger UI, you might want to do that exercise first.
 
 ## Running in a Browser
 
-Run Play With Docker and start your agent using the BCovrin Test network:
+To get started in a browser, go to [Play With Docker](https://labs.play-with-docker.com/), start a terminal session, and start your agent using the BCovrin Test network as follows. 
 
 ```bash
 git clone https://github.com/hyperledger/aries-cloudagent-python
@@ -41,29 +44,35 @@ This is similar to the instructions in the prior "Play with Docker" section, exc
 - We are running in "auto" mode, so we will have to do fewer manual acknowledgements
 - Play with Docker exposes the Agent's' port (in this case port 8021 of the container) on a public URL that the mobile app can access
 
-## Running in Docker
+## Running Locally in Docker
 
-An alternative for running locally - left as an excercise for the user - is to use ngrok and then set your agent's endpoint to the ngrok url.
+An alternative for running locally&mdash;left as an exercise for the user&mdash;is to use ngrok and then set your agent's endpoint to the ngrok url.
 
-## Enabling Revocation
+## Testing with Revocation
 
-There are two things you need to do to run with revocation enabled:
+Want to run this with revocation active?  There are some extra things you need to do to run with revocation enabled:
 
-1. Setup a public `https` repository to publish the tails files (in this example we will publish to github)
-2. Run `faber` with a few extra parameters
+1. Setup a public `https` repository to publish the tails files. In this example we will publish to github.
+2. Run `faber` with a few extra parameters (given below).
 
-Note that the `https` step is required to enable revocation on a mobile wallet, such as StreetCred.
+Note that the `https` requirement is necessary because of the operating system on which the mobile wallets are running.
 
-### Setup a Public HTTPS Tails Server (e.g. github)
+### Set up a Public GitHub Tails Server
 
-Create yourself a public github repository called `tails-files` (actually you can use any name but this will be the least friction)
+There are a number of ways to get the tails file posted on an HTTPS web service.  We're going to use GitHub. If you ideas for other/easier ways to do this, please let us us know. In these instructions, we're going to use GitHub by having you create a `tails-files` repo in your personal GitHub account. We're assuming that you have your own GitHub account and repo, and that you can push updates to it.
+
+1. Implement a tails server by creating a public github repository called `tails-files` in your personal GitHub account.
 
 <details>
     <summary>Click here to view screenshot (github.com)</summary>
     <img src="./collateral/revocation-1-github-repo.png" alt="Github repo">
 </details>
 
-Clone this repo in your local `/tmp` directory
+2. On your **local machine** where you have a git/github setup, open a terminal session and clone the repo in your local `/tmp` directory. To clone the repo, do the following, replacing `ianco` with your own GitHub id:
+
+> NOTE: You can't use Play With Docker for this because you must **NEVER** enter your credentials into a Play With Docker terminal session.
+> 
+> NOTE: Later instructions assume you put the clone of the repo in the `/tmp/` folder on your system as specified below. If you put it elsewhere, you need to watch for that later in the instructions.
 
 ```bash
 $ cd /tmp/
@@ -72,11 +81,11 @@ $ git clone https://github.com/ianco/tails-files.git
 
 That's it!  You will manually copy tails files here and then commit them to github.
 
-### Run `faber` with a few extra parameters
+### Run `faber` With Extra Parameters
 
 You have to tell `faber` (a) to enable revocation, and (b) to advertise the location of the tails files in github.
 
-You acomplish both as follows:
+You accomplish this in Play With Docker by hitting `Ctrl-c` to stop your previous start of Faber and executing the following:
 
 ```bash
 PUBLIC_TAILS_URL=https://github.com/ianco/tails-files/raw/master TAILS_FILE_COUNT=10 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events --revocation
@@ -84,7 +93,7 @@ PUBLIC_TAILS_URL=https://github.com/ianco/tails-files/raw/master TAILS_FILE_COUN
 
 The `--revocation` flag tells faber to enable revocation and create a revocation registry and tails file.
 
-For `PUBLIC_TAILS_URL`, substitute the location of your own github repository.  You can see this URL in the ledger transaction for the revocation registry.  If you copy & paste the `Tails file location:` url into your browser it should download the tails file.
+For `PUBLIC_TAILS_URL`, substitute `ianco` with your GitHub ID. Later, you will see this URL in the ledger transaction for the revocation registry.  If you copy & paste the `Tails file location:` url into your browser it should download the tails file.
 
 <details>
     <summary>Click here to view screenshot (ledger)</summary>
@@ -93,13 +102,11 @@ For `PUBLIC_TAILS_URL`, substitute the location of your own github repository.  
 
 For `TAILS_FILE_COUNT`, enter the size of your tails file.  Use a small number to keep things quick!  10 or 20 is fine for this demo.
 
-Note that the tails file is published by the agent itself, you need to manually copy it to github to make it available via https.  More on that step later!
+### Copy the Tails File to GitHub
 
-### Copying your tails file to github.com
+As the agent starts up, the tails file is published by the agent itself to a local, non-HTTPS location. Before going further, you need to manually copy the to github to make it available via https. Follow these steps to do that:
 
-OK we are now "later" and we will copy our tails file over to our github repo.
-
-On faber startup, look for the following in the logs:
+1. Scroll back in the terminal looking for the following in the logs:
 
 ```
 Revocation Registry ID: EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2
@@ -111,72 +118,32 @@ curl -X GET "http://127.0.0.1:8021/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:
 ================
 ```
 
-There are two commands in between the "================" markers:
+There are two terminal commands in between the "================" markers that you will run in sequence.
 
-1. Run this to create the folder in your local github repo clone:
+2. Run the first one `mkdir...` to create the folder in your local github repo clone:
 
-```bash
-$mkdir -p /tmp/tails-files/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/
-```
+3. Copy, paste and edit the second **before** running. You must change `http://127.0.0.1:8021/` to the public IP address of port 8021 of your Play with Docker session. To get that URL, click `8021` at the top of the screen (carefully&mdash;sometimes it moves around!) or click `Open Port`, enter `8021` when prompted. Either way, a new browser tab will open.
+   
+4. Update the command line and run the command. It will download the file from the agent to the git repo.
 
-2. Run this to download the tails file to your local dir (note you will need to "patch in" the server name - it will be the PWD host name for port 8021):
-
-```bash
-curl -X GET "http://ip10-0-77-4-bpl64sjschj0j6gkkr60-8021.direct.play-with-von.vonx.io/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file" --output /tmp/tails-files/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file
-```
-
-3. Commit this file!
+5. Commit the file from your local system by running the following steps:
 
 ```bash
-$ git add .
-$ git commit -m "New tails file"
-$ git push
+cd /tmp/tails-files
+git add .
+git commit -m "New tails file"
+git push
 ```
 
 That's it!  You are now serving your tails file on a secure https connection.
 
-## Installing the Streetcred Agent
+> There's got to be an easier way...
 
-Search for "Streetcred Identity Wallet" on the App Store or Google Play.
+## Install a Mobile Agent
 
-<details>
-    <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./collateral/ios1-install-app.jpg" alt="App Store">
-</details>
+To find, install and setup a compatible mobile agent, follow the instructions [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
 
-Start the app and accept the terms of service to create an Agent.
-
-<details>
-    <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./collateral/ios2-create-agent.jpg" alt="Create Agent">
-</details>
-
-Enble Face ID (or Android equivalent) to secure the Agent.
-
-<details>
-    <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./collateral/ios3-enable-security.jpg" alt="Enable Security">
-</details>
-
-Enable notifications (or else you will have to continually refresh the Agent to get updates).
-
-<details>
-    <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./collateral/ios4-enable-notifications.jpg" alt="Enable Notifications">
-</details>
-
-Before connecting with the BC Government applications, you must do some additional setup, as follows:
-
-- Go to settings by clicking the menu icon in the top right (the "hamburger" icon—three stacked horizontal lines)
-- Click on the "Network" item and from the subsequent list select "BCovrin Test" network.
-- Click the back arrow to return to the settings and again to return to the main menu.Streetcred app screen.
-
-<details>
-    <summary>Click here to view screenshot (iOS)</summary>
-    <img src="./collateral/ios5-select-network.jpg" alt="Select BCovrin Network">
-</details>
-
-## Creating an Invitation
+## Copy the Faber Invitation
 
 When the Faber agent starts up it automatically creates an invitation.  We will copy the "url" format of the invitation for the next step.  Copy all the text between the quotes (do not include the quotes) - the copied text should be a properly formatted URL.
 
@@ -185,11 +152,11 @@ When the Faber agent starts up it automatically creates an invitation.  We will 
     <img src="./collateral/S-0-invitation-1.png" alt="Select Invitation URL">
 </details>
 
-## Converting the Invitation to a QR Code
+## Create a QR Code from the Invitation
 
-To send the invitation to the agent, we need to convert the URl into a QR code.  Your application can do this, but for this demo we will use https://www.the-qrcode-generator.com/
+To get the invitation to the agent, we need to convert the URl into a QR code.  Your application can do this, but for this demo we will use an online QR Code generator.
 
-Open up https://www.the-qrcode-generator.com/ in a new browser window, and:
+Open [https://www.the-qrcode-generator.com/](https://www.the-qrcode-generator.com/) in a new browser window, and:
 
 - Select the "URL" option
 - Paste your invitation url into the provided input field
@@ -199,16 +166,16 @@ Open up https://www.the-qrcode-generator.com/ in a new browser window, and:
     <img src="./collateral/S-0-invitation-2.png" alt="Generate QR Code">
 </details>
 
-## Accepting the Invitation with Streetcred
+## Accept the Invitation
 
-On the Streetcred mobile app, select "SCAN CODE" and point your camera at the generated QR code.  Streetcred should automatically capture the code and ask you to confirm the connection.  GO ahead and confirm.
+On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code.  The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.
 
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-1-connect-1.jpg" alt="Accept Invitation">
 </details>
 
-Streetcred will then give you a message that "A connection was added to your wallet".
+The mobile agent will give you a message that "A connection was added to your wallet".
 
 <details>
     <summary>Click here to view screenshot</summary>
@@ -219,16 +186,16 @@ Streetcred will then give you a message that "A connection was added to your wal
     <img src="./collateral/S-1-connect-3.jpg" alt="Add Connection to Wallet">
 </details>
 
-## Accepting Streetcred's connection request
+## Accept the Mobile Agent's Connection Request
 
-At this point Faber has issued an invitation, and you have accpted the invitation and asked Faber to establish a connection to your agent.  Faber must now accept this request.  You can see the Event in the Faber console window.  Find this event, and select and copy the "connection id".
+At this point Faber has issued an invitation, you have accepted the invitation, and asked Faber to establish a connection to your agent.  Faber must now accept this request.  You can see the Event in the Faber terminal window.  Find this event, and select and copy the "connection id".
 
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-2-connect-1.png" alt="Accept Connection Request">
 </details>
 
-Now, in Faber's swagger page (at the top of the console window, click on port `8021` to open the swagger page in a new window) scroll down to the **`POST /connections/{id}/accept-request`** endpoint, paste the connection id and click on "Execute".
+Now, on Faber's Swagger page (if not open, at the top of the console window, click on port `8021` to open the Swagger page in a new window) scroll down to the **`POST /connections/{id}/accept-request`** endpoint, click `Try It Now`, paste the connection id and click on "Execute".
 
 <details>
     <summary>Click here to view screenshot</summary>
@@ -246,22 +213,22 @@ Scroll to the **`GET /connections`** endpoint to check the status of the connect
     <img src="./collateral/S-2-connect-4.png" alt="View Connection Status">
 </details>
 
-Note - if the connection status does not update to `active`, try sending a `trust-ping` or `basic-message` on the connection.  This will force a handshake between the agents that whould upate the connection status.
+Note - if the connection status does not update to `active`, send a `trust-ping` or `basic-message` on the connection.  This will force a handshake between the agents that should activate the connection.
 
-## Issuing a Credential
+## Issue a Credential
 
-We will use the Faber console to issue a credential.  (This could be done using the REST API as we have done above, this will be left as an exercise to the user.)
+We will use the Faber console to issue a credential. This could be done using the Swagger API as we have done in the connection process. We'll leave that as an exercise to the user.
 
-In the Faber console, select option `1` to send a credential to streetcred.
+In the Faber console, select option `1` to send a credential to the mobile agent.
 
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-3-credential-0.png" alt="View Connection Status">
 </details>
 
-### Accepting the Credential with Streetcred
+### Accept the Credential
 
-The credential should automatically show up in streetcred - accept the offered credential.
+The credential offer should automatically show up in the mobile agent. Accept the offered credential.
 
 <details>
     <summary>Click here to view screenshot</summary>
@@ -276,20 +243,20 @@ The credential should automatically show up in streetcred - accept the offered c
     <img src="./collateral/S-3-credential-3.jpg" alt="View Connection Status">
 </details>
 
-## Issuing a Proof Request
+## Issue a Presentation Request
 
-We will use the Faber console to ask Streetcred for a proof.  (This could be done using the REST API as we have done above, this will be left as an exercise to the user.)
+We will use the Faber console to ask mobile agent for a proof. This could be done using the Swagger API as we have done in the connection process. We'll leave that as an exercise to the user.
 
-In the Faber console, select option `2` to send a proof request to streetcred.
+In the Faber console, select option `2` to send a proof request to the mobile agent.
 
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-4-proof-0.png" alt="View Connection Status">
 </details>
 
-## Responding to the Proof Request with Streetcred
+## Present the Proof
 
-In streetcred, respond to the proof
+In the mobile agent, select the option to present the requested proof.
 
 <details>
     <summary>Click here to view screenshot</summary>
@@ -304,7 +271,7 @@ In streetcred, respond to the proof
     <img src="./collateral/S-4-proof-3.jpg" alt="View Connection Status">
 </details>
 
-## Review the Received Proof
+## Review the Proof
 
 In the Faber console window, the proof should be received as validated.
 
@@ -315,9 +282,9 @@ In the Faber console window, the proof should be received as validated.
 
 ## Revoke the Credential and Send Another Proof Request
 
-If you have enabled revocation, you can try revoking the credential (`faber` option `4`) - you will need the credential exchnage id from the original credential issuance.
+If you have enabled revocation, you can try revoking the credential (`faber` option `4`). You will need the credential exchange id from the original credential issuance (not the one from the presentation exchange).
 
-Then try sending another proof request and see what happens in StreetCred!
+Once that is done, try sending another proof request and see what happens!
 
 Note - screenshots not yet provided for this last step.
 
