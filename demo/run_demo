@@ -16,7 +16,11 @@ do
     fi
 	case $i in
 	--events)
-		EVENTS=1
+		if [[ "${AGENT}" == "performance" ]] ; then
+			echo -e "\nIgnoring the \"--events\" option when running the ${AGENT} agent.\n"
+		else
+			EVENTS=1
+		fi
 		continue
 	;;
     --debug-ptvsd)
@@ -46,6 +50,38 @@ do
 			echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
 			exit 1
 		fi
+		continue
+		;;
+	--bg)
+		if [[ "${AGENT}" == "alice" ]] || [[ "${AGENT}" == "faber" ]] || [[ "${AGENT}" == "acme" ]]; then
+			DOCKER_OPTS="-d"
+			echo -e "\nRunning in ${AGENT} in the background. Note that you cannot use the comand line console in this mode."
+			echo To see the logs use: \"docker logs ${AGENT}\".
+			echo While viewing logs, hit CTRL-C to return to the command line.
+			echo To stop the agent, use: \"docker stop ${AGENT}\". The docker environment will
+			echo -e "be removed on stop.\n\n"
+		else
+			echo The "bg" option \(for running docker in daemon mode\) is only for agents Alice, Faber and Acme.
+			echo Ignoring...
+		fi
+		continue
+		;;
+		--help)
+		cat <<EOF
+
+Usage:
+   ./demo_run <agent> [OPTIONS]
+
+   - <agent> is one of alice, faber, acme, performance.
+   - Options:
+	--events - display on the terminal the webhook events from the ACA-Py agent.
+	--timing - at the end of the run, display timing; relevant to the "performance" agent.
+	--bg - run the agent in the background; for use when using OpenAPI/Swagger interface
+	debug options: --debug-pycharm-agent-port <port>; --debug-pycharm-controller-port <port>
+	               --debug-pycharm; --debug-ptvsd
+
+EOF
+		exit 0
 	;;
 	esac
 	ARGS="${ARGS:+$ARGS }$i"
@@ -128,7 +164,7 @@ fi
 DOCKER=${DOCKER:-docker}
 
 echo "Starting $AGENT..."
-$DOCKER run --name $AGENT --rm -it \
+$DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	-v "/$(pwd)/../logs:/home/indy/logs" \
 	$DOCKER_ENV \
