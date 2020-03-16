@@ -50,18 +50,17 @@ do
 			echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
 			exit 1
 		fi
-		continue
 		;;
 	--bg)
 		if [[ "${AGENT}" == "alice" ]] || [[ "${AGENT}" == "faber" ]] || [[ "${AGENT}" == "acme" ]]; then
 			DOCKER_OPTS="-d"
-			echo -e "\nRunning in ${AGENT} in the background. Note that you cannot use the comand line console in this mode."
+			echo -e "\nRunning in ${AGENT} in the background. Note that you cannot use the command line console in this mode."
 			echo To see the logs use: \"docker logs ${AGENT}\".
 			echo While viewing logs, hit CTRL-C to return to the command line.
 			echo To stop the agent, use: \"docker stop ${AGENT}\". The docker environment will
 			echo -e "be removed on stop.\n\n"
 		else
-			echo The "bg" option \(for running docker in daemon mode\) is only for agents Alice, Faber and Acme.
+			echo The "bg" option \(for running docker in detached mode\) is only for agents Alice, Faber and Acme.
 			echo Ignoring...
 		fi
 		continue
