@@ -6,8 +6,10 @@ import re
 from pathlib import Path
 from tempfile import gettempdir
 
+from requests import Session
+from requests.exceptions import RequestException
+
 from ...config.injection_context import InjectionContext
-from ...utils.http import FetchError, fetch_stream
 from ...utils.temp import get_temp_dir
 
 from ..error import RevocationError
@@ -163,11 +165,6 @@ class RevocationRegistry:
             self.registry_id,
         )
 
-        try:
-            tails_stream = await fetch_stream(self._tails_public_uri)
-        except FetchError as e:
-            raise RevocationError("Error retrieving tails file") from e
-
         tails_file_path = Path(self.get_receiving_tails_local_path(context))
         tails_file_dir = tails_file_path.parent
         if not tails_file_dir.exists():
@@ -176,11 +173,15 @@ class RevocationRegistry:
         buffer_size = 65536  # should be multiple of 32 bytes for sha256
         with open(tails_file_path, "wb", buffer_size) as tails_file:
             file_hasher = hashlib.sha256()
-            buf = await tails_stream.read(buffer_size)
-            while len(buf) > 0:
-                file_hasher.update(buf)
-                tails_file.write(buf)
-                buf = await tails_stream.read(buffer_size)
+
+            with Session() as req_session:
+                try:
+                    resp = req_session.get(self._tails_public_uri, stream=True)
+                    for buf in resp.iter_content(chunk_size=buffer_size):
+                        tails_file.write(buf)
+                        file_hasher.update(buf)
+                except RequestException as rx:
+                    raise RevocationError(f"Error retrieving tails file: {rx}")
 
             download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
             if download_tails_hash != self.tails_hash:
