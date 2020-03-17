@@ -572,7 +572,7 @@ Alice now has her Faber credential. Let’s have the Faber agent send a request 
 
 ### Faber sends a Proof Request
 
-From the Faber browser tab, get ready to execute the **`POST /present-proof/send-request`** endpoint. Select copy and paste the entire pre-populated text (below) and then replace each instance of `cred_def_id` (there are four instances) and `connection_id` with the values found using the same techniques we've used earlier in this tutorial. Both can be found by scrolling back a little in the Faber terminal, or you can execute API endpoints we've already covered. You can also change the value of the `comment` item to whatever you want.
+From the Faber browser tab, get ready to execute the **`POST /present-proof/send-request`** endpoint. After hitting `Try it Now`, erase the data in the block labelled "Edit Value Model", replacing it with the text below. Once that is done, replace in the JSON each instance of `cred_def_id` (there are four instances) and `connection_id` with the values found using the same techniques we've used earlier in this tutorial. Both can be found by scrolling back a little in the Faber terminal, or you can execute API endpoints we've already covered. You can also change the value of the `comment` item to whatever you want.
 
 ``` JSONC
 {
