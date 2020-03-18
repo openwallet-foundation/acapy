@@ -1,5 +1,7 @@
 """Credential exchange admin routes."""
 
+import json
+
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from json.decoder import JSONDecodeError
@@ -147,6 +149,18 @@ class V10CredentialProblemReportRequestSchema(Schema):
     """Request schema for sending problem report."""
 
     explain_ltxt = fields.Str(required=True)
+
+
+class V10PublishRevocationsResultSchema(Schema):
+    """Result schema for revocation publication API call."""
+
+    results = fields.Dict(
+        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        values=fields.List(
+            fields.Str(description="Credential revocation identifier", example="23")
+        ),
+        description="Credential revocation ids published by revocation registry id",
+    )
 
 
 @docs(tags=["issue-credential"], summary="Get attribute MIME types from wallet")
@@ -689,7 +703,19 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     return web.json_response({})
 
 
-@docs(tags=["issue-credential"], summary="Revoke an issued credential")
+@docs(
+    tags=["issue-credential"],
+    parameters=[
+        {
+            "in": "path",
+            "name": "publish",
+            "description": "Whether to publish revocation to ledger immediately.",
+            "schema": {"type": "boolean"},
+            "required": False
+        }
+    ],
+    summary="Revoke an issued credential"
+)
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_revoke(request: web.BaseRequest):
     """
@@ -704,9 +730,9 @@ async def credential_exchange_revoke(request: web.BaseRequest):
     """
 
     context = request.app["request_context"]
-
     try:
         credential_exchange_id = request.match_info["cred_ex_id"]
+        publish = bool(json.loads(request.query.get("publish", json.dumps(False))))
         credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
             context, credential_exchange_id
         )
@@ -723,9 +749,30 @@ async def credential_exchange_revoke(request: web.BaseRequest):
 
     credential_manager = CredentialManager(context)
 
-    await credential_manager.revoke_credential(credential_exchange_record)
+    await credential_manager.revoke_credential(credential_exchange_record, publish)
 
     return web.json_response(credential_exchange_record.serialize())
+
+
+@docs(tags=["issue-credential"], summary="Publish pending revocations to ledger")
+@response_schema(V10PublishRevocationsResultSchema(), 200)
+async def credential_exchange_publish_revocations(request: web.BaseRequest):
+    """
+    Request handler for publishing pending revocations to the ledger.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Credential revocation ids published as revoked by revocation registry id.
+
+    """
+
+    context = request.app["request_context"]
+
+    credential_manager = CredentialManager(context)
+
+    return web.json_response(await credential_manager.publish_pending_revocations())
 
 
 @docs(
@@ -789,6 +836,10 @@ async def register(app: web.Application):
             web.post(
                 "/issue-credential/records/{cred_ex_id}/revoke",
                 credential_exchange_revoke,
+            ),
+            web.post(
+                "/issue-credential/publish-revocations",
+                credential_exchange_publish_revocations,
             ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/problem-report",
