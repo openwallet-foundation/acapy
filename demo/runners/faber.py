@@ -62,9 +62,10 @@ class FaberAgent(DemoAgent):
 
     async def handle_connections(self, message):
         if message["connection_id"] == self.connection_id:
-            if message["state"] == "active" and not self._connection_ready.done():
+            if message["state"] in ["active", "response"]:
                 self.log("Connected")
-                self._connection_ready.set_result(True)
+                if not self._connection_ready.done():
+                    self._connection_ready.set_result(True)
 
     async def handle_issue_credential(self, message):
         state = message["state"]
