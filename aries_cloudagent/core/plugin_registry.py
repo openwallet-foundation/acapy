@@ -37,6 +37,7 @@ class PluginRegistry:
         else:
             try:
                 mod = ClassLoader.load_module(module_name)
+                LOGGER.debug(f"Loaded module: {module_name}")
             except ModuleLoadError as e:
                 LOGGER.error("Error loading plugin module: %s", e)
                 mod = None
