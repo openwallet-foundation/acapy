@@ -43,6 +43,12 @@ class PluginRegistry:
                 "Versions definition is not of type list"
             )
 
+        # Must have at least one definition
+        if len(version_list) < 1:
+            raise ProtocolDefinitionValidationError(
+                "Versions list must define at least one version module"
+            )
+
         for version_dict in version_list:
             # Dicts must have correct format
             is_dict = type(version_dict) is dict
@@ -82,6 +88,18 @@ class PluginRegistry:
                 raise ProtocolDefinitionValidationError(
                     "Minimum supported minor version cannot"
                     + " be greater than current minor version"
+                )
+
+            # There can only be one definition per major version
+            major_version = version_dict["major_version"]
+            count = 0
+            for version_dict in version_list:
+                if version_dict["major_version"] == major_version:
+                    count += 1
+            if count > 1:
+                raise ProtocolDefinitionValidationError(
+                    "There can only be one definition per major version. "
+                    + f"Found {count} for major version {major_version}."
                 )
 
             # Specified module must be loadable
