@@ -53,11 +53,35 @@ class PluginRegistry:
 
             try:
                 type(version_dict["major_version"]) is int and type(
-                    version_dict["minimum_minor"]
-                ) is int and type(version_dict["path"]) is str
+                    version_dict["minimum_minor_version"]
+                ) is int and type(
+                    version_dict["current_minor_version"]
+                ) is int and type(
+                    version_dict["path"]
+                ) is str
             except KeyError as e:
                 raise ProtocolDefinitionValidationError(
                     f"Element of versions definition list is missing an attribute: {e}"
+                )
+
+            # Version number cannot be negative
+            if (
+                version_dict["major_version"] < 0
+                or version_dict["minimum_minor_version"] < 0
+                or version_dict["current_minor_version"] < 0
+            ):
+                raise ProtocolDefinitionValidationError(
+                    "Version number cannot be negative"
+                )
+
+            # Minimum minor version cannot be great than current version
+            if (
+                version_dict["minimum_minor_version"]
+                > version_dict["current_minor_version"]
+            ):
+                raise ProtocolDefinitionValidationError(
+                    "Minimum supported minor version cannot"
+                    + " be greater than current minor version"
                 )
 
             # Specified module must be loadable
@@ -103,9 +127,7 @@ class PluginRegistry:
             try:
                 self.validate_version(definition.versions, module_name)
             except ProtocolDefinitionValidationError as e:
-                LOGGER.error(
-                    f"Protocol versions definition is malformed. {e}"
-                )
+                LOGGER.error(f"Protocol versions definition is malformed. {e}")
                 return None
 
         self._plugins[module_name] = mod
