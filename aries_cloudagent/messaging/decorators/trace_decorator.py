@@ -5,7 +5,7 @@ A trace decorator identifies a responsibility on the processor
 to record information on message processing events.
 """
 
-from typing import Mapping, Sequence
+from typing import Sequence
 
 from marshmallow import fields
 
@@ -13,8 +13,11 @@ from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUIDFour
 
 
+TRACE_MESSAGE_TARGET = "message"
+
+
 class MessageIdElement(BaseModel):
-    """Class representing a message or trace id within a report"""
+    """Class representing a message or trace id within a report."""
 
     class Meta:
         """MessageIdElement metadata."""
@@ -62,7 +65,7 @@ class MessageIdElement(BaseModel):
 
 
 class TraceReport(BaseModel):
-    """Class representing a Trace Report"""
+    """Class representing a Trace Report."""
 
     class Meta:
         """TraceReport metadata."""
@@ -239,18 +242,48 @@ class TraceDecorator(BaseModel):
     @property
     def trace_reports(self):
         """
-        The set of trace reports for this message.
+        Set of trace reports for this message.
 
         Returns:
             The trace reports that have been logged on this message/thread
             so far.  (Only for target="message".)
 
         """
+        if not self._trace_reports:
+            return []
         return self._trace_reports
+
+    def append_trace_report(self, trace_report: TraceReport):
+        """Append a trace report to this decorator."""
+        if not self._trace_reports:
+            self._trace_reports = []
+        self._trace_reports.append(trace_report)
+
+    def next_msg_sender_order(self, msg_id: str):
+        """Get next sender order for given message id."""
+        sender_order = 1
+        if self._trace_reports:
+            for trace_report in self._trace_reports:
+                if (trace_report.msg_id
+                        and trace_report.msg_id.id == msg_id
+                        and trace_report.msg_id.sender_order >= sender_order):
+                    sender_order = trace_report.msg_id.sender_order + 1
+        return sender_order
+
+    def next_thread_sender_order(self, thread_id: str):
+        """Get next sender order for given thread id."""
+        sender_order = 1
+        if self._trace_reports:
+            for trace_report in self._trace_reports:
+                if (trace_report.thread_id
+                        and trace_report.thread_id.id == thread_id
+                        and trace_report.thread_id.sender_order >= sender_order):
+                    sender_order = trace_report.thread_id.sender_order + 1
+        return sender_order
 
 
 class MessageIdSchema(BaseModelSchema):
-    """Message Id schema"""
+    """Message Id schema."""
 
     class Meta:
         """MessageIdSchema metadata."""
@@ -270,8 +303,9 @@ class MessageIdSchema(BaseModelSchema):
         example=27,
     )
 
+
 class TraceReportSchema(BaseModelSchema):
-    """Trace report schema"""
+    """Trace report schema."""
 
     class Meta:
         """TraceReportSchema metadata."""
