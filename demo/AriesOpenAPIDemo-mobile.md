@@ -282,7 +282,7 @@ In the Faber console window, the proof should be received as validated.
 
 ## Revoke the Credential and Send Another Proof Request
 
-If you have enabled revocation, you can try revoking the credential (`faber` option `4`). You will need the credential exchange id from the original credential issuance (not the one from the presentation exchange).
+If you have enabled revocation, you can try revoking the credential pending publication (`faber` options `4` and `5`). For the revocation step, You will need the credential exchange id from the original credential issuance (not the one from the presentation exchange).
 
 Once that is done, try sending another proof request and see what happens!
 

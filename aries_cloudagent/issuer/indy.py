@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Sequence, Tuple
+from typing import Mapping, Sequence, Tuple
 
 import indy.anoncreds
 import indy.blob_storage
@@ -117,7 +117,7 @@ class IndyIssuer(BaseIssuer):
 
         Args:
             origin_did: the DID issuing the credential definition
-            schema_json: the schema used as a basis
+            schema: the schema used as a basis
             signature_type: the credential definition signature type (default 'CL')
             tag: the credential definition tag
             support_revocation: whether to enable revocation for this credential def
@@ -305,3 +305,25 @@ class IndyIssuer(BaseIssuer):
                 tails_writer,
             )
         return (revoc_reg_id, revoc_reg_def_json, revoc_reg_entry_json)
+
+    async def merge_revocation_registry_deltas(
+        self,
+        fro_delta: dict,
+        to_delta: dict
+    ) -> Mapping:
+        """
+        Merge revocation registry deltas.
+
+        Args:
+            fro_delta: original delta
+            to_delta: incoming delta
+
+        Returns:
+            Merged delta.
+
+        """
+
+        return json.loads(await indy.anoncreds.issuer_merge_revocation_registry_deltas(
+            json.dumps(fro_delta),
+            json.dumps(to_delta)
+        ))

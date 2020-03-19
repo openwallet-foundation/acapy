@@ -17,7 +17,7 @@ from ....wallet.base import BaseWallet, DIDInfo
 
 from ...error import RevocationError
 
-from ..issuer_revocation_record import IssuerRevocationRecord
+from ..issuer_rev_reg_record import IssuerRevRegRecord
 from ..revocation_registry import RevocationRegistry
 
 
@@ -44,7 +44,7 @@ class TestRecord(AsyncTestCase):
         CRED_DEF_ID = f"{TestRecord.test_did}:3:CL:1234:default"
         REV_REG_ID = f"{TestRecord.test_did}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
-        rec = IssuerRevocationRecord(
+        rec = IssuerRevRegRecord(
             issuer_did=TestRecord.test_did, cred_def_id=CRED_DEF_ID
         )
         issuer = async_mock.MagicMock(BaseIssuer)
@@ -74,7 +74,7 @@ class TestRecord(AsyncTestCase):
         await rec.generate_registry(self.context, None)
 
         assert rec.revoc_reg_id == REV_REG_ID
-        assert rec.state == IssuerRevocationRecord.STATE_GENERATED
+        assert rec.state == IssuerRevRegRecord.STATE_GENERATED
         assert rec.tails_hash == "59NY25UEV8a5CzNkXFQMppwofUxtYtf4FDp1h9xgeLcK"
         assert rec.tails_local_path == "point at infinity"
 
@@ -92,45 +92,45 @@ class TestRecord(AsyncTestCase):
         rev_reg = await rec.get_registry()
         assert type(rev_reg) == RevocationRegistry
 
-        queried = await IssuerRevocationRecord.query_by_cred_def_id(
+        queried = await IssuerRevRegRecord.query_by_cred_def_id(
             context=self.context,
             cred_def_id=CRED_DEF_ID,
-            state=IssuerRevocationRecord.STATE_GENERATED,
+            state=IssuerRevRegRecord.STATE_GENERATED,
         )
         assert len(queried) == 1
 
-        retrieved = await IssuerRevocationRecord.retrieve_by_revoc_reg_id(
+        retrieved = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
             context=self.context, revoc_reg_id=rec.revoc_reg_id
         )
         assert retrieved.revoc_reg_id == rec.revoc_reg_id
 
         await rec.mark_full(self.context)
-        assert rec.state == IssuerRevocationRecord.STATE_FULL
+        assert rec.state == IssuerRevRegRecord.STATE_FULL
 
         data = rec.serialize()
-        model_instance = IssuerRevocationRecord.deserialize(data)
-        assert isinstance(model_instance, IssuerRevocationRecord)
+        model_instance = IssuerRevRegRecord.deserialize(data)
+        assert isinstance(model_instance, IssuerRevRegRecord)
         assert model_instance == rec
 
-    # async def test_generate_registry_not_indy_wallet(self):
-    #     self.wallet = async_mock.MagicMock()
-    #     self.wallet.WALLET_TYPE = "not-indy"
-    #     self.context.injector.clear_binding(BaseWallet)
-    #     self.context.injector.bind_instance(BaseWallet, self.wallet)
-    #     issuer = IndyIssuer(self.wallet)
-    #     self.context.injector.bind_instance(BaseIssuer, issuer)
+    async def test_pending(self):
+        rec = IssuerRevRegRecord()
+        await rec.mark_pending(self.context, "1")
+        await rec.mark_pending(self.context, "2")
 
-    #     rec = IssuerRevocationRecord()
-    #     with self.assertRaises(RevocationError):
-    #         await rec.generate_registry(self.context, ".")
+        found = await IssuerRevRegRecord.query_by_pending(self.context)
+        assert len(found) == 1 and found[0] == rec
+
+        await rec.clear_pending(self.context)
+        found = await IssuerRevRegRecord.query_by_pending(self.context)
+        assert not found
 
     async def test_set_tails_file_public_uri_rev_reg_undef(self):
-        rec = IssuerRevocationRecord()
+        rec = IssuerRevRegRecord()
         with self.assertRaises(RevocationError):
             rec.set_tails_file_public_uri("dummy")
 
     async def test_publish_rev_reg_undef(self):
-        rec = IssuerRevocationRecord()
+        rec = IssuerRevRegRecord()
         with self.assertRaises(RevocationError):
             await rec.publish_registry_definition(self.context)
 
