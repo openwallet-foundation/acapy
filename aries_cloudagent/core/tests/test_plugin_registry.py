@@ -50,7 +50,7 @@ class TestPluginRegistry(AsyncTestCase):
         versions_not_a_list = {}
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions_not_a_list, mod_name)
@@ -63,7 +63,7 @@ class TestPluginRegistry(AsyncTestCase):
         versions_not_a_list = [{}, []]
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions_not_a_list, mod_name)
@@ -76,7 +76,7 @@ class TestPluginRegistry(AsyncTestCase):
         versions_not_a_list = []
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions_not_a_list, mod_name)
@@ -96,7 +96,7 @@ class TestPluginRegistry(AsyncTestCase):
         ]
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions_not_a_list, mod_name)
@@ -116,7 +116,7 @@ class TestPluginRegistry(AsyncTestCase):
         ]
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions_not_a_list, mod_name)
@@ -136,11 +136,56 @@ class TestPluginRegistry(AsyncTestCase):
         ]
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions_not_a_list, mod_name)
 
+    async def test_validate_version_multiple_major(self):
+        mod_name = "test_mod"
+        mod = async_mock.MagicMock()
+        mod.__name__ = mod_name
+
+        versions_not_a_list = [
+            {
+                "major_version": 1,
+                "minimum_minor_version": 0,
+                "current_minor_version": 0,
+                "path": "v1_0",
+            },
+            {
+                "major_version": 1,
+                "minimum_minor_version": 0,
+                "current_minor_version": 1,
+                "path": "v1_1",
+            },
+        ]
+
+        with async_mock.patch.object(
+            ClassLoader, "load_module", async_mock.MagicMock()
+        ) as load_module:
+            with pytest.raises(ProtocolDefinitionValidationError):
+                self.registry.validate_version(versions_not_a_list, mod_name)
+
+    async def test_validate_version_bad_path(self):
+        mod_name = "test_mod"
+        mod = async_mock.MagicMock()
+        mod.__name__ = mod_name
+
+        versions_not_a_list = [
+            {
+                "major_version": 1,
+                "minimum_minor_version": 1,
+                "current_minor_version": 0,
+                "path": "v1_0",
+            }
+        ]
+
+        with async_mock.patch.object(
+            ClassLoader, "load_module", async_mock.MagicMock(return_value=None)
+        ) as load_module:
+            with pytest.raises(ProtocolDefinitionValidationError):
+                self.registry.validate_version(versions_not_a_list, mod_name)
 
     async def test_validate_version_list_correct(self):
         mod_name = "test_mod"
@@ -158,18 +203,18 @@ class TestPluginRegistry(AsyncTestCase):
                 "major_version": 2,
                 "minimum_minor_version": 0,
                 "current_minor_version": 0,
-                "path": "v2_0"
-            }
+                "path": "v2_0",
+            },
         ]
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             assert self.registry.validate_version(versions_not_a_list, mod_name) is True
-            
+
             load_module.has_calls(
                 call(versions_not_a_list[0]["path"], mod_name),
-                call(versions_not_a_list[1]["path"], mod_name)
+                call(versions_not_a_list[1]["path"], mod_name),
             )
 
     async def test_validate_version_list_extra_attributes_ok(self):
@@ -188,7 +233,7 @@ class TestPluginRegistry(AsyncTestCase):
         ]
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader, "load_module", async_mock.MagicMock()
         ) as load_module:
             assert self.registry.validate_version(versions_not_a_list, mod_name) is True
 
