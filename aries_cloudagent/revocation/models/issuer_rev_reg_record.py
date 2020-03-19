@@ -98,7 +98,7 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_hash = tails_hash
         self.tails_local_path = tails_local_path
         self.tails_public_uri = tails_public_uri
-        self.pending_pub = list(pending_pub) if pending_pub else []
+        self.pending_pub = list(set(pending_pub)) if pending_pub else []
 
     @property
     def record_id(self) -> str:
@@ -203,7 +203,8 @@ class IssuerRevRegRecord(BaseRecord):
             context: The injection context to use
             cred_rev_id: The credential revocation identifier for credential to revoke
         """
-        self.pending_pub.append(cred_rev_id)
+        if cred_rev_id not in self.pending_pub:
+            self.pending_pub.append(cred_rev_id)
 
         await self.save(context)
 

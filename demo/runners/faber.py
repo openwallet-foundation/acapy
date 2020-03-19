@@ -318,8 +318,12 @@ async def main(
                 )
             elif option == "4" and revocation:
                 revoking_cred_id = await prompt("Enter credential exchange id: ")
+                publish = json.dumps(
+                    await prompt("Publish now? [Y/N]: ", default="N") in ('yY')
+                )
                 await agent.admin_POST(
-                    f"/issue-credential/records/{revoking_cred_id}/revoke?publish=false"
+                    f"/issue-credential/records/{revoking_cred_id}"
+                    f"/revoke?publish={publish}"
                 )
             elif option == "5" and revocation:
                 resp = await agent.admin_POST("/issue-credential/publish-revocations")
