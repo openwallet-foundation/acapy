@@ -6,7 +6,7 @@ from ..config.injection_context import InjectionContext
 from ..ledger.base import BaseLedger
 
 from .error import RevocationNotSupportedError
-from .models.issuer_revocation_record import IssuerRevocationRecord
+from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.revocation_registry import RevocationRegistry
 
 
@@ -27,7 +27,7 @@ class IndyRevocation:
         max_cred_num: int = None,
         revoc_def_type: str = None,
         tag: str = None,
-    ) -> "IssuerRevocationRecord":
+    ) -> "IssuerRevRegRecord":
         """Create a new revocation registry record for a credential definition."""
         ledger: BaseLedger = await self._context.inject(BaseLedger)
         async with ledger:
@@ -38,13 +38,13 @@ class IndyRevocation:
             raise RevocationNotSupportedError(
                 "Credential definition does not support revocation"
             )
-        record = IssuerRevocationRecord(
+        record = IssuerRevRegRecord(
             cred_def_id=cred_def_id,
             issuer_did=issuer_did,
             issuance_type=(
-                IssuerRevocationRecord.ISSUANCE_BY_DEFAULT
+                IssuerRevRegRecord.ISSUANCE_BY_DEFAULT
                 if in_advance
-                else IssuerRevocationRecord.ISSUANCE_ON_DEMAND
+                else IssuerRevRegRecord.ISSUANCE_ON_DEMAND
             ),
             max_cred_num=max_cred_num,
             revoc_def_type=revoc_def_type,
@@ -54,9 +54,9 @@ class IndyRevocation:
         self.REGISTRY_CACHE[cred_def_id] = record.record_id
         return record
 
-    async def get_active_issuer_revocation_record(
+    async def get_active_issuer_rev_reg_record(
         self, cred_def_id: str, await_create: bool = False
-    ) -> "IssuerRevocationRecord":
+    ) -> "IssuerRevRegRecord":
         """Return the current active registry for issuing a given credential definition.
 
         If no registry exists, then a new one will be created.
@@ -67,28 +67,28 @@ class IndyRevocation:
         """
         # FIXME filter issuing registries by cred def, state (active or full), pick one
         if cred_def_id in self.REGISTRY_CACHE:
-            registry = await IssuerRevocationRecord.retrieve_by_id(
+            registry = await IssuerRevRegRecord.retrieve_by_id(
                 self._context, self.REGISTRY_CACHE[cred_def_id]
             )
             return registry
 
-    async def get_issuer_revocation_record(
+    async def get_issuer_rev_reg_record(
         self, revoc_reg_id: str
-    ) -> "IssuerRevocationRecord":
-        """Return the current active revocation record for a given registry ID.
+    ) -> "IssuerRevRegRecord":
+        """Return the current active revocation registry record for a given registry ID.
 
         If no registry exists, then a new one will be created.
 
         Args:
-            revoc_reg_id: ID of the base revocation registry
+            revoc_reg_id: ID of the revocation registry
         """
-        return await IssuerRevocationRecord.retrieve_by_revoc_reg_id(
+        return await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
             self._context, revoc_reg_id
         )
 
-    async def list_issuer_registries(self) -> Sequence["IssuerRevocationRecord"]:
-        """List the current revocation registries."""
-        return await IssuerRevocationRecord.query(self._context)
+    async def list_issuer_registries(self) -> Sequence["IssuerRevRegRecord"]:
+        """List the issuer's current revocation registries."""
+        return await IssuerRevRegRecord.query(self._context)
 
     async def get_ledger_registry(self, revoc_reg_id: str) -> "RevocationRegistry":
         """Get a revocation registry from the ledger, fetching as necessary."""

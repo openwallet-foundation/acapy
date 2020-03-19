@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Mapping, Tuple
+from typing import Mapping, Text, Sequence, Tuple
 
 from indy.error import IndyError
 
@@ -25,6 +25,7 @@ from ....messaging.credential_definitions.util import (
 )
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
+from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
@@ -500,7 +501,7 @@ class CredentialManager:
 
             if credential_exchange_record.revoc_reg_id:
                 revoc = IndyRevocation(self.context)
-                registry_record = await revoc.get_issuer_revocation_record(
+                registry_record = await revoc.get_issuer_rev_reg_record(
                     credential_exchange_record.revoc_reg_id
                 )
                 # FIXME exception on missing
@@ -580,6 +581,7 @@ class CredentialManager:
         Args:
             credential_exchange_record: credential exchange record
                 with credential to store and ack
+            credential_id: optional credential identifier to override default on storage
 
         Returns:
             Tuple: (Updated credential exchange record, credential ack message)
@@ -682,16 +684,18 @@ class CredentialManager:
         return credential_exchange_record
 
     async def revoke_credential(
-        self, credential_exchange_record: V10CredentialExchange
+        self, credential_exchange_record: V10CredentialExchange, publish: bool = False
     ):
         """
         Revoke a previously-issued credential.
 
+        Optionally, publish the corresponding revocation registry delta to the ledger.
+
         Args:
             credential_exchange_record: the active credential exchange
+            publish: whether to publish the resulting revocation registry delta
 
         """
-
         assert (
             credential_exchange_record.revocation_id
             and credential_exchange_record.revoc_reg_id
@@ -699,27 +703,71 @@ class CredentialManager:
         issuer: BaseIssuer = await self.context.inject(BaseIssuer)
 
         revoc = IndyRevocation(self.context)
-        registry_record = await revoc.get_issuer_revocation_record(
+        registry_record = await revoc.get_issuer_rev_reg_record(
             credential_exchange_record.revoc_reg_id
         )
-        # FIXME exception on missing
-
-        registry = await registry_record.get_registry()
-
-        delta_json = await issuer.revoke_credential(
-            registry.registry_id,
-            registry.tails_local_path,
-            credential_exchange_record.revocation_id,
-        )
-        delta = json.loads(delta_json)
-
-        # create entry and send to ledger
-        if delta:
-            ledger: BaseLedger = await self.context.inject(BaseLedger)
-            async with ledger:
-                await ledger.send_revoc_reg_entry(
-                    registry.registry_id, registry.reg_def_type, delta
+        if not registry_record:
+            raise CredentialManagerError(
+                "No revocation registry record found for id {}".format(
+                    credential_exchange_record.revoc_reg_id
                 )
+            )
+
+        if publish:
+            # create entry and send to ledger
+            delta = json.loads(
+                await issuer.revoke_credential(
+                    registry_record.revoc_reg_id,
+                    registry_record.tails_local_path,
+                    credential_exchange_record.revocation_id,
+                )
+            )
+
+            if delta:
+                registry_record.revoc_reg_entry = delta
+                await registry_record.publish_registry_entry(self.context)
+        else:
+            await registry_record.mark_pending(
+                self.context,
+                credential_exchange_record.revocation_id
+            )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_REVOKED
         await credential_exchange_record.save(self.context, reason="Revoked credential")
+
+    async def publish_pending_revocations(self) -> Mapping[Text, Sequence[Text]]:
+        """
+        Publish pending revocations to the ledger.
+
+        Returns: mapping from each revocation registry id to its cred rev ids published.
+        """
+
+        result = {}
+
+        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
+
+        registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
+        for registry_record in registry_records:
+            net_delta = {}
+            for cr_id in registry_record.pending_pub:
+                delta = json.loads(
+                    await issuer.revoke_credential(
+                        registry_record.revoc_reg_id,
+                        registry_record.tails_local_path,
+                        cr_id,
+                    )
+                )
+                if delta:
+                    net_delta = await issuer.merge_revocation_registry_deltas(
+                        net_delta,
+                        delta
+                    ) if net_delta else delta
+
+            registry_record.revoc_reg_entry = net_delta
+            await registry_record.publish_registry_entry(self.context)
+            result[registry_record.revoc_reg_id] = [
+                cr_id for cr_id in registry_record.pending_pub
+            ]
+            await registry_record.clear_pending(self.context)
+
+        return result
