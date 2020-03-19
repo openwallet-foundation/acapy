@@ -1,9 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from ....config.injection_context import InjectionContext
-from ....messaging.request_context import RequestContext
-from ....messaging.responder import MockResponder
+from ......config.injection_context import InjectionContext
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
 from .. import driver_service as test_module
 
 

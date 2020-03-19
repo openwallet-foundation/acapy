@@ -13,8 +13,8 @@ from ..ledger.provider import LedgerProvider
 from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
-from ..protocols.actionmenu.base_service import BaseMenuService
-from ..protocols.actionmenu.driver_service import DriverMenuService
+from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
+from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
 from ..protocols.introduction.base_service import BaseIntroductionService
 from ..protocols.introduction.demo_service import DemoIntroductionService
 from ..storage.base import BaseStorage

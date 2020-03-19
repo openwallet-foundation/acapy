@@ -1,8 +1,8 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from ....config.injection_context import InjectionContext
-from ....messaging.request_context import RequestContext
+from .....config.injection_context import InjectionContext
+from .....messaging.request_context import RequestContext
 from .. import controller as test_module
 
 

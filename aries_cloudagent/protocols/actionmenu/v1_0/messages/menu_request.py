@@ -1,6 +1,6 @@
 """Represents a request for an action menu."""
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import MENU_REQUEST, PROTOCOL_PACKAGE
 

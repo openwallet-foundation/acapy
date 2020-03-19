@@ -1,7 +1,7 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from ....storage.error import StorageNotFoundError
+from .....storage.error import StorageNotFoundError
 
 from .. import routes as test_module
 

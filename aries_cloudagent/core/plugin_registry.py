@@ -5,6 +5,8 @@ from collections import OrderedDict
 from types import ModuleType
 from typing import Sequence
 
+from .error import ProtocolDefinitionValidationError
+
 from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader, ModuleLoadError
 
@@ -30,6 +32,46 @@ class PluginRegistry:
         """Accessor for a list of all plugin modules."""
         return list(self._plugins.values())
 
+    def validate_version(self, version_list, module_name):
+        """Validate version dict format."""
+
+        is_list = type(version_list) is list
+
+        # Must be a list
+        if not is_list:
+            raise ProtocolDefinitionValidationError(
+                "Versions definition is not of type list"
+            )
+
+        for version_dict in version_list:
+            # Dicts must have correct format
+            is_dict = type(version_dict) is dict
+            if not is_dict:
+                raise ProtocolDefinitionValidationError(
+                    "Element of versions definition list is not of type obj"
+                )
+
+            try:
+                type(version_dict["major_version"]) is int and type(
+                    version_dict["minimum_minor"]
+                ) is int and type(version_dict["path"]) is str
+            except KeyError as e:
+                raise ProtocolDefinitionValidationError(
+                    f"Element of versions definition list is missing an attribute: {e}"
+                )
+
+            # Specified module must be loadable
+            version_path = version_dict["path"]
+            mod = ClassLoader.load_module(version_path, module_name)
+
+            if not mod:
+                raise ProtocolDefinitionValidationError(
+                    "Version module path is not "
+                    + f"loadable: {module_name}, {version_path}"
+                )
+
+        return True
+
     def register_plugin(self, module_name: str) -> ModuleType:
         """Register a plugin module."""
         if module_name in self._plugins:
@@ -39,13 +81,34 @@ class PluginRegistry:
                 mod = ClassLoader.load_module(module_name)
                 LOGGER.debug(f"Loaded module: {module_name}")
             except ModuleLoadError as e:
-                LOGGER.error("Error loading plugin module: %s", e)
-                mod = None
-            else:
-                if mod:
-                    self._plugins[module_name] = mod
-                else:
-                    LOGGER.error("Plugin module not found: %s", module_name)
+                LOGGER.error(f"Error loading plugin module: {e}")
+                return None
+
+            definition = ClassLoader.load_module("definition", module_name)
+
+            # definition.py must exist in protocol
+            if not definition:
+                LOGGER.error(f"Protocol does not include definition.py: {module_name}")
+                return None
+
+            # definition.py must include versions attribute
+            if not hasattr(definition, "versions"):
+                LOGGER.error(
+                    "Protocol definition does not "
+                    + f"include versions attribute: {module_name}"
+                )
+                return None
+
+            # Definition list must not be malformed
+            try:
+                self.validate_version(definition.versions, module_name)
+            except ProtocolDefinitionValidationError as e:
+                LOGGER.error(
+                    f"Protocol versions definition is malformed. {e}"
+                )
+                return None
+
+        self._plugins[module_name] = mod
         return mod
 
     def register_package(self, package_name: str) -> Sequence[ModuleType]:
