@@ -4,9 +4,9 @@ from asynctest import (
     TestCase as AsyncTestCase,
 )
 
-from .....config.injection_context import InjectionContext
-from .....messaging.request_context import RequestContext
-from .....messaging.responder import MockResponder
+from aries_cloudagent.config.injection_context import InjectionContext
+from aries_cloudagent.messaging.request_context import RequestContext
+from aries_cloudagent.messaging.responder import MockResponder
 
 from .. import menu_request_handler as handler
 

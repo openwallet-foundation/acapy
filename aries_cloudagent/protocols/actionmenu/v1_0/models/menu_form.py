@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from .....messaging.models.base import BaseModel, BaseModelSchema
+from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
 
 from .menu_form_param import MenuFormParam, MenuFormParamSchema
 

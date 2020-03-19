@@ -2,9 +2,9 @@
 
 from abc import ABC, abstractmethod
 
-from ....config.injection_context import InjectionContext
-from ....connections.models.connection_record import ConnectionRecord
-from ....messaging.agent_message import AgentMessage
+from aries_cloudagent.config.injection_context import InjectionContext
+from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.messaging.agent_message import AgentMessage
 
 from .messages.menu import Menu
 

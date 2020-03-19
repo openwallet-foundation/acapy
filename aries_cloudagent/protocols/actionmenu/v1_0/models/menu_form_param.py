@@ -2,7 +2,7 @@
 
 from marshmallow import fields
 
-from .....messaging.models.base import BaseModel, BaseModelSchema
+from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
 
 
 class MenuFormParam(BaseModel):

@@ -12,7 +12,7 @@ NEW_MENU = f"{NEW_PROTOCOL_URI}/menu"
 NEW_MENU_REQUEST = f"{NEW_PROTOCOL_URI}/menu-request"
 NEW_PERFORM = f"{NEW_PROTOCOL_URI}/perform"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.actionmenu"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.actionmenu.v1_0"
 
 MESSAGE_TYPES = {
     MENU: f"{PROTOCOL_PACKAGE}.messages.menu.Menu",

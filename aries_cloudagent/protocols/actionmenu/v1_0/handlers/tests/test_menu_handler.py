@@ -4,8 +4,8 @@ from asynctest import (
     TestCase as AsyncTestCase,
 )
 
-from .....messaging.request_context import RequestContext
-from .....messaging.responder import MockResponder
+from aries_cloudagent.messaging.request_context import RequestContext
+from aries_cloudagent.messaging.responder import MockResponder
 
 from .. import menu_handler as handler
 

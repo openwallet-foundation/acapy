@@ -1,12 +1,12 @@
 from asynctest import TestCase as AsyncTestCase
 
-from .....config.injection_context import InjectionContext
-from .....connections.models.connection_record import ConnectionRecord
-from .....messaging.responder import MockResponder
-from .....storage.base import BaseStorage
-from .....storage.basic import BasicStorage
-from .....wallet.base import BaseWallet
-from .....wallet.basic import BasicWallet
+from aries_cloudagent.config.injection_context import InjectionContext
+from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.messaging.responder import MockResponder
+from aries_cloudagent.storage.base import BaseStorage
+from aries_cloudagent.storage.basic import BasicStorage
+from aries_cloudagent.wallet.base import BaseWallet
+from aries_cloudagent.wallet.basic import BasicWallet
 
 from .. import util as test_module
 from ..models.menu_form_param import MenuFormParam

@@ -1,6 +1,10 @@
 """Action menu message handler."""
 
-from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
+from aries_cloudagent.messaging.base_handler import (
+    BaseHandler,
+    BaseResponder,
+    RequestContext,
+)
 
 from ..messages.menu import Menu
 from ..util import save_connection_menu
