@@ -1,16 +1,16 @@
 """Route coordination record information with non-secrets storage."""
 
-from typing import Sequence
+# from typing import Sequence
 
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
-from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ...messaging.valid import UUIDFour
+from ....messaging.models.base_record import BaseRecord, BaseRecordSchema
+from ....messaging.valid import UUIDFour
 
 
 class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
-    """Represents an route coordination for coordinate mediation."""
+    """Represents a route coordination for coordinate mediation."""
 
     class Meta:
         """RouteCoordination metadata."""
@@ -22,7 +22,6 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
     WEBHOOK_TOPIC = "route_coordination"
     TAG_NAMES = {
         "connection_id",
-        "rouiting_keys",
         "routing_endpoint",
     }
 
@@ -48,9 +47,9 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
         initiator: str = None,
         role: str = None,
         state: str = None,
-        mediator_terms: Sequence[str] = None,
-        recipient_terms: Sequence[str] = None,
-        rouiting_keys: Sequence[str] = None,
+        # mediator_terms: Sequence[str] = None,
+        # recipient_terms: Sequence[str] = None,
+        # rouiting_keys: Sequence[str] = None,
         routing_endpoint: str = None,
         error_msg: str = None,
         **kwargs,
@@ -63,9 +62,9 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
         self.initiator = initiator
         self.role = role
         self.state = state
-        self.mediator_terms = list(mediator_terms) if mediator_terms else []
-        self.recipient_terms = list(recipient_terms) if recipient_terms else []
-        self.rouiting_keys = list(rouiting_keys) if rouiting_keys else []
+        # self.mediator_terms = list(mediator_terms) if mediator_terms else []
+        # self.recipient_terms = list(recipient_terms) if recipient_terms else []
+        # self.rouiting_keys = list(rouiting_keys) if rouiting_keys else []
         self.routing_endpoint = routing_endpoint
         self.error_msg = error_msg
 
@@ -83,9 +82,9 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
                 "connection_id",
                 "thread_id",
                 "state",
-                "mediator_terms",
-                "recipient_terms",
-                "rouiting_keys",
+                # "mediator_terms",
+                # "recipient_terms",
+                # "rouiting_keys",
                 "routing_endpoint",
             )
         }
@@ -115,6 +114,7 @@ class RouteCoordinationSchema(BaseRecordSchema):
         description="Mediator process state",
         example=RouteCoordination.STATE_MEDIATION_REQUEST,
     )
+    """
     mediator_terms = fields.List(
         fields.Str(
             description="Indicate terms that the mediator "
@@ -131,6 +131,14 @@ class RouteCoordinationSchema(BaseRecordSchema):
         required=False,
         description="List of mediator rules for mediator",
     )
+    rouiting_keys = fields.List(
+        fields.Str(
+            description="Recipient verkeys for routing"
+        ),
+        required=False,
+        description="List of all related verkeys for the routing",
+    )
+    """
     routing_endpoint = fields.Str(
         required=False,
         description="Mediation routing endpoint",
