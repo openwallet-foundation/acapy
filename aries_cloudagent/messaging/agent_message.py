@@ -325,7 +325,7 @@ class AgentMessage(BaseModel):
         Args:
             msg: The received message containing optional trace information
         """
-        if msg:
+        if msg and msg._trace:
             self._trace = msg._trace
 
     def add_trace_decorator(
