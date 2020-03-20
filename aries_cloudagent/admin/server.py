@@ -171,7 +171,9 @@ class AdminServer(BaseAdminServer):
 
             @web.middleware
             async def check_token(request, handler):
-                header_admin_api_key = request.headers.get("x-api-key")
+                header_admin_api_key = request.headers.get(
+                    "x-api-key"
+                ) or request.query.get("x-api-key")
                 if not header_admin_api_key:
                     raise web.HTTPUnauthorized()
 
