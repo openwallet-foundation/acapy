@@ -220,7 +220,9 @@ class FaberAgent(BaseAgent):
         )
 
     async def revoke_credential(self, cred_ex_id: str):
-        await self.admin_POST(f"/issue-credential/records/{cred_ex_id}/revoke")
+        await self.admin_POST(
+            f"/issue-credential/records/{cred_ex_id}/revoke?publish=true"
+        )
 
 
 class RoutingAgent(BaseAgent):
@@ -431,7 +433,7 @@ async def main(
 
         cred_id = next(iter(faber.cred_ex_ids))
         if revoc:
-            print("Revoking credential", cred_id)
+            print("Revoking credential and publishing", cred_id)
             await faber.revoke_credential(cred_id)
 
         if show_timing:

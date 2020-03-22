@@ -238,7 +238,10 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
         await input_invitation(agent)
 
         async for option in prompt_loop(
-            "(3) Send Message (4) Input New Invitation (X) Exit? [3/4/X]: "
+            "   (3) Send Message\n"
+            "   (4) Input New Invitation\n"
+            "   (X) Exit?\n"
+            "[3/4/X]: "
         ):
             if option is None or option in "xX":
                 break
