@@ -16,10 +16,7 @@ from ...wallet.indy import IndyWallet
 
 from ..error import RevocationError, RevocationNotSupportedError
 from ..indy import IndyRevocation
-from ..models.issuer_revocation_record import (
-    DEFAULT_REGISTRY_SIZE,
-    IssuerRevocationRecord
-)
+from ..models.issuer_rev_reg_record import DEFAULT_REGISTRY_SIZE, IssuerRevRegRecord
 from ..models.revocation_registry import RevocationRegistry
 
 
@@ -62,9 +59,9 @@ class TestIndyRevocation(AsyncTestCase):
 
         assert result.cred_def_id == CRED_DEF_ID
         assert result.issuer_did == self.test_did
-        assert result.issuance_type == IssuerRevocationRecord.ISSUANCE_BY_DEFAULT
+        assert result.issuance_type == IssuerRevRegRecord.ISSUANCE_BY_DEFAULT
         assert result.max_cred_num == DEFAULT_REGISTRY_SIZE
-        assert result.revoc_def_type == IssuerRevocationRecord.REVOC_DEF_TYPE_CL
+        assert result.revoc_def_type == IssuerRevRegRecord.REVOC_DEF_TYPE_CL
         assert result.tag is None
 
     async def test_init_issuer_registry_no_cred_def(self):
@@ -99,23 +96,23 @@ class TestIndyRevocation(AsyncTestCase):
             )
             assert x_revo.message == "Credential definition does not support revocation"
 
-    async def test_get_active_issuer_revocation_record(self):
+    async def test_get_active_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
         rec = await self.revoc.init_issuer_registry(
             CRED_DEF_ID,
             self.test_did
         )
 
-        result = await self.revoc.get_active_issuer_revocation_record(CRED_DEF_ID)
+        result = await self.revoc.get_active_issuer_rev_reg_record(CRED_DEF_ID)
         assert rec == result
 
-    async def test_get_active_issuer_revocation_record_none(self):
+    async def test_get_active_issuer_rev_reg_record_none(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-        result = await self.revoc.get_active_issuer_revocation_record(CRED_DEF_ID)
+        result = await self.revoc.get_active_issuer_rev_reg_record(CRED_DEF_ID)
         assert result is None
         
 
-    async def test_get_issuer_revocation_record(self):
+    async def test_get_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         rec = await self.revoc.init_issuer_registry(
@@ -126,14 +123,14 @@ class TestIndyRevocation(AsyncTestCase):
         rec.generate_registry=async_mock.CoroutineMock()
 
         with async_mock.patch.object(
-            IssuerRevocationRecord,
+            IssuerRevRegRecord,
             "retrieve_by_revoc_reg_id",
             async_mock.CoroutineMock()
         ) as mock_retrieve_by_rr_id:
             mock_retrieve_by_rr_id.return_value = rec
             await rec.generate_registry(self.context, None)
 
-            result = await self.revoc.get_issuer_revocation_record(rec.revoc_reg_id)
+            result = await self.revoc.get_issuer_rev_reg_record(rec.revoc_reg_id)
             assert result.revoc_reg_id == "dummy"
 
     async def test_list_issuer_registries(self):

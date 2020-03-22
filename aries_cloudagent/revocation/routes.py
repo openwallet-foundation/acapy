@@ -15,7 +15,7 @@ from ..storage.base import BaseStorage, StorageNotFoundError
 
 from .error import RevocationNotSupportedError
 from .indy import IndyRevocation
-from .models.issuer_revocation_record import IssuerRevocationRecordSchema
+from .models.issuer_rev_reg_record import IssuerRevRegRecordSchema
 from .models.revocation_registry import RevocationRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class RevRegCreateRequestSchema(Schema):
 class RevRegCreateResultSchema(Schema):
     """Result schema for revocation registry creation request."""
 
-    result = IssuerRevocationRecordSchema()
+    result = IssuerRevRegRecordSchema()
 
 
 class RevRegUpdateTailsFileUriSchema(Schema):
@@ -114,7 +114,7 @@ async def get_current_registry(request: web.BaseRequest):
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
@@ -145,7 +145,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
@@ -174,7 +174,7 @@ async def publish_registry(request: web.BaseRequest):
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
@@ -221,7 +221,7 @@ async def update_registry(request: web.BaseRequest):
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
