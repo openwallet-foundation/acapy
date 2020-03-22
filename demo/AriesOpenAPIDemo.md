@@ -116,7 +116,7 @@ To run the demo on your local system, you must have git, a running Docker instal
 
 ### Start the Faber Agent
 
-To begin running the demo in Docker, open up two terminal windows, one each for the Faber’s and Alice’s agent.
+To begin running the demo in Docker, open up two terminal windows, one each for Faber’s and Alice’s agent.
 
 In the first terminal window, clone the ACA-Py repo, change into the demo folder and start the Faber agent:
 
