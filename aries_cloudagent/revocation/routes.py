@@ -28,7 +28,11 @@ class RevRegCreateRequestSchema(Schema):
         description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
 
-    max_cred_num = fields.Int(description="Maximum credential numbers", required=False)
+    max_cred_num = fields.Int(
+        description="Maximum credential numbers",
+        example=100,
+        required=False
+    )
 
 
 class RevRegCreateResultSchema(Schema):
