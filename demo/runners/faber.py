@@ -6,8 +6,6 @@ import random
 import sys
 import time
 
-from uuid import uuid4
-
 from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
