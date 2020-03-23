@@ -1,7 +1,6 @@
 """Admin routes for presentations."""
 
 import json
-from uuid import uuid4
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
@@ -20,6 +19,7 @@ from ....messaging.valid import (
     UUIDFour,
 )
 from ....storage.error import StorageNotFoundError
+from ....indy.util import generate_pr_nonce
 
 from .manager import PresentationManager
 from .messages.inner.presentation_preview import (
@@ -457,7 +457,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     comment = body.get("comment")
     indy_proof_request = body.get("proof_request")
     if not indy_proof_request.get("nonce"):
-        indy_proof_request["nonce"] = str(uuid4().int)
+        indy_proof_request["nonce"] = await generate_pr_nonce()
 
     presentation_request_message = PresentationRequest(
         comment=comment,
@@ -518,7 +518,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     comment = body.get("comment")
     indy_proof_request = body.get("proof_request")
     if not indy_proof_request.get("nonce"):
-        indy_proof_request["nonce"] = str(uuid4().int)
+        indy_proof_request["nonce"] = await generate_pr_nonce()
 
     presentation_request_message = PresentationRequest(
         comment=comment,

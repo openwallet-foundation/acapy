@@ -9,6 +9,7 @@ from ...core.error import BaseError
 from ...holder.base import BaseHolder
 from ...ledger.base import BaseLedger
 from ...verifier.base import BaseVerifier
+from ...indy.util import generate_pr_nonce
 
 from .models.presentation_exchange import PresentationExchange
 from .messages.presentation_request import PresentationRequest
@@ -56,7 +57,7 @@ class PresentationManager:
         presentation_request = {
             "name": name,
             "version": version,
-            "nonce": str(uuid4().int),
+            "nonce": await generate_pr_nonce(),
             "requested_attributes": {},
             "requested_predicates": {},
         }

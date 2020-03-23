@@ -6,8 +6,6 @@ import random
 import sys
 import time
 
-from uuid import uuid4
-
 from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
@@ -292,7 +290,6 @@ async def main(
                 indy_proof_request = {
                     "name": "Proof of Education",
                     "version": "1.0",
-                    "nonce": str(uuid4().int),
                     "requested_attributes": {
                         f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
                     },

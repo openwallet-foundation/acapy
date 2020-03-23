@@ -2,7 +2,6 @@
 
 
 from enum import Enum
-from uuid import uuid4
 from time import time
 from typing import Mapping, Sequence
 
@@ -14,6 +13,7 @@ from ......messaging.util import canon
 from ......messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
 from ......revocation.models.indy import NonRevocationInterval
 from ......wallet.util import b64_to_str
+from ......indy.util import generate_pr_nonce
 
 
 from ...message_types import PRESENTATION_PREVIEW
@@ -321,7 +321,7 @@ class PresentationPreview(BaseModel):
         proof_req = {
             "name": name or "proof-request",
             "version": version or "1.0",
-            "nonce": nonce or str(uuid4().int),
+            "nonce": nonce or await generate_pr_nonce(),
             "requested_attributes": {},
             "requested_predicates": {},
         }
