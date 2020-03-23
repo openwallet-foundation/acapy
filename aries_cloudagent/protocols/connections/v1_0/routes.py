@@ -5,12 +5,12 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
-from ...connections.models.connection_record import (
+from aries_cloudagent.connections.models.connection_record import (
     ConnectionRecord,
     ConnectionRecordSchema,
 )
-from ...messaging.valid import IndyDID, UUIDFour
-from ...storage.error import StorageNotFoundError
+from aries_cloudagent.messaging.valid import IndyDID, UUIDFour
+from aries_cloudagent.storage.error import StorageNotFoundError
 
 from .manager import ConnectionManager
 from .messages.connection_invitation import (

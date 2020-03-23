@@ -1,12 +1,17 @@
 import pytest
 from asynctest import mock as async_mock
 
-from .....connections.models import connection_target
-from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from .....messaging.base_handler import HandlerException
-from .....messaging.request_context import RequestContext
-from .....messaging.responder import MockResponder
-from .....transport.inbound.receipt import MessageReceipt
+from aries_cloudagent.connections.models import connection_target
+from aries_cloudagent.connections.models.diddoc import (
+    DIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
+from aries_cloudagent.messaging.base_handler import HandlerException
+from aries_cloudagent.messaging.request_context import RequestContext
+from aries_cloudagent.messaging.responder import MockResponder
+from aries_cloudagent.transport.inbound.receipt import MessageReceipt
 
 from ...handlers import connection_request_handler as handler
 from ...manager import ConnectionManagerError
@@ -21,11 +26,13 @@ def request_context() -> RequestContext:
     ctx.message_receipt = MessageReceipt()
     yield ctx
 
+
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_LABEL = "Label"
 TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
+
 
 @pytest.fixture()
 def did_doc():
@@ -34,23 +41,13 @@ def did_doc():
     ident = "1"
     pk_value = TEST_VERKEY
     pk = PublicKey(
-        TEST_DID,
-        ident,
-        pk_value,
-        PublicKeyType.ED25519_SIG_2018,
-        controller,
-        False,
+        TEST_DID, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
     )
     doc.set(pk)
     recip_keys = [pk]
     router_keys = []
     service = Service(
-        TEST_DID,
-        "indy",
-        "IndyAgent",
-        recip_keys,
-        router_keys,
-        TEST_ENDPOINT,
+        TEST_DID, "indy", "IndyAgent", recip_keys, router_keys, TEST_ENDPOINT
     )
     doc.set(service)
     yield doc
@@ -96,11 +93,7 @@ class TestRequestHandler:
     @async_mock.patch.object(handler, "ConnectionManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
-        self,
-        mock_conn_target,
-        mock_conn_mgr,
-        request_context,
-        did_doc
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
@@ -112,7 +105,7 @@ class TestRequestHandler:
         request_context.message = ConnectionRequest(
             connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc),
             label=TEST_LABEL,
-            image_url=TEST_IMAGE_URL
+            image_url=TEST_IMAGE_URL,
         )
         handler_inst = handler.ConnectionRequestHandler()
         responder = MockResponder()
@@ -130,11 +123,7 @@ class TestRequestHandler:
     @async_mock.patch.object(handler, "ConnectionManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
-        self,
-        mock_conn_target,
-        mock_conn_mgr,
-        request_context,
-        did_doc
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
@@ -146,7 +135,7 @@ class TestRequestHandler:
         request_context.message = ConnectionRequest(
             connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc),
             label=TEST_LABEL,
-            image_url=TEST_IMAGE_URL
+            image_url=TEST_IMAGE_URL,
         )
         handler_inst = handler.ConnectionRequestHandler()
         responder = MockResponder()

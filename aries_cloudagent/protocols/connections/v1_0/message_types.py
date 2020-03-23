@@ -14,7 +14,7 @@ NEW_CONNECTION_REQUEST = f"{NEW_PROTOCOL_URI}/request"
 NEW_CONNECTION_RESPONSE = f"{NEW_PROTOCOL_URI}/response"
 NEW_PROBLEM_REPORT = f"{NEW_PROTOCOL_URI}/problem_report"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.connections"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.connections.v1_0"
 
 MESSAGE_TYPES = {
     CONNECTION_INVITATION: (

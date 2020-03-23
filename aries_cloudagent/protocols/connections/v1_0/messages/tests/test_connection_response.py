@@ -2,8 +2,13 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from .....wallet.basic import BasicWallet
+from aries_cloudagent.connections.models.diddoc import (
+    DIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
+from aries_cloudagent.wallet.basic import BasicWallet
 
 from ...message_types import CONNECTION_RESPONSE
 from ...models.connection_detail import ConnectionDetail

@@ -2,7 +2,12 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from aries_cloudagent.connections.models.diddoc import (
+    DIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
 
 from ...message_types import CONNECTION_REQUEST
 from ...models.connection_detail import ConnectionDetail
@@ -109,8 +114,8 @@ class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
 
     async def test_make_model_conn_detail_interpolate_authn_service(self):
         did_doc_dict = self.make_did_doc().serialize()
-        del did_doc_dict['authentication']
-        del did_doc_dict['service']
+        del did_doc_dict["authentication"]
+        del did_doc_dict["service"]
         did_doc = DIDDoc.deserialize(did_doc_dict)
 
         connection_request = ConnectionRequest(

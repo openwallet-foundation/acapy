@@ -3,7 +3,8 @@
 from enum import Enum
 from marshmallow import fields, validate
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+
 from ..message_types import PROBLEM_REPORT
 
 HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"

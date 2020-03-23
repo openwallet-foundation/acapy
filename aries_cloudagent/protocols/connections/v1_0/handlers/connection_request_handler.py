@@ -1,34 +1,32 @@
-"""Connection response handler."""
+"""Connection request handler."""
 
-from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
-from ....protocols.trustping.messages.ping import Ping
+from aries_cloudagent.messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..manager import ConnectionManager, ConnectionManagerError
-from ..messages.connection_response import ConnectionResponse
+from ..messages.connection_request import ConnectionRequest
 from ..messages.problem_report import ProblemReport
 
 
-class ConnectionResponseHandler(BaseHandler):
-    """Handler class for connection responses."""
+class ConnectionRequestHandler(BaseHandler):
+    """Handler class for connection requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """
-        Handle connection response.
+        Handle connection request.
 
         Args:
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"ConnectionResponseHandler called with context {context}")
-        assert isinstance(context.message, ConnectionResponse)
+
+        self._logger.debug(f"ConnectionRequestHandler called with context {context}")
+        assert isinstance(context.message, ConnectionRequest)
 
         mgr = ConnectionManager(context)
         try:
-            connection = await mgr.accept_response(
-                context.message, context.message_receipt
-            )
+            await mgr.receive_request(context.message, context.message_receipt)
         except ConnectionManagerError as e:
-            self._logger.exception("Error receiving connection response")
+            self._logger.exception("Error receiving connection request")
             if e.error_code:
                 targets = None
                 if context.message.connection and context.message.connection.did_doc:
@@ -45,8 +43,3 @@ class ConnectionResponseHandler(BaseHandler):
                     ProblemReport(problem_code=e.error_code, explain=str(e)),
                     target_list=targets,
                 )
-            return
-
-        # send trust ping in response
-        if context.settings.get("auto_ping_connection"):
-            await responder.send(Ping(), connection_id=connection.connection_id)

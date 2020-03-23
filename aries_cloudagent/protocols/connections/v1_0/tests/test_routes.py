@@ -3,11 +3,12 @@ from asynctest import mock as async_mock
 
 from aiohttp import web as aio_web
 
-from ....config.injection_context import InjectionContext
-from ....connections.models.connection_record import ConnectionRecord
-from ....storage.error import StorageNotFoundError
-from ....holder.base import BaseHolder
-from ....messaging.request_context import RequestContext
+from aries_cloudagent.config.injection_context import InjectionContext
+from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.storage.error import StorageNotFoundError
+from aries_cloudagent.holder.base import BaseHolder
+from aries_cloudagent.messaging.request_context import RequestContext
+
 from .. import routes as test_module
 
 

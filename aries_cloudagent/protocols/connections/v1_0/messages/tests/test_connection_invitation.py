@@ -1,6 +1,7 @@
 from unittest import mock, TestCase
 
-from .....messaging.models.base import BaseModelError
+from aries_cloudagent.messaging.models.base import BaseModelError
+
 from ...message_types import CONNECTION_INVITATION
 from ..connection_invitation import ConnectionInvitation
 
