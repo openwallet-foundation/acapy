@@ -1,9 +1,9 @@
 import pytest
 from unittest import mock
 
-from .....messaging.base_handler import HandlerException
-from .....messaging.request_context import RequestContext
-from .....messaging.responder import MockResponder
+from aries_cloudagent.messaging.base_handler import HandlerException
+from aries_cloudagent.messaging.request_context import RequestContext
+from aries_cloudagent.messaging.responder import MockResponder
 
 from ...handlers.basicmessage_handler import BasicMessageHandler
 from ...messages.basicmessage import BasicMessage
@@ -64,8 +64,7 @@ class TestBasicMessageHandler:
         request_context.default_label = "agent"
         test_message_content = "Reply with: g'day"
         request_context.message = BasicMessage(
-            content=test_message_content,
-            localization="en-CA"
+            content=test_message_content, localization="en-CA"
         )
         request_context.connection_ready = True
         handler = BasicMessageHandler()

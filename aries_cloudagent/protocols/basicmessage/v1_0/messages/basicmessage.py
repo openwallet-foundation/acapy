@@ -5,9 +5,9 @@ from typing import Union
 
 from marshmallow import fields
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ....messaging.util import datetime_now, datetime_to_str
-from ....messaging.valid import INDY_ISO8601_DATETIME
+from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+from aries_cloudagent.messaging.util import datetime_now, datetime_to_str
+from aries_cloudagent.messaging.valid import INDY_ISO8601_DATETIME
 
 from ..message_types import BASIC_MESSAGE, PROTOCOL_PACKAGE
 
@@ -63,4 +63,4 @@ class BasicMessageSchema(AgentMessageSchema):
         description="Time message was sent, ISO8601 with space date/time separator",
         **INDY_ISO8601_DATETIME,
     )
-    content = fields.Str(required=True, description="Message content", example="Hello",)
+    content = fields.Str(required=True, description="Message content", example="Hello")
