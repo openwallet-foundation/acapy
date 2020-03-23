@@ -98,7 +98,7 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_hash = tails_hash
         self.tails_local_path = tails_local_path
         self.tails_public_uri = tails_public_uri
-        self.pending_pub = list(set(pending_pub)) if pending_pub else []
+        self.pending_pub = sorted(list(set(pending_pub))) if pending_pub else []
 
     @property
     def record_id(self) -> str:
@@ -205,6 +205,7 @@ class IssuerRevRegRecord(BaseRecord):
         """
         if cred_rev_id not in self.pending_pub:
             self.pending_pub.append(cred_rev_id)
+            self.pending_pub.sort()
 
         await self.save(context)
 
@@ -288,7 +289,7 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of revocation registry records."""
 
     class Meta:
-        """ConnectionRecordSchema metadata."""
+        """IssuerRevRegRecordSchema metadata."""
 
         model_class = IssuerRevRegRecord
 
