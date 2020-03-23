@@ -8,7 +8,7 @@ NEW_PROTOCOL_URI = "https://didcomm.org/basicmessage/1.0"
 
 NEW_BASIC_MESSAGE = f"{NEW_PROTOCOL_URI}/message"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.basicmessage/v1_0"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.basicmessage.v1_0"
 
 MESSAGE_TYPES = {
     BASIC_MESSAGE: f"{PROTOCOL_PACKAGE}.messages.basicmessage.BasicMessage",
