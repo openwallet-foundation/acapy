@@ -9,9 +9,7 @@ from ...connections.models.connection_record import ConnectionRecord
 from ...storage.error import StorageNotFoundError
 from .manager import RouteCoordinationManager
 
-from .models.route_coordination import RouteCoordinationSchema
-from .models.routing_key import RoutingKeySchema
-from .models.routing_term import RoutingTermSchema
+from .models.route_coordination import RouteCoordination, RouteCoordinationSchema
 
 
 class MediationRequestSchema(Schema):
@@ -21,13 +19,19 @@ class MediationRequestSchema(Schema):
     mediator_terms = fields.List(fields.Str, required=False)
 
 
-class MediationRequestResultSchema(RouteCoordinationSchema):
+class MediationRequestResultSchema(Schema):
     """Result schema for a mediation request."""
 
     route_coordination = fields.Nested(RouteCoordinationSchema())
-    mediator_terms = fields.List(fields.Nested(RoutingKeySchema()))
-    recipient_terms = fields.List(fields.Nested(RoutingTermSchema()))
-    routing_keys = fields.List(fields.Nested(RoutingTermSchema()))
+
+
+class RoutingListResultSchema(Schema):
+    """Result schema for routing list."""
+
+    results = fields.List(
+        fields.Nested(RouteCoordinationSchema()),
+        description="List of mediation records",
+    )
 
 
 @docs(tags=["route-coordination"], summary="Creates a new mediation request")
@@ -56,30 +60,112 @@ async def create_mediation_request(request: web.BaseRequest):
         raise web.HTTPNotFound()
 
     route_coordination_manager = RouteCoordinationManager(context)
-    (
-        route_coordination,
-        accepted_recipient_terms,
-        accepted_mediator_terms
-    ) = await route_coordination_manager.create_mediation_request(
+    route_coordination = await route_coordination_manager.create_mediation_request(
         connection_id=connection.connection_id,
         recipient_terms=recipient_terms,
         mediator_terms=mediator_terms
     )
-    response = {
-        'route_coordination': route_coordination.serialize(),
-        'recipient_terms': [term.serialize() for term in accepted_recipient_terms],
-        'mediator_terms': [term.serialize() for term in accepted_mediator_terms],
-        'routing_keys': []
-    }
-    return web.json_response(response)
+    return web.json_response(route_coordination.serialize())
+
+
+def route_coordination_sort(coord):
+    """Get the sorting key for a particular route coordination."""
+    return coord["created_at"]
+
+
+@docs(
+    tags=["route-coordination"],
+    summary="Query route coordination records",
+    parameters=[
+        {
+            "name": "connection_id",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+        {
+            "name": "route_coordination_id",
+            "in": "query",
+            "schema": {"type": "string"},
+            "required": False,
+        },
+        {
+            "name": "initiator",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["self", "external"]},
+            "required": False,
+        },
+        {
+            "name": "state",
+            "in": "query",
+            "schema": {
+                "type": "string",
+                "enum": [
+                    "mediation_request",
+                    "mediation_sent",
+                    "mediation_received",
+                    "mediation_granted",
+                    "mediation_denied",
+                    "mediation_canceled",
+                ],
+            },
+            "required": False,
+        },
+        {
+            "name": "role",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["mediator", "recipient"]},
+            "required": False,
+        },
+    ],
+)
+@response_schema(RoutingListResultSchema(), 200)
+async def routing_list(request: web.BaseRequest):
+    """
+    Request handler for searching route coordinations.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The connection list response
+
+    """
+    context = request.app["request_context"]
+    tag_filter = {}
+    for param_name in (
+        "connection_id",
+        "route_coordination_id",
+    ):
+        if param_name in request.query and request.query[param_name] != "":
+            tag_filter[param_name] = request.query[param_name]
+    post_filter = {}
+    for param_name in (
+        "initiator",
+        "state",
+        "role",
+    ):
+        if param_name in request.query and request.query[param_name] != "":
+            post_filter[param_name] = request.query[param_name]
+    records = await RouteCoordination.query(context, tag_filter, post_filter)
+    results = [record.serialize() for record in records]
+    results.sort(key=route_coordination_sort)
+
+    return web.json_response({"results": results})
 
 
 async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes(
-        [web.post(
-            "/route-coordination/{connection_id}/create-request",
-            create_mediation_request
-        )]
+        [
+            web.post(
+                "/route-coordination/{connection_id}/create-request",
+                create_mediation_request
+            ),
+            web.post(
+                "/route-coordination/list",
+                routing_list
+            ),
+        ]
     )

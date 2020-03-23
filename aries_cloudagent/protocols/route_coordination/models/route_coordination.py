@@ -1,6 +1,6 @@
 """Route coordination record information with non-secrets storage."""
 
-# from typing import Sequence
+from typing import Sequence
 
 from marshmallow import fields
 from marshmallow.validate import OneOf
@@ -27,7 +27,7 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
 
     STATE_MEDIATION_REQUEST = "mediation_request"
     STATE_MEDIATION_SENT = "mediation_sent"
-    STATE_MEDIATION_RECEIVED = "mediation_received"
+    STATE_MEDIATION_RECEIVED = "mediation_request_received"
     STATE_MEDIATION_GRANTED = "mediation_granted"
     STATE_MEDIATION_DENIED = "mediation_denied"
     STATE_MEDIATION_CANCELED = "mediation_canceled"
@@ -47,9 +47,9 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
         initiator: str = None,
         role: str = None,
         state: str = None,
-        # mediator_terms: Sequence[str] = None,
-        # recipient_terms: Sequence[str] = None,
-        # rouiting_keys: Sequence[str] = None,
+        mediator_terms: Sequence[str] = None,
+        recipient_terms: Sequence[str] = None,
+        rouiting_keys: Sequence[str] = None,
         routing_endpoint: str = None,
         error_msg: str = None,
         **kwargs,
@@ -62,9 +62,9 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
         self.initiator = initiator
         self.role = role
         self.state = state
-        # self.mediator_terms = list(mediator_terms) if mediator_terms else []
-        # self.recipient_terms = list(recipient_terms) if recipient_terms else []
-        # self.rouiting_keys = list(rouiting_keys) if rouiting_keys else []
+        self.mediator_terms = list(mediator_terms) if mediator_terms else []
+        self.recipient_terms = list(recipient_terms) if recipient_terms else []
+        self.rouiting_keys = list(rouiting_keys) if rouiting_keys else []
         self.routing_endpoint = routing_endpoint
         self.error_msg = error_msg
 
@@ -82,9 +82,9 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
                 "connection_id",
                 "thread_id",
                 "state",
-                # "mediator_terms",
-                # "recipient_terms",
-                # "rouiting_keys",
+                "mediator_terms",
+                "recipient_terms",
+                "rouiting_keys",
                 "routing_endpoint",
             )
         }
@@ -114,7 +114,6 @@ class RouteCoordinationSchema(BaseRecordSchema):
         description="Mediator process state",
         example=RouteCoordination.STATE_MEDIATION_REQUEST,
     )
-    """
     mediator_terms = fields.List(
         fields.Str(
             description="Indicate terms that the mediator "
@@ -138,7 +137,6 @@ class RouteCoordinationSchema(BaseRecordSchema):
         required=False,
         description="List of all related verkeys for the routing",
     )
-    """
     routing_endpoint = fields.Str(
         required=False,
         description="Mediation routing endpoint",
