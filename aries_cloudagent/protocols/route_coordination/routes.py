@@ -18,6 +18,7 @@ class MediationRequestSchema(Schema):
     """Request schema for requesting new mediation."""
 
     recipient_terms = fields.List(fields.Str, required=False)
+    mediator_terms = fields.List(fields.Str, required=False)
 
 
 class MediationRequestResultSchema(RouteCoordinationSchema):
@@ -47,6 +48,7 @@ async def create_mediation_request(request: web.BaseRequest):
 
     connection_id = request.match_info["connection_id"]
     recipient_terms = body.get("recipient_terms")
+    mediator_terms = body.get("mediator_terms")
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
@@ -56,14 +58,17 @@ async def create_mediation_request(request: web.BaseRequest):
     route_coordination_manager = RouteCoordinationManager(context)
     (
         route_coordination,
-        recipient_terms
+        accepted_recipient_terms,
+        accepted_mediator_terms
     ) = await route_coordination_manager.create_mediation_request(
-        connection_id=connection.connection_id, recipient_terms=recipient_terms
+        connection_id=connection.connection_id,
+        recipient_terms=recipient_terms,
+        mediator_terms=mediator_terms
     )
     response = {
         'route_coordination': route_coordination.serialize(),
-        'recipient_terms': [term.serialize() for term in recipient_terms],
-        'mediator_terms': [],
+        'recipient_terms': [term.serialize() for term in accepted_recipient_terms],
+        'mediator_terms': [term.serialize() for term in accepted_mediator_terms],
         'routing_keys': []
     }
     return web.json_response(response)
