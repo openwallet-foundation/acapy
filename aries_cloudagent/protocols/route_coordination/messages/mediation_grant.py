@@ -39,7 +39,7 @@ class MediationGrant(AgentMessage):
         """
         super(MediationGrant, self).__init__(**kwargs)
         self.endpoint = endpoint
-        self.routing_keys = routing_keys
+        self.routing_keys = list(routing_keys) if routing_keys else []
 
 
 class MediationGrantSchema(AgentMessageSchema):
