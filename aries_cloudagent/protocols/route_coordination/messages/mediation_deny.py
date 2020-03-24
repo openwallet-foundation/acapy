@@ -1,27 +1,27 @@
-"""A mediation request content message."""
+"""Mediation grant message."""
 
 from typing import Sequence
 
 from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import MEDIATION_REQUEST, PROTOCOL_PACKAGE
+from ..message_types import MEDIATION_DENY, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
-    ".mediaton_request_handler.MediationRequestHandler"
+    ".mediation_deny_handler.MediationDenyHandler"
 )
 
 
-class MediationRequest(AgentMessage):
-    """Class representing a mediation request."""
+class MediationDeny(AgentMessage):
+    """Class representing a mediation deny message."""
 
     class Meta:
-        """Metadata for a mediation request."""
+        """Metadata for a mediation deny."""
 
         handler_class = HANDLER_CLASS
-        message_type = MEDIATION_REQUEST
-        schema_class = "MediationRequestSchema"
+        message_type = MEDIATION_DENY
+        schema_class = "MediationDenySchema"
 
     def __init__(
         self,
@@ -31,37 +31,34 @@ class MediationRequest(AgentMessage):
         **kwargs,
     ):
         """
-        Initialize mediation request object.
+        Initialize mediation deny object.
 
         Args:
             mediator_terms: Terms that were agreeed by the recipient
             recipient_terms: Terms that recipient wants to mediator to agree to
         """
-        super(MediationRequest, self).__init__(**kwargs)
+        super(MediationDeny, self).__init__(**kwargs)
         self.mediator_terms = list(mediator_terms) if mediator_terms else []
         self.recipient_terms = list(recipient_terms) if recipient_terms else []
 
 
-class MediationRequestSchema(AgentMessageSchema):
-    """Mediation request schema class."""
+class MediationDenySchema(AgentMessageSchema):
+    """Mediation grant schema class."""
 
     class Meta:
-        """Mediation request schema metadata."""
+        """Mediation deny schema metadata."""
 
-        model_class = MediationRequest
+        model_class = MediationDeny
 
     mediator_terms = fields.List(
         fields.Str(
-            description="Indicate terms that the mediator "
-            "requires the recipient to agree to"
+            description="Terms for mediator to agree"
         ),
         required=False,
-        description="List of mediator rules for recipient",
     )
     recipient_terms = fields.List(
         fields.Str(
-            description="Indicate terms that the recipient "
-            "requires the mediator to agree to"
+            description="Terms for recipient to agree"
         ),
         required=False,
     )

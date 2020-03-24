@@ -101,6 +101,7 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
         )
         return record
 
+
 class RouteCoordinationSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of route coordination records."""
 
