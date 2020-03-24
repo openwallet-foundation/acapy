@@ -242,19 +242,6 @@ class CredentialManager:
             cred_preview = None
 
         async def _create(cred_def_id):
-            ledger: BaseLedger = await self.context.inject(BaseLedger)
-            async with ledger:
-                credential_definition = await ledger.get_credential_definition(
-                    cred_def_id
-                )
-            if (
-                credential_definition["value"].get("revocation")
-                and not credential_exchange_record.revoc_reg_id
-            ):
-                raise CredentialManagerError(
-                    "Missing revocation registry ID for revocable credential definition"
-                )
-
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
@@ -498,15 +485,26 @@ class CredentialManager:
             ledger: BaseLedger = await self.context.inject(BaseLedger)
             async with ledger:
                 schema = await ledger.get_schema(schema_id)
-
-            if credential_exchange_record.revoc_reg_id:
-                revoc = IndyRevocation(self.context)
-                registry_record = await revoc.get_issuer_rev_reg_record(
-                    credential_exchange_record.revoc_reg_id
+                credential_definition = await ledger.get_credential_definition(
+                    credential_exchange_record.credential_definition_id
                 )
-                # FIXME exception on missing
 
-                registry = await registry_record.get_registry()
+            if credential_definition["value"]["revocation"]:
+                issuer_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                    self.context,
+                    credential_exchange_record.credential_definition_id,
+                    state=IssuerRevRegRecord.STATE_ACTIVE
+                )
+                if not issuer_rev_regs:
+                    raise CredentialManagerError(
+                        "No active revocation registry record found "
+                        f"for cred def id {credential_exchange_record.revoc_reg_id}"
+                    )
+
+                registry = await issuer_rev_regs[0].get_registry()
+                credential_exchange_record.revoc_reg_id = (
+                    issuer_rev_regs[0].revoc_reg_id
+                )
                 tails_path = registry.tails_local_path
             else:
                 tails_path = None
