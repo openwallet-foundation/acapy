@@ -18,6 +18,7 @@ from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....holder.base import BaseHolder
 from ....issuer.base import BaseIssuer
+from ....issuer.indy import IssuerRevocationRegistryFullError
 from ....ledger.base import BaseLedger
 from ....messaging.credential_definitions.util import (
     CRED_DEF_TAGS,
@@ -497,8 +498,9 @@ class CredentialManager:
                 )
                 if not issuer_rev_regs:
                     raise CredentialManagerError(
-                        "No active revocation registry record found "
-                        f"for cred def id {credential_exchange_record.revoc_reg_id}"
+                        "Cred def id {} has no active revocation registry".format(
+                            credential_exchange_record.credential_definition_id
+                        )
                     )
 
                 registry = await issuer_rev_regs[0].get_registry()
@@ -510,17 +512,22 @@ class CredentialManager:
                 tails_path = None
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-            (
-                credential_json,
-                credential_exchange_record.revocation_id,
-            ) = await issuer.create_credential(
-                schema,
-                credential_offer,
-                credential_request,
-                credential_values,
-                credential_exchange_record.revoc_reg_id,
-                tails_path,
-            )
+            try:
+                (
+                    credential_json,
+                    credential_exchange_record.revocation_id,
+                ) = await issuer.create_credential(
+                    schema,
+                    credential_offer,
+                    credential_request,
+                    credential_values,
+                    credential_exchange_record.revoc_reg_id,
+                    tails_path,
+                )
+            except IssuerRevocationRegistryFullError:
+                await registry.mark_full(self.context)
+                raise
+
             credential_exchange_record.credential = json.loads(credential_json)
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED

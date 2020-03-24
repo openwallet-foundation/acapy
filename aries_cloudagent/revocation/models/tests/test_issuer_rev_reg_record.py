@@ -78,15 +78,20 @@ class TestRecord(AsyncTestCase):
         assert rec.tails_hash == "59NY25UEV8a5CzNkXFQMppwofUxtYtf4FDp1h9xgeLcK"
         assert rec.tails_local_path == "point at infinity"
 
-        rec.set_tails_file_public_uri("dummy")
-        assert rec.tails_public_uri == "dummy"
-        assert rec.revoc_reg_def["value"]["tailsLocation"] == "dummy"
+        with self.assertRaises(RevocationError):
+            await rec.set_tails_file_public_uri(self.context, "dummy")
+
+        await rec.set_tails_file_public_uri(self.context, "http://localhost/dummy")
+        assert rec.tails_public_uri == "http://localhost/dummy"
+        assert rec.revoc_reg_def["value"]["tailsLocation"] == "http://localhost/dummy"
 
         ledger = await self.context.inject(BaseLedger)
         await rec.publish_registry_definition(self.context)
+        assert rec.state == IssuerRevRegRecord.STATE_PUBLISHED
         ledger.send_revoc_reg_def.assert_called_once()
 
         await rec.publish_registry_entry(self.context)
+        assert rec.state == IssuerRevRegRecord.STATE_ACTIVE
         ledger.send_revoc_reg_entry.assert_called_once()
 
         rev_reg = await rec.get_registry()
@@ -95,7 +100,7 @@ class TestRecord(AsyncTestCase):
         queried = await IssuerRevRegRecord.query_by_cred_def_id(
             context=self.context,
             cred_def_id=CRED_DEF_ID,
-            state=IssuerRevRegRecord.STATE_GENERATED,
+            state=IssuerRevRegRecord.STATE_ACTIVE,
         )
         assert len(queried) == 1
 
@@ -112,6 +117,30 @@ class TestRecord(AsyncTestCase):
         assert isinstance(model_instance, IssuerRevRegRecord)
         assert model_instance == rec
 
+    async def test_operate_on_full_record(self):
+        CRED_DEF_ID = f"{TestRecord.test_did}:3:CL:1234:default"
+        REV_REG_ID = f"{TestRecord.test_did}:4:{CRED_DEF_ID}:CL_ACCUM:0"
+
+        rec_full = IssuerRevRegRecord(
+            issuer_did=TestRecord.test_did,
+            revoc_reg_id=REV_REG_ID,
+            revoc_reg_def={"sample": "rr-def"},
+            revoc_def_type="CL_ACCUM",
+            revoc_reg_entry={"sample": "rr-ent"},
+            cred_def_id=CRED_DEF_ID,
+            state=IssuerRevRegRecord.STATE_FULL,
+            tails_public_uri="http://localhost/dummy/path"
+        )
+
+        with self.assertRaises(RevocationError) as x_state:
+            await rec_full.generate_registry(self.context, None)
+
+        with self.assertRaises(RevocationError) as x_state:
+            await rec_full.publish_registry_definition(self.context)
+
+        with self.assertRaises(RevocationError) as x_state:
+            await rec_full.publish_registry_entry(self.context)
+
     async def test_pending(self):
         rec = IssuerRevRegRecord()
         await rec.mark_pending(self.context, "1")
@@ -127,7 +156,7 @@ class TestRecord(AsyncTestCase):
     async def test_set_tails_file_public_uri_rev_reg_undef(self):
         rec = IssuerRevRegRecord()
         with self.assertRaises(RevocationError):
-            rec.set_tails_file_public_uri("dummy")
+            await rec.set_tails_file_public_uri(self.context, "dummy")
 
     async def test_publish_rev_reg_undef(self):
         rec = IssuerRevRegRecord()
@@ -136,4 +165,3 @@ class TestRecord(AsyncTestCase):
 
         with self.assertRaises(RevocationError):
             await rec.publish_registry_entry(self.context)
-

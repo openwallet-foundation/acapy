@@ -303,7 +303,7 @@ class TestRevocationRoutes(AsyncTestCase):
             mock_indy_revoc.return_value = async_mock.MagicMock(
                 get_issuer_rev_reg_record=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
-                        set_tails_file_public_uri=async_mock.MagicMock(),
+                        set_tails_file_public_uri=async_mock.CoroutineMock(),
                         save=async_mock.CoroutineMock(),
                         serialize=async_mock.MagicMock(return_value="dummy")
                     )

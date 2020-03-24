@@ -885,7 +885,56 @@ class TestCredentialManager(AsyncTestCase):
                     stored_exchange, comment=comment, credential_values=cred_values
                 )
                 assert x_cred_mgr.message.contains(
-                    "No active rvocation registry record found for cred def id"
+                    "has no active revocation registry"
+                )
+
+    async def test_issue_credential_rr_full(self):
+        connection_id = "test_conn_id"
+        comment = "comment"
+        cred_values = {"attr": "value"}
+        indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID, "nonce": "0"}
+        indy_cred_req = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
+        thread_id = "thread-id"
+
+        stored_exchange = V10CredentialExchange(
+            connection_id=connection_id,
+            credential_definition_id=CRED_DEF_ID,
+            credential_offer=indy_offer,
+            credential_request=indy_cred_req,
+            initiator=V10CredentialExchange.INITIATOR_SELF,
+            role=V10CredentialExchange.ROLE_ISSUER,
+            revoc_reg_id=REV_REG_ID,
+            thread_id=thread_id,
+        )
+
+        issuer = async_mock.MagicMock()
+        cred = {"indy": "credential"}
+        cred_revoc = async_mock.MagicMock()
+        issuer.create_credential = async_mock.CoroutineMock(
+            side_effect=test_module.IssuerRevocationRegistryFullError("Nope")
+        )
+        self.context.injector.bind_instance(BaseIssuer, issuer)
+
+        with async_mock.patch.object(
+           test_module, "IssuerRevRegRecord", autospec=True
+        ) as issuer_rr_rec:
+            issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
+                return_value=[
+                    async_mock.MagicMock(
+                        get_registry=async_mock.CoroutineMock(
+                            return_value=async_mock.MagicMock(
+                                mark_full=async_mock.CoroutineMock(),
+                                tails_local_path="dummy-path"
+                            )
+                        ),
+                        revoc_reg_id=REV_REG_ID
+                    )
+                ]
+            )
+
+            with self.assertRaises(test_module.IssuerRevocationRegistryFullError):
+                await self.manager.issue_credential(
+                    stored_exchange, comment=comment, credential_values=cred_values
                 )
 
     async def test_receive_credential(self):
