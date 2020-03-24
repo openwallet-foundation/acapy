@@ -18,6 +18,7 @@ from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....holder.base import BaseHolder
 from ....issuer.base import BaseIssuer
+from ....issuer.indy import IssuerRevocationRegistryFullError
 from ....ledger.base import BaseLedger
 from ....messaging.credential_definitions.util import (
     CRED_DEF_TAGS,
@@ -242,19 +243,6 @@ class CredentialManager:
             cred_preview = None
 
         async def _create(cred_def_id):
-            ledger: BaseLedger = await self.context.inject(BaseLedger)
-            async with ledger:
-                credential_definition = await ledger.get_credential_definition(
-                    cred_def_id
-                )
-            if (
-                credential_definition["value"].get("revocation")
-                and not credential_exchange_record.revoc_reg_id
-            ):
-                raise CredentialManagerError(
-                    "Missing revocation registry ID for revocable credential definition"
-                )
-
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
@@ -498,31 +486,48 @@ class CredentialManager:
             ledger: BaseLedger = await self.context.inject(BaseLedger)
             async with ledger:
                 schema = await ledger.get_schema(schema_id)
-
-            if credential_exchange_record.revoc_reg_id:
-                revoc = IndyRevocation(self.context)
-                registry_record = await revoc.get_issuer_rev_reg_record(
-                    credential_exchange_record.revoc_reg_id
+                credential_definition = await ledger.get_credential_definition(
+                    credential_exchange_record.credential_definition_id
                 )
-                # FIXME exception on missing
 
-                registry = await registry_record.get_registry()
+            if credential_definition["value"]["revocation"]:
+                issuer_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                    self.context,
+                    credential_exchange_record.credential_definition_id,
+                    state=IssuerRevRegRecord.STATE_ACTIVE
+                )
+                if not issuer_rev_regs:
+                    raise CredentialManagerError(
+                        "Cred def id {} has no active revocation registry".format(
+                            credential_exchange_record.credential_definition_id
+                        )
+                    )
+
+                registry = await issuer_rev_regs[0].get_registry()
+                credential_exchange_record.revoc_reg_id = (
+                    issuer_rev_regs[0].revoc_reg_id
+                )
                 tails_path = registry.tails_local_path
             else:
                 tails_path = None
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-            (
-                credential_json,
-                credential_exchange_record.revocation_id,
-            ) = await issuer.create_credential(
-                schema,
-                credential_offer,
-                credential_request,
-                credential_values,
-                credential_exchange_record.revoc_reg_id,
-                tails_path,
-            )
+            try:
+                (
+                    credential_json,
+                    credential_exchange_record.revocation_id,
+                ) = await issuer.create_credential(
+                    schema,
+                    credential_offer,
+                    credential_request,
+                    credential_values,
+                    credential_exchange_record.revoc_reg_id,
+                    tails_path,
+                )
+            except IssuerRevocationRegistryFullError:
+                await registry.mark_full(self.context)
+                raise
+
             credential_exchange_record.credential = json.loads(credential_json)
 
         credential_exchange_record.state = V10CredentialExchange.STATE_ISSUED
