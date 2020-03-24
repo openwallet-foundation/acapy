@@ -10,6 +10,7 @@ from ...messaging.responder import BaseResponder
 
 from .messages.mediation_request import MediationRequest
 from .messages.mediation_grant import MediationGrant
+from .messages.mediation_deny import MediationDeny
 from .models.route_coordination import RouteCoordinationSchema, RouteCoordination
 from .models.routing_key import RoutingKey
 
@@ -151,11 +152,11 @@ class RouteCoordinationManager:
             A new `MediationGrant` message to send to the other agent
 
         """
-        request = MediationGrant(
+        grant_response = MediationGrant(
             endpoint=endpoint,
             routing_keys=routing_keys,
         )
-        return request
+        return grant_response
 
     async def create_accept_response(
         self,
@@ -199,27 +200,24 @@ class RouteCoordinationManager:
         routing_key: str
     ):
         """
-        Saves routing key for specific routing.
+        Save routing key for specific routing.
 
         Args:
             route_coordination_id: Route coordination record identifier
             routing_key: Related routin key
 
         """
+
         routing_key_record = RoutingKey(
-            route_coordination_id = route_coordination_id,
-            routing_key = routing_key
+            route_coordination_id=route_coordination_id,
+            routing_key=routing_key
         )
-        await routing_key.save(self.context)
+        await routing_key_record.save(self.context)
 
     async def receive_mediation_grant(
         self
     ):
-        """
-        Receives mediator grant response.
-
-        """
-        connection_id = self.context.connection_record.connection_id
+        """Receives mediator grant response."""
 
         mediation_grant_message: MediationGrant = self.context.message
 
@@ -234,8 +232,77 @@ class RouteCoordinationManager:
             route_coordination.routing_keys = mediation_grant_message.routing_keys
             for routing_key in mediation_grant_message.routing_keys:
                 await self.save_routing_key(
-                    route_coordination_id = route_coordination.route_coordination_id,
-                    routing_key = routing_key
+                    route_coordination_id=route_coordination.route_coordination_id,
+                    routing_key=routing_key
                 )
+
+        await route_coordination.save(self.context)
+
+    async def create_deny_message(
+        self,
+        mediator_terms: Sequence[str] = None,
+        recipient_terms: Sequence[str] = None
+    ) -> MediationDeny:
+        """
+        Create a new mediation deny response.
+
+        Args:
+            mediator_terms: Terms that mediator wants to recipient to agree to
+            recipient_terms: Terms that recipient wants to mediator to agree to
+
+        Returns:
+            A new `MediationDeny` message to send to the other agent
+
+        """
+        response = MediationDeny(
+            mediator_terms=mediator_terms,
+            recipient_terms=recipient_terms,
+        )
+        return response
+
+    async def create_deny_response(
+        self,
+        route_coordination: RouteCoordination,
+        mediator_terms: Sequence[str] = None,
+        recipient_terms: Sequence[str] = None
+    ) -> (MediationDeny, RouteCoordination):
+        """
+        Create a mediator grant response.
+
+        Args:
+            route_coordination: Route coordination object
+
+        Returns:
+            grant_response: Response message for grant
+
+        """
+        route_coordination.mediator_terms = mediator_terms
+        route_coordination.recipient_terms = recipient_terms
+        route_coordination.state = RouteCoordination.STATE_MEDIATION_DENIED
+
+        await route_coordination.save(self.context)
+        deny_response = await self.create_deny_message(
+            mediator_terms=mediator_terms,
+            recipient_terms=recipient_terms
+        )
+        deny_response._thread = {
+            "thid": route_coordination.thread_id
+        }
+        return deny_response, route_coordination
+
+    async def receive_mediation_deny(
+        self
+    ):
+        """Receives mediator deny response."""
+
+        mediation_deny_message: MediationDeny = self.context.message
+
+        route_coordination = await RouteCoordination.retrieve_by_thread(
+            context=self.context,
+            thread_id=mediation_deny_message._thread_id
+        )
+        route_coordination.state = RouteCoordination.STATE_MEDIATION_DENIED
+        route_coordination.mediator_terms = mediation_deny_message.mediator_terms
+        route_coordination.recipient_terms = mediation_deny_message.recipient_terms
 
         await route_coordination.save(self.context)
