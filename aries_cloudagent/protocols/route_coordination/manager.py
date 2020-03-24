@@ -9,7 +9,9 @@ from ...core.error import BaseError
 from ...messaging.responder import BaseResponder
 
 from .messages.mediation_request import MediationRequest
+from .messages.mediation_grant import MediationGrant
 from .models.route_coordination import RouteCoordinationSchema, RouteCoordination
+from .models.routing_key import RoutingKey
 
 
 class RouteCoordinationManagerError(BaseError):
@@ -69,13 +71,15 @@ class RouteCoordinationManager:
                 recipient_terms=recipient_terms,
                 mediator_terms=mediator_terms
             )
-        await route_coordination.save(
-                self.context, reason="New mediation initiation request received"
-            )
-        request = await self.create_request(
+        request = await self.create_mediation_request_message(
             recipient_terms=recipient_terms,
             mediator_terms=mediator_terms
         )
+        route_coordination.thread_id = request._thread_id
+        await route_coordination.save(
+                self.context, reason="New mediation initiation request received"
+            )
+
         responder: BaseResponder = await self._context.inject(
                 BaseResponder, required=False
             )
@@ -83,7 +87,7 @@ class RouteCoordinationManager:
             await responder.send(request, connection_id=connection_id)
         return route_coordination
 
-    async def create_request(
+    async def create_mediation_request_message(
         self,
         recipient_terms: Sequence[str],
         mediator_terms: Sequence[str],
@@ -130,3 +134,108 @@ class RouteCoordinationManager:
         route_coordination_record = await route_coordination.save(self.context)
 
         return route_coordination_record
+
+    async def create_grant_message(
+        self,
+        endpoint: str,
+        routing_keys: Sequence[str],
+    ) -> MediationGrant:
+        """
+        Create a new mediation grant response.
+
+        Args:
+            endpoint: Artificial endpoint for the mediation request
+            keys: Assigned keys for mediation
+
+        Returns:
+            A new `MediationGrant` message to send to the other agent
+
+        """
+        request = MediationGrant(
+            endpoint=endpoint,
+            routing_keys=routing_keys,
+        )
+        return request
+
+    async def create_accept_response(
+        self,
+        route_coordination: RouteCoordination
+    ) -> (MediationGrant, RouteCoordination):
+        """
+        Create a mediator grant response.
+
+        Args:
+            route_coordination: Route coordination object
+
+        Returns:
+            grant_response: Response message for grant
+
+        """
+        async def get_routing_endpoint():
+            return "test_endpoint"
+
+        if not route_coordination.state == RouteCoordination.STATE_MEDIATION_RECEIVED:
+            raise RouteCoordinationManagerError(
+                "Route coordination record not in response state"
+            )
+
+        routing_endpoint = await get_routing_endpoint()
+        route_coordination.routing_endpoint = routing_endpoint
+        route_coordination.state = RouteCoordination.STATE_MEDIATION_GRANTED
+
+        await route_coordination.save(self.context)
+        grant_response = await self.create_grant_message(
+            endpoint=routing_endpoint,
+            routing_keys=[]
+        )
+        grant_response._thread = {
+            "thid": route_coordination.thread_id
+        }
+        return grant_response, route_coordination
+
+    async def save_routing_key(
+        self,
+        route_coordination_id: str,
+        routing_key: str
+    ):
+        """
+        Saves routing key for specific routing.
+
+        Args:
+            route_coordination_id: Route coordination record identifier
+            routing_key: Related routin key
+
+        """
+        routing_key_record = RoutingKey(
+            route_coordination_id = route_coordination_id,
+            routing_key = routing_key
+        )
+        await routing_key.save(self.context)
+
+    async def receive_mediation_grant(
+        self
+    ):
+        """
+        Receives mediator grant response.
+
+        """
+        connection_id = self.context.connection_record.connection_id
+
+        mediation_grant_message: MediationGrant = self.context.message
+
+        route_coordination = await RouteCoordination.retrieve_by_thread(
+            context=self.context,
+            thread_id=mediation_grant_message._thread_id
+        )
+        route_coordination.state = RouteCoordination.STATE_MEDIATION_GRANTED
+        route_coordination.routing_endpoint = mediation_grant_message.endpoint
+
+        if mediation_grant_message.routing_keys:
+            route_coordination.routing_keys = mediation_grant_message.routing_keys
+            for routing_key in mediation_grant_message.routing_keys:
+                await self.save_routing_key(
+                    route_coordination_id = route_coordination.route_coordination_id,
+                    routing_key = routing_key
+                )
+
+        await route_coordination.save(self.context)

@@ -154,6 +154,46 @@ async def routing_list(request: web.BaseRequest):
     return web.json_response({"results": results})
 
 
+@docs(tags=["route-coordination"], summary="Accept a stored route coordination request")
+@response_schema(RouteCoordinationSchema(), 200)
+async def grant_medaite_request(request: web.BaseRequest):
+    """
+    Request handler for accepting a stored route coordination request.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The resulting route coordination record details
+
+    """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+    route_coordination_id = request.match_info["id"]
+
+    try:
+        route_coordination = await RouteCoordination.retrieve_by_id(
+            context,
+            route_coordination_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context, route_coordination.connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
+    route_coordination_manager = RouteCoordinationManager(context)
+
+    response, routing_record = await route_coordination_manager.create_accept_response(
+        route_coordination
+    )
+    await outbound_handler(response, connection_id=connection_record.connection_id)
+    return web.json_response(routing_record.serialize())
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -166,6 +206,10 @@ async def register(app: web.Application):
             web.post(
                 "/route-coordination/list",
                 routing_list
+            ),
+            web.post(
+                "/route-coordination/{id}/grant-request",
+                grant_medaite_request
             ),
         ]
     )

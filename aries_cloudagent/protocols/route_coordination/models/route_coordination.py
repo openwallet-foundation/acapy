@@ -5,6 +5,7 @@ from typing import Sequence
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
+from ....config.injection_context import InjectionContext
 from ....messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ....messaging.valid import UUIDFour
 
@@ -23,6 +24,7 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
     TAG_NAMES = {
         "connection_id",
         "routing_endpoint",
+        "thread_id",
     }
 
     STATE_MEDIATION_REQUEST = "mediation_request"
@@ -80,15 +82,24 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
             prop: getattr(self, prop)
             for prop in (
                 "connection_id",
-                "thread_id",
                 "state",
                 "mediator_terms",
                 "recipient_terms",
                 "rouiting_keys",
                 "routing_endpoint",
+                "role"
             )
         }
 
+    @classmethod
+    async def retrieve_by_thread(
+        cls, context: InjectionContext, thread_id: str
+    ) -> "RouteCoordination":
+        """Retrieve a route coordination record by thread ID."""
+        record = await cls.retrieve_by_tag_filter(
+            context, {"thread_id": thread_id}
+        )
+        return record
 
 class RouteCoordinationSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of route coordination records."""
