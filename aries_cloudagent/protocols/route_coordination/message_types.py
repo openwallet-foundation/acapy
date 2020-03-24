@@ -3,12 +3,14 @@
 PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/coordinatemediation/1.0/"
 
 MEDIATION_REQUEST = f"{PROTOCOL_URI}/mediate-request"
+MEDIATION_GRANT = f"{PROTOCOL_URI}/mediate-grant"
 KEYLIST_UPDATE = f"{PROTOCOL_URI}/keylist_update"
 KEYLIST_QUERY = f"{PROTOCOL_URI}/key_list_query"
 
 NEW_PROTOCOL_URI = "https://didcomm.org/coordinatemediation/1.0"
 
 NEW_MEDIATION_REQUEST = f"{NEW_PROTOCOL_URI}/mediate-request"
+NEW_MEDIATION_GRANT = f"{NEW_PROTOCOL_URI}/mediate-grant"
 NEW_KEYLIST_UPDATE = f"{NEW_PROTOCOL_URI}/keylist_update"
 NEW_KEYLIST_QUERY = f"{NEW_PROTOCOL_URI}/key_list_query"
 
@@ -20,6 +22,12 @@ MESSAGE_TYPES = {
     ),
     NEW_MEDIATION_REQUEST: (
         f"{PROTOCOL_PACKAGE}.messages.mediation_request.MediationRequest"
+    ),
+    MEDIATION_GRANT: (
+        f"{PROTOCOL_PACKAGE}.messages.mediation_grant.MediationGrant"
+    ),
+    NEW_MEDIATION_GRANT: (
+        f"{PROTOCOL_PACKAGE}.messages.mediation_grant.MediationGrant"
     ),
     KEYLIST_UPDATE: f"{PROTOCOL_PACKAGE}.messages.keylist_update.KeylistUpdate",
     NEW_KEYLIST_UPDATE: f"{PROTOCOL_PACKAGE}.messages.keylist_update.KeylistUpdate",
