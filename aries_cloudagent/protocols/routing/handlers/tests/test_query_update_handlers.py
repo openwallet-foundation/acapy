@@ -28,7 +28,6 @@ TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 
-
 class TestQueryUpdateHandlers(AsyncTestCase):
     async def setUp(self):
         self.context = RequestContext(
@@ -80,8 +79,7 @@ class TestQueryUpdateHandlers(AsyncTestCase):
         self.context.message = RouteUpdateRequest(
             updates=[
                 RouteUpdate(
-                    recipient_key=TEST_VERKEY,
-                    action=RouteUpdate.ACTION_CREATE,
+                    recipient_key=TEST_VERKEY, action=RouteUpdate.ACTION_CREATE,
                 )
             ]
         )
@@ -110,43 +108,48 @@ class TestQueryUpdateHandlers(AsyncTestCase):
         assert not target
 
     async def test_handle_response(self):
-        messages = [
-            RouteUpdateResponse(
-                updated=[
-                    RouteUpdated(
-                        recipient_key=TEST_VERKEY,
-                        action=RouteUpdate.ACTION_CREATE,
-                        result=r
-                    )
+        messages = (
+            [
+                RouteUpdateResponse(
+                    updated=[
+                        RouteUpdated(
+                            recipient_key=TEST_VERKEY,
+                            action=RouteUpdate.ACTION_CREATE,
+                            result=r,
+                        )
+                    ]
+                )
+                for r in [
+                    RouteUpdated.RESULT_NO_CHANGE,
+                    RouteUpdated.RESULT_SUCCESS,
+                    RouteUpdated.RESULT_CLIENT_ERROR,
+                    RouteUpdated.RESULT_SERVER_ERROR,
                 ]
-            ) for r in [
-                RouteUpdated.RESULT_NO_CHANGE,
-                RouteUpdated.RESULT_SUCCESS,
-                RouteUpdated.RESULT_CLIENT_ERROR,
-                RouteUpdated.RESULT_SERVER_ERROR,
             ]
-        ] + [
-            RouteUpdateResponse(
-                updated=[
-                    RouteUpdated(
-                        recipient_key=TEST_VERKEY,
-                        action=RouteUpdate.ACTION_DELETE,
-                        result=RouteUpdated.RESULT_SUCCESS,
-                    )
-                ]
-            )
-        ] + [
-            RouteUpdateResponse(
-                updated=[
-                    RouteUpdated(
-                        recipient_key=TEST_VERKEY,
-                        action="no such action",
-                        result=RouteUpdated.RESULT_CLIENT_ERROR,
-                    )
-                ]
-            )
-        ] + [
-        ]
+            + [
+                RouteUpdateResponse(
+                    updated=[
+                        RouteUpdated(
+                            recipient_key=TEST_VERKEY,
+                            action=RouteUpdate.ACTION_DELETE,
+                            result=RouteUpdated.RESULT_SUCCESS,
+                        )
+                    ]
+                )
+            ]
+            + [
+                RouteUpdateResponse(
+                    updated=[
+                        RouteUpdated(
+                            recipient_key=TEST_VERKEY,
+                            action="no such action",
+                            result=RouteUpdated.RESULT_CLIENT_ERROR,
+                        )
+                    ]
+                )
+            ]
+            + []
+        )
         handler = RouteUpdateResponseHandler()
         for message in messages:
             self.context.message = message

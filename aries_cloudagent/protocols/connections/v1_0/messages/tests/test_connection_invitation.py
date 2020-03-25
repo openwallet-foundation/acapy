@@ -100,16 +100,15 @@ class TestConnectionInvitationSchema(TestCase):
             ConnectionInvitation(
                 label="did-and-endpoint",
                 did="did:sov:QmWbsNYhMrjHiqZDTUTEJs",
-                endpoint = "https://example.com/endpoint",
+                endpoint="https://example.com/endpoint",
             ),
             ConnectionInvitation(
-                label="no-did-no-recip-keys",
-                endpoint = "https://example.com/endpoint",
+                label="no-did-no-recip-keys", endpoint="https://example.com/endpoint",
             ),
             ConnectionInvitation(
                 label="no-did-no-endpoint",
                 recipient_keys=["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
-            )
+            ),
         ]
         for x_conn in x_conns:
             data = x_conn.serialize()

@@ -38,7 +38,7 @@ class TestIntroductionRoutes(AsyncTestCase):
                 init_connection_id="init-id",
                 target_connection_id=None,
                 message="Hello",
-                outbound_handler=None
+                outbound_handler=None,
             )
 
     async def test_service_start_introduction_init_conn_rec_not_active(self):
@@ -47,8 +47,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         )
 
         conn_rec_init = ConnectionRecord(
-            connection_id=None,
-            state=ConnectionRecord.STATE_INACTIVE,
+            connection_id=None, state=ConnectionRecord.STATE_INACTIVE,
         )
         await conn_rec_init.save(self.context)
         assert conn_rec_init._id
@@ -58,7 +57,7 @@ class TestIntroductionRoutes(AsyncTestCase):
                 init_connection_id=conn_rec_init._id,
                 target_connection_id=None,
                 message="Hello",
-                outbound_handler=None
+                outbound_handler=None,
             )
 
     async def test_service_start_introduction_no_target_conn_rec(self):
@@ -67,18 +66,17 @@ class TestIntroductionRoutes(AsyncTestCase):
         )
 
         conn_rec_init = ConnectionRecord(
-            connection_id=None,
-            state=ConnectionRecord.STATE_ACTIVE,
+            connection_id=None, state=ConnectionRecord.STATE_ACTIVE,
         )
         await conn_rec_init.save(self.context)
         assert conn_rec_init._id
-        
+
         with self.assertRaises(base_service.IntroductionError):
             await service.start_introduction(
                 init_connection_id=conn_rec_init._id,
                 target_connection_id="target-id",
                 message="Hello",
-                outbound_handler=None
+                outbound_handler=None,
             )
 
     async def test_service_start_introduction_target_conn_rec_not_active(self):
@@ -87,16 +85,13 @@ class TestIntroductionRoutes(AsyncTestCase):
         )
 
         conn_rec_init = ConnectionRecord(
-            connection_id=None,
-            state=ConnectionRecord.STATE_ACTIVE,
+            connection_id=None, state=ConnectionRecord.STATE_ACTIVE,
         )
         await conn_rec_init.save(self.context)
         assert conn_rec_init._id
-        
 
         conn_rec_target = ConnectionRecord(
-            connection_id=None,
-            state=ConnectionRecord.STATE_INACTIVE,
+            connection_id=None, state=ConnectionRecord.STATE_INACTIVE,
         )
         await conn_rec_target.save(self.context)
         assert conn_rec_target._id
@@ -106,7 +101,7 @@ class TestIntroductionRoutes(AsyncTestCase):
                 init_connection_id=conn_rec_init._id,
                 target_connection_id=conn_rec_target._id,
                 message="Hello",
-                outbound_handler=None
+                outbound_handler=None,
             )
 
     async def test_service_start_and_return_introduction(self):
@@ -116,15 +111,13 @@ class TestIntroductionRoutes(AsyncTestCase):
         start_responder = MockResponder()
 
         conn_rec_init = ConnectionRecord(
-            connection_id=None,
-            state=ConnectionRecord.STATE_ACTIVE,
+            connection_id=None, state=ConnectionRecord.STATE_ACTIVE,
         )
         await conn_rec_init.save(self.context)
         assert conn_rec_init._id
 
         conn_rec_target = ConnectionRecord(
-            connection_id=None,
-            state=ConnectionRecord.STATE_ACTIVE,
+            connection_id=None, state=ConnectionRecord.STATE_ACTIVE,
         )
         await conn_rec_target.save(self.context)
         assert conn_rec_target._id
@@ -133,7 +126,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             init_connection_id=conn_rec_init._id,
             target_connection_id=conn_rec_target._id,
             message="Hello Start",
-            outbound_handler=start_responder.send
+            outbound_handler=start_responder.send,
         )
         messages = start_responder.messages
         assert len(messages) == 1
@@ -152,14 +145,14 @@ class TestIntroductionRoutes(AsyncTestCase):
                 image_url=TEST_IMAGE_URL,
             ),
             message="Hello Invite",
-            _id=result._id
-        ) 
+            _id=result._id,
+        )
         return_responder = MockResponder()
 
         await service.return_invitation(
             target_connection_id=conn_rec_target._id,
             invitation=invite,
-            outbound_handler=return_responder.send
+            outbound_handler=return_responder.send,
         )
         messages = return_responder.messages
         assert len(messages) == 1
@@ -179,15 +172,14 @@ class TestIntroductionRoutes(AsyncTestCase):
                 image_url=TEST_IMAGE_URL,
             ),
             message="Hello World",
-        ) 
+        )
 
         service = await demo_service.DemoIntroductionService.service_handler()(
             self.context
         )
 
         conn_rec_target = ConnectionRecord(
-            connection_id=None,
-            state=ConnectionRecord.STATE_ACTIVE,
+            connection_id=None, state=ConnectionRecord.STATE_ACTIVE,
         )
         await conn_rec_target.save(self.context)
         assert conn_rec_target._id
@@ -195,5 +187,5 @@ class TestIntroductionRoutes(AsyncTestCase):
         await service.return_invitation(
             target_connection_id=conn_rec_target._id,
             invitation=invite,
-            outbound_handler=None
+            outbound_handler=None,
         )

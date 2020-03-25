@@ -30,8 +30,8 @@ def load_postgres_plugin(storage_config, storage_creds, raise_exc=False):
             else:
                 raise SystemExit(1)
         if "wallet_scheme" in storage_config:
-            c_config = c_char_p(storage_config.encode('utf-8'))
-            c_credentials = c_char_p(storage_creds.encode('utf-8'))
+            c_config = c_char_p(storage_config.encode("utf-8"))
+            c_credentials = c_char_p(storage_creds.encode("utf-8"))
             result = stg_lib.init_storagetype(c_config, c_credentials)
             if result != 0:
                 LOGGER.error("Error unable to configure postgres stg: %s", result)

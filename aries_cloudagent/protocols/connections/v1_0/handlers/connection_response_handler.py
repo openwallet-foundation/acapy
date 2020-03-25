@@ -1,6 +1,10 @@
 """Connection response handler."""
 
-from aries_cloudagent.messaging.base_handler import BaseHandler, BaseResponder, RequestContext
+from aries_cloudagent.messaging.base_handler import (
+    BaseHandler,
+    BaseResponder,
+    RequestContext,
+)
 from aries_cloudagent.protocols.trustping.messages.ping import Ping
 
 from ..manager import ConnectionManager, ConnectionManagerError

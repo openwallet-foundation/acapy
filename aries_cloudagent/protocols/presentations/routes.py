@@ -331,7 +331,7 @@ async def presentation_exchange_send_credential_presentation(request: web.BaseRe
 )
 @response_schema(PresentationExchangeSchema())
 async def presentation_exchange_verify_credential_presentation(
-    request: web.BaseRequest
+    request: web.BaseRequest,
 ):
     """
     Request handler for verifying a presentation request.

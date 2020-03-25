@@ -125,4 +125,3 @@ class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
         data = connection_request.serialize()
         model_instance = ConnectionRequest.deserialize(data)
         assert type(model_instance) is type(connection_request)
-

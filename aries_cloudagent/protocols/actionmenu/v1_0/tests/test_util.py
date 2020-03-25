@@ -13,6 +13,7 @@ from ..models.menu_form_param import MenuFormParam
 from ..models.menu_form import MenuForm
 from ..models.menu_option import MenuOption
 
+
 class TestUtil(AsyncTestCase):
     async def test_save_retrieve_delete_connection_menu(self):
         self.storage = BasicStorage()
@@ -24,8 +25,8 @@ class TestUtil(AsyncTestCase):
         self.context.injector.bind_instance(test_module.BaseResponder, self.responder)
 
         menu = test_module.Menu(
-            title='title',
-            description='description',
+            title="title",
+            description="description",
             errormsg=None,
             options=[
                 MenuOption(
@@ -43,21 +44,19 @@ class TestUtil(AsyncTestCase):
                                 default=f"param-default-{i}-{j}",
                                 description=f"param-description-{i}-{j}",
                                 input_type="int",
-                                required=bool((i + j) % 2)
-                            ) for j in range(2)
-                        ]
-                    )
-                ) for i in range(3)
-            ]
+                                required=bool((i + j) % 2),
+                            )
+                            for j in range(2)
+                        ],
+                    ),
+                )
+                for i in range(3)
+            ],
         )
         connection_id = "connid"
 
         for i in range(2):  # once to add, once to update
-            await test_module.save_connection_menu(
-                menu,
-                connection_id,
-                self.context
-            )
+            await test_module.save_connection_menu(menu, connection_id, self.context)
 
             webhooks = self.responder.webhooks
             assert len(webhooks) == 1
@@ -68,30 +67,22 @@ class TestUtil(AsyncTestCase):
             self.responder.webhooks.clear()
 
         # retrieve connection menu
-        assert (await test_module.retrieve_connection_menu(
-            connection_id,
-            self.context
-        )).serialize() == menu.serialize()
+        assert (
+            await test_module.retrieve_connection_menu(connection_id, self.context)
+        ).serialize() == menu.serialize()
 
         # delete connection menu
-        await test_module.save_connection_menu(
-            None,
-            connection_id,
-            self.context
-        )
+        await test_module.save_connection_menu(None, connection_id, self.context)
 
         webhooks = self.responder.webhooks
         assert len(webhooks) == 1
         (result, target) = webhooks[0]
         assert result == "actionmenu"
-        assert target == {
-            "connection_id": connection_id,
-            "menu": None
-        }
+        assert target == {"connection_id": connection_id, "menu": None}
         self.responder.webhooks.clear()
 
         # retrieve no menu
-        assert await test_module.retrieve_connection_menu(
-            connection_id,
-            self.context
-        ) is None
+        assert (
+            await test_module.retrieve_connection_menu(connection_id, self.context)
+            is None
+        )

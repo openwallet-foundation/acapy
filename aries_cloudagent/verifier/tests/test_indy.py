@@ -488,4 +488,3 @@ class TestIndyVerifier(AsyncTestCase):
         mock_verify.assert_not_called()
 
         assert verified == False
-

@@ -136,4 +136,3 @@ class TestRecord(AsyncTestCase):
 
         with self.assertRaises(RevocationError):
             await rec.publish_registry_entry(self.context)
-

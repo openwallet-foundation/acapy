@@ -72,9 +72,7 @@ class ConnectionStaticRequestSchema(Schema):
 class ConnectionStaticResultSchema(Schema):
     """Result schema for new static connection."""
 
-    my_did = fields.Str(
-        description="Local DID", required=True, example=IndyDID.EXAMPLE
-    )
+    my_did = fields.Str(description="Local DID", required=True, example=IndyDID.EXAMPLE)
     mv_verkey = fields.Str(description="My verification key", required=True)
     my_endpoint = fields.Str(description="My endpoint", required=True)
     their_did = fields.Str(
@@ -229,17 +227,12 @@ async def connections_retrieve(request: web.BaseRequest):
             "schema": {"type": "string", "enum": ["none", "auto"]},
             "required": False,
         },
-        {
-            "name": "public",
-            "in": "query",
-            "schema": {"type": "int"},
-            "required": False
-        },
+        {"name": "public", "in": "query", "schema": {"type": "int"}, "required": False},
         {
             "name": "multi_use",
             "in": "query",
             "schema": {"type": "int"},
-            "required": False
+            "required": False,
         },
     ],
 )
@@ -470,11 +463,7 @@ async def connections_create_static(request: web.BaseRequest):
     body = await request.json()
 
     connection_mgr = ConnectionManager(context)
-    (
-        my_info,
-        their_info,
-        connection
-    ) = await connection_mgr.create_static_connection(
+    (my_info, their_info, connection) = await connection_mgr.create_static_connection(
         my_seed=body.get("my_seed") or None,
         my_did=body.get("my_did") or None,
         their_seed=body.get("their_seed") or None,
@@ -486,12 +475,12 @@ async def connections_create_static(request: web.BaseRequest):
         alias=body.get("alias") or None,
     )
     response = {
-        'my_did': my_info.did,
-        'my_verkey': my_info.verkey,
-        'my_endpoint': context.settings.get('default_endpoint'),
-        'their_did': their_info.did,
-        'their_verkey': their_info.verkey,
-        'record': connection.serialize()
+        "my_did": my_info.did,
+        "my_verkey": my_info.verkey,
+        "my_endpoint": context.settings.get("default_endpoint"),
+        "their_did": their_info.did,
+        "their_verkey": their_info.verkey,
+        "record": connection.serialize(),
     }
 
     return web.json_response(response)

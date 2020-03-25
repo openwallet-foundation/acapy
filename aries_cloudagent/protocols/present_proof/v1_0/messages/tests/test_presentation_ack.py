@@ -22,10 +22,7 @@ class TestPresentationAck(TestCase):
 
     def test_deserialize(self):
         """Test deserialization."""
-        dump = json.dumps({
-            "@type": PRESENTATION_ACK,
-            "status": "OK"
-        })
+        dump = json.dumps({"@type": PRESENTATION_ACK, "status": "OK"})
 
         pres_ack = PresentationAck.deserialize(dump)
         assert type(pres_ack) == PresentationAck
@@ -35,10 +32,7 @@ class TestPresentationAck(TestCase):
         pres_ack_dict = PresentationAck().serialize()
         pres_ack_dict.pop("@id")
 
-        assert pres_ack_dict == {
-            "@type": PRESENTATION_ACK,
-            "status": "OK"
-        }
+        assert pres_ack_dict == {"@type": PRESENTATION_ACK, "status": "OK"}
 
 
 class TestPresentationAckSchema(TestCase):
@@ -47,13 +41,13 @@ class TestPresentationAckSchema(TestCase):
     def test_make_model(self):
         """Test making model."""
         pres_ack_dict = PresentationAck().serialize()
-        '''
+        """
         Looks like: {
             "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/ack",
             "@id": "f49773e3-bd56-4868-a5f1-456d1e6d1a16",
             "status": "OK"
         }
-        '''
+        """
 
         model_instance = PresentationAck.deserialize(pres_ack_dict)
         assert isinstance(model_instance, PresentationAck)

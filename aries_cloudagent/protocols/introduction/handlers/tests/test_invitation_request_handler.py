@@ -31,8 +31,7 @@ class TestInvitationRequestHandler(AsyncTestCase):
 
         self.context.connection_ready = True
         self.context.message = InvitationRequest(
-            responder="test-agent",
-            message="Hello World",
+            responder="test-agent", message="Hello World",
         )
         self.context.update_settings({"accept_requests": False})
 
@@ -51,7 +50,7 @@ class TestInvitationRequestHandler(AsyncTestCase):
         handler = test_module.InvitationRequestHandler()
         self.context.update_settings({"accept_requests": True})
 
-        conn_invitation=ConnectionInvitation(
+        conn_invitation = ConnectionInvitation(
             label=TEST_LABEL,
             did=TEST_DID,
             recipient_keys=[TEST_VERKEY],

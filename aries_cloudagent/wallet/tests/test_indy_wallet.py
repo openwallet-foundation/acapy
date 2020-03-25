@@ -124,7 +124,9 @@ class TestWalletCompat:
                 "key": wallet_key,
                 "key_derivation_method": "RAW",
                 "storage_type": "postgres_storage",
-                "storage_config": '{"url":"' + postgres_url + '", "wallet_scheme":"MultiWalletSingleTable"}',
+                "storage_config": '{"url":"'
+                + postgres_url
+                + '", "wallet_scheme":"MultiWalletSingleTable"}',
                 "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
             }
         )
@@ -159,7 +161,9 @@ class TestWalletCompat:
                 "key": wallet_key,
                 "key_derivation_method": "RAW",
                 "storage_type": "postgres_storage",
-                "storage_config": '{"url":"' + postgres_url + '", "wallet_scheme":"MultiWalletSingleTableSharedPool"}',
+                "storage_config": '{"url":"'
+                + postgres_url
+                + '", "wallet_scheme":"MultiWalletSingleTableSharedPool"}',
                 "storage_creds": '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}',
             }
         )

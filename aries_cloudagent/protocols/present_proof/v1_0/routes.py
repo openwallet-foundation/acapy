@@ -525,7 +525,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         request_presentations_attach=[
             AttachDecorator.from_indy_dict(
                 indy_dict=indy_proof_request,
-                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
+                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
             )
         ],
     )

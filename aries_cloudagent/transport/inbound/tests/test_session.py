@@ -225,11 +225,7 @@ class TestInboundSession(TestCase):
         assert result is test_wire_format.encode_message.return_value
 
         test_wire_format.encode_message.assert_awaited_once_with(
-            test_ctx,
-            test_msg.payload,
-            [test_to_verkey],
-            None,
-            test_from_verkey,
+            test_ctx, test_msg.payload, [test_to_verkey], None, test_from_verkey,
         )
 
     async def test_accept_response(self):

@@ -7,7 +7,12 @@ from typing import Sequence, Tuple
 from aries_cloudagent.cache.base import BaseCache
 from aries_cloudagent.connections.models.connection_record import ConnectionRecord
 from aries_cloudagent.connections.models.connection_target import ConnectionTarget
-from aries_cloudagent.connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from aries_cloudagent.connections.models.diddoc import (
+    DIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
 from aries_cloudagent.config.base import InjectorError
 from aries_cloudagent.config.injection_context import InjectionContext
 from aries_cloudagent.core.error import BaseError
@@ -767,7 +772,7 @@ class ConnectionManager:
                 )
 
         return await self.find_connection(
-            receipt.sender_did, receipt.recipient_did, receipt.recipient_verkey, True,
+            receipt.sender_did, receipt.recipient_did, receipt.recipient_verkey, True
         )
 
     async def create_did_document(
@@ -846,7 +851,7 @@ class ConnectionManager:
                 "IndyAgent",
                 [pk],
                 routing_keys,
-                svc_endpoint
+                svc_endpoint,
             )
             did_doc.set(service)
 
@@ -971,10 +976,8 @@ class ConnectionManager:
         results = None
 
         if (
-            connection.state in (
-                ConnectionRecord.STATE_INVITATION,
-                ConnectionRecord.STATE_REQUEST
-            )
+            connection.state
+            in (ConnectionRecord.STATE_INVITATION, ConnectionRecord.STATE_REQUEST)
             and connection.initiator == ConnectionRecord.INITIATOR_EXTERNAL
         ):
             invitation = await connection.retrieve_invitation(self.context)

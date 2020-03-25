@@ -137,11 +137,9 @@ class PresAttrSpec(BaseModel):
         """
         return [
             PresAttrSpec(
-                name=k,
-                cred_def_id=cred_def_id,
-                value=plain[k],
-                referent=referent
-            ) for k in plain
+                name=k, cred_def_id=cred_def_id, value=plain[k], referent=referent
+            )
+            for k in plain
         ]
 
     @property
@@ -213,9 +211,7 @@ class PresAttrSpecSchema(BaseModelSchema):
     )
     value = fields.Str(description="Attribute value", required=False, example="martini")
     referent = fields.Str(
-        description="Credential referent",
-        required=False,
-        example="0"
+        description="Credential referent", required=False, example="0"
     )
 
 
@@ -270,10 +266,9 @@ class PresentationPreview(BaseModel):
         """
 
         return any(
-            a.name == canon(name) and a.value in (
-                value,
-                None
-            ) and a.cred_def_id == cred_def_id
+            a.name == canon(name)
+            and a.value in (value, None)
+            and a.cred_def_id == cred_def_id
             for a in self.attributes
         )
 
@@ -326,9 +321,7 @@ class PresentationPreview(BaseModel):
             if attr_spec.posture == PresAttrSpec.Posture.SELF_ATTESTED:
                 proof_req["requested_attributes"][
                     "self_{}_uuid".format(canon(attr_spec.name))
-                ] = {
-                    "name": canon(attr_spec.name)
-                }
+                ] = {"name": canon(attr_spec.name)}
             else:
                 cd_id = attr_spec.cred_def_id
                 revo_support = bool(
@@ -359,7 +352,7 @@ class PresentationPreview(BaseModel):
                     proof_req["requested_attributes"][
                         "{}_{}_uuid".format(
                             len(proof_req["requested_attributes"]),
-                            canon(attr_spec.name)
+                            canon(attr_spec.name),
                         )
                     ] = {
                         "name": canon(attr_spec.name),
@@ -373,8 +366,7 @@ class PresentationPreview(BaseModel):
         for (reft, attr_spec) in attr_specs_names.items():
             proof_req["requested_attributes"][
                 "{}_{}_uuid".format(
-                    len(proof_req["requested_attributes"]),
-                    canon(attr_spec["names"][0])
+                    len(proof_req["requested_attributes"]), canon(attr_spec["names"][0])
                 )
             ] = attr_spec
 

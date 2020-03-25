@@ -16,6 +16,7 @@ from ...connections.models.diddoc import (
     Service,
 )
 from ...core.protocol_registry import ProtocolRegistry
+
 # FIXME: We shouldn't rely on a hardcoded message version here.
 from ...protocols.connections.v1_0.manager import ConnectionManager
 from ...storage.base import BaseStorage
@@ -315,4 +316,3 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_enqueue.assert_called_once_with(
                 test_topic, test_payload, test_endpoint, test_attempts
             )
-

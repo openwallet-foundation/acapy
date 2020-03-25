@@ -26,5 +26,5 @@ class TestHandler(AsyncTestCase):
         handler.save_connection_menu.assert_called_once_with(
             request_context.message,
             request_context.connection_record.connection_id,
-            request_context
+            request_context,
         )

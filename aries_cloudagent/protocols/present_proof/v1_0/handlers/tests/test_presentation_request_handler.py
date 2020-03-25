@@ -104,23 +104,14 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
-                    }
+                        "restrictions": [{"cred_def_id": CD_ID,}],
+                    },
                 },
-                "requested_predicates": {
-                }
+                "requested_predicates": {},
             }
         )
         request_context.message_receipt = MessageReceipt()
@@ -132,21 +123,13 @@ class TestPresentationRequestHandler(AsyncTestCase):
                         "spec/present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
-                        {
-                            "name": "favourite",
-                            "cred_def_id": CD_ID,
-                            "value": "potato"
-                        },
-                        {
-                            "name": "icon",
-                            "cred_def_id": CD_ID,
-                            "value": "cG90YXRv"
-                        }
+                        {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
+                        {"name": "icon", "cred_def_id": CD_ID, "value": "cG90YXRv"},
                     ],
-                    "predicates": []
+                    "predicates": [],
                 }
             },
-            auto_present=True
+            auto_present=True,
         )
 
         with async_mock.patch.object(
@@ -157,16 +140,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(
-                    return_value=[
-                        {
-                            "cred_info": {
-                                "referent": "dummy"
-                            }
-                        }
-                    ]
-                )
+            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+                return_value=[{"cred_info": {"referent": "dummy"}}]
             )
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 
@@ -210,23 +185,14 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
-                    }
+                        "restrictions": [{"cred_def_id": CD_ID,}],
+                    },
                 },
-                "requested_predicates": {
-                }
+                "requested_predicates": {},
             }
         )
         request_context.message_receipt = MessageReceipt()
@@ -240,21 +206,11 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(
-                    return_value=[
-                        {
-                            "cred_info": {
-                                "referent": "dummy-0"
-                            }
-                        },
-                        {
-                            "cred_info": {
-                                "referent": "dummy-1"
-                            }
-                        }
-                    ]
-                )
+            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+                return_value=[
+                    {"cred_info": {"referent": "dummy-0"}},
+                    {"cred_info": {"referent": "dummy-1"}},
+                ]
             )
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 
@@ -295,20 +251,15 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "name": "proof-request",
                 "version": "1.0",
                 "nonce": "1234567890",
-                "requested_attributes": {
-                },
+                "requested_attributes": {},
                 "requested_predicates": {
                     "0_score_GE_uuid": {
                         "name": "score",
                         "p_type": ">=",
                         "p_value": "1000000",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     }
-                }
+                },
             }
         )
         request_context.message_receipt = MessageReceipt()
@@ -322,10 +273,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(
-                    return_value=[]
-                )
+            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+                return_value=[]
             )
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 
@@ -362,20 +311,15 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "name": "proof-request",
                 "version": "1.0",
                 "nonce": "1234567890",
-                "requested_attributes": {
-                },
+                "requested_attributes": {},
                 "requested_predicates": {
                     "0_score_GE_uuid": {
                         "name": "score",
                         "p_type": ">=",
                         "p_value": "1000000",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     }
-                }
+                },
             }
         )
         request_context.message_receipt = MessageReceipt()
@@ -389,16 +333,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(
-                    return_value=[
-                        {
-                            "cred_info": {
-                                "referent": "dummy-0"
-                            }
-                        }
-                    ]
-                )
+            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+                return_value=[{"cred_info": {"referent": "dummy-0"}}]
             )
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 
@@ -439,20 +375,15 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "name": "proof-request",
                 "version": "1.0",
                 "nonce": "1234567890",
-                "requested_attributes": {
-                },
+                "requested_attributes": {},
                 "requested_predicates": {
                     "0_score_GE_uuid": {
                         "name": "score",
                         "p_type": ">=",
                         "p_value": "1000000",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     }
-                }
+                },
             }
         )
         request_context.message_receipt = MessageReceipt()
@@ -466,21 +397,11 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(
-                    return_value=[
-                        {
-                            "cred_info": {
-                                "referent": "dummy-0"
-                            }
-                        },
-                        {
-                            "cred_info": {
-                                "referent": "dummy-1"
-                            }
-                        }
-                    ]
-                )
+            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+                return_value=[
+                    {"cred_info": {"referent": "dummy-0"}},
+                    {"cred_info": {"referent": "dummy-1"}},
+                ]
             )
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 
@@ -524,23 +445,14 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
-                    }
+                        "restrictions": [{"cred_def_id": CD_ID,}],
+                    },
                 },
-                "requested_predicates": {
-                }
+                "requested_predicates": {},
             }
         )
         request_context.message_receipt = MessageReceipt()
@@ -552,21 +464,13 @@ class TestPresentationRequestHandler(AsyncTestCase):
                         "spec/present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
-                        {
-                            "name": "favourite",
-                            "cred_def_id": CD_ID,
-                            "value": "potato"
-                        },
-                        {
-                            "name": "icon",
-                            "cred_def_id": CD_ID,
-                            "value": "cG90YXRv"
-                        }
+                        {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
+                        {"name": "icon", "cred_def_id": CD_ID, "value": "cG90YXRv"},
                     ],
-                    "predicates": []
+                    "predicates": [],
                 }
             },
-            auto_present=True
+            auto_present=True,
         )
 
         with async_mock.patch.object(
@@ -577,44 +481,42 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(
-                    return_value=[
-                        {
-                            "cred_info": {
-                                "referent": "dummy-0",
-                                "cred_def_id": CD_ID,
-                                "attrs": {
-                                    "ident": "zero",
-                                    "favourite": "potato",
-                                    "icon": "cG90YXRv"
-                                }
-                            }
-                        },
-                        {
-                            "cred_info": {
-                                "referent": "dummy-1",
-                                "cred_def_id": CD_ID,
-                                "attrs": {
-                                    "ident": "one",
-                                    "favourite": "spud",
-                                    "icon": "c3B1ZA=="
-                                }
-                            }
-                        },
-                        {
-                            "cred_info": {
-                                "referent": "dummy-2",
-                                "cred_def_id": CD_ID,
-                                "attrs": {
-                                    "ident": "two",
-                                    "favourite": "patate",
-                                    "icon": "cGF0YXRl"
-                                }
-                            }
+            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+                return_value=[
+                    {
+                        "cred_info": {
+                            "referent": "dummy-0",
+                            "cred_def_id": CD_ID,
+                            "attrs": {
+                                "ident": "zero",
+                                "favourite": "potato",
+                                "icon": "cG90YXRv",
+                            },
                         }
-                    ]
-                )
+                    },
+                    {
+                        "cred_info": {
+                            "referent": "dummy-1",
+                            "cred_def_id": CD_ID,
+                            "attrs": {
+                                "ident": "one",
+                                "favourite": "spud",
+                                "icon": "c3B1ZA==",
+                            },
+                        }
+                    },
+                    {
+                        "cred_info": {
+                            "referent": "dummy-2",
+                            "cred_def_id": CD_ID,
+                            "attrs": {
+                                "ident": "two",
+                                "favourite": "patate",
+                                "icon": "cGF0YXRl",
+                            },
+                        }
+                    },
+                ]
             )
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 
@@ -658,15 +560,10 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ]
+                        "restrictions": [{"cred_def_id": CD_ID,}],
                     }
                 },
-                "requested_predicates": {
-                }
+                "requested_predicates": {},
             }
         )
         request_context.message_receipt = MessageReceipt()
@@ -678,16 +575,12 @@ class TestPresentationRequestHandler(AsyncTestCase):
                         "spec/present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
-                        {
-                            "name": "favourite",
-                            "cred_def_id": CD_ID,
-                            "value": "potato"
-                        }
+                        {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"}
                     ],
-                    "predicates": []
+                    "predicates": [],
                 }
             },
-            auto_present=True
+            auto_present=True,
         )
 
         with async_mock.patch.object(
@@ -698,41 +591,33 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = (
-                async_mock.CoroutineMock(
-                    return_value=[
-                        {
-                            "cred_info": {
-                                "referent": "dummy-0",
-                                "cred_def_id": CD_ID,
-                                "attrs": {
-                                    "ident": "zero",
-                                    "favourite": "yam"
-                                }
-                            }
-                        },
-                        {
-                            "cred_info": {
-                                "referent": "dummy-1",
-                                "cred_def_id": CD_ID,
-                                "attrs": {
-                                    "ident": "one",
-                                    "favourite": "turnip"
-                                }
-                            }
-                        },
-                        {
-                            "cred_info": {
-                                "referent": "dummy-2",
-                                "cred_def_id": CD_ID,
-                                "attrs": {
-                                    "ident": "two",
-                                    "favourite": "the idea of a potato but not a potato"
-                                }
-                            }
+            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+                return_value=[
+                    {
+                        "cred_info": {
+                            "referent": "dummy-0",
+                            "cred_def_id": CD_ID,
+                            "attrs": {"ident": "zero", "favourite": "yam"},
                         }
-                    ]
-                )
+                    },
+                    {
+                        "cred_info": {
+                            "referent": "dummy-1",
+                            "cred_def_id": CD_ID,
+                            "attrs": {"ident": "one", "favourite": "turnip"},
+                        }
+                    },
+                    {
+                        "cred_info": {
+                            "referent": "dummy-2",
+                            "cred_def_id": CD_ID,
+                            "attrs": {
+                                "ident": "two",
+                                "favourite": "the idea of a potato but not a potato",
+                            },
+                        }
+                    },
+                ]
             )
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 

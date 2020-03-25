@@ -15,17 +15,13 @@ from ..valid import (
     INDY_VERSION,
     INT_EPOCH,
     SHA256,
-    UUID4
+    UUID4,
 )
 
 
 class TestValid(TestCase):
-
     def test_epoch(self):
-        non_epochs = [
-            -9223372036854775809,
-            9223372036854775808
-        ]
+        non_epochs = [-9223372036854775809, 9223372036854775808]
         for non_epoch in non_epochs:
             with self.assertRaises(ValidationError):
                 INT_EPOCH["validate"](non_epoch)
@@ -37,11 +33,11 @@ class TestValid(TestCase):
 
     def test_indy_did(self):
         non_indy_dids = [
-           "Q4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
-           "Q4zqM7aXqm7gDQkUVLng",  # too short
-           "Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
-           "did:sov:Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
-           "did:other:Q4zqM7aXqm7gDQkUVLng9h",  # specifies non-indy DID
+            "Q4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
+            "Q4zqM7aXqm7gDQkUVLng",  # too short
+            "Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
+            "did:sov:Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
+            "did:other:Q4zqM7aXqm7gDQkUVLng9h",  # specifies non-indy DID
         ]
         for non_indy_did in non_indy_dids:
             with self.assertRaises(ValidationError):
@@ -52,9 +48,9 @@ class TestValid(TestCase):
 
     def test_indy_raw_public_key(self):
         non_indy_raw_public_keys = [
-           "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
-           "Q4zqM7aXqm7gDQkUVLng",  # too short
-           "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
+            "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
+            "Q4zqM7aXqm7gDQkUVLng",  # too short
+            "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
         ]
         for non_indy_raw_public_key in non_indy_raw_public_keys:
             with self.assertRaises(ValidationError):
@@ -64,9 +60,9 @@ class TestValid(TestCase):
 
     def test_indy_base58_sha256_hash(self):
         non_base58_sha256_hashes = [
-           "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
-           "Q4zqM7aXqm7gDQkUVLng",  # too short
-           "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
+            "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
+            "Q4zqM7aXqm7gDQkUVLng",  # too short
+            "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
         ]
         for non_base58_sha256_hash in non_base58_sha256_hashes:
             with self.assertRaises(ValidationError):
@@ -76,12 +72,11 @@ class TestValid(TestCase):
 
     def test_cred_def_id(self):
         non_cred_def_ids = [
-           "Q4zqM7aXqm7gDQkUVLng9h:4:CL:18:0",
-           "Q4zqM7aXqm7gDQkUVLng9h::CL:18:0",
-           "Q4zqM7aXqm7gDQkUVLng9I:3:CL:18:tag",
-           "Q4zqM7aXqm7gDQkUVLng9h:3::18:tag",
-           "Q4zqM7aXqm7gDQkUVLng9h:3:18:tag"
-                            
+            "Q4zqM7aXqm7gDQkUVLng9h:4:CL:18:0",
+            "Q4zqM7aXqm7gDQkUVLng9h::CL:18:0",
+            "Q4zqM7aXqm7gDQkUVLng9I:3:CL:18:tag",
+            "Q4zqM7aXqm7gDQkUVLng9h:3::18:tag",
+            "Q4zqM7aXqm7gDQkUVLng9h:3:18:tag",
         ]
         for non_cred_def_id in non_cred_def_ids:
             with self.assertRaises(ValidationError):
@@ -106,7 +101,7 @@ class TestValid(TestCase):
             (
                 "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:"
                 "Q4zqM7aXqm7gDQkUVLng9I:2:bc-reg:1.0:tag:CL_ACCUM:0"
-            )
+            ),
         ]
         for non_rev_reg_id in non_rev_reg_ids:
             with self.assertRaises(ValidationError):
@@ -121,12 +116,7 @@ class TestValid(TestCase):
         )  # long
 
     def test_version(self):
-        non_versions = [
-            "-1",
-            "",
-            "3_5",
-            "3.5a"
-        ]
+        non_versions = ["-1", "", "3_5", "3.5a"]
         for non_version in non_versions:
             with self.assertRaises(ValidationError):
                 INDY_VERSION["validate"](non_version)
@@ -145,7 +135,7 @@ class TestValid(TestCase):
             "Q4zqM7aXqm7gDQkUVLng9h:2::1.0",
             "Q4zqM7aXqm7gDQkUVLng9h:2:bc-reg:",
             "Q4zqM7aXqm7gDQkUVLng9h:2:bc-reg:1.0a",
-            "Q4zqM7aXqm7gDQkUVLng9I:2:bc-reg:1.0"  # I is not in base58
+            "Q4zqM7aXqm7gDQkUVLng9I:2:bc-reg:1.0",  # I is not in base58
         ]
         for non_schema_id in non_schema_ids:
             with self.assertRaises(ValidationError):
@@ -154,15 +144,7 @@ class TestValid(TestCase):
         INDY_SCHEMA_ID["validate"]("Q4zqM7aXqm7gDQkUVLng9h:2:bc-reg:1.0")
 
     def test_predicate(self):
-        non_predicates = [
-            ">>",
-            "",
-            " >= ",
-            "<<<=",
-            "==",
-            "=",
-            "!="
-        ]
+        non_predicates = [">>", "", " >= ", "<<<=", "==", "=", "!="]
         for non_predicate in non_predicates:
             with self.assertRaises(ValidationError):
                 INDY_PREDICATE["validate"](non_predicate)
@@ -179,7 +161,7 @@ class TestValid(TestCase):
             "2020-01-01:00:00:00Z",
             "2020.01.01 00:00:00Z",
             "2020-01-01T00:00.123456+00:00",
-            "2020-01-01T00:00:00.123456+0:00"
+            "2020-01-01T00:00:00.123456+0:00",
         ]
         for non_datetime in non_datetimes:
             with self.assertRaises(ValidationError):
@@ -253,7 +235,7 @@ class TestValid(TestCase):
             "----",
             "3fa85f6-5717-4562-b3fc-2c963f66afa6",  # short a hex digit
             "3fa85f645-5717-4562-b3fc-2c963f66afa6",  # extra hex digit
-            "3fa85f64-5717-f562-b3fc-2c963f66afa6"  # 13th hex digit is not 4
+            "3fa85f64-5717-f562-b3fc-2c963f66afa6",  # 13th hex digit is not 4
         ]
         for non_uuid4 in non_uuid4s:
             with self.assertRaises(ValidationError):
