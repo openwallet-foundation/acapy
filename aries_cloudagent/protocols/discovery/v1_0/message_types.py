@@ -10,7 +10,7 @@ NEW_PROTOCOL_URI = "https://didcomm.org/discover-features/1.0"
 NEW_DISCLOSE = f"{NEW_PROTOCOL_URI}/disclose"
 NEW_QUERY = f"{NEW_PROTOCOL_URI}/query"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.discovery"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.discovery.v1_0"
 
 MESSAGE_TYPES = {
     DISCLOSE: f"{PROTOCOL_PACKAGE}.messages.disclose.Disclose",
