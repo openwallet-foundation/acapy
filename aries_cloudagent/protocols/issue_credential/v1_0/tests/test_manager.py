@@ -30,20 +30,16 @@ from .. import manager as test_module
 
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
-SCHEMA_NAME="bc-reg"
-SCHEMA_TXN=12
+SCHEMA_NAME = "bc-reg"
+SCHEMA_TXN = 12
 SCHEMA_ID = f"{TEST_DID}:2:{SCHEMA_NAME}:1.0"
 SCHEMA = {
     "ver": "1.0",
     "id": SCHEMA_ID,
     "name": SCHEMA_NAME,
     "version": "1.0",
-    "attrNames": [
-        "legalName",
-        "jurisdictionId",
-        "incorporationDate"
-    ],
-    "seqNo": SCHEMA_TXN
+    "attrNames": ["legalName", "jurisdictionId", "incorporationDate"],
+    "seqNo": SCHEMA_TXN,
 }
 CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 CRED_DEF = {
@@ -56,13 +52,9 @@ CRED_DEF = {
         "primary": {
             "n": "...",
             "s": "...",
-            "r": {
-                "master_secret": "...",
-                "number": "...",
-                "remainder": "..."
-            },
+            "r": {"master_secret": "...", "number": "...", "remainder": "..."},
             "rctxt": "...",
-            "z": "..."
+            "z": "...",
         },
         "revocation": {
             "g": "1 ...",
@@ -75,11 +67,11 @@ CRED_DEF = {
             "h_cap": "1 ...",
             "u": "1 ...",
             "pk": "1 ...",
-            "y": "1 ..."
-        }
-    }
+            "y": "1 ...",
+        },
+    },
 }
-REV_REG_DEF_TYPE="CL_ACCUM"
+REV_REG_DEF_TYPE = "CL_ACCUM"
 REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag1"
 TAILS_DIR = "/tmp/indy/revocation/tails_files"
 TAILS_HASH = "8UW1Sz5cqoUnK9hqQk7nvtKK65t7Chu3ui866J23sFyJ"
@@ -93,15 +85,12 @@ REV_REG_DEF = {
     "value": {
         "issuanceType": "ISSUANCE_ON_DEMAND",
         "maxCredNum": 5,
-        "publicKeys": {
-            "accumKey": {
-                "z": "1 ..."
-            }
-        },
+        "publicKeys": {"accumKey": {"z": "1 ..."}},
         "tailsHash": TAILS_HASH,
         "tailsLocation": TAILS_LOCAL,
     },
 }
+
 
 class TestCredentialManager(AsyncTestCase):
     async def setUp(self):
@@ -111,18 +100,14 @@ class TestCredentialManager(AsyncTestCase):
 
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
-        self.ledger.get_schema=async_mock.CoroutineMock(
-            return_value=SCHEMA
-        )
-        self.ledger.get_credential_definition=async_mock.CoroutineMock(
+        self.ledger.get_schema = async_mock.CoroutineMock(return_value=SCHEMA)
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value=CRED_DEF
         )
-        self.ledger.get_revoc_reg_def=async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_def = async_mock.CoroutineMock(
             return_value=REV_REG_DEF
         )
-        self.ledger.__aenter__ = async_mock.CoroutineMock(
-            return_value=self.ledger
-        )
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.manager = CredentialManager(self.context)
@@ -732,7 +717,7 @@ class TestCredentialManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
         with async_mock.patch.object(
-           test_module, "IssuerRevRegRecord", autospec=True
+            test_module, "IssuerRevRegRecord", autospec=True
         ) as issuer_rr_rec, async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
@@ -744,7 +729,7 @@ class TestCredentialManager(AsyncTestCase):
                                 tails_local_path="dummy-path"
                             )
                         ),
-                        revoc_reg_id=REV_REG_ID
+                        revoc_reg_id=REV_REG_ID,
                     )
                 ]
             )
@@ -755,12 +740,7 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             issuer.create_credential.assert_called_once_with(
-                SCHEMA,
-                indy_offer,
-                indy_cred_req,
-                cred_values,
-                REV_REG_ID,
-                "dummy-path"
+                SCHEMA, indy_offer, indy_cred_req, cred_values, REV_REG_ID, "dummy-path"
             )
 
             assert ret_exchange.credential == cred
@@ -808,15 +788,11 @@ class TestCredentialManager(AsyncTestCase):
 
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
-        self.ledger.get_schema=async_mock.CoroutineMock(
-            return_value=SCHEMA
-        )
-        self.ledger.get_credential_definition=async_mock.CoroutineMock(
+        self.ledger.get_schema = async_mock.CoroutineMock(return_value=SCHEMA)
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value=CRED_DEF_NR
         )
-        self.ledger.__aenter__ = async_mock.CoroutineMock(
-            return_value=self.ledger
-        )
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.context.injector.clear_binding(BaseLedger)
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
@@ -830,12 +806,7 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             issuer.create_credential.assert_called_once_with(
-                SCHEMA,
-                indy_offer,
-                indy_cred_req,
-                cred_values,
-                None,
-                None
+                SCHEMA, indy_offer, indy_cred_req, cred_values, None, None
             )
 
             assert ret_exchange.credential == cred
@@ -870,7 +841,7 @@ class TestCredentialManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
         with async_mock.patch.object(
-           test_module, "IssuerRevRegRecord", autospec=True
+            test_module, "IssuerRevRegRecord", autospec=True
         ) as issuer_rr_rec, async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
@@ -881,9 +852,7 @@ class TestCredentialManager(AsyncTestCase):
                 await self.manager.issue_credential(
                     stored_exchange, comment=comment, credential_values=cred_values
                 )
-                assert (
-                    "has no active revocation registry"
-                ) in x_cred_mgr.message
+                assert "has no active revocation registry" in x_cred_mgr.message
 
     async def test_issue_credential_rr_full(self):
         connection_id = "test_conn_id"
@@ -912,7 +881,7 @@ class TestCredentialManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
         with async_mock.patch.object(
-           test_module, "IssuerRevRegRecord", autospec=True
+            test_module, "IssuerRevRegRecord", autospec=True
         ) as issuer_rr_rec:
             issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
                 return_value=[
@@ -920,10 +889,10 @@ class TestCredentialManager(AsyncTestCase):
                         get_registry=async_mock.CoroutineMock(
                             return_value=async_mock.MagicMock(
                                 mark_full=async_mock.CoroutineMock(),
-                                tails_local_path="dummy-path"
+                                tails_local_path="dummy-path",
                             )
                         ),
-                        revoc_reg_id=REV_REG_ID
+                        revoc_reg_id=REV_REG_ID,
                     )
                 ]
             )
@@ -1004,12 +973,11 @@ class TestCredentialManager(AsyncTestCase):
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     has_local_tails_file=async_mock.MagicMock(return_value=False),
-                    retrieve_tails=async_mock.CoroutineMock(return_value=None)
+                    retrieve_tails=async_mock.CoroutineMock(return_value=None),
                 )
             )
             ret_exchange, ret_cred_ack = await self.manager.store_credential(
-                stored_exchange,
-                credential_id=cred_id,
+                stored_exchange, credential_id=cred_id
             )
 
             save_ex.assert_called_once()
@@ -1122,8 +1090,7 @@ class TestCredentialManager(AsyncTestCase):
 
         with self.assertRaises(test_module.IndyError):
             await self.manager.store_credential(
-                credential_exchange_record=stored_exchange,
-                credential_id=cred_id,
+                credential_exchange_record=stored_exchange, credential_id=cred_id
             )
 
     async def test_credential_ack(self):
@@ -1166,22 +1133,22 @@ class TestCredentialManager(AsyncTestCase):
             mock_issuer_rev_reg_record = async_mock.MagicMock(
                 revoc_reg_id=REV_REG_ID,
                 tails_local_path=TAILS_LOCAL,
-                publish_registry_entry=async_mock.CoroutineMock()
+                publish_registry_entry=async_mock.CoroutineMock(),
             )
             revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
                 return_value=mock_issuer_rev_reg_record
             )
 
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
-            issuer.revoke_credential = async_mock.CoroutineMock(
+            issuer.revoke_credentials = async_mock.CoroutineMock(
                 return_value=json.dumps(
                     {
                         "ver": "1.0",
                         "value": {
                             "prevAccum": "1 ...",
                             "accum": "21 ...",
-                            "issued": [1]
-                        }
+                            "issued": [1],
+                        },
                     }
                 )
             )
@@ -1228,28 +1195,23 @@ class TestCredentialManager(AsyncTestCase):
 
             await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID, False)
             mock_issuer_rev_reg_record.mark_pending.assert_called_once_with(
-                self.context,
-                CRED_REV_ID
+                self.context, CRED_REV_ID
             )
 
     async def test_publish_pending_revocations(self):
         deltas = [
             {
                 "ver": "1.0",
-                "value": {
-                    "prevAccum": "1 ...",
-                    "accum": "21 ...",
-                    "issued": [1, 2, 3]
-                }
+                "value": {"prevAccum": "1 ...", "accum": "21 ...", "issued": [1, 2, 3]},
             },
             {
                 "ver": "1.0",
                 "value": {
                     "prevAccum": "21 ...",
                     "accum": "36 ...",
-                    "issued": [1, 2, 3]
-                }
-            }
+                    "issued": [1, 2, 3],
+                },
+            },
         ]
 
         mock_issuer_rev_reg_record = async_mock.MagicMock(
@@ -1257,31 +1219,25 @@ class TestCredentialManager(AsyncTestCase):
             tails_local_path=TAILS_LOCAL,
             pending_pub=[1, 2],
             publish_registry_entry=async_mock.CoroutineMock(),
-            clear_pending=async_mock.CoroutineMock()
+            clear_pending=async_mock.CoroutineMock(),
         )
         with async_mock.patch.object(
             test_module.IssuerRevRegRecord,
             "query_by_pending",
-            async_mock.CoroutineMock(
-                return_value=[
-                    mock_issuer_rev_reg_record,
-                ]
-            )
+            async_mock.CoroutineMock(return_value=[mock_issuer_rev_reg_record]),
         ) as revoc:
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
             issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
                 side_effect=deltas
             )
 
-            issuer.revoke_credential = async_mock.CoroutineMock(
+            issuer.revoke_credentials = async_mock.CoroutineMock(
                 side_effect=[json.dumps(delta) for delta in deltas]
             )
             self.context.injector.bind_instance(BaseIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations()
-            assert result == {
-                REV_REG_ID: [1, 2]
-            }
+            assert result == {REV_REG_ID: [1, 2]}
             mock_issuer_rev_reg_record.clear_pending.assert_called_once()
 
     async def test_retrieve_records(self):
