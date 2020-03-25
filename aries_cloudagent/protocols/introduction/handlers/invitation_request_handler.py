@@ -6,7 +6,9 @@ from ....messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-from ...connections.manager import ConnectionManager
+
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ...connections.v1_0.manager import ConnectionManager
 from ..messages.invitation_request import InvitationRequest
 from ..messages.invitation import Invitation
 

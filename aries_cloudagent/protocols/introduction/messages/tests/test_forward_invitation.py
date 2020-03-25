@@ -1,7 +1,8 @@
 from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
-from ....connections.messages.connection_invitation import ConnectionInvitation
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 
 from ...message_types import FORWARD_INVITATION, PROTOCOL_PACKAGE
 

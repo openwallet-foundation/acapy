@@ -20,7 +20,8 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder
 from ..messaging.util import datetime_now
-from ..protocols.connections.manager import ConnectionManager
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage

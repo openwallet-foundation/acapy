@@ -4,7 +4,8 @@ from marshmallow import fields
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ...connections.messages.connection_invitation import (
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ...connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )

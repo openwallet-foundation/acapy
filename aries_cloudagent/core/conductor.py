@@ -19,7 +19,12 @@ from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..messaging.responder import BaseResponder
-from ..protocols.connections.manager import ConnectionManager, ConnectionManagerError
+
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ..protocols.connections.v1_0.manager import (
+    ConnectionManager,
+    ConnectionManagerError,
+)
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -73,7 +78,7 @@ class Conductor:
 
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager(
-            context, self.inbound_message_router, self.handle_not_returned,
+            context, self.inbound_message_router, self.handle_not_returned
         )
         await self.inbound_transport_manager.setup()
 

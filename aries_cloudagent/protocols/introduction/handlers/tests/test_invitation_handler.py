@@ -9,7 +9,8 @@ from .....messaging.responder import MockResponder
 from .....storage.base import BaseStorage
 from .....storage.basic import BasicStorage
 
-from ....connections.messages.connection_invitation import ConnectionInvitation
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 
 from ...messages.invitation import Invitation
 from ...messages.invitation_request import InvitationRequest

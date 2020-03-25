@@ -8,7 +8,8 @@ from ....messaging.base_handler import (
     RequestContext,
 )
 
-from ...connections.manager import ConnectionManager
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ...connections.v1_0.manager import ConnectionManager
 
 from ..messages.route_update_response import RouteUpdateResponse
 from ..models.route_update import RouteUpdate

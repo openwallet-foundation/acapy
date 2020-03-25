@@ -23,7 +23,7 @@ from aries_cloudagent.wallet.base import BaseWallet, DIDInfo
 from aries_cloudagent.wallet.basic import BasicWallet
 from aries_cloudagent.wallet.error import WalletNotFoundError
 
-from aries_cloudagentrouting.manager import RoutingManager
+from ....routing.manager import RoutingManager
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_invitation import ConnectionInvitation

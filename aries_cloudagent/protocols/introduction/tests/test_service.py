@@ -9,7 +9,8 @@ from ....storage.base import BaseStorage
 from ....storage.basic import BasicStorage
 from ....storage.error import StorageNotFoundError
 
-from ...connections.messages.connection_invitation import ConnectionInvitation
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 
 from .. import base_service, demo_service
 
