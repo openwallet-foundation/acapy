@@ -2,8 +2,8 @@
 
 from abc import ABC, abstractmethod
 
-from ...core.error import BaseError
-from ...messaging.request_context import RequestContext
+from aries_cloudagent.core.error import BaseError
+from aries_cloudagent.messaging.request_context import RequestContext
 
 from .messages.invitation import Invitation
 

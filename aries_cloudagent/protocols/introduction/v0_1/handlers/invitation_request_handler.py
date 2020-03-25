@@ -1,6 +1,6 @@
 """Handler for incoming invitation request messages."""
 
-from ....messaging.base_handler import (
+from aries_cloudagent.messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
@@ -8,7 +8,7 @@ from ....messaging.base_handler import (
 )
 
 # FIXME: We shouldn't rely on a hardcoded message version here.
-from ...connections.v1_0.manager import ConnectionManager
+from aries_cloudagent.protocols.connections.v1_0.manager import ConnectionManager
 from ..messages.invitation_request import InvitationRequest
 from ..messages.invitation import Invitation
 

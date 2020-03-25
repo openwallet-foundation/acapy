@@ -12,7 +12,7 @@ NEW_INVITATION_REQUEST = f"{NEW_PROTOCOL_URI}/invitation-request"
 NEW_INVITATION = f"{NEW_PROTOCOL_URI}/invitation"
 NEW_FORWARD_INVITATION = f"{NEW_PROTOCOL_URI}/forward-invitation"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.introduction"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.introduction.v0_1"
 
 MESSAGE_TYPES = {
     INVITATION_REQUEST: (

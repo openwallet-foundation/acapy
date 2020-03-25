@@ -2,7 +2,7 @@
 
 from marshmallow import fields
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import INVITATION_REQUEST, PROTOCOL_PACKAGE
 
