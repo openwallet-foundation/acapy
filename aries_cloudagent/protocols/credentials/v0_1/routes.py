@@ -7,13 +7,17 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
 
-from ...connections.models.connection_record import ConnectionRecord
-from ...holder.base import BaseHolder
-from ...messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID, INDY_SCHEMA_ID
-from ...storage.error import StorageNotFoundError
-from ...wallet.error import WalletNotFoundError
+from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.holder.base import BaseHolder
+from aries_cloudagent.messaging.valid import (
+    INDY_CRED_DEF_ID,
+    INDY_REV_REG_ID,
+    INDY_SCHEMA_ID,
+)
+from aries_cloudagent.storage.error import StorageNotFoundError
+from aries_cloudagent.wallet.error import WalletNotFoundError
 
-from ..problem_report.message import ProblemReport
+from aries_cloudagent.protocols.problem_report.message import ProblemReport
 
 from .manager import CredentialManager
 from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema

@@ -3,12 +3,12 @@
 import json
 import logging
 
-from ...config.injection_context import InjectionContext
-from ...connections.models.connection_record import ConnectionRecord
-from ...core.error import BaseError
-from ...holder.base import BaseHolder
-from ...issuer.base import BaseIssuer
-from ...ledger.base import BaseLedger
+from aries_cloudagent.config.injection_context import InjectionContext
+from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.core.error import BaseError
+from aries_cloudagent.holder.base import BaseHolder
+from aries_cloudagent.issuer.base import BaseIssuer
+from aries_cloudagent.ledger.base import BaseLedger
 
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_stored import CredentialStored

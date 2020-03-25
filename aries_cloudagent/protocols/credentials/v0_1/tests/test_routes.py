@@ -3,7 +3,7 @@ from asynctest import mock as async_mock
 
 from .. import routes as test_module
 
-from ....storage.error import StorageNotFoundError
+from aries_cloudagent.storage.error import StorageNotFoundError
 
 
 class TestCredentialRoutes(AsyncTestCase):

@@ -2,8 +2,8 @@
 
 from marshmallow import fields
 
-from ....config.injection_context import InjectionContext
-from ....messaging.models.base_record import BaseRecord, BaseRecordSchema
+from aries_cloudagent.config.injection_context import InjectionContext
+from aries_cloudagent.messaging.models.base_record import BaseRecord, BaseRecordSchema
 
 
 class CredentialExchange(BaseRecord):
