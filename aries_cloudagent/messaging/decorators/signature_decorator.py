@@ -133,7 +133,8 @@ class SignatureDecoratorSchema(BaseModelSchema):
         data_key="@type",
         required=True,
         description="Signature type",
-        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
+        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+        + "spec/signature/1.0/ed25519Sha512_single",
     )
     signature = fields.Str(
         required=True,

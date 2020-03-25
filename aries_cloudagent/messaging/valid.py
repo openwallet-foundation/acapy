@@ -219,7 +219,8 @@ class UUIDFour(Regexp):
             r"4[a-fA-F0-9]{3}-"
             r"[a-fA-F0-9]{4}-"
             r"[a-fA-F0-9]{12}",
-            error="Value {input} is not a UUID4 (8-4-4-4-12 hex digits with digit#13=4)",
+            error="Value {input} is not a UUID4 "
+            + "(8-4-4-4-12 hex digits with digit#13=4)",
         )
 
 

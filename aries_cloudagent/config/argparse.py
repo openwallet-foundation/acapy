@@ -537,7 +537,8 @@ class ProtocolGroup(ArgumentGroup):
             "--invite-base-url",
             type=str,
             metavar="<base-url>",
-            help="Base URL to use when formatting connection invitations in URL format.",
+            help="Base URL to use when formatting connection "
+            + "invitations in URL format.",
         )
         parser.add_argument(
             "--monitor-ping",
