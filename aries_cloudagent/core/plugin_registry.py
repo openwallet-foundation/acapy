@@ -190,13 +190,17 @@ class PluginRegistry:
     async def register_admin_routes(self, app):
         """Call route registration methods on the current context."""
         for plugin in self._plugins.values():
-            try:
-                mod = ClassLoader.load_module(plugin.__name__ + ".routes")
-            except ModuleLoadError as e:
-                LOGGER.error("Error loading admin routes: %s", e)
-                continue
-            if mod and hasattr(mod, "register"):
-                await mod.register(app)
+            definition = ClassLoader.load_module("definition", plugin.__name__)
+            for plugin_version in definition.versions:
+                try:
+                    mod = ClassLoader.load_module(
+                        f"{plugin.__name__}.{plugin_version['path']}.routes"
+                    )
+                except ModuleLoadError as e:
+                    LOGGER.error("Error loading admin routes: %s", e)
+                    continue
+                if mod and hasattr(mod, "register"):
+                    await mod.register(app)
 
     def __repr__(self) -> str:
         """Return a string representation for this class."""
