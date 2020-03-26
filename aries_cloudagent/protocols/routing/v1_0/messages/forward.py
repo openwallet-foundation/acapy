@@ -6,7 +6,7 @@ from typing import Union
 
 from marshmallow import fields, pre_load
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import FORWARD, PROTOCOL_PACKAGE
 

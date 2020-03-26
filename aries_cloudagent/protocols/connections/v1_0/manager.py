@@ -27,7 +27,8 @@ from aries_cloudagent.wallet.crypto import create_keypair, seed_to_did
 from aries_cloudagent.wallet.error import WalletNotFoundError
 from aries_cloudagent.wallet.util import bytes_to_b58
 
-from aries_cloudagent.protocols.routing.manager import RoutingManager
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from aries_cloudagent.protocols.routing.v1_0.manager import RoutingManager
 
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest

@@ -1,14 +1,14 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .....config.injection_context import InjectionContext
-from .....connections.models.connection_record import ConnectionRecord
-from .....messaging.base_handler import HandlerException
-from .....messaging.request_context import RequestContext
-from .....messaging.responder import MockResponder
-from .....storage.base import BaseStorage
-from .....storage.basic import BasicStorage
-from .....transport.inbound.receipt import MessageReceipt
+from aries_cloudagent.config.injection_context import InjectionContext
+from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.messaging.base_handler import HandlerException
+from aries_cloudagent.messaging.request_context import RequestContext
+from aries_cloudagent.messaging.responder import MockResponder
+from aries_cloudagent.storage.base import BaseStorage
+from aries_cloudagent.storage.basic import BasicStorage
+from aries_cloudagent.transport.inbound.receipt import MessageReceipt
 
 from ...handlers.route_query_request_handler import RouteQueryRequestHandler
 from ...handlers.route_update_request_handler import RouteUpdateRequestHandler

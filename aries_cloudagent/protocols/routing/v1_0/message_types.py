@@ -18,7 +18,7 @@ NEW_ROUTE_QUERY_RESPONSE = f"{NEW_PROTOCOL_URI}/route-query-response"
 NEW_ROUTE_UPDATE_REQUEST = f"{NEW_PROTOCOL_URI}/route-update-request"
 NEW_ROUTE_UPDATE_RESPONSE = f"{NEW_PROTOCOL_URI}/route-update-response"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.routing"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.routing.v1_0"
 
 MESSAGE_TYPES = {
     FORWARD: f"{PROTOCOL_PACKAGE}.messages.forward.Forward",

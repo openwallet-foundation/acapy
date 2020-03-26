@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_RESPONSE
 from ..models.paginated import Paginated, PaginatedSchema
