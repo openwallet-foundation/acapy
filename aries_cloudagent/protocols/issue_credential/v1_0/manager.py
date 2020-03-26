@@ -490,7 +490,7 @@ class CredentialManager:
                     credential_exchange_record.credential_definition_id
                 )
 
-            if credential_definition["value"]["revocation"]:
+            if credential_definition["value"].get("revocation"):
                 issuer_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
                     self.context,
                     credential_exchange_record.credential_definition_id,

@@ -601,20 +601,20 @@ class ProtocolGroup(ArgumentGroup):
         if args.timing_log:
             settings["timing.log_file"] = args.timing_log
         if args.trace:
+            # note that you can configure tracing without actually enabling it
+            # this is to allow message- or exchange-specific tracing (vs global)
             settings["trace.enabled"] = True
             settings["trace.target"] = "log"
             settings["trace.tag"] = ""
         if args.trace_target:
-            settings["trace.enabled"] = True
             settings["trace.target"] = args.trace_target
         if args.trace_tag:
-            settings["trace.enabled"] = True
             settings["trace.tag"] = args.trace_tag
         if settings.get("trace.enabled"):
             try:
                 trace_event(
-                    settings, 
-                    None, 
+                    settings,
+                    None,
                     handler="ArgParse",
                     outcome="Successfully configured aca-py",
                     raise_errors=True

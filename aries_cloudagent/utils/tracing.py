@@ -1,3 +1,5 @@
+"""Event tracing."""
+
 import json
 import logging
 import time
@@ -12,11 +14,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 def trace_event(
-        context, 
-        message, 
+        context,
+        message,
         handler: str = None,
         ellapsed_milli: int = None,
         outcome: str = None,
+        force_trace: bool = False,
         raise_errors: bool = False):
     """
     Log a trace event to a configured target.
@@ -24,19 +27,35 @@ def trace_event(
     Args:
         context: The application context, attributes of interest are:
             context["trace.enabled"]: True if we are logging events
-            context["trace.target"]: Trace target ("log", "message" or an http endpoint)
+            context["trace.target"]: Trace target
+                ("log", "message" or an http endpoint)
             context["trace.tag"]: Tag to be included in trace output
-        message: the current message, can be an AgentMessage, InboundMessage or OutboundMessage
+        message: the current message, can be an AgentMessage,
+                InboundMessage or OutboundMessage
         event: Dict that will be converted to json and posted to the target
     """
 
-    if context.get("trace.enabled"):
+    if force_trace or context.get("trace.enabled"):
         # build the event to log
-        # TODO check instance type of message to determine how to get message and thread id's
+        # TODO check instance type of message to determine how to
+        # get message and thread id's
+        msg_id = ""
+        thread_id = ""
+        msg_type = ""
+        if message and isinstance(message, AgentMessage):
+            msg_id = message._id
+            thread_id = message._thread.thid
+            msg_type = message._type
+        elif message and isinstance(message, InboundMessage):
+            # TODO
+            pass
+        elif message and isinstance(message, OutboundMessage):
+            # TODO
+            pass
         event = {
-            "message_id": message._id if message else "",
-            "thread_id": message._thread.thid if message else "",
-            "traced_type": message._type if message else "",
+            "message_id": msg_id,
+            "thread_id": thread_id,
+            "traced_type": msg_type,
             "timestamp": time.time(),
             "handler": handler,
             "ellapsed_milli": ellapsed_milli,
@@ -56,8 +75,9 @@ def trace_event(
                 LOGGER.info(" %s %s", context["trace.tag"], event_str)
             else:
                 # should be an http endpoint
-                resp = requests.post(
-                    context["trace.target"] + (context["trace.tag"] if context["trace.tag"] else ""),
+                _ = requests.post(
+                    context["trace.target"] +
+                    (context["trace.tag"] if context["trace.tag"] else ""),
                     data=event_str,
                     headers={"Content-Type": "application/json"}
                 )

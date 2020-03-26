@@ -32,6 +32,10 @@ EVENT_LOGGER.setLevel(logging.DEBUG if DEBUG_EVENTS else logging.NOTSET)
 EVENT_LOGGER.addHandler(event_stream_handler)
 EVENT_LOGGER.propagate = False
 
+TRACE_TARGET = os.getenv("TRACE_TARGET")
+TRACE_TAG    = os.getenv("TRACE_TAG")
+TRACE_ENABLED = True if TRACE_TARGET else False
+
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
@@ -124,6 +128,9 @@ class DemoAgent:
         self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.extra_args = extra_args
+        self.trace_enabled = TRACE_ENABLED
+        self.trace_target = TRACE_TARGET
+        self.trace_tag = TRACE_TAG
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if RUN_MODE == "pwd":
@@ -267,6 +274,14 @@ class DemoAgent:
             )
         if self.webhook_url:
             result.append(("--webhook-url", self.webhook_url))
+        if self.trace_enabled:
+            result.extend(
+                [
+                    ("--trace",),
+                    ("--trace-target", self.trace_target),
+                    ("--trace-tag", self.trace_tag),
+                ]
+            )
         if self.extra_args:
             result.extend(self.extra_args)
 
