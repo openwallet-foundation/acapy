@@ -490,11 +490,11 @@ class CredentialManager:
                     credential_exchange_record.credential_definition_id
                 )
 
-            if credential_definition["value"]["revocation"]:
+            if credential_definition["value"].get("revocation"):
                 issuer_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
                     self.context,
                     credential_exchange_record.credential_definition_id,
-                    state=IssuerRevRegRecord.STATE_ACTIVE
+                    state=IssuerRevRegRecord.STATE_ACTIVE,
                 )
                 if not issuer_rev_regs:
                     raise CredentialManagerError(
@@ -504,9 +504,9 @@ class CredentialManager:
                     )
 
                 registry = await issuer_rev_regs[0].get_registry()
-                credential_exchange_record.revoc_reg_id = (
-                    issuer_rev_regs[0].revoc_reg_id
-                )
+                credential_exchange_record.revoc_reg_id = issuer_rev_regs[
+                    0
+                ].revoc_reg_id
                 tails_path = registry.tails_local_path
             else:
                 tails_path = None
@@ -733,8 +733,7 @@ class CredentialManager:
                 await registry_record.publish_registry_entry(self.context)
         else:
             await registry_record.mark_pending(
-                self.context,
-                credential_exchange_record.revocation_id
+                self.context, credential_exchange_record.revocation_id
             )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_REVOKED
@@ -763,10 +762,11 @@ class CredentialManager:
                     )
                 )
                 if delta:
-                    net_delta = await issuer.merge_revocation_registry_deltas(
-                        net_delta,
-                        delta
-                    ) if net_delta else delta
+                    net_delta = (
+                        await issuer.merge_revocation_registry_deltas(net_delta, delta)
+                        if net_delta
+                        else delta
+                    )
 
             registry_record.revoc_reg_entry = net_delta
             await registry_record.publish_registry_entry(self.context)
