@@ -5,7 +5,9 @@ from aries_cloudagent.messaging.base_handler import (
     BaseResponder,
     RequestContext,
 )
-from aries_cloudagent.protocols.trustping.messages.ping import Ping
+
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from aries_cloudagent.protocols.trustping.v1_0.messages.ping import Ping
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_response import ConnectionResponse

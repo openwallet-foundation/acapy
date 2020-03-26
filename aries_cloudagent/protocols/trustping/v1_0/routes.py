@@ -5,8 +5,8 @@ from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
-from ...connections.models.connection_record import ConnectionRecord
-from ...storage.error import StorageNotFoundError
+from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.storage.error import StorageNotFoundError
 
 from .messages.ping import Ping
 

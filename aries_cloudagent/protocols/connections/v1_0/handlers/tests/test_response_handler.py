@@ -11,7 +11,10 @@ from aries_cloudagent.connections.models.diddoc import (
 from aries_cloudagent.messaging.base_handler import HandlerException
 from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.messaging.responder import MockResponder
-from aries_cloudagent.protocols.trustping.messages.ping import Ping
+
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from aries_cloudagent.protocols.trustping.v1_0.messages.ping import Ping
+
 from aries_cloudagent.transport.inbound.receipt import MessageReceipt
 
 from ...handlers import connection_response_handler as handler

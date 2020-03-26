@@ -10,7 +10,7 @@ NEW_PROTOCOL_URI = "https://didcomm.org/trust_ping/1.0"
 NEW_PING = f"{NEW_PROTOCOL_URI}/ping"
 NEW_PING_RESPONSE = f"{NEW_PROTOCOL_URI}/ping_response"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.trustping"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.trustping.v1_0"
 
 MESSAGE_TYPES = {
     PING: f"{PROTOCOL_PACKAGE}.messages.ping.Ping",

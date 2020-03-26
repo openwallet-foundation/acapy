@@ -1,6 +1,10 @@
 """Ping response handler."""
 
-from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
+from aries_cloudagent.messaging.base_handler import (
+    BaseHandler,
+    BaseResponder,
+    RequestContext,
+)
 
 from ..messages.ping_response import PingResponse
 
