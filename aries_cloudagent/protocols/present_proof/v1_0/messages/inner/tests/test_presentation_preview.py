@@ -1,16 +1,15 @@
-from copy import deepcopy
-from datetime import datetime, timezone
-from unittest import TestCase
-
 import json
+import pytest
+
+from copy import deepcopy
+from time import time
+from unittest import TestCase
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-import pytest
-
-from .......holder.indy import IndyHolder
-from .......messaging.util import canon, str_to_datetime, str_to_epoch
+from .......messaging.util import canon
+from .......revocation.models.indy import NonRevocationInterval
 
 from ....message_types import PRESENTATION_PREVIEW
 from ....util.predicate import Predicate
@@ -22,8 +21,6 @@ from ..presentation_preview import (
 )
 
 
-NOW_8601 = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
-NOW_EPOCH = str_to_epoch(NOW_8601)
 S_ID = {
     "score": "NcYxiDXkpYi6ov5FcYDi1e:2:score:1.0",
     "membership": "NcYxiDXkpYi6ov5FcYDi1e:2:membership:1.0",
@@ -440,6 +437,95 @@ class TestPresentationPreviewAsync(AsyncTestCase):
         )
 
     @pytest.mark.asyncio
+    async def test_to_indy_proof_request_revo_default_interval(self):
+        """Test pres preview to indy proof req with revocation support, defaults."""
+
+        canon_indy_proof_req = deepcopy(INDY_PROOF_REQ)
+        for spec in canon_indy_proof_req["requested_attributes"].values():
+            spec["name"] = canon(spec["name"])
+        for spec in canon_indy_proof_req["requested_predicates"].values():
+            spec["name"] = canon(spec["name"])
+
+        pres_preview = deepcopy(PRES_PREVIEW)
+        mock_ledger = async_mock.MagicMock(
+            get_credential_definition=async_mock.CoroutineMock(
+                return_value={
+                    "value": {
+                        "revocation": {
+                            "...": "..."
+                        }
+                    }
+                }
+            )
+        )
+        
+        indy_proof_req = await pres_preview.indy_proof_request(
+            **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
+            ledger=mock_ledger
+        )
+
+        for uuid, attr_spec in indy_proof_req["requested_attributes"].items():
+            assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
+            canon_indy_proof_req["requested_attributes"][uuid]["non_revoked"] = (
+                attr_spec["non_revoked"]
+            )
+        for uuid, pred_spec in indy_proof_req["requested_predicates"].items():
+            assert set(pred_spec.get("non_revoked", {}).keys()) == {"from", "to"}
+            canon_indy_proof_req["requested_predicates"][uuid]["non_revoked"] = (
+                pred_spec["non_revoked"]
+            )
+
+        assert canon_indy_proof_req == indy_proof_req
+
+    @pytest.mark.asyncio
+    async def test_to_indy_proof_request_revo(self):
+        """Test pres preview to indy proof req with revocation support, interval."""
+
+        EPOCH_NOW = int(time())
+        canon_indy_proof_req = deepcopy(INDY_PROOF_REQ)
+        for spec in canon_indy_proof_req["requested_attributes"].values():
+            spec["name"] = canon(spec["name"])
+        for spec in canon_indy_proof_req["requested_predicates"].values():
+            spec["name"] = canon(spec["name"])
+
+        pres_preview = deepcopy(PRES_PREVIEW)
+        mock_ledger = async_mock.MagicMock(
+            get_credential_definition=async_mock.CoroutineMock(
+                return_value={
+                    "value": {
+                        "revocation": {
+                            "...": "..."
+                        }
+                    }
+                }
+            )
+        )
+        
+        indy_proof_req = await pres_preview.indy_proof_request(
+            **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
+            ledger=mock_ledger,
+            non_revoc_intervals={
+                CD_ID[s_id]: NonRevocationInterval(
+                    1234567890,
+                    EPOCH_NOW
+                ) for s_id in S_ID
+            }
+        )
+
+        for uuid, attr_spec in indy_proof_req["requested_attributes"].items():
+            assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
+            canon_indy_proof_req["requested_attributes"][uuid]["non_revoked"] = (
+                attr_spec["non_revoked"]
+            )
+        for uuid, pred_spec in indy_proof_req["requested_predicates"].items():
+            assert set(pred_spec.get("non_revoked", {}).keys()) == {"from", "to"}
+            canon_indy_proof_req["requested_predicates"][uuid]["non_revoked"] = (
+                pred_spec["non_revoked"]
+            )
+
+        assert canon_indy_proof_req == indy_proof_req
+
+    @pytest.mark.asyncio
     async def test_satisfaction(self):
         """Test presentation preview predicate satisfaction."""
 
@@ -468,6 +554,11 @@ class TestPresentationPreview(TestCase):
         """Test initializer."""
         assert PRES_PREVIEW.attributes
         assert PRES_PREVIEW.predicates
+        assert PRES_PREVIEW.has_attr_spec(
+            cred_def_id=CD_ID["score"],
+            name="player",
+            value="Richie Knucklez"
+        )
 
     def test_type(self):
         """Test type."""

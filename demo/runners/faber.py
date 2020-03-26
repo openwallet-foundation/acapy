@@ -6,8 +6,6 @@ import random
 import sys
 import time
 
-from uuid import uuid4
-
 from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
@@ -62,9 +60,11 @@ class FaberAgent(DemoAgent):
 
     async def handle_connections(self, message):
         if message["connection_id"] == self.connection_id:
-            if message["state"] == "active" and not self._connection_ready.done():
+            if message["state"] in ["active", "response"]:
                 self.log("Connected")
                 self._connection_ready.set_result(True)
+                if not self._connection_ready.done():
+                    self._connection_ready.set_result(True)
 
     async def handle_issue_credential(self, message):
         state = message["state"]
@@ -75,10 +75,10 @@ class FaberAgent(DemoAgent):
         self.cred_state[credential_exchange_id] = state
 
         self.log(
-            "Credential: state =",
-            state,
-            ", credential_exchange_id =",
-            credential_exchange_id,
+            "Credential: state = {}, credential_exchange_id = {}".format(
+                state,
+                credential_exchange_id,
+            )
         )
 
         if state == "request_received":
@@ -211,10 +211,18 @@ async def main(
         log_msg("Waiting for connection...")
         await agent.detect_connection()
 
-        options = "(1) Issue Credential (2) Send Proof Request (3) Send Message"
+        options = (
+            "    (1) Issue Credential\n"
+            "    (2) Send Proof Request\n"
+            "    (3) Send Message\n"
+        )
         if revocation:
-            options += " (4) Revoke Credential (5) Add Revocation Registry"
-        options += " (X) Exit? [1/2/3/X] "
+            options += (
+                "    (4) Revoke Credential\n"
+                "    (5) Publish Revocations\n"
+                "    (6) Add Revocation Registry\n"
+            )
+        options += "    (X) Exit?\n[1/2/3/{}X] ".format("4/5/6/" if revocation else "")
         async for option in prompt_loop(options):
             if option is None or option in "xX":
                 break
@@ -282,7 +290,6 @@ async def main(
                 indy_proof_request = {
                     "name": "Proof of Education",
                     "version": "1.0",
-                    "nonce": str(uuid4().int),
                     "requested_attributes": {
                         f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
                     },
@@ -308,10 +315,23 @@ async def main(
                 )
             elif option == "4" and revocation:
                 revoking_cred_id = await prompt("Enter credential exchange id: ")
+                publish = json.dumps(
+                    await prompt("Publish now? [Y/N]: ", default="N") in ('yY')
+                )
                 await agent.admin_POST(
-                    f"/issue-credential/records/{revoking_cred_id}/revoke"
+                    f"/issue-credential/records/{revoking_cred_id}"
+                    f"/revoke?publish={publish}"
                 )
             elif option == "5" and revocation:
+                resp = await agent.admin_POST("/issue-credential/publish-revocations")
+                agent.log(
+                    "Published revocations for {} revocation registr{} {}".format(
+                        len(resp),
+                        "y" if len(resp) == 1 else "ies",
+                        json.dumps([k for k in resp], indent=4)
+                    )
+                )
+            elif option == "6" and revocation:
                 log_status("#19 Add another revocation registry")
                 revocation_registry_id = await (
                     agent.create_and_publish_revocation_registry(

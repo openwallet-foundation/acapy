@@ -15,7 +15,7 @@ from ..storage.base import BaseStorage, StorageNotFoundError
 
 from .error import RevocationNotSupportedError
 from .indy import IndyRevocation
-from .models.issuer_revocation_record import IssuerRevocationRecordSchema
+from .models.issuer_rev_reg_record import IssuerRevRegRecordSchema
 from .models.revocation_registry import RevocationRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -28,13 +28,17 @@ class RevRegCreateRequestSchema(Schema):
         description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
 
-    max_cred_num = fields.Int(description="Maximum credential numbers", required=False)
+    max_cred_num = fields.Int(
+        description="Maximum credential numbers",
+        example=100,
+        required=False
+    )
 
 
 class RevRegCreateResultSchema(Schema):
     """Result schema for revocation registry creation request."""
 
-    result = IssuerRevocationRecordSchema()
+    result = IssuerRevRegRecordSchema()
 
 
 class RevRegUpdateTailsFileUriSchema(Schema):
@@ -94,7 +98,7 @@ async def revocation_create_registry(request: web.BaseRequest):
 @docs(
     tags=["revocation"],
     summary="Get current revocation registry",
-    parameters=[{"in": "path", "name": "id", "description": "revocation registry id."}],
+    parameters=[{"in": "path", "name": "id", "description": "revocation registry id"}],
 )
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_current_registry(request: web.BaseRequest):
@@ -114,7 +118,7 @@ async def get_current_registry(request: web.BaseRequest):
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
@@ -125,7 +129,7 @@ async def get_current_registry(request: web.BaseRequest):
     tags=["revocation"],
     summary="Download the tails file of revocation registry",
     produces="application/octet-stream",
-    parameters=[{"in": "path", "name": "id", "description": "revocation registry id."}],
+    parameters=[{"in": "path", "name": "id", "description": "revocation registry id"}],
     responses={200: {"description": "tails file", "schema": {"type": "file"}}},
 )
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
@@ -145,7 +149,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
@@ -155,7 +159,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 @docs(
     tags=["revocation"],
     summary="Publish a given revocation registry",
-    parameters=[{"in": "path", "name": "id", "description": "revocation registry id."}],
+    parameters=[{"in": "path", "name": "id", "description": "revocation registry id"}],
 )
 @response_schema(RevRegCreateResultSchema(), 200)
 async def publish_registry(request: web.BaseRequest):
@@ -174,7 +178,7 @@ async def publish_registry(request: web.BaseRequest):
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
@@ -193,9 +197,7 @@ async def publish_registry(request: web.BaseRequest):
         {
             "in": "path",
             "name": "id",
-            "description": (
-                "use credential definition id as the revocation registry id."
-            ),
+            "description": "revocation registry identifier",
         }
     ],
 )
@@ -221,12 +223,11 @@ async def update_registry(request: web.BaseRequest):
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_revocation_record(registry_id)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
-    revoc_registry.set_tails_file_public_uri(tails_public_uri)
-    await revoc_registry.save(context, reason="Updating tails file public URI")
+    await revoc_registry.set_tails_file_public_uri(context, tails_public_uri)
 
     return web.json_response({"result": revoc_registry.serialize()})
 

@@ -15,7 +15,6 @@ from ....storage.basic import BasicStorage
 
 from ...error import RevocationError
 
-from ..issuer_revocation_record import IssuerRevocationRecord
 from ..revocation_registry import RevocationRegistry
 
 from .. import revocation_registry as test_module
