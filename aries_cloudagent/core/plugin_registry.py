@@ -160,8 +160,11 @@ class PluginRegistry:
                 LOGGER.error(f"Protocol versions definition is malformed. {e}")
                 return None
 
-        self._plugins[module_name] = mod
-        return mod
+        # Load each version as a separate plugin
+        for version in definition.versions:
+            mod = ClassLoader.load_module(f"{module_name}.{version['path']}")
+            self._plugins[module_name] = mod
+            return mod
 
     def register_package(self, package_name: str) -> Sequence[ModuleType]:
         """Register all modules (sub-packages) under a given package name."""
@@ -188,6 +191,7 @@ class PluginRegistry:
     async def load_message_types(self, context: InjectionContext, plugin: ModuleType):
         """For modules that don't implement setup, register protocols manually."""
         registry = await context.inject(ProtocolRegistry)
+        LOGGER.error(f"Loading message type: {plugin.__name__}")
         try:
             mod = ClassLoader.load_module(plugin.__name__ + ".message_types")
         except ModuleLoadError as e:
@@ -202,29 +206,14 @@ class PluginRegistry:
     async def register_admin_routes(self, app):
         """Call route registration methods on the current context."""
         for plugin in self._plugins.values():
-
-            definition = ClassLoader.load_module("definition", plugin.__name__)
-            if definition:
-                # Load plugin routes that are in a versioned package.
-                for plugin_version in definition.versions:
-                    try:
-                        mod = ClassLoader.load_module(
-                            f"{plugin.__name__}.{plugin_version['path']}.routes"
-                        )
-                    except ModuleLoadError as e:
-                        LOGGER.error("Error loading admin routes: %s", e)
-                        continue
-                    if mod and hasattr(mod, "register"):
-                        await mod.register(app)
-            else:
-                # Load plugin routes that aren't in a versioned package.
-                try:
-                    mod = ClassLoader.load_module(f"{plugin.__name__}.routes")
-                except ModuleLoadError as e:
-                    LOGGER.error("Error loading admin routes: %s", e)
-                    continue
-                if mod and hasattr(mod, "register"):
-                    await mod.register(app)
+            # Load plugin routes that aren't in a versioned package.
+            try:
+                mod = ClassLoader.load_module(f"{plugin.__name__}.routes")
+            except ModuleLoadError as e:
+                LOGGER.error("Error loading admin routes: %s", e)
+                continue
+            if mod and hasattr(mod, "register"):
+                await mod.register(app)
 
     def __repr__(self) -> str:
         """Return a string representation for this class."""
