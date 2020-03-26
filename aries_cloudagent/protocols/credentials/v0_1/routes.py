@@ -17,7 +17,8 @@ from aries_cloudagent.messaging.valid import (
 from aries_cloudagent.storage.error import StorageNotFoundError
 from aries_cloudagent.wallet.error import WalletNotFoundError
 
-from aries_cloudagent.protocols.problem_report.message import ProblemReport
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from aries_cloudagent.protocols.problem_report.v1_0.message import ProblemReport
 
 from .manager import CredentialManager
 from .models.credential_exchange import CredentialExchange, CredentialExchangeSchema

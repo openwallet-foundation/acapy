@@ -8,7 +8,10 @@ from ...connections.models.connection_record import ConnectionRecord
 from ...core.protocol_registry import ProtocolRegistry
 from ...messaging.agent_message import AgentMessage, AgentMessageSchema
 from ...messaging.error import MessageParseError
-from ...protocols.problem_report.message import ProblemReport
+
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ...protocols.problem_report.v1_0.message import ProblemReport
+
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.message import OutboundMessage

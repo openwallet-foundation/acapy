@@ -23,7 +23,8 @@ from ..messaging.util import datetime_now
 
 # FIXME: We shouldn't rely on a hardcoded message version here.
 from ..protocols.connections.v1_0.manager import ConnectionManager
-from ..protocols.problem_report.message import ProblemReport
+from ..protocols.problem_report.v1_0.message import ProblemReport
+
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
