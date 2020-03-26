@@ -19,11 +19,18 @@ class TestTracing(TestCase):
             "trace.target": "log",
             "trace.tag": "acapy.trace"
         }
+        ret = test_module.trace_event(
+            context, 
+            message, 
+            handler="message_handler",
+            perf_counter=None,
+            outcome="processed Start"
+        )
         test_module.trace_event(
             context, 
             message, 
             handler="message_handler",
-            ellapsed_milli=27,
+            perf_counter=ret,
             outcome="processed OK"
         )
 
@@ -39,16 +46,24 @@ class TestTracing(TestCase):
             context, 
             message, 
             handler="message_handler",
-            ellapsed_milli=27,
+            perf_counter=None,
             outcome="processed OK",
         )
 
+    async def test_post_event_with_error(self):
+        message = Ping()
+        message._thread = {"thid": "dummy_thread_id_12345"}
+        context = {
+            "trace.enabled": True,
+            "trace.target": "http://fluentd-dummy:8080/",
+            "trace.tag": "acapy.trace"
+        }
         try:
             test_module.trace_event(
                 context, 
                 message, 
                 handler="message_handler",
-                ellapsed_milli=27,
+                perf_counter=None,
                 outcome="processed OK",
                 raise_errors=True,
             )

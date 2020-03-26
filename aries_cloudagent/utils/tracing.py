@@ -17,10 +17,11 @@ def trace_event(
         context,
         message,
         handler: str = None,
-        ellapsed_milli: int = None,
         outcome: str = None,
+        perf_counter: float = None,
         force_trace: bool = False,
-        raise_errors: bool = False):
+        raise_errors: bool = False
+) -> float:
     """
     Log a trace event to a configured target.
 
@@ -34,6 +35,8 @@ def trace_event(
                 InboundMessage or OutboundMessage
         event: Dict that will be converted to json and posted to the target
     """
+
+    ret = time.perf_counter()
 
     if force_trace or context.get("trace.enabled"):
         # build the event to log
@@ -58,7 +61,7 @@ def trace_event(
             "traced_type": msg_type,
             "timestamp": time.time(),
             "handler": handler,
-            "ellapsed_milli": ellapsed_milli,
+            "ellapsed_milli": int(1000 * (ret - perf_counter)) if perf_counter else 0,
             "outcome": outcome,
         }
         event_str = json.dumps(event)
@@ -95,3 +98,5 @@ def trace_event(
     else:
         # trace is not enabled so just return
         pass
+
+    return ret
