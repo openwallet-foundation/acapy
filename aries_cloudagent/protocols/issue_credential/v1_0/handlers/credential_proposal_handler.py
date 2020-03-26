@@ -1,5 +1,6 @@
 """Credential proposal message handler."""
 
+import time
 
 from .....messaging.base_handler import (
     BaseHandler,
@@ -10,6 +11,8 @@ from .....messaging.base_handler import (
 
 from ..manager import CredentialManager
 from ..messages.credential_proposal import CredentialProposal
+
+from .....utils.tracing import trace_event
 
 
 class CredentialProposalHandler(BaseHandler):
@@ -24,6 +27,8 @@ class CredentialProposalHandler(BaseHandler):
             responder: responder callback
 
         """
+        r_time = time.perf_counter()
+
         self._logger.debug("CredentialProposalHandler called with context %s", context)
         assert isinstance(context.message, CredentialProposal)
         self._logger.info(
@@ -37,6 +42,16 @@ class CredentialProposalHandler(BaseHandler):
         credential_manager = CredentialManager(context)
         credential_exchange_record = await credential_manager.receive_proposal()
 
+        r_time = trace_event(
+            context.settings,
+            context.message,
+            handler=context.settings.get("default_label")
+            if context and context.settings and context.settings.get("default_label")
+            else "aca-py.agent",
+            outcome="CredentialProposalHandler.handle.END",
+            perf_counter=r_time
+        )
+
         # If auto_offer is enabled, respond immediately with offer
         if credential_exchange_record.auto_offer:
             (
@@ -47,3 +62,13 @@ class CredentialProposalHandler(BaseHandler):
             )
 
             await responder.send_reply(credential_offer_message)
+
+            trace_event(
+                context.settings,
+                credential_offer_message,
+                handler=context.settings.get("default_label")
+                if context.settings and context.settings.get("default_label")
+                else "aca-py.agent",
+                outcome="CredentialProposalHandler.handle.OFFER",
+                perf_counter=r_time
+            )

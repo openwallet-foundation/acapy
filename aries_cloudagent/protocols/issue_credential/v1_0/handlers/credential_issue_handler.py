@@ -1,5 +1,6 @@
 """Credential issue message handler."""
 
+import time
 
 from .....messaging.base_handler import (
     BaseHandler,
@@ -10,6 +11,8 @@ from .....messaging.base_handler import (
 
 from ..manager import CredentialManager
 from ..messages.credential_issue import CredentialIssue
+
+from .....utils.tracing import trace_event
 
 
 class CredentialIssueHandler(BaseHandler):
@@ -24,6 +27,8 @@ class CredentialIssueHandler(BaseHandler):
             responder: responder callback
 
         """
+        r_time = time.perf_counter()
+
         self._logger.debug("CredentialHandler called with context %s", context)
         assert isinstance(context.message, CredentialIssue)
         self._logger.info(
@@ -38,6 +43,16 @@ class CredentialIssueHandler(BaseHandler):
 
         credential_exchange_record = await credential_manager.receive_credential()
 
+        r_time = trace_event(
+            context.settings,
+            context.message,
+            handler=context.settings.get("default_label")
+            if context and context.settings and context.settings.get("default_label")
+            else "aca-py.agent",
+            outcome="CredentialIssueHandler.handle.END",
+            perf_counter=r_time
+        )
+
         # Automatically move to next state if flag is set
         if context.settings.get("debug.auto_store_credential"):
             (
@@ -47,3 +62,13 @@ class CredentialIssueHandler(BaseHandler):
 
             # Ack issuer that holder stored credential
             await responder.send_reply(credential_ack_message)
+
+            trace_event(
+                context.settings,
+                credential_ack_message,
+                handler=context.settings.get("default_label")
+                if context.settings and context.settings.get("default_label")
+                else "aca-py.agent",
+                outcome="CredentialIssueHandler.handle.STORE",
+                perf_counter=r_time
+            )

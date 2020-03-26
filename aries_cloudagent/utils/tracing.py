@@ -55,9 +55,13 @@ def trace_event(
         elif message and isinstance(message, OutboundMessage):
             # TODO
             pass
+        elif message and isinstance(message, dict):
+            msg_id = message["msg_id"]
+            thread_id = message["thread_id"]
+            msg_type = message["type"]
         event = {
             "message_id": msg_id,
-            "thread_id": thread_id,
+            "thread_id": thread_id if thread_id else msg_id,
             "traced_type": msg_type,
             "timestamp": time.time(),
             "handler": handler,

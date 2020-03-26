@@ -1,5 +1,6 @@
 """Credential request message handler."""
 
+import time
 
 from .....messaging.base_handler import (
     BaseHandler,
@@ -11,6 +12,8 @@ from .....messaging.base_handler import (
 from ..manager import CredentialManager
 from ..messages.credential_request import CredentialRequest
 from ..messages.credential_proposal import CredentialProposal
+
+from .....utils.tracing import trace_event
 
 
 class CredentialRequestHandler(BaseHandler):
@@ -25,6 +28,8 @@ class CredentialRequestHandler(BaseHandler):
             responder: responder callback
 
         """
+        r_time = time.perf_counter()
+
         self._logger.debug("CredentialRequestHandler called with context %s", context)
         assert isinstance(context.message, CredentialRequest)
         self._logger.info(
@@ -37,6 +42,16 @@ class CredentialRequestHandler(BaseHandler):
 
         credential_manager = CredentialManager(context)
         cred_exchange_rec = await credential_manager.receive_request()
+
+        r_time = trace_event(
+            context.settings,
+            context.message,
+            handler=context.settings.get("default_label")
+            if context and context.settings and context.settings.get("default_label")
+            else "aca-py.agent",
+            outcome="CredentialRequestHandler.handle.END",
+            perf_counter=r_time
+        )
 
         # If auto_issue is enabled, respond immediately
         if cred_exchange_rec.auto_issue:
@@ -56,6 +71,16 @@ class CredentialRequestHandler(BaseHandler):
                 )
 
                 await responder.send_reply(credential_issue_message)
+
+                trace_event(
+                    context.settings,
+                    credential_issue_message,
+                    handler=context.settings.get("default_label")
+                    if context.settings and context.settings.get("default_label")
+                    else "aca-py.agent",
+                    outcome="CredentialRequestHandler.issue.END",
+                    perf_counter=r_time
+                )
             else:
                 self._logger.warning(
                     "Operation set for auto-issue but credential exchange record "
