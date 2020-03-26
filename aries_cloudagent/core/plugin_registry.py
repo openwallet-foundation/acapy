@@ -126,6 +126,18 @@ class PluginRegistry:
                 LOGGER.error(f"Error loading plugin module: {e}")
                 return None
 
+            # Module must exist
+            if not mod:
+                LOGGER.error(f"Module doesn't exist: {module_name}")
+                return None
+
+            # Sort of hacky: make an exception for non-protocol modules
+            # that contain admin routes.
+            routes = ClassLoader.load_module("routes", module_name)
+            if routes:
+                self._plugins[module_name] = mod
+                return mod
+
             definition = ClassLoader.load_module("definition", module_name)
 
             # definition.py must exist in protocol
@@ -190,12 +202,24 @@ class PluginRegistry:
     async def register_admin_routes(self, app):
         """Call route registration methods on the current context."""
         for plugin in self._plugins.values():
+
             definition = ClassLoader.load_module("definition", plugin.__name__)
-            for plugin_version in definition.versions:
+            if definition:
+                # Load plugin routes that are in a versioned package.
+                for plugin_version in definition.versions:
+                    try:
+                        mod = ClassLoader.load_module(
+                            f"{plugin.__name__}.{plugin_version['path']}.routes"
+                        )
+                    except ModuleLoadError as e:
+                        LOGGER.error("Error loading admin routes: %s", e)
+                        continue
+                    if mod and hasattr(mod, "register"):
+                        await mod.register(app)
+            else:
+                # Load plugin routes that aren't in a versioned package.
                 try:
-                    mod = ClassLoader.load_module(
-                        f"{plugin.__name__}.{plugin_version['path']}.routes"
-                    )
+                    mod = ClassLoader.load_module(f"{plugin.__name__}.routes")
                 except ModuleLoadError as e:
                     LOGGER.error("Error loading admin routes: %s", e)
                     continue
