@@ -2,7 +2,7 @@
 
 from marshmallow import fields
 
-from ....messaging.models.base_record import BaseRecord, BaseRecordSchema
+from aries_cloudagent.messaging.models.base_record import BaseRecord, BaseRecordSchema
 
 
 class PresentationExchange(BaseRecord):

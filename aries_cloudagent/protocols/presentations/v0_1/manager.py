@@ -4,12 +4,12 @@ import json
 import logging
 from uuid import uuid4
 
-from ...config.injection_context import InjectionContext
-from ...core.error import BaseError
-from ...holder.base import BaseHolder
-from ...ledger.base import BaseLedger
-from ...verifier.base import BaseVerifier
-from ...indy.util import generate_pr_nonce
+from aries_cloudagent.config.injection_context import InjectionContext
+from aries_cloudagent.core.error import BaseError
+from aries_cloudagent.holder.base import BaseHolder
+from aries_cloudagent.ledger.base import BaseLedger
+from aries_cloudagent.verifier.base import BaseVerifier
+from aries_cloudagent.indy.util import generate_pr_nonce
 
 from .models.presentation_exchange import PresentationExchange
 from .messages.presentation_request import PresentationRequest

@@ -6,8 +6,8 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields, Schema
 
-from ...holder.base import BaseHolder
-from ...storage.error import StorageNotFoundError
+from aries_cloudagent.holder.base import BaseHolder
+from aries_cloudagent.storage.error import StorageNotFoundError
 
 from .manager import PresentationManager
 from .models.presentation_exchange import (

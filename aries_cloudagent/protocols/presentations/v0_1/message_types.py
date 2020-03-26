@@ -10,7 +10,7 @@ NEW_PROTOCOL_URI = "https://didcomm.org/credential-presentation/0.1"
 NEW_PRESENTATION_REQUEST = f"{NEW_PROTOCOL_URI}/presentation-request"
 NEW_CREDENTIAL_PRESENTATION = f"{NEW_PROTOCOL_URI}/credential-presentation"
 
-PROTOCOL_PACKAGE = "aries_cloudagent.protocols.presentations"
+PROTOCOL_PACKAGE = "aries_cloudagent.protocols.presentations.v0_1"
 
 MESSAGE_TYPES = {
     PRESENTATION_REQUEST: (

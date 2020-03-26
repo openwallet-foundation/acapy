@@ -2,8 +2,12 @@
 
 import json
 
-from ....holder.base import BaseHolder
-from ....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
+from aries_cloudagent.holder.base import BaseHolder
+from aries_cloudagent.messaging.base_handler import (
+    BaseHandler,
+    BaseResponder,
+    RequestContext,
+)
 
 from ..manager import PresentationManager
 from ..messages.presentation_request import PresentationRequest
