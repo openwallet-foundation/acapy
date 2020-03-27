@@ -51,7 +51,7 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
         state: str = None,
         mediator_terms: Sequence[str] = None,
         recipient_terms: Sequence[str] = None,
-        rouiting_keys: Sequence[str] = None,
+        routing_keys: Sequence[str] = None,
         routing_endpoint: str = None,
         error_msg: str = None,
         **kwargs,
@@ -66,7 +66,7 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
         self.state = state
         self.mediator_terms = list(mediator_terms) if mediator_terms else []
         self.recipient_terms = list(recipient_terms) if recipient_terms else []
-        self.rouiting_keys = list(rouiting_keys) if rouiting_keys else []
+        self.routing_keys = list(routing_keys) if routing_keys else []
         self.routing_endpoint = routing_endpoint
         self.error_msg = error_msg
 
@@ -85,7 +85,7 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
                 "state",
                 "mediator_terms",
                 "recipient_terms",
-                "rouiting_keys",
+                "routing_keys",
                 "routing_endpoint",
                 "role"
             )
@@ -98,6 +98,16 @@ class RouteCoordination(BaseRecord):  # lgtm[py/missing-equals]
         """Retrieve a route coordination record by thread ID."""
         record = await cls.retrieve_by_tag_filter(
             context, {"thread_id": thread_id}
+        )
+        return record
+
+    @classmethod
+    async def retrieve_by_connection_id(
+        cls, context: InjectionContext, connection_id: str
+    ) -> "RouteCoordination":
+        """Retrieve a route coordination record by connection id."""
+        record = await cls.retrieve_by_tag_filter(
+            context, {"connection_id": connection_id}
         )
         return record
 
@@ -142,7 +152,7 @@ class RouteCoordinationSchema(BaseRecordSchema):
         required=False,
         description="List of mediator rules for mediator",
     )
-    rouiting_keys = fields.List(
+    routing_keys = fields.List(
         fields.Str(
             description="Recipient verkeys for routing"
         ),

@@ -10,6 +10,7 @@ from ...storage.error import StorageNotFoundError
 from .manager import RouteCoordinationManager
 
 from .models.route_coordination import RouteCoordination, RouteCoordinationSchema
+from .messages.inner.keylist_update_rule import KeylistUpdateRuleSchema
 
 
 class MediationRequestSchema(Schema):
@@ -39,6 +40,53 @@ class MediationDenySchema(Schema):
 
     recipient_terms = fields.List(fields.Str, required=False)
     mediator_terms = fields.List(fields.Str, required=False)
+
+
+class KeylistUpdateRequest(Schema):
+    """Request schema for updating keys."""
+
+    updates = fields.List(
+        fields.Nested(KeylistUpdateRuleSchema()),
+        description="List of key updates",
+    )
+
+
+class KeylistUpdateResponse(Schema):
+    """Response schema for updating keys."""
+
+    updates = fields.List(
+        fields.Nested(KeylistUpdateRuleSchema()),
+        description="List of key updates",
+    )
+
+
+class KeylistQueryRequest(Schema):
+    """Request schema for keylist query."""
+
+    limit = fields.Int(
+        description="Total message count for query",
+    )
+    offset = fields.Int(
+        description="Offset value for query",
+    )
+    filter = fields.Dict(
+        description="Query dictionary object",
+        example={
+            "routing_key": [
+                "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+                "2wUJCoyzkJz1tTxehfT7Usq5FgJz3EQHBQC7b2mXxbRZ"
+            ]
+        }
+    )
+
+
+class KeylistQueryResponse(Schema):
+    """Response schema for keylist query."""
+
+    route_coordination_id = fields.Str(
+        description="Route coordination identifier to query",
+        required=False
+    )
 
 
 @docs(tags=["route-coordination"], summary="Creates a new mediation request")
@@ -249,6 +297,108 @@ async def deny_mediate_request(request: web.BaseRequest):
     return web.json_response(routing_record.serialize())
 
 
+@docs(tags=["route-coordination"], summary="Create a keylist update request")
+@request_schema(KeylistUpdateRequest())
+@response_schema(KeylistUpdateResponse(), 200)
+async def keylist_update(request: web.BaseRequest):
+    """
+    Request handler for updating keylist.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The resulting route coordination record details
+
+    """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+
+    body = await request.json()
+
+    route_coordination_id = request.match_info["id"]
+    updates = body.get("updates")
+
+    try:
+        route_coordination = await RouteCoordination.retrieve_by_id(
+            context,
+            route_coordination_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context, route_coordination.connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
+
+    route_coordination_manager = RouteCoordinationManager(context)
+
+    request = await route_coordination_manager.create_keylist_update_request(
+        updates=updates,
+    )
+
+    await outbound_handler(request, connection_id=connection_record.connection_id)
+    return web.json_response({"updates": updates})
+
+
+@docs(tags=["route-coordination"], summary="Create a keylist query request")
+@request_schema(KeylistQueryRequest())
+@response_schema(KeylistQueryResponse(), 200)
+async def keylist_query(request: web.BaseRequest):
+    """
+    Request handler for denying a stored route coordination request.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The resulting route coordination record details
+
+    """
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+
+    body = await request.json()
+
+    route_coordination_id = request.match_info["id"]
+    limit = body.get("limit")
+    offset = body.get("offset")
+    filter = body.get("filter")
+
+    try:
+        route_coordination = await RouteCoordination.retrieve_by_id(
+            context,
+            route_coordination_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+
+    try:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context, route_coordination.connection_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
+
+    route_coordination_manager = RouteCoordinationManager(context)
+
+    request = await route_coordination_manager.create_keylist_query_request_request(
+        limit=limit,
+        offset=offset,
+        filter=filter
+    )
+
+    await outbound_handler(request, connection_id=connection_record.connection_id)
+    return web.json_response(
+        {
+            "route_coordination_id": route_coordination.connection_id
+        }
+    )
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -269,6 +419,14 @@ async def register(app: web.Application):
             web.post(
                 "/route-coordination/{id}/deny-request",
                 deny_mediate_request
+            ),
+            web.post(
+                "/route-coordination/{id}/keylist_update",
+                keylist_update
+            ),
+            web.post(
+                "/route-coordination/{id}/keylist_query",
+                keylist_query
             ),
         ]
     )
