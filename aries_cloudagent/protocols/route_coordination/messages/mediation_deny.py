@@ -1,4 +1,4 @@
-"""Mediation grant message."""
+"""Mediation deny message."""
 
 from typing import Sequence
 

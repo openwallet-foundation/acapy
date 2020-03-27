@@ -2,6 +2,7 @@
 
 from marshmallow import fields
 
+from ....config.injection_context import InjectionContext
 from ....messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ....messaging.valid import UUIDFour, INDY_RAW_PUBLIC_KEY
 
@@ -49,11 +50,27 @@ class RoutingKey(BaseRecord):  # lgtm[py/missing-equals]
         return {
             prop: getattr(self, prop)
             for prop in (
-                "routing_key_id",
                 "route_coordination_id",
                 "routing_key",
             )
         }
+
+    @classmethod
+    async def retrieve_by_routing_key_and_coord_id(
+        cls,
+        context: InjectionContext,
+        routing_key: str,
+        route_coordination_id: str
+    ) -> "RoutingKey":
+        """Retrieve a routing key record by routing key."""
+        record = await cls.retrieve_by_tag_filter(
+            context,
+            {
+                "routing_key": routing_key,
+                "route_coordination_id": route_coordination_id
+            }
+        )
+        return record
 
 
 class RoutingKeySchema(BaseRecordSchema):
