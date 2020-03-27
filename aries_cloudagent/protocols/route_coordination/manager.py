@@ -11,6 +11,13 @@ from ...messaging.responder import BaseResponder
 from .messages.mediation_request import MediationRequest
 from .messages.mediation_grant import MediationGrant
 from .messages.mediation_deny import MediationDeny
+from .messages.keylist_update_request import KeylistUpdateRequest
+from .messages.keylist_update_response import KeylistUpdateResponse
+from .messages.inner.keylist_update_rule import KeylistUpdateRule
+from .messages.inner.keylist_update_result import KeylistUpdateResult
+from .messages.keylist_query import KeylistQuery
+from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
+from .messages.keylist import KeylistQueryResponse
 from .models.route_coordination import RouteCoordinationSchema, RouteCoordination
 from .models.routing_key import RoutingKey
 
@@ -129,7 +136,7 @@ class RouteCoordinationManager:
             initiator=RouteCoordination.INITIATOR_EXTERNAL,
             role=RouteCoordination.ROLE_MEDIATOR,
             state=RouteCoordination.STATE_MEDIATION_RECEIVED,
-            mediator_terms=mediation_request.recipient_terms,
+            mediator_terms=mediation_request.mediator_terms,
             recipient_terms=mediation_request.recipient_terms
         )
         route_coordination_record = await route_coordination.save(self.context)
@@ -306,3 +313,231 @@ class RouteCoordinationManager:
         route_coordination.recipient_terms = mediation_deny_message.recipient_terms
 
         await route_coordination.save(self.context)
+
+    async def create_keylist_update_request(
+        self,
+        updates: Sequence[KeylistUpdateRule]
+    ) -> KeylistUpdateRequest:
+        """
+        Create a new keylist update request.
+
+        Args:
+            keylist: Terms that recipient wants to mediator to agree to
+
+        Returns:
+            A new `KeylistUpdateRequest` message to send to the other agent
+
+        """
+        request = KeylistUpdateRequest(
+            updates=updates
+        )
+        return request
+
+    async def receive_keylist_update_request(
+        self
+    ):
+        """Receives mediator keylist update request."""
+
+        connection_id = self.context.connection_record.connection_id
+        keylist_update_request: KeylistUpdateRequest = self.context.message
+
+        route_coordination = await RouteCoordination.retrieve_by_connection_id(
+            context=self.context,
+            connection_id=connection_id
+        )
+
+        if not route_coordination:
+            raise RouteCoordinationManagerError(
+                "Route coordination for connection couldn't be found"
+            )
+        updated = []
+        for update_record in keylist_update_request.updates:
+            operation_result = KeylistUpdateResult(
+                recipient_key=update_record.recipient_key,
+                action=update_record.action,
+            )
+            if update_record.action == KeylistUpdateRule.RULE_ADD:
+                if update_record.recipient_key in route_coordination.routing_keys:
+                    operation_result.result = KeylistUpdateResult.RESULT_NO_CHANGE
+                else:
+                    routing_key = RoutingKey(
+                        routing_key=update_record.recipient_key,
+                        route_coordination_id=route_coordination.route_coordination_id
+                    )
+                    try:
+                        await routing_key.save(self.context)
+                        route_coordination.routing_keys.append(
+                            update_record.recipient_key
+                        )
+                        operation_result.result = KeylistUpdateResult.RESULT_SUCCESS
+                    except BaseException:
+                        operation_result.result = \
+                            KeylistUpdateResult.RESULT_SERVER_ERROR
+
+            elif update_record.action == KeylistUpdateRule.RULE_REMOVE:
+                if update_record.recipient_key not in route_coordination.routing_keys:
+                    operation_result.result = KeylistUpdateResult.RESULT_NO_CHANGE
+                else:
+                    routing_key = await RoutingKey.retrieve_by_routing_key_and_coord_id(
+                        context=self.context,
+                        routing_key=update_record.recipient_key,
+                        route_coordination_id=route_coordination.route_coordination_id
+                    )
+                    try:
+                        await routing_key.delete_record(self.context)
+                        route_coordination.routing_keys.remove(
+                            update_record.recipient_key
+                        )
+                        operation_result.result = KeylistUpdateResult.RESULT_SUCCESS
+                    except BaseException:
+                        operation_result.result = \
+                            KeylistUpdateResult.RESULT_SERVER_ERROR
+
+            updated.append(operation_result)
+
+        # FIXME - save for each update?
+        await route_coordination.save(self.context)
+
+        response = KeylistUpdateResponse(
+            updated=updated
+        )
+
+        responder: BaseResponder = await self._context.inject(
+                BaseResponder, required=False
+            )
+        if responder:
+            await responder.send(response, connection_id=connection_id)
+
+    async def receive_keylist_update_response(
+        self
+    ) -> (Sequence[str], Sequence[str]):
+        """Receives mediator keylist update response."""
+
+        connection_id = self.context.connection_record.connection_id
+        keylist_update_response: KeylistUpdateResponse = self.context.message
+
+        route_coordination = await RouteCoordination.retrieve_by_connection_id(
+            context=self.context,
+            connection_id=connection_id
+        )
+
+        if not route_coordination:
+            raise RouteCoordinationManagerError(
+                "Route coordination for connection couldn't be found"
+            )
+
+        server_error = []
+        client_error = []
+
+        for updated_record in keylist_update_response.updated:
+            if updated_record.result in (
+                KeylistUpdateResult.RESULT_SUCCESS,
+                KeylistUpdateResult.RESULT_NO_CHANGE
+            ):
+                if updated_record.action == KeylistUpdateResult.RULE_ADD:
+                    if updated_record.recipient_key not in (
+                        route_coordination.routing_keys
+                    ):
+                        route_coordination.routing_keys.append(
+                            updated_record.recipient_key
+                            )
+                elif updated_record.action == KeylistUpdateResult.RULE_REMOVE:
+                    route_coordination.routing_keys.remove(updated_record.recipient_key)
+            elif updated_record.result == KeylistUpdateResult.RESULT_SERVER_ERROR:
+                server_error.append(updated_record.recipient_key)
+            elif updated_record.result == KeylistUpdateResult.RESULT_CLIENT_ERROR:
+                client_error.append(updated_record.recipient_key)
+
+        # FIXME - save for each update?
+        await route_coordination.save(self.context)
+        return (server_error, client_error)
+
+    async def create_keylist_query_request_request(
+        self,
+        limit: int,
+        offset: int,
+        filter: dict
+    ) -> KeylistQuery:
+        """
+        Create a new keylist query request.
+
+        Args:
+            limit: Total keylist limit for response
+            offset: Offset value for keylist query
+            filter: Dictionary object for filtering keylist
+
+        Returns:
+            A new `KeylistQuery` message to send to the other agent
+
+        """
+        request = KeylistQuery(
+            filter=filter,
+            paginate=KeylistQueryPaginate(
+                limit=limit,
+                offset=offset
+            )
+        )
+        return request
+
+    def routing_key_sort(self, routing_key):
+        """Get the sorting key for a particular routing key list."""
+        return routing_key["routing_key"]
+
+    async def receive_keylist_query_request(
+        self
+    ):
+        """Receives mediator keylist update request."""
+        def sample_result(result, offset=0, limit=None):
+            return result[offset:(limit + offset if limit is not None else None)]
+
+        connection_id = self.context.connection_record.connection_id
+        keylist_query: KeylistQuery = self.context.message
+
+        route_coordination = await RouteCoordination.retrieve_by_connection_id(
+            context=self.context,
+            connection_id=connection_id
+        )
+
+        if not route_coordination:
+            raise RouteCoordinationManagerError(
+                "Route coordination for connection couldn't be found"
+            )
+
+        tag_filter = {
+            "route_coordination_id": route_coordination.route_coordination_id
+        }
+        if keylist_query.filter:
+            filter_keys = keylist_query.filter.keys()
+            if filter_keys:
+                for key in filter_keys:
+                    if key in (
+                        "routing_key"
+                    ):
+                        filtering_key = [
+                            {
+                                key: val
+                            }
+                            for val in keylist_query.filter[key]
+                        ]
+                        tag_filter["$or"] = filtering_key
+
+        post_filter = {}
+        records = await RoutingKey.query(self.context, tag_filter, post_filter)
+        records = [rec.serialize() for rec in records]
+        records.sort(key=self.routing_key_sort)
+        records = sample_result(
+            result=records,
+            offset=keylist_query.paginate.offset,
+            limit=keylist_query.paginate.limit
+        )
+
+        response = KeylistQueryResponse(
+            keys=[record['routing_key'] for record in records],
+            pagination=keylist_query.paginate
+        )
+
+        responder: BaseResponder = await self._context.inject(
+                BaseResponder, required=False
+            )
+        if responder:
+            await responder.send(response, connection_id=connection_id)
