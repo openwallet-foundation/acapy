@@ -291,8 +291,8 @@ async def credential_exchange_send(request: web.BaseRequest):
     trace_event(
         context.settings,
         credential_proposal,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_send.START",
     )
@@ -315,8 +315,8 @@ async def credential_exchange_send(request: web.BaseRequest):
     trace_event(
         context.settings,
         credential_offer_message,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_send.END",
         perf_counter=r_time
@@ -385,8 +385,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     trace_event(
         context.settings,
         credential_proposal,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_send_proposal.END",
         perf_counter=r_time
@@ -486,8 +486,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     trace_event(
         context.settings,
         credential_offer_message,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_send_free_offer.END",
         perf_counter=r_time
@@ -551,8 +551,8 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     trace_event(
         context.settings,
         credential_offer_message,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_send_bound_offer.END",
         perf_counter=r_time
@@ -613,8 +613,8 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     trace_event(
         context.settings,
         credential_request_message,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_send_request.END",
         perf_counter=r_time
@@ -688,8 +688,8 @@ async def credential_exchange_issue(request: web.BaseRequest):
     trace_event(
         context.settings,
         credential_issue_message,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_issue.END",
         perf_counter=r_time
@@ -757,8 +757,8 @@ async def credential_exchange_store(request: web.BaseRequest):
     trace_event(
         context.settings,
         credential_stored_message,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_store.END",
         perf_counter=r_time
@@ -804,8 +804,8 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     trace_event(
         context.settings,
         error_result,
-        handler=context.settings.get("default_label")
-        if context and context.settings and context.settings.get("default_label")
+        handler=context.settings.get("trace.label")
+        if context and context.settings and context.settings.get("trace.label")
         else "aca-py.agent",
         outcome="credential_exchange_problem_report.END",
         perf_counter=r_time

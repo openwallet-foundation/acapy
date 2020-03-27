@@ -580,6 +580,12 @@ class ProtocolGroup(ArgumentGroup):
             help="Tag to be included when logging events.",
         )
         parser.add_argument(
+            "--trace-label",
+            type=str,
+            metavar="<trace-label>",
+            help="Label (agent name) used logging events.",
+        )
+        parser.add_argument(
             "--preserve-exchange-records",
             action="store_true",
             help="Keep credential exchange records after exchange has completed."
@@ -610,6 +616,12 @@ class ProtocolGroup(ArgumentGroup):
             settings["trace.target"] = args.trace_target
         if args.trace_tag:
             settings["trace.tag"] = args.trace_tag
+        if args.trace_label:
+            settings["trace.label"] = args.trace_label
+        elif args.label:
+            settings["trace.label"] = args.label
+        else:
+            settings["trace.label"] = "aca-py.agent"
         if settings.get("trace.enabled"):
             try:
                 trace_event(

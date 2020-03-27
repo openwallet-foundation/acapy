@@ -8,6 +8,7 @@ lifecycle hook callbacks storing state for message threads, etc.
 import asyncio
 import logging
 import os
+import time
 from typing import Callable, Coroutine, Union
 
 from aiohttp.web import HTTPException
@@ -26,6 +27,8 @@ from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
+
+from ..utils.tracing import trace_event
 
 LOGGER = logging.getLogger(__name__)
 
@@ -122,6 +125,7 @@ class Dispatcher:
             The response from the handler
 
         """
+        r_time = time.perf_counter()
 
         connection_mgr = ConnectionManager(self.context)
         connection = await connection_mgr.find_inbound_connection(
@@ -139,6 +143,15 @@ class Dispatcher:
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
             message = None
+
+        trace_event(
+            self.context.settings,
+            message,
+            handler=self.context.settings.get("trace.label")
+            if self.context.settings and self.context.settings.get("trace.label")
+            else "aca-py.agent",
+            outcome="Dispatcher.handle_message.START",
+        )
 
         context = RequestContext(base_context=self.context)
         context.message = message
@@ -167,6 +180,16 @@ class Dispatcher:
         if self.collector:
             handler = self.collector.wrap_coro(handler, [handler.__qualname__])
         await handler(context, responder)
+
+        trace_event(
+            self.context.settings,
+            context.message,
+            handler=self.context.settings.get("trace.label")
+            if self.context.settings and self.context.settings.get("trace.label")
+            else "aca-py.agent",
+            outcome="Dispatcher.handle_message.END",
+            perf_counter=r_time
+        )
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:
         """

@@ -280,6 +280,7 @@ class DemoAgent:
                     ("--trace",),
                     ("--trace-target", self.trace_target),
                     ("--trace-tag", self.trace_tag),
+                    ("--trace-label", self.label+".trace"),
                 ]
             )
         if self.extra_args:

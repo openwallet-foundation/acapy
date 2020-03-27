@@ -47,14 +47,17 @@ def trace_event(
         msg_type = ""
         if message and isinstance(message, AgentMessage):
             msg_id = message._id
-            thread_id = message._thread.thid
+            thread_id = message._thread.thid if message._thread else message._id
             msg_type = message._type
         elif message and isinstance(message, InboundMessage):
-            # TODO
-            pass
+            # TODO not sure if we can log an InboundMessage before it's "handled"
+            msg_id = message.session_id if message.session_id else "N/A"
+            thread_id = message.session_id if message.session_id else "N/A"
+            msg_type = "InboundMessage"
         elif message and isinstance(message, OutboundMessage):
-            # TODO
-            pass
+            msg_id = message.reply_thread_id if message.reply_thread_id else "N/A"
+            thread_id = message.reply_thread_id if message.reply_thread_id else "N/A"
+            msg_type = "OutboundMessage"
         elif message and isinstance(message, dict):
             msg_id = message["msg_id"]
             thread_id = message["thread_id"]
