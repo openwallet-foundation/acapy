@@ -307,8 +307,7 @@ class PresentationPreview(BaseModel):
             nonlocal non_revoc_intervals
 
             return (non_revoc_intervals or {}).get(
-                cred_def_id,
-                NonRevocationInterval(epoch_now, epoch_now)
+                cred_def_id, NonRevocationInterval(epoch_now, epoch_now)
             )
 
         epoch_now = int(time())
@@ -330,9 +329,10 @@ class PresentationPreview(BaseModel):
             else:
                 cd_id = attr_spec.cred_def_id
                 revoc_support = bool(
-                    ledger and (
-                        await ledger.get_credential_definition(cd_id)
-                    )["value"]["revocation"]
+                    ledger
+                    and (await ledger.get_credential_definition(cd_id))["value"].get(
+                        "revocation"
+                    )
                 )
 
                 interval = non_revoc(cd_id) if revoc_support else None
@@ -377,9 +377,10 @@ class PresentationPreview(BaseModel):
         for pred_spec in self.predicates:
             cd_id = pred_spec.cred_def_id
             revoc_support = bool(
-                ledger and (
-                    await ledger.get_credential_definition(cd_id)
-                )["value"]["revocation"]
+                ledger
+                and (await ledger.get_credential_definition(cd_id))["value"].get(
+                    "revocation"
+                )
             )
 
             interval = non_revoc(cd_id) if revoc_support else None
@@ -395,7 +396,7 @@ class PresentationPreview(BaseModel):
                 "p_type": pred_spec.predicate,
                 "p_value": pred_spec.threshold,
                 "restrictions": [{"cred_def_id": cd_id}],
-                **{"non_revoked": interval.serialize() for _ in [""] if revoc_support}
+                **{"non_revoked": interval.serialize() for _ in [""] if revoc_support},
             }
 
         return proof_req
