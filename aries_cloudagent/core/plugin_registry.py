@@ -132,7 +132,8 @@ class PluginRegistry:
                 return None
 
             # Sort of hacky: make an exception for non-protocol modules
-            # that contain admin routes.
+            # that contain admin routes. This also leaves support for old
+            # style protocols.
             routes = ClassLoader.load_module("routes", module_name)
             if routes:
                 self._plugins[module_name] = mod
