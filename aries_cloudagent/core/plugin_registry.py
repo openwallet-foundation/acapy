@@ -131,11 +131,12 @@ class PluginRegistry:
                 LOGGER.error(f"Module doesn't exist: {module_name}")
                 return None
 
-            # Sort of hacky: make an exception for non-protocol modules
-            # that contain admin routes. This also leaves support for old
-            # style protocols.
+            # Make an exception for non-protocol modules
+            # that contain admin routes and for old-style protocol
+            # modules with out version support
             routes = ClassLoader.load_module("routes", module_name)
-            if routes:
+            message_types = ClassLoader.load_module("message_types", module_name)
+            if routes or message_types:
                 self._plugins[module_name] = mod
                 return mod
 
@@ -161,11 +162,14 @@ class PluginRegistry:
                 LOGGER.error(f"Protocol versions definition is malformed. {e}")
                 return None
 
-        # Load each version as a separate plugin
-        for version in definition.versions:
-            mod = ClassLoader.load_module(f"{module_name}.{version['path']}")
-            self._plugins[module_name] = mod
-            return mod
+        self._plugins[module_name] = mod
+        return mod
+
+        # # Load each version as a separate plugin
+        # for version in definition.versions:
+        #     mod = ClassLoader.load_module(f"{module_name}.{version['path']}")
+        #     self._plugins[module_name] = mod
+        #     return mod
 
     def register_package(self, package_name: str) -> Sequence[ModuleType]:
         """Register all modules (sub-packages) under a given package name."""
@@ -187,34 +191,86 @@ class PluginRegistry:
             if hasattr(plugin, "setup"):
                 await plugin.setup(context)
             else:
-                await self.load_message_types(context, plugin)
+                await self.load_protocols(context, plugin)
 
-    async def load_message_types(self, context: InjectionContext, plugin: ModuleType):
-        """For modules that don't implement setup, register protocols manually."""
+    async def load_protocol_version(
+        self,
+        context: InjectionContext,
+        mod: ModuleType,
+        version_definition: dict = None,
+    ):
+        """Load a particular protocol version."""
         registry = await context.inject(ProtocolRegistry)
-        LOGGER.error(f"Loading message type: {plugin.__name__}")
+
+        if hasattr(mod, "MESSAGE_TYPES"):
+            registry.register_message_types(
+                mod.MESSAGE_TYPES, version_definition=version_definition
+            )
+        if hasattr(mod, "CONTROLLERS"):
+            registry.register_controllers(
+                mod.CONTROLLERS, version_definition=version_definition
+            )
+
+    async def load_protocols(self, context: InjectionContext, plugin: ModuleType):
+        """For modules that don't implement setup, register protocols manually."""
+
+        # If this module contains message_types, then assume that
+        # this is a valid module of the old style (not versioned)
         try:
             mod = ClassLoader.load_module(plugin.__name__ + ".message_types")
         except ModuleLoadError as e:
             LOGGER.error("Error loading plugin module message types: %s", e)
             return
+
         if mod:
-            if hasattr(mod, "MESSAGE_TYPES"):
-                registry.register_message_types(mod.MESSAGE_TYPES)
-            if hasattr(mod, "CONTROLLERS"):
-                registry.register_controllers(mod.CONTROLLERS)
+            await self.load_protocol_version(context, mod)
+        else:
+            # Otherwise, try check for definition.py for versioned
+            # protocol packages
+            try:
+                definition = ClassLoader.load_module(plugin.__name__ + ".definition")
+            except ModuleLoadError as e:
+                LOGGER.error("Error loading plugin definition module: %s", e)
+                return
+
+            if definition:
+                for protocol_version in definition.versions:
+                    try:
+                        mod = ClassLoader.load_module(
+                            f"{plugin.__name__}.{protocol_version['path']}"
+                            + ".message_types"
+                        )
+                        await self.load_protocol_version(context, mod, protocol_version)
+
+                    except ModuleLoadError as e:
+                        LOGGER.error("Error loading plugin module message types: %s", e)
+                        return
 
     async def register_admin_routes(self, app):
         """Call route registration methods on the current context."""
         for plugin in self._plugins.values():
-            # Load plugin routes that aren't in a versioned package.
-            try:
-                mod = ClassLoader.load_module(f"{plugin.__name__}.routes")
-            except ModuleLoadError as e:
-                LOGGER.error("Error loading admin routes: %s", e)
-                continue
-            if mod and hasattr(mod, "register"):
-                await mod.register(app)
+            definition = ClassLoader.load_module("definition", plugin.__name__)
+            if definition:
+                # Load plugin routes that are in a versioned package.
+                for plugin_version in definition.versions:
+                    try:
+                        mod = ClassLoader.load_module(
+                            f"{plugin.__name__}.{plugin_version['path']}.routes"
+                        )
+                    except ModuleLoadError as e:
+                        LOGGER.error("Error loading admin routes: %s", e)
+                        continue
+                    if mod and hasattr(mod, "register"):
+                        await mod.register(app)
+            else:
+                # Load plugin routes that aren't in a versioned package.
+                try:
+                    mod = ClassLoader.load_module(f"{plugin.__name__}.routes")
+                except ModuleLoadError as e:
+                    LOGGER.error("Error loading admin routes: %s", e)
+                    continue
+                if mod and hasattr(mod, "register"):
+                    await mod.register(app)
 
     def __repr__(self) -> str:
         """Return a string representation for this class."""

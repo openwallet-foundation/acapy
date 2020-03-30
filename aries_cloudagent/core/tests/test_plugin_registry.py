@@ -34,14 +34,28 @@ class TestPluginRegistry(AsyncTestCase):
         app = async_mock.MagicMock()
         self.registry._plugins[mod_name] = mod
         mod.routes.register = async_mock.CoroutineMock()
+        definition = async_mock.MagicMock()
+        definition.versions = [
+            {
+                "major_version": 1,
+                "minimum_minor_version": 0,
+                "current_minor_version": 0,
+                "path": "v1_0",
+            }
+        ]
 
         with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=mod.routes)
+            ClassLoader,
+            "load_module",
+            async_mock.MagicMock(side_effect=[definition, mod.routes]),
         ) as load_module:
             await self.registry.register_admin_routes(app)
-            load_module.assert_called_once_with(mod_name + ".routes")
 
-        mod.routes.register.assert_awaited_once_with(app)
+            calls = [
+                call("definition", mod_name),
+                call(f"{mod_name}.{definition.versions[0]['path']}.routes"),
+            ]
+            load_module.assert_has_calls(calls)
 
     async def test_validate_version_not_a_list(self):
         mod_name = "test_mod"
