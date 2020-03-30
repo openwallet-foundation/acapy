@@ -16,7 +16,7 @@ services:
       - ./fluentd/conf:/fluentd/etc
       - ./logs:/logs
     ports:
-      - 8080:8080
+      - 8088:8088
     networks:
       - efk_net
 

@@ -3,6 +3,7 @@
 import json
 import logging
 import time
+import datetime
 import requests
 
 from ..transport.inbound.message import InboundMessage
@@ -11,6 +12,7 @@ from ..messaging.agent_message import AgentMessage
 
 
 LOGGER = logging.getLogger(__name__)
+DT_FMT = '%Y-%m-%d %H:%M:%S.%f%z'
 
 
 def trace_event(
@@ -42,6 +44,11 @@ def trace_event(
         # build the event to log
         # TODO check instance type of message to determine how to
         # get message and thread id's
+        if not handler:
+            if context and context.get("trace.label"):
+                handler = context.get("trace.label")
+            else:
+                handler = "aca-py.agent"
         msg_id = ""
         thread_id = ""
         msg_type = ""
@@ -62,11 +69,14 @@ def trace_event(
             msg_id = message["msg_id"]
             thread_id = message["thread_id"]
             msg_type = message["type"]
+        ep_time = time.time()
+        str_time = datetime.datetime.utcfromtimestamp(ep_time).strftime(DT_FMT)
         event = {
             "message_id": msg_id,
             "thread_id": thread_id if thread_id else msg_id,
             "traced_type": msg_type,
-            "timestamp": time.time(),
+            "timestamp": ep_time,
+            "str_time": str_time,
             "handler": handler,
             "ellapsed_milli": int(1000 * (ret - perf_counter)) if perf_counter else 0,
             "outcome": outcome,

@@ -147,9 +147,6 @@ class Dispatcher:
         trace_event(
             self.context.settings,
             message,
-            handler=self.context.settings.get("trace.label")
-            if self.context.settings and self.context.settings.get("trace.label")
-            else "aca-py.agent",
             outcome="Dispatcher.handle_message.START",
         )
 
@@ -184,9 +181,6 @@ class Dispatcher:
         trace_event(
             self.context.settings,
             context.message,
-            handler=self.context.settings.get("trace.label")
-            if self.context.settings and self.context.settings.get("trace.label")
-            else "aca-py.agent",
             outcome="Dispatcher.handle_message.END",
             perf_counter=r_time
         )

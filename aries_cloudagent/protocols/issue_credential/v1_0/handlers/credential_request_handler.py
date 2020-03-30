@@ -46,9 +46,6 @@ class CredentialRequestHandler(BaseHandler):
         r_time = trace_event(
             context.settings,
             context.message,
-            handler=context.settings.get("trace.label")
-            if context and context.settings and context.settings.get("trace.label")
-            else "aca-py.agent",
             outcome="CredentialRequestHandler.handle.END",
             perf_counter=r_time
         )
@@ -75,9 +72,6 @@ class CredentialRequestHandler(BaseHandler):
                 trace_event(
                     context.settings,
                     credential_issue_message,
-                    handler=context.settings.get("trace.label")
-                    if context.settings and context.settings.get("trace.label")
-                    else "aca-py.agent",
                     outcome="CredentialRequestHandler.issue.END",
                     perf_counter=r_time
                 )

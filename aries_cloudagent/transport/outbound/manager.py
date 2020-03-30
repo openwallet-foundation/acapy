@@ -338,10 +338,6 @@ class OutboundTransportManager:
                     trace_event(
                         self.context.settings,
                         queued.message,
-                        handler=self.context.settings.get("trace.label")
-                        if self.context.settings
-                        and self.context.settings.get("trace.label")
-                        else "aca-py.agent",
                         outcome="OutboundTransportManager._process_loop.DELIVER",
                     )
                     self.deliver_queued_message(queued)
@@ -363,10 +359,6 @@ class OutboundTransportManager:
                         trace_event(
                             self.context.settings,
                             queued.message,
-                            handler=self.context.settings.get("trace.label")
-                            if self.context.settings
-                            and self.context.settings.get("trace.label")
-                            else "aca-py.agent",
                             outcome="OutboundTransportManager._process_loop.ENCODE",
                         )
                         self.encode_queued_message(queued)
