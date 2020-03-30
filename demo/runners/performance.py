@@ -28,7 +28,7 @@ class BaseAgent(DemoAgent):
         self._connection_ready = None
         self.credential_state = {}
         self.credential_event = asyncio.Event()
-        self.cred_ex_ids = set()
+        self.revoc_info = {}
         self.ping_state = {}
         self.ping_event = asyncio.Event()
         self.sent_pings = set()
@@ -76,9 +76,12 @@ class BaseAgent(DemoAgent):
                 self._connection_ready.set_result(True)
 
     async def handle_issue_credential(self, payload):
-        cred_id = payload["credential_exchange_id"]
+        cred_ex_id = payload["credential_exchange_id"]
+        rev_reg_id = payload["revoc_reg_id"]
+        cred_rev_id = payload["revocation_id"]
+
         self.credential_state[cred_id] = payload["state"]
-        self.cred_ex_ids.add(cred_id)
+        self.revoc_info[cred_ex_id] = (payload["revoc_reg_id"], payload["revocation_id"])
         self.credential_event.set()
 
     async def handle_ping(self, payload):
@@ -219,9 +222,12 @@ class FaberAgent(BaseAgent):
             },
         )
 
-    async def revoke_credential(self, cred_ex_id: str):
+    async def revoke_credential(self, rev_reg_id: str, cred_rev_id: str):
         await self.admin_POST(
-            f"/issue-credential/records/{cred_ex_id}/revoke?publish=true"
+            "/issue-credential/revoke"
+            "?publish=true"
+            f"&rev_reg_id={rev_reg_id}"
+            f"&cred_rev_id={rev_reg_id}"
         )
 
 
@@ -431,10 +437,13 @@ async def main(
             for line in faber.format_postgres_stats():
                 faber.log(line)
 
-        cred_id = next(iter(faber.cred_ex_ids))
         if revoc:
-            print("Revoking credential and publishing", cred_id)
-            await faber.revoke_credential(cred_id)
+            (rev_reg_id, cred_rev_id) = next(iter(faber.revoc_info.values))
+            print(
+                f"Revoking and credential reg reg id {rev_reg_id}, "
+                "cred rev id {cred_rev_id}; publishing revocation"
+            )
+            await faber.revoke_credential(rev_reg_id, cred_rev_id)
 
         if show_timing:
             timing = await alice.fetch_timing()

@@ -84,8 +84,10 @@ class IssuerRevRegRecord(BaseRecord):
         **kwargs,
     ):
         """Initialize the issuer revocation registry record."""
-        super(IssuerRevRegRecord, self).__init__(
-            record_id, state=state or IssuerRevRegRecord.STATE_INIT, **kwargs
+        super().__init__(
+            record_id,
+            state=state or IssuerRevRegRecord.STATE_INIT,
+            **kwargs
         )
         self.cred_def_id = cred_def_id
         self.error_msg = error_msg
@@ -350,6 +352,11 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         required=False,
         description="Issuer revocation registry record identifier",
         example=UUIDFour.EXAMPLE,
+    )
+    state = fields.Str(
+        required=False,
+        description="Issue revocation registry record state",
+        example=IssuerRevRegRecord.STATE_ACTIVE,
     )
     cred_def_id = fields.Str(
         required=False,
