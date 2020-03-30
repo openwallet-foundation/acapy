@@ -63,13 +63,13 @@ class ProtocolRegistry:
         message_name = tokens[-1]
 
         version_string_tokens = version_string.split(".")
-        assert len(version_string_tokens) is 2
+        assert len(version_string_tokens) == 2
 
         return {
             "protocol_name": protocol_name,
             "message_name": message_name,
-            "major_version": version_string_tokens[0],
-            "minor_version": version_string_tokens[1],
+            "major_version": int(version_string_tokens[0]),
+            "minor_version": int(version_string_tokens[1]),
         }
 
     def register_message_types(self, *typesets, version_definition=None):
@@ -135,10 +135,11 @@ class ProtocolRegistry:
 
         if not msg_cls:
             parsed_type_string = self.parse_type_string(message_type)
-            major_version = parsed_type_string["parsed_type_string"]
+            major_version = parsed_type_string["major_version"]
 
             version_supported_protos = self._versionmap.get(major_version)
             if not version_supported_protos:
+                raise Exception("Major")
                 # Send major version not supported problem report
                 return None
 
@@ -153,7 +154,8 @@ class ProtocolRegistry:
                         parsed_type_string["minor_version"]
                         < proto["version_definition"]["minimum_minor_version"]
                     ):
-                        # Send major version not supported problem report
+                        raise Exception("Minor version not supported")
+                        # Send minor version not supported problem report
                         return None
 
                     return ClassLoader.load_class(msg_cls)
