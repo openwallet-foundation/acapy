@@ -1,7 +1,6 @@
 """Credential exchange admin routes."""
 
 import json
-import time
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
@@ -35,7 +34,7 @@ from .models.credential_exchange import (
     V10CredentialExchangeSchema,
 )
 
-from ....utils.tracing import trace_event
+from ....utils.tracing import trace_event, get_timer
 
 
 class V10AttributeMimeTypesResultSchema(Schema):
@@ -256,7 +255,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         The credential exchange record
 
     """
-    r_time = time.perf_counter()
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -333,7 +332,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         The credential exchange record
 
     """
-    r_time = time.perf_counter()
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -406,7 +405,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         The credential exchange record
 
     """
-    r_time = time.perf_counter()
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -503,7 +502,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         The credential exchange record
 
     """
-    r_time = time.perf_counter()
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -559,7 +558,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         The credential exchange record
 
     """
-    r_time = time.perf_counter()
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -619,7 +618,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         The credential exchange record
 
     """
-    r_time = time.perf_counter()
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -691,7 +690,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         The credential exchange record
 
     """
-    r_time = time.perf_counter()
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -755,7 +754,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    r_time = time.perf_counter()
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]

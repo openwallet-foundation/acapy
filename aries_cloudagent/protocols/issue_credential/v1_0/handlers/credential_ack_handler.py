@@ -1,7 +1,5 @@
 """Credential ack message handler."""
 
-import time
-
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -12,7 +10,7 @@ from .....messaging.base_handler import (
 from ..manager import CredentialManager
 from ..messages.credential_ack import CredentialAck
 
-from .....utils.tracing import trace_event
+from .....utils.tracing import trace_event, get_timer
 
 
 class CredentialAckHandler(BaseHandler):
@@ -26,7 +24,7 @@ class CredentialAckHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        r_time = time.perf_counter()
+        r_time = get_timer()
 
         self._logger.debug("CredentialAckHandler called with context %s", context)
         assert isinstance(context.message, CredentialAck)

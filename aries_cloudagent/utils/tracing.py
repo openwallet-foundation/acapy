@@ -15,6 +15,11 @@ LOGGER = logging.getLogger(__name__)
 DT_FMT = '%Y-%m-%d %H:%M:%S.%f%z'
 
 
+def get_timer() -> float:
+    """Return a timer."""
+    return time.perf_counter()
+
+
 def trace_event(
         context,
         message,

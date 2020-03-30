@@ -14,7 +14,7 @@ from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundErro
 from ...utils.stats import Collector
 from ...utils.task_queue import CompletedTask, TaskQueue, task_exc_info
 
-from ...utils.tracing import trace_event
+from ...utils.tracing import trace_event, get_timer
 
 from ..wire_format import BaseWireFormat
 
@@ -309,7 +309,7 @@ class OutboundTransportManager:
 
         while True:
             self.outbound_event.clear()
-            loop_time = time.perf_counter()
+            loop_time = get_timer()
             upd_buffer = []
 
             for queued in self.outbound_buffer:

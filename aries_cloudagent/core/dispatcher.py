@@ -8,7 +8,6 @@ lifecycle hook callbacks storing state for message threads, etc.
 import asyncio
 import logging
 import os
-import time
 from typing import Callable, Coroutine, Union
 
 from aiohttp.web import HTTPException
@@ -28,7 +27,7 @@ from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 
-from ..utils.tracing import trace_event
+from ..utils.tracing import trace_event, get_timer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -125,7 +124,7 @@ class Dispatcher:
             The response from the handler
 
         """
-        r_time = time.perf_counter()
+        r_time = get_timer()
 
         connection_mgr = ConnectionManager(self.context)
         connection = await connection_mgr.find_inbound_connection(
