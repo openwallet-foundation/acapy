@@ -736,33 +736,6 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"], summary="Send a problem report for credential exchange"
-)
-@request_schema(V10CredentialProblemReportRequestSchema())
-async def credential_exchange_problem_report(request: web.BaseRequest):
-    """
-    Request handler for sending problem report.
-
-    Args:
-        request: aiohttp request object
-
-    """
-    r_time = get_timer()
-
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
-
-    trace_event(
-        context.settings,
-        error_result,
-        outcome="credential_exchange_problem_report.END",
-        perf_counter=r_time
-    )
-
-    return web.json_response({})
-
-
-@docs(
     tags=["issue-credential"],
     parameters=[
         {
@@ -896,7 +869,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
     trace_event(
         context.settings,
-        credential_request_message,
+        error_result,
         outcome="credential_exchange_problem_report.END",
         perf_counter=r_time
     )
