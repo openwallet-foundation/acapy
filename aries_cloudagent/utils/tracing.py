@@ -9,6 +9,7 @@ import requests
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..messaging.agent_message import AgentMessage
+from ..messaging.decorators.trace_decorator import TraceReport, TRACE_MESSAGE_TARGET
 
 
 LOGGER = logging.getLogger(__name__)
@@ -77,7 +78,7 @@ def trace_event(
         ep_time = time.time()
         str_time = datetime.datetime.utcfromtimestamp(ep_time).strftime(DT_FMT)
         event = {
-            "message_id": msg_id,
+            "msg_id": msg_id,
             "thread_id": thread_id if thread_id else msg_id,
             "traced_type": msg_type,
             "timestamp": ep_time,
@@ -90,7 +91,11 @@ def trace_event(
 
         try:
             # check our target
-            if context["trace.target"] == "message":
+            if (context["trace.target"] == TRACE_MESSAGE_TARGET
+                    and isinstance(message, AgentMessage)):
+                # add a trace report to the existing message
+                trace_report = TraceReport(event)
+                message.add_trace_report(trace_report)
                 # TODO, just log for now
                 LOGGER.setLevel(logging.INFO)
                 LOGGER.info(" %s %s", context["trace.tag"], event_str)

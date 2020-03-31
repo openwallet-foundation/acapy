@@ -19,6 +19,10 @@ from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
 from .decorators.signature_decorator import SignatureDecorator
 from .decorators.thread_decorator import ThreadDecorator
+from .decorators.trace_decorator import (
+    TraceDecorator, TraceReport,
+    TRACE_MESSAGE_TARGET
+)
 from .models.base import (
     BaseModel,
     BaseModelError,
@@ -290,6 +294,68 @@ class AgentMessage(BaseModel):
             pthid: The parent thread identifier
         """
         self._thread = ThreadDecorator(thid=thid, pthid=pthid)
+
+    @property
+    def _trace(self) -> TraceDecorator:
+        """
+        Accessor for the message's trace decorator.
+
+        Returns:
+            The TraceDecorator for this message
+
+        """
+        return self._decorators.get("trace")
+
+    @_trace.setter
+    def _trace(self, val: Union[TraceDecorator, dict]):
+        """
+        Setter for the message's trace decorator.
+
+        Args:
+            val: TraceDecorator or dict to set as the trace
+        """
+        self._decorators["trace"] = val
+
+    def assign_trace_from(self, msg: "AgentMessage"):
+        """
+        Copy trace information from a previous message.
+
+        Args:
+            msg: The received message containing optional trace information
+        """
+        if msg and msg._trace:
+            self._trace = msg._trace
+
+    def add_trace_decorator(
+        self,
+        target: str = TRACE_MESSAGE_TARGET,
+        full_thread: bool = True
+    ):
+        """
+        Create a new trace decorator.
+
+        Args:
+            target: The trace target
+            full_thread: Full thread flag
+        """
+        if self._trace:
+            # don't replace if there is already a trace decorator
+            # (potentially holding trace reports already)
+            self._trace.target = target
+            self._trace.full_thread = full_thread
+        else:
+            self._trace = TraceDecorator(target=target, full_thread=full_thread)
+
+    def add_trace_report(self, val: Union[TraceReport, dict]):
+        """
+        Append a new trace report.
+
+        Args:
+            val: The trace target
+        """
+        if not self._trace:
+            self.add_trace_decorator()
+        self._trace.append_trace_report(val)
 
 
 class AgentMessageSchema(BaseModelSchema):
