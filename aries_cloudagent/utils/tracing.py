@@ -21,6 +21,21 @@ def get_timer() -> float:
     return time.perf_counter()
 
 
+def tracing_enabled(context, message) -> bool:
+    """Determine whether to log trace messages or not."""
+    # check if tracing is explicitely on
+    if context.get("trace.enabled"):
+        return True
+
+    # if there is a trace decorator on the messages then continue to trace
+    if message and isinstance(message, AgentMessage):
+        if message._trace:
+            return True
+
+    # default off
+    return False
+
+
 def trace_event(
         context,
         message,
@@ -46,7 +61,7 @@ def trace_event(
 
     ret = time.perf_counter()
 
-    if force_trace or context.get("trace.enabled"):
+    if force_trace or tracing_enabled(context, message):
         # build the event to log
         # TODO check instance type of message to determine how to
         # get message and thread id's
@@ -75,6 +90,8 @@ def trace_event(
             msg_id = message["msg_id"]
             thread_id = message["thread_id"]
             msg_type = message["type"]
+        else:
+            msg_type = str(message)
         ep_time = time.time()
         str_time = datetime.datetime.utcfromtimestamp(ep_time).strftime(DT_FMT)
         event = {
@@ -90,15 +107,21 @@ def trace_event(
         event_str = json.dumps(event)
 
         try:
-            # check our target
+            # check our target - if we get this far we know we are logging the event
             if (context["trace.target"] == TRACE_MESSAGE_TARGET
                     and isinstance(message, AgentMessage)):
                 # add a trace report to the existing message
-                trace_report = TraceReport(event)
+                trace_report = TraceReport(
+                    msg_id=event["msg_id"],
+                    thread_id=event["thread_id"],
+                    traced_type=event["traced_type"],
+                    timestamp=event["timestamp"],
+                    str_time=event["str_time"],
+                    handler=event["handler"],
+                    ellapsed_milli=event["ellapsed_milli"],
+                    outcome=event["outcome"],
+                )
                 message.add_trace_report(trace_report)
-                # TODO, just log for now
-                LOGGER.setLevel(logging.INFO)
-                LOGGER.info(" %s %s", context["trace.tag"], event_str)
             elif context["trace.target"] == "log":
                 # write to standard log file
                 LOGGER.setLevel(logging.INFO)
