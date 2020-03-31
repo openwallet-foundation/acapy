@@ -34,6 +34,8 @@ from .models.credential_exchange import (
     V10CredentialExchangeSchema,
 )
 
+from ....utils.tracing import trace_event, get_timer
+
 
 class V10AttributeMimeTypesResultSchema(Schema):
     """Result schema for credential attribute MIME types by credential definition."""
@@ -251,6 +253,8 @@ async def credential_exchange_send(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -280,6 +284,12 @@ async def credential_exchange_send(request: web.BaseRequest):
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
+    trace_event(
+        context.settings,
+        credential_proposal,
+        outcome="credential_exchange_send.START",
+    )
+
     credential_manager = CredentialManager(context)
 
     (
@@ -292,6 +302,13 @@ async def credential_exchange_send(request: web.BaseRequest):
     )
     await outbound_handler(
         credential_offer_message, connection_id=credential_exchange_record.connection_id
+    )
+
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_send.END",
+        perf_counter=r_time
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -311,6 +328,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -349,6 +368,13 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         connection_id=connection_id,
     )
 
+    trace_event(
+        context.settings,
+        credential_proposal,
+        outcome="credential_exchange_send_proposal.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -372,6 +398,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -438,6 +465,13 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
 
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_send_free_offer.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -460,6 +494,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -492,6 +527,13 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
 
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_send_bound_offer.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -508,6 +550,8 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -541,6 +585,13 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     )
 
     await outbound_handler(credential_request_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        credential_request_message,
+        outcome="credential_exchange_send_request.END",
+        perf_counter=r_time
+    )
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -558,6 +609,8 @@ async def credential_exchange_issue(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -603,6 +656,14 @@ async def credential_exchange_issue(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Revocation registry is full")
 
     await outbound_handler(credential_issue_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        credential_request_message,
+        outcome="credential_exchange_issue.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(cred_exch_record.serialize())
 
 
@@ -620,6 +681,8 @@ async def credential_exchange_store(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -659,6 +722,14 @@ async def credential_exchange_store(request: web.BaseRequest):
     )
 
     await outbound_handler(credential_stored_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        credential_request_message,
+        outcome="credential_exchange_store.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -774,6 +845,8 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
         request: aiohttp request object
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -793,6 +866,14 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     await outbound_handler(
         error_result, connection_id=credential_exchange_record.connection_id
     )
+
+    trace_event(
+        context.settings,
+        credential_request_message,
+        outcome="credential_exchange_problem_report.END",
+        perf_counter=r_time
+    )
+
     return web.json_response({})
 
 
