@@ -424,23 +424,22 @@ First, get the connection Id for Faber's connection with Alice. You can copy tha
 
 Next, for the following fields, scroll through the Swagger page, execute, copy the corresponding value and fill in to the JSON for:
 
-- `issuer_did` the Faber public DID (**`GET /wallet/DID/public`**), 
-- `schema_id` the ID of the schema Faber created (**`GET /schemas/created`**) and,
+- `issuer_did` the Faber public DID (**`GET /wallet/DID/public`**), and
 - `cred_def_id` the ID of the schema Faber created (**`GET /credential-definitions/created`**)
 
 
 We now have (almost) all the information we need to fill in the JSON. The good news is that the hard part is done. For the rest of the fields:
 
-- `schema_version` set to the second last segment of the `schema_id`, in this case `degree schema`
+- `schema_id` the ID of the schema Faber created (**`GET /schemas/created`**)
+- `schema_name` set to the second last segment of the `schema_id`, in this case `degree schema`
 - `auto_remove` set to `true` (no quotes), see note below
-- `revoc_reg_id` set to `null` (no quotes), see note below
 - `comment` a string that let's Alice know something about the credential being offered.
 - `schema_issuer_did:` reuse the value in `issuer_did`,
-- `schema_name` set to the last segment of the `schema_id`, a three part version number that was randomly generated on startup of the Faber agent.
+- `schema_version` set to the last segment of the `schema_id`, a three part version number that was randomly generated on startup of the Faber agent.
 
-The `revoc_reg_id` being `null` means that we won't be using a revocation registry and therefore can't revoke the credentials we issue. 
+Note that the latter fields are optional: given a credential definition identifier, the Faber (as Issuer) can infer schema info; the `auto_remove` setting overrides the configured default via the presence or absence of command line argument `--preserve-exchange-records`.
 
-By setting `auto-remove` to true, ACA-Py will automatically remove the credential exchange record after the protocol completes. When implementing a controller, this is the likely setting to use to free up space in the agent storage, but implies if a record of the issuance of the credential is needed, the controller must save it somewhere. For example, Faber College might extend their Student Information System, where they track all their students, to record when credentials are issued to students, and the IDs of the issued credentials.
+By setting `auto_remove` to true, ACA-Py will automatically remove the credential exchange record after the protocol completes. When implementing a controller, this is the likely setting to use to free up space in the agent storage, but implies if a record of the issuance of the credential is needed, the controller must save it somewhere. For example, Faber College might extend their Student Information System, where they track all their students, to record when credentials are issued to students, and the IDs of the issued credentials.
 
 ### Faber - Issuing the Credential
 

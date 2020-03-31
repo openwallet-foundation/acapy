@@ -223,8 +223,17 @@ In the Faber console, select option `1` to send a credential to the mobile agent
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-3-credential-0.png" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-0.png" alt="Issue Credential">
 </details>
+
+The Faber agent outputs details to the console; e.g.,
+```
+Faber      | Credential: state = credential_issued, credential_exchange_id = bb9bf750-905f-444f-b8aa-42c3a51d9464
+Faber      | Revocation registry id: Jt7PhrEc2rYuS4iVcREfoA:4:Jt7PhrEc2rYuS4iVcREfoA:3:CL:44:default:CL_ACCUM:55a13dff-c104-45b5-b633-d3fd1ac43b9a
+Faber      | Credential revocation id: 1
+Faber      | Credential: state = credential_acked, credential_exchange_id = bb9bf750-905f-444f-b8aa-42c3a51d9464
+```
+where the revocation registry id and credential revocation id only appear if revocation is active.
 
 ### Accept the Credential
 
@@ -232,15 +241,15 @@ The credential offer should automatically show up in the mobile agent. Accept th
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-3-credential-1.jpg" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-1.jpg" alt="Credential Offer">
 </details>
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-3-credential-2.jpg" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-2.jpg" alt="Credential Details">
 </details>
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-3-credential-3.jpg" alt="View Connection Status">
+    <img src="./collateral/S-3-credential-3.jpg" alt="Credential Acceptance">
 </details>
 
 ## Issue a Presentation Request
@@ -251,7 +260,7 @@ In the Faber console, select option `2` to send a proof request to the mobile ag
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-4-proof-0.png" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-0.png" alt="Request Proof">
 </details>
 
 ## Present the Proof
@@ -260,15 +269,15 @@ In the mobile agent, select the option to present the requested proof.
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-4-proof-1.jpg" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-1.jpg" alt="Proof Request Notice">
 </details>
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-4-proof-2.jpg" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-2.jpg" alt="Proof Request Details">
 </details>
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-4-proof-3.jpg" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-3.jpg" alt="Proof Presentation">
 </details>
 
 ## Review the Proof
@@ -277,16 +286,19 @@ In the Faber console window, the proof should be received as validated.
 
 <details>
     <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-4-proof-4.png" alt="View Connection Status">
+    <img src="./collateral/S-4-proof-4.png" alt="Proof Validation">
 </details>
 
 ## Revoke the Credential and Send Another Proof Request
 
-If you have enabled revocation, you can try revoking the credential pending publication (`faber` options `4` and `5`). For the revocation step, You will need the credential exchange id from the original credential issuance (not the one from the presentation exchange).
+If you have enabled revocation, you can try revoking the credential pending publication (`faber` options `4` and `5`). For the revocation step, You will need the revocation registry identifier and the credential revocation identifier, as the Faber agent logged them to the console at credential issue.
 
-Once that is done, try sending another proof request and see what happens!
+Once that is done, try sending another proof request and see what happens! Experiment with immediate and pending publication.
 
-Note - screenshots not yet provided for this last step.
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="./collateral/revocation-3-console.png" alt="Revocation">
+</details>
 
 ## Conclusion
 
