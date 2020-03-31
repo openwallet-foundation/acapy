@@ -37,6 +37,16 @@ from .models.credential_exchange import (
 from ....utils.tracing import trace_event, get_timer
 
 
+class V10MessageTracingSchema(Schema):
+    """Request/result schema including agent message tracing."""
+
+    trace_info = fields.Str(
+        description="Message trace information", required=False,
+        example="{\"target\":\"message\",\"full_thread\":\"True\","
+                "\"trace_reports\":\"{}\"}"
+    )
+
+
 class V10AttributeMimeTypesResultSchema(Schema):
     """Result schema for credential attribute MIME types by credential definition."""
 
@@ -50,13 +60,13 @@ class V10CredentialExchangeListResultSchema(Schema):
     )
 
 
-class V10CredentialStoreRequestSchema(Schema):
+class V10CredentialStoreRequestSchema(V10MessageTracingSchema):
     """Request schema for sending a credential store admin message."""
 
     credential_id = fields.Str(required=False)
 
 
-class V10CredentialProposalRequestSchemaBase(Schema):
+class V10CredentialProposalRequestSchemaBase(V10MessageTracingSchema):
     """Base class for request schema for sending credential proposal admin message."""
 
     connection_id = fields.UUID(
@@ -107,7 +117,7 @@ class V10CredentialProposalRequestMandSchema(V10CredentialProposalRequestSchemaB
     credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialOfferRequestSchema(Schema):
+class V10CredentialOfferRequestSchema(V10MessageTracingSchema):
     """Request schema for sending credential offer admin message."""
 
     connection_id = fields.UUID(
@@ -140,20 +150,20 @@ class V10CredentialOfferRequestSchema(Schema):
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialIssueRequestSchema(Schema):
+class V10CredentialIssueRequestSchema(V10MessageTracingSchema):
     """Request schema for sending credential issue admin message."""
 
     comment = fields.Str(description="Human-readable comment", required=False)
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialProblemReportRequestSchema(Schema):
+class V10CredentialProblemReportRequestSchema(V10MessageTracingSchema):
     """Request schema for sending problem report."""
 
     explain_ltxt = fields.Str(required=True)
 
 
-class V10PublishRevocationsResultSchema(Schema):
+class V10PublishRevocationsResultSchema(V10MessageTracingSchema):
     """Result schema for revocation publication API call."""
 
     results = fields.Dict(
@@ -421,6 +431,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     revoc_reg_id = body.get("revoc_reg_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
+    trace_info = body.get("trace_info")
 
     if not cred_def_id:
         raise web.HTTPBadRequest(reason="cred_def_id is required")
@@ -460,6 +471,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         auto_issue=auto_issue,
         auto_remove=auto_remove,
         revoc_reg_id=revoc_reg_id,
+        trace_info=trace_info,
     )
 
     credential_manager = CredentialManager(context)
@@ -771,6 +783,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
     error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
     error_result.assign_thread_id(credential_exchange_record.thread_id)
+    error_result.assign_trace_from_json(credential_exchange_record.trace_info)
 
     await outbound_handler(
         error_result, connection_id=credential_exchange_record.connection_id

@@ -74,22 +74,22 @@ def trace_event(
         thread_id = ""
         msg_type = ""
         if message and isinstance(message, AgentMessage):
-            msg_id = message._id
-            thread_id = message._thread.thid if message._thread else message._id
-            msg_type = message._type
+            msg_id = str(message._id)
+            thread_id = str(message._thread.thid) if message._thread else msg_id
+            msg_type = str(message._type)
         elif message and isinstance(message, InboundMessage):
             # TODO not sure if we can log an InboundMessage before it's "handled"
-            msg_id = message.session_id if message.session_id else "N/A"
-            thread_id = message.session_id if message.session_id else "N/A"
+            msg_id = str(message.session_id) if message.session_id else "N/A"
+            thread_id = str(message.session_id) if message.session_id else "N/A"
             msg_type = "InboundMessage"
         elif message and isinstance(message, OutboundMessage):
-            msg_id = message.reply_thread_id if message.reply_thread_id else "N/A"
-            thread_id = message.reply_thread_id if message.reply_thread_id else "N/A"
+            msg_id = str(message.reply_thread_id) if message.reply_thread_id else "N/A"
+            thread_id = msg_id
             msg_type = "OutboundMessage"
         elif message and isinstance(message, dict):
-            msg_id = message["msg_id"]
-            thread_id = message["thread_id"]
-            msg_type = message["type"]
+            msg_id = str(message["msg_id"])
+            thread_id = str(message["thread_id"])
+            msg_type = str(message["type"])
         else:
             msg_type = str(message)
         ep_time = time.time()
@@ -138,9 +138,9 @@ def trace_event(
             if raise_errors:
                 raise
             LOGGER.error(
-                "Error logging trace %s %s %s",
-                context["trace.target"],
-                context["trace.tag"],
+                "Error logging trace target: %s tag: %s event: %s",
+                context.get("trace.target"),
+                context.get("trace.tag"),
                 event_str
             )
             LOGGER.exception(e)

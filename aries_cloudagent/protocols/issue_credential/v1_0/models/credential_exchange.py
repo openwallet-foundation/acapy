@@ -64,6 +64,7 @@ class V10CredentialExchange(BaseRecord):
         auto_issue: bool = False,
         auto_remove: bool = True,
         error_msg: str = None,
+        trace_info: str = None,
         **kwargs,
     ):
         """Initialize a new V10CredentialExchange."""
@@ -90,6 +91,7 @@ class V10CredentialExchange(BaseRecord):
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
         self.error_msg = error_msg
+        self.trace_info = trace_info
 
     @property
     def credential_exchange_id(self) -> str:
@@ -122,6 +124,7 @@ class V10CredentialExchange(BaseRecord):
                 "revocation_id",
                 "role",
                 "state",
+                "trace_info",
             )
         }
 
@@ -241,4 +244,9 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
     )
     revocation_id = fields.Str(
         required=False, description="Credential identifier within revocation registry"
+    )
+    trace_info = fields.Str(
+        description="Message trace information", required=False,
+        example="{\"target\":\"message\",\"full_thread\":\"True\""
+                ",\"trace_reports\":\"{}\"}"
     )

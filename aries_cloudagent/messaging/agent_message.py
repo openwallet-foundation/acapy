@@ -2,6 +2,7 @@
 
 from collections import OrderedDict
 from typing import Union
+import json
 import uuid
 
 from marshmallow import (
@@ -324,7 +325,21 @@ class AgentMessage(BaseModel):
             msg: The received message containing optional trace information
         """
         if msg and msg._trace:
-            self._trace = msg._trace
+            # ignore if not a valid type
+            if (isinstance(msg._trace, TraceDecorator) or
+                    isinstance(msg._trace, dict)):
+                self._trace = msg._trace
+
+    def assign_trace_from_json(self, trace_json):
+        """
+        Copy trace from a json structure.
+
+        Args:
+            trace_json: string containing trace json stucture
+        """
+        if trace_json:
+            trace = json.loads(trace_json)
+            print(">>> trace """, trace)
 
     def add_trace_decorator(
         self,
