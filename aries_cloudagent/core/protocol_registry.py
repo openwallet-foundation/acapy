@@ -158,7 +158,7 @@ class ProtocolRegistry:
                         # Send minor version not supported problem report
                         return None
 
-                    return ClassLoader.load_class(msg_cls)
+                    return ClassLoader.load_class(proto['message_module'])
 
         return None
 

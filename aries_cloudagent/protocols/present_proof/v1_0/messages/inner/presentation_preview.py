@@ -422,10 +422,7 @@ class PresentationPreviewSchema(BaseModelSchema):
         description="Message type identifier",
         required=False,
         example=PRESENTATION_PREVIEW,
-        data_key="@type",
-        validate=validate.Equal(
-            PRESENTATION_PREVIEW, error="Must be absent or equal to {other}"
-        ),
+        data_key="@type"
     )
     attributes = fields.Nested(PresAttrSpecSchema, required=True, many=True)
     predicates = fields.Nested(PresPredSpecSchema, required=True, many=True)

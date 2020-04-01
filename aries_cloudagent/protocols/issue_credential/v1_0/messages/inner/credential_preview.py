@@ -168,10 +168,7 @@ class CredentialPreviewSchema(BaseModelSchema):
         description="Message type identifier",
         required=False,
         example=CREDENTIAL_PREVIEW,
-        data_key="@type",
-        validate=validate.Equal(
-            CREDENTIAL_PREVIEW, error="Must be absent or equal to {other}"
-        ),
+        data_key="@type"
     )
     attributes = fields.Nested(
         CredAttrSpecSchema, many=True, required=True, data_key="attributes"
