@@ -6,6 +6,7 @@ from typing import Mapping, Sequence
 
 from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader
+from .error import ProtocolMinorVersionNotSupported
 
 LOGGER = logging.getLogger(__name__)
 
@@ -129,18 +130,18 @@ class ProtocolRegistry:
 
         """
 
+        # Try and retrieve from direct mapping
         msg_cls = self._typemap.get(message_type)
         if isinstance(msg_cls, str):
             return ClassLoader.load_class(msg_cls)
 
+        # Try and route via min/maj version matching
         if not msg_cls:
             parsed_type_string = self.parse_type_string(message_type)
             major_version = parsed_type_string["major_version"]
 
             version_supported_protos = self._versionmap.get(major_version)
             if not version_supported_protos:
-                raise Exception("Major")
-                # Send major version not supported problem report
                 return None
 
             for proto in version_supported_protos:
@@ -154,11 +155,12 @@ class ProtocolRegistry:
                         parsed_type_string["minor_version"]
                         < proto["version_definition"]["minimum_minor_version"]
                     ):
-                        raise Exception("Minor version not supported")
-                        # Send minor version not supported problem report
-                        return None
+                        raise ProtocolMinorVersionNotSupported(
+                            "Minimum supported minor version is "
+                            + f"{proto['version_definition']['minimum_minor_version']}"
+                        )
 
-                    return ClassLoader.load_class(proto['message_module'])
+                    return ClassLoader.load_class(proto["message_module"])
 
         return None
 
