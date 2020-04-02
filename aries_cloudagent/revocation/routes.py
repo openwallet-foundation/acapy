@@ -52,7 +52,7 @@ class RevRegUpdateTailsFileUriSchema(Schema):
             "http://192.168.56.133:5000/revocation/registry/"
             f"{IndyRevRegId.EXAMPLE}/tails-file"
         ),
-        required=True
+        required=True,
     )
 
 
@@ -109,13 +109,7 @@ async def revocation_create_registry(request: web.BaseRequest):
 @docs(
     tags=["revocation"],
     summary="Get revocation registry by credential definition id",
-    parameters=[
-        {
-            "in": "path",
-            "name": "id",
-            "description": "revocation registry id"
-        }
-    ],
+    parameters=[{"in": "path", "name": "id", "description": "revocation registry id"}],
 )
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_registry(request: web.BaseRequest):
@@ -146,11 +140,7 @@ async def get_registry(request: web.BaseRequest):
     tags=["revocation"],
     summary="Get an active revocation registry by credential definition id",
     parameters=[
-        {
-            "in": "path",
-            "name": "cred_def_id",
-            "description": "credential definition id"
-        }
+        {"in": "path", "name": "cred_def_id", "description": "credential definition id"}
     ],
 )
 @response_schema(RevRegCreateResultSchema(), 200)
@@ -247,11 +237,7 @@ async def publish_registry(request: web.BaseRequest):
     tags=["revocation"],
     summary="Update revocation registry with new public URI to the tails file.",
     parameters=[
-        {
-            "in": "path",
-            "name": "id",
-            "description": "revocation registry identifier",
-        }
+        {"in": "path", "name": "id", "description": "revocation registry identifier",}
     ],
 )
 @request_schema(RevRegUpdateTailsFileUriSchema())

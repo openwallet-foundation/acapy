@@ -76,8 +76,7 @@ class FaberAgent(DemoAgent):
 
         self.log(
             "Credential: state = {}, credential_exchange_id = {}".format(
-                state,
-                credential_exchange_id,
+                state, credential_exchange_id,
             )
         )
 
@@ -104,13 +103,9 @@ class FaberAgent(DemoAgent):
                 rev_reg_id = cred_ex_rec.get("revoc_reg_id")
                 cred_rev_id = cred_ex_rec.get("revocation_id")
                 if rev_reg_id:
-                    self.log(
-                        f"Revocation registry id: {rev_reg_id}"
-                    )
+                    self.log(f"Revocation registry id: {rev_reg_id}")
                 if cred_rev_id:
-                    self.log(
-                        f"Credential revocation id: {cred_rev_id}"
-                    )
+                    self.log(f"Credential revocation id: {cred_rev_id}")
             except ClientError:
                 pass
 
@@ -327,7 +322,7 @@ async def main(
                 rev_reg_id = await prompt("Enter revocation registry id: ")
                 cred_rev_id = await prompt("Enter credential revocation id: ")
                 publish = json.dumps(
-                    await prompt("Publish now? [Y/N]: ", default="N") in ('yY')
+                    await prompt("Publish now? [Y/N]: ", default="N") in ("yY")
                 )
                 await agent.admin_POST(
                     "/issue-credential/revoke"
@@ -341,7 +336,7 @@ async def main(
                     "Published revocations for {} revocation registr{} {}".format(
                         len(resp),
                         "y" if len(resp) == 1 else "ies",
-                        json.dumps([k for k in resp["results"]], indent=4)
+                        json.dumps([k for k in resp["results"]], indent=4),
                     )
                 )
             elif option == "6" and revocation:

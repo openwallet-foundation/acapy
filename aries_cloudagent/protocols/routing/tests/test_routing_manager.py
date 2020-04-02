@@ -89,8 +89,7 @@ class TestRoutingManager(AsyncTestCase):
     async def test_get_routes_connection_id(self):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.get_routes(
-            client_connection_id=TEST_CONN_ID,
-            tag_filter=None
+            client_connection_id=TEST_CONN_ID, tag_filter=None
         )
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
@@ -99,8 +98,7 @@ class TestRoutingManager(AsyncTestCase):
     async def test_get_routes_connection_id_tag_filter_vacuous(self):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.get_routes(
-            client_connection_id=None,
-            tag_filter={"for": "coverage"}
+            client_connection_id=None, tag_filter={"for": "coverage"}
         )
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
@@ -109,8 +107,7 @@ class TestRoutingManager(AsyncTestCase):
     async def test_get_routes_connection_id_tag_filter_str(self):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.get_routes(
-            client_connection_id=None,
-            tag_filter={"recipient_key": TEST_ROUTE_VERKEY}
+            client_connection_id=None, tag_filter={"recipient_key": TEST_ROUTE_VERKEY}
         )
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
@@ -119,8 +116,7 @@ class TestRoutingManager(AsyncTestCase):
     async def test_get_routes_connection_id_tag_filter_list(self):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.get_routes(
-            client_connection_id=None,
-            tag_filter={"recipient_key": [TEST_ROUTE_VERKEY]}
+            client_connection_id=None, tag_filter={"recipient_key": [TEST_ROUTE_VERKEY]}
         )
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
@@ -130,7 +126,7 @@ class TestRoutingManager(AsyncTestCase):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.get_routes(
             client_connection_id=None,
-            tag_filter={"recipient_key": ["none", "of", "these"]}
+            tag_filter={"recipient_key": ["none", "of", "these"]},
         )
         assert len(results) == 0
 
@@ -138,7 +134,7 @@ class TestRoutingManager(AsyncTestCase):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.get_routes(
             client_connection_id=None,
-            tag_filter={"recipient_key": ["none", TEST_ROUTE_VERKEY, "of", "these"]}
+            tag_filter={"recipient_key": ["none", TEST_ROUTE_VERKEY, "of", "these"]},
         )
         assert len(results) == 1
         assert results[0].connection_id == TEST_CONN_ID
@@ -148,19 +144,18 @@ class TestRoutingManager(AsyncTestCase):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         with self.assertRaises(RoutingManagerError):
             await self.manager.get_routes(
-                client_connection_id=None,
-                tag_filter={"recipient_key": None}
+                client_connection_id=None, tag_filter={"recipient_key": None}
             )
 
     async def test_update_routes_delete(self):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.update_routes(
             client_connection_id=TEST_CONN_ID,
-                updates=[RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY,
-                    action=RouteUpdate.ACTION_DELETE
+            updates=[
+                RouteUpdate(
+                    recipient_key=TEST_ROUTE_VERKEY, action=RouteUpdate.ACTION_DELETE
                 )
-            ]
+            ],
         )
         assert len(results) == 1
         assert results[0].recipient_key == TEST_ROUTE_VERKEY
@@ -172,10 +167,9 @@ class TestRoutingManager(AsyncTestCase):
             client_connection_id=TEST_CONN_ID,
             updates=[
                 RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY,
-                    action=RouteUpdate.ACTION_CREATE
+                    recipient_key=TEST_ROUTE_VERKEY, action=RouteUpdate.ACTION_CREATE
                 )
-            ]
+            ],
         )
         assert len(results) == 1
         assert results[0].recipient_key == TEST_ROUTE_VERKEY
@@ -188,10 +182,9 @@ class TestRoutingManager(AsyncTestCase):
             client_connection_id=TEST_CONN_ID,
             updates=[
                 RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY,
-                    action=RouteUpdate.ACTION_CREATE
+                    recipient_key=TEST_ROUTE_VERKEY, action=RouteUpdate.ACTION_CREATE
                 )
-            ]
+            ],
         )
         assert len(results) == 1
         assert results[0].recipient_key == TEST_ROUTE_VERKEY
@@ -202,11 +195,7 @@ class TestRoutingManager(AsyncTestCase):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.update_routes(
             client_connection_id=TEST_CONN_ID,
-                updates=[RouteUpdate(
-                    recipient_key=None,
-                    action=RouteUpdate.ACTION_DELETE
-                )
-            ]
+            updates=[RouteUpdate(recipient_key=None, action=RouteUpdate.ACTION_DELETE)],
         )
         assert len(results) == 1
         assert results[0].recipient_key == None
@@ -217,11 +206,7 @@ class TestRoutingManager(AsyncTestCase):
         record = await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
         results = await self.manager.update_routes(
             client_connection_id=TEST_CONN_ID,
-                updates=[RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY,
-                    action="mystery"
-                )
-            ]
+            updates=[RouteUpdate(recipient_key=TEST_ROUTE_VERKEY, action="mystery")],
         )
         assert len(results) == 1
         assert results[0].recipient_key == TEST_ROUTE_VERKEY
@@ -238,9 +223,9 @@ class TestRoutingManager(AsyncTestCase):
                 updates=[
                     RouteUpdate(
                         recipient_key=TEST_ROUTE_VERKEY,
-                        action=RouteUpdate.ACTION_CREATE
+                        action=RouteUpdate.ACTION_CREATE,
                     )
-                ]
+                ],
             )
             assert len(results) == 1
             assert results[0].recipient_key == TEST_ROUTE_VERKEY
@@ -252,10 +237,9 @@ class TestRoutingManager(AsyncTestCase):
             client_connection_id=TEST_CONN_ID,
             updates=[
                 RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY,
-                    action=RouteUpdate.ACTION_DELETE
+                    recipient_key=TEST_ROUTE_VERKEY, action=RouteUpdate.ACTION_DELETE
                 )
-            ]
+            ],
         )
         assert len(results) == 1
         assert results[0].recipient_key == TEST_ROUTE_VERKEY
@@ -273,9 +257,9 @@ class TestRoutingManager(AsyncTestCase):
                 updates=[
                     RouteUpdate(
                         recipient_key=TEST_ROUTE_VERKEY,
-                        action=RouteUpdate.ACTION_DELETE
+                        action=RouteUpdate.ACTION_DELETE,
                     )
-                ]
+                ],
             )
             assert len(results) == 1
             assert results[0].recipient_key == TEST_ROUTE_VERKEY
@@ -287,6 +271,6 @@ class TestRoutingManager(AsyncTestCase):
         await self.manager.send_create_route(
             router_connection_id=TEST_CONN_ID,
             recip_key=TEST_ROUTE_VERKEY,
-            outbound_handler=mock_outbound_handler
+            outbound_handler=mock_outbound_handler,
         )
         mock_outbound_handler.assert_called_once()

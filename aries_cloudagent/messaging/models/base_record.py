@@ -275,9 +275,7 @@ class BaseRecord(BaseModel):
             vals = json.loads(record.value)
             if match_post_filter(
                 vals, post_filter_positive, True
-            ) and match_post_filter(
-                vals, post_filter_negative, False
-            ):
+            ) and match_post_filter(vals, post_filter_negative, False):
                 result.append(cls.from_storage(record.id, vals))
         return result
 

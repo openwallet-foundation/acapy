@@ -141,7 +141,7 @@ class PresentationManager:
             name=name,
             version=version,
             nonce=nonce,
-            ledger=await self.context.inject(BaseLedger)
+            ledger=await self.context.inject(BaseLedger),
         )
         presentation_request_message = PresentationRequest(
             comment=comment,
@@ -323,10 +323,7 @@ class PresentationManager:
         # of the presentation request or attributes
         current_timestamp = int(time.time())
 
-        non_revoc_interval = {
-            "from": 0,
-            "to": current_timestamp
-        }
+        non_revoc_interval = {"from": 0, "to": current_timestamp}
         non_revoc_interval.update(
             presentation_exchange_record.presentation_request.get("non_revoked", {})
         )

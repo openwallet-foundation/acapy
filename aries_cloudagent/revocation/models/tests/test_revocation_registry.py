@@ -101,14 +101,13 @@ class TestRevocationRegistry(AsyncTestCase):
         rev_reg_loc = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
         assert rev_reg_loc.get_receiving_tails_local_path(self.context) == TAILS_LOCAL
 
-        with async_mock.patch.object(
-            Path, "is_file", autospec=True
-        ) as mock_is_file:
+        with async_mock.patch.object(Path, "is_file", autospec=True) as mock_is_file:
             mock_is_file.return_value = True
 
-            assert await rev_reg_loc.get_or_fetch_local_tails_path(
-                self.context
-            ) == TAILS_LOCAL
+            assert (
+                await rev_reg_loc.get_or_fetch_local_tails_path(self.context)
+                == TAILS_LOCAL
+            )
 
         rmtree(TAILS_DIR, ignore_errors=True)
         assert not rev_reg_loc.has_local_tails_file(self.context)
@@ -127,11 +126,11 @@ class TestRevocationRegistry(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "Session", autospec=True
         ) as mock_session:
-            mock_session.return_value.__enter__=async_mock.MagicMock(
+            mock_session.return_value.__enter__ = async_mock.MagicMock(
                 return_value=more_magic
             )
-            more_magic.get=async_mock.MagicMock(
-                side_effect=test_module.RequestException('Not this time')
+            more_magic.get = async_mock.MagicMock(
+                side_effect=test_module.RequestException("Not this time")
             )
 
             with self.assertRaises(RevocationError) as x_retrieve:
@@ -144,13 +143,13 @@ class TestRevocationRegistry(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "Session", autospec=True
         ) as mock_session:
-            mock_session.return_value.__enter__=async_mock.MagicMock(
+            mock_session.return_value.__enter__ = async_mock.MagicMock(
                 return_value=more_magic
             )
-            more_magic.get=async_mock.MagicMock(
+            more_magic.get = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     iter_content=async_mock.MagicMock(
-                        side_effect=[(b"abcd1234",), (b"", )]
+                        side_effect=[(b"abcd1234",), (b"",)]
                     )
                 )
             )
@@ -171,13 +170,13 @@ class TestRevocationRegistry(AsyncTestCase):
         ) as mock_b58enc, async_mock.patch.object(
             Path, "is_file", autospec=True
         ) as mock_is_file:
-            mock_session.return_value.__enter__=async_mock.MagicMock(
+            mock_session.return_value.__enter__ = async_mock.MagicMock(
                 return_value=more_magic
             )
-            more_magic.get=async_mock.MagicMock(
+            more_magic.get = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     iter_content=async_mock.MagicMock(
-                        side_effect=[(b"abcd1234",), (b"", )]
+                        side_effect=[(b"abcd1234",), (b"",)]
                     )
                 )
             )

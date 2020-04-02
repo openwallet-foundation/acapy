@@ -96,8 +96,7 @@ class AttachDecoratorData(BaseModel):
         if self.sig:
             if isinstance(self.sig, str):
                 assert re.match(
-                    r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$",
-                    self.sig
+                    r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$", self.sig
                 )
                 return 1
             return len(self.sig["signatures"])
@@ -124,10 +123,9 @@ class AttachDecoratorData(BaseModel):
         if self.signatures == 1:
             return json.loads(b64_to_str(self.sig.split(".")[0], urlsafe=True))
         if self.signatures > 1:
-            headers = json.loads(b64_to_str(
-                self.sig["signatures"][idx]["protected"],
-                urlsafe=True,
-            ))
+            headers = json.loads(
+                b64_to_str(self.sig["signatures"][idx]["protected"], urlsafe=True,)
+            )
             if jose:
                 headers.update(self.sig["signatures"][idx]["header"])
             return headers
@@ -149,9 +147,7 @@ class AttachDecoratorData(BaseModel):
         return getattr(self, "sha256_", None)
 
     async def sign(
-        self,
-        verkeys: Union[str, Mapping[str, str]],
-        wallet: BaseWallet,
+        self, verkeys: Union[str, Mapping[str, str]], wallet: BaseWallet,
     ):
         """
         Sign and replace base64 data value of attachment.
@@ -164,34 +160,34 @@ class AttachDecoratorData(BaseModel):
             wallet: The wallet to use for the signature
 
         """
+
         def build_protected(verkey: str, kid: str, protect_kid: bool):
             """Build protected header."""
             return str_to_b64(
-                json.dumps({
-                    "alg": "EdDSA",
-                    **{"kid": k for k in [kid] if kid and protect_kid},
-                    "jwk": {
-                        "kty": "OKP",
-                        "crv": "Ed25519",
-                        "x": bytes_to_b64(
-                            b58_to_bytes(verkey),
-                            urlsafe=True,
-                            pad=False
-                        ),
-                        **{"kid": k for k in [kid] if kid},
-                    },
-                }),
+                json.dumps(
+                    {
+                        "alg": "EdDSA",
+                        **{"kid": k for k in [kid] if kid and protect_kid},
+                        "jwk": {
+                            "kty": "OKP",
+                            "crv": "Ed25519",
+                            "x": bytes_to_b64(
+                                b58_to_bytes(verkey), urlsafe=True, pad=False
+                            ),
+                            **{"kid": k for k in [kid] if kid},
+                        },
+                    }
+                ),
                 urlsafe=True,
-                pad=False
+                pad=False,
             )
 
         assert self.base64_
 
         b64_payload = unpad(set_urlsafe_b64(self.base64_, True))
 
-        if (
-            isinstance(verkeys, str) or
-            (isinstance(verkeys, Mapping) and len(verkeys) == 1)
+        if isinstance(verkeys, str) or (
+            isinstance(verkeys, Mapping) and len(verkeys) == 1
         ):
             kid = list(verkeys)[0] if isinstance(verkeys, Mapping) else None
             verkey = verkeys[kid] if isinstance(verkeys, Mapping) else verkeys
@@ -199,7 +195,7 @@ class AttachDecoratorData(BaseModel):
             b64_sig = bytes_to_b64(
                 await wallet.sign_message(
                     message=(b64_protected + "." + b64_payload).encode("ascii"),
-                    from_verkey=verkey
+                    from_verkey=verkey,
                 ),
                 urlsafe=True,
                 pad=False,
@@ -213,7 +209,7 @@ class AttachDecoratorData(BaseModel):
                 b64_sig = bytes_to_b64(
                     await wallet.sign_message(
                         message=(b64_protected + "." + b64_payload).encode("ascii"),
-                        from_verkey=verkey
+                        from_verkey=verkey,
                     ),
                     urlsafe=True,
                     pad=False,
@@ -222,7 +218,7 @@ class AttachDecoratorData(BaseModel):
                     {
                         "protected": b64_protected,
                         "header": {"kid": kid},
-                        "signature": b64_sig
+                        "signature": b64_sig,
                     }
                 )
             self.sig_ = sig
@@ -286,10 +282,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         model_class = AttachDecoratorData
 
     base64_ = fields.Str(
-        description="Base64-encoded data",
-        required=False,
-        data_key="base64",
-        **BASE64
+        description="Base64-encoded data", required=False, data_key="base64", **BASE64
     )
     sig_ = fields.Str(
         description="Signed content, replacing base64-encoded data",
@@ -305,19 +298,19 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         description="JSON-serialized data",
         required=False,
         example='{"sample": "content"}',
-        data_key="json"
+        data_key="json",
     )
     links_ = fields.List(
         fields.Str(example="https://link.to/data"),
         description="List of hypertext links to data",
         required=False,
-        data_key="links"
+        data_key="links",
     )
     sha256_ = fields.Str(
         description="SHA256 hash of linked data",
         required=False,
         data_key="sha256",
-        **SHA256
+        **SHA256,
     )
 
 
@@ -339,7 +332,7 @@ class AttachDecorator(BaseModel):
         lastmod_time: str = None,
         byte_count: int = None,
         data: AttachDecoratorData,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize an AttachDecorator instance.
@@ -411,7 +404,7 @@ class AttachDecorator(BaseModel):
             byte_count=byte_count,
             data=AttachDecoratorData(
                 base64_=bytes_to_b64(json.dumps(indy_dict).encode())
-            )
+            ),
         )
 
 
@@ -428,35 +421,30 @@ class AttachDecoratorSchema(BaseModelSchema):
         example=UUIDFour.EXAMPLE,
         required=False,
         allow_none=False,
-        data_key="@id"
+        data_key="@id",
     )
     mime_type = fields.Str(
         description="MIME type",
         example="image/png",
         required=False,
-        data_key="mime-type"
+        data_key="mime-type",
     )
     filename = fields.Str(
-        description="File name",
-        example="IMG1092348.png",
-        required=False
+        description="File name", example="IMG1092348.png", required=False
     )
     byte_count = fields.Integer(
         description="Byte count of data included by reference",
         example=1234,
-        required=False
+        required=False,
     )
     lastmod_time = fields.Str(
         description="Hint regarding last modification datetime, in ISO-8601 format",
         required=False,
-        **INDY_ISO8601_DATETIME
+        **INDY_ISO8601_DATETIME,
     )
     description = fields.Str(
         description="Human-readable description of content",
         example="view from doorway, facing east, with lights off",
-        required=False
+        required=False,
     )
-    data = fields.Nested(
-        AttachDecoratorDataSchema,
-        required=True,
-    )
+    data = fields.Nested(AttachDecoratorDataSchema, required=True,)

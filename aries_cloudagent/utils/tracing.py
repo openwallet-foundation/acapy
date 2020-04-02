@@ -12,7 +12,7 @@ from ..messaging.agent_message import AgentMessage
 
 
 LOGGER = logging.getLogger(__name__)
-DT_FMT = '%Y-%m-%d %H:%M:%S.%f%z'
+DT_FMT = "%Y-%m-%d %H:%M:%S.%f%z"
 
 
 def get_timer() -> float:
@@ -21,13 +21,13 @@ def get_timer() -> float:
 
 
 def trace_event(
-        context,
-        message,
-        handler: str = None,
-        outcome: str = None,
-        perf_counter: float = None,
-        force_trace: bool = False,
-        raise_errors: bool = False
+    context,
+    message,
+    handler: str = None,
+    outcome: str = None,
+    perf_counter: float = None,
+    force_trace: bool = False,
+    raise_errors: bool = False,
 ) -> float:
     """
     Log a trace event to a configured target.
@@ -101,10 +101,10 @@ def trace_event(
             else:
                 # should be an http endpoint
                 _ = requests.post(
-                    context["trace.target"] +
-                    (context["trace.tag"] if context["trace.tag"] else ""),
+                    context["trace.target"]
+                    + (context["trace.tag"] if context["trace.tag"] else ""),
                     data=event_str,
-                    headers={"Content-Type": "application/json"}
+                    headers={"Content-Type": "application/json"},
                 )
         except Exception as e:
             if raise_errors:
@@ -113,7 +113,7 @@ def trace_event(
                 "Error logging trace %s %s %s",
                 context["trace.target"],
                 context["trace.tag"],
-                event_str
+                event_str,
             )
             LOGGER.exception(e)
 

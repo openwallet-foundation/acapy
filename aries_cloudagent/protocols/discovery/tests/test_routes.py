@@ -14,9 +14,7 @@ class TestBasicMessageRoutes(AsyncTestCase):
         mock_context = async_mock.MagicMock()
         mock_context.inject = async_mock.CoroutineMock()
         mock_context.inject.return_value = async_mock.MagicMock()
-        mock_query = async_mock.MagicMock(
-            return_value=["abc", "def", "ghi"]
-        )
+        mock_query = async_mock.MagicMock(return_value=["abc", "def", "ghi"])
         mock_context.inject.return_value.protocols_matching_query = mock_query
 
         mock_request.app = {
@@ -24,17 +22,11 @@ class TestBasicMessageRoutes(AsyncTestCase):
             "request_context": mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
+        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
 
             res = await test_module.query_features(mock_request)
             mock_response.assert_called_once_with(
-                {
-                    "results": {
-                        k: {} for k in mock_query.return_value
-                    }
-                }
+                {"results": {k: {} for k in mock_query.return_value}}
             )
 
     async def test_register(self):
@@ -43,4 +35,3 @@ class TestBasicMessageRoutes(AsyncTestCase):
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
-

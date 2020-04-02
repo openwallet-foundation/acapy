@@ -17,11 +17,7 @@ class Ack(AgentMessage):
 
         schema_class = "AckSchema"
 
-    def __init__(
-        self,
-        status: str = None,
-        **kwargs
-    ):
+    def __init__(self, status: str = None, **kwargs):
         """
         Initialize an explicit ack message instance.
 
