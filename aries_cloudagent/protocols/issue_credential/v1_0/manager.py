@@ -466,6 +466,7 @@ class CredentialManager:
 
         """
         schema_id = credential_exchange_record.schema_id
+        registry = None
 
         if credential_exchange_record.credential:
             self._logger.warning(
@@ -518,8 +519,15 @@ class CredentialManager:
                     credential_exchange_record.revoc_reg_id,
                     tails_path,
                 )
+                if (
+                    registry and registry.max_creds == int(
+                        credential_exchange_record.revocation_id  # monotonic "1"-based
+                    )
+                ):
+                    await issuer_rev_regs[0].mark_full(self.context)
+
             except IssuerRevocationRegistryFullError:
-                await registry.mark_full(self.context)
+                await issuer_rev_regs[0].mark_full(self.context)
                 raise
 
             credential_exchange_record.credential = json.loads(credential_json)
