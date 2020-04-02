@@ -6,6 +6,8 @@ import time
 import datetime
 import requests
 
+from marshmallow import fields, Schema
+
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..messaging.agent_message import AgentMessage
@@ -14,6 +16,21 @@ from ..messaging.decorators.trace_decorator import TraceReport, TRACE_MESSAGE_TA
 
 LOGGER = logging.getLogger(__name__)
 DT_FMT = '%Y-%m-%d %H:%M:%S.%f%z'
+
+
+class AdminAPIMessageTracingSchema(Schema):
+    """
+    Request/result schema including agent message tracing.
+
+    This is to be used as a superclass for aca-py admin input/output
+    messages that need to support tracing.
+    """
+
+    trace = fields.Boolean(
+        description="Record trace information, based on agent configuration",
+        required=False,
+        default=False,
+    )
 
 
 def get_timer() -> float:
@@ -28,9 +45,10 @@ def tracing_enabled(context, message) -> bool:
         return True
 
     # if there is a trace decorator on the messages then continue to trace
-    if message and isinstance(message, AgentMessage):
-        if message._trace:
-            return True
+    if message:
+        if isinstance(message, AgentMessage):
+            if message._trace:
+                return True
 
     # default off
     return False

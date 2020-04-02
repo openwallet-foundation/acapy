@@ -10,7 +10,7 @@ from .....messaging.base_handler import (
 from ..manager import CredentialManager
 from ..messages.credential_issue import CredentialIssue
 
-from .....utils.tracing import trace_event, get_timer
+from .....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
 
 class CredentialIssueHandler(BaseHandler):

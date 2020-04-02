@@ -1,5 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 from marshmallow import fields
+import json
 
 from ..agent_message import AgentMessage, AgentMessageSchema
 from ..decorators.signature_decorator import SignatureDecorator

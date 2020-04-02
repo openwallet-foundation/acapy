@@ -8,9 +8,27 @@ from marshmallow.validate import OneOf
 from .....config.injection_context import InjectionContext
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
+from .....utils.tracing import AdminAPIMessageTracingSchema
+from .....messaging.agent_message import AgentMessage
 
 
-class V10CredentialExchange(BaseRecord):
+class BaseExchangeRecord(BaseRecord):
+    """Represents a base record with event tracing capability."""
+
+    def __init__(
+        self,
+        id: str = None,
+        state: str = None,
+        *,
+        trace: bool = False,
+        **kwargs,
+    ):
+        """Initialize a new V10CredentialExchange."""
+        super().__init__(id, state, **kwargs)
+        self.trace = trace
+
+
+class V10CredentialExchange(BaseExchangeRecord):
     """Represents an Aries#0036 credential exchange."""
 
     class Meta:
@@ -64,11 +82,16 @@ class V10CredentialExchange(BaseRecord):
         auto_issue: bool = False,
         auto_remove: bool = True,
         error_msg: str = None,
-        trace_info: str = None,
+        trace: bool = False,
         **kwargs,
     ):
         """Initialize a new V10CredentialExchange."""
-        super().__init__(credential_exchange_id, state, **kwargs)
+        super().__init__(
+            credential_exchange_id,
+            state,
+            trace=trace,
+            **kwargs
+        )
         self._id = credential_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
@@ -91,7 +114,7 @@ class V10CredentialExchange(BaseRecord):
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
         self.error_msg = error_msg
-        self.trace_info = trace_info
+        self.trace = trace
 
     @property
     def credential_exchange_id(self) -> str:
@@ -124,7 +147,7 @@ class V10CredentialExchange(BaseRecord):
                 "revocation_id",
                 "role",
                 "state",
-                "trace_info",
+                "trace",
             )
         }
 
@@ -149,7 +172,22 @@ class V10CredentialExchange(BaseRecord):
         return super().__eq__(other)
 
 
-class V10CredentialExchangeSchema(BaseRecordSchema):
+class BaseExchangeSchema(BaseRecordSchema):
+    """Base schema for exchange records."""
+
+    class Meta:
+        """BaseExchangeSchema metadata."""
+
+        model_class = BaseExchangeRecord
+
+        trace = fields.Boolean(
+            description="Record trace information, based on agent configuration",
+            required=False,
+            default=False,
+        )
+
+
+class V10CredentialExchangeSchema(BaseExchangeSchema):
     """Schema to allow serialization/deserialization of credential exchange records."""
 
     class Meta:
@@ -244,9 +282,4 @@ class V10CredentialExchangeSchema(BaseRecordSchema):
     )
     revocation_id = fields.Str(
         required=False, description="Credential identifier within revocation registry"
-    )
-    trace_info = fields.Str(
-        description="Message trace information", required=False,
-        example="{\"target\":\"message\",\"full_thread\":\"True\""
-                ",\"trace_reports\":\"{}\"}"
     )

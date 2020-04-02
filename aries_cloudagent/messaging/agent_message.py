@@ -2,7 +2,6 @@
 
 from collections import OrderedDict
 from typing import Union
-import json
 import uuid
 
 from marshmallow import (
@@ -330,16 +329,15 @@ class AgentMessage(BaseModel):
                     isinstance(msg._trace, dict)):
                 self._trace = msg._trace
 
-    def assign_trace_from_json(self, trace_json):
+    def assign_trace_decorator(self, trace):
         """
         Copy trace from a json structure.
 
         Args:
-            trace_json: string containing trace json stucture
+            trace: string containing trace json stucture
         """
-        if trace_json:
-            trace = json.loads(trace_json)
-            print(">>> trace """, trace)
+        if trace:
+            self.add_trace_decorator()
 
     def add_trace_decorator(
         self,

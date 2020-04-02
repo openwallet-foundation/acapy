@@ -103,6 +103,7 @@ class CredentialManager:
             role=V10CredentialExchange.ROLE_ISSUER,
             credential_proposal_dict=credential_proposal.serialize(),
             revoc_reg_id=revoc_reg_id,
+            trace=(credential_proposal._trace is not None)
         )
         (credential_exchange, credential_offer) = await self.create_offer(
             credential_exchange_record=credential_exchange,
@@ -269,6 +270,9 @@ class CredentialManager:
         credential_offer_message._thread = {
             "thid": credential_exchange_record.thread_id
         }
+        credential_offer_message.assign_trace_decorator(
+            credential_exchange_record.trace
+        )
 
         credential_exchange_record.thread_id = credential_offer_message._thread_id
         credential_exchange_record.schema_id = credential_offer["schema_id"]
