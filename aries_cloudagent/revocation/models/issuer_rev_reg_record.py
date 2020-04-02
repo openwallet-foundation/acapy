@@ -140,8 +140,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state != IssuerRevRegRecord.STATE_INIT:
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot generate".format(
-                    self.revoc_reg_id,
-                    self.state
+                    self.revoc_reg_id, self.state
                 )
             )
 
@@ -175,9 +174,7 @@ class IssuerRevRegRecord(BaseRecord):
         await self.save(context, reason="Generated registry")
 
     async def set_tails_file_public_uri(
-        self,
-        context: InjectionContext,
-        tails_file_uri: str
+        self, context: InjectionContext, tails_file_uri: str
     ):
         """Update tails file's publicly accessible URI."""
         if not (
@@ -202,8 +199,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state != IssuerRevRegRecord.STATE_GENERATED:
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot publish definition".format(
-                    self.revoc_reg_id,
-                    self.state
+                    self.revoc_reg_id, self.state
                 )
             )
 
@@ -227,12 +223,11 @@ class IssuerRevRegRecord(BaseRecord):
 
         if self.state not in (
             IssuerRevRegRecord.STATE_PUBLISHED,
-            IssuerRevRegRecord.STATE_ACTIVE
+            IssuerRevRegRecord.STATE_ACTIVE,
         ):
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot publish entry".format(
-                    self.revoc_reg_id,
-                    self.state
+                    self.revoc_reg_id, self.state
                 )
             )
 
@@ -247,8 +242,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state != IssuerRevRegRecord.STATE_ACTIVE:
             self.state = IssuerRevRegRecord.STATE_ACTIVE
             await self.save(
-                context,
-                reason="Published initial revocation registry entry"
+                context, reason="Published initial revocation registry entry"
             )
 
     async def mark_pending(self, context: InjectionContext, cred_rev_id: str) -> None:
@@ -302,20 +296,14 @@ class IssuerRevRegRecord(BaseRecord):
 
     @classmethod
     async def query_by_pending(
-        cls,
-        context: InjectionContext
+        cls, context: InjectionContext
     ) -> Sequence["IssuerRevRegRecord"]:
         """Retrieve revocation records with revocations pending.
 
         Args:
             context: The injection context to use
         """
-        return await cls.query(
-            context,
-            None,
-            None,
-            {"pending_pub": []}
-        )
+        return await cls.query(context, None, None, {"pending_pub": []})
 
     @classmethod
     async def retrieve_by_revoc_reg_id(

@@ -102,7 +102,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def create_credential_offer(self, credential_definition_id) -> str:
+    async def create_credential_offer(self, credential_definition_id) -> str:
         """
         Create a credential offer for the given credential definition id.
 
@@ -141,19 +141,19 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def revoke_credential(
-        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_id: str
+    async def revoke_credentials(
+        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
     ) -> str:
         """
-        Revoke a credential.
+        Revoke a set of credentials in a revocation registry.
 
         Args:
             revoc_reg_id: ID of the revocation registry
             tails_file_path: path to the local tails file
-            cred_revoc_id: index of the credential in the revocation registry
+            cred_revoc_ids: sequences of credential indexes in the revocation registry
 
         Returns:
-            the revocation delta
+            the combined revocation delta
 
         """
 
@@ -182,5 +182,21 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
 
         Returns:
             A tuple of the revocation registry ID, JSON, and entry JSON
+
+        """
+
+    @abstractmethod
+    async def merge_revocation_registry_deltas(
+        self, fro_delta: str, to_delta: str
+    ) -> str:
+        """
+        Merge revocation registry deltas.
+
+        Args:
+            fro_delta: original delta in JSON format
+            to_delta: incoming delta in JSON format
+
+        Returns:
+            Merged delta in JSON format
 
         """
