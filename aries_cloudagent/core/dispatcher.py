@@ -210,6 +210,7 @@ class Dispatcher:
 
         registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
         message_type = parsed_msg.get("@type")
+
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
 

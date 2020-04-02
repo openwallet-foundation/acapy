@@ -136,7 +136,7 @@ class ProtocolRegistry:
             return ClassLoader.load_class(msg_cls)
 
         # Support registered modules (not path as string)
-        if msg_cls:
+        elif msg_cls:
             return msg_cls
 
         # Try and route via min/maj version matching
@@ -165,7 +165,10 @@ class ProtocolRegistry:
                             + f" Received {parsed_type_string['minor_version']}."
                         )
 
-                    return ClassLoader.load_class(proto["message_module"])
+                    if isinstance(proto["message_module"], str):
+                        return ClassLoader.load_class(msg_cls)
+                    elif proto["message_module"]:
+                        return proto["message_module"]
 
         return None
 
