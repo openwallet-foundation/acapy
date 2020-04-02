@@ -5,7 +5,7 @@ from enum import Enum
 from time import time
 from typing import Mapping, Sequence
 
-from marshmallow import fields, validate
+from marshmallow import fields
 
 from ......ledger.indy import IndyLedger
 from ......messaging.models.base import BaseModel, BaseModelSchema

@@ -157,8 +157,8 @@ class ProtocolRegistry:
                     ):
                         raise ProtocolMinorVersionNotSupported(
                             "Minimum supported minor version is "
-                            + f"{proto['version_definition']['minimum_minor_version']}. "
-                            + f"Received {parsed_type_string['minor_version']}."
+                            + f"{proto['version_definition']['minimum_minor_version']}."
+                            + f" Received {parsed_type_string['minor_version']}."
                         )
 
                     return ClassLoader.load_class(proto["message_module"])
