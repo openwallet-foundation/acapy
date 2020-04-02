@@ -93,8 +93,8 @@ class PluginRegistry:
             # There can only be one definition per major version
             major_version = version_dict["major_version"]
             count = 0
-            for version_dict in version_list:
-                if version_dict["major_version"] == major_version:
+            for version_dict_outer in version_list:
+                if version_dict_outer["major_version"] == major_version:
                     count += 1
             if count > 1:
                 raise ProtocolDefinitionValidationError(
