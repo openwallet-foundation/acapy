@@ -13,8 +13,6 @@ from .models.revocation_registry import RevocationRegistry
 class IndyRevocation:
     """Class for managing Indy credential revocation."""
 
-    REGISTRY_CACHE = {}
-
     def __init__(self, context: InjectionContext):
         """Initialize the IndyRevocation instance."""
         self._context = context
@@ -23,7 +21,7 @@ class IndyRevocation:
         self,
         cred_def_id: str,
         issuer_did: str,
-        in_advance: bool = True,
+        issuance_by_default: bool = True,
         max_cred_num: int = None,
         revoc_def_type: str = None,
         tag: str = None,
@@ -43,7 +41,7 @@ class IndyRevocation:
             issuer_did=issuer_did,
             issuance_type=(
                 IssuerRevRegRecord.ISSUANCE_BY_DEFAULT
-                if in_advance
+                if issuance_by_default
                 else IssuerRevRegRecord.ISSUANCE_ON_DEMAND
             ),
             max_cred_num=max_cred_num,
@@ -51,11 +49,11 @@ class IndyRevocation:
             tag=tag,
         )
         await record.save(self._context, reason="Init revocation registry")
-        self.REGISTRY_CACHE[cred_def_id] = record.record_id
         return record
 
     async def get_active_issuer_rev_reg_record(
-        self, cred_def_id: str, await_create: bool = False
+        self,
+        cred_def_id: str
     ) -> "IssuerRevRegRecord":
         """Return the current active registry for issuing a given credential definition.
 
@@ -63,21 +61,18 @@ class IndyRevocation:
 
         Args:
             cred_def_id: ID of the base credential definition
-            await_create: Wait for the registry and tails file to be created, if needed
         """
-        # FIXME filter issuing registries by cred def, state (active or full), pick one
-        if cred_def_id in self.REGISTRY_CACHE:
-            registry = await IssuerRevRegRecord.retrieve_by_id(
-                self._context, self.REGISTRY_CACHE[cred_def_id]
-            )
-            return registry
+        current = await IssuerRevRegRecord.query_by_cred_def_id(
+            self._context,
+            cred_def_id,
+            IssuerRevRegRecord.STATE_ACTIVE
+        )
+        return current[0] if current else None
 
     async def get_issuer_rev_reg_record(
         self, revoc_reg_id: str
     ) -> "IssuerRevRegRecord":
-        """Return the current active revocation registry record for a given registry ID.
-
-        If no registry exists, then a new one will be created.
+        """Return a revocation registry record by identifier.
 
         Args:
             revoc_reg_id: ID of the revocation registry

@@ -8,6 +8,7 @@ from typing import Type
 
 from .error import ArgsParseError
 from .util import ByteSize
+from ..utils.tracing import trace_event
 
 CAT_PROVISION = "general"
 CAT_START = "start"
@@ -563,6 +564,29 @@ class ProtocolGroup(ArgumentGroup):
             help="Write timing information to a given log file.",
         )
         parser.add_argument(
+            "--trace",
+            action="store_true",
+            help="Generate tracing events.",
+        )
+        parser.add_argument(
+            "--trace-target",
+            type=str,
+            metavar="<trace-target>",
+            help="Target for trace events (\"log\", \"message\", or http endpoint).",
+        )
+        parser.add_argument(
+            "--trace-tag",
+            type=str,
+            metavar="<trace-tag>",
+            help="Tag to be included when logging events.",
+        )
+        parser.add_argument(
+            "--trace-label",
+            type=str,
+            metavar="<trace-label>",
+            help="Label (agent name) used logging events.",
+        )
+        parser.add_argument(
             "--preserve-exchange-records",
             action="store_true",
             help="Keep credential exchange records after exchange has completed.",
@@ -583,6 +607,36 @@ class ProtocolGroup(ArgumentGroup):
             settings["timing.enabled"] = True
         if args.timing_log:
             settings["timing.log_file"] = args.timing_log
+        if args.trace:
+            # note that you can configure tracing without actually enabling it
+            # this is to allow message- or exchange-specific tracing (vs global)
+            settings["trace.enabled"] = True
+            settings["trace.target"] = "log"
+            settings["trace.tag"] = ""
+        if args.trace_target:
+            settings["trace.target"] = args.trace_target
+        if args.trace_tag:
+            settings["trace.tag"] = args.trace_tag
+        if args.trace_label:
+            settings["trace.label"] = args.trace_label
+        elif args.label:
+            settings["trace.label"] = args.label
+        else:
+            settings["trace.label"] = "aca-py.agent"
+        if settings.get("trace.enabled"):
+            try:
+                trace_event(
+                    settings,
+                    None,
+                    handler="ArgParse",
+                    outcome="Successfully configured aca-py",
+                    raise_errors=True
+                )
+            except Exception as e:
+                raise ArgsParseError(
+                    "Error writing trace event "
+                    + str(e)
+                )
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
         return settings

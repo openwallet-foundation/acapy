@@ -114,7 +114,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
             mock_json_response.assert_not_called()
 
-    async def test_get_current_registry(self):
+    async def test_get_registry(self):
         REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
             self.test_did, self.test_did
         )
@@ -135,11 +135,13 @@ class TestRevocationRoutes(AsyncTestCase):
                 )
             )
 
-            result = await test_module.get_current_registry(request)
-            mock_json_response.assert_called_once_with({"result": "dummy"})
+            result = await test_module.get_registry(request)
+            mock_json_response.assert_called_once_with(
+                {"result": "dummy"}
+            )
             assert result is mock_json_response.return_value
 
-    async def test_get_current_registry_not_found(self):
+    async def test_get_registry_not_found(self):
         REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
             self.test_did, self.test_did
         )
@@ -161,7 +163,55 @@ class TestRevocationRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(HTTPNotFound):
-                result = await test_module.get_current_registry(request)
+                result = await test_module.get_registry(request)
+            mock_json_response.assert_not_called()
+
+    async def test_get_active_registry(self):
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.match_info = {"cred_def_id": CRED_DEF_ID}
+
+        with async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc,  async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_active_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        serialize=async_mock.MagicMock(return_value="dummy")
+                    )
+                )
+            )
+
+            result = await test_module.get_active_registry(request)
+            mock_json_response.assert_called_once_with(
+                {"result": "dummy"}
+            )
+            assert result is mock_json_response.return_value
+
+    async def test_get_active_registry_not_found(self):
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.match_info = {"cred_def_id": CRED_DEF_ID}
+
+        with async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc,  async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_active_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageNotFoundError(
+                        error_code="dummy"
+                    )
+                )
+            )
+
+            with self.assertRaises(HTTPNotFound):
+                result = await test_module.get_active_registry(request)
             mock_json_response.assert_not_called()
 
     async def test_get_tails_file(self):

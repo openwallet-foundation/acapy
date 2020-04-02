@@ -10,7 +10,7 @@ import logging
 from marshmallow import fields, Schema
 
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.valid import INDY_CRED_DEF_ID
+from ..messaging.valid import INDY_CRED_DEF_ID, IndyRevRegId
 from ..storage.base import BaseStorage, StorageNotFoundError
 
 from .error import RevocationNotSupportedError
@@ -27,11 +27,13 @@ class RevRegCreateRequestSchema(Schema):
     credential_definition_id = fields.Str(
         description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
-
+    issuance_by_default = fields.Boolean(
+        description="Create registry with all indexes issued",
+        required=False,
+        default=True,
+    )
     max_cred_num = fields.Int(
-        description="Maximum credential numbers",
-        example=100,
-        required=False
+        description="Maximum credential numbers", example=100, required=False
     )
 
 
@@ -45,7 +47,12 @@ class RevRegUpdateTailsFileUriSchema(Schema):
     """Request schema for updating tails file URI."""
 
     tails_public_uri = fields.Url(
-        description="Public URI to the tails file", required=True
+        description="Public URI to the tails file",
+        example=(
+            "http://192.168.56.133:5000/revocation/registry/"
+            f"{IndyRevRegId.EXAMPLE}/tails-file"
+        ),
+        required=True
     )
 
 
@@ -69,6 +76,7 @@ async def revocation_create_registry(request: web.BaseRequest):
 
     credential_definition_id = body.get("credential_definition_id")
     max_cred_num = body.get("max_cred_num")
+    issuance_by_default = body.get("issuance_by_default", True)
 
     # check we published this cred def
     storage = await context.inject(BaseStorage)
@@ -84,7 +92,10 @@ async def revocation_create_registry(request: web.BaseRequest):
         issuer_did = credential_definition_id.split(":")[0]
         revoc = IndyRevocation(context)
         registry_record = await revoc.init_issuer_registry(
-            credential_definition_id, issuer_did, max_cred_num=max_cred_num
+            credential_definition_id,
+            issuer_did,
+            issuance_by_default=issuance_by_default,
+            max_cred_num=max_cred_num,
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
@@ -97,13 +108,55 @@ async def revocation_create_registry(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Get current revocation registry",
-    parameters=[{"in": "path", "name": "id", "description": "revocation registry id"}],
+    summary="Get revocation registry by credential definition id",
+    parameters=[
+        {
+            "in": "path",
+            "name": "id",
+            "description": "revocation registry id"
+        }
+    ],
 )
 @response_schema(RevRegCreateResultSchema(), 200)
-async def get_current_registry(request: web.BaseRequest):
+async def get_registry(request: web.BaseRequest):
     """
-    Request handler for getting the current revocation registry.
+    Request handler for getting a revocation registry by identifier.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The revocation registry
+
+    """
+    context = request.app["request_context"]
+
+    registry_id = request.match_info["id"]
+
+    try:
+        revoc = IndyRevocation(context)
+        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
+    except StorageNotFoundError as e:
+        raise web.HTTPNotFound() from e
+
+    return web.json_response({"result": revoc_registry.serialize()})
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get an active revocation registry by credential definition id",
+    parameters=[
+        {
+            "in": "path",
+            "name": "cred_def_id",
+            "description": "credential definition id"
+        }
+    ],
+)
+@response_schema(RevRegCreateResultSchema(), 200)
+async def get_active_registry(request: web.BaseRequest):
+    """
+    Request handler for getting an active revocation registry by cred def id.
 
     Args:
         request: aiohttp request object
@@ -114,11 +167,11 @@ async def get_current_registry(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    registry_id = request.match_info["id"]
+    cred_def_id = request.match_info["cred_def_id"]
 
     try:
         revoc = IndyRevocation(context)
-        revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
+        revoc_registry = await revoc.get_active_issuer_rev_reg_record(cred_def_id)
     except StorageNotFoundError as e:
         raise web.HTTPNotFound() from e
 
@@ -237,7 +290,8 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/revocation/create-registry", revocation_create_registry),
-            web.get("/revocation/registry/{id}", get_current_registry),
+            web.get("/revocation/registry/{id}", get_registry),
+            web.get("/revocation/active-registry/{cred_def_id}", get_active_registry),
             web.get("/revocation/registry/{id}/tails-file", get_tails_file),
             web.patch("/revocation/registry/{id}", update_registry),
             web.post("/revocation/registry/{id}/publish", publish_registry),

@@ -36,7 +36,6 @@ class TestIndyRevocation(AsyncTestCase):
         self.storage = BasicStorage()
         self.context.injector.bind_instance(BaseStorage, self.storage)
 
-        IndyRevocation.REGISTRY_CACHE.clear()
         self.revoc = IndyRevocation(self.context)
         assert self.revoc._context is self.context
 
@@ -46,9 +45,6 @@ class TestIndyRevocation(AsyncTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         result = await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
-
-        assert CRED_DEF_ID in self.revoc.REGISTRY_CACHE
-        self.revoc.REGISTRY_CACHE.clear()
 
         assert result.cred_def_id == CRED_DEF_ID
         assert result.issuer_did == self.test_did
@@ -85,7 +81,13 @@ class TestIndyRevocation(AsyncTestCase):
 
     async def test_get_active_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+        rec = await self.revoc.init_issuer_registry(
+            CRED_DEF_ID,
+            self.test_did
+        )
+        rec.revoc_reg_id = "dummy"
+        rec.state = IssuerRevRegRecord.STATE_ACTIVE
+        await rec.save(self.context)
 
         result = await self.revoc.get_active_issuer_rev_reg_record(CRED_DEF_ID)
         assert rec == result

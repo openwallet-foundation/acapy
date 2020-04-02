@@ -35,6 +35,8 @@ from .models.credential_exchange import (
     V10CredentialExchangeSchema,
 )
 
+from ....utils.tracing import trace_event, get_timer
+
 
 class V10AttributeMimeTypesResultSchema(Schema):
     """Result schema for credential attribute MIME types by credential definition."""
@@ -84,12 +86,11 @@ class V10CredentialProposalRequestSchemaBase(Schema):
         description="Credential issuer DID", required=False, **INDY_DID
     )
     auto_remove = fields.Bool(
-        description=("Whether to remove the credential exchange record on completion"),
-        required=False,
-        default=True,
-    )
-    revoc_reg_id = fields.Str(
-        description="Revocation Registry ID", required=False, **INDY_REV_REG_ID
+        description=(
+            "Whether to remove the credential exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False
     )
     comment = fields.Str(description="Human-readable comment", required=False)
 
@@ -124,16 +125,15 @@ class V10CredentialOfferRequestSchema(Schema):
             "Whether to respond automatically to credential requests, creating "
             "and issuing requested credentials"
         ),
-        required=False,
-        default=False,
+        required=False
     )
     auto_remove = fields.Bool(
-        description=("Whether to remove the credential exchange record on completion"),
+        description=(
+            "Whether to remove the credential exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
         required=False,
         default=True,
-    )
-    revoc_reg_id = fields.Str(
-        description="Revocation Registry ID", required=False, **INDY_REV_REG_ID
     )
     comment = fields.Str(description="Human-readable comment", required=False)
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
@@ -254,6 +254,8 @@ async def credential_exchange_send(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -263,9 +265,8 @@ async def credential_exchange_send(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     preview_spec = body.get("credential_proposal")
     if not preview_spec:
-        raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
-    auto_remove = body.get("auto_remove", True)
-    revoc_reg_id = body.get("revoc_reg_id")
+        raise web.HTTPBadRequest(reason="credential_proposal must be provided")
+    auto_remove = body.get("auto_remove")
     preview = CredentialPreview.deserialize(preview_spec)
 
     try:
@@ -284,6 +285,12 @@ async def credential_exchange_send(request: web.BaseRequest):
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
+    trace_event(
+        context.settings,
+        credential_proposal,
+        outcome="credential_exchange_send.START",
+    )
+
     credential_manager = CredentialManager(context)
 
     (
@@ -293,10 +300,16 @@ async def credential_exchange_send(request: web.BaseRequest):
         connection_id,
         credential_proposal=credential_proposal,
         auto_remove=auto_remove,
-        revoc_reg_id=revoc_reg_id,
     )
     await outbound_handler(
         credential_offer_message, connection_id=credential_exchange_record.connection_id
+    )
+
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_send.END",
+        perf_counter=r_time
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -316,6 +329,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -325,8 +340,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     comment = body.get("comment")
     preview_spec = body.get("credential_proposal")
     preview = CredentialPreview.deserialize(preview_spec) if preview_spec else None
-    auto_remove = body.get("auto_remove", True)
-    revoc_reg_id = body.get("revoc_reg_id")
+    auto_remove = body.get("auto_remove")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -345,15 +359,22 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         comment=comment,
         credential_preview=preview,
         auto_remove=auto_remove,
-        revoc_reg_id=revoc_reg_id,
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
-    await outbound_handler(
-        CredentialProposal.deserialize(
+    credential_proposal = CredentialProposal.deserialize(
             credential_exchange_record.credential_proposal_dict
-        ),
+        )
+    await outbound_handler(
+        credential_proposal,
         connection_id=connection_id,
+    )
+
+    trace_event(
+        context.settings,
+        credential_proposal,
+        outcome="credential_exchange_send_proposal.END",
+        perf_counter=r_time
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -379,6 +400,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -390,8 +412,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove", True)
-    revoc_reg_id = body.get("revoc_reg_id")
+    auto_remove = body.get("auto_remove")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
 
@@ -400,8 +421,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     if auto_issue and not preview_spec:
         raise web.HTTPBadRequest(
-            reason="If auto_issue is set to"
-            + " true then credential_preview must also be provided."
+            reason=(
+                "If auto_issue is set then credential_preview must be provided"
+            )
         )
 
     try:
@@ -432,7 +454,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         credential_proposal_dict=credential_proposal_dict,
         auto_issue=auto_issue,
         auto_remove=auto_remove,
-        revoc_reg_id=revoc_reg_id,
     )
 
     credential_manager = CredentialManager(context)
@@ -445,6 +466,13 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     )
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_send_free_offer.END",
+        perf_counter=r_time
+    )
 
     return web.json_response(credential_exchange_record.serialize())
 
@@ -468,6 +496,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -500,6 +529,13 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
 
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_send_bound_offer.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -516,6 +552,8 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -549,6 +587,14 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     )
 
     await outbound_handler(credential_request_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        credential_request_message,
+        outcome="credential_exchange_send_request.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(credential_exchange_record.serialize())
 
 
@@ -566,6 +612,8 @@ async def credential_exchange_issue(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -574,7 +622,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     preview_spec = body.get("credential_preview")
 
     if not preview_spec:
-        raise web.HTTPBadRequest(reason="credential_preview must be provided.")
+        raise web.HTTPBadRequest(reason="credential_preview must be provided")
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_exch_record = await V10CredentialExchange.retrieve_by_id(
@@ -608,9 +656,17 @@ async def credential_exchange_issue(request: web.BaseRequest):
             credential_values=credential_preview.attr_dict(decode=False),
         )
     except IssuerRevocationRegistryFullError:
-        raise web.HTTPBadRequest(reason="Revocation registry is full.")
+        raise web.HTTPBadRequest(reason="Revocation registry is full")
 
     await outbound_handler(credential_issue_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        credential_issue_message,
+        outcome="credential_exchange_issue.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(cred_exch_record.serialize())
 
 
@@ -628,6 +684,8 @@ async def credential_exchange_store(request: web.BaseRequest):
         The credential exchange record
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -667,57 +725,45 @@ async def credential_exchange_store(request: web.BaseRequest):
     )
 
     await outbound_handler(credential_stored_message, connection_id=connection_id)
-    return web.json_response(credential_exchange_record.serialize())
 
-
-@docs(
-    tags=["issue-credential"], summary="Send a problem report for credential exchange"
-)
-@request_schema(V10CredentialProblemReportRequestSchema())
-async def credential_exchange_problem_report(request: web.BaseRequest):
-    """
-    Request handler for sending problem report.
-
-    Args:
-        request: aiohttp request object
-
-    """
-    context = request.app["request_context"]
-    outbound_handler = request.app["outbound_message_router"]
-
-    credential_exchange_id = request.match_info["cred_ex_id"]
-    body = await request.json()
-
-    try:
-        credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
-            context, credential_exchange_id
-        )
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
-
-    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
-    error_result.assign_thread_id(credential_exchange_record.thread_id)
-
-    await outbound_handler(
-        error_result, connection_id=credential_exchange_record.connection_id
+    trace_event(
+        context.settings,
+        credential_stored_message,
+        outcome="credential_exchange_store.END",
+        perf_counter=r_time
     )
-    return web.json_response({})
+
+    return web.json_response(credential_exchange_record.serialize())
 
 
 @docs(
     tags=["issue-credential"],
     parameters=[
         {
-            "in": "path",
+            "name": "rev_reg_id",
+            "in": "query",
+            "description": "revocation registry id",
+            "required": True
+        },
+        {
+            "name": "cred_rev_id",
+            "in": "query",
+            "description": "credential revocation id",
+            "required": True
+        },
+        {
             "name": "publish",
-            "description": "Whether to publish revocation to ledger immediately.",
+            "in": "query",
+            "description": (
+                "(true) publish revocation to ledger immediately, or "
+                "(false) mark it pending"
+            ),
             "schema": {"type": "boolean"},
             "required": False
         }
     ],
     summary="Revoke an issued credential"
 )
-@response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_revoke(request: web.BaseRequest):
     """
     Request handler for storing a credential request.
@@ -729,30 +775,16 @@ async def credential_exchange_revoke(request: web.BaseRequest):
         The credential request details.
 
     """
-
     context = request.app["request_context"]
-    try:
-        credential_exchange_id = request.match_info["cred_ex_id"]
-        publish = bool(json.loads(request.query.get("publish", json.dumps(False))))
-        credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
-            context, credential_exchange_id
-        )
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
 
-    if (
-        credential_exchange_record.state
-        not in (V10CredentialExchange.STATE_ISSUED, V10CredentialExchange.STATE_ACKED)
-        or not credential_exchange_record.revocation_id
-        or not credential_exchange_record.revoc_reg_id
-    ):
-        raise web.HTTPBadRequest()
+    rev_reg_id = request.query.get("rev_reg_id")
+    cred_rev_id = request.query.get("cred_rev_id")
+    publish = bool(json.loads(request.query.get("publish", json.dumps(False))))
 
     credential_manager = CredentialManager(context)
+    await credential_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
 
-    await credential_manager.revoke_credential(credential_exchange_record, publish)
-
-    return web.json_response(credential_exchange_record.serialize())
+    return web.json_response({})
 
 
 @docs(tags=["issue-credential"], summary="Publish pending revocations to ledger")
@@ -768,12 +800,15 @@ async def credential_exchange_publish_revocations(request: web.BaseRequest):
         Credential revocation ids published as revoked by revocation registry id.
 
     """
-
     context = request.app["request_context"]
 
     credential_manager = CredentialManager(context)
 
-    return web.json_response(await credential_manager.publish_pending_revocations())
+    return web.json_response(
+        {
+            "results": await credential_manager.publish_pending_revocations()
+        }
+    )
 
 
 @docs(
@@ -796,6 +831,50 @@ async def credential_exchange_remove(request: web.BaseRequest):
     except StorageNotFoundError:
         raise web.HTTPNotFound()
     await credential_exchange_record.delete_record(context)
+    return web.json_response({})
+
+
+@docs(
+    tags=["issue-credential"], summary="Send a problem report for credential exchange"
+)
+@request_schema(V10CredentialProblemReportRequestSchema())
+async def credential_exchange_problem_report(request: web.BaseRequest):
+    """
+    Request handler for sending problem report.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    r_time = get_timer()
+
+    context = request.app["request_context"]
+    outbound_handler = request.app["outbound_message_router"]
+
+    credential_exchange_id = request.match_info["cred_ex_id"]
+    body = await request.json()
+
+    try:
+        credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
+            context, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+
+    error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
+    error_result.assign_thread_id(credential_exchange_record.thread_id)
+
+    await outbound_handler(
+        error_result, connection_id=credential_exchange_record.connection_id
+    )
+
+    trace_event(
+        context.settings,
+        error_result,
+        outcome="credential_exchange_problem_report.END",
+        perf_counter=r_time
+    )
+
     return web.json_response({})
 
 
@@ -835,7 +914,7 @@ async def register(app: web.Application):
                 credential_exchange_store,
             ),
             web.post(
-                "/issue-credential/records/{cred_ex_id}/revoke",
+                "/issue-credential/revoke",
                 credential_exchange_revoke,
             ),
             web.post(
@@ -843,12 +922,12 @@ async def register(app: web.Application):
                 credential_exchange_publish_revocations,
             ),
             web.post(
-                "/issue-credential/records/{cred_ex_id}/problem-report",
-                credential_exchange_problem_report,
-            ),
-            web.post(
                 "/issue-credential/records/{cred_ex_id}/remove",
                 credential_exchange_remove,
+            ),
+            web.post(
+                "/issue-credential/records/{cred_ex_id}/problem-report",
+                credential_exchange_problem_report,
             ),
         ]
     )
