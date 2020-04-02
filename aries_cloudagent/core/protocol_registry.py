@@ -135,6 +135,10 @@ class ProtocolRegistry:
         if isinstance(msg_cls, str):
             return ClassLoader.load_class(msg_cls)
 
+        # Support registered modules (not path as string)
+        if msg_cls:
+            return msg_cls
+
         # Try and route via min/maj version matching
         if not msg_cls:
             parsed_type_string = self.parse_type_string(message_type)
