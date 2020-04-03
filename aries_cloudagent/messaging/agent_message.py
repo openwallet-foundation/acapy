@@ -21,7 +21,7 @@ from .decorators.signature_decorator import SignatureDecorator
 from .decorators.thread_decorator import ThreadDecorator
 from .decorators.trace_decorator import (
     TraceDecorator, TraceReport,
-    TRACE_MESSAGE_TARGET
+    TRACE_MESSAGE_TARGET, TRACE_LOG_TARGET
 )
 from .models.base import (
     BaseModel,
@@ -329,7 +329,7 @@ class AgentMessage(BaseModel):
                     isinstance(msg._trace, dict)):
                 self._trace = msg._trace
 
-    def assign_trace_decorator(self, trace):
+    def assign_trace_decorator(self, context, trace):
         """
         Copy trace from a json structure.
 
@@ -337,11 +337,14 @@ class AgentMessage(BaseModel):
             trace: string containing trace json stucture
         """
         if trace:
-            self.add_trace_decorator()
+            self.add_trace_decorator(
+                target=context.get("trace.target") if context else TRACE_LOG_TARGET,
+                full_thread=True,
+            )
 
     def add_trace_decorator(
         self,
-        target: str = TRACE_MESSAGE_TARGET,
+        target: str = TRACE_LOG_TARGET,
         full_thread: bool = True
     ):
         """
@@ -354,8 +357,8 @@ class AgentMessage(BaseModel):
         if self._trace:
             # don't replace if there is already a trace decorator
             # (potentially holding trace reports already)
-            self._trace.target = target
-            self._trace.full_thread = full_thread
+            self._trace._target = target
+            self._trace._full_thread = full_thread
         else:
             self._trace = TraceDecorator(target=target, full_thread=full_thread)
 
@@ -367,7 +370,7 @@ class AgentMessage(BaseModel):
             val: The trace target
         """
         if not self._trace:
-            self.add_trace_decorator()
+            self.add_trace_decorator(target=TRACE_MESSAGE_TARGET, full_thread=True)
         self._trace.append_trace_report(val)
 
 

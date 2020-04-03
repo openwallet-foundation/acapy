@@ -79,7 +79,7 @@ class TestTracing(TestCase):
         context = {
             "trace.enabled": True,
             "trace.target": TRACE_MESSAGE_TARGET,
-            "trace.tag": "acapy.trace"
+            "trace.tag": "acapy.trace",
         }
         test_module.trace_event(
             context, 

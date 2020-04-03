@@ -283,6 +283,15 @@ class DemoAgent:
                     ("--trace-label", self.label+".trace"),
                 ]
             )
+        else:
+            # set the tracing parameters but don't enable tracing
+            result.extend(
+                [
+                    ("--trace-target", "log"),
+                    ("--trace-tag", "acapy.events"),
+                    ("--trace-label", self.label+".trace"),
+                ]
+            )
         if self.extra_args:
             result.extend(self.extra_args)
 

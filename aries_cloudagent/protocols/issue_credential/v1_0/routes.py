@@ -284,7 +284,10 @@ async def credential_exchange_send(request: web.BaseRequest):
         credential_proposal=preview,
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
-    credential_proposal.assign_trace_decorator(trace_msg)
+    credential_proposal.assign_trace_decorator(
+        context.settings,
+        trace_msg,
+    )
 
     trace_event(
         context.settings,
@@ -447,7 +450,10 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             credential_proposal=credential_preview,
             cred_def_id=cred_def_id,
         )
-        credential_proposal.assign_trace_decorator(trace_msg)
+        credential_proposal.assign_trace_decorator(
+            context.settings,
+            trace_msg,
+        )
         credential_proposal_dict = credential_proposal.serialize()
     else:
         credential_proposal_dict = None

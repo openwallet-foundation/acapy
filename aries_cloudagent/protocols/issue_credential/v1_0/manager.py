@@ -156,7 +156,10 @@ class CredentialManager:
             cred_def_id=cred_def_id,
             issuer_did=issuer_did,
         )
-        credential_proposal_message.assign_trace_decorator(trace)
+        credential_proposal_message.assign_trace_decorator(
+            self.context.settings,
+            trace,
+        )
 
         if auto_remove is None:
             auto_remove = not self.context.settings.get("preserve_exchange_records")
@@ -228,8 +231,10 @@ class CredentialManager:
             credential_proposal_message = CredentialProposal.deserialize(
                 credential_exchange_record.credential_proposal_dict
             )
+            print(">>> credential_proposal_message:", credential_proposal_message)
             credential_proposal_message.assign_trace_decorator(
-                credential_exchange_record.trace
+                self.context.settings,
+                credential_exchange_record.trace,
             )
             cred_def_id = await self._match_sent_cred_def_id(
                 {
@@ -272,7 +277,8 @@ class CredentialManager:
             "thid": credential_exchange_record.thread_id
         }
         credential_offer_message.assign_trace_decorator(
-            credential_exchange_record.trace
+            self.context.settings,
+            credential_exchange_record.trace,
         )
 
         credential_exchange_record.thread_id = credential_offer_message._thread_id
@@ -420,7 +426,8 @@ class CredentialManager:
             "thid": credential_exchange_record.thread_id
         }
         credential_request_message.assign_trace_decorator(
-            credential_exchange_record.trace
+            self.context.settings,
+            credential_exchange_record.trace,
         )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_SENT
@@ -560,7 +567,8 @@ class CredentialManager:
         )
         credential_message._thread = {"thid": credential_exchange_record.thread_id}
         credential_message.assign_trace_decorator(
-            credential_exchange_record.trace
+            self.context.settings,
+            credential_exchange_record.trace,
         )
 
         return (credential_exchange_record, credential_message)

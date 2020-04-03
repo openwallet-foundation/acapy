@@ -4,7 +4,7 @@ import json
 
 from ..agent_message import AgentMessage, AgentMessageSchema
 from ..decorators.signature_decorator import SignatureDecorator
-from ..decorators.trace_decorator import TraceReport, TRACE_MESSAGE_TARGET
+from ..decorators.trace_decorator import TraceReport, TRACE_LOG_TARGET
 from ...wallet.basic import BasicWallet
 
 
@@ -93,7 +93,7 @@ class TestAgentMessage(AsyncTestCase):
         msg = BasicAgentMessage()
         msg.add_trace_decorator()
         tracer = msg._trace
-        assert tracer.target == TRACE_MESSAGE_TARGET
+        assert tracer.target == TRACE_LOG_TARGET
         assert tracer.full_thread == True
 
         trace_report = TraceReport(

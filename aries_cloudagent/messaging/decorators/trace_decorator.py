@@ -14,6 +14,7 @@ from ..valid import UUIDFour
 
 
 TRACE_MESSAGE_TARGET = "message"
+TRACE_LOG_TARGET = "log"
 
 
 class TraceReport(BaseModel):

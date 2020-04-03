@@ -11,7 +11,9 @@ from marshmallow import fields, Schema
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..messaging.agent_message import AgentMessage
-from ..messaging.decorators.trace_decorator import TraceReport, TRACE_MESSAGE_TARGET
+from ..messaging.decorators.trace_decorator import (
+    TraceReport, TRACE_MESSAGE_TARGET, TRACE_LOG_TARGET
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -49,8 +51,9 @@ def tracing_enabled(context, message) -> bool:
             # if there is a trace decorator on the messages then continue to trace
             if message._trace:
                 return True
-        # TODO elif isinstance(message, other types)
-        # TODO check if we should log tracing
+        elif isinstance(message, dict):
+            # TODO check if we should log tracing
+            pass
 
     # default off
     return False
@@ -142,7 +145,7 @@ def trace_event(
                     outcome=event["outcome"],
                 )
                 message.add_trace_report(trace_report)
-            elif context["trace.target"] == "log":
+            elif context["trace.target"] == TRACE_LOG_TARGET:
                 # write to standard log file
                 LOGGER.setLevel(logging.INFO)
                 LOGGER.info(" %s %s", context["trace.tag"], event_str)

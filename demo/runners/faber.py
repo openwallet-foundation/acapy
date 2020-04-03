@@ -221,6 +221,7 @@ async def main(
         log_msg("Waiting for connection...")
         await agent.detect_connection()
 
+        cred_exch_tracing = False
         options = (
             "    (1) Issue Credential\n"
             "    (2) Send Proof Request\n"
@@ -232,11 +233,15 @@ async def main(
                 "    (5) Publish Revocations\n"
                 "    (6) Add Revocation Registry\n"
             )
-        options += "    (X) Exit?\n[1/2/3/{}X] ".format("4/5/6/" if revocation else "")
+        options += "    (T) Toggle tracing on credential exchange\n"
+        options += "    (X) Exit?\n[1/2/3/{}T/X] ".format("4/5/6/" if revocation else "")
         async for option in prompt_loop(options):
             if option is None or option in "xX":
                 break
 
+            elif option in "tT":
+                cred_exch_tracing = not cred_exch_tracing
+                log_msg(">>> Credential Exchange Tracing is {}".format("ON" if cred_exch_tracing else "OFF"))
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
 
@@ -263,6 +268,7 @@ async def main(
                     "auto_remove": False,
                     "credential_preview": cred_preview,
                     "revoc_reg_id": revocation_registry_id,
+                    "trace": cred_exch_tracing,
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
 
