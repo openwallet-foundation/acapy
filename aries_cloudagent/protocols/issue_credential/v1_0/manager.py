@@ -231,7 +231,6 @@ class CredentialManager:
             credential_proposal_message = CredentialProposal.deserialize(
                 credential_exchange_record.credential_proposal_dict
             )
-            print(">>> credential_proposal_message:", credential_proposal_message)
             credential_proposal_message.assign_trace_decorator(
                 self.context.settings,
                 credential_exchange_record.trace,
