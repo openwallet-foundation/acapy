@@ -237,7 +237,7 @@ class DemoAgent:
             log_msg(f"External host Tails File URL: {tails_file_external_url}")
             log_msg(f"================")
             log_msg(f"mkdir -p ./revocation/registry/{revocation_registry_id}/")
-            log_msg(f"curl -X GET \"{tails_file_external_url}\" --output /tmp/tails-files/revocation/registry/{revocation_registry_id}/tails-file")
+            log_msg(f"curl -X GET \"{tails_file_external_url}\" --output /tmp/tails-files/revocation/registry/{revocation_registry_id}/tails-file.txt")
             log_msg(f"base64 revocation/registry/{revocation_registry_id}/tails-file.txt >revocation/registry/{revocation_registry_id}/tails-file")
             log_msg(f"================")
 
