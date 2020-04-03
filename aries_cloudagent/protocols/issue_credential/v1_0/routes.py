@@ -781,7 +781,10 @@ async def credential_exchange_revoke(request: web.BaseRequest):
     publish = bool(json.loads(request.query.get("publish", json.dumps(False))))
 
     credential_manager = CredentialManager(context)
-    await credential_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
+    try:
+        await credential_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
 
     return web.json_response({})
 

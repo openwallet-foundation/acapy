@@ -710,9 +710,9 @@ class TestCredentialManager(AsyncTestCase):
 
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
-        cred_revoc = async_mock.MagicMock()
+        cred_rev_id = "1000"
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(cred), cred_revoc)
+            return_value=(json.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
@@ -726,9 +726,11 @@ class TestCredentialManager(AsyncTestCase):
                     async_mock.MagicMock(
                         get_registry=async_mock.CoroutineMock(
                             return_value=async_mock.MagicMock(
-                                tails_local_path="dummy-path"
+                                tails_local_path="dummy-path",
+                                max_creds=1000
                             )
                         ),
+                        mark_full=async_mock.CoroutineMock(),
                         revoc_reg_id=REV_REG_ID,
                     )
                 ]
@@ -834,9 +836,9 @@ class TestCredentialManager(AsyncTestCase):
 
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
-        cred_revoc = async_mock.MagicMock()
+        cred_rev_id = "1"
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(cred), cred_revoc)
+            return_value=(json.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
@@ -874,7 +876,6 @@ class TestCredentialManager(AsyncTestCase):
 
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
-        cred_revoc = async_mock.MagicMock()
         issuer.create_credential = async_mock.CoroutineMock(
             side_effect=test_module.IssuerRevocationRegistryFullError("Nope")
         )
@@ -888,11 +889,11 @@ class TestCredentialManager(AsyncTestCase):
                     async_mock.MagicMock(
                         get_registry=async_mock.CoroutineMock(
                             return_value=async_mock.MagicMock(
-                                mark_full=async_mock.CoroutineMock(),
-                                tails_local_path="dummy-path",
+                                tails_local_path="dummy-path"
                             )
                         ),
                         revoc_reg_id=REV_REG_ID,
+                        mark_full=async_mock.CoroutineMock()
                     )
                 ]
             )

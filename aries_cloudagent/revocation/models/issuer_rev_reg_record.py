@@ -224,6 +224,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state not in (
             IssuerRevRegRecord.STATE_PUBLISHED,
             IssuerRevRegRecord.STATE_ACTIVE,
+            IssuerRevRegRecord.STATE_FULL  # can still publish revocation deltas
         ):
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot publish entry".format(
@@ -239,7 +240,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.revoc_reg_entry,
                 self.issuer_did,
             )
-        if self.state != IssuerRevRegRecord.STATE_ACTIVE:
+        if self.state == IssuerRevRegRecord.STATE_PUBLISHED:  # initial entry activates
             self.state = IssuerRevRegRecord.STATE_ACTIVE
             await self.save(
                 context, reason="Published initial revocation registry entry"
