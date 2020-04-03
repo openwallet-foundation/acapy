@@ -23,6 +23,10 @@ do
 		fi
 		continue
 	;;
+    --self-attested)
+        SELF_ATTESTED=1
+        continue
+    ;;
     --trace-log)
         TRACE_TARGET=log
         TRACE_TAG=acapy.events
@@ -62,6 +66,7 @@ do
 			echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
 			exit 1
 		fi
+        continue
 		;;
 	--bg)
 		if [[ "${AGENT}" == "alice" ]] || [[ "${AGENT}" == "faber" ]] || [[ "${AGENT}" == "acme" ]]; then
@@ -90,6 +95,7 @@ Usage:
 	--bg - run the agent in the background; for use when using OpenAPI/Swagger interface
     --trace-log - log events to the standard log file
     --trace-http - log events to an http endmoint specified in env var TRACE_TARGET_URL
+    --self-attested - inlcude a self-attested attribute in the proof request/response
 	debug options: --debug-pycharm-agent-port <port>; --debug-pycharm-controller-port <port>
 	               --debug-pycharm; --debug-ptvsd
 
@@ -158,6 +164,9 @@ if ! [ -z "$GENESIS_URL" ]; then
 fi
 if ! [ -z "$EVENTS" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
+fi
+if ! [ -z "$SELF_ATTESTED" ]; then
+    DOCKER_ENV="${DOCKER_ENV} -e SELF_ATTESTED=${SELF_ATTESTED}"
 fi
 if ! [ -z "$TRACE_TARGET" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e TRACE_TARGET=${TRACE_TARGET}"
