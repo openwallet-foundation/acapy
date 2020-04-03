@@ -317,17 +317,17 @@ class IndyHolder(BaseHolder):
         requested_credentials: dict,
         schemas: dict,
         credential_definitions: dict,
-        rev_states_json: dict = None,
+        rev_states: dict = None,
     ) -> str:
         """
         Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid indy format presentation request
-            requested_credentials: Indy format requested_credentials
-            schemas: Indy formatted schemas_json
-            credential_definitions: Indy formatted schemas_json
-            rev_states_json: Indy format revocation states
+            requested_credentials: Indy format requested credentials
+            schemas: Indy formatted schemas JSON
+            credential_definitions: Indy formatted credential definitions JSON
+            rev_states: Indy format revocation states JSON
 
         """
 
@@ -339,7 +339,7 @@ class IndyHolder(BaseHolder):
                 self.wallet.master_secret_id,
                 json.dumps(schemas),
                 json.dumps(credential_definitions),
-                json.dumps(rev_states_json) if rev_states_json else "{}",
+                json.dumps(rev_states) if rev_states else "{}",
             )
 
         return presentation_json
@@ -353,7 +353,7 @@ class IndyHolder(BaseHolder):
         tails_file_path: str,
     ) -> str:
         """
-        Get credentials stored in the wallet.
+        Create current revocation state for a received credential.
 
         Args:
             cred_rev_id: credential revocation id in revocation registry

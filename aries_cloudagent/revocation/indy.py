@@ -21,7 +21,7 @@ class IndyRevocation:
         self,
         cred_def_id: str,
         issuer_did: str,
-        in_advance: bool = True,
+        issuance_by_default: bool = True,
         max_cred_num: int = None,
         revoc_def_type: str = None,
         tag: str = None,
@@ -41,7 +41,7 @@ class IndyRevocation:
             issuer_did=issuer_did,
             issuance_type=(
                 IssuerRevRegRecord.ISSUANCE_BY_DEFAULT
-                if in_advance
+                if issuance_by_default
                 else IssuerRevRegRecord.ISSUANCE_ON_DEMAND
             ),
             max_cred_num=max_cred_num,
