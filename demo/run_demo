@@ -26,13 +26,11 @@ do
     --trace-log)
         TRACE_TARGET=log
         TRACE_TAG=acapy.events
-        SKIP=1
         continue
     ;;
     --trace-http)
-        TRACE_TARGET=http://${TRACE_TARGET_URL}
+        TRACE_TARGET=http://${TRACE_TARGET_URL}/
         TRACE_TAG=acapy.events
-        SKIP=1
         continue
     ;;
     --debug-ptvsd)
@@ -182,6 +180,7 @@ DOCKER=${DOCKER:-docker}
 
 echo "Starting $AGENT..."
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
+    --network=efk-stack_efk_net \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	-v "/$(pwd)/../logs:/home/indy/logs" \
 	$DOCKER_ENV \
