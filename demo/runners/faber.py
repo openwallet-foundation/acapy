@@ -27,7 +27,7 @@ CRED_PREVIEW_TYPE = (
 
 LOGGER = logging.getLogger(__name__)
 
-TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 4))
+TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 20))
 
 
 class FaberAgent(DemoAgent):
@@ -345,7 +345,7 @@ async def main(
                     )
                     agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
-                            len(resp),
+                            len(resp["results"]),
                             "y" if len(resp) == 1 else "ies",
                             json.dumps([k for k in resp["results"]], indent=4)
                         )
