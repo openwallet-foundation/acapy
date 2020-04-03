@@ -160,9 +160,9 @@ class TestCredentialRoutes(AsyncTestCase):
         }
         mock.app["request_context"].settings = {}
 
-        with self.assertRaises(test_module.web.HTTPBadRequest) as x_http:
+        with self.assertRaises(test_module.web.HTTPBadRequest) as context:
             await test_module.credential_exchange_send(mock)
-            assert "credential_proposal" in x_http.message
+        assert "credential_proposal" in str(context.exception)
 
     async def test_credential_exchange_send_no_conn_record(self):
         conn_id = "connection-id"
@@ -980,9 +980,9 @@ class TestCredentialRoutes(AsyncTestCase):
                 async_mock.MagicMock()
             )
 
-            with self.assertRaises(test_module.web.HTTPBadRequest) as x_bad_req:
+            with self.assertRaises(test_module.web.HTTPBadRequest) as context:
                 await test_module.credential_exchange_issue(mock)
-                assert "Revocation registry is full" in x_bad_req.message
+            assert "Revocation registry is full" in str(context.exception)
 
     async def test_credential_exchange_store(self):
         mock = async_mock.MagicMock()
