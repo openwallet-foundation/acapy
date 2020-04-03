@@ -8,8 +8,6 @@ from marshmallow.validate import OneOf
 from .....config.injection_context import InjectionContext
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
-from .....utils.tracing import AdminAPIMessageTracingSchema
-from .....messaging.agent_message import AgentMessage
 
 
 class BaseExchangeRecord(BaseRecord):

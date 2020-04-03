@@ -126,6 +126,7 @@ class CredentialManager:
         cred_def_id: str = None,
         issuer_did: str = None,
         revoc_reg_id: str = None,
+        trace: bool = False,
     ) -> V10CredentialExchange:
         """
         Create a credential proposal.
@@ -160,6 +161,7 @@ class CredentialManager:
             cred_def_id=cred_def_id,
             issuer_did=issuer_did,
         )
+        credential_proposal_message.assign_trace_decorator(trace)
 
         if auto_remove is None:
             auto_remove = not self.context.settings.get("preserve_exchange_records")
@@ -173,6 +175,7 @@ class CredentialManager:
             auto_offer=auto_offer,
             auto_remove=auto_remove,
             revoc_reg_id=revoc_reg_id,
+            trace=trace
         )
         await credential_exchange_record.save(
             self.context, reason="create credential proposal"
@@ -205,6 +208,7 @@ class CredentialManager:
             auto_issue=self.context.settings.get(
                 "debug.auto_respond_credential_request"
             ),
+            trace=(credential_proposal_message._trace is not None)
         )
         await credential_exchange_record.save(
             self.context, reason="receive credential proposal"
@@ -229,6 +233,9 @@ class CredentialManager:
         if credential_exchange_record.credential_proposal_dict:
             credential_proposal_message = CredentialProposal.deserialize(
                 credential_exchange_record.credential_proposal_dict
+            )
+            credential_proposal_message.assign_trace_decorator(
+                credential_exchange_record.trace
             )
             cred_def_id = await self._match_sent_cred_def_id(
                 {
@@ -331,6 +338,7 @@ class CredentialManager:
                 initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
                 role=V10CredentialExchange.ROLE_HOLDER,
                 credential_proposal_dict=credential_proposal_dict,
+                trace=(credential_offer_message._trace is not None)
             )
 
         credential_exchange_record.credential_offer = indy_offer
@@ -417,6 +425,9 @@ class CredentialManager:
         credential_request_message._thread = {
             "thid": credential_exchange_record.thread_id
         }
+        credential_request_message.assign_trace_decorator(
+            credential_exchange_record.trace
+        )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_SENT
         await credential_exchange_record.save(
@@ -546,6 +557,9 @@ class CredentialManager:
             ],
         )
         credential_message._thread = {"thid": credential_exchange_record.thread_id}
+        credential_message.assign_trace_decorator(
+            credential_exchange_record.trace
+        )
 
         return (credential_exchange_record, credential_message)
 

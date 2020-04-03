@@ -50,7 +50,7 @@ class V10CredentialExchangeListResultSchema(Schema):
     )
 
 
-class V10CredentialStoreRequestSchema(AdminAPIMessageTracingSchema):
+class V10CredentialStoreRequestSchema(Schema):
     """Request schema for sending a credential store admin message."""
 
     credential_id = fields.Str(required=False)
@@ -140,20 +140,20 @@ class V10CredentialOfferRequestSchema(AdminAPIMessageTracingSchema):
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialIssueRequestSchema(AdminAPIMessageTracingSchema):
+class V10CredentialIssueRequestSchema(Schema):
     """Request schema for sending credential issue admin message."""
 
     comment = fields.Str(description="Human-readable comment", required=False)
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
-class V10CredentialProblemReportRequestSchema(AdminAPIMessageTracingSchema):
+class V10CredentialProblemReportRequestSchema(Schema):
     """Request schema for sending problem report."""
 
     explain_ltxt = fields.Str(required=True)
 
 
-class V10PublishRevocationsResultSchema(AdminAPIMessageTracingSchema):
+class V10PublishRevocationsResultSchema(Schema):
     """Result schema for revocation publication API call."""
 
     results = fields.Dict(
@@ -269,6 +269,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="credential_proposal must be provided.")
     auto_remove = body.get("auto_remove", True)
     revoc_reg_id = body.get("revoc_reg_id")
+    trace_msg = body.get("trace")
     preview = CredentialPreview.deserialize(preview_spec)
 
     try:
@@ -286,9 +287,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         credential_proposal=preview,
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
-
-    # TODO copy tracing info from body (input json) to credential_proposal (agent msg)
-    # TODO
+    credential_proposal.assign_trace_decorator(trace_msg)
 
     trace_event(
         context.settings,
@@ -348,6 +347,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     preview = CredentialPreview.deserialize(preview_spec) if preview_spec else None
     auto_remove = body.get("auto_remove", True)
     revoc_reg_id = body.get("revoc_reg_id")
+    trace_msg = body.get("trace")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -367,6 +367,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         credential_preview=preview,
         auto_remove=auto_remove,
         revoc_reg_id=revoc_reg_id,
+        trace=trace_msg,
         **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
     )
 
@@ -424,7 +425,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     revoc_reg_id = body.get("revoc_reg_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
-    trace = body.get("trace")
+    trace_msg = body.get("trace")
 
     if not cred_def_id:
         raise web.HTTPBadRequest(reason="cred_def_id is required")
@@ -452,6 +453,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             credential_proposal=credential_preview,
             cred_def_id=cred_def_id,
         )
+        credential_proposal.assign_trace_decorator(trace_msg)
         credential_proposal_dict = credential_proposal.serialize()
     else:
         credential_proposal_dict = None
@@ -464,7 +466,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         auto_issue=auto_issue,
         auto_remove=auto_remove,
         revoc_reg_id=revoc_reg_id,
-        trace=trace,
+        trace=trace_msg,
     )
 
     credential_manager = CredentialManager(context)

@@ -44,11 +44,13 @@ def tracing_enabled(context, message) -> bool:
     if context.get("trace.enabled"):
         return True
 
-    # if there is a trace decorator on the messages then continue to trace
     if message:
         if isinstance(message, AgentMessage):
+            # if there is a trace decorator on the messages then continue to trace
             if message._trace:
                 return True
+        # TODO elif isinstance(message, other types)
+        # TODO check if we should log tracing
 
     # default off
     return False
