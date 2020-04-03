@@ -219,7 +219,7 @@ class DemoAgent:
         # Update the revocation registry with the public URL to the tails file
         tails_file_admin_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
         tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
-        tails_file_external_url = f"http://{DEFAULT_EXTERNAL_HOST}/revocation/registry/{revocation_registry_id}/tails-file"
+        tails_file_external_url = f"{self.endpoint}/revocation/registry/{revocation_registry_id}/tails-file"
         revoc_updated_response = await self.admin_PATCH(
             f"/revocation/registry/{revocation_registry_id}",
             {
