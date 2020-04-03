@@ -138,6 +138,7 @@ class TestRecord(AsyncTestCase):
         with self.assertRaises(RevocationError) as x_state:
             await rec_full.publish_registry_definition(self.context)
 
+        rec_full.state=IssuerRevRegRecord.STATE_INIT
         with self.assertRaises(RevocationError) as x_state:
             await rec_full.publish_registry_entry(self.context)
 

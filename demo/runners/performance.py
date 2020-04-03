@@ -4,6 +4,8 @@ import os
 import random
 import sys
 
+import json
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from runners.support.agent import DemoAgent, default_genesis_txns
@@ -28,7 +30,7 @@ class BaseAgent(DemoAgent):
         self._connection_ready = None
         self.credential_state = {}
         self.credential_event = asyncio.Event()
-        self.cred_ex_ids = set()
+        self.revocations = []
         self.ping_state = {}
         self.ping_event = asyncio.Event()
         self.sent_pings = set()
@@ -76,9 +78,13 @@ class BaseAgent(DemoAgent):
                 self._connection_ready.set_result(True)
 
     async def handle_issue_credential(self, payload):
-        cred_id = payload["credential_exchange_id"]
-        self.credential_state[cred_id] = payload["state"]
-        self.cred_ex_ids.add(cred_id)
+        cred_ex_id = payload["credential_exchange_id"]
+        rev_reg_id = payload.get("revoc_reg_id")
+        cred_rev_id = payload.get("revocation_id")
+
+        self.credential_state[cred_ex_id] = payload["state"]
+        if rev_reg_id and cred_rev_id:
+            self.revocations.append((rev_reg_id, cred_rev_id))
         self.credential_event.set()
 
     async def handle_ping(self, payload):
@@ -414,7 +420,7 @@ async def main(
             except KeyboardInterrupt:
                 if receive_task:
                     receive_task.cancel()
-                print("Canceled")
+                print("Cancelled")
 
         recv_timer.stop()
         avg = recv_timer.duration / issue_count
@@ -431,10 +437,12 @@ async def main(
             for line in faber.format_postgres_stats():
                 faber.log(line)
 
-        cred_id = next(iter(faber.cred_ex_ids))
-        if revoc:
-            print("Revoking credential and publishing", cred_id)
-            await faber.revoke_credential(cred_id)
+        if revoc and faber.revocations:
+            (rev_reg_id, cred_rev_id) = next(iter(faber.revocations))
+            print(
+                "Revoking and publishing cred rev id {cred_rev_id} "
+                "from rev reg id {rev_reg_id}"
+            )
 
         if show_timing:
             timing = await alice.fetch_timing()

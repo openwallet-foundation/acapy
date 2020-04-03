@@ -92,7 +92,7 @@ class FaberAgent(DemoAgent):
                 ],
             }
             try:
-                await self.admin_POST(
+                cred_ex_rec = await self.admin_POST(
                     f"/issue-credential/records/{credential_exchange_id}/issue",
                     {
                         "comment": (
@@ -101,6 +101,16 @@ class FaberAgent(DemoAgent):
                         "credential_preview": cred_preview,
                     },
                 )
+                rev_reg_id = cred_ex_rec.get("revoc_reg_id")
+                cred_rev_id = cred_ex_rec.get("revocation_id")
+                if rev_reg_id:
+                    self.log(
+                        f"Revocation registry id: {rev_reg_id}"
+                    )
+                if cred_rev_id:
+                    self.log(
+                        f"Credential revocation id: {cred_rev_id}"
+                    )
             except ClientError:
                 pass
 
@@ -314,23 +324,34 @@ async def main(
                     f"/connections/{agent.connection_id}/send-message", {"content": msg}
                 )
             elif option == "4" and revocation:
-                revoking_cred_id = await prompt("Enter credential exchange id: ")
+                rev_reg_id = await prompt("Enter revocation registry id: ")
+                cred_rev_id = await prompt("Enter credential revocation id: ")
                 publish = json.dumps(
                     await prompt("Publish now? [Y/N]: ", default="N") in ('yY')
                 )
-                await agent.admin_POST(
-                    f"/issue-credential/records/{revoking_cred_id}"
-                    f"/revoke?publish={publish}"
-                )
-            elif option == "5" and revocation:
-                resp = await agent.admin_POST("/issue-credential/publish-revocations")
-                agent.log(
-                    "Published revocations for {} revocation registr{} {}".format(
-                        len(resp),
-                        "y" if len(resp) == 1 else "ies",
-                        json.dumps([k for k in resp], indent=4)
+                try:
+                    await agent.admin_POST(
+                        "/issue-credential/revoke"
+                        f"?publish={publish}"
+                        f"&rev_reg_id={rev_reg_id}"
+                        f"&cred_rev_id={cred_rev_id}"
                     )
-                )
+                except ClientError:
+                    pass
+            elif option == "5" and revocation:
+                try:
+                    resp = await agent.admin_POST(
+                        "/issue-credential/publish-revocations"
+                    )
+                    agent.log(
+                        "Published revocations for {} revocation registr{} {}".format(
+                            len(resp["results"]),
+                            "y" if len(resp) == 1 else "ies",
+                            json.dumps([k for k in resp["results"]], indent=4)
+                        )
+                    )
+                except ClientError:
+                    pass
             elif option == "6" and revocation:
                 log_status("#19 Add another revocation registry")
                 revocation_registry_id = await (

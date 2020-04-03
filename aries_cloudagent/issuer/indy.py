@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Mapping, Sequence, Tuple
+from typing import Sequence, Tuple
 
 import indy.anoncreds
 import indy.blob_storage
@@ -234,29 +234,57 @@ class IndyIssuer(BaseIssuer):
 
         return credential_json, credential_revocation_id
 
-    async def revoke_credential(
-        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_id: str
+    async def revoke_credentials(
+        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
     ) -> str:
         """
-        Revoke a credential.
+        Revoke a set of credentials in a revocation registry.
 
         Args:
             revoc_reg_id: ID of the revocation registry
             tails_file_path: path to the local tails file
-            cred_revoc_id: index of the credential in the revocation registry
+            cred_revoc_ids: sequences of credential indexes in the revocation registry
 
         Returns:
-            the revocation delta
+            the combined revocation delta
 
         """
         tails_reader_handle = await create_tails_reader(tails_file_path)
-        with IndyErrorHandler("Exception when revoking credential", IssuerError):
-            revoc_reg_delta_json = await indy.anoncreds.issuer_revoke_credential(
-                self.wallet.handle, tails_reader_handle, revoc_reg_id, cred_revoc_id
-            )
-            # may throw AnoncredsInvalidUserRevocId if using ISSUANCE_ON_DEMAND
 
-        return revoc_reg_delta_json
+        result_json = None
+        for cred_revoc_id in cred_revoc_ids:
+            with IndyErrorHandler("Exception when revoking credential", IssuerError):
+                # may throw AnoncredsInvalidUserRevocId if using ISSUANCE_ON_DEMAND
+                delta_json = await indy.anoncreds.issuer_revoke_credential(
+                    self.wallet.handle, tails_reader_handle, revoc_reg_id, cred_revoc_id
+                )
+                if not result_json:
+                    result_json = delta_json
+                else:
+                    result_json = await self.merge_revocation_registry_deltas(
+                        result_json, delta_json
+                    )
+
+        return result_json
+
+    async def merge_revocation_registry_deltas(
+        self, fro_delta: str, to_delta: str
+    ) -> str:
+        """
+        Merge revocation registry deltas.
+
+        Args:
+            fro_delta: original delta in JSON format
+            to_delta: incoming delta in JSON format
+
+        Returns:
+            Merged delta in JSON format
+
+        """
+
+        return await indy.anoncreds.issuer_merge_revocation_registry_deltas(
+            fro_delta, to_delta
+        )
 
     async def create_and_store_revocation_registry(
         self,
@@ -309,25 +337,3 @@ class IndyIssuer(BaseIssuer):
                 tails_writer,
             )
         return (revoc_reg_id, revoc_reg_def_json, revoc_reg_entry_json)
-
-    async def merge_revocation_registry_deltas(
-        self,
-        fro_delta: dict,
-        to_delta: dict
-    ) -> Mapping:
-        """
-        Merge revocation registry deltas.
-
-        Args:
-            fro_delta: original delta
-            to_delta: incoming delta
-
-        Returns:
-            Merged delta.
-
-        """
-
-        return json.loads(await indy.anoncreds.issuer_merge_revocation_registry_deltas(
-            json.dumps(fro_delta),
-            json.dumps(to_delta)
-        ))
