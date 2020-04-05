@@ -219,7 +219,11 @@ class DemoAgent:
         # Update the revocation registry with the public URL to the tails file
         tails_file_admin_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
         tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
-        tails_file_external_url = f"{self.endpoint}/revocation/registry/{revocation_registry_id}/tails-file"
+        if RUN_MODE == "pwd":
+            tails_file_external_url = f"http://{self.external_host}"
+        else:
+            tails_file_external_url = f"http://127.0.0.1:{self.admin_port}"
+        tails_file_external_url += f"/revocation/registry/{revocation_registry_id}/tails-file"
         revoc_updated_response = await self.admin_PATCH(
             f"/revocation/registry/{revocation_registry_id}",
             {
@@ -237,8 +241,8 @@ class DemoAgent:
             log_msg(f"External host Tails File URL: {tails_file_external_url}")
             log_msg(f"================")
             log_msg(f"mkdir -p ./revocation/registry/{revocation_registry_id}/")
-            log_msg(f"curl -X GET \"{tails_file_external_url}\" --output /tmp/tails-files/revocation/registry/{revocation_registry_id}/tails-file.txt")
-            log_msg(f"base64 revocation/registry/{revocation_registry_id}/tails-file.txt >revocation/registry/{revocation_registry_id}/tails-file")
+            log_msg(f"curl -X GET \"{tails_file_external_url}\" --output /tmp/tails-files/revocation/registry/{revocation_registry_id}/tails-file.bin")
+            log_msg(f"base64 revocation/registry/{revocation_registry_id}/tails-file.bin >revocation/registry/{revocation_registry_id}/tails-file")
             log_msg(f"================")
 
         revoc_publish_response = await self.admin_POST(
