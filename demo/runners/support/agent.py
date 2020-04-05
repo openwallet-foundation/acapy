@@ -220,7 +220,9 @@ class DemoAgent:
         tails_file_admin_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
         tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
         if RUN_MODE == "pwd":
-            tails_file_external_url = f"http://{self.external_host}"
+            tails_file_external_url = f"http://{self.external_host}".replace(
+                "{PORT}", str(self.admin_port)
+            )
         else:
             tails_file_external_url = f"http://127.0.0.1:{self.admin_port}"
         tails_file_external_url += f"/revocation/registry/{revocation_registry_id}/tails-file"
