@@ -24,6 +24,7 @@ from runners.support.utils import (
 CRED_PREVIEW_TYPE = (
     "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
 )
+SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 
 LOGGER = logging.getLogger(__name__)
 
@@ -286,8 +287,9 @@ async def main(
                     req_attrs.append(
                         {"name": "degree", "restrictions": [{"issuer_did": agent.did}]}
                     )
-                # test self-attested claims
-                req_attrs.append({"name": "self_attested_thing"},)
+                if SELF_ATTESTED:
+                    # test self-attested claims
+                    req_attrs.append({"name": "self_attested_thing"},)
                 req_preds = [
                     # test zero-knowledge proofs
                     {
