@@ -95,7 +95,7 @@ Usage:
 	--bg - run the agent in the background; for use when using OpenAPI/Swagger interface
     --trace-log - log events to the standard log file
     --trace-http - log events to an http endmoint specified in env var TRACE_TARGET_URL
-    --self-attested - inlcude a self-attested attribute in the proof request/response
+    --self-attested - include a self-attested attribute in the proof request/response
 	debug options: --debug-pycharm-agent-port <port>; --debug-pycharm-controller-port <port>
 	               --debug-pycharm; --debug-ptvsd
 
