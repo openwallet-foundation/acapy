@@ -160,9 +160,9 @@ class TestCredentialRoutes(AsyncTestCase):
         }
         mock.app["request_context"].settings = {}
 
-        with self.assertRaises(test_module.web.HTTPBadRequest) as x_http:
+        with self.assertRaises(test_module.web.HTTPBadRequest) as context:
             await test_module.credential_exchange_send(mock)
-            assert "credential_proposal" in x_http.message
+        assert "credential_proposal" in str(context.exception)
 
     async def test_credential_exchange_send_no_conn_record(self):
         conn_id = "connection-id"
@@ -980,9 +980,9 @@ class TestCredentialRoutes(AsyncTestCase):
                 async_mock.MagicMock()
             )
 
-            with self.assertRaises(test_module.web.HTTPBadRequest) as x_bad_req:
+            with self.assertRaises(test_module.web.HTTPBadRequest) as context:
                 await test_module.credential_exchange_issue(mock)
-                assert "Revocation registry is full" in x_bad_req.message
+            assert "Revocation registry is full" in str(context.exception)
 
     async def test_credential_exchange_store(self):
         mock = async_mock.MagicMock()
@@ -1209,6 +1209,34 @@ class TestCredentialRoutes(AsyncTestCase):
             await test_module.credential_exchange_revoke(mock)
 
             mock_response.assert_called_once_with({})
+
+    async def test_credential_exchange_revoke_not_found(self):
+        mock = async_mock.MagicMock(
+            query={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+            }
+        )
+        mock.app = {
+            "request_context": async_mock.patch.object(
+                aio_web, "BaseRequest", autospec=True
+            ),
+        }
+        mock.app["request_context"].settings = {}
+
+        with async_mock.patch.object(
+            test_module, "CredentialManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            mock_cred_mgr.return_value.revoke_credential = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError()
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.credential_exchange_revoke(mock)
 
     async def test_credential_exchange_publish_revocations(self):
         mock = async_mock.MagicMock()

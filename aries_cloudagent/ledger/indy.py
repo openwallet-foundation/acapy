@@ -317,10 +317,10 @@ class IndyLedger(BaseLedger):
                     # parse sequence number out of response
                     seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
                     schema_def["seqNo"] = seq_no
-                except KeyError:
-                    self.logger.warning(
+                except KeyError as err:
+                    raise LedgerError(
                         "Failed to parse schema sequence number from ledger response"
-                    )
+                    ) from err
             except LedgerTransactionError as e:
                 # Identify possible duplicate schema errors on indy-node < 1.9 and > 1.9
                 if (
@@ -512,6 +512,7 @@ class IndyLedger(BaseLedger):
                     credential_definition_id,
                     self.pool_name,
                 )
+
                 try:
                     if not await issuer.credential_definition_in_wallet(
                         credential_definition_id
@@ -711,7 +712,6 @@ class IndyLedger(BaseLedger):
         Args:
             did: The ledger DID
             endpoint: The endpoint address
-            transport_vk: The endpoint transport verkey
         """
         exist_endpoint = await self.get_endpoint_for_did(did)
         if exist_endpoint != endpoint:
@@ -889,10 +889,10 @@ class IndyLedger(BaseLedger):
         (
             found_id,
             found_reg_json,
-            timestamp2,
+            ledger_timestamp,
         ) = await indy.ledger.parse_get_revoc_reg_response(response_json)
         assert found_id == revoc_reg_id
-        return json.loads(found_reg_json), timestamp2
+        return json.loads(found_reg_json), ledger_timestamp
 
     async def get_revoc_reg_delta(
         self, revoc_reg_id: str, timestamp_from=0, timestamp_to=None
@@ -949,6 +949,10 @@ class IndyLedger(BaseLedger):
             did_info = await self.wallet.get_local_did(issuer_did)
         else:
             did_info = await self.wallet.get_public_did()
+        if not did_info:
+            raise LedgerTransactionError(
+                "No issuer DID found for revocation registry entry"
+            )
         request_json = await indy.ledger.build_revoc_reg_entry_request(
             did_info.did, revoc_reg_id, revoc_def_type, json.dumps(revoc_reg_entry)
         )
