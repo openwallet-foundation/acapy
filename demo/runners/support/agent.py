@@ -219,6 +219,13 @@ class DemoAgent:
         # Update the revocation registry with the public URL to the tails file
         tails_file_admin_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
         tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        if RUN_MODE == "pwd":
+            tails_file_external_url = f"http://{self.external_host}".replace(
+                "{PORT}", str(self.admin_port)
+            )
+        else:
+            tails_file_external_url = f"http://127.0.0.1:{self.admin_port}"
+        tails_file_external_url += f"/revocation/registry/{revocation_registry_id}/tails-file"
         revoc_updated_response = await self.admin_PATCH(
             f"/revocation/registry/{revocation_registry_id}",
             {
@@ -226,13 +233,19 @@ class DemoAgent:
             }
         )
         tails_public_uri = revoc_updated_response["result"]["tails_public_uri"]
-        log_msg(f"Revocation Registry Tails File Admin URL: {tails_file_admin_url}")
-        log_msg(f"Revocation Registry Tails File URL: {tails_public_uri}")
-        log_msg(f"================")
-        log_msg(f"mkdir -p /tmp/tails-files/revocation/registry/{revocation_registry_id}/")
-        log_msg(f"curl -X GET \"{tails_file_admin_url}\" --output /tmp/tails-files/revocation/registry/{revocation_registry_id}/tails-file")
-        log_msg(f"================")
         assert tails_public_uri == tails_file_url
+
+        # if PUBLIC_TAILS_URL is specified, tell user how to get tails file from agent
+        if os.getenv("PUBLIC_TAILS_URL"):
+            log_msg(f"================")
+            log_msg(f"Revocation Registry Tails File Admin URL: {tails_file_admin_url}")
+            log_msg(f"Revocation Registry Tails File URL: {tails_public_uri}")
+            log_msg(f"External host Tails File URL: {tails_file_external_url}")
+            log_msg(f"================")
+            log_msg(f"mkdir -p ./revocation/registry/{revocation_registry_id}/")
+            log_msg(f"curl -X GET \"{tails_file_external_url}\" --output ./revocation/registry/{revocation_registry_id}/tails-file.bin")
+            log_msg(f"base64 revocation/registry/{revocation_registry_id}/tails-file.bin >revocation/registry/{revocation_registry_id}/tails-file")
+            log_msg(f"================")
 
         revoc_publish_response = await self.admin_POST(
             f"/revocation/registry/{revocation_registry_id}/publish"
