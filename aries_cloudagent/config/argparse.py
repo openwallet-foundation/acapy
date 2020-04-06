@@ -630,7 +630,7 @@ class ProtocolGroup(ArgumentGroup):
                     settings,
                     None,
                     handler="ArgParse",
-                    outcome="Successfully configured aca-py",
+                    outcome="Successfully_configured_aca-py",
                     raise_errors=True,
                     force_trace=True
                 )

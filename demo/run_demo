@@ -8,6 +8,14 @@ AGENT="$1"
 shift
 ARGS=""
 
+TRACE_ENABLED=""
+TRACE_TAG=acapy.events
+if ! [ -z "$TRACE_TARGET_URL" ]; then
+    TRACE_TARGET=http://${TRACE_TARGET_URL}/
+else
+    TRACE_TARGET=log
+fi
+
 for i in "$@"
 do
     if [ ! -z "$SKIP" ]; then
@@ -28,11 +36,13 @@ do
         continue
     ;;
     --trace-log)
+        TRACE_ENABLED=1
         TRACE_TARGET=log
         TRACE_TAG=acapy.events
         continue
     ;;
     --trace-http)
+        TRACE_ENABLED=1
         TRACE_TARGET=http://${TRACE_TARGET_URL}/
         TRACE_TAG=acapy.events
         continue
@@ -169,6 +179,7 @@ fi
 if ! [ -z "$TRACE_TARGET" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e TRACE_TARGET=${TRACE_TARGET}"
     DOCKER_ENV="${DOCKER_ENV} -e TRACE_TAG=${TRACE_TAG}"
+    DOCKER_ENV="${DOCKER_ENV} -e TRACE_ENABLED=${TRACE_ENABLED}"
 fi
 if ! [ -z "$PUBLIC_TAILS_URL" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"

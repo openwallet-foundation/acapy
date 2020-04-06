@@ -682,6 +682,10 @@ class CredentialManager:
             credential_exchange_record.thread_id,
             credential_exchange_record.parent_thread_id,
         )
+        credential_ack_message.assign_trace_decorator(
+            self.context.settings,
+            credential_exchange_record.trace,
+        )
 
         if credential_exchange_record.auto_remove:
             # Delete the exchange record since we're done with it

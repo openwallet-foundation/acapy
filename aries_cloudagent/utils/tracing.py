@@ -52,11 +52,32 @@ def tracing_enabled(context, message) -> bool:
             if message._trace:
                 return True
         elif isinstance(message, dict):
-            # TODO check if we should log tracing
-            pass
+            # if there is a trace decorator on the messages then continue to trace
+            if message.get("~trace"):
+                return True
 
     # default off
     return False
+
+
+def decode_inbound_message(message):
+    """Return bundled message if appropriate."""
+
+    if message and isinstance(message, OutboundMessage):
+        if message.payload and isinstance(message.payload, AgentMessage):
+            return message.payload
+        elif message.payload and isinstance(message.payload, dict):
+            return message.payload
+        elif message.payload and isinstance(message.payload, str):
+            if 0 <= message.payload.find("~trace"):
+                message_dict = None
+                try:
+                    return json.loads(message.payload)
+                except:
+                    pass
+    
+    # default is the provided message
+    return message
 
 
 def trace_event(
@@ -84,6 +105,8 @@ def trace_event(
 
     ret = time.perf_counter()
 
+    message = decode_inbound_message(message)
+
     if force_trace or tracing_enabled(context, message):
         # build the event to log
         # TODO check instance type of message to determine how to
@@ -98,7 +121,7 @@ def trace_event(
         msg_type = ""
         if message and isinstance(message, AgentMessage):
             msg_id = str(message._id)
-            thread_id = str(message._thread.thid) if message._thread else msg_id
+            thread_id = str(message._thread.thid) if (message._thread and message._thread.thid) else msg_id
             msg_type = str(message._type)
         elif message and isinstance(message, InboundMessage):
             # TODO not sure if we can log an InboundMessage before it's "handled"
@@ -110,10 +133,12 @@ def trace_event(
             thread_id = msg_id
             msg_type = "OutboundMessage"
         elif message and isinstance(message, dict):
-            msg_id = str(message["msg_id"])
-            thread_id = str(message["thread_id"])
-            msg_type = str(message["type"])
+            msg_id = str(message["@id"]) if message.get("@id") else "N/A"
+            thread_id = str(message["~thread"]["thid"]) if (message.get("~thread") and message["~thread"].get("thid")) else msg_id
+            msg_type = str(message["@type"]) if message.get("@type") else "N/A"
         else:
+            msg_id = "N/A"
+            thread_id = "N/A"
             msg_type = str(message)
         ep_time = time.time()
         str_time = datetime.datetime.utcfromtimestamp(ep_time).strftime(DT_FMT)
