@@ -33,4 +33,5 @@ class TestRecord(UnitTestCase):
             "auto_present": True,
             "error_msg": "error",
             "verified": False,
+            "trace": False,
         }

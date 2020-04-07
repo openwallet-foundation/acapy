@@ -6,24 +6,10 @@ from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from .....config.injection_context import InjectionContext
-from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
+from .....messaging.models.base_record import (
+    BaseExchangeRecord, BaseExchangeSchema
+)
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
-
-
-class BaseExchangeRecord(BaseRecord):
-    """Represents a base record with event tracing capability."""
-
-    def __init__(
-        self,
-        id: str = None,
-        state: str = None,
-        *,
-        trace: bool = False,
-        **kwargs,
-    ):
-        """Initialize a new V10CredentialExchange."""
-        super().__init__(id, state, **kwargs)
-        self.trace = trace
 
 
 class V10CredentialExchange(BaseExchangeRecord):
@@ -167,21 +153,6 @@ class V10CredentialExchange(BaseExchangeRecord):
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
         return super().__eq__(other)
-
-
-class BaseExchangeSchema(BaseRecordSchema):
-    """Base schema for exchange records."""
-
-    class Meta:
-        """BaseExchangeSchema metadata."""
-
-        model_class = BaseExchangeRecord
-
-        trace = fields.Boolean(
-            description="Record trace information, based on agent configuration",
-            required=False,
-            default=False,
-        )
 
 
 class V10CredentialExchangeSchema(BaseExchangeSchema):

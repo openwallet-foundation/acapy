@@ -14,6 +14,7 @@ from ..messaging.agent_message import AgentMessage
 from ..messaging.decorators.trace_decorator import (
     TraceReport, TRACE_MESSAGE_TARGET, TRACE_LOG_TARGET
 )
+from ..messaging.models.base_record import BaseExchangeRecord
 
 
 LOGGER = logging.getLogger(__name__)
@@ -50,6 +51,9 @@ def tracing_enabled(context, message) -> bool:
         if isinstance(message, AgentMessage):
             # if there is a trace decorator on the messages then continue to trace
             if message._trace:
+                return True
+        elif isinstance(message, BaseExchangeRecord):
+            if message.trace:
                 return True
         elif isinstance(message, dict):
             # if there is a trace decorator on the messages then continue to trace
@@ -98,7 +102,7 @@ def trace_event(
                 ("log", "message" or an http endpoint)
             context["trace.tag"]: Tag to be included in trace output
         message: the current message, can be an AgentMessage,
-                InboundMessage or OutboundMessage
+                InboundMessage, OutboundMessage or Exchange record
         event: Dict that will be converted to json and posted to the target
     """
 
@@ -129,22 +133,26 @@ def trace_event(
             # TODO not sure if we can log an InboundMessage before it's "handled"
             msg_id = str(message.session_id) if message.session_id else "N/A"
             thread_id = str(message.session_id) if message.session_id else "N/A"
-            msg_type = "InboundMessage"
+            msg_type = str(message.__class__.__name__)
         elif message and isinstance(message, OutboundMessage):
             msg_id = str(message.reply_thread_id) if message.reply_thread_id else "N/A"
             thread_id = msg_id
-            msg_type = "OutboundMessage"
+            msg_type = str(message.__class__.__name__)
         elif message and isinstance(message, dict):
             msg_id = str(message["@id"]) if message.get("@id") else "N/A"
             if message.get("~thread") and message["~thread"].get("thid"):
                 thread_id = str(message["~thread"]["thid"])
             else:
                 thread_id = msg_id
-            msg_type = str(message["@type"]) if message.get("@type") else "N/A"
+            msg_type = str(message["@type"]) if message.get("@type") else "dict"
+        elif isinstance(message, BaseExchangeRecord):
+            msg_id = "N/A"
+            thread_id = str(message.thread_id)
+            msg_type = str(message.__class__.__name__)
         else:
             msg_id = "N/A"
             thread_id = "N/A"
-            msg_type = str(message)
+            msg_type = str(message.__class__.__name__)
         ep_time = time.time()
         str_time = datetime.datetime.utcfromtimestamp(ep_time).strftime(DT_FMT)
         event = {
@@ -153,9 +161,9 @@ def trace_event(
             "traced_type": msg_type,
             "timestamp": ep_time,
             "str_time": str_time,
-            "handler": handler,
+            "handler": str(handler),
             "ellapsed_milli": int(1000 * (ret - perf_counter)) if perf_counter else 0,
-            "outcome": outcome,
+            "outcome": str(outcome),
         }
         event_str = json.dumps(event)
 
