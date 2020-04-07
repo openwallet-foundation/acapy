@@ -285,7 +285,7 @@ async def wallet_set_tagging_policy(request: web.BaseRequest):
     credential_definition_id = request.match_info["id"]
 
     body = await request.json()
-    taggables = body.get("taggables")
+    taggables = body.get("taggables")  # None for all attrs, [] for no attrs
 
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet or wallet.WALLET_TYPE != "indy":
