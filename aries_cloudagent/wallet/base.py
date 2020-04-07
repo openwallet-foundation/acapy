@@ -13,8 +13,6 @@ DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
 class BaseWallet(ABC):
     """Abstract wallet interface."""
 
-    WALLET_TYPE = None
-
     # TODO: break config out into params?
     def __init__(self, config: dict):
         """
@@ -26,26 +24,14 @@ class BaseWallet(ABC):
         """
 
     @property
+    @abstractmethod
     def name(self) -> str:
-        """
-        Accessor for the wallet name.
-
-        Returns:
-            Defaults to None
-
-        """
-        return None
+        """Accessor for the wallet name."""
 
     @property
+    @abstractmethod
     def type(self) -> str:
-        """
-        Accessor for the wallet type.
-
-        Returns:
-            Defaults to None
-
-        """
-        return self.WALLET_TYPE
+        """Accessor for the wallet type."""
 
     @property
     def handle(self):
@@ -59,20 +45,14 @@ class BaseWallet(ABC):
         return None
 
     @property
+    @abstractmethod
     def created(self) -> bool:
         """Check whether the wallet was created on the last open call."""
-        return None
 
     @property
+    @abstractmethod
     def opened(self) -> bool:
-        """
-        Check whether wallet is currently open.
-
-        Returns:
-            Defaults to False
-
-        """
-        return False
+        """Check whether wallet is currently open."""
 
     @abstractmethod
     async def open(self):
@@ -86,8 +66,7 @@ class BaseWallet(ABC):
     async def create_signing_key(
         self, seed: str = None, metadata: dict = None
     ) -> KeyInfo:
-        """
-        Create a new public/private signing keypair.
+        """Create a new public/private signing keypair.
 
         Args:
             seed: Optional seed allowing deterministic key creation
