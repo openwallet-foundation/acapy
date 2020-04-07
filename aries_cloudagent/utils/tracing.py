@@ -70,12 +70,11 @@ def decode_inbound_message(message):
             return message.payload
         elif message.payload and isinstance(message.payload, str):
             if 0 <= message.payload.find("~trace"):
-                message_dict = None
                 try:
                     return json.loads(message.payload)
-                except:
+                except Exception:
                     pass
-    
+
     # default is the provided message
     return message
 
@@ -121,7 +120,10 @@ def trace_event(
         msg_type = ""
         if message and isinstance(message, AgentMessage):
             msg_id = str(message._id)
-            thread_id = str(message._thread.thid) if (message._thread and message._thread.thid) else msg_id
+            if message._thread and message._thread.thid:
+                thread_id = str(message._thread.thid)
+            else:
+                thread_id = msg_id
             msg_type = str(message._type)
         elif message and isinstance(message, InboundMessage):
             # TODO not sure if we can log an InboundMessage before it's "handled"
@@ -134,7 +136,10 @@ def trace_event(
             msg_type = "OutboundMessage"
         elif message and isinstance(message, dict):
             msg_id = str(message["@id"]) if message.get("@id") else "N/A"
-            thread_id = str(message["~thread"]["thid"]) if (message.get("~thread") and message["~thread"].get("thid")) else msg_id
+            if message.get("~thread") and message["~thread"].get("thid"):
+                thread_id = str(message["~thread"]["thid"])
+            else:
+                thread_id = msg_id
             msg_type = str(message["@type"]) if message.get("@type") else "N/A"
         else:
             msg_id = "N/A"
