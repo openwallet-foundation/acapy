@@ -51,7 +51,20 @@ Then, in the Acme shell, you can select option ```2``` and then option ```1```, 
 
 In the Acme code ```acme.py``` we are going to add code to issue a proof request to Alice, and then validate the received proof.
 
-First locate the code that is triggered by option ```2```:
+First the following import statements and a constant we will need near the top of acme.py:
+```
+        import random
+        from uuid import uuid4
+        from datetime import date
+```
+
+```
+        CRED_PREVIEW_TYPE = (
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
+        )
+```
+
+Next locate the code that is triggered by option ```2```:
 
 ```
             elif option == "2":
@@ -147,6 +160,7 @@ There are two options for this.  We can (a) add code under option ```1``` to iss
 
 We're going to do option (a), but you can try to implement option (b) as homework.  You have most of the information you need from the proof response!
 
+
 First though we need to register a schema and credential definition.  Find this code:
 
 ```
@@ -215,11 +229,6 @@ with the following code:
                     "connection_id": agent.connection_id,
                     "cred_def_id": credential_definition_id,
                     "comment": f"Offer on cred def id {credential_definition_id}",
-                    "credential_preview": CredentialPreview(
-                        attributes=CredAttrSpec.list_plain(
-                            agent.cred_attrs[credential_definition_id]
-                        )
-                    ).serialize()
                 }
                 await agent.admin_POST(
                     "/issue-credential/send-offer",
@@ -240,13 +249,20 @@ with the following code:
 ```
             # issue credentials based on the credential_definition_id
             cred_attrs = self.cred_attrs[message["credential_definition_id"]]
+            cred_preview = {
+                "@type": CRED_PREVIEW_TYPE,
+                "attributes": [
+                    {"name": n, "value": v} for (n, v) in cred_attrs.items()
+                ],
+            }
             await self.admin_POST(
                 f"/issue-credential/records/{credential_exchange_id}/issue",
                 {
                     "comment": f"Issuing credential, exchange {credential_exchange_id}",
-                    "credential_preview": CredentialPreview(
-                        attributes=CredAttrSpec.list_plain(cred_attrs)
-                    ).serialize()
+                    "credential_preview": cred_preview
+                    # "credential_preview": CredentialPreview(
+                    #     attributes=CredAttrSpec.list_plain(cred_attrs)
+                    # ).serialize()
                 }
             )
 ```
