@@ -1,6 +1,5 @@
 """Credential proposal message handler."""
 
-
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -10,6 +9,8 @@ from .....messaging.base_handler import (
 
 from ..manager import CredentialManager
 from ..messages.credential_proposal import CredentialProposal
+
+from .....utils.tracing import trace_event, get_timer
 
 
 class CredentialProposalHandler(BaseHandler):
@@ -24,6 +25,8 @@ class CredentialProposalHandler(BaseHandler):
             responder: responder callback
 
         """
+        r_time = get_timer()
+
         self._logger.debug("CredentialProposalHandler called with context %s", context)
         assert isinstance(context.message, CredentialProposal)
         self._logger.info(
@@ -37,6 +40,13 @@ class CredentialProposalHandler(BaseHandler):
         credential_manager = CredentialManager(context)
         credential_exchange_record = await credential_manager.receive_proposal()
 
+        r_time = trace_event(
+            context.settings,
+            context.message,
+            outcome="CredentialProposalHandler.handle.END",
+            perf_counter=r_time
+        )
+
         # If auto_offer is enabled, respond immediately with offer
         if credential_exchange_record.auto_offer:
             (
@@ -47,3 +57,10 @@ class CredentialProposalHandler(BaseHandler):
             )
 
             await responder.send_reply(credential_offer_message)
+
+            trace_event(
+                context.settings,
+                credential_offer_message,
+                outcome="CredentialProposalHandler.handle.OFFER",
+                perf_counter=r_time
+            )

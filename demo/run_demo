@@ -10,11 +10,53 @@ ARGS=""
 
 for i in "$@"
 do
+    if [ ! -z "$SKIP" ]; then
+        SKIP=""
+        continue
+    fi
 	case $i in
 	--events)
-		EVENTS=1
+		if [[ "${AGENT}" == "performance" ]] ; then
+			echo -e "\nIgnoring the \"--events\" option when running the ${AGENT} agent.\n"
+		else
+			EVENTS=1
+		fi
 		continue
 	;;
+    --self-attested)
+        SELF_ATTESTED=1
+        continue
+    ;;
+    --trace-log)
+        TRACE_TARGET=log
+        TRACE_TAG=acapy.events
+        SKIP=1
+        continue
+    ;;
+    --trace-http)
+        TRACE_TARGET=http://${TRACE_TARGET_URL}
+        TRACE_TAG=acapy.events
+        SKIP=1
+        continue
+    ;;
+    --debug-ptvsd)
+        ENABLE_PTVSD=1
+        continue
+        ;;
+    --debug-pycharm)
+        ENABLE_PYDEVD_PYCHARM=1
+        continue
+        ;;
+    --debug-pycharm-controller-port)
+        PYDEVD_PYCHARM_CONTROLLER_PORT=$2
+        SKIP=1
+        continue
+        ;;
+    --debug-pycharm-agent-port)
+        PYDEVD_PYCHARM_AGENT_PORT=$2
+        SKIP=1
+        continue
+        ;;
 	--timing)
 		if [ ! -d "../logs" ]; then
 			mkdir ../logs && chmod -R uga+rws ../logs
@@ -24,6 +66,41 @@ do
 			echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
 			exit 1
 		fi
+        continue
+		;;
+	--bg)
+		if [[ "${AGENT}" == "alice" ]] || [[ "${AGENT}" == "faber" ]] || [[ "${AGENT}" == "acme" ]]; then
+			DOCKER_OPTS="-d"
+			echo -e "\nRunning in ${AGENT} in the background. Note that you cannot use the command line console in this mode."
+			echo To see the logs use: \"docker logs ${AGENT}\".
+			echo While viewing logs, hit CTRL-C to return to the command line.
+			echo To stop the agent, use: \"docker stop ${AGENT}\". The docker environment will
+			echo -e "be removed on stop.\n\n"
+		else
+			echo The "bg" option \(for running docker in detached mode\) is only for agents Alice, Faber and Acme.
+			echo Ignoring...
+		fi
+		continue
+		;;
+		--help)
+		cat <<EOF
+
+Usage:
+   ./demo_run <agent> [OPTIONS]
+
+   - <agent> is one of alice, faber, acme, performance.
+   - Options:
+	--events - display on the terminal the webhook events from the ACA-Py agent.
+	--timing - at the end of the run, display timing; relevant to the "performance" agent.
+	--bg - run the agent in the background; for use when using OpenAPI/Swagger interface
+    --trace-log - log events to the standard log file
+    --trace-http - log events to an http endmoint specified in env var TRACE_TARGET_URL
+    --self-attested - include a self-attested attribute in the proof request/response
+	debug options: --debug-pycharm-agent-port <port>; --debug-pycharm-controller-port <port>
+	               --debug-pycharm; --debug-ptvsd
+
+EOF
+		exit 0
 	;;
 	esac
 	ARGS="${ARGS:+$ARGS }$i"
@@ -86,7 +163,24 @@ if ! [ -z "$GENESIS_URL" ]; then
 	DOCKER_ENV="${DOCKER_ENV} -e GENESIS_URL=${GENESIS_URL}"
 fi
 if ! [ -z "$EVENTS" ]; then
-	DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
+    DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
+fi
+if ! [ -z "$SELF_ATTESTED" ]; then
+    DOCKER_ENV="${DOCKER_ENV} -e SELF_ATTESTED=${SELF_ATTESTED}"
+fi
+if ! [ -z "$TRACE_TARGET" ]; then
+    DOCKER_ENV="${DOCKER_ENV} -e TRACE_TARGET=${TRACE_TARGET}"
+    DOCKER_ENV="${DOCKER_ENV} -e TRACE_TAG=${TRACE_TAG}"
+fi
+if ! [ -z "$PUBLIC_TAILS_URL" ]; then
+    DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"
+fi
+if ! [ -z "$TAILS_FILE_COUNT" ]; then
+    DOCKER_ENV="${DOCKER_ENV} -e TAILS_FILE_COUNT=${TAILS_FILE_COUNT}"
+fi
+
+if ! [[ -z "${ENABLE_PYDEVD_PYCHARM}" ]]; then
+    DOCKER_ENV="${DOCKER_ENV} -e ENABLE_PYDEVD_PYCHARM=${ENABLE_PYDEVD_PYCHARM} -e PYDEVD_PYCHARM_CONTROLLER_PORT=${PYDEVD_PYCHARM_CONTROLLER_PORT} -e PYDEVD_PYCHARM_AGENT_PORT=${PYDEVD_PYCHARM_AGENT_PORT}"
 fi
 
 # on Windows, docker run needs to be prefixed by winpty
@@ -96,7 +190,7 @@ fi
 DOCKER=${DOCKER:-docker}
 
 echo "Starting $AGENT..."
-$DOCKER run --name $AGENT --rm -it \
+$DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	-v "/$(pwd)/../logs:/home/indy/logs" \
 	$DOCKER_ENV \

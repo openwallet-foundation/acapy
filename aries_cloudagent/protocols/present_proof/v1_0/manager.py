@@ -2,7 +2,11 @@
 
 import json
 import logging
+import time
 
+from indy.error import IndyError
+
+from ....revocation.models.revocation_registry import RevocationRegistry
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....holder.base import BaseHolder
@@ -134,9 +138,11 @@ class PresentationManager:
                 presentation_exchange_record.presentation_proposal_dict
             )
         ).presentation_proposal.indy_proof_request(
-            name=name, version=version, nonce=nonce
+            name=name,
+            version=version,
+            nonce=nonce,
+            ledger=await self.context.inject(BaseLedger)
         )
-
         presentation_request_message = PresentationRequest(
             comment=comment,
             request_presentations_attach=[
@@ -225,6 +231,7 @@ class PresentationManager:
             requested_credentials: Indy formatted requested_credentials
             comment: optional human-readable comment
 
+
         Example `requested_credentials` format:
 
         ::
@@ -250,56 +257,161 @@ class PresentationManager:
             A tuple (updated presentation exchange record, presentation message)
 
         """
-        # Get all credential ids for this presentation
-        credential_ids = []
-
-        requested_attributes = requested_credentials["requested_attributes"]
-        for presentation_referent in requested_attributes:
-            credential_id = requested_attributes[presentation_referent]["cred_id"]
-            credential_ids.append(credential_id)
-
-        requested_predicates = requested_credentials["requested_predicates"]
-        for presentation_referent in requested_predicates:
-            credential_id = requested_predicates[presentation_referent]["cred_id"]
-            credential_ids.append(credential_id)
-
-        # Get all schema and credential definition ids in use
-        # TODO: Cache this!!!
-        schema_ids = []
-        credential_definition_ids = []
+        # Get all credentials for this presentation
         holder: BaseHolder = await self.context.inject(BaseHolder)
-        for credential_id in credential_ids:
-            credential = await holder.get_credential(credential_id)
-            schema_id = credential["schema_id"]
-            credential_definition_id = credential["cred_def_id"]
-            schema_ids.append(schema_id)
-            credential_definition_ids.append(credential_definition_id)
+        credentials = {}
 
+        # extract credential ids and non_revoked
+        requested_referents = {}
+        presentation_request = presentation_exchange_record.presentation_request
+        attr_creds = requested_credentials.get("requested_attributes", {})
+        req_attrs = presentation_request.get("requested_attributes", {})
+        for referent in attr_creds:
+            requested_referents[referent] = {"cred_id": attr_creds[referent]["cred_id"]}
+            if referent in req_attrs and "non_revoked" in req_attrs[referent]:
+                requested_referents[referent]["non_revoked"] = req_attrs[referent][
+                    "non_revoked"
+                ]
+
+        preds_creds = requested_credentials.get("requested_predicates", {})
+        req_preds = presentation_request.get("requested_predicates", {})
+        for referent in preds_creds:
+            requested_referents[referent] = {
+                "cred_id": preds_creds[referent]["cred_id"],
+            }
+            if referent in req_preds and "non_revoked" in req_preds[referent]:
+                requested_referents[referent]["non_revoked"] = req_preds[referent][
+                    "non_revoked"
+                ]
+
+        # extract mapping of presentation referents to credential ids
+        for referent in requested_referents:
+            credential_id = requested_referents[referent]["cred_id"]
+            if credential_id not in credentials:
+                credentials[credential_id] = json.loads(
+                    await holder.get_credential(credential_id)
+                )
+
+        # Get all schema, credential definition, and revocation registry in use
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
         schemas = {}
         credential_definitions = {}
+        revocation_registries = {}
 
-        ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
+            for credential in credentials.values():
+                schema_id = credential["schema_id"]
+                if schema_id not in schemas:
+                    schemas[schema_id] = await ledger.get_schema(schema_id)
 
-            # Build schemas for anoncreds
-            for schema_id in schema_ids:
-                schema = await ledger.get_schema(schema_id)
-                schemas[schema_id] = schema
+                credential_definition_id = credential["cred_def_id"]
+                if credential_definition_id not in credential_definitions:
+                    credential_definitions[
+                        credential_definition_id
+                    ] = await ledger.get_credential_definition(credential_definition_id)
 
-            # Build credential_definitions for anoncreds
-            for credential_definition_id in credential_definition_ids:
-                (credential_definition) = await ledger.get_credential_definition(
-                    credential_definition_id
+                if credential.get("rev_reg_id"):
+                    revocation_registry_id = credential["rev_reg_id"]
+                    if revocation_registry_id not in revocation_registries:
+                        revocation_registries[
+                            revocation_registry_id
+                        ] = RevocationRegistry.from_definition(
+                            await ledger.get_revoc_reg_def(revocation_registry_id), True
+                        )
+
+        # Get delta with non-revocation interval defined in "non_revoked"
+        # of the presentation request or attributes
+        current_timestamp = int(time.time())
+
+        non_revoc_interval = {
+            "from": 0,
+            "to": current_timestamp
+        }
+        non_revoc_interval.update(
+            presentation_exchange_record.presentation_request.get("non_revoked", {})
+        )
+
+        revoc_reg_deltas = {}
+        async with ledger:
+            for referented in requested_referents.values():
+                credential_id = referented["cred_id"]
+                if not credentials[credential_id].get("rev_reg_id"):
+                    continue
+
+                rev_reg_id = credentials[credential_id]["rev_reg_id"]
+                referent_non_revoc_interval = referented.get(
+                    "non_revoked", non_revoc_interval
                 )
-                credential_definitions[credential_definition_id] = credential_definition
 
-        holder: BaseHolder = await self.context.inject(BaseHolder)
-        indy_proof = await holder.create_presentation(
+                if referent_non_revoc_interval:
+                    key = (
+                        f"{rev_reg_id}_{non_revoc_interval['from']}_"
+                        f"{non_revoc_interval['to']}"
+                    )
+                    if key not in revoc_reg_deltas:
+                        (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
+                            rev_reg_id,
+                            non_revoc_interval["from"],
+                            non_revoc_interval["to"],
+                        )
+                        revoc_reg_deltas[key] = (
+                            rev_reg_id,
+                            credential_id,
+                            delta,
+                            delta_timestamp,
+                        )
+                    referented["timestamp"] = revoc_reg_deltas[key][3]
+
+        # Get revocation states to prove non-revoked
+        revocation_states = {}
+        for (
+            rev_reg_id,
+            credential_id,
+            delta,
+            delta_timestamp,
+        ) in revoc_reg_deltas.values():
+            if rev_reg_id not in revocation_states:
+                revocation_states[rev_reg_id] = {}
+
+            rev_reg = revocation_registries[rev_reg_id]
+            tails_local_path = await rev_reg.get_or_fetch_local_tails_path(self.context)
+
+            try:
+                revocation_states[rev_reg_id][delta_timestamp] = json.loads(
+                    await holder.create_revocation_state(
+                        credential["cred_rev_id"],
+                        rev_reg.reg_def,
+                        delta,
+                        delta_timestamp,
+                        tails_local_path,
+                    )
+                )
+            except IndyError as e:
+                self._logger.error(
+                    f"Failed to create revocation state: {e.error_code}, {e.message}"
+                )
+                raise e
+
+        for (referent, referented) in requested_referents.items():
+            if "timestamp" not in referented:
+                continue
+            if referent in requested_credentials["requested_attributes"]:
+                requested_credentials["requested_attributes"][referent][
+                    "timestamp"
+                ] = referented["timestamp"]
+            if referent in requested_credentials["requested_predicates"]:
+                requested_credentials["requested_predicates"][referent][
+                    "timestamp"
+                ] = referented["timestamp"]
+
+        indy_proof_json = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
             requested_credentials,
             schemas,
             credential_definitions,
+            revocation_states,
         )
+        indy_proof = json.loads(indy_proof_json)
 
         presentation_message = Presentation(
             comment=comment,
@@ -353,10 +465,9 @@ class PresentationManager:
             presentation_preview = exchange_pres_proposal.presentation_proposal
 
             proof_req = presentation_exchange_record.presentation_request
-            for (
-                reft,
-                attr_spec
-            ) in presentation["requested_proof"]["revealed_attrs"].items():
+            for (reft, attr_spec) in presentation["requested_proof"][
+                "revealed_attrs"
+            ].items():
                 name = proof_req["requested_attributes"][reft]["name"]
                 value = attr_spec["raw"]
                 if not presentation_preview.has_attr_spec(
@@ -364,7 +475,7 @@ class PresentationManager:
                         attr_spec["sub_proof_index"]
                     ]["cred_def_id"],
                     name=name,
-                    value=value
+                    value=value,
                 ):
                     raise PresentationManagerError(
                         f"Presentation {name}={value} mismatches proposal value"
@@ -401,33 +512,63 @@ class PresentationManager:
         schema_ids = []
         credential_definition_ids = []
 
-        identifiers = indy_proof["identifiers"]
-        for identifier in identifiers:
-            schema_ids.append(identifier["schema_id"])
-            credential_definition_ids.append(identifier["cred_def_id"])
-
         schemas = {}
         credential_definitions = {}
+        rev_reg_defs = {}
+        rev_reg_entries = {}
 
+        identifiers = indy_proof["identifiers"]
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
+            for identifier in identifiers:
+                schema_ids.append(identifier["schema_id"])
+                credential_definition_ids.append(identifier["cred_def_id"])
 
-            # Build schemas for anoncreds
-            for schema_id in schema_ids:
-                schema = await ledger.get_schema(schema_id)
-                schemas[schema_id] = schema
+                # Build schemas for anoncreds
+                if identifier["schema_id"] not in schemas:
+                    schemas[identifier["schema_id"]] = await ledger.get_schema(
+                        identifier["schema_id"]
+                    )
 
-            # Build credential_definitions for anoncreds
-            for credential_definition_id in credential_definition_ids:
-                (credential_definition) = await ledger.get_credential_definition(
-                    credential_definition_id
-                )
-                credential_definitions[credential_definition_id] = credential_definition
+                if identifier["cred_def_id"] not in credential_definitions:
+                    credential_definitions[
+                        identifier["cred_def_id"]
+                    ] = await ledger.get_credential_definition(
+                        identifier["cred_def_id"]
+                    )
+
+                if identifier.get("rev_reg_id"):
+                    if identifier["rev_reg_id"] not in rev_reg_defs:
+                        rev_reg_defs[
+                            identifier["rev_reg_id"]
+                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+
+                    if identifier.get("timestamp"):
+                        (
+                            found_rev_reg_entry,
+                            found_timestamp,
+                        ) = await ledger.get_revoc_reg_entry(
+                            identifier["rev_reg_id"], identifier["timestamp"]
+                        )
+
+                        if identifier["rev_reg_id"] not in rev_reg_entries:
+                            rev_reg_entries[identifier["rev_reg_id"]] = {
+                                found_timestamp: found_rev_reg_entry
+                            }
+                        else:
+                            rev_reg_entries[identifier["rev_reg_id"]][
+                                found_timestamp
+                            ] = found_rev_reg_entry
 
         verifier: BaseVerifier = await self.context.inject(BaseVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value
             await verifier.verify_presentation(
-                indy_proof_request, indy_proof, schemas, credential_definitions
+                indy_proof_request,
+                indy_proof,
+                schemas,
+                credential_definitions,
+                rev_reg_defs,
+                rev_reg_entries,
             )
         )
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
@@ -477,7 +618,7 @@ class PresentationManager:
         ) = await V10PresentationExchange.retrieve_by_tag_filter(
             self.context,
             {"thread_id": self.context.message._thread_id},
-            {"connection_id": self.context.connection_record.connection_id}
+            {"connection_id": self.context.connection_record.connection_id},
         )
 
         presentation_exchange_record.state = (
