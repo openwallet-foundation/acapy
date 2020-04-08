@@ -70,9 +70,10 @@ class CredentialManager:
             credential_offer = cached["offer"]
         else:
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-            credential_offer = await issuer.create_credential_offer(
+            credential_offer_json = await issuer.create_credential_offer(
                 credential_definition_id
             )
+            credential_offer = json.loads(credential_offer_json)
             await CredentialExchange.set_cached_key(
                 self.context, cache_key, {"offer": credential_offer}, 3600
             )
@@ -172,11 +173,16 @@ class CredentialManager:
 
                 holder: BaseHolder = await self.context.inject(BaseHolder)
                 (
-                    credential_exchange_record.credential_request,
-                    credential_exchange_record.credential_request_metadata,
+                    cred_req_json,
+                    cred_req_meta_json,
                 ) = await holder.create_credential_request(
                     credential_offer, credential_definition, did
                 )
+                (
+                    credential_exchange_record.credential_request,
+                    credential_exchange_record.credential_request_metadata,
+                ) = (json.loads(cred_req_json), json.loads(cred_req_meta_json))
+
                 await CredentialExchange.set_cached_key(
                     self.context,
                     cache_key,
@@ -259,11 +265,12 @@ class CredentialManager:
 
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             (
-                credential_exchange_record.credential,
-                _,  # credential_revocation_id
+                credential_json,
+                credential_exchange_record.revocation_id,
             ) = await issuer.create_credential(
                 schema, credential_offer, credential_request, credential_values
             )
+            credential_exchange_record.credential = json.loads(credential_json)
 
         credential_exchange_record.state = CredentialExchange.STATE_ISSUED
 
@@ -337,11 +344,11 @@ class CredentialManager:
             credential_id=credential_id,
         )
 
-        credential = await holder.get_credential(credential_id)
+        credential_json = await holder.get_credential(credential_id)
 
         credential_exchange_record.state = CredentialExchange.STATE_STORED
         credential_exchange_record.credential_id = credential_id
-        credential_exchange_record.credential = credential
+        credential_exchange_record.credential = json.loads(credential_json)
 
         await credential_exchange_record.save(self.context, reason="Store credential")
 

@@ -6,6 +6,8 @@ import logging
 import os
 import random
 import subprocess
+import hashlib
+import base58
 from timeit import default_timer
 
 from aiohttp import (
@@ -29,6 +31,10 @@ EVENT_LOGGER = logging.getLogger("event")
 EVENT_LOGGER.setLevel(logging.DEBUG if DEBUG_EVENTS else logging.NOTSET)
 EVENT_LOGGER.addHandler(event_stream_handler)
 EVENT_LOGGER.propagate = False
+
+TRACE_TARGET = os.getenv("TRACE_TARGET")
+TRACE_TAG    = os.getenv("TRACE_TAG")
+TRACE_ENABLED = True if TRACE_TARGET else False
 
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
@@ -122,14 +128,25 @@ class DemoAgent:
         self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.extra_args = extra_args
+        self.trace_enabled = TRACE_ENABLED
+        self.trace_target = TRACE_TARGET
+        self.trace_tag = TRACE_TAG
 
+        self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if RUN_MODE == "pwd":
             self.endpoint = f"http://{self.external_host}".replace(
                 "{PORT}", str(http_port)
             )
         else:
             self.endpoint = f"http://{self.external_host}:{http_port}"
-        self.admin_url = f"http://{self.internal_host}:{admin_port}"
+        if os.getenv("PUBLIC_TAILS_URL"):
+            self.public_tails_url = os.getenv("PUBLIC_TAILS_URL")
+        elif RUN_MODE == "pwd":
+            self.public_tails_url = f"http://{self.external_host}".replace(
+                "{PORT}", str(admin_port)
+            )
+        else:
+            self.public_tails_url = self.admin_url
         self.webhook_port = None
         self.webhook_url = None
         self.webhook_site = None
@@ -152,7 +169,7 @@ class DemoAgent:
         self.did = None
         self.wallet_stats = []
 
-    async def register_schema_and_creddef(self, schema_name, version, schema_attrs):
+    async def register_schema_and_creddef(self, schema_name, version, schema_attrs, support_revocation: bool = False):
         # Create a schema
         schema_body = {
             "schema_name": schema_name,
@@ -165,7 +182,10 @@ class DemoAgent:
         log_msg("Schema ID:", schema_id)
 
         # Create a cred def for the schema
-        credential_definition_body = {"schema_id": schema_id}
+        credential_definition_body = {
+            "schema_id": schema_id,
+            "support_revocation": support_revocation
+        }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
         )
@@ -173,8 +193,65 @@ class DemoAgent:
             "credential_definition_id"
         ]
         log_msg("Cred def ID:", credential_definition_id)
+        return schema_id, credential_definition_id
 
-        return (schema_id, credential_definition_id)
+    async def create_and_publish_revocation_registry(self, credential_def_id, max_cred_num):
+        revoc_response = await self.admin_POST(
+            "/revocation/create-registry",
+            {
+                "credential_definition_id": credential_def_id,
+                "max_cred_num": max_cred_num
+            }
+        )
+        revocation_registry_id = revoc_response["result"]["revoc_reg_id"]
+        tails_hash = revoc_response["result"]["tails_hash"]
+
+        # get the tails file from "GET /revocation/registry/{id}/tails-file"
+        tails_file = await self.admin_GET_FILE(f"/revocation/registry/{revocation_registry_id}/tails-file")
+        hasher = hashlib.sha256()
+        hasher.update(tails_file)
+        my_tails_hash = base58.b58encode(hasher.digest()).decode("utf-8")
+        log_msg(f"Revocation Registry ID: {revocation_registry_id}")
+        assert tails_hash == my_tails_hash
+
+        # Real app should publish tails file somewhere and update the revocation registry with the URI.
+        # But for the demo, assume the agent's admin end-points are accessible to the other agents
+        # Update the revocation registry with the public URL to the tails file
+        tails_file_admin_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        if RUN_MODE == "pwd":
+            tails_file_external_url = f"http://{self.external_host}".replace(
+                "{PORT}", str(self.admin_port)
+            )
+        else:
+            tails_file_external_url = f"http://127.0.0.1:{self.admin_port}"
+        tails_file_external_url += f"/revocation/registry/{revocation_registry_id}/tails-file"
+        revoc_updated_response = await self.admin_PATCH(
+            f"/revocation/registry/{revocation_registry_id}",
+            {
+                "tails_public_uri": tails_file_url
+            }
+        )
+        tails_public_uri = revoc_updated_response["result"]["tails_public_uri"]
+        assert tails_public_uri == tails_file_url
+
+        # if PUBLIC_TAILS_URL is specified, tell user how to get tails file from agent
+        if os.getenv("PUBLIC_TAILS_URL"):
+            log_msg(f"================")
+            log_msg(f"Revocation Registry Tails File Admin URL: {tails_file_admin_url}")
+            log_msg(f"Revocation Registry Tails File URL: {tails_public_uri}")
+            log_msg(f"External host Tails File URL: {tails_file_external_url}")
+            log_msg(f"================")
+            log_msg(f"mkdir -p ./revocation/registry/{revocation_registry_id}/")
+            log_msg(f"curl -X GET \"{tails_file_external_url}\" --output ./revocation/registry/{revocation_registry_id}/tails-file.bin")
+            log_msg(f"base64 revocation/registry/{revocation_registry_id}/tails-file.bin >revocation/registry/{revocation_registry_id}/tails-file")
+            log_msg(f"================")
+
+        revoc_publish_response = await self.admin_POST(
+            f"/revocation/registry/{revocation_registry_id}/publish"
+        )
+
+        return revoc_publish_response["result"]["revoc_reg_id"]
 
     def get_agent_args(self):
         result = [
@@ -210,6 +287,15 @@ class DemoAgent:
             )
         if self.webhook_url:
             result.append(("--webhook-url", self.webhook_url))
+        if self.trace_enabled:
+            result.extend(
+                [
+                    ("--trace",),
+                    ("--trace-target", self.trace_target),
+                    ("--trace-tag", self.trace_tag),
+                    ("--trace-label", self.label+".trace"),
+                ]
+            )
         if self.extra_args:
             result.extend(self.extra_args)
 
@@ -408,6 +494,23 @@ class DemoAgent:
             return response
         except ClientError as e:
             self.log(f"Error during POST {path}: {str(e)}")
+            raise
+
+    async def admin_PATCH(self, path, data=None, text=False, params=None) -> ClientResponse:
+        try:
+            return await self.admin_request("PATCH", path, data, text, params)
+        except ClientError as e:
+            self.log(f"Error during PATCH {path}: {str(e)}")
+            raise
+
+    async def admin_GET_FILE(self, path, params=None) -> bytes:
+        try:
+            params = {k: v for (k, v) in (params or {}).items() if v is not None}
+            resp = await self.client_session.request("GET", self.admin_url + path, params=params)
+            resp.raise_for_status()
+            return await resp.read()
+        except ClientError as e:
+            self.log(f"Error during GET FILE {path}: {str(e)}")
             raise
 
     async def detect_process(self):

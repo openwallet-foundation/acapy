@@ -9,6 +9,7 @@ from ...core.error import BaseError
 from ...holder.base import BaseHolder
 from ...ledger.base import BaseLedger
 from ...verifier.base import BaseVerifier
+from ...indy.util import generate_pr_nonce
 
 from .models.presentation_exchange import PresentationExchange
 from .messages.presentation_request import PresentationRequest
@@ -56,7 +57,7 @@ class PresentationManager:
         presentation_request = {
             "name": name,
             "version": version,
-            "nonce": str(uuid4().int),
+            "nonce": await generate_pr_nonce(),
             "requested_attributes": {},
             "requested_predicates": {},
         }
@@ -167,7 +168,7 @@ class PresentationManager:
         credential_definition_ids = []
         holder: BaseHolder = await self.context.inject(BaseHolder)
         for credential_id in credential_ids:
-            credential = await holder.get_credential(credential_id)
+            credential = json.loads(await holder.get_credential(credential_id))
             schema_id = credential["schema_id"]
             credential_definition_id = credential["cred_def_id"]
             schema_ids.append(schema_id)
@@ -192,16 +193,14 @@ class PresentationManager:
                 credential_definitions[credential_definition_id] = credential_definition
 
         holder: BaseHolder = await self.context.inject(BaseHolder)
-        presentation = await holder.create_presentation(
+        presentation_json = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
             requested_credentials,
             schemas,
             credential_definitions,
         )
 
-        presentation_message = CredentialPresentation(
-            presentation=json.dumps(presentation)
-        )
+        presentation_message = CredentialPresentation(presentation=presentation_json)
 
         # TODO: Find a more elegant way to do this
         presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
@@ -210,7 +209,7 @@ class PresentationManager:
         presentation_exchange_record.state = (
             PresentationExchange.STATE_PRESENTATION_SENT
         )
-        presentation_exchange_record.presentation = presentation
+        presentation_exchange_record.presentation = json.loads(presentation_json)
         await presentation_exchange_record.save(
             self.context,
             reason="Create presentation",

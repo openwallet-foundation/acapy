@@ -4,6 +4,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Union
 
+from ...config.injection_context import InjectionContext
 from ...utils.stats import Collector
 
 from ..error import TransportError
@@ -57,11 +58,14 @@ class BaseOutboundTransport(ABC):
         self._wire_format = format
 
     @abstractmethod
-    async def handle_message(self, payload: Union[str, bytes], endpoint: str):
+    async def handle_message(
+        self, context: InjectionContext, payload: Union[str, bytes], endpoint: str
+    ):
         """
         Handle message from queue.
 
         Args:
+            context: the context that produced the message
             payload: message payload in string or byte format
             endpoint: URI endpoint for delivery
         """

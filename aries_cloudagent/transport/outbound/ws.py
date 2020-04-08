@@ -5,6 +5,8 @@ from typing import Union
 
 from aiohttp import ClientSession, DummyCookieJar
 
+from ...config.injection_context import InjectionContext
+
 from .base import BaseOutboundTransport
 
 
@@ -28,12 +30,16 @@ class WsTransport(BaseOutboundTransport):
         await self.client_session.close()
         self.client_session = None
 
-    async def handle_message(self, payload: Union[str, bytes], endpoint: str):
+    async def handle_message(
+        self, context: InjectionContext, payload: Union[str, bytes], endpoint: str
+    ):
         """
         Handle message from queue.
 
         Args:
-            message: `OutboundMessage` to send over transport implementation
+            context: the context that produced the message
+            payload: message payload in string or byte format
+            endpoint: URI endpoint for delivery
         """
         # aiohttp should automatically handle websocket sessions
         async with self.client_session.ws_connect(endpoint) as ws:

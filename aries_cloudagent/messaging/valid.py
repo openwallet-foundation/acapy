@@ -63,11 +63,11 @@ class IndyCredDefId(Regexp):
 
         super().__init__(
             (
-                rf"([{B58}]{{21,22}})"  # issuer DID
+                rf"^([{B58}]{{21,22}})"  # issuer DID
                 f":3"  # cred def id marker
                 f":CL"  # sig alg
                 rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
-                f"(.+)?$"  # tag
+                f":(.+)?$"  # tag
             ),
             error="Value {input} is not an indy credential definition identifier."
         )
@@ -114,7 +114,7 @@ class IndyRevRegId(Regexp):
                 rf"^([{B58}]{{21,22}}):4:"
                 rf"([{B58}]{{21,22}}):3:"
                 rf"CL:(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))(:.+)?:"
-                rf"CL_ACCUM:.+$"
+                rf"CL_ACCUM:(.+$)"
             ),
             error="Value {input} is not an indy revocation registry identifier."
         )
@@ -191,6 +191,20 @@ class SHA256Hash(Regexp):
         )
 
 
+class Base58SHA256Hash(Regexp):
+    """Validate value against base58 encoding of SHA-256 hash."""
+
+    EXAMPLE = "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            rf"^[{B58}]{{43,44}}$",
+            error="Value {input} is not a base58 encoding of a SHA-256 hash."
+        )
+
+
 class UUIDFour(Regexp):
     """Validate UUID4: 8-4-4-4-12 hex digits, the 13th of which being 4."""
 
@@ -257,6 +271,10 @@ BASE64URL = {
 SHA256 = {
     "validate": SHA256Hash(),
     "example": SHA256Hash.EXAMPLE
+}
+BASE58_SHA256_HASH = {
+    "validate": Base58SHA256Hash(),
+    "example": Base58SHA256Hash.EXAMPLE
 }
 UUID4 = {
     "validate": UUIDFour(),

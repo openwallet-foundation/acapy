@@ -2,6 +2,7 @@ from marshmallow import ValidationError
 from unittest import TestCase
 
 from ..valid import (
+    BASE58_SHA256_HASH,
     BASE64,
     BASE64URL,
     INDY_CRED_DEF_ID,
@@ -60,6 +61,18 @@ class TestValid(TestCase):
                 INDY_RAW_PUBLIC_KEY["validate"](non_indy_raw_public_key)
 
         INDY_RAW_PUBLIC_KEY["validate"]("Q4zqM7aXqm7gDQkUVLng9hQ4zqM7aXqm7gDQkUVLng9h")
+
+    def test_indy_base58_sha256_hash(self):
+        non_base58_sha256_hashes = [
+           "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
+           "Q4zqM7aXqm7gDQkUVLng",  # too short
+           "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
+        ]
+        for non_base58_sha256_hash in non_base58_sha256_hashes:
+            with self.assertRaises(ValidationError):
+                BASE58_SHA256_HASH["validate"](non_base58_sha256_hash)
+
+        BASE58_SHA256_HASH["validate"]("Q4zqM7aXqm7gDQkUVLng9hQ4zqM7aXqm7gDQkUVLng9h")
 
     def test_cred_def_id(self):
         non_cred_def_ids = [
