@@ -10,6 +10,8 @@ from .....messaging.base_handler import (
 from ..manager import CredentialManager
 from ..messages.credential_ack import CredentialAck
 
+from .....utils.tracing import trace_event, get_timer
+
 
 class CredentialAckHandler(BaseHandler):
     """Message handler class for credential acks."""
@@ -22,6 +24,8 @@ class CredentialAckHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
+        r_time = get_timer()
+
         self._logger.debug("CredentialAckHandler called with context %s", context)
         assert isinstance(context.message, CredentialAck)
         self._logger.info(
@@ -35,3 +39,10 @@ class CredentialAckHandler(BaseHandler):
         credential_manager = CredentialManager(context)
 
         await credential_manager.receive_credential_ack()
+
+        trace_event(
+            context.settings,
+            context.message,
+            outcome="CredentialAckHandler.handle.END",
+            perf_counter=r_time
+        )

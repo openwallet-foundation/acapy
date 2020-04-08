@@ -66,17 +66,20 @@ class TestOutboundTransportManager(AsyncTestCase):
             sender_key=4,
         )
 
-        mgr.enqueue_message(context, message)
+        send_context = InjectionContext()
+        mgr.enqueue_message(send_context, message)
         await mgr.flush()
         transport.wire_format.encode_message.assert_awaited_once_with(
-            context,
+            send_context,
             message.payload,
             message.target.recipient_keys,
             message.target.routing_keys,
             message.target.sender_key,
         )
         transport.handle_message.assert_awaited_once_with(
-            transport.wire_format.encode_message.return_value, message.target.endpoint
+            send_context,
+            transport.wire_format.encode_message.return_value,
+            message.target.endpoint,
         )
         await mgr.stop()
 

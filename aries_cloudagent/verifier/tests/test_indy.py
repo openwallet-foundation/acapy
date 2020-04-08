@@ -313,6 +313,8 @@ class TestIndyVerifier(AsyncTestCase):
                 "presentation",
                 "schemas",
                 "credential_definitions",
+                "rev_reg_defs",
+                "rev_reg_entries",
             )
 
         mock_verify.assert_called_once_with(
@@ -320,8 +322,8 @@ class TestIndyVerifier(AsyncTestCase):
             json.dumps("presentation"),
             json.dumps("schemas"),
             json.dumps("credential_definitions"),
-            json.dumps({}),
-            json.dumps({}),
+            json.dumps("rev_reg_defs"),
+            json.dumps("rev_reg_entries"),
         )
 
         assert verified == "val"
@@ -331,7 +333,12 @@ class TestIndyVerifier(AsyncTestCase):
         mock_verify.return_value = True
         verifier = IndyVerifier("wallet")
         verified = await verifier.verify_presentation(
-            INDY_PROOF_REQ_NAME, INDY_PROOF_NAME, "schemas", "credential_definitions"
+            INDY_PROOF_REQ_NAME,
+            INDY_PROOF_NAME,
+            "schemas",
+            "credential_definitions",
+            "rev_reg_defs",
+            "rev_reg_entries",
         )
 
         mock_verify.assert_called_once_with(
@@ -339,8 +346,8 @@ class TestIndyVerifier(AsyncTestCase):
             json.dumps(INDY_PROOF_NAME),
             json.dumps("schemas"),
             json.dumps("credential_definitions"),
-            json.dumps({}),
-            json.dumps({}),
+            json.dumps("rev_reg_defs"),
+            json.dumps("rev_reg_entries"),
         )
 
         assert verified == True
@@ -356,7 +363,12 @@ class TestIndyVerifier(AsyncTestCase):
         ] = "Mock chicken"
 
         verified = await verifier.verify_presentation(
-            INDY_PROOF_REQ_NAME, INDY_PROOF_X, "schemas", "credential_definitions"
+            INDY_PROOF_REQ_NAME,
+            INDY_PROOF_X,
+            "schemas",
+            "credential_definitions",
+            "rev_reg_defs",
+            "rev_reg_entries",
         )
 
         mock_verify.assert_not_called()
@@ -374,7 +386,12 @@ class TestIndyVerifier(AsyncTestCase):
         ] = "1234567890"
 
         verified = await verifier.verify_presentation(
-            INDY_PROOF_REQ_NAME, INDY_PROOF_X, "schemas", "credential_definitions"
+            INDY_PROOF_REQ_NAME,
+            INDY_PROOF_X,
+            "schemas",
+            "credential_definitions",
+            "rev_reg_defs",
+            "rev_reg_entries",
         )
 
         mock_verify.assert_not_called()
@@ -390,6 +407,8 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_PRED_NAMES,
             "schemas",
             "credential_definitions",
+            "rev_reg_defs",
+            "rev_reg_entries",
         )
 
         mock_verify.assert_called_once_with(
@@ -397,8 +416,8 @@ class TestIndyVerifier(AsyncTestCase):
             json.dumps(INDY_PROOF_PRED_NAMES),
             json.dumps("schemas"),
             json.dumps("credential_definitions"),
-            json.dumps({}),
-            json.dumps({}),
+            json.dumps("rev_reg_defs"),
+            json.dumps("rev_reg_entries"),
         )
 
         assert verified == True
@@ -414,7 +433,12 @@ class TestIndyVerifier(AsyncTestCase):
         ]["value"] = 0
 
         verified = await verifier.verify_presentation(
-            INDY_PROOF_REQ_PRED_NAMES, INDY_PROOF_X, "schemas", "credential_definitions"
+            INDY_PROOF_REQ_PRED_NAMES,
+            INDY_PROOF_X,
+            "schemas",
+            "credential_definitions",
+            "rev_reg_defs",
+            "rev_reg_entries",
         )
 
         mock_verify.assert_not_called()
@@ -430,7 +454,12 @@ class TestIndyVerifier(AsyncTestCase):
         INDY_PROOF_REQ_X["requested_predicates"]["18_busid_GE_uuid"]["name"] = "dummy"
 
         verified = await verifier.verify_presentation(
-            INDY_PROOF_REQ_X, INDY_PROOF_PRED_NAMES, "schemas", "credential_definitions"
+            INDY_PROOF_REQ_X,
+            INDY_PROOF_PRED_NAMES,
+            "schemas",
+            "credential_definitions",
+            "rev_reg_defs",
+            "rev_reg_entries",
         )
 
         mock_verify.assert_not_called()
@@ -448,7 +477,12 @@ class TestIndyVerifier(AsyncTestCase):
         ] = INDY_PROOF_X["requested_proof"]["revealed_attr_groups"].pop("18_uuid")
 
         verified = await verifier.verify_presentation(
-            INDY_PROOF_REQ_PRED_NAMES, INDY_PROOF_X, "schemas", "credential_definitions"
+            INDY_PROOF_REQ_PRED_NAMES,
+            INDY_PROOF_X,
+            "schemas",
+            "credential_definitions",
+            "rev_reg_defs",
+            "rev_reg_entries",
         )
 
         mock_verify.assert_not_called()

@@ -4,8 +4,9 @@ import logging
 import os
 import random
 import sys
+import time
 
-from uuid import uuid4
+from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
@@ -23,8 +24,11 @@ from runners.support.utils import (
 CRED_PREVIEW_TYPE = (
     "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
 )
+SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 
 LOGGER = logging.getLogger(__name__)
+
+TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 20))
 
 
 class FaberAgent(DemoAgent):
@@ -57,9 +61,11 @@ class FaberAgent(DemoAgent):
 
     async def handle_connections(self, message):
         if message["connection_id"] == self.connection_id:
-            if message["state"] == "active" and not self._connection_ready.done():
+            if message["state"] in ["active", "response"]:
                 self.log("Connected")
                 self._connection_ready.set_result(True)
+                if not self._connection_ready.done():
+                    self._connection_ready.set_result(True)
 
     async def handle_issue_credential(self, message):
         state = message["state"]
@@ -70,10 +76,10 @@ class FaberAgent(DemoAgent):
         self.cred_state[credential_exchange_id] = state
 
         self.log(
-            "Credential: state =",
-            state,
-            ", credential_exchange_id =",
-            credential_exchange_id,
+            "Credential: state = {}, credential_exchange_id = {}".format(
+                state,
+                credential_exchange_id,
+            )
         )
 
         if state == "request_received":
@@ -86,13 +92,28 @@ class FaberAgent(DemoAgent):
                     {"name": n, "value": v} for (n, v) in cred_attrs.items()
                 ],
             }
-            await self.admin_POST(
-                f"/issue-credential/records/{credential_exchange_id}/issue",
-                {
-                    "comment": f"Issuing credential, exchange {credential_exchange_id}",
-                    "credential_preview": cred_preview,
-                },
-            )
+            try:
+                cred_ex_rec = await self.admin_POST(
+                    f"/issue-credential/records/{credential_exchange_id}/issue",
+                    {
+                        "comment": (
+                            f"Issuing credential, exchange {credential_exchange_id}"
+                        ),
+                        "credential_preview": cred_preview,
+                    },
+                )
+                rev_reg_id = cred_ex_rec.get("revoc_reg_id")
+                cred_rev_id = cred_ex_rec.get("revocation_id")
+                if rev_reg_id:
+                    self.log(
+                        f"Revocation registry id: {rev_reg_id}"
+                    )
+                if cred_rev_id:
+                    self.log(
+                        f"Credential revocation id: {cred_rev_id}"
+                    )
+            except ClientError:
+                pass
 
     async def handle_present_proof(self, message):
         state = message["state"]
@@ -118,7 +139,12 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def main(start_port: int, no_auto: bool = False, show_timing: bool = False):
+async def main(
+    start_port: int,
+    no_auto: bool = False,
+    revocation: bool = False,
+    show_timing: bool = False,
+):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -159,15 +185,31 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                 _,  # schema id
                 credential_definition_id,
             ) = await agent.register_schema_and_creddef(
-                "degree schema", version, ["name", "date", "degree", "age"]
+                "degree schema",
+                version,
+                ["name", "date", "degree", "age", "timestamp"],
+                support_revocation=revocation,
             )
+
+        if revocation:
+            with log_timer("Publish revocation registry duration:"):
+                log_status(
+                    "#5/6 Create and publish the revocation registry on the ledger"
+                )
+                revocation_registry_id = await (
+                    agent.create_and_publish_revocation_registry(
+                        credential_definition_id, TAILS_FILE_COUNT
+                    )
+                )
+        else:
+            revocation_registry_id = None
 
         # TODO add an additional credential for Student ID
 
         with log_timer("Generate invitation duration:"):
             # Generate an invitation
             log_status(
-                "#5 Create a connection to alice and print out the invite details"
+                "#7 Create a connection to alice and print out the invite details"
             )
             connection = await agent.admin_POST("/connections/create-invitation")
 
@@ -180,10 +222,19 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
         log_msg("Waiting for connection...")
         await agent.detect_connection()
 
-        async for option in prompt_loop(
-            "(1) Issue Credential, (2) Send Proof Request, "
-            + "(3) Send Message (X) Exit? [1/2/3/X] "
-        ):
+        options = (
+            "    (1) Issue Credential\n"
+            "    (2) Send Proof Request\n"
+            "    (3) Send Message\n"
+        )
+        if revocation:
+            options += (
+                "    (4) Revoke Credential\n"
+                "    (5) Publish Revocations\n"
+                "    (6) Add Revocation Registry\n"
+            )
+        options += "    (X) Exit?\n[1/2/3/{}X] ".format("4/5/6/" if revocation else "")
+        async for option in prompt_loop(options):
             if option is None or option in "xX":
                 break
 
@@ -196,6 +247,7 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                     "date": "2018-05-28",
                     "degree": "Maths",
                     "age": "24",
+                    "timestamp": str(int(time.time())),
                 }
 
                 cred_preview = {
@@ -209,7 +261,9 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                     "connection_id": agent.connection_id,
                     "cred_def_id": credential_definition_id,
                     "comment": f"Offer on cred def id {credential_definition_id}",
+                    "auto_remove": False,
                     "credential_preview": cred_preview,
+                    "revoc_reg_id": revocation_registry_id,
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
 
@@ -220,23 +274,34 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                 req_attrs = [
                     {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
                     {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
-                    {"name": "degree", "restrictions": [{"issuer_did": agent.did}]},
-                    # include the following to test self-attested attributes
-                    #{"name": "self_attested_thing"},
                 ]
+                if revocation:
+                    req_attrs.append(
+                        {
+                            "name": "degree",
+                            "restrictions": [{"issuer_did": agent.did}],
+                            "non_revoked": {"to": int(time.time() - 1)},
+                        },
+                    )
+                else:
+                    req_attrs.append(
+                        {"name": "degree", "restrictions": [{"issuer_did": agent.did}]}
+                    )
+                if SELF_ATTESTED:
+                    # test self-attested claims
+                    req_attrs.append({"name": "self_attested_thing"},)
                 req_preds = [
-                    # include the following to test zero-knowledge proofs
-                    #{
-                    #    "name": "age",
-                    #    "p_type": ">=",
-                    #    "p_value": 18,
-                    #    "restrictions": [{"issuer_did": agent.did}],
-                    #}
+                    # test zero-knowledge proofs
+                    {
+                        "name": "age",
+                        "p_type": ">=",
+                        "p_value": 18,
+                        "restrictions": [{"issuer_did": agent.did}],
+                    }
                 ]
                 indy_proof_request = {
                     "name": "Proof of Education",
                     "version": "1.0",
-                    "nonce": str(uuid4().int),
                     "requested_attributes": {
                         f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
                     },
@@ -245,6 +310,8 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                         for req_pred in req_preds
                     },
                 }
+                if revocation:
+                    indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
                     "connection_id": agent.connection_id,
                     "proof_request": indy_proof_request,
@@ -257,6 +324,42 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
                 msg = await prompt("Enter message: ")
                 await agent.admin_POST(
                     f"/connections/{agent.connection_id}/send-message", {"content": msg}
+                )
+            elif option == "4" and revocation:
+                rev_reg_id = await prompt("Enter revocation registry id: ")
+                cred_rev_id = await prompt("Enter credential revocation id: ")
+                publish = json.dumps(
+                    await prompt("Publish now? [Y/N]: ", default="N") in ('yY')
+                )
+                try:
+                    await agent.admin_POST(
+                        "/issue-credential/revoke"
+                        f"?publish={publish}"
+                        f"&rev_reg_id={rev_reg_id}"
+                        f"&cred_rev_id={cred_rev_id}"
+                    )
+                except ClientError:
+                    pass
+            elif option == "5" and revocation:
+                try:
+                    resp = await agent.admin_POST(
+                        "/issue-credential/publish-revocations"
+                    )
+                    agent.log(
+                        "Published revocations for {} revocation registr{} {}".format(
+                            len(resp["results"]),
+                            "y" if len(resp) == 1 else "ies",
+                            json.dumps([k for k in resp["results"]], indent=4)
+                        )
+                    )
+                except ClientError:
+                    pass
+            elif option == "6" and revocation:
+                log_status("#19 Add another revocation registry")
+                revocation_registry_id = await (
+                    agent.create_and_publish_revocation_registry(
+                        credential_definition_id, TAILS_FILE_COUNT
+                    )
                 )
 
         if show_timing:
@@ -294,15 +397,46 @@ if __name__ == "__main__":
         help="Choose the starting port number to listen on",
     )
     parser.add_argument(
+        "--revocation", action="store_true", help="Enable credential revocation"
+    )
+    parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
     args = parser.parse_args()
+
+    ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
+    ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in (
+        "false",
+        "0",
+    )
+    PYDEVD_PYCHARM_HOST = os.getenv("PYDEVD_PYCHARM_HOST", "localhost")
+    PYDEVD_PYCHARM_CONTROLLER_PORT = int(
+        os.getenv("PYDEVD_PYCHARM_CONTROLLER_PORT", 5001)
+    )
+
+    if ENABLE_PYDEVD_PYCHARM:
+        try:
+            import pydevd_pycharm
+
+            print(
+                "Faber remote debugging to "
+                f"{PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}"
+            )
+            pydevd_pycharm.settrace(
+                host=PYDEVD_PYCHARM_HOST,
+                port=PYDEVD_PYCHARM_CONTROLLER_PORT,
+                stdoutToServer=True,
+                stderrToServer=True,
+                suspend=False,
+            )
+        except ImportError:
+            print("pydevd_pycharm library was not found")
 
     require_indy()
 
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, args.no_auto, args.timing)
+            main(args.port, args.no_auto, args.revocation, args.timing)
         )
     except KeyboardInterrupt:
         os._exit(1)

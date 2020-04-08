@@ -44,6 +44,11 @@ class BasicWallet(BaseWallet):
         return self._name
 
     @property
+    def type(self) -> str:
+        """Accessor for the wallet type."""
+        return BasicWallet.WALLET_TYPE
+
+    @property
     def created(self) -> bool:
         """Check whether the wallet was created on the last open call."""
         return True
@@ -335,7 +340,13 @@ class BasicWallet(BaseWallet):
         Returns:
             The resulting packed message bytes
 
+        Raises:
+            WalletError: If the message is not provided
+
         """
+        if message is None:
+            raise WalletError("Message not provided")
+
         keys_bin = [b58_to_bytes(key) for key in to_verkeys]
         secret = self._get_private_key(from_verkey) if from_verkey else None
         result = await asyncio.get_event_loop().run_in_executor(

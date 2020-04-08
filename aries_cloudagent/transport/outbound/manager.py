@@ -14,6 +14,8 @@ from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundErro
 from ...utils.stats import Collector
 from ...utils.task_queue import CompletedTask, TaskQueue, task_exc_info
 
+from ...utils.tracing import trace_event, get_timer
+
 from ..wire_format import BaseWireFormat
 
 from .base import (
@@ -307,7 +309,7 @@ class OutboundTransportManager:
 
         while True:
             self.outbound_event.clear()
-            loop_time = time.perf_counter()
+            loop_time = get_timer()
             upd_buffer = []
 
             for queued in self.outbound_buffer:
@@ -333,6 +335,11 @@ class OutboundTransportManager:
 
                 if deliver:
                     queued.state = QueuedOutboundMessage.STATE_DELIVER
+                    trace_event(
+                        self.context.settings,
+                        queued.message,
+                        outcome="OutboundTransportManager._process_loop.DELIVER",
+                    )
                     self.deliver_queued_message(queued)
 
                 upd_buffer.append(queued)
@@ -349,6 +356,11 @@ class OutboundTransportManager:
                         new_pending += 1
                     else:
                         queued.state = QueuedOutboundMessage.STATE_ENCODE
+                        trace_event(
+                            self.context.settings,
+                            queued.message,
+                            outcome="OutboundTransportManager._process_loop.ENCODE",
+                        )
                         self.encode_queued_message(queued)
                 else:
                     new_pending += 1
@@ -398,7 +410,7 @@ class OutboundTransportManager:
         """Kick off delivery of a queued message."""
         transport = self.get_transport_instance(queued.transport_id)
         queued.task = self.task_queue.run(
-            transport.handle_message(queued.payload, queued.endpoint),
+            transport.handle_message(queued.context, queued.payload, queued.endpoint),
             lambda completed: self.finished_deliver(queued, completed),
         )
         return queued.task
@@ -411,15 +423,14 @@ class OutboundTransportManager:
             if queued.retries:
                 LOGGER.error(
                     ">>> Posting error: %s; Re-queue failed message ...",
-                    queued.endpoint
+                    queued.endpoint,
                 )
                 queued.retries -= 1
                 queued.state = QueuedOutboundMessage.STATE_RETRY
                 queued.retry_at = time.perf_counter() + 10
             else:
                 LOGGER.exception(
-                    "Outbound message could not be delivered",
-                    exc_info=queued.error,
+                    "Outbound message could not be delivered", exc_info=queued.error,
                 )
                 LOGGER.error(">>> NOT Re-queued, state is DONE, failed to deliver msg.")
                 queued.state = QueuedOutboundMessage.STATE_DONE
