@@ -1,7 +1,7 @@
 """Agent message base class and schema."""
 
 from collections import OrderedDict
-from typing import Union
+from typing import Mapping, Union
 import uuid
 
 from marshmallow import (
@@ -336,7 +336,7 @@ class AgentMessageSchema(BaseModelSchema):
         self._signatures = {}
 
     @pre_load
-    def extract_decorators(self, data, **kwargs):
+    def extract_decorators(self, data: Mapping, **kwargs):
         """
         Pre-load hook to extract the decorators and check the signed fields.
 
