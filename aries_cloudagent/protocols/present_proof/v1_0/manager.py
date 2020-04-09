@@ -143,7 +143,7 @@ class PresentationManager:
             name=name,
             version=version,
             nonce=nonce,
-            ledger=await self.context.inject(BaseLedger)
+            ledger=await self.context.inject(BaseLedger),
         )
         presentation_request_message = PresentationRequest(
             comment=comment,
@@ -330,10 +330,7 @@ class PresentationManager:
         # of the presentation request or attributes
         current_timestamp = int(time.time())
 
-        non_revoc_interval = {
-            "from": 0,
-            "to": current_timestamp
-        }
+        non_revoc_interval = {"from": 0, "to": current_timestamp}
         non_revoc_interval.update(
             presentation_exchange_record.presentation_request.get("non_revoked", {})
         )
@@ -555,20 +552,20 @@ class PresentationManager:
                         ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
 
                     if identifier.get("timestamp"):
-                        (
-                            found_rev_reg_entry,
-                            found_timestamp,
-                        ) = await ledger.get_revoc_reg_entry(
-                            identifier["rev_reg_id"], identifier["timestamp"]
-                        )
+                        rev_reg_entries.setdefault(identifier["rev_reg_id"], {})
 
-                        if identifier["rev_reg_id"] not in rev_reg_entries:
-                            rev_reg_entries[identifier["rev_reg_id"]] = {
-                                found_timestamp: found_rev_reg_entry
-                            }
-                        else:
+                        if (
+                            identifier["timestamp"]
+                            not in rev_reg_entries[identifier["rev_reg_id"]]
+                        ):
+                            (
+                                found_rev_reg_entry,
+                                _found_timestamp,
+                            ) = await ledger.get_revoc_reg_entry(
+                                identifier["rev_reg_id"], identifier["timestamp"]
+                            )
                             rev_reg_entries[identifier["rev_reg_id"]][
-                                found_timestamp
+                                identifier["timestamp"]
                             ] = found_rev_reg_entry
 
         verifier: BaseVerifier = await self.context.inject(BaseVerifier)
