@@ -12,6 +12,9 @@ if [ "$OSTYPE" == "msys" ]; then
 else
   DOCKER="docker"
 fi
+if [ -z "$DOCKER_NET" ]; then
+    DOCKER_NET="bridge"
+fi
 
 if [ -z "$POSTGRES_URL" ]; then
   if [ ! -z $(docker ps --filter name=indy-demo-postgres --quiet) ]; then
@@ -24,7 +27,7 @@ if [ ! -z "$POSTGRES_URL" ]; then
 fi
 
 $DOCKER run --rm -ti --name aries-cloudagent-runner \
-  --network=efk-stack_efk_net \
+  --network=${DOCKER_NET} \
   -v "/$(pwd)/../test-reports:/home/indy/src/app/test-reports" \
   $DOCKER_ARGS \
   aries-cloudagent-test "$@"

@@ -15,6 +15,9 @@ if ! [ -z "$TRACE_TARGET_URL" ]; then
 else
     TRACE_TARGET=log
 fi
+if [ -z "$DOCKER_NET" ]; then
+    DOCKER_NET="bridge"
+fi
 
 for i in "$@"
 do
@@ -200,7 +203,7 @@ DOCKER=${DOCKER:-docker}
 
 echo "Starting $AGENT..."
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
-    --network=efk-stack_efk_net \
+    --network=${DOCKER_NET} \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	-v "/$(pwd)/../logs:/home/indy/logs" \
 	$DOCKER_ENV \
