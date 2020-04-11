@@ -335,12 +335,20 @@ class OutboundTransportManager:
 
                 if deliver:
                     queued.state = QueuedOutboundMessage.STATE_DELIVER
+                    p_time = trace_event(
+                        self.context.settings,
+                        queued.message if queued.message else queued.payload,
+                        outcome="OutboundTransportManager.DELIVER.START."
+                        +queued.endpoint,
+                    )
+                    self.deliver_queued_message(queued)
                     trace_event(
                         self.context.settings,
                         queued.message if queued.message else queued.payload,
-                        outcome="OutboundTransportManager._process_loop.DELIVER",
+                        outcome="OutboundTransportManager.DELIVER.END."
+                        +queued.endpoint,
+                        perf_counter=p_time,
                     )
-                    self.deliver_queued_message(queued)
 
                 upd_buffer.append(queued)
 
@@ -356,12 +364,18 @@ class OutboundTransportManager:
                         new_pending += 1
                     else:
                         queued.state = QueuedOutboundMessage.STATE_ENCODE
+                        p_time = trace_event(
+                            self.context.settings,
+                            queued.message if queued.message else queued.payload,
+                            outcome="OutboundTransportManager.ENCODE.START",
+                        )
+                        self.encode_queued_message(queued)
                         trace_event(
                             self.context.settings,
                             queued.message if queued.message else queued.payload,
-                            outcome="OutboundTransportManager._process_loop.ENCODE",
+                            outcome="OutboundTransportManager.ENCODE.END",
+                            perf_counter=p_time,
                         )
-                        self.encode_queued_message(queued)
                 else:
                     new_pending += 1
 

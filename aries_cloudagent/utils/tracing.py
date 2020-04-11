@@ -57,8 +57,21 @@ def tracing_enabled(context, message) -> bool:
                 return True
         elif isinstance(message, dict):
             # if there is a trace decorator on the messages then continue to trace
-            if message.get("~trace"):
+            if message.get("~trace") or message.get("trace"):
                 return True
+        elif isinstance(message, str):
+            if "~trace" in message or "trace" in message:
+                return True
+        elif isinstance(message, OutboundMessage):
+            if message.payload and isinstance(message.payload, AgentMessage):
+                if message.payload._trace:
+                    return True
+            elif message.payload and isinstance(message.payload, dict):
+                if message.payload.get("~trace") or message.payload.get("trace"):
+                    return True
+            elif message.payload and isinstance(message.payload, str):
+                if "~trace" in message.payload or "trace" in message.payload:
+                    return True
 
     # default off
     return False
@@ -112,9 +125,9 @@ def trace_event(
 
     ret = time.perf_counter()
 
-    message = decode_inbound_message(message)
-
     if force_trace or tracing_enabled(context, message):
+        message = decode_inbound_message(message)
+
         # build the event to log
         # TODO check instance type of message to determine how to
         # get message and thread id's
