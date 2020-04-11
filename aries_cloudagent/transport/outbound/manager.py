@@ -337,7 +337,7 @@ class OutboundTransportManager:
                     queued.state = QueuedOutboundMessage.STATE_DELIVER
                     trace_event(
                         self.context.settings,
-                        queued.message,
+                        queued.message if queued.message else queued.payload,
                         outcome="OutboundTransportManager._process_loop.DELIVER",
                     )
                     self.deliver_queued_message(queued)
@@ -358,7 +358,7 @@ class OutboundTransportManager:
                         queued.state = QueuedOutboundMessage.STATE_ENCODE
                         trace_event(
                             self.context.settings,
-                            queued.message,
+                            queued.message if queued.message else queued.payload,
                             outcome="OutboundTransportManager._process_loop.ENCODE",
                         )
                         self.encode_queued_message(queued)

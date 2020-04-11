@@ -73,11 +73,15 @@ def decode_inbound_message(message):
         elif message.payload and isinstance(message.payload, dict):
             return message.payload
         elif message.payload and isinstance(message.payload, str):
-            if 0 <= message.payload.find("~trace"):
-                try:
-                    return json.loads(message.payload)
-                except Exception:
-                    pass
+            try:
+                return json.loads(message.payload)
+            except Exception:
+                pass
+    elif message and isinstance(message, str):
+        try:
+            return json.loads(message)
+        except Exception:
+            pass
 
     # default is the provided message
     return message
@@ -142,9 +146,19 @@ def trace_event(
             msg_id = str(message["@id"]) if message.get("@id") else "N/A"
             if message.get("~thread") and message["~thread"].get("thid"):
                 thread_id = str(message["~thread"]["thid"])
+            elif message.get("thread_id"):
+                thread_id = str(message["thread_id"])
             else:
                 thread_id = msg_id
-            msg_type = str(message["@type"]) if message.get("@type") else "dict"
+            if message.get("@type"):
+                msg_type = str(message["@type"])
+            else:
+                if message.get("~thread"):
+                    msg_type = "dict:Message"
+                elif message.get("thread_id"):
+                    msg_type = "dict:Exchange"
+                else:
+                    msg_type = "dict"
         elif isinstance(message, BaseExchangeRecord):
             msg_id = "N/A"
             thread_id = str(message.thread_id)
@@ -152,7 +166,7 @@ def trace_event(
         else:
             msg_id = "N/A"
             thread_id = "N/A"
-            msg_type = str(message.__class__.__name__)
+            msg_type = str(message) # str(message.__class__.__name__)
         ep_time = time.time()
         str_time = datetime.datetime.utcfromtimestamp(ep_time).strftime(DT_FMT)
         event = {
