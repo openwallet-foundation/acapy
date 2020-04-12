@@ -491,8 +491,8 @@ class BaseExchangeSchema(BaseRecordSchema):
 
         model_class = BaseExchangeRecord
 
-        trace = fields.Boolean(
-            description="Record trace information, based on agent configuration",
-            required=False,
-            default=False,
-        )
+    trace = fields.Boolean(
+        description="Record trace information, based on agent configuration",
+        required=False,
+        default=False,
+    )

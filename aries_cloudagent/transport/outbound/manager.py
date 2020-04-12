@@ -339,14 +339,14 @@ class OutboundTransportManager:
                         self.context.settings,
                         queued.message if queued.message else queued.payload,
                         outcome="OutboundTransportManager.DELIVER.START."
-                        +queued.endpoint,
+                        + queued.endpoint,
                     )
                     self.deliver_queued_message(queued)
                     trace_event(
                         self.context.settings,
                         queued.message if queued.message else queued.payload,
                         outcome="OutboundTransportManager.DELIVER.END."
-                        +queued.endpoint,
+                        + queued.endpoint,
                         perf_counter=p_time,
                     )
 

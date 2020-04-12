@@ -179,7 +179,7 @@ def trace_event(
         else:
             msg_id = "N/A"
             thread_id = "N/A"
-            msg_type = str(message) # str(message.__class__.__name__)
+            msg_type = str(message.__class__.__name__)
         ep_time = time.time()
         str_time = datetime.datetime.utcfromtimestamp(ep_time).strftime(DT_FMT)
         event = {
