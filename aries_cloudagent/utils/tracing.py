@@ -57,11 +57,16 @@ def tracing_enabled(context, message) -> bool:
                 return True
         elif isinstance(message, dict):
             # if there is a trace decorator on the messages then continue to trace
-            if message.get("~trace") or message.get("trace"):
+            if message.get("~trace"):
                 return True
+            if message.get("trace"):
+                return message.get("trace")
         elif isinstance(message, str):
-            if "~trace" in message or "trace" in message:
+            if "~trace" in message:
                 return True
+            if "trace" in message:
+                msg = json.loads(message)
+                return msg.get("trace")
         elif isinstance(message, OutboundMessage):
             if message.payload and isinstance(message.payload, AgentMessage):
                 if message.payload._trace:

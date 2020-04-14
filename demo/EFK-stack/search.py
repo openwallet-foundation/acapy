@@ -26,6 +26,7 @@ for x in s.scan():
 sorted_events = sorted(events, key = lambda i: i['timestamp']) 
 
 threads = {}
+thread_count = 0
 agents = {}
 with open('agent-events.csv', 'w', newline='') as csvfile:
     spamwriter = csv.writer(csvfile)
@@ -47,8 +48,11 @@ with open('agent-events.csv', 'w', newline='') as csvfile:
                 print(i, delta_thread)
         else:
             delta_thread = 0
+            thread_count = thread_count + 1
         threads[x["thread_id"]] = x["timestamp"]
         i = i + 1
         spamwriter.writerow(
             [i, x["str_time"], x["timestamp"], x["handler"], x["ellapsed_milli"], x["thread_id"], x["msg_id"], x["outcome"], x["traced_type"], delta_agent, delta_thread]
         )
+
+print("Total threads=", thread_count)
