@@ -346,12 +346,27 @@ class TestAttachDecorator(TestCase):
         )
         assert deco_indy.mime_type == 'application/json'
         assert hasattr(deco_indy.data, 'base64_')
+        assert deco_indy.data.base64 is not None
+        assert deco_indy.data.json is None
+        assert deco_indy.data.links is None
+        assert deco_indy.data.sha256 is None
         assert deco_indy.indy_dict == INDY_CRED
         assert deco_indy.ident == IDENT
         assert deco_indy.description == DESCRIPTION
 
         deco_indy_auto_id = AttachDecorator.from_indy_dict(indy_dict=INDY_CRED)
         assert deco_indy_auto_id.ident
+
+        # cover AttachDecoratorData equality operator
+        plain_json = AttachDecoratorData(json_=json.dumps({"sample": "data"}))
+        assert deco_indy.data != plain_json
+
+        lynx_str = AttachDecoratorData(links_="https://en.wikipedia.org/wiki/Lynx")
+        lynx_list = AttachDecoratorData(links_=["https://en.wikipedia.org/wiki/Lynx"])
+        links = AttachDecoratorData(links_="https://en.wikipedia.org/wiki/Chain")
+
+        assert lynx_str == lynx_list
+        assert lynx_str != links
 
 
 @pytest.mark.indy
@@ -458,3 +473,10 @@ class TestAttachDecoratorSignature:
 
         indy_cred = json.loads(deco_indy.data.signed.decode())
         assert indy_cred == INDY_CRED
+
+        # De/serialize to exercise initializer with JWS
+        deco_dict = deco_indy.serialize()
+        deco = AttachDecorator.deserialize(deco_dict)
+        deco_dict["data"]["links"] = "https://en.wikipedia.org/wiki/Potato"
+        with pytest.raises(BaseModelError):
+            AttachDecorator.deserialize(deco_dict)  # now has base64 and links

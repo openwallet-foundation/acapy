@@ -147,17 +147,6 @@ class AttachDecoratorDataJWS(BaseModel):
         self.signature = signature
         self.signatures = signatures
 
-    def __eq__(self, other: Any):
-        """Compare equality with another."""
-
-        return (
-            type(self) == type(other)
-            and self.header == other.header
-            and self.protected == other.protected
-            and self.signature == other.signature
-            and self.signatures == other.signatures
-        )
-
 
 class AttachDecoratorDataJWSSchema(BaseModelSchema):
     """Schema for detached JSON Web Signature for inclusion in attach decorator data."""
@@ -169,7 +158,7 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
 
     @pre_load
     def validate_single_xor_multi_sig(self, data: Mapping, **kwargs):
-        """Make sure model is for either 1 or many sigatures, not mishmash of both."""
+        """Ensure model is for either 1 or many sigatures, not mishmash of both."""
 
         if "signatures" in data:
             if any(k in data for k in ("header", "protected", "signature")):
@@ -242,11 +231,11 @@ class AttachDecoratorData(BaseModel):
 
             - `base64_`
             - `json_`
-            - `links_` and optionally `sha256_`.
+            - `links_`.
 
         Args:
             jws_: detached JSON Web Signature over base64 or linked attachment content
-            sha256_: sha-256 hash for URL content, if `links_` specified
+            sha256_: optional sha-256 hash for content
             links_: list or single URL of hyperlinks
             base64_: base64 encoded content for inclusion
             json_: json-dumped content for inclusion
@@ -263,8 +252,8 @@ class AttachDecoratorData(BaseModel):
         else:
             assert isinstance(links_, (str, list))
             self.links_ = [links_] if isinstance(links_, str) else list(links_)
-            if sha256_:
-                self.sha256_ = sha256_
+        if sha256_:
+            self.sha256_ = sha256_
 
     @property
     def base64(self):
@@ -464,6 +453,17 @@ class AttachDecoratorDataSchema(BaseModelSchema):
 
         model_class = AttachDecoratorData
 
+    @pre_load
+    def validate_data_spec(self, data: Mapping, **kwargs):
+        """Ensure model chooses exactly one of base64, json, or links."""
+
+        if len(set(data.keys()) & {"base64", "json", "links"}) != 1:
+            raise BaseModelError(
+                "AttachDecoratorSchema: choose exactly one of base64, json, or links"
+            )
+
+        return data
+
     base64_ = fields.Str(
         description="Base64-encoded data",
         required=False,
@@ -489,7 +489,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         data_key="links"
     )
     sha256_ = fields.Str(
-        description="SHA256 hash of linked data",
+        description="SHA256 hash (binhex encoded) of content",
         required=False,
         data_key="sha256",
         **SHA256
