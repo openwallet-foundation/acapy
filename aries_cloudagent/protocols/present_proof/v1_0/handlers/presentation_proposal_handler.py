@@ -10,6 +10,8 @@ from .....messaging.base_handler import (
 from ..manager import PresentationManager
 from ..messages.presentation_proposal import PresentationProposal
 
+from .....utils.tracing import trace_event, get_timer
+
 
 class PresentationProposalHandler(BaseHandler):
     """Message handler class for presentation proposals."""
@@ -23,6 +25,8 @@ class PresentationProposalHandler(BaseHandler):
             responder: responder callback
 
         """
+        r_time = get_timer()
+
         self._logger.debug(
             "PresentationProposalHandler called with context %s", context
         )
@@ -40,6 +44,13 @@ class PresentationProposalHandler(BaseHandler):
         presentation_manager = PresentationManager(context)
         presentation_exchange_record = await presentation_manager.receive_proposal()
 
+        r_time = trace_event(
+            context.settings,
+            context.message,
+            outcome="PresentationProposalHandler.handle.END",
+            perf_counter=r_time
+        )
+
         # If auto_respond_presentation_proposal is set, reply with proof req
         if context.settings.get("debug.auto_respond_presentation_proposal"):
             (
@@ -51,3 +62,10 @@ class PresentationProposalHandler(BaseHandler):
             )
 
             await responder.send_reply(presentation_request_message)
+
+            trace_event(
+                context.settings,
+                presentation_request_message,
+                outcome="PresentationProposalHandler.handle.PRESENT",
+                perf_counter=r_time
+            )

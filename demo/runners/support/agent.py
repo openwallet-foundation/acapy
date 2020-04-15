@@ -34,7 +34,7 @@ EVENT_LOGGER.propagate = False
 
 TRACE_TARGET = os.getenv("TRACE_TARGET")
 TRACE_TAG    = os.getenv("TRACE_TAG")
-TRACE_ENABLED = True if TRACE_TARGET else False
+TRACE_ENABLED = os.getenv("TRACE_ENABLED")
 
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
@@ -266,6 +266,7 @@ class DemoAgent:
             ("--wallet-type", self.wallet_type),
             ("--wallet-name", self.wallet_name),
             ("--wallet-key", self.wallet_key),
+            "--preserve-exchange-records",
         ]
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
@@ -293,6 +294,15 @@ class DemoAgent:
                     ("--trace",),
                     ("--trace-target", self.trace_target),
                     ("--trace-tag", self.trace_tag),
+                    ("--trace-label", self.label+".trace"),
+                ]
+            )
+        else:
+            # set the tracing parameters but don't enable tracing
+            result.extend(
+                [
+                    ("--trace-target", self.trace_target if self.trace_target else "log"),
+                    ("--trace-tag", self.trace_tag if self.trace_tag else "acapy.events"),
                     ("--trace-label", self.label+".trace"),
                 ]
             )

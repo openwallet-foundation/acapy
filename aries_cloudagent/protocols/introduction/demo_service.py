@@ -100,6 +100,7 @@ class DemoIntroductionService(BaseIntroductionService):
                     invitation=invitation.invitation, message=invitation.message
                 )
                 msg.assign_thread_from(invitation)
+                msg.assign_trace_from(invitation)
 
                 value["state"] = "complete"
                 await storage.update_record_value(row, json.dumps(value))

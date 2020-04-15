@@ -463,6 +463,7 @@ class ConnectionManager:
         )
         # Assign thread information
         response.assign_thread_from(request)
+        response.assign_trace_from(request)
         # Sign connection field using the invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)

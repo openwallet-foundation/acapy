@@ -8,6 +8,17 @@ AGENT="$1"
 shift
 ARGS=""
 
+TRACE_ENABLED=""
+TRACE_TAG=acapy.events
+if ! [ -z "$TRACE_TARGET_URL" ]; then
+    TRACE_TARGET=http://${TRACE_TARGET_URL}/
+else
+    TRACE_TARGET=log
+fi
+if [ -z "$DOCKER_NET" ]; then
+    DOCKER_NET="bridge"
+fi
+
 for i in "$@"
 do
     if [ ! -z "$SKIP" ]; then
@@ -28,15 +39,15 @@ do
         continue
     ;;
     --trace-log)
+        TRACE_ENABLED=1
         TRACE_TARGET=log
         TRACE_TAG=acapy.events
-        SKIP=1
         continue
     ;;
     --trace-http)
-        TRACE_TARGET=http://${TRACE_TARGET_URL}
+        TRACE_ENABLED=1
+        TRACE_TARGET=http://${TRACE_TARGET_URL}/
         TRACE_TAG=acapy.events
-        SKIP=1
         continue
     ;;
     --debug-ptvsd)
@@ -171,6 +182,7 @@ fi
 if ! [ -z "$TRACE_TARGET" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e TRACE_TARGET=${TRACE_TARGET}"
     DOCKER_ENV="${DOCKER_ENV} -e TRACE_TAG=${TRACE_TAG}"
+    DOCKER_ENV="${DOCKER_ENV} -e TRACE_ENABLED=${TRACE_ENABLED}"
 fi
 if ! [ -z "$PUBLIC_TAILS_URL" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"
@@ -191,6 +203,7 @@ DOCKER=${DOCKER:-docker}
 
 echo "Starting $AGENT..."
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
+    --network=${DOCKER_NET} \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	-v "/$(pwd)/../logs:/home/indy/logs" \
 	$DOCKER_ENV \

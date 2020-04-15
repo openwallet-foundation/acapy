@@ -32,4 +32,5 @@ class InvitationRequestHandler(BaseHandler):
             _connection, invite = await connection_mgr.create_invitation()
             response = Invitation(invitation=invite)
             response.assign_thread_from(context.message)
+            response.assign_trace_from(context.message)
             await responder.send_reply(response)

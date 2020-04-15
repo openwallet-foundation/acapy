@@ -20,4 +20,5 @@ class QueryHandler(BaseHandler):
         result = await registry.prepare_disclosed(context, protocols)
         reply = Disclose(protocols=result)
         reply.assign_thread_from(context.message)
+        reply.assign_trace_from(context.message)
         await responder.send_reply(reply)
