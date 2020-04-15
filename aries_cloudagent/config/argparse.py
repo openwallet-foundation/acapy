@@ -622,14 +622,17 @@ class ProtocolGroup(ArgumentGroup):
             settings["trace.label"] = args.label
         else:
             settings["trace.label"] = "aca-py.agent"
-        if settings.get("trace.enabled"):
+        if settings.get("trace.enabled") or settings.get("trace.target"):
+            # make sure we can trace to the configured target
+            # (target can be set even if tracing is off)
             try:
                 trace_event(
                     settings,
                     None,
                     handler="ArgParse",
-                    outcome="Successfully configured aca-py",
-                    raise_errors=True
+                    outcome="Successfully_configured_aca-py",
+                    raise_errors=True,
+                    force_trace=True
                 )
             except Exception as e:
                 raise ArgsParseError(

@@ -35,6 +35,8 @@ from .models.presentation_exchange import (
 
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST
 
+from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+
 
 class V10PresentationExchangeListSchema(Schema):
     """Result schema for an Aries#0037 v1.0 presentation exchange query."""
@@ -45,7 +47,7 @@ class V10PresentationExchangeListSchema(Schema):
     )
 
 
-class V10PresentationProposalRequestSchema(Schema):
+class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
     connection_id = fields.UUID(
@@ -129,7 +131,7 @@ class IndyProofReqPredSpecSchema(Schema):
 
     name = fields.String(example="index", description="Attribute name", required=True)
     p_type = fields.String(
-        description="Predicate type (indy currently supports only '>=')",
+        description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
         **INDY_PREDICATE
     )
@@ -172,7 +174,7 @@ class IndyProofRequestSchema(Schema):
     )
 
 
-class V10PresentationRequestRequestSchema(Schema):
+class V10PresentationRequestRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a proof request."""
 
     connection_id = fields.UUID(
@@ -207,7 +209,7 @@ class IndyRequestedCredsRequestedPredSchema(Schema):
     )
 
 
-class V10PresentationRequestSchema(Schema):
+class V10PresentationRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation."""
 
     self_attested_attributes = fields.Dict(
@@ -386,6 +388,8 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         The presentation exchange details
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -409,6 +413,11 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         comment=comment,
         presentation_proposal=PresentationPreview.deserialize(presentation_preview),
     )
+    trace_msg = body.get("trace")
+    presentation_proposal_message.assign_trace_decorator(
+        context.settings,
+        trace_msg,
+    )
     auto_present = body.get(
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
@@ -422,7 +431,15 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         presentation_proposal_message=presentation_proposal_message,
         auto_present=auto_present,
     )
+
     await outbound_handler(presentation_proposal_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        presentation_proposal_message,
+        outcome="presentation_exchange_propose.END",
+        perf_counter=r_time
+    )
 
     return web.json_response(presentation_exchange_record.serialize())
 
@@ -449,6 +466,8 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         The presentation exchange details
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -468,6 +487,11 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
             )
         ],
     )
+    trace_msg = body.get("trace")
+    presentation_request_message.assign_trace_decorator(
+        context.settings,
+        trace_msg,
+    )
 
     presentation_manager = PresentationManager(context)
 
@@ -478,6 +502,13 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     )
 
     await outbound_handler(presentation_request_message, connection_id=None)
+
+    trace_event(
+        context.settings,
+        presentation_request_message,
+        outcome="presentation_exchange_create_request.END",
+        perf_counter=r_time
+    )
 
     return web.json_response(presentation_exchange_record.serialize())
 
@@ -499,6 +530,8 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         The presentation exchange details
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -529,6 +562,11 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
             )
         ],
     )
+    trace_msg = body.get("trace")
+    presentation_request_message.assign_trace_decorator(
+        context.settings,
+        trace_msg,
+    )
 
     presentation_manager = PresentationManager(context)
 
@@ -540,6 +578,13 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     )
 
     await outbound_handler(presentation_request_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        presentation_request_message,
+        outcome="presentation_exchange_send_request.END",
+        perf_counter=r_time
+    )
 
     return web.json_response(presentation_exchange_record.serialize())
 
@@ -561,6 +606,8 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         The presentation exchange details
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
 
@@ -590,8 +637,20 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         presentation_exchange_record,
         presentation_request_message,
     ) = await presentation_manager.create_bound_request(presentation_exchange_record)
+    trace_msg = body.get("trace")
+    presentation_request_message.assign_trace_decorator(
+        context.settings,
+        trace_msg,
+    )
 
     await outbound_handler(presentation_request_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        presentation_request_message,
+        outcome="presentation_exchange_send_request.END",
+        perf_counter=r_time
+    )
 
     return web.json_response(presentation_exchange_record.serialize())
 
@@ -610,6 +669,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         The presentation exchange details
 
     """
+    r_time = get_timer()
 
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
@@ -649,8 +709,21 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         },
         comment=body.get("comment"),
     )
+    trace_msg = body.get("trace")
+    presentation_message.assign_trace_decorator(
+        context.settings,
+        trace_msg,
+    )
 
     await outbound_handler(presentation_message, connection_id=connection_id)
+
+    trace_event(
+        context.settings,
+        presentation_message,
+        outcome="presentation_exchange_send_request.END",
+        perf_counter=r_time
+    )
+
     return web.json_response(presentation_exchange_record.serialize())
 
 
@@ -667,6 +740,8 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
         The presentation exchange details
 
     """
+    r_time = get_timer()
+
     context = request.app["request_context"]
     presentation_exchange_id = request.match_info["pres_ex_id"]
 
@@ -693,6 +768,13 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
 
     presentation_exchange_record = await presentation_manager.verify_presentation(
         presentation_exchange_record
+    )
+
+    trace_event(
+        context.settings,
+        presentation_exchange_record,
+        outcome="presentation_exchange_verify.END",
+        perf_counter=r_time
     )
 
     return web.json_response(presentation_exchange_record.serialize())

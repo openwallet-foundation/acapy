@@ -16,25 +16,29 @@ class Predicate(Enum):
         '$lt',
         '<',
         lambda x, y: Predicate.to_int(x) < Predicate.to_int(y),
-        lambda x, y: Predicate.to_int(x) >= Predicate.to_int(y))
+        lambda x, y: Predicate.to_int(x) >= Predicate.to_int(y)
+    )
     LE = Relation(
         'LE',
         '$lte',
         '<=',
         lambda x, y: Predicate.to_int(x) <= Predicate.to_int(y),
-        lambda x, y: Predicate.to_int(x) > Predicate.to_int(y))
+        lambda x, y: Predicate.to_int(x) > Predicate.to_int(y)
+    )
     GE = Relation(
         'GE',
         '$gte',
         '>=',
         lambda x, y: Predicate.to_int(x) >= Predicate.to_int(y),
-        lambda x, y: Predicate.to_int(x) < Predicate.to_int(y))
+        lambda x, y: Predicate.to_int(x) < Predicate.to_int(y)
+    )
     GT = Relation(
         'GT',
         '$gt',
         '>',
         lambda x, y: Predicate.to_int(x) > Predicate.to_int(y),
-        lambda x, y: Predicate.to_int(x) <= Predicate.to_int(y))
+        lambda x, y: Predicate.to_int(x) <= Predicate.to_int(y)
+    )
 
     @staticmethod
     def get(relation: str) -> 'Predicate':

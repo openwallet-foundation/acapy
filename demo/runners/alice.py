@@ -29,7 +29,7 @@ class AliceAgent(DemoAgent):
         self, http_port: int, admin_port: int, no_auto: bool = False, **kwargs
     ):
         super().__init__(
-            "Alice Agent",
+            "Alice.Agent",
             http_port,
             admin_port,
             prefix="Alice",
