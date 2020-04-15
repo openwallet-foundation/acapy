@@ -12,5 +12,5 @@ PROTOCOL_PACKAGE = "aries_cloudagent.protocols.problem_report"
 
 MESSAGE_TYPES = {
     PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.message.ProblemReport",
-    NEW_PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.message.ProblemReport"
+    NEW_PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.message.ProblemReport",
 }

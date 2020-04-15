@@ -463,6 +463,7 @@ class ConnectionManager:
         )
         # Assign thread information
         response.assign_thread_from(request)
+        response.assign_trace_from(request)
         # Sign connection field using the invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)
@@ -846,7 +847,7 @@ class ConnectionManager:
                 "IndyAgent",
                 [pk],
                 routing_keys,
-                svc_endpoint
+                svc_endpoint,
             )
             did_doc.set(service)
 
@@ -971,10 +972,8 @@ class ConnectionManager:
         results = None
 
         if (
-            connection.state in (
-                ConnectionRecord.STATE_INVITATION,
-                ConnectionRecord.STATE_REQUEST
-            )
+            connection.state
+            in (ConnectionRecord.STATE_INVITATION, ConnectionRecord.STATE_REQUEST)
             and connection.initiator == ConnectionRecord.INITIATOR_EXTERNAL
         ):
             invitation = await connection.retrieve_invitation(self.context)

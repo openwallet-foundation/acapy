@@ -75,7 +75,7 @@ class CredentialIssueSchema(AgentMessageSchema):
 
         model_class = CredentialIssue
 
-    comment = fields.Str(comment="Human-readable comment", required=False)
+    comment = fields.Str(description="Human-readable comment", required=False)
     credentials_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="credentials~attach"
     )

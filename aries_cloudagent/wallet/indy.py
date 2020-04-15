@@ -7,7 +7,10 @@ from typing import Sequence
 import indy.anoncreds
 import indy.did
 import indy.crypto
+import indy.wallet
 from indy.error import IndyError, ErrorCode
+
+from ..indy.error import IndyErrorHandler
 
 from .base import BaseWallet, KeyInfo, DIDInfo
 from .crypto import validate_seed
@@ -61,6 +64,11 @@ class IndyWallet(BaseWallet):
 
         if self._storage_type == "postgres_storage":
             load_postgres_plugin(self._storage_config, self._storage_creds)
+
+    @property
+    def type(self) -> str:
+        """Accessor for the wallet type."""
+        return IndyWallet.WALLET_TYPE
 
     @property
     def handle(self):
@@ -171,14 +179,13 @@ class IndyWallet(BaseWallet):
                 credentials=json.dumps(self._wallet_access),
             )
         except IndyError as x_indy:
-            if x_indy.error_code == ErrorCode.WalletAlreadyExistsError:
-                raise WalletError(
-                    "Wallet was not removed by SDK, may still be open: {}".format(
-                        self.name
-                    )
-                )
-            else:
-                raise WalletError(str(x_indy))
+            raise IndyErrorHandler.wrap_error(
+                x_indy,
+                "Wallet was not removed by SDK, {} may still be open".format(self.name)
+                if x_indy.error_code == ErrorCode.WalletAlreadyExistsError
+                else None,
+                WalletError,
+            ) from x_indy
 
     async def remove(self):
         """
@@ -196,8 +203,12 @@ class IndyWallet(BaseWallet):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletNotFoundError:
-                raise WalletNotFoundError("Wallet not found: {}".format(self.name))
-            raise WalletError(str(x_indy))
+                raise IndyErrorHandler.wrap_error(
+                    x_indy, "Wallet {} not found".format(self.name), WalletNotFoundError
+                ) from x_indy
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet error", WalletError
+            ) from x_indy
 
     async def open(self):
         """
@@ -224,32 +235,38 @@ class IndyWallet(BaseWallet):
             except IndyError as x_indy:
                 if x_indy.error_code == ErrorCode.WalletNotFoundError:
                     if self._created:
-                        raise WalletError(
-                            "Wallet not found after creation: {}".format(self.name)
-                        )
+                        raise IndyErrorHandler.wrap_error(
+                            x_indy,
+                            "Wallet {} not found after creation".format(self.name),
+                            WalletError,
+                        ) from x_indy
                     if self._auto_create:
                         await self.create(self._auto_remove)
                         self._created = True
                     else:
                         raise WalletNotFoundError(
-                            "Wallet not found: {}".format(self.name)
+                            "Wallet {} not found".format(self.name)
                         )
                 elif x_indy.error_code == ErrorCode.WalletAlreadyOpenedError:
-                    raise WalletError("Wallet is already open: {}".format(self.name))
+                    raise WalletError("Wallet {} is already open".format(self.name))
                 else:
-                    raise WalletError(str(x_indy))
+                    raise IndyErrorHandler.wrap_error(
+                        x_indy, "Wallet {} error".format(self.name), WalletError
+                    ) from x_indy
 
         self.logger.info("Creating master secret...")
         try:
             self._master_secret_id = await indy.anoncreds.prover_create_master_secret(
                 self.handle, self.name
             )
-        except IndyError as error:
-            if error.error_code == ErrorCode.AnoncredsMasterSecretDuplicateNameError:
+        except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.AnoncredsMasterSecretDuplicateNameError:
                 self.logger.info("Master secret already exists")
                 self._master_secret_id = self.name
             else:
-                raise
+                raise IndyErrorHandler.wrap_error(
+                    x_indy, "Wallet {} error".format(self.name), WalletError
+                ) from x_indy
 
     async def close(self):
         """Close previously-opened wallet, removing it if so configured."""
@@ -285,8 +302,10 @@ class IndyWallet(BaseWallet):
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
                 raise WalletDuplicateError("Verification key already present in wallet")
-            else:
-                raise WalletError(str(x_indy))
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet {} error".format(self.name), WalletError
+            ) from x_indy
+
         # must save metadata to allow identity check
         # otherwise get_key_metadata just returns WalletItemNotFound
         if metadata is None:
@@ -315,7 +334,9 @@ class IndyWallet(BaseWallet):
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError("Unknown key: {}".format(verkey))
             else:
-                raise WalletError(str(x_indy))
+                raise IndyErrorHandler.wrap_error(
+                    x_indy, "Wallet {} error".format(self.name), WalletError
+                ) from x_indy
         return KeyInfo(verkey, json.loads(metadata) if metadata else {})
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
@@ -365,8 +386,9 @@ class IndyWallet(BaseWallet):
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.DidAlreadyExistsError:
                 raise WalletDuplicateError("DID already present in wallet")
-            else:
-                raise WalletError(str(x_indy))
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet {} error".format(self.name), WalletError
+            ) from x_indy
         if metadata:
             await self.replace_local_did_metadata(did, metadata)
         else:
@@ -415,8 +437,9 @@ class IndyWallet(BaseWallet):
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError("Unknown DID: {}".format(did))
-            else:
-                raise WalletError(str(x_indy))
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet {} error".format(self.name), WalletError
+            ) from x_indy
         info = json.loads(info_json)
         return DIDInfo(
             did=info["did"],
@@ -518,7 +541,9 @@ class IndyWallet(BaseWallet):
             if x_indy.error_code == ErrorCode.CommonInvalidStructure:
                 result = False
             else:
-                raise WalletError(str(x_indy))
+                raise IndyErrorHandler.wrap_error(
+                    x_indy, "Wallet {} error".format(self.name), WalletError
+                ) from x_indy
         return result
 
     async def pack_message(
@@ -546,8 +571,11 @@ class IndyWallet(BaseWallet):
             result = await indy.crypto.pack_message(
                 self.handle, message, to_verkeys, from_verkey
             )
-        except IndyError:
-            raise WalletError("Exception when packing message")
+        except IndyError as x_indy:
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Exception when packing message", WalletError
+            ) from x_indy
+
         return result
 
     async def unpack_message(self, enc_message: bytes) -> (str, str, str):
@@ -579,9 +607,15 @@ class IndyWallet(BaseWallet):
 
     async def get_credential_definition_tag_policy(self, credential_definition_id: str):
         """Return the tag policy for a given credential definition ID."""
-        policy_json = await indy.anoncreds.prover_get_credential_attr_tag_policy(
-            self.handle, credential_definition_id
-        )
+        try:
+            policy_json = await indy.anoncreds.prover_get_credential_attr_tag_policy(
+                self.handle, credential_definition_id
+            )
+        except IndyError as x_indy:
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet {} error".format(self.name), WalletError
+            ) from x_indy
+
         return json.loads(policy_json) if policy_json else None
 
     async def set_credential_definition_tag_policy(
@@ -595,22 +629,27 @@ class IndyWallet(BaseWallet):
 
         Args:
             credential_definition_id: The ID of the credential definition
-            taggables: A sequence of string values representing attribute names
+            taggables: A sequence of string values representing attribute names;
+                empty array for none, None for all
             retroactive: Whether to apply the policy to previously-stored credentials
         """
 
-        if taggables is not None:
-            self.logger.info(
-                "Set tagging policy: %s %s", credential_definition_id, taggables
-            )
+        self.logger.info(
+            "%s tagging policy: %s",
+            "Clear" if taggables is None else "Set",
+            credential_definition_id,
+        )
+        try:
             await indy.anoncreds.prover_set_credential_attr_tag_policy(
                 self.handle,
                 credential_definition_id,
                 json.dumps(taggables),
                 retroactive,
             )
-        else:
-            self.logger.info("Clear tagging policy: %s", credential_definition_id)
+        except IndyError as x_indy:
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet {} error".format(self.name), WalletError
+            ) from x_indy
 
     @classmethod
     async def generate_wallet_key(self, seed: str = None) -> str:

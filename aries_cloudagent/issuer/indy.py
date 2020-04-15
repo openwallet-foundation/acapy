@@ -258,12 +258,12 @@ class IndyIssuer(BaseIssuer):
                 delta_json = await indy.anoncreds.issuer_revoke_credential(
                     self.wallet.handle, tails_reader_handle, revoc_reg_id, cred_revoc_id
                 )
-                if not result_json:
-                    result_json = delta_json
-                else:
+                if result_json:
                     result_json = await self.merge_revocation_registry_deltas(
                         result_json, delta_json
                     )
+                else:
+                    result_json = delta_json
 
         return result_json
 

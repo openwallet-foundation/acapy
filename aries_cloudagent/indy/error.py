@@ -34,7 +34,7 @@ class IndyErrorHandler:
         error_cls: Type[BaseError] = BaseError,
     ) -> BaseError:
         """Create an instance of BaseError from an IndyError."""
-        err_msg = message or "Exception while performing ledger operation"
+        err_msg = message or "Exception while performing indy operation"
         indy_message = hasattr(err_value, "message") and err_value.message
         if indy_message:
             err_msg += f": {indy_message}"

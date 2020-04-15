@@ -15,48 +15,31 @@ from .error import WalletError
 class DIDSchema(Schema):
     """Result schema for a DID."""
 
-    did = fields.Str(
-        description="DID of interest",
-        **INDY_DID
-    )
-    verkey = fields.Str(
-        description="Public verification key",
-        **INDY_RAW_PUBLIC_KEY
-    )
-    public = fields.Bool(
-        description="Whether DID is public",
-        example=False
-    )
+    did = fields.Str(description="DID of interest", **INDY_DID)
+    verkey = fields.Str(description="Public verification key", **INDY_RAW_PUBLIC_KEY)
+    public = fields.Bool(description="Whether DID is public", example=False)
 
 
 class DIDResultSchema(Schema):
     """Result schema for a DID."""
 
-    result = fields.Nested(
-        DIDSchema()
-    )
+    result = fields.Nested(DIDSchema())
 
 
 class DIDListSchema(Schema):
     """Result schema for connection list."""
 
-    results = fields.List(
-        fields.Nested(DIDSchema()),
-        description="DID list",
-    )
+    results = fields.List(fields.Nested(DIDSchema()), description="DID list",)
 
 
 class GetTagPolicyResultSchema(Schema):
     """Result schema for tagging policy get request."""
 
     taggables = fields.List(
-        fields.Str(
-            description="Taggable attribute",
-            example="score",
-        ),
+        fields.Str(description="Taggable attribute", example="score",),
         description=(
             "List of attributes taggable for credential search under current policy"
-        )
+        ),
     )
 
 
@@ -64,10 +47,7 @@ class SetTagPolicyRequestSchema(Schema):
     """Request schema for tagging policy set request."""
 
     taggables = fields.List(
-        fields.Str(
-            description="Taggable attribute",
-            example="score",
-        ),
+        fields.Str(description="Taggable attribute", example="score",),
         description="List of attributes to set taggable for credential search",
     )
 
@@ -285,7 +265,7 @@ async def wallet_set_tagging_policy(request: web.BaseRequest):
     credential_definition_id = request.match_info["id"]
 
     body = await request.json()
-    taggables = body.get("taggables")
+    taggables = body.get("taggables")  # None for all attrs, [] for no attrs
 
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet or wallet.WALLET_TYPE != "indy":

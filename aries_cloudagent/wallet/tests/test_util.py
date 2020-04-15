@@ -19,10 +19,9 @@ STR = "Hello World"  # b64encodes to SGVsbG8gV29ybGQ=
 
 
 class TestUtil(TestCase):
-
     def test_b64_urlsafe(self):
         for urlsafe in (False, True):
-            CHAR62 = ['+', '-']
+            CHAR62 = ["+", "-"]
             b64 = bytes_to_b64(BYTES, urlsafe=urlsafe)
             assert CHAR62[urlsafe] in b64
 

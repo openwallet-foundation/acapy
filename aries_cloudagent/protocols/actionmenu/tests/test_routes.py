@@ -300,4 +300,3 @@ class TestActionMenuRoutes(AsyncTestCase):
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
-

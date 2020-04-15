@@ -12,37 +12,43 @@ class Predicate(Enum):
     """Enum for predicate types that indy-sdk supports."""
 
     LT = Relation(
-        'LT',
-        '$lt',
-        '<',
+        "LT",
+        "$lt",
+        "<",
         lambda x, y: Predicate.to_int(x) < Predicate.to_int(y),
-        lambda x, y: Predicate.to_int(x) >= Predicate.to_int(y))
-    LE = Relation(
-        'LE',
-        '$lte',
-        '<=',
-        lambda x, y: Predicate.to_int(x) <= Predicate.to_int(y),
-        lambda x, y: Predicate.to_int(x) > Predicate.to_int(y))
-    GE = Relation(
-        'GE',
-        '$gte',
-        '>=',
         lambda x, y: Predicate.to_int(x) >= Predicate.to_int(y),
-        lambda x, y: Predicate.to_int(x) < Predicate.to_int(y))
-    GT = Relation(
-        'GT',
-        '$gt',
-        '>',
+    )
+    LE = Relation(
+        "LE",
+        "$lte",
+        "<=",
+        lambda x, y: Predicate.to_int(x) <= Predicate.to_int(y),
         lambda x, y: Predicate.to_int(x) > Predicate.to_int(y),
-        lambda x, y: Predicate.to_int(x) <= Predicate.to_int(y))
+    )
+    GE = Relation(
+        "GE",
+        "$gte",
+        ">=",
+        lambda x, y: Predicate.to_int(x) >= Predicate.to_int(y),
+        lambda x, y: Predicate.to_int(x) < Predicate.to_int(y),
+    )
+    GT = Relation(
+        "GT",
+        "$gt",
+        ">",
+        lambda x, y: Predicate.to_int(x) > Predicate.to_int(y),
+        lambda x, y: Predicate.to_int(x) <= Predicate.to_int(y),
+    )
 
     @staticmethod
-    def get(relation: str) -> 'Predicate':
+    def get(relation: str) -> "Predicate":
         """Return enum instance corresponding to input relation string."""
 
         for pred in Predicate:
             if relation.upper() in (
-                pred.value.fortran, pred.value.wql.upper(), pred.value.math
+                pred.value.fortran,
+                pred.value.wql.upper(),
+                pred.value.math,
             ):
                 return pred
         return None

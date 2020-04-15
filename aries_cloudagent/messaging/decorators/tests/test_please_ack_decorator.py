@@ -13,6 +13,7 @@ from ..please_ack_decorator import PleaseAckDecorator
 MESSAGE_ID = "abc123"
 ON = ("RECEIPT", "OUTCOME")
 
+
 class TestPleaseAckDecorator(TestCase):
     def test_init_serde(self):
         decorator = PleaseAckDecorator()
@@ -31,9 +32,7 @@ class TestPleaseAckDecorator(TestCase):
         assert decorator.message_id == MESSAGE_ID
         assert decorator.on is None
         dumped = decorator.serialize()
-        assert dumped == {
-            "message_id": MESSAGE_ID
-        }
+        assert dumped == {"message_id": MESSAGE_ID}
         loaded = PleaseAckDecorator.deserialize(dumped)
         assert type(loaded) == PleaseAckDecorator
         assert loaded.message_id == MESSAGE_ID
