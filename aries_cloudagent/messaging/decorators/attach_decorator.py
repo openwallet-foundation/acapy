@@ -205,7 +205,7 @@ def did_key(verkey: str) -> str:
         return verkey
 
     return f"did:key:{MULTIBASE_B58_BTC}" + bytes_to_b58(
-        MULTICODEC_ED25519_PUB + verkey.encode("ascii")
+        MULTICODEC_ED25519_PUB + b58_to_bytes(verkey)
     )
 
 
@@ -213,7 +213,7 @@ def raw_key(verkey: str) -> str:
     """Strip qualified key to raw key if need be."""
 
     if verkey.startswith(f"did:key:{MULTIBASE_B58_BTC}"):
-        return b58_to_bytes(verkey[9:].encode("ascii"))[1:].decode("ascii")
+        return bytes_to_b58(b58_to_bytes(verkey[9:])[1:])
 
     return verkey
 
