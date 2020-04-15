@@ -167,7 +167,7 @@ async def credentials_get(request: web.BaseRequest):
     except WalletNotFoundError:
         raise web.HTTPNotFound()
 
-    return web.json_response(credential)
+    return web.json_response(json.loads(credential))
 
 
 @docs(tags=["credentials"], summary="Remove a credential from the wallet by id")

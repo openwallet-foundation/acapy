@@ -649,6 +649,7 @@ class TestProofRoutes(AsyncTestCase):
                 return_value=mock_presentation_exchange
             )
             mock_presentation_exchange.connection_id = "dummy"
+            mock_presentation_exchange.thread_id = "dummy"
             mock_presentation_exchange.serialize = async_mock.MagicMock()
             mock_presentation_exchange.serialize.return_value = {"hello": "world"}
 
