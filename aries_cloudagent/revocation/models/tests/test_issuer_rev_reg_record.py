@@ -129,7 +129,7 @@ class TestRecord(AsyncTestCase):
             revoc_reg_entry={"sample": "rr-ent"},
             cred_def_id=CRED_DEF_ID,
             state=IssuerRevRegRecord.STATE_FULL,
-            tails_public_uri="http://localhost/dummy/path"
+            tails_public_uri="http://localhost/dummy/path",
         )
 
         with self.assertRaises(RevocationError) as x_state:

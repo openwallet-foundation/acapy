@@ -44,7 +44,7 @@ class CredentialIssueHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="CredentialIssueHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
         # Automatically move to next state if flag is set
@@ -61,5 +61,5 @@ class CredentialIssueHandler(BaseHandler):
                 context.settings,
                 credential_ack_message,
                 outcome="CredentialIssueHandler.handle.STORE",
-                perf_counter=r_time
+                perf_counter=r_time,
             )

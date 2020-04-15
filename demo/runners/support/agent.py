@@ -33,7 +33,7 @@ EVENT_LOGGER.addHandler(event_stream_handler)
 EVENT_LOGGER.propagate = False
 
 TRACE_TARGET = os.getenv("TRACE_TARGET")
-TRACE_TAG    = os.getenv("TRACE_TAG")
+TRACE_TAG = os.getenv("TRACE_TAG")
 TRACE_ENABLED = True if TRACE_TARGET else False
 
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
@@ -290,7 +290,7 @@ class DemoAgent:
                     ("--trace",),
                     ("--trace-target", self.trace_target),
                     ("--trace-tag", self.trace_tag),
-                    ("--trace-label", self.label+".trace"),
+                    ("--trace-label", self.label + ".trace"),
                 ]
             )
         if self.extra_args:

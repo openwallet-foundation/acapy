@@ -23,7 +23,9 @@ class TestPing(TestCase):
         """Test type."""
         assert self.test_ping._type == PING
 
-    @mock.patch("aries_cloudagent.protocols.trustping.v1_0.messages.ping.PingSchema.load")
+    @mock.patch(
+        "aries_cloudagent.protocols.trustping.v1_0.messages.ping.PingSchema.load"
+    )
     def test_deserialize(self, mock_ping_schema_load):
         """
         Test deserialization.
@@ -35,7 +37,9 @@ class TestPing(TestCase):
 
         assert msg is mock_ping_schema_load.return_value
 
-    @mock.patch("aries_cloudagent.protocols.trustping.v1_0.messages.ping.PingSchema.dump")
+    @mock.patch(
+        "aries_cloudagent.protocols.trustping.v1_0.messages.ping.PingSchema.dump"
+    )
     def test_serialize(self, mock_ping_schema_load):
         """
         Test serialization.

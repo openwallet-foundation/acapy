@@ -69,6 +69,7 @@ class StubV1_2AgentMessage(AgentMessage):
         schema_class = "StubV1_2AgentMessageSchema"
         message_type = "proto-name/1.2/message-type"
 
+
 class StubV1_2AgentMessageSchema(AgentMessageSchema):
     class Meta:
         model_class = StubV1_2AgentMessage
@@ -187,7 +188,6 @@ class TestDispatcher(AsyncTestCase):
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
             assert payload["@type"] == ProblemReport.Meta.message_type
-
 
     async def test_bad_message_dispatch(self):
         dispatcher = test_module.Dispatcher(make_context())

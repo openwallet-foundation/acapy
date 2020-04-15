@@ -449,31 +449,25 @@ class TestPresentationPreviewAsync(AsyncTestCase):
         pres_preview = deepcopy(PRES_PREVIEW)
         mock_ledger = async_mock.MagicMock(
             get_credential_definition=async_mock.CoroutineMock(
-                return_value={
-                    "value": {
-                        "revocation": {
-                            "...": "..."
-                        }
-                    }
-                }
+                return_value={"value": {"revocation": {"...": "..."}}}
             )
         )
-        
+
         indy_proof_req = await pres_preview.indy_proof_request(
             **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
-            ledger=mock_ledger
+            ledger=mock_ledger,
         )
 
         for uuid, attr_spec in indy_proof_req["requested_attributes"].items():
             assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            canon_indy_proof_req["requested_attributes"][uuid]["non_revoked"] = (
-                attr_spec["non_revoked"]
-            )
+            canon_indy_proof_req["requested_attributes"][uuid][
+                "non_revoked"
+            ] = attr_spec["non_revoked"]
         for uuid, pred_spec in indy_proof_req["requested_predicates"].items():
             assert set(pred_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            canon_indy_proof_req["requested_predicates"][uuid]["non_revoked"] = (
-                pred_spec["non_revoked"]
-            )
+            canon_indy_proof_req["requested_predicates"][uuid][
+                "non_revoked"
+            ] = pred_spec["non_revoked"]
 
         assert canon_indy_proof_req == indy_proof_req
 
@@ -491,37 +485,29 @@ class TestPresentationPreviewAsync(AsyncTestCase):
         pres_preview = deepcopy(PRES_PREVIEW)
         mock_ledger = async_mock.MagicMock(
             get_credential_definition=async_mock.CoroutineMock(
-                return_value={
-                    "value": {
-                        "revocation": {
-                            "...": "..."
-                        }
-                    }
-                }
+                return_value={"value": {"revocation": {"...": "..."}}}
             )
         )
-        
+
         indy_proof_req = await pres_preview.indy_proof_request(
             **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
             ledger=mock_ledger,
             non_revoc_intervals={
-                CD_ID[s_id]: NonRevocationInterval(
-                    1234567890,
-                    EPOCH_NOW
-                ) for s_id in S_ID
-            }
+                CD_ID[s_id]: NonRevocationInterval(1234567890, EPOCH_NOW)
+                for s_id in S_ID
+            },
         )
 
         for uuid, attr_spec in indy_proof_req["requested_attributes"].items():
             assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            canon_indy_proof_req["requested_attributes"][uuid]["non_revoked"] = (
-                attr_spec["non_revoked"]
-            )
+            canon_indy_proof_req["requested_attributes"][uuid][
+                "non_revoked"
+            ] = attr_spec["non_revoked"]
         for uuid, pred_spec in indy_proof_req["requested_predicates"].items():
             assert set(pred_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            canon_indy_proof_req["requested_predicates"][uuid]["non_revoked"] = (
-                pred_spec["non_revoked"]
-            )
+            canon_indy_proof_req["requested_predicates"][uuid][
+                "non_revoked"
+            ] = pred_spec["non_revoked"]
 
         assert canon_indy_proof_req == indy_proof_req
 
@@ -555,9 +541,7 @@ class TestPresentationPreview(TestCase):
         assert PRES_PREVIEW.attributes
         assert PRES_PREVIEW.predicates
         assert PRES_PREVIEW.has_attr_spec(
-            cred_def_id=CD_ID["score"],
-            name="player",
-            value="Richie Knucklez"
+            cred_def_id=CD_ID["score"], name="player", value="Richie Knucklez"
         )
 
     def test_type(self):

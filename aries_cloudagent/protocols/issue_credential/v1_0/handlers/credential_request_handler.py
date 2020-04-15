@@ -45,7 +45,7 @@ class CredentialRequestHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="CredentialRequestHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
         # If auto_issue is enabled, respond immediately
@@ -71,7 +71,7 @@ class CredentialRequestHandler(BaseHandler):
                     context.settings,
                     credential_issue_message,
                     outcome="CredentialRequestHandler.issue.END",
-                    perf_counter=r_time
+                    perf_counter=r_time,
                 )
             else:
                 self._logger.warning(

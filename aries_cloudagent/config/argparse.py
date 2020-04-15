@@ -564,15 +564,13 @@ class ProtocolGroup(ArgumentGroup):
             help="Write timing information to a given log file.",
         )
         parser.add_argument(
-            "--trace",
-            action="store_true",
-            help="Generate tracing events.",
+            "--trace", action="store_true", help="Generate tracing events.",
         )
         parser.add_argument(
             "--trace-target",
             type=str,
             metavar="<trace-target>",
-            help="Target for trace events (\"log\", \"message\", or http endpoint).",
+            help='Target for trace events ("log", "message", or http endpoint).',
         )
         parser.add_argument(
             "--trace-tag",
@@ -630,13 +628,10 @@ class ProtocolGroup(ArgumentGroup):
                     None,
                     handler="ArgParse",
                     outcome="Successfully configured aca-py",
-                    raise_errors=True
+                    raise_errors=True,
                 )
             except Exception as e:
-                raise ArgsParseError(
-                    "Error writing trace event "
-                    + str(e)
-                )
+                raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
         return settings

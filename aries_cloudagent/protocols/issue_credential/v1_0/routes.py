@@ -90,7 +90,7 @@ class V10CredentialProposalRequestSchemaBase(Schema):
             "Whether to remove the credential exchange record on completion "
             "(overrides --preserve-exchange-records configuration setting)"
         ),
-        required=False
+        required=False,
     )
     comment = fields.Str(description="Human-readable comment", required=False)
 
@@ -125,7 +125,7 @@ class V10CredentialOfferRequestSchema(Schema):
             "Whether to respond automatically to credential requests, creating "
             "and issuing requested credentials"
         ),
-        required=False
+        required=False,
     )
     auto_remove = fields.Bool(
         description=(
@@ -286,9 +286,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     )
 
     trace_event(
-        context.settings,
-        credential_proposal,
-        outcome="credential_exchange_send.START",
+        context.settings, credential_proposal, outcome="credential_exchange_send.START",
     )
 
     credential_manager = CredentialManager(context)
@@ -297,9 +295,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         credential_exchange_record,
         credential_offer_message,
     ) = await credential_manager.prepare_send(
-        connection_id,
-        credential_proposal=credential_proposal,
-        auto_remove=auto_remove,
+        connection_id, credential_proposal=credential_proposal, auto_remove=auto_remove,
     )
     await outbound_handler(
         credential_offer_message, connection_id=credential_exchange_record.connection_id
@@ -309,7 +305,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         context.settings,
         credential_offer_message,
         outcome="credential_exchange_send.END",
-        perf_counter=r_time
+        perf_counter=r_time,
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -363,18 +359,17 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     )
 
     credential_proposal = CredentialProposal.deserialize(
-            credential_exchange_record.credential_proposal_dict
-        )
+        credential_exchange_record.credential_proposal_dict
+    )
     await outbound_handler(
-        credential_proposal,
-        connection_id=connection_id,
+        credential_proposal, connection_id=connection_id,
     )
 
     trace_event(
         context.settings,
         credential_proposal,
         outcome="credential_exchange_send_proposal.END",
-        perf_counter=r_time
+        perf_counter=r_time,
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -421,9 +416,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     if auto_issue and not preview_spec:
         raise web.HTTPBadRequest(
-            reason=(
-                "If auto_issue is set then credential_preview must be provided"
-            )
+            reason=("If auto_issue is set then credential_preview must be provided")
         )
 
     try:
@@ -471,7 +464,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         context.settings,
         credential_offer_message,
         outcome="credential_exchange_send_free_offer.END",
-        perf_counter=r_time
+        perf_counter=r_time,
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -533,7 +526,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         context.settings,
         credential_offer_message,
         outcome="credential_exchange_send_bound_offer.END",
-        perf_counter=r_time
+        perf_counter=r_time,
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -592,7 +585,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         context.settings,
         credential_request_message,
         outcome="credential_exchange_send_request.END",
-        perf_counter=r_time
+        perf_counter=r_time,
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -664,7 +657,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         context.settings,
         credential_issue_message,
         outcome="credential_exchange_issue.END",
-        perf_counter=r_time
+        perf_counter=r_time,
     )
 
     return web.json_response(cred_exch_record.serialize())
@@ -730,7 +723,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         context.settings,
         credential_stored_message,
         outcome="credential_exchange_store.END",
-        perf_counter=r_time
+        perf_counter=r_time,
     )
 
     return web.json_response(credential_exchange_record.serialize())
@@ -743,13 +736,13 @@ async def credential_exchange_store(request: web.BaseRequest):
             "name": "rev_reg_id",
             "in": "query",
             "description": "revocation registry id",
-            "required": True
+            "required": True,
         },
         {
             "name": "cred_rev_id",
             "in": "query",
             "description": "credential revocation id",
-            "required": True
+            "required": True,
         },
         {
             "name": "publish",
@@ -759,10 +752,10 @@ async def credential_exchange_store(request: web.BaseRequest):
                 "(false) mark it pending"
             ),
             "schema": {"type": "boolean"},
-            "required": False
-        }
+            "required": False,
+        },
     ],
-    summary="Revoke an issued credential"
+    summary="Revoke an issued credential",
 )
 async def credential_exchange_revoke(request: web.BaseRequest):
     """
@@ -805,9 +798,7 @@ async def credential_exchange_publish_revocations(request: web.BaseRequest):
     credential_manager = CredentialManager(context)
 
     return web.json_response(
-        {
-            "results": await credential_manager.publish_pending_revocations()
-        }
+        {"results": await credential_manager.publish_pending_revocations()}
     )
 
 
@@ -872,7 +863,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
         context.settings,
         error_result,
         outcome="credential_exchange_problem_report.END",
-        perf_counter=r_time
+        perf_counter=r_time,
     )
 
     return web.json_response({})
@@ -913,10 +904,7 @@ async def register(app: web.Application):
                 "/issue-credential/records/{cred_ex_id}/store",
                 credential_exchange_store,
             ),
-            web.post(
-                "/issue-credential/revoke",
-                credential_exchange_revoke,
-            ),
+            web.post("/issue-credential/revoke", credential_exchange_revoke,),
             web.post(
                 "/issue-credential/publish-revocations",
                 credential_exchange_publish_revocations,

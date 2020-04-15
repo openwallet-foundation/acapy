@@ -81,10 +81,7 @@ class TestIndyRevocation(AsyncTestCase):
 
     async def test_get_active_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-        rec = await self.revoc.init_issuer_registry(
-            CRED_DEF_ID,
-            self.test_did
-        )
+        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
         rec.revoc_reg_id = "dummy"
         rec.state = IssuerRevRegRecord.STATE_ACTIVE
         await rec.save(self.context)
@@ -105,9 +102,7 @@ class TestIndyRevocation(AsyncTestCase):
         rec.generate_registry = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
-            IssuerRevRegRecord,
-            "retrieve_by_revoc_reg_id",
-            async_mock.CoroutineMock(),
+            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", async_mock.CoroutineMock(),
         ) as mock_retrieve_by_rr_id:
             mock_retrieve_by_rr_id.return_value = rec
             await rec.generate_registry(self.context, None)

@@ -268,4 +268,3 @@ class TestIndyIssuer(AsyncTestCase):
                 {"fro": "delta"}, {"to": "delta"}
             )
         )
-
