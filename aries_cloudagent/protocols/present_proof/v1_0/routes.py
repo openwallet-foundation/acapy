@@ -131,7 +131,7 @@ class IndyProofReqPredSpecSchema(Schema):
 
     name = fields.String(example="index", description="Attribute name", required=True)
     p_type = fields.String(
-        description="Predicate type (indy currently supports only '>=')",
+        description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
         **INDY_PREDICATE
     )
