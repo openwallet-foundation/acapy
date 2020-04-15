@@ -64,8 +64,7 @@ class TestBasicMessageHandler:
         request_context.default_label = "agent"
         test_message_content = "Reply with: g'day"
         request_context.message = BasicMessage(
-            content=test_message_content,
-            localization="en-CA"
+            content=test_message_content, localization="en-CA"
         )
         request_context.connection_ready = True
         handler = BasicMessageHandler()

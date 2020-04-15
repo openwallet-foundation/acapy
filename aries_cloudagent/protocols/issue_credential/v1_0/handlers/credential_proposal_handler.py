@@ -44,7 +44,7 @@ class CredentialProposalHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="CredentialProposalHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
         # If auto_offer is enabled, respond immediately with offer
@@ -62,5 +62,5 @@ class CredentialProposalHandler(BaseHandler):
                 context.settings,
                 credential_offer_message,
                 outcome="CredentialProposalHandler.handle.OFFER",
-                perf_counter=r_time
+                perf_counter=r_time,
             )

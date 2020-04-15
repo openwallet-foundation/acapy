@@ -20,8 +20,10 @@ from .decorators.default import DecoratorSet
 from .decorators.signature_decorator import SignatureDecorator
 from .decorators.thread_decorator import ThreadDecorator
 from .decorators.trace_decorator import (
-    TraceDecorator, TraceReport,
-    TRACE_MESSAGE_TARGET, TRACE_LOG_TARGET
+    TraceDecorator,
+    TraceReport,
+    TRACE_MESSAGE_TARGET,
+    TRACE_LOG_TARGET,
 )
 from .models.base import (
     BaseModel,
@@ -325,8 +327,7 @@ class AgentMessage(BaseModel):
         """
         if msg and msg._trace:
             # ignore if not a valid type
-            if (isinstance(msg._trace, TraceDecorator) or
-                    isinstance(msg._trace, dict)):
+            if isinstance(msg._trace, TraceDecorator) or isinstance(msg._trace, dict):
                 self._trace = msg._trace
 
     def assign_trace_decorator(self, context, trace):
@@ -343,9 +344,7 @@ class AgentMessage(BaseModel):
             )
 
     def add_trace_decorator(
-        self,
-        target: str = TRACE_LOG_TARGET,
-        full_thread: bool = True
+        self, target: str = TRACE_LOG_TARGET, full_thread: bool = True
     ):
         """
         Create a new trace decorator.

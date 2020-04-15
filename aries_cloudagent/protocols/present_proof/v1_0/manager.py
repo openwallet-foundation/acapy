@@ -104,7 +104,7 @@ class PresentationManager:
             role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
             presentation_proposal_dict=presentation_proposal_message.serialize(),
-            trace=(presentation_proposal_message._trace is not None)
+            trace=(presentation_proposal_message._trace is not None),
         )
         await presentation_exchange_record.save(
             self.context, reason="receive presentation request"
@@ -158,8 +158,7 @@ class PresentationManager:
             "thid": presentation_exchange_record.thread_id
         }
         presentation_request_message.assign_trace_decorator(
-            self.context.settings,
-            presentation_exchange_record.trace,
+            self.context.settings, presentation_exchange_record.trace,
         )
 
         presentation_exchange_record.thread_id = presentation_request_message._thread_id
@@ -193,7 +192,7 @@ class PresentationManager:
             role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_REQUEST_SENT,
             presentation_request=presentation_request_message.indy_proof_request(),
-            trace=(presentation_request_message._trace is not None)
+            trace=(presentation_request_message._trace is not None),
         )
         await presentation_exchange_record.save(
             self.context, reason="create (free) presentation request"
@@ -428,8 +427,7 @@ class PresentationManager:
 
         presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
         presentation_message.assign_trace_decorator(
-            self.context.settings,
-            presentation_exchange_record.trace,
+            self.context.settings, presentation_exchange_record.trace,
         )
 
         # save presentation exchange state
@@ -606,8 +604,7 @@ class PresentationManager:
                 "thid": presentation_exchange_record.thread_id
             }
             presentation_ack_message.assign_trace_decorator(
-                self.context.settings,
-                presentation_exchange_record.trace,
+                self.context.settings, presentation_exchange_record.trace,
             )
 
             await responder.send_reply(presentation_ack_message)

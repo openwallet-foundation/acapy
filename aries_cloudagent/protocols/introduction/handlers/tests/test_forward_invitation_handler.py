@@ -37,7 +37,7 @@ class TestForwardInvitationHandler(AsyncTestCase):
                 routing_keys=[TEST_ROUTE_VERKEY],
                 image_url=TEST_IMAGE_URL,
             ),
-            message="Hello World"
+            message="Hello World",
         )
         self.context.update_settings({"accept_invites": False})
 
@@ -53,7 +53,7 @@ class TestForwardInvitationHandler(AsyncTestCase):
             )
 
             await handler.handle(self.context, responder)
-            assert not(responder.messages)
+            assert not (responder.messages)
 
     async def test_handle_auto_accept(self):
         handler = test_module.ForwardInvitationHandler()

@@ -18,21 +18,21 @@ class TestTracing(TestCase):
         context = {
             "trace.enabled": True,
             "trace.target": "log",
-            "trace.tag": "acapy.trace"
+            "trace.tag": "acapy.trace",
         }
         ret = test_module.trace_event(
-            context, 
-            message, 
+            context,
+            message,
             handler="message_handler",
             perf_counter=None,
-            outcome="processed Start"
+            outcome="processed Start",
         )
         test_module.trace_event(
-            context, 
-            message, 
+            context,
+            message,
             handler="message_handler",
             perf_counter=ret,
-            outcome="processed OK"
+            outcome="processed OK",
         )
 
     async def test_post_event(self):
@@ -41,11 +41,11 @@ class TestTracing(TestCase):
         context = {
             "trace.enabled": True,
             "trace.target": "http://fluentd:8080/",
-            "trace.tag": "acapy.trace"
+            "trace.tag": "acapy.trace",
         }
         test_module.trace_event(
-            context, 
-            message, 
+            context,
+            message,
             handler="message_handler",
             perf_counter=None,
             outcome="processed OK",
@@ -57,12 +57,12 @@ class TestTracing(TestCase):
         context = {
             "trace.enabled": True,
             "trace.target": "http://fluentd-dummy:8080/",
-            "trace.tag": "acapy.trace"
+            "trace.tag": "acapy.trace",
         }
         try:
             test_module.trace_event(
-                context, 
-                message, 
+                context,
+                message,
                 handler="message_handler",
                 perf_counter=None,
                 outcome="processed OK",
@@ -82,8 +82,8 @@ class TestTracing(TestCase):
             "trace.tag": "acapy.trace",
         }
         test_module.trace_event(
-            context, 
-            message, 
+            context,
+            message,
             handler="message_handler",
             perf_counter=None,
             outcome="processed OK",

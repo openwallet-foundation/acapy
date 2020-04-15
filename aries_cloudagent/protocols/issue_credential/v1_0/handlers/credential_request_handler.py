@@ -32,7 +32,7 @@ class CredentialRequestHandler(BaseHandler):
         assert isinstance(context.message, CredentialRequest)
         self._logger.info(
             "Received credential request message: %s",
-            context.message.serialize(as_string=True)
+            context.message.serialize(as_string=True),
         )
 
         if not context.connection_ready:
@@ -45,14 +45,14 @@ class CredentialRequestHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="CredentialRequestHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
         # If auto_issue is enabled, respond immediately
         if cred_exchange_rec.auto_issue:
             if (
-                cred_exchange_rec.credential_proposal_dict and
-                "credential_proposal" in cred_exchange_rec.credential_proposal_dict
+                cred_exchange_rec.credential_proposal_dict
+                and "credential_proposal" in cred_exchange_rec.credential_proposal_dict
             ):
                 (
                     cred_exchange_rec,
@@ -71,7 +71,7 @@ class CredentialRequestHandler(BaseHandler):
                     context.settings,
                     credential_issue_message,
                     outcome="CredentialRequestHandler.issue.END",
-                    perf_counter=r_time
+                    perf_counter=r_time,
                 )
             else:
                 self._logger.warning(

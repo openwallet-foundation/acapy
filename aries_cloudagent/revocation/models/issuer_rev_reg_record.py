@@ -85,9 +85,7 @@ class IssuerRevRegRecord(BaseRecord):
     ):
         """Initialize the issuer revocation registry record."""
         super().__init__(
-            record_id,
-            state=state or IssuerRevRegRecord.STATE_INIT,
-            **kwargs
+            record_id, state=state or IssuerRevRegRecord.STATE_INIT, **kwargs
         )
         self.cred_def_id = cred_def_id
         self.error_msg = error_msg
@@ -224,7 +222,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state not in (
             IssuerRevRegRecord.STATE_PUBLISHED,
             IssuerRevRegRecord.STATE_ACTIVE,
-            IssuerRevRegRecord.STATE_FULL  # can still publish revocation deltas
+            IssuerRevRegRecord.STATE_FULL,  # can still publish revocation deltas
         ):
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot publish entry".format(

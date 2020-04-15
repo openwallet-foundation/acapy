@@ -65,7 +65,7 @@ class TestInvitationHandler(AsyncTestCase):
             assert mock_ctx_inject.return_value.return_invitation.called_once_with(
                 self.context.connection_record.connection_id,
                 self.context.message,
-                responder.send
+                responder.send,
             )
 
     async def test_handle_no_service(self):

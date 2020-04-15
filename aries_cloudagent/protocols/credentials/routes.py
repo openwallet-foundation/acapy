@@ -82,7 +82,7 @@ class RawEncCredAttrSchema(Schema):
     raw = fields.Str(description="Raw value", example="Alex")
     encoded = fields.Str(
         description="(Numeric string) encoded value",
-        example="412821674062189604125602903860586582569826459817431467861859655321"
+        example="412821674062189604125602903860586582569826459817431467861859655321",
     )
 
 
@@ -91,7 +91,7 @@ class RevRegSchema(Schema):
 
     accum = fields.Str(
         description="Revocation registry accumulator state",
-        example="21 136D54EA439FC26F03DB4b812 21 123DE9F624B86823A00D ..."
+        example="21 136D54EA439FC26F03DB4b812 21 123DE9F624B86823A00D ...",
     )
 
 
@@ -100,31 +100,24 @@ class WitnessSchema(Schema):
 
     omega = fields.Str(
         description="Revocation registry witness omega state",
-        example="21 129EA8716C921058BB91826FD 21 8F19B91313862FE916C0 ..."
+        example="21 129EA8716C921058BB91826FD 21 8F19B91313862FE916C0 ...",
     )
 
 
 class CredentialSchema(Schema):
     """Result schema for a credential query."""
 
-    schema_id = fields.Str(
-        description="Schema identifier",
-        **INDY_SCHEMA_ID
-    )
+    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID
+        description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
-        **INDY_REV_REG_ID
+        description="Revocation registry identifier", **INDY_REV_REG_ID
     )
     values = fields.Dict(
-        keys=fields.Str(
-            description="Attribute name"
-        ),
+        keys=fields.Str(description="Attribute name"),
         values=fields.Nested(RawEncCredAttrSchema),
-        description="Attribute names mapped to their raw and encoded values"
+        description="Attribute names mapped to their raw and encoded values",
     )
     signature = fields.Dict(description="Digital signature")
     signature_correctness_proof = fields.Dict(description="Signature correctness proof")
@@ -394,9 +387,7 @@ async def credential_exchange_send_offer(request: web.BaseRequest):
     (
         credential_exchange_record,
         credential_offer_message,
-    ) = await credential_manager.create_offer(
-        credential_definition_id, connection_id
-    )
+    ) = await credential_manager.create_offer(credential_definition_id, connection_id)
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
     return web.json_response(credential_exchange_record.serialize())

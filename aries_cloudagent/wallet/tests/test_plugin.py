@@ -18,12 +18,8 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin(self):
         storage_config = "wallet_scheme"
         mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(
-                return_value=0
-            ),
-            init_storagetype=async_mock.MagicMock(
-                return_value=0
-            )
+            postgresstorage_init=async_mock.MagicMock(return_value=0),
+            init_storagetype=async_mock.MagicMock(return_value=0),
         )
         with async_mock.patch.object(
             test_module.cdll, "LoadLibrary", async_mock.Mock()
@@ -36,9 +32,7 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin_init_x_raise(self):
         storage_config = "wallet_scheme"
         mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(
-                return_value=2
-            )
+            postgresstorage_init=async_mock.MagicMock(return_value=2)
         )
         with async_mock.patch.object(
             test_module.cdll, "LoadLibrary", async_mock.Mock()
@@ -46,18 +40,14 @@ class TestWalletCrypto(AsyncTestCase):
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(OSError) as context:
                 test_module.load_postgres_plugin(
-                    storage_config,
-                    "creds",
-                    raise_exc=True
+                    storage_config, "creds", raise_exc=True
                 )
             assert "unable to load postgres" in str(context.exception)
 
     def test_load_postgres_plugin_init_x_exit(self):
         storage_config = "wallet_scheme"
         mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(
-                return_value=2
-            )
+            postgresstorage_init=async_mock.MagicMock(return_value=2)
         )
         with async_mock.patch.object(
             test_module.cdll, "LoadLibrary", async_mock.Mock()
@@ -65,20 +55,14 @@ class TestWalletCrypto(AsyncTestCase):
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(SystemExit):
                 test_module.load_postgres_plugin(
-                    storage_config,
-                    "creds",
-                    raise_exc=False
+                    storage_config, "creds", raise_exc=False
                 )
 
     def test_load_postgres_plugin_config_x_raise(self):
         storage_config = "wallet_scheme"
         mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(
-                return_value=0
-            ),
-            init_storagetype=async_mock.MagicMock(
-                return_value=2
-            )
+            postgresstorage_init=async_mock.MagicMock(return_value=0),
+            init_storagetype=async_mock.MagicMock(return_value=2),
         )
         with async_mock.patch.object(
             test_module.cdll, "LoadLibrary", async_mock.Mock()
@@ -86,21 +70,15 @@ class TestWalletCrypto(AsyncTestCase):
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(OSError) as context:
                 test_module.load_postgres_plugin(
-                    storage_config,
-                    "creds",
-                    raise_exc=True
+                    storage_config, "creds", raise_exc=True
                 )
             assert "unable to configure postgres" in str(context.exception)
 
     def test_load_postgres_plugin_config_x_exit(self):
         storage_config = "wallet_scheme"
         mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(
-                return_value=0
-            ),
-            init_storagetype=async_mock.MagicMock(
-                return_value=2
-            )
+            postgresstorage_init=async_mock.MagicMock(return_value=0),
+            init_storagetype=async_mock.MagicMock(return_value=2),
         )
         with async_mock.patch.object(
             test_module.cdll, "LoadLibrary", async_mock.Mock()
@@ -108,7 +86,5 @@ class TestWalletCrypto(AsyncTestCase):
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(SystemExit):
                 test_module.load_postgres_plugin(
-                    storage_config,
-                    "creds",
-                    raise_exc=False
+                    storage_config, "creds", raise_exc=False
                 )

@@ -12,13 +12,15 @@ from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..messaging.agent_message import AgentMessage
 from ..messaging.decorators.trace_decorator import (
-    TraceReport, TRACE_MESSAGE_TARGET, TRACE_LOG_TARGET
+    TraceReport,
+    TRACE_MESSAGE_TARGET,
+    TRACE_LOG_TARGET,
 )
 from ..messaging.models.base_record import BaseExchangeRecord
 
 
 LOGGER = logging.getLogger(__name__)
-DT_FMT = '%Y-%m-%d %H:%M:%S.%f%z'
+DT_FMT = "%Y-%m-%d %H:%M:%S.%f%z"
 
 
 class AdminAPIMessageTracingSchema(Schema):
@@ -106,13 +108,13 @@ def decode_inbound_message(message):
 
 
 def trace_event(
-        context,
-        message,
-        handler: str = None,
-        outcome: str = None,
-        perf_counter: float = None,
-        force_trace: bool = False,
-        raise_errors: bool = False
+    context,
+    message,
+    handler: str = None,
+    outcome: str = None,
+    perf_counter: float = None,
+    force_trace: bool = False,
+    raise_errors: bool = False,
 ) -> float:
     """
     Log a trace event to a configured target.
@@ -201,8 +203,9 @@ def trace_event(
 
         try:
             # check our target - if we get this far we know we are logging the event
-            if (context["trace.target"] == TRACE_MESSAGE_TARGET
-                    and isinstance(message, AgentMessage)):
+            if context["trace.target"] == TRACE_MESSAGE_TARGET and isinstance(
+                message, AgentMessage
+            ):
                 # add a trace report to the existing message
                 trace_report = TraceReport(
                     msg_id=event["msg_id"],
@@ -222,10 +225,10 @@ def trace_event(
             else:
                 # should be an http endpoint
                 _ = requests.post(
-                    context["trace.target"] +
-                    (context["trace.tag"] if context["trace.tag"] else ""),
+                    context["trace.target"]
+                    + (context["trace.tag"] if context["trace.tag"] else ""),
                     data=event_str,
-                    headers={"Content-Type": "application/json"}
+                    headers={"Content-Type": "application/json"},
                 )
         except Exception as e:
             if raise_errors:
@@ -234,7 +237,7 @@ def trace_event(
                 "Error logging trace target: %s tag: %s event: %s",
                 context.get("trace.target"),
                 context.get("trace.tag"),
-                event_str
+                event_str,
             )
             LOGGER.exception(e)
 

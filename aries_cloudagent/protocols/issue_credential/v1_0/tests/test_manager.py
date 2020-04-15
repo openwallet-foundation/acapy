@@ -726,8 +726,7 @@ class TestCredentialManager(AsyncTestCase):
                     async_mock.MagicMock(
                         get_registry=async_mock.CoroutineMock(
                             return_value=async_mock.MagicMock(
-                                tails_local_path="dummy-path",
-                                max_creds=1000
+                                tails_local_path="dummy-path", max_creds=1000
                             )
                         ),
                         mark_full=async_mock.CoroutineMock(),
@@ -893,7 +892,7 @@ class TestCredentialManager(AsyncTestCase):
                             )
                         ),
                         revoc_reg_id=REV_REG_ID,
-                        mark_full=async_mock.CoroutineMock()
+                        mark_full=async_mock.CoroutineMock(),
                     )
                 ]
             )

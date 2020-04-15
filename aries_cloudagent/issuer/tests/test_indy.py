@@ -157,11 +157,8 @@ class TestIndyIssuer(AsyncTestCase):
         test_cred_rev_ids = ["42", "54"]
         test_rr_delta = TEST_RR_DELTA
         mock_indy_create_credential.side_effect = [
-            (
-                json.dumps(test_cred),
-                cr_id,
-                test_rr_delta,
-            ) for cr_id in test_cred_rev_ids
+            (json.dumps(test_cred), cr_id, test_rr_delta,)
+            for cr_id in test_cred_rev_ids
         ]
 
         with self.assertRaises(IssuerError):  # missing attribute
@@ -195,9 +192,7 @@ class TestIndyIssuer(AsyncTestCase):
         mock_indy_revoke_credential.return_value = json.dumps(TEST_RR_DELTA)
         mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
         result = await self.issuer.revoke_credentials(
-            REV_REG_ID,
-            tails_file_path="dummy",
-            cred_revoc_ids=test_cred_rev_ids
+            REV_REG_ID, tails_file_path="dummy", cred_revoc_ids=test_cred_rev_ids
         )
         assert json.loads(result) == TEST_RR_DELTA
         assert mock_indy_revoke_credential.call_count == 2
@@ -277,4 +272,3 @@ class TestIndyIssuer(AsyncTestCase):
                 {"fro": "delta"}, {"to": "delta"}
             )
         )
-

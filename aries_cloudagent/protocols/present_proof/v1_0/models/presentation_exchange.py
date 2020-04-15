@@ -5,9 +5,7 @@ from typing import Any
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
-from .....messaging.models.base_record import (
-    BaseExchangeRecord, BaseExchangeSchema
-)
+from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
 
@@ -58,12 +56,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         **kwargs
     ):
         """Initialize a new PresentationExchange."""
-        super().__init__(
-            presentation_exchange_id,
-            state,
-            trace=trace,
-            **kwargs
-        )
+        super().__init__(presentation_exchange_id, state, trace=trace, **kwargs)
         self.connection_id = connection_id
         self.thread_id = thread_id
         self.initiator = initiator

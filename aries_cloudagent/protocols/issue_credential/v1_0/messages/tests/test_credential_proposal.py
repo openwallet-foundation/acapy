@@ -109,13 +109,11 @@ class TestCredentialProposalSchema(TestCase):
     """Test credential cred proposal schema."""
 
     credential_proposals = [
-        CredentialProposal(
-            credential_proposal=CRED_PREVIEW,
-        ),
+        CredentialProposal(credential_proposal=CRED_PREVIEW,),
         CredentialProposal(
             comment="Hello World",
             credential_proposal=CRED_PREVIEW,
-            cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
+            cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag",
         ),
         CredentialProposal(
             comment="Hello World",

@@ -309,7 +309,5 @@ class TraceDecoratorSchema(BaseModelSchema):
         fields.Nested(TraceReportSchema),
         required=False,
         allow_none=True,
-        description=(
-            "The set of reports collected so far for this message or thread"
-        ),
+        description=("The set of reports collected so far for this message or thread"),
     )

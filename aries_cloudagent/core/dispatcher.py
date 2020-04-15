@@ -144,9 +144,7 @@ class Dispatcher:
             message = None
 
         trace_event(
-            self.context.settings,
-            message,
-            outcome="Dispatcher.handle_message.START",
+            self.context.settings, message, outcome="Dispatcher.handle_message.START",
         )
 
         context = RequestContext(base_context=self.context)
@@ -181,7 +179,7 @@ class Dispatcher:
             self.context.settings,
             context.message,
             outcome="Dispatcher.handle_message.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
     async def make_message(self, parsed_msg: dict) -> AgentMessage:

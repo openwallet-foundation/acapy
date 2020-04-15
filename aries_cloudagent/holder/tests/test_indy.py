@@ -305,4 +305,3 @@ class TestIndyHolder(AsyncTestCase):
                 rev_reg_delta_json=json.dumps(rev_reg_delta),
                 timestamp=timestamp,
             )
-
