@@ -149,11 +149,7 @@ class TestLedgerRoutes(AsyncTestCase):
             self.ledger.get_latest_txn_author_acceptance.return_value = accepted
             result = await test_module.ledger_get_taa(request)
             taa_info["taa_accepted"] = accepted
-            json_response.assert_called_once_with(
-                {
-                    "result": taa_info
-                }
-            )
+            json_response.assert_called_once_with({"result": taa_info})
             assert result is json_response.return_value
 
     async def test_taa_accept_not_required(self):

@@ -61,7 +61,7 @@ class ProblemReportSchema(AgentMessageSchema):
         description="Standard error identifier",
         validate=validate.OneOf(
             choices=[prr.value for prr in ProblemReportReason],
-            error="Value {input} must be one of {choices}."
+            error="Value {input} must be one of {choices}.",
         ),
         example=ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
     )

@@ -6,9 +6,7 @@ from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from .....config.injection_context import InjectionContext
-from .....messaging.models.base_record import (
-    BaseExchangeRecord, BaseExchangeSchema
-)
+from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 
 
@@ -69,12 +67,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         **kwargs,
     ):
         """Initialize a new V10CredentialExchange."""
-        super().__init__(
-            credential_exchange_id,
-            state,
-            trace=trace,
-            **kwargs
-        )
+        super().__init__(credential_exchange_id, state, trace=trace, **kwargs)
         self._id = credential_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id

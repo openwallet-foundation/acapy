@@ -105,9 +105,7 @@ class TestWalletRoutes(AsyncTestCase):
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
             self.wallet.get_public_did.return_value = DIDInfo(
-                self.test_did,
-                self.test_verkey,
-                {}
+                self.test_did, self.test_verkey, {}
             )
             format_did_info.return_value = {"did": self.test_did}
             result = await test_module.wallet_did_list(request)
@@ -130,9 +128,7 @@ class TestWalletRoutes(AsyncTestCase):
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
             self.wallet.get_local_did.return_value = DIDInfo(
-                self.test_did,
-                self.test_verkey,
-                {}
+                self.test_did, self.test_verkey, {}
             )
             format_did_info.return_value = {"did": self.test_did}
             result = await test_module.wallet_did_list(request)
@@ -168,9 +164,7 @@ class TestWalletRoutes(AsyncTestCase):
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
             self.wallet.get_local_did_for_verkey.return_value = DIDInfo(
-                self.test_did,
-                self.test_verkey,
-                {}
+                self.test_did, self.test_verkey, {}
             )
             format_did_info.return_value = {"did": self.test_did}
             result = await test_module.wallet_did_list(request)
@@ -296,9 +290,7 @@ class TestWalletRoutes(AsyncTestCase):
                 return_value=["a", "b", "c"]
             )
             result = await test_module.wallet_get_tagging_policy(request)
-            json_response.assert_called_once_with(
-                {"taggables": ["a", "b", "c"]}
-            )
+            json_response.assert_called_once_with({"taggables": ["a", "b", "c"]})
             assert result is json_response.return_value
 
     async def test_get_catpol_not_indy_x(self):

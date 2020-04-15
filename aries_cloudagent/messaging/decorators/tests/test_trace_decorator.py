@@ -19,12 +19,10 @@ class TestTraceDecorator(TestCase):
     ellapsed_milli = 27
     outcome = "OK ..."
 
-
     def test_init_api(self):
 
         decorator = TraceDecorator(
-            target=self.target_api,
-            full_thread=self.full_thread_api,
+            target=self.target_api, full_thread=self.full_thread_api,
         )
         assert decorator.target == self.target_api
         assert decorator.full_thread == self.full_thread_api
@@ -80,7 +78,7 @@ class TestTraceDecorator(TestCase):
         decorator = TraceDecorator(
             target=self.target_msg,
             full_thread=self.full_thread_msg,
-            trace_reports=[x_trace_report,x_trace_report,],
+            trace_reports=[x_trace_report, x_trace_report,],
         )
 
         dumped = decorator.serialize()
@@ -101,8 +99,7 @@ class TestTraceDecorator(TestCase):
 
     def test_trace_reports(self):
         decorator = TraceDecorator(
-            target=self.target_msg,
-            full_thread=self.full_thread_msg,
+            target=self.target_msg, full_thread=self.full_thread_msg,
         )
         assert len(decorator.trace_reports) == 0
 
@@ -139,8 +136,8 @@ class TestTraceDecorator(TestCase):
         assert trace_report.msg_id == x_trace_report.msg_id
         assert trace_report.thread_id == x_trace_report.thread_id
 
-        z_msg_id = self.msg_id+"-z"
-        z_thread_id = self.thread_id+"-z"
+        z_msg_id = self.msg_id + "-z"
+        z_thread_id = self.thread_id + "-z"
         z_trace_report = TraceReport(
             msg_id=z_msg_id,
             thread_id=z_thread_id,
@@ -154,5 +151,5 @@ class TestTraceDecorator(TestCase):
         decorator.append_trace_report(z_trace_report)
         assert len(decorator.trace_reports) == 3
         trace_report = decorator.trace_reports[2]
-        assert trace_report.msg_id == self.msg_id+"-z"
-        assert trace_report.thread_id == self.thread_id+"-z"
+        assert trace_report.msg_id == self.msg_id + "-z"
+        assert trace_report.thread_id == self.thread_id + "-z"

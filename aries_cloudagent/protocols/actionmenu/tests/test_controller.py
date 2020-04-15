@@ -14,12 +14,9 @@ class TestActionMenuController(AsyncTestCase):
         MenuService = async_mock.MagicMock(test_module.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(
-            test_module.BaseMenuService,
-            self.menu_service
+            test_module.BaseMenuService, self.menu_service
         )
-        self.context.inject = async_mock.CoroutineMock(
-            return_value=self.menu_service
-        )
+        self.context.inject = async_mock.CoroutineMock(return_value=self.menu_service)
 
         controller = test_module.Controller("protocol")
 

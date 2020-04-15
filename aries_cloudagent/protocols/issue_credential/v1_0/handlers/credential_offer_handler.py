@@ -45,7 +45,7 @@ class CredentialOfferHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="CredentialOfferHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
         # If auto respond is turned on, automatically reply with credential request
@@ -60,5 +60,5 @@ class CredentialOfferHandler(BaseHandler):
                 context.settings,
                 credential_request_message,
                 outcome="CredentialOfferHandler.handle.REQUEST",
-                perf_counter=r_time
+                perf_counter=r_time,
             )

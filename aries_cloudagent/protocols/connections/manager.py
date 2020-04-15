@@ -847,7 +847,7 @@ class ConnectionManager:
                 "IndyAgent",
                 [pk],
                 routing_keys,
-                svc_endpoint
+                svc_endpoint,
             )
             did_doc.set(service)
 
@@ -972,10 +972,8 @@ class ConnectionManager:
         results = None
 
         if (
-            connection.state in (
-                ConnectionRecord.STATE_INVITATION,
-                ConnectionRecord.STATE_REQUEST
-            )
+            connection.state
+            in (ConnectionRecord.STATE_INVITATION, ConnectionRecord.STATE_REQUEST)
             and connection.initiator == ConnectionRecord.INITIATOR_EXTERNAL
         ):
             invitation = await connection.retrieve_invitation(self.context)

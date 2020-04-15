@@ -15,7 +15,7 @@ class TestProvider(AsyncTestCase):
                 "wallet.name": "name",
                 "wallet.storage_type": "storage_type",
                 "wallet.storage_config": "storage_config",
-                "wallet.storage_creds": "storage_creds"
+                "wallet.storage_creds": "storage_creds",
             }
         )
         wallet = await provider.provide(settings, None)

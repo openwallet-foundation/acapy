@@ -48,7 +48,7 @@ class PresentationProposalHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="PresentationProposalHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
         # If auto_respond_presentation_proposal is set, reply with proof req
@@ -67,5 +67,5 @@ class PresentationProposalHandler(BaseHandler):
                 context.settings,
                 presentation_request_message,
                 outcome="PresentationProposalHandler.handle.PRESENT",
-                perf_counter=r_time
+                perf_counter=r_time,
             )

@@ -77,8 +77,7 @@ class FaberAgent(DemoAgent):
 
         self.log(
             "Credential: state = {}, credential_exchange_id = {}".format(
-                state,
-                credential_exchange_id,
+                state, credential_exchange_id,
             )
         )
 
@@ -105,13 +104,9 @@ class FaberAgent(DemoAgent):
                 rev_reg_id = cred_ex_rec.get("revoc_reg_id")
                 cred_rev_id = cred_ex_rec.get("revocation_id")
                 if rev_reg_id:
-                    self.log(
-                        f"Revocation registry id: {rev_reg_id}"
-                    )
+                    self.log(f"Revocation registry id: {rev_reg_id}")
                 if cred_rev_id:
-                    self.log(
-                        f"Credential revocation id: {cred_rev_id}"
-                    )
+                    self.log(f"Credential revocation id: {cred_rev_id}")
             except ClientError:
                 pass
 
@@ -235,14 +230,20 @@ async def main(
                 "    (6) Add Revocation Registry\n"
             )
         options += "    (T) Toggle tracing on credential/proof exchange\n"
-        options += "    (X) Exit?\n[1/2/3/{}T/X] ".format("4/5/6/" if revocation else "")
+        options += "    (X) Exit?\n[1/2/3/{}T/X] ".format(
+            "4/5/6/" if revocation else ""
+        )
         async for option in prompt_loop(options):
             if option is None or option in "xX":
                 break
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
-                log_msg(">>> Credential/Proof Exchange Tracing is {}".format("ON" if exchange_tracing else "OFF"))
+                log_msg(
+                    ">>> Credential/Proof Exchange Tracing is {}".format(
+                        "ON" if exchange_tracing else "OFF"
+                    )
+                )
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
 
@@ -336,7 +337,7 @@ async def main(
                 rev_reg_id = await prompt("Enter revocation registry id: ")
                 cred_rev_id = await prompt("Enter credential revocation id: ")
                 publish = json.dumps(
-                    await prompt("Publish now? [Y/N]: ", default="N") in ('yY')
+                    await prompt("Publish now? [Y/N]: ", default="N") in ("yY")
                 )
                 try:
                     await agent.admin_POST(
@@ -356,7 +357,7 @@ async def main(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["results"]),
                             "y" if len(resp) == 1 else "ies",
-                            json.dumps([k for k in resp["results"]], indent=4)
+                            json.dumps([k for k in resp["results"]], indent=4),
                         )
                     )
                 except ClientError:

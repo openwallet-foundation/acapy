@@ -36,7 +36,7 @@ class PresentationRequestHandler(BaseHandler):
         assert isinstance(context.message, PresentationRequest)
         self._logger.info(
             "Received presentation request message: %s",
-            context.message.serialize(as_string=True)
+            context.message.serialize(as_string=True),
         )
 
         if not context.connection_ready:
@@ -78,7 +78,7 @@ class PresentationRequestHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="PresentationRequestHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
         # If auto_present is enabled, respond immediately with presentation
@@ -94,7 +94,7 @@ class PresentationRequestHandler(BaseHandler):
                 req_creds = await indy_proof_req_preview2indy_requested_creds(
                     indy_proof_request,
                     presentation_preview,
-                    holder=await context.inject(BaseHolder)
+                    holder=await context.inject(BaseHolder),
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")
@@ -117,5 +117,5 @@ class PresentationRequestHandler(BaseHandler):
                 context.settings,
                 presentation_message,
                 outcome="PresentationRequestHandler.handle.PRESENT",
-                perf_counter=r_time
+                perf_counter=r_time,
             )

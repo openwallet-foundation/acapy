@@ -16,12 +16,7 @@ class NonRevocationInterval(BaseModel):
 
         schema_class = "NonRevocationIntervalSchema"
 
-    def __init__(
-        self,
-        fro: int = None,
-        to: int = None,
-        **kwargs
-    ):
+    def __init__(self, fro: int = None, to: int = None, **kwargs):
         """Initialize non-revocation interval.
 
         Args:

@@ -29,8 +29,9 @@ class LedgerProvider(BaseProvider):
         if wallet.WALLET_TYPE == "indy":
             IndyLedger = ClassLoader.load_class(self.LEDGER_CLASSES["indy"])
             cache = await injector.inject(BaseCache, required=False)
-            ledger = IndyLedger(pool_name, wallet, keepalive=keepalive, cache=cache,
-                                read_only=read_only)
+            ledger = IndyLedger(
+                pool_name, wallet, keepalive=keepalive, cache=cache, read_only=read_only
+            )
 
             genesis_transactions = settings.get("ledger.genesis_transactions")
             if genesis_transactions:

@@ -41,7 +41,7 @@ class PresentationHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="PresentationHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )
 
         if context.settings.get("debug.auto_verify_presentation"):
@@ -51,5 +51,5 @@ class PresentationHandler(BaseHandler):
                 context.settings,
                 presentation_exchange_record,
                 outcome="PresentationHandler.handle.VERIFY",
-                perf_counter=r_time
+                perf_counter=r_time,
             )

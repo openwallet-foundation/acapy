@@ -275,9 +275,7 @@ class BaseRecord(BaseModel):
             vals = json.loads(record.value)
             if match_post_filter(
                 vals, post_filter_positive, True
-            ) and match_post_filter(
-                vals, post_filter_negative, False
-            ):
+            ) and match_post_filter(vals, post_filter_negative, False):
                 result.append(cls.from_storage(record.id, vals))
         return result
 
@@ -444,12 +442,7 @@ class BaseExchangeRecord(BaseRecord):
     """Represents a base record with event tracing capability."""
 
     def __init__(
-        self,
-        id: str = None,
-        state: str = None,
-        *,
-        trace: bool = False,
-        **kwargs,
+        self, id: str = None, state: str = None, *, trace: bool = False, **kwargs,
     ):
         """Initialize a new V10CredentialExchange."""
         super().__init__(id, state, **kwargs)
@@ -458,9 +451,11 @@ class BaseExchangeRecord(BaseRecord):
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
         if type(other) is type(self):
-            return (self.value == other.value
-                    and self.tags == other.tags
-                    and self.trace == other.trace)
+            return (
+                self.value == other.value
+                and self.tags == other.tags
+                and self.trace == other.trace
+            )
         return False
 
 
