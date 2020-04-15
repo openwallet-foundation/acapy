@@ -15,6 +15,8 @@ from ..messages.presentation_request import PresentationRequest
 from ..models.presentation_exchange import V10PresentationExchange
 from ..util.indy import indy_proof_req_preview2indy_requested_creds
 
+from .....utils.tracing import trace_event, get_timer
+
 
 class PresentationRequestHandler(BaseHandler):
     """Message handler class for Aries#0037 v1.0 presentation requests."""
@@ -28,6 +30,8 @@ class PresentationRequestHandler(BaseHandler):
             responder: responder callback
 
         """
+        r_time = get_timer()
+
         self._logger.debug("PresentationRequestHandler called with context %s", context)
         assert isinstance(context.message, PresentationRequest)
         self._logger.info(
@@ -62,11 +66,19 @@ class PresentationRequestHandler(BaseHandler):
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
                 ),
+                trace=(context.message._trace is not None),
             )
 
         presentation_exchange_record.presentation_request = indy_proof_request
         presentation_exchange_record = await presentation_manager.receive_request(
             presentation_exchange_record
+        )
+
+        r_time = trace_event(
+            context.settings,
+            context.message,
+            outcome="PresentationRequestHandler.handle.END",
+            perf_counter=r_time,
         )
 
         # If auto_present is enabled, respond immediately with presentation
@@ -100,3 +112,10 @@ class PresentationRequestHandler(BaseHandler):
             )
 
             await responder.send_reply(presentation_message)
+
+            trace_event(
+                context.settings,
+                presentation_message,
+                outcome="PresentationRequestHandler.handle.PRESENT",
+                perf_counter=r_time,
+            )

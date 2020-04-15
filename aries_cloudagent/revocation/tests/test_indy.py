@@ -102,7 +102,7 @@ class TestIndyRevocation(AsyncTestCase):
         rec.generate_registry = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
-            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", async_mock.CoroutineMock(),
+            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", async_mock.CoroutineMock()
         ) as mock_retrieve_by_rr_id:
             mock_retrieve_by_rr_id.return_value = rec
             await rec.generate_registry(self.context, None)

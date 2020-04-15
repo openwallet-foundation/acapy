@@ -100,6 +100,7 @@ class CredentialManager:
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
             credential_proposal_dict=credential_proposal.serialize(),
+            trace=(credential_proposal._trace is not None),
         )
         (credential_exchange, credential_offer) = await self.create_offer(
             credential_exchange_record=credential_exchange,
@@ -121,6 +122,7 @@ class CredentialManager:
         schema_version: str = None,
         cred_def_id: str = None,
         issuer_did: str = None,
+        trace: bool = False,
     ) -> V10CredentialExchange:
         """
         Create a credential proposal.
@@ -154,6 +156,9 @@ class CredentialManager:
             cred_def_id=cred_def_id,
             issuer_did=issuer_did,
         )
+        credential_proposal_message.assign_trace_decorator(
+            self.context.settings, trace,
+        )
 
         if auto_remove is None:
             auto_remove = not self.context.settings.get("preserve_exchange_records")
@@ -166,6 +171,7 @@ class CredentialManager:
             credential_proposal_dict=credential_proposal_message.serialize(),
             auto_offer=auto_offer,
             auto_remove=auto_remove,
+            trace=trace,
         )
         await credential_exchange_record.save(
             self.context, reason="create credential proposal"
@@ -198,6 +204,7 @@ class CredentialManager:
             auto_issue=self.context.settings.get(
                 "debug.auto_respond_credential_request"
             ),
+            trace=(credential_proposal_message._trace is not None),
         )
         await credential_exchange_record.save(
             self.context, reason="receive credential proposal"
@@ -222,6 +229,9 @@ class CredentialManager:
         if credential_exchange_record.credential_proposal_dict:
             credential_proposal_message = CredentialProposal.deserialize(
                 credential_exchange_record.credential_proposal_dict
+            )
+            credential_proposal_message.assign_trace_decorator(
+                self.context.settings, credential_exchange_record.trace,
             )
             cred_def_id = await self._match_sent_cred_def_id(
                 {
@@ -263,6 +273,9 @@ class CredentialManager:
         credential_offer_message._thread = {
             "thid": credential_exchange_record.thread_id
         }
+        credential_offer_message.assign_trace_decorator(
+            self.context.settings, credential_exchange_record.trace,
+        )
 
         credential_exchange_record.thread_id = credential_offer_message._thread_id
         credential_exchange_record.schema_id = credential_offer["schema_id"]
@@ -321,6 +334,7 @@ class CredentialManager:
                 initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
                 role=V10CredentialExchange.ROLE_HOLDER,
                 credential_proposal_dict=credential_proposal_dict,
+                trace=(credential_offer_message._trace is not None),
             )
 
         credential_exchange_record.credential_offer = indy_offer
@@ -407,6 +421,9 @@ class CredentialManager:
         credential_request_message._thread = {
             "thid": credential_exchange_record.thread_id
         }
+        credential_request_message.assign_trace_decorator(
+            self.context.settings, credential_exchange_record.trace,
+        )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_SENT
         await credential_exchange_record.save(
@@ -466,6 +483,7 @@ class CredentialManager:
 
         """
         schema_id = credential_exchange_record.schema_id
+        registry = None
 
         if credential_exchange_record.credential:
             self._logger.warning(
@@ -518,8 +536,13 @@ class CredentialManager:
                     credential_exchange_record.revoc_reg_id,
                     tails_path,
                 )
+                if registry and registry.max_creds == int(
+                    credential_exchange_record.revocation_id  # monotonic "1"-based
+                ):
+                    await issuer_rev_regs[0].mark_full(self.context)
+
             except IssuerRevocationRegistryFullError:
-                await registry.mark_full(self.context)
+                await issuer_rev_regs[0].mark_full(self.context)
                 raise
 
             credential_exchange_record.credential = json.loads(credential_json)
@@ -536,6 +559,9 @@ class CredentialManager:
             ],
         )
         credential_message._thread = {"thid": credential_exchange_record.thread_id}
+        credential_message.assign_trace_decorator(
+            self.context.settings, credential_exchange_record.trace,
+        )
 
         return (credential_exchange_record, credential_message)
 
@@ -648,6 +674,9 @@ class CredentialManager:
         credential_ack_message.assign_thread_id(
             credential_exchange_record.thread_id,
             credential_exchange_record.parent_thread_id,
+        )
+        credential_ack_message.assign_trace_decorator(
+            self.context.settings, credential_exchange_record.trace,
         )
 
         if credential_exchange_record.auto_remove:

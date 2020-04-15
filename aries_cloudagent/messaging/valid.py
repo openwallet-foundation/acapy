@@ -21,7 +21,52 @@ class IntEpoch(Range):
         super().__init__(  # use 64-bit for Aries RFC compatibility
             min=-9223372036854775808,
             max=9223372036854775807,
-            error="Value {input} is not a valid integer epoch time.",
+            error="Value {input} is not a valid integer epoch time",
+        )
+
+
+class JWSHeaderKid(Regexp):
+    """Validate value against JWS header kid."""
+
+    EXAMPLE = "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            rf"^did:(?:key:z[{B58}]+|sov:[{B58}]{{21,22}}(;.*)?(\?.*)?#.+)$",
+            error="Value {input} is neither in W3C did:key nor DID URL format",
+        )
+
+
+class JSONWebToken(Regexp):
+    """Validate JSON Web Token."""
+
+    EXAMPLE = (
+        "eyJhbGciOiJFZERTQSJ9."
+        "eyJhIjogIjAifQ."
+        "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+    )
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$",
+            error="Value {input} is not a valid JSON Web token",
+        )
+
+
+class DIDKey(Regexp):
+    """Validate value against DID key specification."""
+
+    EXAMPLE = "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            rf"^did:key:z[{B58}]+$", error="Value {input} is not in W3C did:key format"
         )
 
 
@@ -35,7 +80,7 @@ class IndyDID(Regexp):
 
         super().__init__(
             rf"^(did:sov:)?[{B58}]{{21,22}}$",
-            error="Value {input} is not an indy decentralized identifier (DID).",
+            error="Value {input} is not an indy decentralized identifier (DID)",
         )
 
 
@@ -49,7 +94,7 @@ class IndyRawPublicKey(Regexp):
 
         super().__init__(
             rf"^[{B58}]{{43,44}}$",
-            error="Value {input} is not a raw Ed25519VerificationKey2018 key.",
+            error="Value {input} is not a raw Ed25519VerificationKey2018 key",
         )
 
 
@@ -69,7 +114,7 @@ class IndyCredDefId(Regexp):
                 rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
                 f":(.+)?$"  # tag
             ),
-            error="Value {input} is not an indy credential definition identifier.",
+            error="Value {input} is not an indy credential definition identifier",
         )
 
 
@@ -83,7 +128,7 @@ class IndyVersion(Regexp):
 
         super().__init__(
             rf"^[0-9.]+$",
-            error="Value {input} is not an indy version (use only digits and '.').",
+            error="Value {input} is not an indy version (use only digits and '.')",
         )
 
 
@@ -97,7 +142,7 @@ class IndySchemaId(Regexp):
 
         super().__init__(
             rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$",
-            error="Value {input} is not an indy schema identifier.",
+            error="Value {input} is not an indy schema identifier",
         )
 
 
@@ -116,7 +161,7 @@ class IndyRevRegId(Regexp):
                 rf"CL:(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))(:.+)?:"
                 rf"CL_ACCUM:(.+$)"
             ),
-            error="Value {input} is not an indy revocation registry identifier.",
+            error="Value {input} is not an indy revocation registry identifier",
         )
 
 
@@ -130,7 +175,7 @@ class IndyPredicate(OneOf):
 
         super().__init__(
             choices=["<", "<=", ">=", ">"],
-            error="Value {input} must be one of {choices}.",
+            error="Value {input} must be one of {choices}",
         )
 
 
@@ -145,7 +190,7 @@ class IndyISO8601DateTime(Regexp):
         super().__init__(
             r"^\d{4}-\d\d-\d\d[T ]\d\d:\d\d"
             r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z|)$",
-            error="Value {input} is not a date in valid format.",
+            error="Value {input} is not a date in valid format",
         )
 
 
@@ -177,6 +222,20 @@ class Base64URL(Regexp):
         )
 
 
+class Base64URLNoPad(Regexp):
+    """Validate base64 value."""
+
+    EXAMPLE = "ey4uLn0"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            r"^[-_a-zA-Z0-9]*$",
+            error="Value {input} is not a valid unpadded base64url encoding",
+        )
+
+
 class SHA256Hash(Regexp):
     """Validate (binhex-encoded) SHA256 value."""
 
@@ -201,7 +260,7 @@ class Base58SHA256Hash(Regexp):
 
         super().__init__(
             rf"^[{B58}]{{43,44}}$",
-            error="Value {input} is not a base58 encoding of a SHA-256 hash.",
+            error="Value {input} is not a base58 encoding of a SHA-256 hash",
         )
 
 
@@ -219,13 +278,15 @@ class UUIDFour(Regexp):
             r"4[a-fA-F0-9]{3}-"
             r"[a-fA-F0-9]{4}-"
             r"[a-fA-F0-9]{12}",
-            error="Value {input} is not a UUID4 "
-            + "(8-4-4-4-12 hex digits with digit#13=4)",
+            error="Value {input} is not a UUID4 (8-4-4-4-12 hex digits with digit#13=4)",
         )
 
 
 # Instances for marshmallow schema specification
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
+JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
+JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
+DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),
@@ -241,7 +302,9 @@ INDY_ISO8601_DATETIME = {
     "example": IndyISO8601DateTime.EXAMPLE,
 }
 BASE64 = {"validate": Base64(), "example": Base64.EXAMPLE}
-BASE64URL = {"validate": Base64URL(), "example": Base64.EXAMPLE}
+BASE64URL = {"validate": Base64URL(), "example": Base64URL.EXAMPLE}
+BASE64URL_NO_PAD = {"validate": Base64URLNoPad(), "example": Base64URLNoPad.EXAMPLE}
+
 SHA256 = {"validate": SHA256Hash(), "example": SHA256Hash.EXAMPLE}
 BASE58_SHA256_HASH = {
     "validate": Base58SHA256Hash(),

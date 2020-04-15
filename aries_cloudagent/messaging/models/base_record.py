@@ -438,6 +438,27 @@ class BaseRecord(BaseModel):
         return False
 
 
+class BaseExchangeRecord(BaseRecord):
+    """Represents a base record with event tracing capability."""
+
+    def __init__(
+        self, id: str = None, state: str = None, *, trace: bool = False, **kwargs,
+    ):
+        """Initialize a new V10CredentialExchange."""
+        super().__init__(id, state, **kwargs)
+        self.trace = trace
+
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        if type(other) is type(self):
+            return (
+                self.value == other.value
+                and self.tags == other.tags
+                and self.trace == other.trace
+            )
+        return False
+
+
 class BaseRecordSchema(BaseModelSchema):
     """Schema to allow serialization/deserialization of base records."""
 
@@ -454,4 +475,19 @@ class BaseRecordSchema(BaseModelSchema):
         required=False,
         description="Time of last record update",
         **INDY_ISO8601_DATETIME,
+    )
+
+
+class BaseExchangeSchema(BaseRecordSchema):
+    """Base schema for exchange records."""
+
+    class Meta:
+        """BaseExchangeSchema metadata."""
+
+        model_class = BaseExchangeRecord
+
+    trace = fields.Boolean(
+        description="Record trace information, based on agent configuration",
+        required=False,
+        default=False,
     )

@@ -538,8 +538,7 @@ class ProtocolGroup(ArgumentGroup):
             "--invite-base-url",
             type=str,
             metavar="<base-url>",
-            help="Base URL to use when formatting connection "
-            + "invitations in URL format.",
+            help="Base URL to use when formatting connection invitations in URL format.",
         )
         parser.add_argument(
             "--monitor-ping",
@@ -621,14 +620,17 @@ class ProtocolGroup(ArgumentGroup):
             settings["trace.label"] = args.label
         else:
             settings["trace.label"] = "aca-py.agent"
-        if settings.get("trace.enabled"):
+        if settings.get("trace.enabled") or settings.get("trace.target"):
+            # make sure we can trace to the configured target
+            # (target can be set even if tracing is off)
             try:
                 trace_event(
                     settings,
                     None,
                     handler="ArgParse",
-                    outcome="Successfully configured aca-py",
+                    outcome="Successfully_configured_aca-py",
                     raise_errors=True,
+                    force_trace=True,
                 )
             except Exception as e:
                 raise ArgsParseError("Error writing trace event " + str(e))

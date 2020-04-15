@@ -8,6 +8,17 @@ AGENT="$1"
 shift
 ARGS=""
 
+TRACE_ENABLED=""
+TRACE_TAG=acapy.events
+if ! [ -z "$TRACE_TARGET_URL" ]; then
+    TRACE_TARGET=http://${TRACE_TARGET_URL}/
+else
+    TRACE_TARGET=log
+fi
+if [ -z "$DOCKER_NET" ]; then
+    DOCKER_NET="bridge"
+fi
+
 for i in "$@"
 do
     if [ ! -z "$SKIP" ]; then
@@ -23,16 +34,20 @@ do
 		fi
 		continue
 	;;
+    --self-attested)
+        SELF_ATTESTED=1
+        continue
+    ;;
     --trace-log)
+        TRACE_ENABLED=1
         TRACE_TARGET=log
         TRACE_TAG=acapy.events
-        SKIP=1
         continue
     ;;
     --trace-http)
-        TRACE_TARGET=http://${TRACE_TARGET_URL}
+        TRACE_ENABLED=1
+        TRACE_TARGET=http://${TRACE_TARGET_URL}/
         TRACE_TAG=acapy.events
-        SKIP=1
         continue
     ;;
     --debug-ptvsd)
@@ -62,6 +77,7 @@ do
 			echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
 			exit 1
 		fi
+        continue
 		;;
 	--bg)
 		if [[ "${AGENT}" == "alice" ]] || [[ "${AGENT}" == "faber" ]] || [[ "${AGENT}" == "acme" ]]; then
@@ -90,6 +106,7 @@ Usage:
 	--bg - run the agent in the background; for use when using OpenAPI/Swagger interface
     --trace-log - log events to the standard log file
     --trace-http - log events to an http endmoint specified in env var TRACE_TARGET_URL
+    --self-attested - include a self-attested attribute in the proof request/response
 	debug options: --debug-pycharm-agent-port <port>; --debug-pycharm-controller-port <port>
 	               --debug-pycharm; --debug-ptvsd
 
@@ -159,9 +176,13 @@ fi
 if ! [ -z "$EVENTS" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
 fi
+if ! [ -z "$SELF_ATTESTED" ]; then
+    DOCKER_ENV="${DOCKER_ENV} -e SELF_ATTESTED=${SELF_ATTESTED}"
+fi
 if ! [ -z "$TRACE_TARGET" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e TRACE_TARGET=${TRACE_TARGET}"
     DOCKER_ENV="${DOCKER_ENV} -e TRACE_TAG=${TRACE_TAG}"
+    DOCKER_ENV="${DOCKER_ENV} -e TRACE_ENABLED=${TRACE_ENABLED}"
 fi
 if ! [ -z "$PUBLIC_TAILS_URL" ]; then
     DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"
@@ -182,6 +203,7 @@ DOCKER=${DOCKER:-docker}
 
 echo "Starting $AGENT..."
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
+    --network=${DOCKER_NET} \
 	-p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
 	-v "/$(pwd)/../logs:/home/indy/logs" \
 	$DOCKER_ENV \

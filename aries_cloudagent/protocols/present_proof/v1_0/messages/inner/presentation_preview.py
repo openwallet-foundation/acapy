@@ -71,7 +71,7 @@ class PresPredSpecSchema(BaseModelSchema):
         **INDY_CRED_DEF_ID,
     )
     predicate = fields.Str(
-        description="Predicate (currently, indy supports >=)",
+        description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
         **INDY_PREDICATE,
     )

@@ -33,7 +33,7 @@ class TestInvitationRequestHandler(AsyncTestCase):
 
         self.context.connection_ready = True
         self.context.message = InvitationRequest(
-            responder="test-agent", message="Hello World"
+            responder="test-agent", message="Hello World",
         )
         self.context.update_settings({"accept_requests": False})
 

@@ -92,7 +92,7 @@ class DemoIntroductionService(BaseIntroductionService):
         tag_filter = {"target_connection_id": target_connection_id}
         storage: BaseStorage = await self._context.inject(BaseStorage)
         records = await storage.search_records(
-            DemoIntroductionService.RECORD_TYPE, tag_filter
+            DemoIntroductionService.RECORD_TYPE, tag_filter,
         ).fetch_all()
 
         found = False
@@ -103,6 +103,7 @@ class DemoIntroductionService(BaseIntroductionService):
                     invitation=invitation.invitation, message=invitation.message
                 )
                 msg.assign_thread_from(invitation)
+                msg.assign_trace_from(invitation)
 
                 value["state"] = "complete"
                 await storage.update_record_value(row, json.dumps(value))

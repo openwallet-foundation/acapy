@@ -5,6 +5,8 @@ from ..valid import (
     BASE58_SHA256_HASH,
     BASE64,
     BASE64URL,
+    BASE64URL_NO_PAD,
+    DID_KEY,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_ISO8601_DATETIME,
@@ -14,6 +16,8 @@ from ..valid import (
     INDY_SCHEMA_ID,
     INDY_VERSION,
     INT_EPOCH,
+    JWS_HEADER_KID,
+    JWT,
     SHA256,
     UUID4,
 )
@@ -57,6 +61,58 @@ class TestValid(TestCase):
                 INDY_RAW_PUBLIC_KEY["validate"](non_indy_raw_public_key)
 
         INDY_RAW_PUBLIC_KEY["validate"]("Q4zqM7aXqm7gDQkUVLng9hQ4zqM7aXqm7gDQkUVLng9h")
+
+    def test_jws_header_kid(self):
+        non_kids = [
+            "http://not-this.one",
+            "did:sov:i",  # too short
+            "did:key:Q4zqM7aXqm7gDQkUVLng9h"  # missing leading z
+            "did:key:zI4zqM7aXqm7gDQkUVLng9h",  # 'I' not a base58 char
+        ]
+        for non_kid in non_kids:
+            with self.assertRaises(ValidationError):
+                JWS_HEADER_KID["validate"](non_kid)
+
+        JWS_HEADER_KID["validate"]("did:key:zQ4zqM7aXqm7gDQkUVLng9h")
+        JWS_HEADER_KID["validate"]("did:sov:Q4zqM7aXqm7gDQkUVLng9h#abc-123")
+        JWS_HEADER_KID["validate"](
+            "did:sov:Q4zqM7aXqm7gDQkUVLng9h?version-time=1234567890#abc-123"
+        )
+        JWS_HEADER_KID["validate"](
+            "did:sov:Q4zqM7aXqm7gDQkUVLng9h?version-time=1234567890&a=b#abc-123"
+        )
+        JWS_HEADER_KID["validate"](
+            "did:sov:Q4zqM7aXqm7gDQkUVLng9h;foo:bar=low;a=b?version-id=1&a=b#abc-123"
+        )
+
+    def test_jwt(self):
+        non_jwts = [
+            "abcde",
+            "abcde+.abcde/.abcdef",
+            "abcdef==.abcdef==.abcdef",
+            "abcdef==..",
+        ]
+
+        for non_jwt in non_jwts:
+            with self.assertRaises(ValidationError):
+                JWT["validate"](non_jwt)
+
+        JWT["validate"]("abcdef.abcdef.abcdef")
+        JWT["validate"]("abcde-.abcde_.abcdef")
+        JWT["validate"]("abcde-..abcdef")
+
+    def test_did_key(self):
+        non_did_keys = [
+            "http://not-this.one",
+            "did:sov:i",  # wrong preamble
+            "did:key:Q4zqM7aXqm7gDQkUVLng9h"  # missing leading z
+            "did:key:zI4zqM7aXqm7gDQkUVLng9h",  # 'I' not a base58 char
+        ]
+        for non_did_key in non_did_keys:
+            with self.assertRaises(ValidationError):
+                DID_KEY["validate"](non_did_key)
+
+        DID_KEY["validate"]("did:key:zQ4zqM7aXqm7gDQkUVLng9h")
 
     def test_indy_base58_sha256_hash(self):
         non_base58_sha256_hashes = [
@@ -208,7 +264,21 @@ class TestValid(TestCase):
         BASE64URL["validate"]("UG90Y-_=")
         BASE64URL["validate"]("UG90YX==")
         with self.assertRaises(ValidationError):
-            BASE64URL["validate"]("UG90YX+v")
+            BASE64URL["validate"]("UG90YX+v")  # '+' is not a base64url char
+
+        non_base64_no_pads = ["####", "abcde=", "ab=cde"]
+        for non_base64_no_pad in non_base64_no_pads:
+            with self.assertRaises(ValidationError):
+                BASE64URL_NO_PAD["validate"](non_base64_no_pad)
+
+        BASE64URL_NO_PAD["validate"]("")
+        BASE64URL_NO_PAD["validate"]("abcd123")
+        BASE64URL_NO_PAD["validate"]("abcde")
+        BASE64URL_NO_PAD["validate"]("UG90YX-v")
+        BASE64URL_NO_PAD["validate"]("UG90Y-_")
+        BASE64URL_NO_PAD["validate"]("UG90YX")
+        with self.assertRaises(ValidationError):
+            BASE64URL_NO_PAD["validate"]("UG90YX+v")  # '+' is not a base64url char
 
     def test_sha256(self):
         non_sha256s = [

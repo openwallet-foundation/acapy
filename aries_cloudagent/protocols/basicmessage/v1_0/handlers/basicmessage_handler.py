@@ -55,6 +55,7 @@ class BasicMessageHandler(BaseHandler):
         if reply:
             reply_msg = BasicMessage(content=reply)
             reply_msg.assign_thread_from(context.message)
+            reply_msg.assign_trace_from(context.message)
             if "l10n" in context.message._decorators:
                 reply_msg._decorators["l10n"] = context.message._decorators["l10n"]
             await responder.send_reply(reply_msg)
