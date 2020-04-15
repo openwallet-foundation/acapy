@@ -237,7 +237,7 @@ async def publish_registry(request: web.BaseRequest):
     tags=["revocation"],
     summary="Update revocation registry with new public URI to the tails file.",
     parameters=[
-        {"in": "path", "name": "id", "description": "revocation registry identifier",}
+        {"in": "path", "name": "id", "description": "revocation registry identifier"}
     ],
 )
 @request_schema(RevRegUpdateTailsFileUriSchema())
