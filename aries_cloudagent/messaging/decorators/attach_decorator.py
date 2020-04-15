@@ -33,6 +33,9 @@ from ..valid import (
     UUIDFour,
 )
 
+MULTIBASE_B58_BTC = "z"
+MULTICODEC_ED25519_PUB = b"\xed"
+
 
 class AttachDecoratorDataJWSHeader(BaseModel):
     """Attach decorator data JWS header."""
@@ -198,13 +201,21 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
 
-    return verkey if verkey.startswith("did:key:z") else f"did:key:z{verkey}"
+    if verkey.startswith(f"did:key:{MULTIBASE_B58_BTC}"):
+        return verkey
+
+    return f"did:key:{MULTIBASE_B58_BTC}" + bytes_to_b58(
+        MULTICODEC_ED25519_PUB + verkey.encode("ascii")
+    )
 
 
 def raw_key(verkey: str) -> str:
     """Strip qualified key to raw key if need be."""
 
-    return verkey[9:] if verkey.startswith("did:key:z") else verkey
+    if verkey.startswith(f"did:key:{MULTIBASE_B58_BTC}"):
+        return b58_to_bytes(verkey[9:].encode("ascii"))[1:].decode("ascii")
+
+    return verkey
 
 
 class AttachDecoratorData(BaseModel):

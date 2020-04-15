@@ -372,6 +372,15 @@ class TestAttachDecorator(TestCase):
 @pytest.mark.indy
 class TestAttachDecoratorSignature:
     @pytest.mark.asyncio
+    async def test_did_raw_key(self, wallet, seed):
+        did_info = await wallet.create_local_did(seed[0])
+        did_key0 = did_key(did_info.verkey)
+        raw_key0 = raw_key(did_key0)
+        assert raw_key0 != did_key0
+        assert did_key0.startswith("did:key:z")
+        assert raw_key0 == did_info.verkey
+        
+    @pytest.mark.asyncio
     async def test_indy_sign(self, wallet, seed):
         deco_indy = AttachDecorator.from_indy_dict(
             indy_dict=INDY_CRED,
