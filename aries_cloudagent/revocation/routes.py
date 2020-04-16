@@ -10,13 +10,19 @@ import logging
 from marshmallow import fields, Schema
 
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.valid import INDY_CRED_DEF_ID, IndyRevRegId
+from ..messaging.valid import (
+    INDY_CRED_DEF_ID,
+    IndyCredDefId,
+    INDY_REV_REG_ID,
+    IndyRevRegId
+)
 from ..storage.base import BaseStorage, StorageNotFoundError
 
 from .error import RevocationNotSupportedError
 from .indy import IndyRevocation
-from .models.issuer_rev_reg_record import IssuerRevRegRecordSchema
+from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .models.revocation_registry import RevocationRegistry
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +49,14 @@ class RevRegCreateResultSchema(Schema):
     result = IssuerRevRegRecordSchema()
 
 
+class RevRegsCreatedSchema(Schema):
+    """Result schema for request for revocation registries created."""
+
+    rev_reg_ids = fields.List(
+        fields.Str(description="Revocation Registry identifiers", **INDY_REV_REG_ID)
+    )
+
+
 class RevRegUpdateTailsFileUriSchema(Schema):
     """Request schema for updating tails file URI."""
 
@@ -61,7 +75,7 @@ class RevRegUpdateTailsFileUriSchema(Schema):
 @response_schema(RevRegCreateResultSchema(), 200)
 async def revocation_create_registry(request: web.BaseRequest):
     """
-    Request handler for creating a new revocation registry.
+    Request handler to create a new revocation registry.
 
     Args:
         request: aiohttp request object
@@ -108,13 +122,78 @@ async def revocation_create_registry(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Get revocation registry by credential definition id",
-    parameters=[{"in": "path", "name": "id", "description": "revocation registry id"}],
+    parameters=[
+        {
+            "name": "cred_def_id",
+            "in": "query",
+            "schema": {
+                "type": "string",
+                "pattern": IndyCredDefId.PATTERN
+            },
+            "required": False
+        },
+        {
+            "name": "state",
+            "in": "query",
+            "schema": {
+                "type": "string",
+                "pattern": (
+                    rf"^(?:{IssuerRevRegRecord.STATE_INIT}|"
+                    rf"{IssuerRevRegRecord.STATE_GENERATED}|"
+                    rf"{IssuerRevRegRecord.STATE_PUBLISHED}|"
+                    rf"{IssuerRevRegRecord.STATE_ACTIVE}|"
+                    rf"{IssuerRevRegRecord.STATE_FULL})$"
+                )
+            },
+            "required": False
+        }
+    ],
+    summary="Search for matching revocation registries that current agent created"
+)
+@response_schema(RevRegsCreatedSchema(), 200)
+async def revocation_registries_created(request: web.BaseRequest):
+    """
+    Request handler to get revocation registries that current agent created.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        List of identifiers of matching revocation registries.
+
+    """
+    context = request.app["request_context"]
+
+    tag_filter = {
+        tag: request.query[tag] for tag in (
+            "cred_def_id",
+            "state"
+        ) if tag in request.query
+    }
+    found = await IssuerRevRegRecord.query(context, tag_filter)
+
+    return web.json_response({"rev_reg_ids": [record.revoc_reg_id for record in found]})
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get revocation registry by revocation registry id",
+    parameters=[
+        {
+            "in": "path",
+            "name": "id",
+            "schema": {
+                "type": "string",
+                "pattern": IndyRevRegId.PATTERN
+            },
+            "description": "revocation registry id"
+        }
+    ],
 )
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_registry(request: web.BaseRequest):
     """
-    Request handler for getting a revocation registry by identifier.
+    Request handler to get a revocation registry by identifier.
 
     Args:
         request: aiohttp request object
@@ -146,7 +225,7 @@ async def get_registry(request: web.BaseRequest):
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_active_registry(request: web.BaseRequest):
     """
-    Request handler for getting an active revocation registry by cred def id.
+    Request handler to get an active revocation registry by cred def id.
 
     Args:
         request: aiohttp request object
@@ -177,7 +256,7 @@ async def get_active_registry(request: web.BaseRequest):
 )
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
-    Request handler for downloading the tails file of the revocation registry.
+    Request handler to download the tails file of the revocation registry.
 
     Args:
         request: aiohttp request object
@@ -207,7 +286,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 @response_schema(RevRegCreateResultSchema(), 200)
 async def publish_registry(request: web.BaseRequest):
     """
-    Request handler for publishing a revocation registry based on the registry id.
+    Request handler to publish a revocation registry based on the registry id.
 
     Args:
         request: aiohttp request object
@@ -244,7 +323,7 @@ async def publish_registry(request: web.BaseRequest):
 @response_schema(RevRegCreateResultSchema(), 200)
 async def update_registry(request: web.BaseRequest):
     """
-    Request handler for updating a revocation registry based on the registry id.
+    Request handler to update a revocation registry based on the registry id.
 
     Args:
         request: aiohttp request object
@@ -276,6 +355,7 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/revocation/create-registry", revocation_create_registry),
+            web.get("/revocation/registries/created", revocation_registries_created),
             web.get("/revocation/registry/{id}", get_registry),
             web.get("/revocation/active-registry/{cred_def_id}", get_active_registry),
             web.get("/revocation/registry/{id}/tails-file", get_tails_file),

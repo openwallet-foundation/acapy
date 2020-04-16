@@ -103,8 +103,16 @@ async def schemas_send_schema(request: web.BaseRequest):
 @docs(
     tags=["schema"],
     parameters=[
-        {"name": p, "in": "query", "schema": {"type": "string"}, "required": False}
-        for p in SCHEMA_TAGS
+        {
+            "name": tag,
+            "in": "query",
+            "schema": {
+                "type": "string",
+                "pattern": pat
+            },
+            "required": False
+        }
+        for (tag, pat) in SCHEMA_TAGS.items()
     ],
     summary="Search for matching schema that agent originated",
 )
@@ -125,7 +133,9 @@ async def schemas_created(request: web.BaseRequest):
     storage = await context.inject(BaseStorage)
     found = await storage.search_records(
         type_filter=SCHEMA_SENT_RECORD_TYPE,
-        tag_query={p: request.query[p] for p in SCHEMA_TAGS if p in request.query},
+        tag_query={
+            tag: request.query[tag] for tag in SCHEMA_TAGS if tag in request.query
+        },
     ).fetch_all()
 
     return web.json_response({"schema_ids": [record.value for record in found]})
