@@ -14,7 +14,7 @@ from ..messaging.valid import (
     INDY_CRED_DEF_ID,
     IndyCredDefId,
     INDY_REV_REG_ID,
-    IndyRevRegId
+    IndyRevRegId,
 )
 from ..storage.base import BaseStorage, StorageNotFoundError
 
@@ -126,11 +126,8 @@ async def revocation_create_registry(request: web.BaseRequest):
         {
             "name": "cred_def_id",
             "in": "query",
-            "schema": {
-                "type": "string",
-                "pattern": IndyCredDefId.PATTERN
-            },
-            "required": False
+            "schema": {"type": "string", "pattern": IndyCredDefId.PATTERN},
+            "required": False,
         },
         {
             "name": "state",
@@ -143,12 +140,12 @@ async def revocation_create_registry(request: web.BaseRequest):
                     rf"{IssuerRevRegRecord.STATE_PUBLISHED}|"
                     rf"{IssuerRevRegRecord.STATE_ACTIVE}|"
                     rf"{IssuerRevRegRecord.STATE_FULL})$"
-                )
+                ),
             },
-            "required": False
-        }
+            "required": False,
+        },
     ],
-    summary="Search for matching revocation registries that current agent created"
+    summary="Search for matching revocation registries that current agent created",
 )
 @response_schema(RevRegsCreatedSchema(), 200)
 async def revocation_registries_created(request: web.BaseRequest):
@@ -165,10 +162,9 @@ async def revocation_registries_created(request: web.BaseRequest):
     context = request.app["request_context"]
 
     tag_filter = {
-        tag: request.query[tag] for tag in (
-            "cred_def_id",
-            "state"
-        ) if tag in request.query
+        tag: request.query[tag]
+        for tag in ("cred_def_id", "state")
+        if tag in request.query
     }
     found = await IssuerRevRegRecord.query(context, tag_filter)
 
@@ -182,11 +178,8 @@ async def revocation_registries_created(request: web.BaseRequest):
         {
             "in": "path",
             "name": "id",
-            "schema": {
-                "type": "string",
-                "pattern": IndyRevRegId.PATTERN
-            },
-            "description": "revocation registry id"
+            "schema": {"type": "string", "pattern": IndyRevRegId.PATTERN},
+            "description": "revocation registry id",
         }
     ],
 )

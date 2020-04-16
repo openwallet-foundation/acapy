@@ -106,11 +106,8 @@ async def schemas_send_schema(request: web.BaseRequest):
         {
             "name": tag,
             "in": "query",
-            "schema": {
-                "type": "string",
-                "pattern": pat
-            },
-            "required": False
+            "schema": {"type": "string", "pattern": pat},
+            "required": False,
         }
         for (tag, pat) in SCHEMA_TAGS.items()
     ],

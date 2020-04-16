@@ -128,12 +128,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         {
             "name": tag,
             "in": "query",
-            "schema": {
-                "type": "string",
-                "pattern": pat
-            },
-            "required": False
-        } for (tag, pat) in CRED_DEF_TAGS.items()
+            "schema": {"type": "string", "pattern": pat},
+            "required": False,
+        }
+        for (tag, pat) in CRED_DEF_TAGS.items()
     ],
     summary="Search for matching credential definitions that agent originated",
 )

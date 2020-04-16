@@ -36,7 +36,7 @@ class TestProvider(AsyncTestCase):
             settings={
                 "ledger.pool_name": "name",
                 "ledger.genesis_transactions": "dummy",
-                "ledger.read_only": True
+                "ledger.read_only": True,
             },
             injector=context.injector,
         )

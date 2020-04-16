@@ -54,8 +54,7 @@ class JSONWebToken(Regexp):
         """Initializer."""
 
         super().__init__(
-            JSONWebToken.PATTERN,
-            error="Value {input} is not a valid JSON Web token",
+            JSONWebToken.PATTERN, error="Value {input} is not a valid JSON Web token",
         )
 
 
@@ -69,8 +68,7 @@ class DIDKey(Regexp):
         """Initializer."""
 
         super().__init__(
-            DIDKey.PATTERN,
-            error="Value {input} is not in W3C did:key format"
+            DIDKey.PATTERN, error="Value {input} is not in W3C did:key format"
         )
 
 
@@ -217,8 +215,7 @@ class Base64(Regexp):
         """Initializer."""
 
         super().__init__(
-            Base64.PATTERN,
-            error="Value {input} is not a valid base64 encoding",
+            Base64.PATTERN, error="Value {input} is not a valid base64 encoding",
         )
 
 
@@ -232,8 +229,7 @@ class Base64URL(Regexp):
         """Initializer."""
 
         super().__init__(
-            Base64URL.PATTERN,
-            error="Value {input} is not a valid base64url encoding",
+            Base64URL.PATTERN, error="Value {input} is not a valid base64url encoding",
         )
 
 
