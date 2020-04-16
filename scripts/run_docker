@@ -6,24 +6,24 @@ docker build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
 
 ARGS=""
 for PORT in $PORTS; do
-	ARGS="${ARGS} -p $PORT"
+  ARGS="${ARGS} -p $PORT"
 done
 
 PTVSD_PORT="${PTVSD_PORT-5678}"
 
 for arg in $@; do
-	if [ "$arg" = "--timing" ]; then
-		ENABLE_PTVSD=1
-	fi
+  if [ "$arg" = "--debug" ]; then
+    ENABLE_PTVSD=1
+  fi
 done
 if [ ! -z "${ENABLE_PTVSD}" ]; then
-	ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
+  ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
 
 ARGS="${ARGS} -v /$(pwd)/../logs:/home/indy/logs"
 
 if [ ! -z "${WEBHOOK_URL}" ]; then
-	ARGS="${ARGS} -e WEBHOOK_URL=\"${WEBHOOK_URL}\""
+  ARGS="${ARGS} -e WEBHOOK_URL=\"${WEBHOOK_URL}\""
 fi
 
 if [ "$OSTYPE" == "msys" ]; then
