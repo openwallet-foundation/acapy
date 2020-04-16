@@ -125,8 +125,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 @docs(
     tags=["credential-definition"],
     parameters=[
-        {"name": p, "in": "query", "schema": {"type": "string"}, "required": False}
-        for p in CRED_DEF_TAGS
+        {
+            "name": tag,
+            "in": "query",
+            "schema": {"type": "string", "pattern": pat},
+            "required": False,
+        }
+        for (tag, pat) in CRED_DEF_TAGS.items()
     ],
     summary="Search for matching credential definitions that agent originated",
 )
@@ -147,7 +152,9 @@ async def credential_definitions_created(request: web.BaseRequest):
     storage = await context.inject(BaseStorage)
     found = await storage.search_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
-        tag_query={p: request.query[p] for p in CRED_DEF_TAGS if p in request.query},
+        tag_query={
+            tag: request.query[tag] for tag in CRED_DEF_TAGS if tag in request.query
+        },
     ).fetch_all()
 
     return web.json_response(

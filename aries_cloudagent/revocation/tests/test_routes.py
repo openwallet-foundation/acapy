@@ -114,6 +114,27 @@ class TestRevocationRoutes(AsyncTestCase):
 
             mock_json_response.assert_not_called()
 
+    async def test_revocation_registries_created(self):
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+        STATE = "active"
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {
+            "cred_def_id": CRED_DEF_ID,
+            "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
+        }
+
+        with async_mock.patch.object(
+            test_module.IssuerRevRegRecord, "query", async_mock.CoroutineMock()
+        ) as mock_query, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_query.return_value = [async_mock.MagicMock(revoc_reg_id="dummy")]
+
+            result = await test_module.revocation_registries_created(request)
+            mock_json_response.assert_called_once_with({"rev_reg_ids": ["dummy"]})
+            assert result is mock_json_response.return_value
+
     async def test_get_registry(self):
         REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
             self.test_did, self.test_did

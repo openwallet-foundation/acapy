@@ -29,12 +29,13 @@ class JWSHeaderKid(Regexp):
     """Validate value against JWS header kid."""
 
     EXAMPLE = "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"
+    PATTERN = rf"^did:(?:key:z[{B58}]+|sov:[{B58}]{{21,22}}(;.*)?(\?.*)?#.+)$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            rf"^did:(?:key:z[{B58}]+|sov:[{B58}]{{21,22}}(;.*)?(\?.*)?#.+)$",
+            JWSHeaderKid.PATTERN,
             error="Value {input} is neither in W3C did:key nor DID URL format",
         )
 
@@ -47,13 +48,13 @@ class JSONWebToken(Regexp):
         "eyJhIjogIjAifQ."
         "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
     )
+    PATTERN = r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$",
-            error="Value {input} is not a valid JSON Web token",
+            JSONWebToken.PATTERN, error="Value {input} is not a valid JSON Web token",
         )
 
 
@@ -61,12 +62,13 @@ class DIDKey(Regexp):
     """Validate value against DID key specification."""
 
     EXAMPLE = "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+    PATTERN = rf"^did:key:z[{B58}]+$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            rf"^did:key:z[{B58}]+$", error="Value {input} is not in W3C did:key format"
+            DIDKey.PATTERN, error="Value {input} is not in W3C did:key format"
         )
 
 
@@ -74,12 +76,13 @@ class IndyDID(Regexp):
     """Validate value against indy DID."""
 
     EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
+    PATTERN = rf"^(did:sov:)?[{B58}]{{21,22}}$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            rf"^(did:sov:)?[{B58}]{{21,22}}$",
+            IndyDID.PATTERN,
             error="Value {input} is not an indy decentralized identifier (DID)",
         )
 
@@ -88,12 +91,13 @@ class IndyRawPublicKey(Regexp):
     """Validate value against indy (Ed25519VerificationKey2018) raw public key."""
 
     EXAMPLE = "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
+    PATTERN = rf"^[{B58}]{{43,44}}$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            rf"^[{B58}]{{43,44}}$",
+            IndyRawPublicKey.PATTERN,
             error="Value {input} is not a raw Ed25519VerificationKey2018 key",
         )
 
@@ -102,18 +106,19 @@ class IndyCredDefId(Regexp):
     """Validate value against indy credential definition identifier specification."""
 
     EXAMPLE = "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
+    PATTERN = (
+        rf"^([{B58}]{{21,22}})"  # issuer DID
+        f":3"  # cred def id marker
+        f":CL"  # sig alg
+        rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
+        f":(.+)?$"  # tag
+    )
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            (
-                rf"^([{B58}]{{21,22}})"  # issuer DID
-                f":3"  # cred def id marker
-                f":CL"  # sig alg
-                rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
-                f":(.+)?$"  # tag
-            ),
+            IndyCredDefId.PATTERN,
             error="Value {input} is not an indy credential definition identifier",
         )
 
@@ -122,12 +127,13 @@ class IndyVersion(Regexp):
     """Validate value against indy version specification."""
 
     EXAMPLE = "1.0"
+    PATTERN = rf"^[0-9.]+$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            rf"^[0-9.]+$",
+            IndyVersion.PATTERN,
             error="Value {input} is not an indy version (use only digits and '.')",
         )
 
@@ -136,12 +142,13 @@ class IndySchemaId(Regexp):
     """Validate value against indy schema identifier specification."""
 
     EXAMPLE = "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0"
+    PATTERN = rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$",
+            IndySchemaId.PATTERN,
             error="Value {input} is not an indy schema identifier",
         )
 
@@ -150,17 +157,18 @@ class IndyRevRegId(Regexp):
     """Validate value against indy revocation registry identifier specification."""
 
     EXAMPLE = f"WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0"
+    PATTERN = (
+        rf"^([{B58}]{{21,22}}):4:"
+        rf"([{B58}]{{21,22}}):3:"
+        rf"CL:(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))(:.+)?:"
+        rf"CL_ACCUM:(.+$)"
+    )
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            (
-                rf"^([{B58}]{{21,22}}):4:"
-                rf"([{B58}]{{21,22}}):3:"
-                rf"CL:(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))(:.+)?:"
-                rf"CL_ACCUM:(.+$)"
-            ),
+            IndyRevRegId.PATTERN,
             error="Value {input} is not an indy revocation registry identifier",
         )
 
@@ -183,13 +191,16 @@ class IndyISO8601DateTime(Regexp):
     """Validate value against ISO 8601 datetime format, indy profile."""
 
     EXAMPLE = epoch_to_str(int(datetime.now().timestamp()))
+    PATTERN = (
+        r"^\d{4}-\d\d-\d\d[T ]\d\d:\d\d"
+        r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z|)$"
+    )
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            r"^\d{4}-\d\d-\d\d[T ]\d\d:\d\d"
-            r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z|)$",
+            IndyISO8601DateTime.PATTERN,
             error="Value {input} is not a date in valid format",
         )
 
@@ -198,13 +209,13 @@ class Base64(Regexp):
     """Validate base64 value."""
 
     EXAMPLE = "ey4uLn0="
+    PATTERN = r"^[a-zA-Z0-9+/]*={0,2}$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            r"^[a-zA-Z0-9+/]*={0,2}$",
-            error="Value {input} is not a valid base64 encoding",
+            Base64.PATTERN, error="Value {input} is not a valid base64 encoding",
         )
 
 
@@ -212,13 +223,13 @@ class Base64URL(Regexp):
     """Validate base64 value."""
 
     EXAMPLE = "ey4uLn0="
+    PATTERN = r"^[-_a-zA-Z0-9]*={0,2}$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            r"^[-_a-zA-Z0-9]*={0,2}$",
-            error="Value {input} is not a valid base64url encoding",
+            Base64URL.PATTERN, error="Value {input} is not a valid base64url encoding",
         )
 
 
@@ -226,12 +237,13 @@ class Base64URLNoPad(Regexp):
     """Validate base64 value."""
 
     EXAMPLE = "ey4uLn0"
+    PATTERN = r"^[-_a-zA-Z0-9]*$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            r"^[-_a-zA-Z0-9]*$",
+            Base64URLNoPad.PATTERN,
             error="Value {input} is not a valid unpadded base64url encoding",
         )
 
@@ -240,12 +252,13 @@ class SHA256Hash(Regexp):
     """Validate (binhex-encoded) SHA256 value."""
 
     EXAMPLE = "617a48c7c8afe0521efdc03e5bb0ad9e655893e6b4b51f0e794d70fba132aacb"
+    PATTERN = r"^[a-fA-F0-9+/]{64}$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            r"^[a-fA-F0-9+/]{64}$",
+            SHA256Hash.PATTERN,
             error="Value {input} is not a valid (binhex-encoded) SHA-256 hash",
         )
 
@@ -254,12 +267,13 @@ class Base58SHA256Hash(Regexp):
     """Validate value against base58 encoding of SHA-256 hash."""
 
     EXAMPLE = "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
+    PATTERN = rf"^[{B58}]{{43,44}}$"
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            rf"^[{B58}]{{43,44}}$",
+            Base58SHA256Hash.PATTERN,
             error="Value {input} is not a base58 encoding of a SHA-256 hash",
         )
 
@@ -268,17 +282,20 @@ class UUIDFour(Regexp):
     """Validate UUID4: 8-4-4-4-12 hex digits, the 13th of which being 4."""
 
     EXAMPLE = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    PATTERN = (
+        r"[a-fA-F0-9]{8}-"
+        r"[a-fA-F0-9]{4}-"
+        r"4[a-fA-F0-9]{3}-"
+        r"[a-fA-F0-9]{4}-"
+        r"[a-fA-F0-9]{12}"
+    )
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            r"[a-fA-F0-9]{8}-"
-            r"[a-fA-F0-9]{4}-"
-            r"4[a-fA-F0-9]{3}-"
-            r"[a-fA-F0-9]{4}-"
-            r"[a-fA-F0-9]{12}",
-            error="Value {input} is not a UUID4 (8-4-4-4-12 hex digits with digit#13=4)",
+            UUIDFour.PATTERN,
+            error="Value {input} is not UUID4 (8-4-4-4-12 hex digits with digit#13=4)",
         )
 
 
