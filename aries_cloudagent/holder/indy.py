@@ -366,13 +366,14 @@ class IndyHolder(BaseHolder):
 
         """
 
-        tails_file_reader = await create_tails_reader(tails_file_path)
-        rev_state_json = await indy.anoncreds.create_revocation_state(
-            tails_file_reader,
-            rev_reg_def_json=json.dumps(rev_reg_def),
-            cred_rev_id=cred_rev_id,
-            rev_reg_delta_json=json.dumps(rev_reg_delta),
-            timestamp=timestamp,
-        )
+        with IndyErrorHandler("Error when constructing revocation state", HolderError):
+            tails_file_reader = await create_tails_reader(tails_file_path)
+            rev_state_json = await indy.anoncreds.create_revocation_state(
+                tails_file_reader,
+                rev_reg_def_json=json.dumps(rev_reg_def),
+                cred_rev_id=cred_rev_id,
+                rev_reg_delta_json=json.dumps(rev_reg_delta),
+                timestamp=timestamp,
+            )
 
         return rev_state_json

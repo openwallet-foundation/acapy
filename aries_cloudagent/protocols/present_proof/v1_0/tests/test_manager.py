@@ -83,7 +83,7 @@ class TestPresentationManager(AsyncTestCase):
                 "value": {
                     "IssuanceType": "ISSUANCE_BY_DEFAULT",
                     "maxCredNum": 1000,
-                    "publicKeys": {"accumKey": {"z": "1 ...",}},
+                    "publicKeys": {"accumKey": {"z": "1 ..."}},
                     "tailsHash": "3MLjUFQz9x9n5u9rFu8Ba9C5bo4HNFjkPNc54jZPSNaZ",
                     "tailsLocation": "http://sample.ca/path",
                 },
@@ -438,7 +438,7 @@ class TestPresentationManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            side_effect=test_module.IndyError(706, {"message": "Nope"})
+            side_effect=test_module.HolderError(706, {"message": "Nope"})
         )
         self.context.injector.clear_binding(BaseHolder)
         self.context.injector.bind_instance(BaseHolder, self.holder)
@@ -465,7 +465,7 @@ class TestPresentationManager(AsyncTestCase):
                 indy_proof_req, holder=self.holder
             )
 
-            with self.assertRaises(test_module.IndyError):
+            with self.assertRaises(test_module.HolderError):
                 await self.manager.create_presentation(exchange_in, req_creds)
 
     async def test_no_matching_creds_for_proof_req(self):
@@ -514,11 +514,11 @@ class TestPresentationManager(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [{"cred_def_id": CD_ID,}],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [{"cred_def_id": CD_ID,}],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                 },
             },
@@ -608,11 +608,11 @@ class TestPresentationManager(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [{"cred_def_id": CD_ID,}],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [{"cred_def_id": CD_ID,}],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                 },
             },
@@ -620,7 +620,7 @@ class TestPresentationManager(AsyncTestCase):
         self.context.message = async_mock.MagicMock()
         self.context.message.indy_proof = async_mock.MagicMock(
             return_value={
-                "proof": {"proofs": [],},
+                "proof": {"proofs": []},
                 "requested_proof": {
                     "revealed_attrs": {
                         "0_favourite_uuid": {
@@ -676,7 +676,7 @@ class TestPresentationManager(AsyncTestCase):
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation()
             retrieve_ex.assert_called_once_with(
-                self.context, {"thread_id": self.context.message._thread_id}, None,
+                self.context, {"thread_id": self.context.message._thread_id}, None
             )
             save_ex.assert_called_once()
 
