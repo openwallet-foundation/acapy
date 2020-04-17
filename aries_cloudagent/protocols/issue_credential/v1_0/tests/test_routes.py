@@ -150,9 +150,7 @@ class TestCredentialRoutes(AsyncTestCase):
         conn_id = "connection-id"
 
         mock = async_mock.MagicMock()
-        mock.json = async_mock.CoroutineMock(
-            return_value={"connection_id": conn_id}
-        )
+        mock.json = async_mock.CoroutineMock(return_value={"connection_id": conn_id})
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -963,10 +961,8 @@ class TestCredentialRoutes(AsyncTestCase):
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_connection_record.retrieve_by_id.return_value.is_ready = True
 
-            mock_credential_manager.return_value.issue_credential = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.IssuerRevocationRegistryFullError()
-                )
+            mock_credential_manager.return_value.issue_credential = async_mock.CoroutineMock(
+                side_effect=test_module.IssuerRevocationRegistryFullError()
             )
             mock_credential_manager.return_value.issue_credential.return_value = (
                 async_mock.MagicMock(),
@@ -1027,7 +1023,7 @@ class TestCredentialRoutes(AsyncTestCase):
     async def test_credential_exchange_store_bad_cred_id_json(self):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock(
-            side_effect=test_module.JSONDecodeError('Nope', 'Nope', 0)
+            side_effect=test_module.JSONDecodeError("Nope", "Nope", 0)
         )
 
         mock.app = {
@@ -1185,11 +1181,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
     async def test_credential_exchange_revoke(self):
         mock = async_mock.MagicMock(
-            query={
-                "rev_reg_id": "rr_id",
-                "cred_rev_id": "23",
-                "publish": "false",
-            }
+            query={"rev_reg_id": "rr_id", "cred_rev_id": "23", "publish": "false",}
         )
         mock.app = {
             "request_context": async_mock.patch.object(
@@ -1212,11 +1204,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
     async def test_credential_exchange_revoke_not_found(self):
         mock = async_mock.MagicMock(
-            query={
-                "rev_reg_id": "rr_id",
-                "cred_rev_id": "23",
-                "publish": "false",
-            }
+            query={"rev_reg_id": "rr_id", "cred_rev_id": "23", "publish": "false",}
         )
         mock.app = {
             "request_context": async_mock.patch.object(
@@ -1257,9 +1245,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
             await test_module.credential_exchange_publish_revocations(mock)
 
-            mock_response.assert_called_once_with(
-                {"results": pub_pending.return_value}
-            )
+            mock_response.assert_called_once_with({"results": pub_pending.return_value})
 
     async def test_credential_exchange_problem_report(self):
         mock = async_mock.MagicMock()

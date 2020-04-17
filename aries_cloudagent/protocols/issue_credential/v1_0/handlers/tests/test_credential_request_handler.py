@@ -16,6 +16,7 @@ from .. import credential_request_handler as handler
 
 CD_ID = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
 
+
 class TestCredentialRequestHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext()
@@ -49,7 +50,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
                 "credential_proposal": CredentialPreview(
                     attributes=(CredAttrSpec.list_plain(ATTR_DICT))
                 ).serialize(),
-                "cred_def_id": CD_ID
+                "cred_def_id": CD_ID,
             }
         )
 
@@ -80,7 +81,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
             mock_cred_mgr.return_value.issue_credential.assert_called_once_with(
                 credential_exchange_record=cred_ex_rec,
                 comment=None,
-                credential_values=ATTR_DICT
+                credential_values=ATTR_DICT,
             )
 
         mock_cred_mgr.assert_called_once_with(request_context)
@@ -97,9 +98,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         cred_ex_rec = V10CredentialExchange(
-            credential_proposal_dict={
-                "cred_def_id": CD_ID
-            }
+            credential_proposal_dict={"cred_def_id": CD_ID}
         )
 
         with async_mock.patch.object(

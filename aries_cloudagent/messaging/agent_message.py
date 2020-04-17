@@ -1,7 +1,7 @@
 """Agent message base class and schema."""
 
 from collections import OrderedDict
-from typing import Union
+from typing import Mapping, Union
 import uuid
 
 from marshmallow import (
@@ -19,6 +19,12 @@ from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
 from .decorators.signature_decorator import SignatureDecorator
 from .decorators.thread_decorator import ThreadDecorator
+from .decorators.trace_decorator import (
+    TraceDecorator,
+    TraceReport,
+    TRACE_MESSAGE_TARGET,
+    TRACE_LOG_TARGET,
+)
 from .models.base import (
     BaseModel,
     BaseModelError,
@@ -291,6 +297,81 @@ class AgentMessage(BaseModel):
         """
         self._thread = ThreadDecorator(thid=thid, pthid=pthid)
 
+    @property
+    def _trace(self) -> TraceDecorator:
+        """
+        Accessor for the message's trace decorator.
+
+        Returns:
+            The TraceDecorator for this message
+
+        """
+        return self._decorators.get("trace")
+
+    @_trace.setter
+    def _trace(self, val: Union[TraceDecorator, dict]):
+        """
+        Setter for the message's trace decorator.
+
+        Args:
+            val: TraceDecorator or dict to set as the trace
+        """
+        self._decorators["trace"] = val
+
+    def assign_trace_from(self, msg: "AgentMessage"):
+        """
+        Copy trace information from a previous message.
+
+        Args:
+            msg: The received message containing optional trace information
+        """
+        if msg and msg._trace:
+            # ignore if not a valid type
+            if isinstance(msg._trace, TraceDecorator) or isinstance(msg._trace, dict):
+                self._trace = msg._trace
+
+    def assign_trace_decorator(self, context, trace):
+        """
+        Copy trace from a json structure.
+
+        Args:
+            trace: string containing trace json stucture
+        """
+        if trace:
+            self.add_trace_decorator(
+                target=context.get("trace.target") if context else TRACE_LOG_TARGET,
+                full_thread=True,
+            )
+
+    def add_trace_decorator(
+        self, target: str = TRACE_LOG_TARGET, full_thread: bool = True
+    ):
+        """
+        Create a new trace decorator.
+
+        Args:
+            target: The trace target
+            full_thread: Full thread flag
+        """
+        if self._trace:
+            # don't replace if there is already a trace decorator
+            # (potentially holding trace reports already)
+            self._trace._target = target
+            self._trace._full_thread = full_thread
+        else:
+            self._trace = TraceDecorator(target=target, full_thread=full_thread)
+
+    def add_trace_report(self, val: Union[TraceReport, dict]):
+        """
+        Append a new trace report.
+
+        Args:
+            val: The trace target
+        """
+        if not self._trace:
+            self.add_trace_decorator(target=TRACE_MESSAGE_TARGET, full_thread=True)
+        self._trace.append_trace_report(val)
+
 
 class AgentMessageSchema(BaseModelSchema):
     """AgentMessage schema."""
@@ -336,7 +417,7 @@ class AgentMessageSchema(BaseModelSchema):
         self._signatures = {}
 
     @pre_load
-    def extract_decorators(self, data, **kwargs):
+    def extract_decorators(self, data: Mapping, **kwargs):
         """
         Pre-load hook to extract the decorators and check the signed fields.
 

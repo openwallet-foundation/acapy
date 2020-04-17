@@ -80,6 +80,7 @@ class PresentationManager:
             state=V10PresentationExchange.STATE_PROPOSAL_SENT,
             presentation_proposal_dict=presentation_proposal_message.serialize(),
             auto_present=auto_present,
+            trace=(presentation_proposal_message._trace is not None),
         )
         await presentation_exchange_record.save(
             self.context, reason="create presentation proposal"
@@ -103,6 +104,7 @@ class PresentationManager:
             role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
             presentation_proposal_dict=presentation_proposal_message.serialize(),
+            trace=(presentation_proposal_message._trace is not None),
         )
         await presentation_exchange_record.save(
             self.context, reason="receive presentation request"
@@ -141,7 +143,7 @@ class PresentationManager:
             name=name,
             version=version,
             nonce=nonce,
-            ledger=await self.context.inject(BaseLedger)
+            ledger=await self.context.inject(BaseLedger),
         )
         presentation_request_message = PresentationRequest(
             comment=comment,
@@ -155,6 +157,9 @@ class PresentationManager:
         presentation_request_message._thread = {
             "thid": presentation_exchange_record.thread_id
         }
+        presentation_request_message.assign_trace_decorator(
+            self.context.settings, presentation_exchange_record.trace,
+        )
 
         presentation_exchange_record.thread_id = presentation_request_message._thread_id
         presentation_exchange_record.state = V10PresentationExchange.STATE_REQUEST_SENT
@@ -187,6 +192,7 @@ class PresentationManager:
             role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_REQUEST_SENT,
             presentation_request=presentation_request_message.indy_proof_request(),
+            trace=(presentation_request_message._trace is not None),
         )
         await presentation_exchange_record.save(
             self.context, reason="create (free) presentation request"
@@ -323,10 +329,7 @@ class PresentationManager:
         # of the presentation request or attributes
         current_timestamp = int(time.time())
 
-        non_revoc_interval = {
-            "from": 0,
-            "to": current_timestamp
-        }
+        non_revoc_interval = {"from": 0, "to": current_timestamp}
         non_revoc_interval.update(
             presentation_exchange_record.presentation_request.get("non_revoked", {})
         )
@@ -423,6 +426,9 @@ class PresentationManager:
         )
 
         presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
+        presentation_message.assign_trace_decorator(
+            self.context.settings, presentation_exchange_record.trace,
+        )
 
         # save presentation exchange state
         presentation_exchange_record.state = (
@@ -544,20 +550,20 @@ class PresentationManager:
                         ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
 
                     if identifier.get("timestamp"):
-                        (
-                            found_rev_reg_entry,
-                            found_timestamp,
-                        ) = await ledger.get_revoc_reg_entry(
-                            identifier["rev_reg_id"], identifier["timestamp"]
-                        )
+                        rev_reg_entries.setdefault(identifier["rev_reg_id"], {})
 
-                        if identifier["rev_reg_id"] not in rev_reg_entries:
-                            rev_reg_entries[identifier["rev_reg_id"]] = {
-                                found_timestamp: found_rev_reg_entry
-                            }
-                        else:
+                        if (
+                            identifier["timestamp"]
+                            not in rev_reg_entries[identifier["rev_reg_id"]]
+                        ):
+                            (
+                                found_rev_reg_entry,
+                                _found_timestamp,
+                            ) = await ledger.get_revoc_reg_entry(
+                                identifier["rev_reg_id"], identifier["timestamp"]
+                            )
                             rev_reg_entries[identifier["rev_reg_id"]][
-                                found_timestamp
+                                identifier["timestamp"]
                             ] = found_rev_reg_entry
 
         verifier: BaseVerifier = await self.context.inject(BaseVerifier)
@@ -597,6 +603,9 @@ class PresentationManager:
             presentation_ack_message._thread = {
                 "thid": presentation_exchange_record.thread_id
             }
+            presentation_ack_message.assign_trace_decorator(
+                self.context.settings, presentation_exchange_record.trace,
+            )
 
             await responder.send_reply(presentation_ack_message)
         else:

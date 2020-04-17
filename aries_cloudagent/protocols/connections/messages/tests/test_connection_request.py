@@ -109,8 +109,8 @@ class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
 
     async def test_make_model_conn_detail_interpolate_authn_service(self):
         did_doc_dict = self.make_did_doc().serialize()
-        del did_doc_dict['authentication']
-        del did_doc_dict['service']
+        del did_doc_dict["authentication"]
+        del did_doc_dict["service"]
         did_doc = DIDDoc.deserialize(did_doc_dict)
 
         connection_request = ConnectionRequest(
@@ -120,4 +120,3 @@ class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
         data = connection_request.serialize()
         model_instance = ConnectionRequest.deserialize(data)
         assert type(model_instance) is type(connection_request)
-

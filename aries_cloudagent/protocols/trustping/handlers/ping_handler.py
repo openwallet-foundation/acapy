@@ -35,6 +35,7 @@ class PingHandler(BaseHandler):
         if context.message.response_requested:
             reply = PingResponse()
             reply.assign_thread_from(context.message)
+            reply.assign_trace_from(context.message)
             await responder.send_reply(reply)
 
         if context.settings.get("debug.monitor_ping"):

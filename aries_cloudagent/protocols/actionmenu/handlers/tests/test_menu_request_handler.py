@@ -19,9 +19,7 @@ class TestHandler(AsyncTestCase):
         MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
-        self.context.inject = async_mock.CoroutineMock(
-            return_value=self.menu_service
-        )
+        self.context.inject = async_mock.CoroutineMock(return_value=self.menu_service)
 
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
@@ -48,18 +46,14 @@ class TestHandler(AsyncTestCase):
         MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
-        self.context.inject = async_mock.CoroutineMock(
-            return_value=self.menu_service
-        )
+        self.context.inject = async_mock.CoroutineMock(return_value=self.menu_service)
 
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()
-        self.menu_service.get_active_menu = async_mock.CoroutineMock(
-            return_value=None
-        )
+        self.menu_service.get_active_menu = async_mock.CoroutineMock(return_value=None)
 
         handler_inst = handler.MenuRequestHandler()
         await handler_inst.handle(self.context, responder)

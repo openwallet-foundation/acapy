@@ -22,11 +22,13 @@ def request_context() -> RequestContext:
     ctx.message_receipt = MessageReceipt()
     yield ctx
 
+
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_LABEL = "Label"
 TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
+
 
 @pytest.fixture()
 def did_doc():
@@ -35,26 +37,17 @@ def did_doc():
     ident = "1"
     pk_value = TEST_VERKEY
     pk = PublicKey(
-        TEST_DID,
-        ident,
-        pk_value,
-        PublicKeyType.ED25519_SIG_2018,
-        controller,
-        False,
+        TEST_DID, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False,
     )
     doc.set(pk)
     recip_keys = [pk]
     router_keys = []
     service = Service(
-        TEST_DID,
-        "indy",
-        "IndyAgent",
-        recip_keys,
-        router_keys,
-        TEST_ENDPOINT,
+        TEST_DID, "indy", "IndyAgent", recip_keys, router_keys, TEST_ENDPOINT,
     )
     doc.set(service)
     yield doc
+
 
 class TestResponseHandler:
     @pytest.mark.asyncio
@@ -115,11 +108,7 @@ class TestResponseHandler:
     @async_mock.patch.object(handler, "ConnectionManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
-        self,
-        mock_conn_target,
-        mock_conn_mgr,
-        request_context,
-        did_doc
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
@@ -147,11 +136,7 @@ class TestResponseHandler:
     @async_mock.patch.object(handler, "ConnectionManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
-        self,
-        mock_conn_target,
-        mock_conn_mgr,
-        request_context,
-        did_doc
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(

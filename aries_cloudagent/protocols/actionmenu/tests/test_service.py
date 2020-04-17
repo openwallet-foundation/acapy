@@ -32,7 +32,7 @@ class TestActionMenuService(AsyncTestCase):
         assert result == "get-active-menu"
         assert target == {
             "connection_id": connection.connection_id,
-            "thread_id": thread_id
+            "thread_id": thread_id,
         }
 
     async def test_perform_menu_action(self):
@@ -48,16 +48,13 @@ class TestActionMenuService(AsyncTestCase):
         )
 
         action_name = "action"
-        action_params = {'a': 1, 'b': 2}
+        action_params = {"a": 1, "b": 2}
         connection = async_mock.MagicMock()
         connection.connection_id = "connid"
         thread_id = "thid"
 
         await self.menu_service.perform_menu_action(
-            action_name,
-            action_params,
-            connection,
-            thread_id
+            action_name, action_params, connection, thread_id
         )
 
         webhooks = self.responder.webhooks
@@ -68,5 +65,5 @@ class TestActionMenuService(AsyncTestCase):
             "connection_id": connection.connection_id,
             "thread_id": thread_id,
             "action_name": action_name,
-            "action_params": action_params
+            "action_params": action_params,
         }

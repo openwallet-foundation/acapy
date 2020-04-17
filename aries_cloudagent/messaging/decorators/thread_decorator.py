@@ -134,13 +134,12 @@ class ThreadDecoratorSchema(BaseModelSchema):
         required=False,
         allow_none=True,
         description="Ordinal of message among all from current sender in thread",
-        example=11
+        example=11,
     )
     received_orders = fields.Dict(
         keys=fields.Str(description="Sender key"),
         values=fields.Integer(
-            description="Highest sender_order value for sender",
-            example="3",
+            description="Highest sender_order value for sender", example="3",
         ),
         required=False,
         allow_none=True,
