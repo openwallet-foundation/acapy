@@ -54,7 +54,7 @@ class PluginRegistry:
             is_dict = type(version_dict) is dict
             if not is_dict:
                 raise ProtocolDefinitionValidationError(
-                    "Element of versions definition list is not of type obj"
+                    "Element of versions definition list is not of type dict"
                 )
 
             try:

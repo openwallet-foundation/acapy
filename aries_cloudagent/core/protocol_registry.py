@@ -93,7 +93,7 @@ class ProtocolRegistry:
                 for message_type_string, module_path in typeset.items():
                     parsed_type_string = self.parse_type_string(message_type_string)
 
-                    if not version_definition["major_version"] in self._versionmap:
+                    if version_definition["major_version"] not in self._versionmap:
                         self._versionmap[version_definition["major_version"]] = []
 
                     self._versionmap[version_definition["major_version"]].append(
