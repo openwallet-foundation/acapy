@@ -5,6 +5,8 @@ from ..valid import (
     BASE58_SHA256_HASH,
     BASE64,
     BASE64URL,
+    BASE64URL_NO_PAD,
+    DID_KEY,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_ISO8601_DATETIME,
@@ -14,18 +16,16 @@ from ..valid import (
     INDY_SCHEMA_ID,
     INDY_VERSION,
     INT_EPOCH,
+    JWS_HEADER_KID,
+    JWT,
     SHA256,
-    UUID4
+    UUID4,
 )
 
 
 class TestValid(TestCase):
-
     def test_epoch(self):
-        non_epochs = [
-            -9223372036854775809,
-            9223372036854775808
-        ]
+        non_epochs = [-9223372036854775809, 9223372036854775808]
         for non_epoch in non_epochs:
             with self.assertRaises(ValidationError):
                 INT_EPOCH["validate"](non_epoch)
@@ -37,11 +37,11 @@ class TestValid(TestCase):
 
     def test_indy_did(self):
         non_indy_dids = [
-           "Q4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
-           "Q4zqM7aXqm7gDQkUVLng",  # too short
-           "Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
-           "did:sov:Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
-           "did:other:Q4zqM7aXqm7gDQkUVLng9h",  # specifies non-indy DID
+            "Q4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
+            "Q4zqM7aXqm7gDQkUVLng",  # too short
+            "Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
+            "did:sov:Q4zqM7aXqm7gDQkUVLngZZZ",  # too long
+            "did:other:Q4zqM7aXqm7gDQkUVLng9h",  # specifies non-indy DID
         ]
         for non_indy_did in non_indy_dids:
             with self.assertRaises(ValidationError):
@@ -52,9 +52,9 @@ class TestValid(TestCase):
 
     def test_indy_raw_public_key(self):
         non_indy_raw_public_keys = [
-           "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
-           "Q4zqM7aXqm7gDQkUVLng",  # too short
-           "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
+            "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
+            "Q4zqM7aXqm7gDQkUVLng",  # too short
+            "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
         ]
         for non_indy_raw_public_key in non_indy_raw_public_keys:
             with self.assertRaises(ValidationError):
@@ -62,11 +62,63 @@ class TestValid(TestCase):
 
         INDY_RAW_PUBLIC_KEY["validate"]("Q4zqM7aXqm7gDQkUVLng9hQ4zqM7aXqm7gDQkUVLng9h")
 
+    def test_jws_header_kid(self):
+        non_kids = [
+            "http://not-this.one",
+            "did:sov:i",  # too short
+            "did:key:Q4zqM7aXqm7gDQkUVLng9h"  # missing leading z
+            "did:key:zI4zqM7aXqm7gDQkUVLng9h",  # 'I' not a base58 char
+        ]
+        for non_kid in non_kids:
+            with self.assertRaises(ValidationError):
+                JWS_HEADER_KID["validate"](non_kid)
+
+        JWS_HEADER_KID["validate"]("did:key:zQ4zqM7aXqm7gDQkUVLng9h")
+        JWS_HEADER_KID["validate"]("did:sov:Q4zqM7aXqm7gDQkUVLng9h#abc-123")
+        JWS_HEADER_KID["validate"](
+            "did:sov:Q4zqM7aXqm7gDQkUVLng9h?version-time=1234567890#abc-123"
+        )
+        JWS_HEADER_KID["validate"](
+            "did:sov:Q4zqM7aXqm7gDQkUVLng9h?version-time=1234567890&a=b#abc-123"
+        )
+        JWS_HEADER_KID["validate"](
+            "did:sov:Q4zqM7aXqm7gDQkUVLng9h;foo:bar=low;a=b?version-id=1&a=b#abc-123"
+        )
+
+    def test_jwt(self):
+        non_jwts = [
+            "abcde",
+            "abcde+.abcde/.abcdef",
+            "abcdef==.abcdef==.abcdef",
+            "abcdef==..",
+        ]
+
+        for non_jwt in non_jwts:
+            with self.assertRaises(ValidationError):
+                JWT["validate"](non_jwt)
+
+        JWT["validate"]("abcdef.abcdef.abcdef")
+        JWT["validate"]("abcde-.abcde_.abcdef")
+        JWT["validate"]("abcde-..abcdef")
+
+    def test_did_key(self):
+        non_did_keys = [
+            "http://not-this.one",
+            "did:sov:i",  # wrong preamble
+            "did:key:Q4zqM7aXqm7gDQkUVLng9h"  # missing leading z
+            "did:key:zI4zqM7aXqm7gDQkUVLng9h",  # 'I' not a base58 char
+        ]
+        for non_did_key in non_did_keys:
+            with self.assertRaises(ValidationError):
+                DID_KEY["validate"](non_did_key)
+
+        DID_KEY["validate"]("did:key:zQ4zqM7aXqm7gDQkUVLng9h")
+
     def test_indy_base58_sha256_hash(self):
         non_base58_sha256_hashes = [
-           "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
-           "Q4zqM7aXqm7gDQkUVLng",  # too short
-           "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
+            "Q4zqM7aXqm7gDQkUVLng9JQ4zqM7aXqm7gDQkUVLng9I",  # 'I' not a base58 char
+            "Q4zqM7aXqm7gDQkUVLng",  # too short
+            "Q4zqM7aXqm7gDQkUVLngZZZZZZZZZZZZZZZZZZZZZZZZZ",  # too long
         ]
         for non_base58_sha256_hash in non_base58_sha256_hashes:
             with self.assertRaises(ValidationError):
@@ -76,12 +128,11 @@ class TestValid(TestCase):
 
     def test_cred_def_id(self):
         non_cred_def_ids = [
-           "Q4zqM7aXqm7gDQkUVLng9h:4:CL:18:0",
-           "Q4zqM7aXqm7gDQkUVLng9h::CL:18:0",
-           "Q4zqM7aXqm7gDQkUVLng9I:3:CL:18:tag",
-           "Q4zqM7aXqm7gDQkUVLng9h:3::18:tag",
-           "Q4zqM7aXqm7gDQkUVLng9h:3:18:tag"
-                            
+            "Q4zqM7aXqm7gDQkUVLng9h:4:CL:18:0",
+            "Q4zqM7aXqm7gDQkUVLng9h::CL:18:0",
+            "Q4zqM7aXqm7gDQkUVLng9I:3:CL:18:tag",
+            "Q4zqM7aXqm7gDQkUVLng9h:3::18:tag",
+            "Q4zqM7aXqm7gDQkUVLng9h:3:18:tag",
         ]
         for non_cred_def_id in non_cred_def_ids:
             with self.assertRaises(ValidationError):
@@ -106,7 +157,7 @@ class TestValid(TestCase):
             (
                 "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:"
                 "Q4zqM7aXqm7gDQkUVLng9I:2:bc-reg:1.0:tag:CL_ACCUM:0"
-            )
+            ),
         ]
         for non_rev_reg_id in non_rev_reg_ids:
             with self.assertRaises(ValidationError):
@@ -121,12 +172,7 @@ class TestValid(TestCase):
         )  # long
 
     def test_version(self):
-        non_versions = [
-            "-1",
-            "",
-            "3_5",
-            "3.5a"
-        ]
+        non_versions = ["-1", "", "3_5", "3.5a"]
         for non_version in non_versions:
             with self.assertRaises(ValidationError):
                 INDY_VERSION["validate"](non_version)
@@ -145,7 +191,7 @@ class TestValid(TestCase):
             "Q4zqM7aXqm7gDQkUVLng9h:2::1.0",
             "Q4zqM7aXqm7gDQkUVLng9h:2:bc-reg:",
             "Q4zqM7aXqm7gDQkUVLng9h:2:bc-reg:1.0a",
-            "Q4zqM7aXqm7gDQkUVLng9I:2:bc-reg:1.0"  # I is not in base58
+            "Q4zqM7aXqm7gDQkUVLng9I:2:bc-reg:1.0",  # I is not in base58
         ]
         for non_schema_id in non_schema_ids:
             with self.assertRaises(ValidationError):
@@ -154,15 +200,7 @@ class TestValid(TestCase):
         INDY_SCHEMA_ID["validate"]("Q4zqM7aXqm7gDQkUVLng9h:2:bc-reg:1.0")
 
     def test_predicate(self):
-        non_predicates = [
-            ">>",
-            "",
-            " >= ",
-            "<<<=",
-            "==",
-            "=",
-            "!="
-        ]
+        non_predicates = [">>", "", " >= ", "<<<=", "==", "=", "!="]
         for non_predicate in non_predicates:
             with self.assertRaises(ValidationError):
                 INDY_PREDICATE["validate"](non_predicate)
@@ -179,7 +217,7 @@ class TestValid(TestCase):
             "2020-01-01:00:00:00Z",
             "2020.01.01 00:00:00Z",
             "2020-01-01T00:00.123456+00:00",
-            "2020-01-01T00:00:00.123456+0:00"
+            "2020-01-01T00:00:00.123456+0:00",
         ]
         for non_datetime in non_datetimes:
             with self.assertRaises(ValidationError):
@@ -226,7 +264,21 @@ class TestValid(TestCase):
         BASE64URL["validate"]("UG90Y-_=")
         BASE64URL["validate"]("UG90YX==")
         with self.assertRaises(ValidationError):
-            BASE64URL["validate"]("UG90YX+v")
+            BASE64URL["validate"]("UG90YX+v")  # '+' is not a base64url char
+
+        non_base64_no_pads = ["####", "abcde=", "ab=cde"]
+        for non_base64_no_pad in non_base64_no_pads:
+            with self.assertRaises(ValidationError):
+                BASE64URL_NO_PAD["validate"](non_base64_no_pad)
+
+        BASE64URL_NO_PAD["validate"]("")
+        BASE64URL_NO_PAD["validate"]("abcd123")
+        BASE64URL_NO_PAD["validate"]("abcde")
+        BASE64URL_NO_PAD["validate"]("UG90YX-v")
+        BASE64URL_NO_PAD["validate"]("UG90Y-_")
+        BASE64URL_NO_PAD["validate"]("UG90YX")
+        with self.assertRaises(ValidationError):
+            BASE64URL_NO_PAD["validate"]("UG90YX+v")  # '+' is not a base64url char
 
     def test_sha256(self):
         non_sha256s = [
@@ -253,7 +305,7 @@ class TestValid(TestCase):
             "----",
             "3fa85f6-5717-4562-b3fc-2c963f66afa6",  # short a hex digit
             "3fa85f645-5717-4562-b3fc-2c963f66afa6",  # extra hex digit
-            "3fa85f64-5717-f562-b3fc-2c963f66afa6"  # 13th hex digit is not 4
+            "3fa85f64-5717-f562-b3fc-2c963f66afa6",  # 13th hex digit is not 4
         ]
         for non_uuid4 in non_uuid4s:
             with self.assertRaises(ValidationError):

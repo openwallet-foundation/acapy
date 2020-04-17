@@ -314,4 +314,3 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_enqueue.assert_called_once_with(
                 test_topic, test_payload, test_endpoint, test_attempts
             )
-

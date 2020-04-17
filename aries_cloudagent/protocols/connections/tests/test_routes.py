@@ -427,14 +427,16 @@ class TestConnectionRoutes(AsyncTestCase):
             )
 
             await test_module.connections_create_static(mock_req)
-            mock_response.assert_called_once_with({
-                "my_did": mock_my_info.did,
-                "my_verkey": mock_my_info.verkey,
-                "their_did": mock_their_info.did,
-                "their_verkey": mock_their_info.verkey,
-                "my_endpoint": context.settings.get("default_endpoint"),
-                "record": mock_conn_rec.serialize.return_value
-            })
+            mock_response.assert_called_once_with(
+                {
+                    "my_did": mock_my_info.did,
+                    "my_verkey": mock_my_info.verkey,
+                    "their_did": mock_their_info.did,
+                    "their_verkey": mock_their_info.verkey,
+                    "my_endpoint": context.settings.get("default_endpoint"),
+                    "record": mock_conn_rec.serialize.return_value,
+                }
+            )
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
@@ -442,4 +444,3 @@ class TestConnectionRoutes(AsyncTestCase):
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
-
