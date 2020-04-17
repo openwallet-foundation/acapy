@@ -16,4 +16,4 @@ RUN pip3 install --no-cache-dir \
 
 ADD --chown=indy:root . .
 
-ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]
+ENTRYPOINT black . --check --diff && pytest "$@" --

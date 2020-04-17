@@ -10,6 +10,8 @@ flake8-docstrings==1.3.0
 flake8-rst==0.7.1
 pydocstyle==3.0.0
 
+black==19.10b0
+
 sphinx==1.8.4
 sphinx-rtd-theme>=0.4.3
 

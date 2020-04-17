@@ -18,4 +18,4 @@ RUN pip3 install --no-cache-dir \
 
 ADD . .
 
-ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]
+ENTRYPOINT black . --check --diff && pytest "$@" --
