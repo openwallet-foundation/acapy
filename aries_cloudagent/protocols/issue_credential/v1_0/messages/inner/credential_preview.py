@@ -3,7 +3,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields, validate
+from marshmallow import fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......wallet.util import b64_to_str
@@ -169,9 +169,6 @@ class CredentialPreviewSchema(BaseModelSchema):
         required=False,
         example=CREDENTIAL_PREVIEW,
         data_key="@type",
-        validate=validate.Equal(
-            CREDENTIAL_PREVIEW, error="Must be absent or equal to {other}"
-        ),
     )
     attributes = fields.Nested(
         CredAttrSpecSchema, many=True, required=True, data_key="attributes"
