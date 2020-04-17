@@ -1084,11 +1084,11 @@ class TestCredentialManager(AsyncTestCase):
         cred_id = "cred-id"
         holder = async_mock.MagicMock()
         holder.store_credential = async_mock.CoroutineMock(
-            side_effect=test_module.IndyError(706, {"message": "Nope"})
+            side_effect=test_module.HolderError(706, {"message": "Nope"})
         )
         self.context.injector.bind_instance(BaseHolder, holder)
 
-        with self.assertRaises(test_module.IndyError):
+        with self.assertRaises(test_module.HolderError):
             await self.manager.store_credential(
                 credential_exchange_record=stored_exchange, credential_id=cred_id
             )
