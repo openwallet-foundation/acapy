@@ -20,6 +20,7 @@ from ...wallet.util import (
     unpad,
 )
 
+from .create_verify_data import create_verify_data
 
 class SignRequestSchema(Schema):
     """Request schema for signing a jsonld doc."""
@@ -43,6 +44,30 @@ def did_key(verkey: str) -> str:
         MULTICODEC_ED25519_PUB + b58_to_bytes(verkey)
     )
 
+def b64encode(str):
+    return str_to_b64(str, urlsafe=True, pad=False)
+
+
+def create_jws(encoded_header, verify_data):
+    return (encoded_header + "." + verify_data).encode("ascii")
+
+
+async def jws_sign(verify_data, verkey, wallet):
+    header = {
+        "alg": "EdDSA",
+        "b64": False,
+        "crit": ["b64"]
+    }
+
+    encoded_header = b64encode(json.dumps(header))
+
+    jws_to_sign = create_jws(encoded_header, verify_data)
+
+    encoded_signature = await  wallet.sign_message(jws_to_sign, verkey)
+
+    #encoded_signature = b64encode(signature)
+    return encoded_header + ".." + bytes_to_b64(encoded_signature, urlsafe=True, pad=False)
+
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -60,35 +85,27 @@ async def sign(request: web.BaseRequest):
     wallet: BaseWallet = await context.inject(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden()
-    #connection_id = request.match_info["id"] #comes from URL
 
     body = await request.json()
     verkey = body.get("verkey")
     doc = body.get("doc")
     credential = doc['credential']
-    options = doc['options']
+    signature_options = doc['options']
 
-    normalized = jsonld.normalize(
-        credential, {'algorithm': 'URDNA2015', 'format': 'application/n-quads'})
+    framed, verify_data_hex_string = create_verify_data(credential, signature_options)
 
-    message_bin = normalized #.encode("ascii")
-    jose_header = {
-        "alg": "EdDSA",
-        "kid": did_key(verkey),
+    jws = await jws_sign(verify_data_hex_string, verkey, wallet)
+
+    document_with_proof = {
+        **framed,
+        "proof": {
+            **signature_options,
+            "jws": jws
+        }
     }
-    encoded_header = str_to_b64(json.dumps(jose_header), urlsafe=True, pad=False)
-    signature_bin = await wallet.sign_message((encoded_header + "." + message_bin).encode("ascii"), verkey)
-    proof = {
-        "type": "Ed25519Signature2018",
-        "created": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "verificationMethod": options["verificationMethod"],
-        "proofPurpose": options["proofPurpose"],
-        "jws": encoded_header + ".." + bytes_to_b64(signature_bin, urlsafe=True, pad=False)
-    }
-    credential['proof'] = proof
 
     return web.json_response({
-        "signed_doc": doc,
+        "signed_doc": document_with_proof,
     })
 
 
@@ -96,3 +113,5 @@ async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes([web.post("/jsonld/sign", sign)])
+
+# examples here: https://github.com/w3c-ccg/vc-examples/tree/master/docs/chapi-http-edu
