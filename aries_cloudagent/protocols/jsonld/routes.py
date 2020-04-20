@@ -109,9 +109,63 @@ async def sign(request: web.BaseRequest):
     })
 
 
+class VerifyRequestSchema(Schema):
+    """Request schema for signing a jsonld doc."""
+    issuerkey = fields.Str(required=True, description="verkey to use for issuer verification")
+    holderkey = fields.Str(required=True, description="verkey to use for holder verification")
+    doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
+
+class VerifyResponseSchema(Schema):
+    """Response schema for verification result."""
+    valid = fields.Bool(required=True)
+
+
+@docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
+@request_schema(VerifyRequestSchema())
+@response_schema(VerifyResponseSchema(), 200)
+async def verify(request: web.BaseRequest):
+    """
+    Request handler for signing a jsonld doc.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context = request.app["request_context"]
+    wallet: BaseWallet = await context.inject(BaseWallet)
+    if not wallet:
+        raise web.HTTPForbidden()
+
+    body = await request.json()
+    issuerkey = body.get("issuekey")
+    holderkey = body.get("holderkey")
+    doc = body.get("doc")
+
+    credential = doc['credential']
+    #signature_options = doc['options']
+
+    #framed, verify_data_hex_string = create_verify_data(credential, signature_options)
+
+    #jws = await jws_sign(verify_data_hex_string, verkey, wallet)
+
+    #document_with_proof = {
+    #    **framed,
+    #    "proof": {
+    #        **signature_options,
+    #        "jws": jws
+    #    }
+    #}
+
+    return web.json_response({
+        "valid": False,
+    })
+
+
+
 async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes([web.post("/jsonld/sign", sign)])
+    app.add_routes([web.post("/jsonld/verify", verify)])
 
 # examples here: https://github.com/w3c-ccg/vc-examples/tree/master/docs/chapi-http-edu
