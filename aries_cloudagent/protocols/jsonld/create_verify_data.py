@@ -43,10 +43,10 @@ def create_verify_data(data, signature_options):
     if 'type' not in signature_options or signature_options['type'] is not "Ed25519Signature2018":
         signature_options['type'] = "Ed25519Signature2018"
 
-    expanded = jsonld.expand(data)
+    [expanded] = jsonld.expand(data)
     framed = jsonld.compact(
         expanded,
-        "https://w3id.org/security/v2",
+        "https://www.w3.org/2018/credentials/v1", #"https://w3id.org/security/v2"
         {"skipExpansion": True}
     )
 
