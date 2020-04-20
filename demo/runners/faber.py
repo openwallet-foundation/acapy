@@ -269,7 +269,6 @@ async def main(
                     "comment": f"Offer on cred def id {credential_definition_id}",
                     "auto_remove": False,
                     "credential_preview": cred_preview,
-                    "revoc_reg_id": revocation_registry_id,
                     "trace": exchange_tracing,
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
