@@ -3,7 +3,7 @@ import asyncio
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
 from aiohttp import web
 from asynctest import TestCase as AsyncTestCase
-from asynctest.mock import patch
+from asynctest.mock import CoroutineMock, patch
 
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
@@ -12,7 +12,7 @@ from ...core.plugin_registry import PluginRegistry
 from ...core.protocol_registry import ProtocolRegistry
 from ...transport.outbound.message import OutboundMessage
 
-from ..server import AdminServer
+from ..server import AdminServer, AdminSetupError
 
 
 class TestAdminServerBasic(AsyncTestCase):
@@ -64,6 +64,11 @@ class TestAdminServerBasic(AsyncTestCase):
         await server.start()
         await server.stop()
 
+        with patch.object(web.TCPSite, "start", CoroutineMock()) as mock_start:
+            mock_start.side_effect = OSError("Failure to launch")
+            with self.assertRaises(AdminSetupError):
+                await self.get_admin_server(settings).start()
+
     async def test_responder_send(self):
         message = OutboundMessage(payload="{}")
         admin_server = self.get_admin_server()
@@ -75,13 +80,20 @@ class TestAdminServerBasic(AsyncTestCase):
         admin_server = self.get_admin_server()
         test_url = "target_url"
         test_attempts = 99
-        admin_server.add_webhook_target(test_url, max_attempts=test_attempts)
+        admin_server.add_webhook_target(
+            target_url=test_url,
+            topic_filter=["*"],  # cover vacuous filter
+            max_attempts=test_attempts,
+        )
         test_topic = "test_topic"
         test_payload = {"test": "TEST"}
         await admin_server.responder.send_webhook(test_topic, test_payload)
         assert self.webhook_results == [
             (test_topic, test_payload, test_url, test_attempts)
         ]
+
+        admin_server.remove_webhook_target(target_url=test_url)
+        assert test_url not in admin_server.webhook_targets
 
     async def test_import_routes(self):
         # this test just imports all default admin routes

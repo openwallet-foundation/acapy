@@ -6,7 +6,11 @@ from typing import Callable, Coroutine, Sequence, Set
 import uuid
 
 from aiohttp import web
-from aiohttp_apispec import docs, response_schema, setup_aiohttp_apispec
+from aiohttp_apispec import (
+    docs,
+    response_schema,
+    setup_aiohttp_apispec,
+)
 import aiohttp_cors
 
 from marshmallow import fields, Schema
@@ -22,6 +26,7 @@ from ..version import __version__
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
+from .middleware import check_param_schema_pattern
 
 LOGGER = logging.getLogger(__name__)
 
@@ -149,7 +154,7 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = []
+        middlewares = [check_param_schema_pattern]
 
         admin_api_key = self.context.settings.get("admin.admin_api_key")
         admin_insecure_mode = self.context.settings.get("admin.admin_insecure_mode")
@@ -238,6 +243,7 @@ class AdminServer(BaseAdminServer):
             app=app, title=agent_label, version=version_string, swagger_path="/api/doc"
         )
         app.on_startup.append(self.on_startup)
+
         return app
 
     async def start(self) -> None:
