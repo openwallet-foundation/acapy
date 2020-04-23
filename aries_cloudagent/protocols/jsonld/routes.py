@@ -70,18 +70,18 @@ async def jws_sign(verify_data, verkey, wallet):
     #encoded_signature = b64encode(signature)
     return encoded_header + ".." + bytes_to_b64(encoded_signature, urlsafe=True, pad=False)
 
+
 def verify_jws_header(header):
-    if not( header.alg == "EdDSA" and
-      header.b64 == False and
-      isinstance(header.crit, list) and
-      len(header.crit) == 1 and
-      header.crit[0] == "b64"
+    if not( header['alg'] == "EdDSA" and
+      header['b64'] == False and
+      isinstance(header['crit'], list) and
+      len(header['crit']) == 1 and
+      header['crit'][0] == "b64"
     ) and len(header) == 3:
         raise Exception("Invalid JWS header parameters for Ed25519Signature2018.")
 
 
-
-async def jws_verify( verify_data, signature, publicKey ):
+async def jws_verify(verify_data, signature, public_key, wallet):
     encoded_header, _,  encoded_signature = signature.partition("..")
     decoded_header = json.loads(b64decode(encoded_header))
 
@@ -91,13 +91,7 @@ async def jws_verify( verify_data, signature, publicKey ):
 
     jws_to_verify = create_jws(encoded_header, verify_data)
 
-
-    return chloride.crypto_sign_verify_detached(
-        decoded_signature,
-        jws_to_verify,
-        publicKey
-    )
-
+    return await wallet.verify_message(jws_to_verify, decoded_signature, public_key)
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -174,10 +168,10 @@ async def verify(request: web.BaseRequest):
     credential = doc['credential']
     #signature_options = doc['options']
 
-    framed, verify_data_hex_string = create_verify_data(credential, credential.proof)
+    framed, verify_data_hex_string = create_verify_data(credential, credential['proof'])
 
     #jws = await jws_sign(verify_data_hex_string, verkey, wallet)
-
+    valid = await jws_verify(verify_data_hex_string, framed['proof']['jws'], holderkey, wallet)
     #document_with_proof = {
     #    **framed,
     #    "proof": {
@@ -186,17 +180,10 @@ async def verify(request: web.BaseRequest):
     #    }
     #}
 
-    return suite.verify({
-        verifyData: verifyDataUint8Array,
-        signature: framed.proof.jws,
-        publicKey: bs58.decode(publicKey)
-    });
-
-
-
+    #holder_valid = await wallet.verify_message(verify_data_hex_string, framed['proof']['jws'], holderkey)
 
     return web.json_response({
-        "valid": False,
+        "valid": valid,
     })
 
 
