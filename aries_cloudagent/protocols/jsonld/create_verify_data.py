@@ -46,7 +46,8 @@ def create_verify_data(data, signature_options):
     [expanded] = jsonld.expand(data)
     framed = jsonld.compact(
         expanded,
-        "https://www.w3.org/2018/credentials/v1", #"https://w3id.org/security/v2"
+        ["https://www.w3.org/2018/credentials/v1",
+         "https://www.w3.org/2018/credentials/examples/v1"], #"https://w3id.org/security/v2"
         {"skipExpansion": True}
     )
 

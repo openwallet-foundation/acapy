@@ -47,6 +47,8 @@ def did_key(verkey: str) -> str:
 def b64encode(str):
     return str_to_b64(str, urlsafe=True, pad=False)
 
+def b64decode(bytes):
+    return b64_to_str(bytes, urlsafe=True)
 
 def create_jws(encoded_header, verify_data):
     return (encoded_header + "." + verify_data).encode("ascii")
@@ -63,10 +65,38 @@ async def jws_sign(verify_data, verkey, wallet):
 
     jws_to_sign = create_jws(encoded_header, verify_data)
 
-    encoded_signature = await  wallet.sign_message(jws_to_sign, verkey)
+    encoded_signature = await wallet.sign_message(jws_to_sign, verkey)
 
     #encoded_signature = b64encode(signature)
     return encoded_header + ".." + bytes_to_b64(encoded_signature, urlsafe=True, pad=False)
+
+def verify_jws_header(header):
+    if not( header.alg == "EdDSA" and
+      header.b64 == False and
+      isinstance(header.crit, list) and
+      len(header.crit) == 1 and
+      header.crit[0] == "b64"
+    ) and len(header) == 3:
+        raise Exception("Invalid JWS header parameters for Ed25519Signature2018.")
+
+
+
+async def jws_verify( verify_data, signature, publicKey ):
+    encoded_header, _,  encoded_signature = signature.partition("..")
+    decoded_header = json.loads(b64decode(encoded_header))
+
+    verify_jws_header(decoded_header)
+
+    decoded_signature = b64decode(encoded_signature)
+
+    jws_to_verify = create_jws(encoded_header, verify_data)
+
+
+    return chloride.crypto_sign_verify_detached(
+        decoded_signature,
+        jws_to_verify,
+        publicKey
+    )
 
 
 
@@ -144,7 +174,7 @@ async def verify(request: web.BaseRequest):
     credential = doc['credential']
     #signature_options = doc['options']
 
-    #framed, verify_data_hex_string = create_verify_data(credential, signature_options)
+    framed, verify_data_hex_string = create_verify_data(credential, credential.proof)
 
     #jws = await jws_sign(verify_data_hex_string, verkey, wallet)
 
@@ -155,6 +185,15 @@ async def verify(request: web.BaseRequest):
     #        "jws": jws
     #    }
     #}
+
+    return suite.verify({
+        verifyData: verifyDataUint8Array,
+        signature: framed.proof.jws,
+        publicKey: bs58.decode(publicKey)
+    });
+
+
+
 
     return web.json_response({
         "valid": False,
