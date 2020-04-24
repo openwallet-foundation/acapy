@@ -65,10 +65,12 @@ async def jws_sign(verify_data, verkey, wallet):
 
     jws_to_sign = create_jws(encoded_header, verify_data)
 
-    encoded_signature = await wallet.sign_message(jws_to_sign, verkey)
+    signature = await wallet.sign_message(jws_to_sign, verkey)
+
+    encoded_signature = bytes_to_b64(signature, urlsafe=True, pad=False)
 
     #encoded_signature = b64encode(signature)
-    return encoded_header + ".." + bytes_to_b64(encoded_signature, urlsafe=True, pad=False)
+    return encoded_header + ".." + encoded_signature
 
 
 def verify_jws_header(header):
@@ -87,7 +89,7 @@ async def jws_verify(verify_data, signature, public_key, wallet):
 
     verify_jws_header(decoded_header)
 
-    decoded_signature = b64decode(encoded_signature)
+    decoded_signature = b64_to_bytes(encoded_signature, urlsafe=True)
 
     jws_to_verify = create_jws(encoded_header, verify_data)
 
