@@ -3,7 +3,6 @@
 import json
 
 from datetime import datetime
-from urllib.parse import urlparse
 
 from base58 import alphabet
 from marshmallow.validate import OneOf, Range, Regexp
@@ -265,9 +264,7 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
         message = "Value {input} is not a valid WQL query".format(input=value)
 
         try:
-            loaded = json.loads(value)
-            if type(loaded) != dict:
-                raise ValidationError(message)
+            json.loads(value)
         except Exception:
             raise ValidationError(message)
 
@@ -385,27 +382,6 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
         super().__init__(
             Endpoint.PATTERN, error="Value {input} is not a valid endpoint",
         )
-
-    def __call__(self, value):
-        """Validate input value."""
-
-        super().__call__(value or "")
-        message = "Value {input} is not a valid endpoint".format(input=value)
-
-        try:
-            parsed = urlparse(value)
-            if (
-                not parsed.scheme
-                or not parsed.netloc
-                or parsed.params
-                or parsed.query
-                or parsed.fragment
-            ):
-                raise ValidationError(message)
-        except Exception:
-            raise ValidationError(message)
-
-        return value
 
 
 # Instances for marshmallow schema specification

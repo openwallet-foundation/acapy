@@ -103,7 +103,7 @@ class IndyProofReqSpecRestrictionsSchema(Schema):
     )
 
 
-class IndyProofReqNonRevoked(Schema):
+class IndyProofReqNonRevokedSchema(Schema):
     """Non-revocation times specification in indy proof request."""
 
     fro = fields.Int(
@@ -147,7 +147,7 @@ class IndyProofReqAttrSpecSchema(Schema):
         description="If present, credential must satisfy one of given restrictions",
         required=False,
     )
-    non_revoked = fields.Nested(IndyProofReqNonRevoked(), required=False)
+    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
 
 
 class IndyProofReqPredSpecSchema(Schema):
@@ -165,7 +165,7 @@ class IndyProofReqPredSpecSchema(Schema):
         description="If present, credential must satisfy one of given restrictions",
         required=False,
     )
-    non_revoked = fields.Nested(IndyProofReqNonRevoked(), required=False)
+    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
 
 
 class IndyProofRequestSchema(Schema):
@@ -196,7 +196,7 @@ class IndyProofRequestSchema(Schema):
         keys=fields.Str(example="0_age_GE_uuid"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyProofReqPredSpecSchema()),
     )
-    non_revoked = fields.Nested(IndyProofReqNonRevoked(), required=False)
+    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
 
 
 class V10PresentationRequestRequestSchema(AdminAPIMessageTracingSchema):

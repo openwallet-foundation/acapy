@@ -1,7 +1,9 @@
 import json
+import pytest
+
+from unittest import TestCase
 
 from marshmallow import ValidationError
-from unittest import TestCase
 
 from ..valid import (
     BASE58_SHA256_HASH,
@@ -263,6 +265,7 @@ class TestValid(TestCase):
         non_wqls = [
             "nope",
             "[a, b, c]",
+            "{1, 2, 3}",
             set(),
             '"Hello World"',
             None,
@@ -363,7 +366,7 @@ class TestValid(TestCase):
     def test_endpoint(self):
         non_endpoints = [
             "123",
-            None,
+            "",
             "/path/only",
             "https://1.2.3.4?query=true&url=false",
             "http://no_tld/bad",

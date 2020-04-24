@@ -1,5 +1,7 @@
 """Revocation registry admin routes."""
 
+import logging
+
 from asyncio import shield
 
 from aiohttp import web
@@ -10,8 +12,6 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
-import logging
 
 from marshmallow import fields, Schema, validate
 
