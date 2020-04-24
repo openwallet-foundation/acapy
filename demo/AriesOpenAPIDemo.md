@@ -491,7 +491,7 @@ Finally, we need put into the JSON the data values for the credential proposal s
       },
       {
         "name": "timestamp",
-        "value": 123456789
+        "value": "123456789"
       },
       {
         "name": "date",

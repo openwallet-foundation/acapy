@@ -4,7 +4,7 @@ from abc import ABC
 import json
 from typing import Union
 
-from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError
+from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError, EXCLUDE
 
 from ...core.error import BaseError
 from ...utils.classloader import ClassLoader
@@ -122,7 +122,7 @@ class BaseModel(ABC):
             A model instance for this data
 
         """
-        schema = cls._get_schema_class()()
+        schema = cls._get_schema_class()(unknown=EXCLUDE)
         try:
             return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
         except ValidationError as e:

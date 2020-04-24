@@ -1,9 +1,14 @@
 """Handle registration and publication of supported protocols."""
 
+import logging
+
 from typing import Mapping, Sequence
 
 from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader
+from .error import ProtocolMinorVersionNotSupported
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ProtocolRegistry:
@@ -13,6 +18,7 @@ class ProtocolRegistry:
         """Initialize a `ProtocolRegistry` instance."""
         self._controllers = {}
         self._typemap = {}
+        self._versionmap = {}
 
     @property
     def protocols(self) -> Sequence[str]:
@@ -50,18 +56,55 @@ class ProtocolRegistry:
                 result = (query,)
         return result or ()
 
-    def register_message_types(self, *typesets):
+    def parse_type_string(self, message_type):
+        """Parse message type string and return dict with info."""
+        tokens = message_type.split("/")
+        protocol_name = tokens[-3]
+        version_string = tokens[-2]
+        message_name = tokens[-1]
+
+        version_string_tokens = version_string.split(".")
+        assert len(version_string_tokens) == 2
+
+        return {
+            "protocol_name": protocol_name,
+            "message_name": message_name,
+            "major_version": int(version_string_tokens[0]),
+            "minor_version": int(version_string_tokens[1]),
+        }
+
+    def register_message_types(self, *typesets, version_definition=None):
         """
         Add new supported message types.
 
         Args:
             typesets: Mappings of message types to register
+            version_definition: Optional version definition dict
 
         """
+
+        # Maintain support for versionless protocol modules
         for typeset in typesets:
             self._typemap.update(typeset)
 
-    def register_controllers(self, *controller_sets):
+        # Track versioned modules for version routing
+        if version_definition:
+            for typeset in typesets:
+                for message_type_string, module_path in typeset.items():
+                    parsed_type_string = self.parse_type_string(message_type_string)
+
+                    if version_definition["major_version"] not in self._versionmap:
+                        self._versionmap[version_definition["major_version"]] = []
+
+                    self._versionmap[version_definition["major_version"]].append(
+                        {
+                            "parsed_type_string": parsed_type_string,
+                            "version_definition": version_definition,
+                            "message_module": module_path,
+                        }
+                    )
+
+    def register_controllers(self, *controller_sets, version_definition=None):
         """
         Add new controllers.
 
@@ -86,10 +129,48 @@ class ProtocolRegistry:
             The resolved message class
 
         """
+
+        # Try and retrieve from direct mapping
         msg_cls = self._typemap.get(message_type)
         if isinstance(msg_cls, str):
-            msg_cls = ClassLoader.load_class(msg_cls)
-        return msg_cls
+            return ClassLoader.load_class(msg_cls)
+
+        # Support registered modules (not path as string)
+        elif msg_cls:
+            return msg_cls
+
+        # Try and route via min/maj version matching
+        if not msg_cls:
+            parsed_type_string = self.parse_type_string(message_type)
+            major_version = parsed_type_string["major_version"]
+
+            version_supported_protos = self._versionmap.get(major_version)
+            if not version_supported_protos:
+                return None
+
+            for proto in version_supported_protos:
+                if (
+                    proto["parsed_type_string"]["protocol_name"]
+                    == parsed_type_string["protocol_name"]
+                    and proto["parsed_type_string"]["message_name"]
+                    == parsed_type_string["message_name"]
+                ):
+                    if (
+                        parsed_type_string["minor_version"]
+                        < proto["version_definition"]["minimum_minor_version"]
+                    ):
+                        raise ProtocolMinorVersionNotSupported(
+                            "Minimum supported minor version is "
+                            + f"{proto['version_definition']['minimum_minor_version']}."
+                            + f" Received {parsed_type_string['minor_version']}."
+                        )
+
+                    if isinstance(proto["message_module"], str):
+                        return ClassLoader.load_class(msg_cls)
+                    elif proto["message_module"]:
+                        return proto["message_module"]
+
+        return None
 
     async def prepare_disclosed(
         self, context: InjectionContext, protocols: Sequence[str]

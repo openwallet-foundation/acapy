@@ -20,8 +20,12 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder
 from ..messaging.util import datetime_now
-from ..protocols.connections.manager import ConnectionManager
-from ..protocols.problem_report.message import ProblemReport
+from .error import ProtocolMinorVersionNotSupported
+
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ..protocols.connections.v1_0.manager import ConnectionManager
+from ..protocols.problem_report.v1_0.message import ProblemReport
+
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
@@ -204,10 +208,15 @@ class Dispatcher:
 
         registry: ProtocolRegistry = await self.context.inject(ProtocolRegistry)
         message_type = parsed_msg.get("@type")
+
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
 
-        message_cls = registry.resolve_message_class(message_type)
+        try:
+            message_cls = registry.resolve_message_class(message_type)
+        except ProtocolMinorVersionNotSupported as e:
+            raise MessageParseError(f"Problem parsing message type. {e}")
+
         if not message_cls:
             raise MessageParseError(f"Unrecognized message type {message_type}")
 
