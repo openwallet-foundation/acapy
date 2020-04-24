@@ -121,7 +121,7 @@ async def sign(request: web.BaseRequest):
     jws = await jws_sign(verify_data_hex_string, verkey, wallet)
 
     document_with_proof = {
-        **framed,
+        **credential,
         "proof": {
             **signature_options,
             "jws": jws
