@@ -1,3 +1,9 @@
+# 0.5.1
+
+## April 23, 2020
+
+- Restore previous response format for the `/credential/{id}` admin route [#474](https://github.com/hyperledger/aries-cloudagent-python/pull/474)
+
 # 0.5.0
 
 ## April 21, 2020
