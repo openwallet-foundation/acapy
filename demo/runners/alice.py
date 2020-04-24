@@ -235,8 +235,8 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
 
         with log_timer("Startup duration:"):
             await agent.start_process()
-        log_msg("Admin url is at:", agent.admin_url)
-        log_msg("Endpoint url is at:", agent.endpoint)
+        log_msg("Admin URL is at:", agent.admin_url)
+        log_msg("Endpoint URL is at:", agent.endpoint)
 
         log_status("#9 Input faber.py invitation details")
         await input_invitation(agent)

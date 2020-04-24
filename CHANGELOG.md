@@ -1,3 +1,26 @@
+# 0.5.1
+
+## April 23, 2020
+
+- Restore previous response format for the `/credential/{id}` admin route [#474](https://github.com/hyperledger/aries-cloudagent-python/pull/474)
+
+# 0.5.0
+
+## April 21, 2020
+
+- Add support for credential revocation and revocation registry handling, with thanks to Medici Ventures [#306](https://github.com/hyperledger/aries-cloudagent-python/pull/306), [#417](https://github.com/hyperledger/aries-cloudagent-python/pull/417), [#425](https://github.com/hyperledger/aries-cloudagent-python/pull/425), [#429](https://github.com/hyperledger/aries-cloudagent-python/pull/429), [#432](https://github.com/hyperledger/aries-cloudagent-python/pull/432), [#435](https://github.com/hyperledger/aries-cloudagent-python/pull/435), [#441](https://github.com/hyperledger/aries-cloudagent-python/pull/441), [#455](https://github.com/hyperledger/aries-cloudagent-python/pull/455)
+- **Breaking change** Remove previous credential and presentation protocols (0.1 versions) [#416](https://github.com/hyperledger/aries-cloudagent-python/pull/416)
+- Add support for major/minor protocol version routing [#443](https://github.com/hyperledger/aries-cloudagent-python/pull/443)
+- Event tracing and trace reports for message exchanges [#440](https://github.com/hyperledger/aries-cloudagent-python/pull/451)
+- Support additional Indy restriction operators (`>`, `<`, `<=` in addition to `>=`) [#457](https://github.com/hyperledger/aries-cloudagent-python/pull/457)
+- Support signed attachments according to the updated Aries RFC 0017 [#456](https://github.com/hyperledger/aries-cloudagent-python/pull/456)
+- Increased test coverage [#442](https://github.com/hyperledger/aries-cloudagent-python/pull/442), [#453](https://github.com/hyperledger/aries-cloudagent-python/pull/453)
+- Updates to demo agents and documentation [#402](https://github.com/hyperledger/aries-cloudagent-python/pull/402), [#403](https://github.com/hyperledger/aries-cloudagent-python/pull/403), [#411](https://github.com/hyperledger/aries-cloudagent-python/pull/411), [#415](https://github.com/hyperledger/aries-cloudagent-python/pull/415), [#422](https://github.com/hyperledger/aries-cloudagent-python/pull/422), [#423](https://github.com/hyperledger/aries-cloudagent-python/pull/423), [#449](https://github.com/hyperledger/aries-cloudagent-python/pull/449), [#450](https://github.com/hyperledger/aries-cloudagent-python/pull/450), [#452](https://github.com/hyperledger/aries-cloudagent-python/pull/452)
+- Use Indy generate_nonce method to create proof request nonces [#431](https://github.com/hyperledger/aries-cloudagent-python/pull/431)
+- Make request context available in the outbound transport handler [#408](https://github.com/hyperledger/aries-cloudagent-python/pull/408)
+- Contain indy-anoncreds usage in IndyIssuer, IndyHolder, IndyProver classes [#406](https://github.com/hyperledger/aries-cloudagent-python/pull/406), [#463](https://github.com/hyperledger/aries-cloudagent-python/pull/463)
+- Fix issue with validation of proof with predicates and revocation support [#400](https://github.com/hyperledger/aries-cloudagent-python/pull/400)
+
 # 0.4.5
 
 ## March 3, 2020

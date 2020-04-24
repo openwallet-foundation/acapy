@@ -5,8 +5,9 @@ import requests
 from ...transport.inbound.message import InboundMessage
 from ...transport.outbound.message import OutboundMessage
 from ...messaging.agent_message import AgentMessage
+
 from ...messaging.decorators.trace_decorator import TRACE_MESSAGE_TARGET
-from ...protocols.trustping.messages.ping import Ping
+from ...protocols.trustping.v1_0.messages.ping import Ping
 
 from .. import tracing as test_module
 

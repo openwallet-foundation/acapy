@@ -107,8 +107,8 @@ async def main(start_port: int, show_timing: bool = False):
 
         with log_timer("Startup duration:"):
             await agent.start_process()
-        log_msg("Admin url is at:", agent.admin_url)
-        log_msg("Endpoint url is at:", agent.endpoint)
+        log_msg("Admin URL is at:", agent.admin_url)
+        log_msg("Endpoint URL is at:", agent.endpoint)
 
         # Create a schema
         log_status("#3 Create a new schema on the ledger")
