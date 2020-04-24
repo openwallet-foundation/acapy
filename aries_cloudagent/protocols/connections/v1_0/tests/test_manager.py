@@ -210,7 +210,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         )
 
         invitee_record = await self.manager.receive_invitation(
-            connect_invite, accept=ConnectionRecord.ACCEPT_MANUAL
+            connect_invite, auto_accept=False
         )
         assert invitee_record.state == ConnectionRecord.STATE_INVITATION
 

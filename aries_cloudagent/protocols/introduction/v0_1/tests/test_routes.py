@@ -28,7 +28,7 @@ class TestIntroductionRoutes(AsyncTestCase):
                 "alias": "alias",
             }
         )
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
         mock_req.query = {
             "target_connection_id": "dummy",
             "message": "Hello",
@@ -54,7 +54,7 @@ class TestIntroductionRoutes(AsyncTestCase):
                 "alias": "alias",
             }
         )
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
         mock_req.query = {
             "target_connection_id": "dummy",
             "message": "Hello",
@@ -74,7 +74,7 @@ class TestIntroductionRoutes(AsyncTestCase):
 
             await test_module.introduction_start(mock_req)
             mock_ctx_inject.return_value.start_introduction.assert_called_once_with(
-                mock_req.match_info["id"],
+                mock_req.match_info["conn_id"],
                 mock_req.query["target_connection_id"],
                 mock_req.query["message"],
                 mock_req.app["outbound_message_router"],

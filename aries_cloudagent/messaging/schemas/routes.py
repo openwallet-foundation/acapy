@@ -3,15 +3,21 @@
 from asyncio import shield
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
+from aiohttp_apispec import (
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
+)
 
 from marshmallow import fields, Schema
 
 from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
-from ..valid import INDY_SCHEMA_ID, INDY_VERSION
-from .util import SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
+from ..valid import NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
+from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 
 
 class SchemaSendRequestSchema(Schema):
@@ -49,7 +55,10 @@ class SchemaSchema(Schema):
         description="Schema attribute names",
         data_key="attrNames",
     )
-    seqNo = fields.Integer(description="Schema sequence number", example=999)
+    seqNo = fields.Int(
+        description="Schema sequence number",
+        **NATURAL_NUM
+    )
 
 
 class SchemaGetResultsSchema(Schema):
@@ -63,6 +72,14 @@ class SchemasCreatedResultsSchema(Schema):
 
     schema_ids = fields.List(
         fields.Str(description="Schema identifiers", **INDY_SCHEMA_ID)
+    )
+
+
+class SchemaIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking schema id."""
+
+    schema_id = fields.Str(
+        description="Schema identifier", required=True, **INDY_SCHEMA_ID,
     )
 
 
@@ -101,18 +118,9 @@ async def schemas_send_schema(request: web.BaseRequest):
 
 
 @docs(
-    tags=["schema"],
-    parameters=[
-        {
-            "name": tag,
-            "in": "query",
-            "schema": {"type": "string", "pattern": pat},
-            "required": False,
-        }
-        for (tag, pat) in SCHEMA_TAGS.items()
-    ],
-    summary="Search for matching schema that agent originated",
+    tags=["schema"], summary="Search for matching schema that agent originated",
 )
+@querystring_schema(SchemaQueryStringSchema())
 @response_schema(SchemasCreatedResultsSchema(), 200)
 async def schemas_created(request: web.BaseRequest):
     """
@@ -139,6 +147,7 @@ async def schemas_created(request: web.BaseRequest):
 
 
 @docs(tags=["schema"], summary="Gets a schema from the ledger")
+@match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultsSchema(), 200)
 async def schemas_get_schema(request: web.BaseRequest):
     """
@@ -153,7 +162,7 @@ async def schemas_get_schema(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    schema_id = request.match_info["id"]
+    schema_id = request.match_info["schema_id"]
 
     ledger: BaseLedger = await context.inject(BaseLedger)
     async with ledger:
@@ -165,5 +174,7 @@ async def schemas_get_schema(request: web.BaseRequest):
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes([web.post("/schemas", schemas_send_schema)])
-    app.add_routes([web.get("/schemas/created", schemas_created)])
-    app.add_routes([web.get("/schemas/{id}", schemas_get_schema)])
+    app.add_routes([web.get("/schemas/created", schemas_created, allow_head=False)])
+    app.add_routes(
+        [web.get("/schemas/{schema_id}", schemas_get_schema, allow_head=False)]
+    )

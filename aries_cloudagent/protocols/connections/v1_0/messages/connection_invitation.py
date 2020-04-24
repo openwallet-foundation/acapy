@@ -11,6 +11,7 @@ from aries_cloudagent.wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
 
+
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
     ".connection_invitation_handler.ConnectionInvitationHandler"

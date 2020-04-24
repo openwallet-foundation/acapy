@@ -3,19 +3,20 @@
 from asyncio import shield
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
+from aiohttp_apispec import (
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
+)
 
 import logging
 
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, validate
 
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.valid import (
-    INDY_CRED_DEF_ID,
-    IndyCredDefId,
-    INDY_REV_REG_ID,
-    IndyRevRegId,
-)
+from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID
 from ..storage.base import BaseStorage, StorageNotFoundError
 
 from .error import RevocationNotSupportedError
@@ -64,9 +65,48 @@ class RevRegUpdateTailsFileUriSchema(Schema):
         description="Public URI to the tails file",
         example=(
             "http://192.168.56.133:5000/revocation/registry/"
-            f"{IndyRevRegId.EXAMPLE}/tails-file"
+            f"{INDY_REV_REG_ID['example']}/tails-file"
         ),
         required=True,
+    )
+
+
+class RevRegsCreatedQueryStringSchema(Schema):
+    """Query string parameters and validators for rev regs created request."""
+
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        required=False,
+        **INDY_CRED_DEF_ID,
+    )
+    state = fields.Str(
+        description="Revocation registry state",
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(IssuerRevRegRecord, m)
+                for m in vars(IssuerRevRegRecord)
+                if m.startswith("STATE_")
+            ]
+        ),
+    )
+
+
+class RevRegIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking rev reg id."""
+
+    rev_reg_id = fields.Str(
+        description="Revocation Registry identifier", required=True, **INDY_REV_REG_ID,
+    )
+
+
+class CredDefIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking cred def id."""
+
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        required=True,
+        **INDY_CRED_DEF_ID,
     )
 
 
@@ -122,31 +162,9 @@ async def revocation_create_registry(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    parameters=[
-        {
-            "name": "cred_def_id",
-            "in": "query",
-            "schema": {"type": "string", "pattern": IndyCredDefId.PATTERN},
-            "required": False,
-        },
-        {
-            "name": "state",
-            "in": "query",
-            "schema": {
-                "type": "string",
-                "pattern": (
-                    rf"^(?:{IssuerRevRegRecord.STATE_INIT}|"
-                    rf"{IssuerRevRegRecord.STATE_GENERATED}|"
-                    rf"{IssuerRevRegRecord.STATE_PUBLISHED}|"
-                    rf"{IssuerRevRegRecord.STATE_ACTIVE}|"
-                    rf"{IssuerRevRegRecord.STATE_FULL})$"
-                ),
-            },
-            "required": False,
-        },
-    ],
     summary="Search for matching revocation registries that current agent created",
 )
+@querystring_schema(RevRegsCreatedQueryStringSchema())
 @response_schema(RevRegsCreatedSchema(), 200)
 async def revocation_registries_created(request: web.BaseRequest):
     """
@@ -161,10 +179,11 @@ async def revocation_registries_created(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
+    search_tags = [
+        tag for tag in vars(RevRegsCreatedQueryStringSchema)["_declared_fields"]
+    ]
     tag_filter = {
-        tag: request.query[tag]
-        for tag in ("cred_def_id", "state")
-        if tag in request.query
+        tag: request.query[tag] for tag in search_tags if tag in request.query
     }
     found = await IssuerRevRegRecord.query(context, tag_filter)
 
@@ -172,17 +191,9 @@ async def revocation_registries_created(request: web.BaseRequest):
 
 
 @docs(
-    tags=["revocation"],
-    summary="Get revocation registry by revocation registry id",
-    parameters=[
-        {
-            "in": "path",
-            "name": "id",
-            "schema": {"type": "string", "pattern": IndyRevRegId.PATTERN},
-            "description": "revocation registry id",
-        }
-    ],
+    tags=["revocation"], summary="Get revocation registry by revocation registry id",
 )
+@match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_registry(request: web.BaseRequest):
     """
@@ -197,7 +208,7 @@ async def get_registry(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    registry_id = request.match_info["id"]
+    registry_id = request.match_info["rev_reg_id"]
 
     try:
         revoc = IndyRevocation(context)
@@ -211,10 +222,8 @@ async def get_registry(request: web.BaseRequest):
 @docs(
     tags=["revocation"],
     summary="Get an active revocation registry by credential definition id",
-    parameters=[
-        {"in": "path", "name": "cred_def_id", "description": "credential definition id"}
-    ],
 )
+@match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def get_active_registry(request: web.BaseRequest):
     """
@@ -244,9 +253,9 @@ async def get_active_registry(request: web.BaseRequest):
     tags=["revocation"],
     summary="Download the tails file of revocation registry",
     produces="application/octet-stream",
-    parameters=[{"in": "path", "name": "id", "description": "revocation registry id"}],
-    responses={200: {"description": "tails file", "schema": {"type": "file"}}},
+    responses={200: {"description": "tails file"}},
 )
+@match_info_schema(RevRegIdMatchInfoSchema())
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
     Request handler to download the tails file of the revocation registry.
@@ -260,7 +269,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
     context = request.app["request_context"]
 
-    registry_id = request.match_info["id"]
+    registry_id = request.match_info["rev_reg_id"]
 
     try:
         revoc = IndyRevocation(context)
@@ -272,10 +281,9 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
 
 @docs(
-    tags=["revocation"],
-    summary="Publish a given revocation registry",
-    parameters=[{"in": "path", "name": "id", "description": "revocation registry id"}],
+    tags=["revocation"], summary="Publish a given revocation registry",
 )
+@match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def publish_registry(request: web.BaseRequest):
     """
@@ -289,7 +297,7 @@ async def publish_registry(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    registry_id = request.match_info["id"]
+    registry_id = request.match_info["rev_reg_id"]
 
     try:
         revoc = IndyRevocation(context)
@@ -308,10 +316,8 @@ async def publish_registry(request: web.BaseRequest):
 @docs(
     tags=["revocation"],
     summary="Update revocation registry with new public URI to the tails file.",
-    parameters=[
-        {"in": "path", "name": "id", "description": "revocation registry identifier"}
-    ],
 )
+@match_info_schema(RevRegIdMatchInfoSchema())
 @request_schema(RevRegUpdateTailsFileUriSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
 async def update_registry(request: web.BaseRequest):
@@ -330,7 +336,7 @@ async def update_registry(request: web.BaseRequest):
     body = await request.json()
     tails_public_uri = body.get("tails_public_uri")
 
-    registry_id = request.match_info["id"]
+    registry_id = request.match_info["rev_reg_id"]
 
     try:
         revoc = IndyRevocation(context)
@@ -348,11 +354,25 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/revocation/create-registry", revocation_create_registry),
-            web.get("/revocation/registries/created", revocation_registries_created),
-            web.get("/revocation/registry/{id}", get_registry),
-            web.get("/revocation/active-registry/{cred_def_id}", get_active_registry),
-            web.get("/revocation/registry/{id}/tails-file", get_tails_file),
-            web.patch("/revocation/registry/{id}", update_registry),
-            web.post("/revocation/registry/{id}/publish", publish_registry),
+            web.get(
+                "/revocation/registries/created",
+                revocation_registries_created,
+                allow_head=False,
+            ),
+            web.get(
+                "/revocation/registry/{rev_reg_id}", get_registry, allow_head=False
+            ),
+            web.get(
+                "/revocation/active-registry/{cred_def_id}",
+                get_active_registry,
+                allow_head=False,
+            ),
+            web.get(
+                "/revocation/registry/{rev_reg_id}/tails-file",
+                get_tails_file,
+                allow_head=False,
+            ),
+            web.patch("/revocation/registry/{rev_reg_id}", update_registry),
+            web.post("/revocation/registry/{rev_reg_id}/publish", publish_registry),
         ]
     )

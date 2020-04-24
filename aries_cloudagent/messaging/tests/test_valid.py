@@ -1,3 +1,5 @@
+import json
+
 from marshmallow import ValidationError
 from unittest import TestCase
 
@@ -7,19 +9,23 @@ from ..valid import (
     BASE64URL,
     BASE64URL_NO_PAD,
     DID_KEY,
+    ENDPOINT,
     INDY_CRED_DEF_ID,
     INDY_DID,
+    INT_EPOCH,
     INDY_ISO8601_DATETIME,
     INDY_PREDICATE,
     INDY_RAW_PUBLIC_KEY,
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
-    INT_EPOCH,
+    INDY_WQL,
+    NATURAL_NUM,
     JWS_HEADER_KID,
     JWT,
     SHA256,
     UUID4,
+    WHOLE_NUM,
 )
 
 
@@ -34,6 +40,26 @@ class TestValid(TestCase):
         INT_EPOCH["validate"](2147483647)
         INT_EPOCH["validate"](-9223372036854775808)
         INT_EPOCH["validate"](9223372036854775807)
+
+    def test_whole(self):
+        non_wholes = [-9223372036854775809, 2.3, "Hello", None]
+        for non_whole in non_wholes:
+            with self.assertRaises(ValidationError):
+                WHOLE_NUM["validate"](non_whole)
+
+        WHOLE_NUM["validate"](0)
+        WHOLE_NUM["validate"](1)
+        WHOLE_NUM["validate"](12345678901234567890)
+
+    def test_natural(self):
+        non_naturals = [-9223372036854775809, 2.3, "Hello", 0, None]
+        for non_natural in non_naturals:
+            with self.assertRaises(ValidationError):
+                NATURAL_NUM["validate"](non_natural)
+
+        NATURAL_NUM["validate"](1)
+        NATURAL_NUM["validate"](2)
+        NATURAL_NUM["validate"](12345678901234567890)
 
     def test_indy_did(self):
         non_indy_dids = [
@@ -233,6 +259,26 @@ class TestValid(TestCase):
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00:00.1-00:00")
         INDY_ISO8601_DATETIME["validate"]("2020-01-01 00:00:00.123456-00:00")
 
+    def test_indy_wql(self):
+        non_wqls = [
+            "nope",
+            "[a, b, c]",
+            set(),
+            '"Hello World"',
+            None,
+            "null",
+            "true",
+            False,
+        ]
+        for non_wql in non_wqls:
+            with self.assertRaises(ValidationError):
+                INDY_WQL["validate"](non_wql)
+
+        INDY_WQL["validate"](json.dumps({}))
+        INDY_WQL["validate"](json.dumps({"a": "1234"}))
+        INDY_WQL["validate"](json.dumps({"a": "1234", "b": {"$not": "0"}}))
+        INDY_WQL["validate"](json.dumps({"$or": {"a": "1234", "b": "0"}}))
+
     def test_base64(self):
         non_base64s = [
             "####",
@@ -313,3 +359,24 @@ class TestValid(TestCase):
 
         UUID4["validate"]("3fa85f64-5717-4562-b3fc-2c963f66afa6")
         UUID4["validate"]("3FA85F64-5717-4562-B3FC-2C963F66AFA6")  # upper case OK
+
+    def test_endpoint(self):
+        non_endpoints = [
+            "123",
+            None,
+            "/path/only",
+            "https://1.2.3.4?query=true&url=false",
+            "http://no_tld/bad",
+            "no-proto:8080/my/path",
+            "smtp:8080/my/path#fragment",
+        ]
+
+        for non_endpoint in non_endpoints:
+            with self.assertRaises(ValidationError):
+                ENDPOINT["validate"](non_endpoint)
+
+        ENDPOINT["validate"]("http://github.com")
+        ENDPOINT["validate"]("https://localhost:8080")
+        ENDPOINT["validate"]("newproto://myhost.ca:8080/path")
+        ENDPOINT["validate"]("ftp://10.10.100.90:8021")
+        ENDPOINT["validate"]("zzzp://someplace.ca:9999/path")
