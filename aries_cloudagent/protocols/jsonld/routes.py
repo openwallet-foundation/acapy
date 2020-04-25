@@ -137,8 +137,7 @@ async def sign(request: web.BaseRequest):
 
 class VerifyRequestSchema(Schema):
     """Request schema for signing a jsonld doc."""
-    issuerkey = fields.Str(required=True, description="verkey to use for issuer verification")
-    holderkey = fields.Str(required=True, description="verkey to use for holder verification")
+    verkey = fields.Str(required=True, description="verkey to use for doc verification")
     doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
 
 class VerifyResponseSchema(Schema):
@@ -163,15 +162,12 @@ async def verify(request: web.BaseRequest):
         raise web.HTTPForbidden()
 
     body = await request.json()
-    issuerkey = body.get("issuekey")
-    holderkey = body.get("holderkey")
+    verkey = body.get("verkey")
     doc = body.get("doc")
 
-    credential = doc['credential']
+    framed, verify_data_hex_string = create_verify_data(doc, doc['proof'])
 
-    framed, verify_data_hex_string = create_verify_data(credential, credential['proof'])
-
-    valid = await jws_verify(verify_data_hex_string, framed['proof']['jws'], holderkey, wallet)
+    valid = await jws_verify(verify_data_hex_string, framed['proof']['jws'], verkey, wallet)
 
     return web.json_response({
         "valid": valid,
