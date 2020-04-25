@@ -107,32 +107,38 @@ async def sign(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden()
+    response = {
 
-    body = await request.json()
-    verkey = body.get("verkey")
-    doc = body.get("doc")
-    credential = doc['credential']
-    signature_options = doc['options']
-
-    framed, verify_data_hex_string = create_verify_data(credential, signature_options)
-
-    jws = await jws_sign(verify_data_hex_string, verkey, wallet)
-
-    document_with_proof = {
-        **credential,
-        "proof": {
-            **signature_options,
-            "jws": jws
-        }
     }
+    try:
 
-    return web.json_response({
-        "signed_doc": document_with_proof,
-    })
+        context = request.app["request_context"]
+        wallet: BaseWallet = await context.inject(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden()
+
+        body = await request.json()
+        verkey = body.get("verkey")
+        doc = body.get("doc")
+        credential = doc['credential']
+        signature_options = doc['options']
+
+        framed, verify_data_hex_string = create_verify_data(credential, signature_options)
+
+        jws = await jws_sign(verify_data_hex_string, verkey, wallet)
+
+        document_with_proof = {
+            **credential,
+            "proof": {
+                **signature_options,
+                "jws": jws
+            }
+        }
+        response['signed_doc'] = document_with_proof
+    except Exception as e:
+        response['error'] = str(e)
+
+    return web.json_response(response)
 
 
 class VerifyRequestSchema(Schema):
@@ -156,22 +162,26 @@ async def verify(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
-    wallet: BaseWallet = await context.inject(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden()
+    response = {
+        "valid": False
+    }
+    try:
+        context = request.app["request_context"]
+        wallet: BaseWallet = await context.inject(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden()
 
-    body = await request.json()
-    verkey = body.get("verkey")
-    doc = body.get("doc")
+        body = await request.json()
+        verkey = body.get("verkey")
+        doc = body.get("doc")
 
-    framed, verify_data_hex_string = create_verify_data(doc, doc['proof'])
+        framed, verify_data_hex_string = create_verify_data(doc, doc['proof'])
 
-    valid = await jws_verify(verify_data_hex_string, framed['proof']['jws'], verkey, wallet)
+        response["valid"] = await jws_verify(verify_data_hex_string, framed['proof']['jws'], verkey, wallet)
+    except Exception as e:
+        response["error"] = str(e)
 
-    return web.json_response({
-        "valid": valid,
-    })
+    return web.json_response(response)
 
 
 
