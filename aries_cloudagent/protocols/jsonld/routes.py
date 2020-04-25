@@ -168,21 +168,10 @@ async def verify(request: web.BaseRequest):
     doc = body.get("doc")
 
     credential = doc['credential']
-    #signature_options = doc['options']
 
     framed, verify_data_hex_string = create_verify_data(credential, credential['proof'])
 
-    #jws = await jws_sign(verify_data_hex_string, verkey, wallet)
     valid = await jws_verify(verify_data_hex_string, framed['proof']['jws'], holderkey, wallet)
-    #document_with_proof = {
-    #    **framed,
-    #    "proof": {
-    #        **signature_options,
-    #        "jws": jws
-    #    }
-    #}
-
-    #holder_valid = await wallet.verify_message(verify_data_hex_string, framed['proof']['jws'], holderkey)
 
     return web.json_response({
         "valid": valid,

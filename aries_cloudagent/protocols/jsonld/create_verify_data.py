@@ -18,9 +18,9 @@ def _cannonize_signature_options(signatureOptions):
         **signatureOptions,
         "@context": "https://w3id.org/security/v2"
     }
-    signatureOptions.pop('jws', None)
-    signatureOptions.pop('signatureValue', None)
-    signatureOptions.pop('proofValue', None)
+    _signatureOptions.pop('jws', None)
+    _signatureOptions.pop('signatureValue', None)
+    _signatureOptions.pop('proofValue', None)
     return _canonize(_signatureOptions)
 
 
@@ -42,8 +42,6 @@ def create_verify_data(data, signature_options):
 
     if 'type' not in signature_options or signature_options['type'] is not "Ed25519Signature2018":
         signature_options['type'] = "Ed25519Signature2018"
-
-    jsonld.INITIAL_CONTEXTS
 
     [expanded] = jsonld.expand(data)
     framed = jsonld.compact(
