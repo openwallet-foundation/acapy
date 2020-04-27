@@ -3,8 +3,15 @@
 import json
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
-from marshmallow import Schema, fields
+from aiohttp_apispec import (
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
+)
+from marshmallow import fields, Schema, validates_schema
+from marshmallow.exceptions import ValidationError
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
@@ -15,8 +22,12 @@ from ....messaging.valid import (
     INDY_PREDICATE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
+    INDY_WQL,
     INT_EPOCH,
+    NATURAL_NUM,
     UUIDFour,
+    UUID4,
+    WHOLE_NUM,
 )
 from ....storage.error import StorageNotFoundError
 from ....indy.util import generate_pr_nonce
@@ -70,11 +81,6 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
 class IndyProofReqSpecRestrictionsSchema(Schema):
     """Schema for restrictions in attr or pred specifier indy proof request."""
 
-    credential_definition_id = fields.Str(
-        description="Credential definition identifier",
-        required=True,
-        **INDY_CRED_DEF_ID
-    )
     schema_id = fields.String(
         description="Schema identifier", required=False, **INDY_SCHEMA_ID
     )
@@ -93,23 +99,41 @@ class IndyProofReqSpecRestrictionsSchema(Schema):
     cred_def_id = fields.String(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID
+        **INDY_CRED_DEF_ID,
     )
 
 
-class IndyProofReqNonRevoked(Schema):
+class IndyProofReqNonRevokedSchema(Schema):
     """Non-revocation times specification in indy proof request."""
 
-    from_epoch = fields.Int(
+    fro = fields.Int(
         description="Earliest epoch of interest for non-revocation proof",
-        required=True,
-        **INT_EPOCH
+        required=False,
+        data_key="from",
+        **INT_EPOCH,
     )
-    to_epoch = fields.Int(
+    to = fields.Int(
         description="Latest epoch of interest for non-revocation proof",
-        required=True,
-        **INT_EPOCH
+        required=False,
+        **INT_EPOCH,
     )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """
+        Validate schema fields - must have from, to, or both.
+
+        Args:
+            data: The data to validate
+
+        Raises:
+            ValidationError: if data has neither from nor to
+
+        """
+        if not (data.get("from") or data.get("to")):
+            raise ValidationError(
+                "Non-revocation interval must have at least one end", ("fro", "to")
+            )
 
 
 class IndyProofReqAttrSpecSchema(Schema):
@@ -123,7 +147,7 @@ class IndyProofReqAttrSpecSchema(Schema):
         description="If present, credential must satisfy one of given restrictions",
         required=False,
     )
-    non_revoked = fields.Nested(IndyProofReqNonRevoked(), required=False)
+    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
 
 
 class IndyProofReqPredSpecSchema(Schema):
@@ -133,7 +157,7 @@ class IndyProofReqPredSpecSchema(Schema):
     p_type = fields.String(
         description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
-        **INDY_PREDICATE
+        **INDY_PREDICATE,
     )
     p_value = fields.Integer(description="Threshold value", required=True)
     restrictions = fields.List(
@@ -141,7 +165,7 @@ class IndyProofReqPredSpecSchema(Schema):
         description="If present, credential must satisfy one of given restrictions",
         required=False,
     )
-    non_revoked = fields.Nested(IndyProofReqNonRevoked(), required=False)
+    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
 
 
 class IndyProofRequestSchema(Schema):
@@ -158,7 +182,7 @@ class IndyProofRequestSchema(Schema):
         description="Proof request version",
         required=False,
         default="1.0",
-        **INDY_VERSION
+        **INDY_VERSION,
     )
     requested_attributes = fields.Dict(
         description=("Requested attribute specifications of proof request"),
@@ -172,6 +196,7 @@ class IndyProofRequestSchema(Schema):
         keys=fields.Str(example="0_age_GE_uuid"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyProofReqPredSpecSchema()),
     )
+    non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
 
 
 class V10PresentationRequestRequestSchema(AdminAPIMessageTracingSchema):
@@ -192,9 +217,15 @@ class IndyRequestedCredsRequestedAttrSchema(Schema):
         description=(
             "Wallet credential identifier (typically but not necessarily a UUID)"
         ),
+        required=True,
     )
     revealed = fields.Bool(
-        description="Whether to reveal attribute in proof", default=True
+        description="Whether to reveal attribute in proof", required=True
+    )
+    timestamp = fields.Int(
+        description="Epoch timestamp of interest for non-revocation proof",
+        required=False,
+        **INT_EPOCH,
     )
 
 
@@ -202,10 +233,16 @@ class IndyRequestedCredsRequestedPredSchema(Schema):
     """Schema for requested predicates within indy requested credentials structure."""
 
     cred_id = fields.Str(
-        example="3fa85f64-5717-4562-b3fc-2c963f66afa6",
         description=(
             "Wallet credential identifier (typically but not necessarily a UUID)"
         ),
+        example="3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        required=True,
+    )
+    timestamp = fields.Int(
+        description="Epoch timestamp of interest for non-revocation proof",
+        required=False,
+        **INT_EPOCH,
     )
 
 
@@ -244,6 +281,31 @@ class V10PresentationRequestSchema(AdminAPIMessageTracingSchema):
     )
 
 
+class CredentialsFetchQueryStringSchema(Schema):
+    """Parameters and validators for credentials fetch request query string."""
+
+    referent = fields.Str(
+        description="Proof request referents of interest, comma-separated",
+        required=False,
+        example="1_name_uuid,2_score_uuid",
+    )
+    start = fields.Int(description="Start index", required=False, **WHOLE_NUM)
+    count = fields.Int(
+        description="Maximum number to retrieve", required=False, **NATURAL_NUM
+    )
+    extra_query = fields.Str(
+        description="(JSON) WQL extra query", required=False, **INDY_WQL,
+    )
+
+
+class PresExIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking presentation exchange id."""
+
+    pres_ex_id = fields.Str(
+        description="Presentation exchange identifier", required=True, **UUID4
+    )
+
+
 @docs(tags=["present-proof"], summary="Fetch all present-proof exchange records")
 @response_schema(V10PresentationExchangeListSchema(), 200)
 async def presentation_exchange_list(request: web.BaseRequest):
@@ -270,6 +332,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 
 
 @docs(tags=["present-proof"], summary="Fetch a single presentation exchange record")
+@match_info_schema(PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_retrieve(request: web.BaseRequest):
     """
@@ -296,27 +359,9 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 @docs(
     tags=["present-proof"],
     summary="Fetch credentials for a presentation request from wallet",
-    parameters=[
-        {
-            "name": "start",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "count",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "extra_query",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-    ],
 )
+@match_info_schema(PresExIdMatchInfoSchema())
+@querystring_schema(CredentialsFetchQueryStringSchema())
 async def presentation_exchange_credentials_list(request: web.BaseRequest):
     """
     Request handler for searching applicable credential records.
@@ -331,8 +376,10 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     context = request.app["request_context"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
-    referents = request.match_info.get("referent")
-    presentation_referents = referents.split(",") if referents else ()
+    referents = request.query.get("referent")
+    presentation_referents = (
+        (r.strip() for r in referents.split(",")) if referents else ()
+    )
 
     try:
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
@@ -590,6 +637,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     tags=["present-proof"],
     summary="Sends a presentation request in reference to a proposal",
 )
+@match_info_schema(PresExIdMatchInfoSchema())
 @request_schema(V10PresentationRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_send_bound_request(request: web.BaseRequest):
@@ -652,6 +700,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
 
 @docs(tags=["present-proof"], summary="Sends a proof presentation")
+@match_info_schema(PresExIdMatchInfoSchema())
 @request_schema(V10PresentationRequestSchema())
 @response_schema(V10PresentationExchangeSchema())
 async def presentation_exchange_send_presentation(request: web.BaseRequest):
@@ -723,6 +772,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 
 
 @docs(tags=["present-proof"], summary="Verify a received presentation")
+@match_info_schema(PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema())
 async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     """
@@ -776,6 +826,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
 
 
 @docs(tags=["present-proof"], summary="Remove an existing presentation exchange record")
+@match_info_schema(PresExIdMatchInfoSchema())
 async def presentation_exchange_remove(request: web.BaseRequest):
     """
     Request handler for removing a presentation exchange record.
@@ -802,26 +853,32 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get("/present-proof/records", presentation_exchange_list),
             web.get(
-                "/present-proof/records/{pres_ex_id}", presentation_exchange_retrieve
+                "/present-proof/records", presentation_exchange_list, allow_head=False
+            ),
+            web.get(
+                "/present-proof/records/{pres_ex_id}",
+                presentation_exchange_retrieve,
+                allow_head=False,
             ),
             web.get(
                 "/present-proof/records/{pres_ex_id}/credentials",
                 presentation_exchange_credentials_list,
+                allow_head=False,
             ),
-            web.get(
-                "/present-proof/records/{pres_ex_id}/credentials/{referent}",
-                presentation_exchange_credentials_list,
+            # web.get(
+            # "/present-proof/records/{pres_ex_id}/credentials/{referent}",
+            # presentation_exchange_credentials_list,
+            # allow_head=False
+            # ),
+            web.post(
+                "/present-proof/send-proposal", presentation_exchange_send_proposal,
             ),
             web.post(
-                "/present-proof/send-proposal", presentation_exchange_send_proposal
+                "/present-proof/create-request", presentation_exchange_create_request,
             ),
             web.post(
-                "/present-proof/create-request", presentation_exchange_create_request
-            ),
-            web.post(
-                "/present-proof/send-request", presentation_exchange_send_free_request
+                "/present-proof/send-request", presentation_exchange_send_free_request,
             ),
             web.post(
                 "/present-proof/records/{pres_ex_id}/send-request",

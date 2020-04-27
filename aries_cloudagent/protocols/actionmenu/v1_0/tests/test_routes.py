@@ -56,7 +56,7 @@ class TestActionMenuRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({"result": None})
 
     async def test_actionmenu_perform(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(match_info={"conn_id": "dummy"})
         mock_request.json = async_mock.CoroutineMock()
 
         mock_request.app = {
@@ -77,7 +77,8 @@ class TestActionMenuRoutes(AsyncTestCase):
             res = await test_module.actionmenu_perform(mock_request)
             mock_response.assert_called_once_with({})
             mock_request.app["outbound_message_router"].assert_called_once_with(
-                mock_perform.return_value, connection_id=mock_request.match_info["id"]
+                mock_perform.return_value,
+                connection_id=mock_request.match_info["conn_id"],
             )
 
     async def test_actionmenu_perform_no_conn_record(self):
@@ -126,7 +127,7 @@ class TestActionMenuRoutes(AsyncTestCase):
                 await test_module.actionmenu_perform(mock_request)
 
     async def test_actionmenu_request(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(match_info={"conn_id": "dummy"})
         mock_request.json = async_mock.CoroutineMock()
 
         mock_request.app = {
@@ -147,7 +148,8 @@ class TestActionMenuRoutes(AsyncTestCase):
             res = await test_module.actionmenu_request(mock_request)
             mock_response.assert_called_once_with({})
             mock_request.app["outbound_message_router"].assert_called_once_with(
-                menu_request.return_value, connection_id=mock_request.match_info["id"]
+                menu_request.return_value,
+                connection_id=mock_request.match_info["conn_id"],
             )
 
     async def test_actionmenu_request_no_conn_record(self):
@@ -196,7 +198,7 @@ class TestActionMenuRoutes(AsyncTestCase):
                 await test_module.actionmenu_request(mock_request)
 
     async def test_actionmenu_send(self):
-        mock_request = async_mock.MagicMock()
+        mock_request = async_mock.MagicMock(match_info={"conn_id": "dummy"})
         mock_request.json = async_mock.CoroutineMock()
 
         mock_request.app = {
@@ -219,7 +221,7 @@ class TestActionMenuRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({})
             mock_request.app["outbound_message_router"].assert_called_once_with(
                 mock_menu.deserialize.return_value,
-                connection_id=mock_request.match_info["id"],
+                connection_id=mock_request.match_info["conn_id"],
             )
 
     async def test_actionmenu_send_deserialize_x(self):

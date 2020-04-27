@@ -2,8 +2,7 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import fields, Schema
-from marshmallow.validate import OneOf
+from marshmallow import fields, Schema, validate
 
 from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -41,7 +40,7 @@ class ProtocolDescriptorSchema(Schema):
         fields.Str(
             description="Role: requester or responder",
             example="requester",
-            validate=OneOf(["requester", "responder"]),
+            validate=validate.OneOf(["requester", "responder"]),
         ),
         required=False,
         allow_none=True,

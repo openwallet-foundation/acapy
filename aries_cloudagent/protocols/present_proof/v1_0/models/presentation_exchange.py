@@ -2,8 +2,7 @@
 
 from typing import Any
 
-from marshmallow import fields
-from marshmallow.validate import OneOf
+from marshmallow import fields, validate
 
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
@@ -127,13 +126,13 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
         required=False,
         description="Present-proof exchange initiator: self or external",
         example=V10PresentationExchange.INITIATOR_SELF,
-        validate=OneOf(["self", "external"]),
+        validate=validate.OneOf(["self", "external"]),
     )
     role = fields.Str(
         required=False,
         description="Present-proof exchange role: prover or verifier",
         example=V10PresentationExchange.ROLE_PROVER,
-        validate=OneOf(["prover", "verifier"]),
+        validate=validate.OneOf(["prover", "verifier"]),
     )
     state = fields.Str(
         required=False,
@@ -154,7 +153,7 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
         required=False,
         description="Whether presentation is verified: true or false",
         example="true",
-        validate=OneOf(["true", "false"]),
+        validate=validate.OneOf(["true", "false"]),
     )
     auto_present = fields.Bool(
         required=False,

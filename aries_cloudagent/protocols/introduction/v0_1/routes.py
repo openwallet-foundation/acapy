@@ -3,31 +3,43 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs
+from aiohttp_apispec import docs, match_info_schema, querystring_schema
+
+from marshmallow import fields, Schema
+
+from ....messaging.valid import UUIDFour
 
 from .base_service import BaseIntroductionService
 
 LOGGER = logging.getLogger(__name__)
 
 
+class IntroStartQueryStringSchema(Schema):
+    """Query string parameters for request to start introduction."""
+
+    target_connection_id = fields.Str(
+        description="Target connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,
+    )
+    message = fields.Str(
+        description="Message", required=False, example="Allow me to introduce ..."
+    )
+
+
+class ConnIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
 @docs(
-    tags=["introduction"],
-    summary="Start an introduction between two connections",
-    parameters=[
-        {
-            "name": "target_connection_id",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": True,
-        },
-        {
-            "name": "message",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-    ],
+    tags=["introduction"], summary="Start an introduction between two connections",
 )
+@match_info_schema(ConnIdMatchInfoSchema())
+@querystring_schema(IntroStartQueryStringSchema())
 async def introduction_start(request: web.BaseRequest):
     """
     Request handler for starting an introduction.
@@ -39,7 +51,7 @@ async def introduction_start(request: web.BaseRequest):
     LOGGER.info("Introduction requested")
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
-    init_connection_id = request.match_info["id"]
+    init_connection_id = request.match_info["conn_id"]
     target_connection_id = request.query.get("target_connection_id")
     message = request.query.get("message")
 
@@ -59,5 +71,5 @@ async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes(
-        [web.post("/connections/{id}/start-introduction", introduction_start)]
+        [web.post("/connections/{conn_id}/start-introduction", introduction_start)]
     )

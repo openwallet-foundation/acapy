@@ -73,7 +73,7 @@ class ConnectionManager:
         my_label: str = None,
         my_endpoint: str = None,
         their_role: str = None,
-        accept: str = None,
+        auto_accept: bool = None,
         public: bool = False,
         multi_use: bool = False,
         alias: str = None,
@@ -115,8 +115,9 @@ class ConnectionManager:
             my_label: label for this connection
             my_endpoint: endpoint where other party can reach me
             their_role: a role to assign the connection
-            accept: set to 'auto' to auto-accept a corresponding connection request
-            public: set to True to create an invitation from the public DID
+            auto_accept: auto-accept a corresponding connection request
+                (None to use config)
+            public: set to create an invitation from the public DID
             multi_use: set to True to create an invitation for multiple use
             alias: optional alias to apply to connection for later use
 
@@ -155,8 +156,17 @@ class ConnectionManager:
 
         if not my_endpoint:
             my_endpoint = self.context.settings.get("default_endpoint")
-        if not accept and self.context.settings.get("debug.auto_accept_requests"):
-            accept = ConnectionRecord.ACCEPT_AUTO
+        accept = (
+            ConnectionRecord.ACCEPT_AUTO
+            if (
+                auto_accept
+                or (
+                    auto_accept is None
+                    and self.context.settings.get("debug.auto_accept_requests")
+                )
+            )
+            else ConnectionRecord.ACCEPT_MANUAL
+        )
 
         # Create and store new invitation key
         connection_key = await wallet.create_signing_key()
@@ -188,7 +198,7 @@ class ConnectionManager:
         self,
         invitation: ConnectionInvitation,
         their_role: str = None,
-        accept: str = None,
+        auto_accept: bool = None,
         alias: str = None,
     ) -> ConnectionRecord:
         """
@@ -197,7 +207,7 @@ class ConnectionManager:
         Args:
             invitation: The `ConnectionInvitation` to store
             their_role: The role assigned to this connection
-            accept: set to 'auto' to auto-accept the invitation
+            auto_accept: set to auto-accept the invitation (None to use config)
             alias: optional alias to set on the record
 
         Returns:
@@ -210,8 +220,17 @@ class ConnectionManager:
             if not invitation.endpoint:
                 raise ConnectionManagerError("Invitation must contain an endpoint")
 
-        if accept is None and self.context.settings.get("debug.auto_accept_invites"):
-            accept = ConnectionRecord.ACCEPT_AUTO
+        accept = (
+            ConnectionRecord.ACCEPT_AUTO
+            if (
+                auto_accept
+                or (
+                    auto_accept is None
+                    and self.context.settings.get("debug.auto_accept_invites")
+                )
+            )
+            else ConnectionRecord.ACCEPT_MANUAL
+        )
 
         # Create connection record
         connection = ConnectionRecord(

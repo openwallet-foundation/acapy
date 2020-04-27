@@ -3,7 +3,7 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema
+from aiohttp_apispec import docs, match_info_schema, request_schema
 
 from marshmallow import fields, Schema
 
@@ -61,9 +61,18 @@ class SendMenuSchema(Schema):
     )
 
 
+class ConnIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
 @docs(
     tags=["action-menu"], summary="Close the active menu associated with a connection"
 )
+@match_info_schema(ConnIdMatchInfoSchema())
 async def actionmenu_close(request: web.BaseRequest):
     """
     Request handler for closing the menu associated with a connection.
@@ -73,7 +82,7 @@ async def actionmenu_close(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
 
     menu = await retrieve_connection_menu(connection_id, context)
     if not menu:
@@ -84,6 +93,7 @@ async def actionmenu_close(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Fetch the active menu")
+@match_info_schema(ConnIdMatchInfoSchema())
 async def actionmenu_fetch(request: web.BaseRequest):
     """
     Request handler for fetching the previously-received menu for a connection.
@@ -93,7 +103,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
 
     menu = await retrieve_connection_menu(connection_id, context)
     result = {"result": menu.serialize() if menu else None}
@@ -101,6 +111,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Perform an action associated with the active menu")
+@match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(PerformRequestSchema())
 async def actionmenu_perform(request: web.BaseRequest):
     """
@@ -111,7 +122,7 @@ async def actionmenu_perform(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     params = await request.json()
 
@@ -129,6 +140,7 @@ async def actionmenu_perform(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Request the active menu")
+@match_info_schema(ConnIdMatchInfoSchema())
 async def actionmenu_request(request: web.BaseRequest):
     """
     Request handler for requesting a menu from the connection target.
@@ -138,7 +150,7 @@ async def actionmenu_request(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
 
     try:
@@ -156,6 +168,7 @@ async def actionmenu_request(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Send an action menu to a connection")
+@match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(SendMenuSchema())
 async def actionmenu_send(request: web.BaseRequest):
     """
@@ -166,7 +179,7 @@ async def actionmenu_send(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     menu_json = await request.json()
     LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
@@ -196,10 +209,10 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.post("/action-menu/{id}/close", actionmenu_close),
-            web.post("/action-menu/{id}/fetch", actionmenu_fetch),
-            web.post("/action-menu/{id}/perform", actionmenu_perform),
-            web.post("/action-menu/{id}/request", actionmenu_request),
-            web.post("/connections/{id}/send-menu", actionmenu_send),
+            web.post("/action-menu/{conn_id}/close", actionmenu_close),
+            web.post("/action-menu/{conn_id}/fetch", actionmenu_fetch),
+            web.post("/action-menu/{conn_id}/perform", actionmenu_perform),
+            web.post("/action-menu/{conn_id}/request", actionmenu_request),
+            web.post("/connections/{conn_id}/send-menu", actionmenu_send),
         ]
     )

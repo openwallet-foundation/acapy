@@ -2,8 +2,7 @@
 
 from typing import Any
 
-from marshmallow import fields
-from marshmallow.validate import OneOf
+from marshmallow import fields, validate
 
 from .....config.injection_context import InjectionContext
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
@@ -174,13 +173,13 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
         required=False,
         description="Issue-credential exchange initiator: self or external",
         example=V10CredentialExchange.INITIATOR_SELF,
-        validate=OneOf(["self", "external"]),
+        validate=validate.OneOf(["self", "external"]),
     )
     role = fields.Str(
         required=False,
         description="Issue-credential exchange role: holder or issuer",
         example=V10CredentialExchange.ROLE_ISSUER,
-        validate=OneOf(["holder", "issuer"]),
+        validate=validate.OneOf(["holder", "issuer"]),
     )
     state = fields.Str(
         required=False,
