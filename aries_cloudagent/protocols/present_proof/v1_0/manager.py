@@ -605,7 +605,10 @@ class PresentationManager:
                 self.context.settings, presentation_exchange_record.trace
             )
 
-            await responder.send_reply(presentation_ack_message)
+            await responder.send_reply(
+                presentation_ack_message,
+                connection_id=presentation_exchange_record.connection_id
+            )
         else:
             self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
