@@ -195,7 +195,7 @@ class IndySchemaId(Regexp):
 class IndyRevRegId(Regexp):
     """Validate value against indy revocation registry identifier specification."""
 
-    EXAMPLE = f"WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0"
+    EXAMPLE = "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0"
     PATTERN = (
         rf"^([{B58}]{{21,22}}):4:"
         rf"([{B58}]{{21,22}}):3:"
