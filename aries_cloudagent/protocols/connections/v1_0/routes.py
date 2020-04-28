@@ -1,15 +1,28 @@
 """Connection handling admin routes."""
 
-from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
+import json
 
-from marshmallow import fields, Schema
+from aiohttp import web
+from aiohttp_apispec import (
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
+)
+
+from marshmallow import fields, Schema, validate, validates_schema
 
 from aries_cloudagent.connections.models.connection_record import (
     ConnectionRecord,
     ConnectionRecordSchema,
 )
-from aries_cloudagent.messaging.valid import IndyDID, UUIDFour
+from aries_cloudagent.messaging.valid import (
+    ENDPOINT,
+    INDY_DID,
+    INDY_RAW_PUBLIC_KEY,
+    UUIDFour,
+)
 from aries_cloudagent.storage.error import StorageNotFoundError
 
 from .manager import ConnectionManager
@@ -26,6 +39,14 @@ class ConnectionListSchema(Schema):
         fields.Nested(ConnectionRecordSchema()),
         description="List of connection records",
     )
+
+
+class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
+    """Request schema for receive invitation request."""
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Bypass middleware field validation."""
 
 
 class InvitationResultSchema(Schema):
@@ -45,20 +66,14 @@ class ConnectionStaticRequestSchema(Schema):
     """Request schema for a new static connection."""
 
     my_seed = fields.Str(description="Seed to use for the local DID", required=False)
-    my_did = fields.Str(
-        description="Local DID", required=False, example=IndyDID.EXAMPLE
-    )
+    my_did = fields.Str(description="Local DID", required=False, **INDY_DID)
     their_seed = fields.Str(
         description="Seed to use for the remote DID", required=False
     )
-    their_did = fields.Str(
-        description="Remote DID", required=False, example=IndyDID.EXAMPLE
-    )
+    their_did = fields.Str(description="Remote DID", required=False, **INDY_DID)
     their_verkey = fields.Str(description="Remote verification key", required=False)
     their_endpoint = fields.Str(
-        description="URL endpoint for the other party",
-        required=False,
-        example="http://192.168.56.101:5000",
+        description="URL endpoint for the other party", required=False, **ENDPOINT
     )
     their_role = fields.Str(
         description="Role to assign to this connection", required=False
@@ -72,14 +87,111 @@ class ConnectionStaticRequestSchema(Schema):
 class ConnectionStaticResultSchema(Schema):
     """Result schema for new static connection."""
 
-    my_did = fields.Str(description="Local DID", required=True, example=IndyDID.EXAMPLE)
-    mv_verkey = fields.Str(description="My verification key", required=True)
-    my_endpoint = fields.Str(description="My endpoint", required=True)
-    their_did = fields.Str(
-        description="Remote DID", required=True, example=IndyDID.EXAMPLE
+    my_did = fields.Str(description="Local DID", required=True, **INDY_DID)
+    mv_verkey = fields.Str(
+        description="My verification key", required=True, **INDY_RAW_PUBLIC_KEY
     )
-    their_verkey = fields.Str(description="Remote verification key", required=True)
+    my_endpoint = fields.Str(description="My URL endpoint", required=True, **ENDPOINT)
+    their_did = fields.Str(description="Remote DID", required=True, **INDY_DID)
+    their_verkey = fields.Str(
+        description="Remote verification key", required=True, **INDY_RAW_PUBLIC_KEY
+    )
     record = fields.Nested(ConnectionRecordSchema, required=True)
+
+
+class ConnectionsListQueryStringSchema(Schema):
+    """Parameters and validators for connections list request query string."""
+
+    alias = fields.Str(description="Alias", required=False, example="Barry",)
+    initiator = fields.Str(
+        description="Connection initiator",
+        required=False,
+        validate=validate.OneOf(["self", "external"]),
+    )
+    invitation_key = fields.Str(
+        description="invitation key", required=False, **INDY_RAW_PUBLIC_KEY
+    )
+    my_did = fields.Str(description="My DID", required=False, **INDY_DID)
+    state = fields.Str(
+        description="Connection state",
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(ConnectionRecord, m)
+                for m in vars(ConnectionRecord)
+                if m.startswith("STATE_")
+            ]
+        ),
+    )
+    their_did = fields.Str(description="Their DID", required=False, **INDY_DID)
+    their_role = fields.Str(
+        description="Their assigned connection role",
+        required=False,
+        example="Interlocutor",
+    )
+
+
+class CreateInvitationQueryStringSchema(Schema):
+    """Parameters and validators for create invitation request query string."""
+
+    alias = fields.Str(description="Alias", required=False, example="Barry",)
+    auto_accept = fields.Boolean(
+        description="Auto-accept connection (default as per configuration)",
+        required=False,
+    )
+    public = fields.Boolean(
+        description="Create invitation from public DID (default false)", required=False
+    )
+    multi_use = fields.Boolean(
+        description="Create invitation for multiple use (default false)", required=False
+    )
+
+
+class ReceiveInvitationQueryStringSchema(Schema):
+    """Parameters and validators for receive invitation request query string."""
+
+    alias = fields.Str(description="Alias", required=False, example="Barry",)
+    auto_accept = fields.Boolean(
+        description="Auto-accept connection (defaults to configuration)",
+        required=False,
+    )
+
+
+class AcceptInvitationQueryStringSchema(Schema):
+    """Parameters and validators for accept invitation request query string."""
+
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_label = fields.Str(
+        description="Label for connection", required=False, example="Broker"
+    )
+
+
+class AcceptRequestQueryStringSchema(Schema):
+    """Parameters and validators for accept conn-request web-request query string."""
+
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+
+
+class ConnIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
+class ConnIdRefIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking connection and ref ids."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+    ref_id = fields.Str(
+        description="Inbound connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,
+    )
 
 
 def connection_sort_key(conn):
@@ -94,64 +206,9 @@ def connection_sort_key(conn):
 
 
 @docs(
-    tags=["connection"],
-    summary="Query agent-to-agent connections",
-    parameters=[
-        {
-            "name": "alias",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "initiator",
-            "in": "query",
-            "schema": {"type": "string", "enum": ["self", "external"]},
-            "required": False,
-        },
-        {
-            "name": "invitation_key",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "my_did",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "state",
-            "in": "query",
-            "schema": {
-                "type": "string",
-                "enum": [
-                    "init",
-                    "invitation",
-                    "request",
-                    "response",
-                    "active",
-                    "error",
-                    "inactive",
-                ],
-            },
-            "required": False,
-        },
-        {
-            "name": "their_did",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "their_role",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-    ],
+    tags=["connection"], summary="Query agent-to-agent connections",
 )
+@querystring_schema(ConnectionsListQueryStringSchema())
 @response_schema(ConnectionListSchema(), 200)
 async def connections_list(request: web.BaseRequest):
     """
@@ -190,6 +247,7 @@ async def connections_list(request: web.BaseRequest):
 
 
 @docs(tags=["connection"], summary="Fetch a single connection record")
+@match_info_schema(ConnIdMatchInfoSchema())
 @response_schema(ConnectionRecordSchema(), 200)
 async def connections_retrieve(request: web.BaseRequest):
     """
@@ -203,7 +261,7 @@ async def connections_retrieve(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     try:
         record = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
@@ -212,30 +270,9 @@ async def connections_retrieve(request: web.BaseRequest):
 
 
 @docs(
-    tags=["connection"],
-    summary="Create a new connection invitation",
-    parameters=[
-        {
-            "name": "alias",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "accept",
-            "in": "query",
-            "schema": {"type": "string", "enum": ["none", "auto"]},
-            "required": False,
-        },
-        {"name": "public", "in": "query", "schema": {"type": "int"}, "required": False},
-        {
-            "name": "multi_use",
-            "in": "query",
-            "schema": {"type": "int"},
-            "required": False,
-        },
-    ],
+    tags=["connection"], summary="Create a new connection invitation",
 )
+@querystring_schema(CreateInvitationQueryStringSchema())
 @response_schema(InvitationResultSchema(), 200)
 async def connections_create_invitation(request: web.BaseRequest):
     """
@@ -249,18 +286,18 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    accept = request.query.get("accept")
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
-    public = request.query.get("public")
-    multi_use = request.query.get("multi_use")
+    public = json.loads(request.query.get("public", "false"))
+    multi_use = json.loads(request.query.get("multi_use", "false"))
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden()
     base_url = context.settings.get("invite_base_url")
 
     connection_mgr = ConnectionManager(context)
-    connection, invitation = await connection_mgr.create_invitation(
-        accept=accept, public=bool(public), multi_use=bool(multi_use), alias=alias
+    (connection, invitation) = await connection_mgr.create_invitation(
+        auto_accept=auto_accept, public=public, multi_use=multi_use, alias=alias
     )
     result = {
         "connection_id": connection and connection.connection_id,
@@ -275,24 +312,10 @@ async def connections_create_invitation(request: web.BaseRequest):
 
 
 @docs(
-    tags=["connection"],
-    summary="Receive a new connection invitation",
-    parameters=[
-        {
-            "name": "alias",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "accept",
-            "in": "query",
-            "schema": {"type": "string", "enum": ["none", "auto"]},
-            "required": False,
-        },
-    ],
+    tags=["connection"], summary="Receive a new connection invitation",
 )
-@request_schema(ConnectionInvitationSchema())
+@querystring_schema(ReceiveInvitationQueryStringSchema())
+@request_schema(ReceiveInvitationRequestSchema())
 @response_schema(ConnectionRecordSchema(), 200)
 async def connections_receive_invitation(request: web.BaseRequest):
     """
@@ -311,32 +334,20 @@ async def connections_receive_invitation(request: web.BaseRequest):
     connection_mgr = ConnectionManager(context)
     invitation_json = await request.json()
     invitation = ConnectionInvitation.deserialize(invitation_json)
-    accept = request.query.get("accept")
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
+
     connection = await connection_mgr.receive_invitation(
-        invitation, accept=accept, alias=alias
+        invitation, auto_accept=auto_accept, alias=alias
     )
     return web.json_response(connection.serialize())
 
 
 @docs(
-    tags=["connection"],
-    summary="Accept a stored connection invitation",
-    parameters=[
-        {
-            "name": "my_endpoint",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "my_label",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-    ],
+    tags=["connection"], summary="Accept a stored connection invitation",
 )
+@match_info_schema(ConnIdMatchInfoSchema())
+@querystring_schema(AcceptInvitationQueryStringSchema())
 @response_schema(ConnectionRecordSchema(), 200)
 async def connections_accept_invitation(request: web.BaseRequest):
     """
@@ -351,7 +362,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
@@ -365,17 +376,10 @@ async def connections_accept_invitation(request: web.BaseRequest):
 
 
 @docs(
-    tags=["connection"],
-    summary="Accept a stored connection request",
-    parameters=[
-        {
-            "name": "my_endpoint",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        }
-    ],
+    tags=["connection"], summary="Accept a stored connection request",
 )
+@match_info_schema(ConnIdMatchInfoSchema())
+@querystring_schema(AcceptRequestQueryStringSchema())
 @response_schema(ConnectionRecordSchema(), 200)
 async def connections_accept_request(request: web.BaseRequest):
     """
@@ -390,7 +394,7 @@ async def connections_accept_request(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
@@ -405,6 +409,7 @@ async def connections_accept_request(request: web.BaseRequest):
 @docs(
     tags=["connection"], summary="Assign another connection as the inbound connection"
 )
+@match_info_schema(ConnIdRefIdMatchInfoSchema())
 async def connections_establish_inbound(request: web.BaseRequest):
     """
     Request handler for setting the inbound connection on a connection record.
@@ -413,7 +418,7 @@ async def connections_establish_inbound(request: web.BaseRequest):
         request: aiohttp request object
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     inbound_connection_id = request.match_info["ref_id"]
     try:
@@ -428,6 +433,7 @@ async def connections_establish_inbound(request: web.BaseRequest):
 
 
 @docs(tags=["connection"], summary="Remove an existing connection record")
+@match_info_schema(ConnIdMatchInfoSchema())
 async def connections_remove(request: web.BaseRequest):
     """
     Request handler for removing a connection record.
@@ -436,7 +442,7 @@ async def connections_remove(request: web.BaseRequest):
         request: aiohttp request object
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError:
@@ -491,19 +497,22 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get("/connections", connections_list),
-            web.get("/connections/{id}", connections_retrieve),
+            web.get("/connections", connections_list, allow_head=False),
+            web.get("/connections/{conn_id}", connections_retrieve, allow_head=False),
             web.post("/connections/create-static", connections_create_static),
             web.post("/connections/create-invitation", connections_create_invitation),
             web.post("/connections/receive-invitation", connections_receive_invitation),
             web.post(
-                "/connections/{id}/accept-invitation", connections_accept_invitation
+                "/connections/{conn_id}/accept-invitation",
+                connections_accept_invitation,
             ),
-            web.post("/connections/{id}/accept-request", connections_accept_request),
             web.post(
-                "/connections/{id}/establish-inbound/{ref_id}",
+                "/connections/{conn_id}/accept-request", connections_accept_request
+            ),
+            web.post(
+                "/connections/{conn_id}/establish-inbound/{ref_id}",
                 connections_establish_inbound,
             ),
-            web.post("/connections/{id}/remove", connections_remove),
+            web.post("/connections/{conn_id}/remove", connections_remove),
         ]
     )

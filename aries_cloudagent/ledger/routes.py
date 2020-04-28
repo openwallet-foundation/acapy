@@ -1,10 +1,11 @@
 """Ledger admin routes."""
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
+from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, validate
 
+from ..messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 from .base import BaseLedger
 from .error import LedgerTransactionError
 
@@ -55,31 +56,33 @@ class TAAAcceptSchema(Schema):
     mechanism = fields.Str()
 
 
+class RegisterLedgerNymQueryStringSchema(Schema):
+    """Query string parameters and validators for register ledger nym request."""
+
+    did = fields.Str(description="DID to register", required=True, **INDY_DID,)
+    verkey = fields.Str(
+        description="Verification key", required=True, **INDY_RAW_PUBLIC_KEY
+    )
+    alias = fields.Str(description="Alias", required=False, example="Barry",)
+    role = fields.Str(
+        description="Role",
+        required=False,
+        validate=validate.OneOf(
+            ["TRUSTEE", "STEWARD", "ENDORSER", "NETWORK_MONITOR", "reset"]
+        ),
+    )
+
+
+class QueryStringDIDSchema(Schema):
+    """Parameters and validators for query string with DID only."""
+
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+
+
 @docs(
-    tags=["ledger"],
-    summary="Send a NYM registration to the ledger.",
-    parameters=[
-        {"name": "did", "in": "query", "schema": {"type": "string"}, "required": True},
-        {
-            "name": "verkey",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": True,
-        },
-        {
-            "name": "alias",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-        {
-            "name": "role",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-    ],
+    tags=["ledger"], summary="Send a NYM registration to the ledger.",
 )
+@querystring_schema(RegisterLedgerNymQueryStringSchema())
 async def register_ledger_nym(request: web.BaseRequest):
     """
     Request handler for registering a NYM with the ledger.
@@ -97,7 +100,11 @@ async def register_ledger_nym(request: web.BaseRequest):
     if not did or not verkey:
         raise web.HTTPBadRequest()
 
-    alias, role = request.query.get("alias"), request.query.get("role")
+    alias = request.query.get("alias")
+    role = request.query.get("role")
+    if role == "reset":  # indy: empty to reset, null for regular user
+        role = ""  # visually: confusing - correct 'reset' to empty string here
+
     success = False
     async with ledger:
         try:
@@ -109,12 +116,9 @@ async def register_ledger_nym(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"],
-    summary="Get the verkey for a DID from the ledger.",
-    parameters=[
-        {"name": "did", "in": "query", "schema": {"type": "string"}, "required": True}
-    ],
+    tags=["ledger"], summary="Get the verkey for a DID from the ledger.",
 )
+@querystring_schema(QueryStringDIDSchema())
 async def get_did_verkey(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -137,12 +141,9 @@ async def get_did_verkey(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"],
-    summary="Get the endpoint for a DID from the ledger.",
-    parameters=[
-        {"name": "did", "in": "query", "schema": {"type": "string"}, "required": True}
-    ],
+    tags=["ledger"], summary="Get the endpoint for a DID from the ledger.",
 )
+@querystring_schema(QueryStringDIDSchema())
 async def get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -233,9 +234,9 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/ledger/register-nym", register_ledger_nym),
-            web.get("/ledger/did-verkey", get_did_verkey),
-            web.get("/ledger/did-endpoint", get_did_endpoint),
-            web.get("/ledger/taa", ledger_get_taa),
+            web.get("/ledger/did-verkey", get_did_verkey, allow_head=False),
+            web.get("/ledger/did-endpoint", get_did_endpoint, allow_head=False),
+            web.get("/ledger/taa", ledger_get_taa, allow_head=False),
             web.post("/ledger/taa/accept", ledger_accept_taa),
         ]
     )

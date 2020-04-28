@@ -80,7 +80,7 @@ class TestConnectionRoutes(AsyncTestCase):
         mock_req.app = {
             "request_context": context,
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock(return_value={"hello": "world"})
@@ -102,7 +102,7 @@ class TestConnectionRoutes(AsyncTestCase):
         mock_req.app = {
             "request_context": context,
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.ConnectionRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -120,10 +120,10 @@ class TestConnectionRoutes(AsyncTestCase):
             "request_context": context,
         }
         mock_req.query = {
-            "accept": "auto",
+            "auto_accept": "true",
             "alias": "alias",
-            "public": 1,
-            "multi_use": 1,
+            "public": "true",
+            "multi_use": "true",
         }
 
         with async_mock.patch.object(
@@ -162,10 +162,10 @@ class TestConnectionRoutes(AsyncTestCase):
             "request_context": context,
         }
         mock_req.query = {
-            "accept": "auto",
+            "auto_accept": "true",
             "alias": "alias",
-            "public": 1,
-            "multi_use": 1,
+            "public": "true",
+            "multi_use": "true",
         }
 
         with self.assertRaises(test_module.web.HTTPForbidden):
@@ -179,7 +179,7 @@ class TestConnectionRoutes(AsyncTestCase):
         }
         mock_req.json = async_mock.CoroutineMock()
         mock_req.query = {
-            "accept": "auto",
+            "auto_accept": "true",
             "alias": "alias",
         }
 
@@ -215,7 +215,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "request_context": context,
             "outbound_message_router": async_mock.CoroutineMock(),
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
         mock_req.query = {
             "my_label": "label",
             "my_endpoint": "http://endpoint.ca",
@@ -245,7 +245,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "request_context": context,
             "outbound_message_router": async_mock.CoroutineMock(),
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.ConnectionRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -262,7 +262,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "request_context": context,
             "outbound_message_router": async_mock.CoroutineMock(),
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
         mock_req.query = {
             "my_endpoint": "http://endpoint.ca",
         }
@@ -290,7 +290,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "request_context": context,
             "outbound_message_router": async_mock.CoroutineMock(),
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.ConnectionRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -307,7 +307,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "request_context": context,
             "outbound_message_router": async_mock.CoroutineMock(),
         }
-        mock_req.match_info = {"id": "dummy", "ref_id": "ref"}
+        mock_req.match_info = {"conn_id": "dummy", "ref_id": "ref"}
         mock_req.query = {
             "my_endpoint": "http://endpoint.ca",
         }
@@ -335,7 +335,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "request_context": context,
             "outbound_message_router": async_mock.CoroutineMock(),
         }
-        mock_req.match_info = {"id": "dummy", "ref_id": "ref"}
+        mock_req.match_info = {"conn_id": "dummy", "ref_id": "ref"}
 
         with async_mock.patch.object(
             test_module.ConnectionRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -351,7 +351,7 @@ class TestConnectionRoutes(AsyncTestCase):
         mock_req.app = {
             "request_context": context,
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.delete_record = async_mock.CoroutineMock()
@@ -372,7 +372,7 @@ class TestConnectionRoutes(AsyncTestCase):
         mock_req.app = {
             "request_context": context,
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
 
         mock_conn_rec = async_mock.MagicMock()
 
@@ -403,10 +403,10 @@ class TestConnectionRoutes(AsyncTestCase):
             }
         )
         mock_req.query = {
-            "accept": "auto",
+            "auto_accept": "true",
             "alias": "alias",
         }
-        mock_req.match_info = {"id": "dummy"}
+        mock_req.match_info = {"conn_id": "dummy"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()

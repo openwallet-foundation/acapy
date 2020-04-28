@@ -1,12 +1,14 @@
 """Trust ping admin routes."""
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
+from aiohttp_apispec import docs, match_info_schema, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
 from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.messaging.valid import UUIDFour
 from aries_cloudagent.storage.error import StorageNotFoundError
+
 
 from .messages.ping import Ping
 
@@ -23,7 +25,16 @@ class PingRequestResponseSchema(Schema):
     thread_id = fields.Str(required=False, description="Thread ID of the ping message")
 
 
+class ConnIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
 @docs(tags=["trustping"], summary="Send a trust ping to a connection")
+@match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(PingRequestSchema())
 @response_schema(PingRequestResponseSchema(), 200)
 async def connections_send_ping(request: web.BaseRequest):
@@ -35,7 +46,7 @@ async def connections_send_ping(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     body = await request.json()
     comment = body.get("comment")
@@ -57,4 +68,6 @@ async def connections_send_ping(request: web.BaseRequest):
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.post("/connections/{id}/send-ping", connections_send_ping)])
+    app.add_routes(
+        [web.post("/connections/{conn_id}/send-ping", connections_send_ping)]
+    )

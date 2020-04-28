@@ -1,7 +1,7 @@
 """Feature discovery admin routes."""
 
 from aiohttp import web
-from aiohttp_apispec import docs, response_schema
+from aiohttp_apispec import docs, querystring_schema, response_schema
 
 from marshmallow import fields, Schema
 
@@ -18,18 +18,16 @@ class QueryResultSchema(Schema):
     )
 
 
+class QueryFeaturesQueryStringSchema(Schema):
+    """Query string parameters for feature query."""
+
+    query = fields.Str(description="Query", required=False, example="did:sov:*")
+
+
 @docs(
-    tags=["server"],
-    summary="Query supported features",
-    parameters=[
-        {
-            "name": "query",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        }
-    ],
+    tags=["server"], summary="Query supported features",
 )
+@querystring_schema(QueryFeaturesQueryStringSchema())
 @response_schema(QueryResultSchema(), 200)
 async def query_features(request: web.BaseRequest):
     """
@@ -52,4 +50,4 @@ async def query_features(request: web.BaseRequest):
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes([web.get("/features", query_features)])
+    app.add_routes([web.get("/features", query_features, allow_head=False)])

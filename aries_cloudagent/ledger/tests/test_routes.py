@@ -24,8 +24,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.test_endpoint = "http://localhost:8021"
 
     async def test_missing_ledger(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
+        request = async_mock.MagicMock(app=self.app,)
         self.context.injector.clear_binding(BaseLedger)
 
         with self.assertRaises(HTTPForbidden):
@@ -80,9 +79,10 @@ class TestLedgerRoutes(AsyncTestCase):
             await test_module.get_did_endpoint(request)
 
     async def test_register_nym(self):
-        request = async_mock.MagicMock()
-        request.app = self.app
-        request.query = {"did": self.test_did, "verkey": self.test_verkey}
+        request = async_mock.MagicMock(
+            app=self.app,
+            query={"did": self.test_did, "verkey": self.test_verkey, "role": "reset",},
+        )
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:

@@ -60,7 +60,6 @@ class MenuFormSchema(BaseModelSchema):
         fields.Nested(MenuFormParamSchema()),
         required=False,
         description="List of form parameters",
-        example="[alpha, x_offset, y_offset, height, width, bgcolor, fgcolor]",
     )
     submit_label = fields.Str(
         required=False,

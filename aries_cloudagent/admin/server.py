@@ -6,7 +6,12 @@ from typing import Callable, Coroutine, Sequence, Set
 import uuid
 
 from aiohttp import web
-from aiohttp_apispec import docs, response_schema, setup_aiohttp_apispec
+from aiohttp_apispec import (
+    docs,
+    response_schema,
+    setup_aiohttp_apispec,
+    validation_middleware,
+)
 import aiohttp_cors
 
 from marshmallow import fields, Schema
@@ -149,7 +154,7 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = []
+        middlewares = [validation_middleware]
 
         admin_api_key = self.context.settings.get("admin.admin_api_key")
         admin_insecure_mode = self.context.settings.get("admin.admin_insecure_mode")
@@ -203,11 +208,11 @@ class AdminServer(BaseAdminServer):
 
         app.add_routes(
             [
-                web.get("/", self.redirect_handler),
-                web.get("/plugins", self.plugins_handler),
-                web.get("/status", self.status_handler),
+                web.get("/", self.redirect_handler, allow_head=False),
+                web.get("/plugins", self.plugins_handler, allow_head=False),
+                web.get("/status", self.status_handler, allow_head=False),
                 web.post("/status/reset", self.status_reset_handler),
-                web.get("/ws", self.websocket_handler),
+                web.get("/ws", self.websocket_handler, allow_head=False),
             ]
         )
 

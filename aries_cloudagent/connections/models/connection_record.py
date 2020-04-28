@@ -1,7 +1,6 @@
 """Handle connection information interface with non-secrets storage."""
 
-from marshmallow import fields
-from marshmallow.validate import OneOf
+from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
@@ -298,7 +297,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
         required=False,
         description="Connection initiator: self, external, or multiuse",
         example=ConnectionRecord.INITIATOR_SELF,
-        validate=OneOf(["self", "external", "multiuse"]),
+        validate=validate.OneOf(["self", "external", "multiuse"]),
     )
     invitation_key = fields.Str(
         required=False, description="Public key for connection", **INDY_RAW_PUBLIC_KEY
@@ -317,7 +316,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
         required=False,
         description="Connection acceptance: manual or auto",
         example=ConnectionRecord.ACCEPT_AUTO,
-        validate=OneOf(["manual", "auto"]),
+        validate=validate.OneOf(["manual", "auto"]),
     )
     error_msg = fields.Str(
         required=False,
@@ -328,7 +327,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
         required=False,
         description="Invitation mode: once, multi, or static",
         example=ConnectionRecord.INVITATION_MODE_ONCE,
-        validate=OneOf(["once", "multi", "static"]),
+        validate=validate.OneOf(["once", "multi", "static"]),
     )
     alias = fields.Str(
         required=False,

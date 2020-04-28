@@ -148,8 +148,7 @@ class AliceAgent(DemoAgent):
                     predicates[referent] = {
                         "cred_id": credentials_by_reft[referent]["cred_info"][
                             "referent"
-                        ],
-                        "revealed": True,
+                        ]
                     }
 
             log_status("#25 Generate the proof")

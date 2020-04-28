@@ -141,7 +141,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         request = async_mock.MagicMock()
         request.app = self.app
-        request.match_info = {"id": REV_REG_ID}
+        request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -166,7 +166,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         request = async_mock.MagicMock()
         request.app = self.app
-        request.match_info = {"id": REV_REG_ID}
+        request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -233,7 +233,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         request = async_mock.MagicMock()
         request.app = self.app
-        request.match_info = {"id": REV_REG_ID}
+        request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -256,7 +256,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         request = async_mock.MagicMock()
         request.app = self.app
-        request.match_info = {"id": REV_REG_ID}
+        request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -279,7 +279,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         request = async_mock.MagicMock()
         request.app = self.app
-        request.match_info = {"id": REV_REG_ID}
+        request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -306,7 +306,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         request = async_mock.MagicMock()
         request.app = self.app
-        request.match_info = {"id": REV_REG_ID}
+        request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -329,7 +329,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         request = async_mock.MagicMock()
         request.app = self.app
-        request.match_info = {"id": REV_REG_ID}
+        request.match_info = {"rev_reg_id": REV_REG_ID}
         request.json = async_mock.CoroutineMock(
             return_value={
                 "tails_public_uri": f"http://sample.ca:8181/tails/{REV_REG_ID}"
@@ -361,7 +361,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         request = async_mock.MagicMock()
         request.app = self.app
-        request.match_info = {"id": REV_REG_ID}
+        request.match_info = {"rev_reg_id": REV_REG_ID}
         request.json = async_mock.CoroutineMock(
             return_value={
                 "tails_public_uri": f"http://sample.ca:8181/tails/{REV_REG_ID}"

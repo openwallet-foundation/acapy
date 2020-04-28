@@ -3,7 +3,13 @@
 import json
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
+from aiohttp_apispec import (
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
+)
 from json.decoder import JSONDecodeError
 from marshmallow import fields, Schema
 
@@ -17,7 +23,9 @@ from ....messaging.valid import (
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
+    NATURAL_NUM,
     UUIDFour,
+    UUID4,
 )
 from ....storage.error import StorageNotFoundError
 
@@ -164,7 +172,42 @@ class V10PublishRevocationsResultSchema(Schema):
     )
 
 
+class RevokeQueryStringSchema(Schema):
+    """Parameters and validators for revocation request."""
+
+    rev_reg_id = fields.Str(
+        description="Revocation registry identifier", required=True, **INDY_REV_REG_ID,
+    )
+    cred_rev_id = fields.Int(
+        description="Credential revocation identifier", required=True, **NATURAL_NUM,
+    )
+    publish = fields.Boolean(
+        description=(
+            "(True) publish revocation to ledger immediately, or "
+            "(False) mark it pending (default value)"
+        ),
+        required=False,
+    )
+
+
+class CredIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking credential id."""
+
+    credential_id = fields.Str(
+        description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
+class CredExIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking credential exchange id."""
+
+    cred_ex_id = fields.Str(
+        description="Credential exchange identifier", required=True, **UUID4
+    )
+
+
 @docs(tags=["issue-credential"], summary="Get attribute MIME types from wallet")
+@match_info_schema(CredIdMatchInfoSchema())
 @response_schema(V10AttributeMimeTypesResultSchema(), 200)
 async def attribute_mime_types_get(request: web.BaseRequest):
     """
@@ -210,6 +253,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 
 
 @docs(tags=["issue-credential"], summary="Fetch a single credential exchange record")
+@match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_retrieve(request: web.BaseRequest):
     """
@@ -485,6 +529,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     tags=["issue-credential"],
     summary="Send holder a credential offer in reference to a proposal with preview",
 )
+@match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     """
@@ -544,6 +589,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 
 @docs(tags=["issue-credential"], summary="Send issuer a credential request")
+@match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_send_request(request: web.BaseRequest):
     """
@@ -603,6 +649,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
 
 @docs(tags=["issue-credential"], summary="Send holder a credential")
+@match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialIssueRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_issue(request: web.BaseRequest):
@@ -675,6 +722,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
 
 @docs(tags=["issue-credential"], summary="Store a received credential")
+@match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialStoreRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
 async def credential_exchange_store(request: web.BaseRequest):
@@ -741,33 +789,9 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"],
-    parameters=[
-        {
-            "name": "rev_reg_id",
-            "in": "query",
-            "description": "revocation registry id",
-            "required": True,
-        },
-        {
-            "name": "cred_rev_id",
-            "in": "query",
-            "description": "credential revocation id",
-            "required": True,
-        },
-        {
-            "name": "publish",
-            "in": "query",
-            "description": (
-                "(true) publish revocation to ledger immediately, or "
-                "(false) mark it pending"
-            ),
-            "schema": {"type": "boolean"},
-            "required": False,
-        },
-    ],
-    summary="Revoke an issued credential",
+    tags=["issue-credential"], summary="Revoke an issued credential",
 )
+@querystring_schema(RevokeQueryStringSchema())
 async def credential_exchange_revoke(request: web.BaseRequest):
     """
     Request handler for storing a credential request.
@@ -782,7 +806,7 @@ async def credential_exchange_revoke(request: web.BaseRequest):
     context = request.app["request_context"]
 
     rev_reg_id = request.query.get("rev_reg_id")
-    cred_rev_id = request.query.get("cred_rev_id")
+    cred_rev_id = request.query.get("cred_rev_id")  # numeric str here, which indy wants
     publish = bool(json.loads(request.query.get("publish", json.dumps(False))))
 
     credential_manager = CredentialManager(context)
@@ -819,6 +843,7 @@ async def credential_exchange_publish_revocations(request: web.BaseRequest):
 @docs(
     tags=["issue-credential"], summary="Remove an existing credential exchange record"
 )
+@match_info_schema(CredExIdMatchInfoSchema())
 async def credential_exchange_remove(request: web.BaseRequest):
     """
     Request handler for removing a credential exchange record.
@@ -842,6 +867,7 @@ async def credential_exchange_remove(request: web.BaseRequest):
 @docs(
     tags=["issue-credential"], summary="Send a problem report for credential exchange"
 )
+@match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialProblemReportRequestSchema())
 async def credential_exchange_problem_report(request: web.BaseRequest):
     """
@@ -889,11 +915,17 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get(
-                "/issue-credential/mime-types/{credential_id}", attribute_mime_types_get
+                "/issue-credential/mime-types/{credential_id}",
+                attribute_mime_types_get,
+                allow_head=False,
             ),
-            web.get("/issue-credential/records", credential_exchange_list),
             web.get(
-                "/issue-credential/records/{cred_ex_id}", credential_exchange_retrieve
+                "/issue-credential/records", credential_exchange_list, allow_head=False
+            ),
+            web.get(
+                "/issue-credential/records/{cred_ex_id}",
+                credential_exchange_retrieve,
+                allow_head=False,
             ),
             web.post("/issue-credential/send", credential_exchange_send),
             web.post(
@@ -918,7 +950,7 @@ async def register(app: web.Application):
                 "/issue-credential/records/{cred_ex_id}/store",
                 credential_exchange_store,
             ),
-            web.post("/issue-credential/revoke", credential_exchange_revoke,),
+            web.post("/issue-credential/revoke", credential_exchange_revoke),
             web.post(
                 "/issue-credential/publish-revocations",
                 credential_exchange_publish_revocations,

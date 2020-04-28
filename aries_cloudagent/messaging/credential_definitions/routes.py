@@ -3,7 +3,13 @@
 from asyncio import shield
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema, response_schema
+from aiohttp_apispec import (
+    docs,
+    match_info_schema,
+    querystring_schema,
+    request_schema,
+    response_schema,
+)
 
 from marshmallow import fields, Schema
 
@@ -13,7 +19,7 @@ from ...storage.base import BaseStorage
 
 from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
 
-from .util import CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
+from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
 
 class CredentialDefinitionSendRequestSchema(Schema):
@@ -81,6 +87,16 @@ class CredentialDefinitionsCreatedResultsSchema(Schema):
     )
 
 
+class CredDefIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking cred def id."""
+
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        required=True,
+        **INDY_CRED_DEF_ID
+    )
+
+
 @docs(
     tags=["credential-definition"],
     summary="Sends a credential definition to the ledger",
@@ -124,17 +140,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
 @docs(
     tags=["credential-definition"],
-    parameters=[
-        {
-            "name": tag,
-            "in": "query",
-            "schema": {"type": "string", "pattern": pat},
-            "required": False,
-        }
-        for (tag, pat) in CRED_DEF_TAGS.items()
-    ],
     summary="Search for matching credential definitions that agent originated",
 )
+@querystring_schema(CredDefQueryStringSchema())
 @response_schema(CredentialDefinitionsCreatedResultsSchema(), 200)
 async def credential_definitions_created(request: web.BaseRequest):
     """
@@ -166,6 +174,7 @@ async def credential_definitions_created(request: web.BaseRequest):
     tags=["credential-definition"],
     summary="Gets a credential definition from the ledger",
 )
+@match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultsSchema(), 200)
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
     """
@@ -180,7 +189,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
     """
     context = request.app["request_context"]
 
-    credential_definition_id = request.match_info["id"]
+    credential_definition_id = request.match_info["cred_def_id"]
 
     ledger: BaseLedger = await context.inject(BaseLedger)
     async with ledger:
@@ -198,17 +207,16 @@ async def register(app: web.Application):
             web.post(
                 "/credential-definitions",
                 credential_definitions_send_credential_definition,
-            )
-        ]
-    )
-    app.add_routes(
-        [web.get("/credential-definitions/created", credential_definitions_created,)]
-    )
-    app.add_routes(
-        [
+            ),
             web.get(
-                "/credential-definitions/{id}",
+                "/credential-definitions/created",
+                credential_definitions_created,
+                allow_head=False,
+            ),
+            web.get(
+                "/credential-definitions/{cred_def_id}",
                 credential_definitions_get_credential_definition,
-            )
+                allow_head=False,
+            ),
         ]
     )
