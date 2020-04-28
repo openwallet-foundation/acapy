@@ -607,7 +607,7 @@ class PresentationManager:
 
             await responder.send_reply(
                 presentation_ack_message,
-                connection_id=presentation_exchange_record.connection_id
+                connection_id=presentation_exchange_record.connection_id,
             )
         else:
             self._logger.warning(
