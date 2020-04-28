@@ -6,7 +6,7 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 import indy.blob_storage
 
-from .. import create_tails_reader
+from .. import create_tails_reader, create_tails_writer
 
 TAILS_DIR = "/tmp/indy/revocation/tails_files"
 TAILS_HASH = "8UW1Sz5cqoUnK9hqQk7nvtKK65t7Chu3ui866J23sFyJ"
@@ -31,3 +31,9 @@ class TestIndyUtils(AsyncTestCase):
         rmtree(TAILS_DIR, ignore_errors=True)
         with self.assertRaises(FileNotFoundError):
             await create_tails_reader(TAILS_LOCAL)
+
+    async def test_tails_writer(self):
+        makedirs(TAILS_DIR, exist_ok=True)
+        assert await create_tails_writer(TAILS_DIR)
+
+        rmtree(TAILS_DIR, ignore_errors=True)
