@@ -230,6 +230,7 @@ async def main(
             "4/5/6/" if revocation else ""
         )
         async for option in prompt_loop(options):
+            option = option.strip()
             if option is None or option in "xX":
                 break
 
@@ -329,10 +330,11 @@ async def main(
                     f"/connections/{agent.connection_id}/send-message", {"content": msg}
                 )
             elif option == "4" and revocation:
-                rev_reg_id = await prompt("Enter revocation registry ID: ")
-                cred_rev_id = await prompt("Enter credential revocation ID: ")
+                rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
+                cred_rev_id = (await prompt("Enter credential revocation ID: ")).strip()
                 publish = json.dumps(
-                    await prompt("Publish now? [Y/N]: ", default="N") in ("yY")
+                    (await prompt("Publish now? [Y/N]: ", default="N")).strip()
+                    in ("yY")
                 )
                 try:
                     await agent.admin_POST(
