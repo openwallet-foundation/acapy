@@ -6,11 +6,11 @@ import hashlib
 
 
 def _canonize(data):
-    return jsonld.canonicalize(data)
+    return jsonld.normalize(data, {'algorithm': 'URDNA2015', 'format': 'application/n-quads'})
 
 
 def _sha256(data):
-    return hashlib.sha256(data).hexdigest()
+    return hashlib.sha256(data.encode('ascii')).hexdigest()
 
 
 def _cannonize_signature_options(signatureOptions):
