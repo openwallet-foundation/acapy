@@ -6,6 +6,8 @@ from copy import deepcopy
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from indy.error import IndyError
+
 from ..indy import IndyVerifier, PreVerifyResult
 
 
@@ -327,6 +329,205 @@ class TestIndyVerifier(AsyncTestCase):
         )
 
         assert verified == "val"
+
+    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    async def test_verify_presentation_x_indy(self, mock_verify):
+        mock_verify.side_effect = IndyError(error_code=1)
+
+        verifier = IndyVerifier("wallet")
+        with async_mock.patch.object(
+            verifier, "pre_verify", return_value=(PreVerifyResult.OK, None)
+        ):
+            verified = await verifier.verify_presentation(
+                {"nonce": "1234567890"},
+                "presentation",
+                "schemas",
+                "credential_definitions",
+                "rev_reg_defs",
+                "rev_reg_entries",
+            )
+
+        mock_verify.assert_called_once_with(
+            json.dumps({"nonce": "1234567890"}),
+            json.dumps("presentation"),
+            json.dumps("schemas"),
+            json.dumps("credential_definitions"),
+            json.dumps("rev_reg_defs"),
+            json.dumps("rev_reg_entries"),
+        )
+
+        assert not verified
+
+    async def test_pre_verify(self):
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                None, {"requested_proof": "...", "proof": "..."}
+            )[0]
+        )
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                {"requested_predicates": "...", "requested_attributes": "..."}, None,
+            )[0]
+        )
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                {"requested_predicates": "...", "requested_attributes": "..."},
+                {"requested_proof": "..."},
+            )[0]
+        )
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                {"requested_predicates": "...", "requested_attributes": "..."},
+                {"proof": "..."},
+            )[0]
+        )
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                {
+                    "requested_predicates": {"0_name_uuid": "..."},
+                    "requested_attributes": "...",
+                },
+                INDY_PROOF_PRED_NAMES,
+            )[0]
+        )
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                INDY_PROOF_REQ_NAME,
+                {
+                    "proof": "...",
+                    "requested_proof": {
+                        "revealed_attrs": {},
+                        "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": "...",
+                },
+            )[0]
+        )
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                {
+                    "nonce": "15606741555044336341559",
+                    "name": "proof_req",
+                    "version": "0.0",
+                    "requested_attributes": {"19_uuid": {"name": "Preferred Name"}},
+                    "requested_predicates": {},
+                },
+                {
+                    "proof": "...",
+                    "requested_proof": {
+                        "revealed_attrs": {},
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": "...",
+                },
+            )[0]
+        )
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                {
+                    "nonce": "15606741555044336341559",
+                    "name": "proof_req",
+                    "version": "0.0",
+                    "requested_attributes": {
+                        "19_uuid": {"neither-name-nor-names": "Preferred Name"}
+                    },
+                    "requested_predicates": {},
+                },
+                {
+                    "proof": "...",
+                    "requested_proof": {
+                        "revealed_attrs": {
+                            "19_uuid": {
+                                "sub_proof_index": 0,
+                                "raw": "Chicken Hawk",
+                                "encoded": "94607763023542937648705576709896212619553924110058781320304650334433495169960",
+                            }
+                        },
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": "...",
+                },
+            )[0]
+        )
+        assert (
+            PreVerifyResult.INCOMPLETE
+            == IndyVerifier.pre_verify(
+                INDY_PROOF_REQ_NAME,
+                {
+                    "proof": {
+                        "proofs": [
+                            {
+                                "primary_proof": {
+                                    "eq_proof": {
+                                        "revealed_attrs": {"otherthing": "..."},
+                                        "...": "...",
+                                    },
+                                    "ge_proofs": [],
+                                },
+                                "...": "...",
+                            }
+                        ],
+                        "...": "...",
+                    },
+                    "requested_proof": {
+                        "revealed_attrs": {
+                            "19_uuid": {
+                                "sub_proof_index": 0,
+                                "raw": "Chicken Hawk",
+                                "encoded": "94607763023542937648705576709896212619553924110058781320304650334433495169960",
+                            }
+                        },
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": [
+                        {
+                            "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                            "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                            "rev_reg_id": None,
+                            "timestamp": None,
+                        }
+                    ],
+                },
+            )[0]
+        )
+        assert (
+            PreVerifyResult.OK
+            == IndyVerifier.pre_verify(
+                {
+                    "nonce": "15606741555044336341559",
+                    "name": "proof_req",
+                    "version": "0.0",
+                    "requested_attributes": {"19_uuid": {"name": "Preferred Name"}},
+                    "requested_predicates": {},
+                },
+                {
+                    "proof": "...",
+                    "requested_proof": {
+                        "revealed_attrs": {},
+                        "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": "...",
+                },
+            )[0]
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr(self, mock_verify):
