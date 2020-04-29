@@ -427,7 +427,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential"],
-    summary="Send holder a credential offer, independent of any proposal with preview",
+    summary="Send holder a credential offer, independent of any proposal",
 )
 @request_schema(V10CredentialOfferRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200)
@@ -454,21 +454,20 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     connection_id = body.get("connection_id")
     cred_def_id = body.get("cred_def_id")
-    auto_issue = body.get(
-        "auto_issue", context.settings.get("debug.auto_respond_credential_request")
-    )
-    auto_remove = body.get("auto_remove")
-    comment = body.get("comment")
-    preview_spec = body.get("credential_preview")
-    trace_msg = body.get("trace")
-
     if not cred_def_id:
         raise web.HTTPBadRequest(reason="cred_def_id is required")
 
-    if auto_issue and not preview_spec:
-        raise web.HTTPBadRequest(
-            reason=("If auto_issue is set then credential_preview must be provided")
-        )
+    auto_issue = body.get(
+        "auto_issue", context.settings.get("debug.auto_respond_credential_request")
+    )
+
+    auto_remove = body.get("auto_remove")
+    comment = body.get("comment")
+    preview_spec = body.get("credential_preview")
+    if not preview_spec:
+        raise web.HTTPBadRequest(reason=("Missing credential_preview"))
+
+    trace_msg = body.get("trace")
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -480,19 +479,16 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    if preview_spec:
-        credential_preview = CredentialPreview.deserialize(preview_spec)
-        credential_proposal = CredentialProposal(
-            comment=comment,
-            credential_proposal=credential_preview,
-            cred_def_id=cred_def_id,
-        )
-        credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
-        )
-        credential_proposal_dict = credential_proposal.serialize()
-    else:
-        credential_proposal_dict = None
+    credential_preview = CredentialPreview.deserialize(preview_spec)
+    credential_proposal = CredentialProposal(
+        comment=comment,
+        credential_proposal=credential_preview,
+        cred_def_id=cred_def_id,
+    )
+    credential_proposal.assign_trace_decorator(
+        context.settings, trace_msg,
+    )
+    credential_proposal_dict = credential_proposal.serialize()
 
     credential_exchange_record = V10CredentialExchange(
         connection_id=connection_id,
@@ -671,7 +667,6 @@ async def credential_exchange_issue(request: web.BaseRequest):
     body = await request.json()
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
-
     if not preview_spec:
         raise web.HTTPBadRequest(reason="credential_preview must be provided")
 
