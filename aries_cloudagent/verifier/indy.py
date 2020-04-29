@@ -47,9 +47,16 @@ class IndyVerifier(BaseVerifier):
             pres: corresponding presentation
 
         Returns:
-            An instance of `PreVerifyResult` representing the validation result
+            A tuple with `PreVerifyResult` representing the validation result and
+            reason text for failure or None for OK.
 
         """
+        if not (
+            pres_req
+            and "requested_predicates" in pres_req
+            and "requested_attributes" in pres_req
+        ):
+            return (PreVerifyResult.INCOMPLETE, "Incomplete or missing proof request")
         if not pres:
             return (PreVerifyResult.INCOMPLETE, "No proof provided")
         if "requested_proof" not in pres:
@@ -58,8 +65,8 @@ class IndyVerifier(BaseVerifier):
             return (PreVerifyResult.INCOMPLETE, "Missing 'proof'")
 
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
-            canon_attr = canon(req_pred["name"])
             try:
+                canon_attr = canon(req_pred["name"])
                 for ge_proof in pres["proof"]["proofs"][
                     pres["requested_proof"]["predicates"][uuid]["sub_proof_index"]
                 ]["primary_proof"]["ge_proofs"]:
