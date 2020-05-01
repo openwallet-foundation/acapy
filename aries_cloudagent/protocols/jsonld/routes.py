@@ -51,7 +51,7 @@ def b64decode(bytes):
     return b64_to_str(bytes, urlsafe=True)
 
 def create_jws(encoded_header, verify_data):
-    return (encoded_header + "." + verify_data).encode("ascii")
+    return (encoded_header + ".").encode('utf-8') + verify_data
 
 
 async def jws_sign(verify_data, verkey, wallet):
@@ -69,7 +69,6 @@ async def jws_sign(verify_data, verkey, wallet):
 
     encoded_signature = bytes_to_b64(signature, urlsafe=True, pad=False)
 
-    #encoded_signature = b64encode(signature)
     return encoded_header + ".." + encoded_signature
 
 
@@ -93,7 +92,9 @@ async def jws_verify(verify_data, signature, public_key, wallet):
 
     jws_to_verify = create_jws(encoded_header, verify_data)
 
-    return await wallet.verify_message(jws_to_verify, decoded_signature, public_key)
+    verified = await wallet.verify_message(jws_to_verify, decoded_signature, public_key)
+
+    return verified
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -176,8 +177,9 @@ async def verify(request: web.BaseRequest):
         doc = body.get("doc")
 
         framed, verify_data_hex_string = create_verify_data(doc, doc['proof'])
+        verify_data_bytes = bytes.fromhex(verify_data_hex_string)
 
-        response["valid"] = await jws_verify(verify_data_hex_string, framed['proof']['jws'], verkey, wallet)
+        response["valid"] = await jws_verify(verify_data_bytes, framed['proof']['jws'], verkey, wallet)
     except Exception as e:
         response["error"] = str(e)
 
