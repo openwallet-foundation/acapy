@@ -30,6 +30,10 @@ def _cannonize_document(doc):
     return _canonize(_doc)
 
 
+class DroppedAttributeException(Exception):
+    pass
+
+
 def create_verify_data(data, signature_options):
     if 'creator' in signature_options:
         signature_options['verificationMethod'] = signature_options['creator']
@@ -49,6 +53,17 @@ def create_verify_data(data, signature_options):
         "https://w3id.org/security/v2",
         {"skipExpansion": True}
     )
+
+
+    # Detect any dropped attributes during the expand/contract step.
+
+    if len(data) != len(framed):
+        raise DroppedAttributeException("Extra Attribute Detected")
+    if 'proof' in data and 'proof' in framed and len(data['proof']) != len(framed['proof']):
+        raise DroppedAttributeException("Extra Attribute Detected")
+    if 'credentialSubject' in data and 'https://www.w3.org/2018/credentials#credentialSubject' in framed and len(data['credentialSubject']) != len(framed['https://www.w3.org/2018/credentials#credentialSubject']):
+        raise DroppedAttributeException("Extra Attribute Detected")
+
 
     cannonized_signature_options = _cannonize_signature_options(
         signature_options
