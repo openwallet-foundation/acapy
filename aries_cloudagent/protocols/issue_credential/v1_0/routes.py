@@ -28,12 +28,15 @@ from ....messaging.valid import (
     UUID4,
 )
 from ....storage.error import StorageNotFoundError
+from ....wallet.base import BaseWallet
+from ....utils.outofband import serialize_outofband
 
 # FIXME: We shouldn't rely on a hardcoded message version here.
 from ...problem_report.v1_0.message import ProblemReport
 
 from .manager import CredentialManager
 from .messages.credential_proposal import CredentialProposal
+from .messages.credential_offer import CredentialOfferSchema
 from .messages.inner.credential_preview import (
     CredentialPreview,
     CredentialPreviewSchema,
@@ -433,6 +436,131 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     )
 
     return web.json_response(credential_exchange_record.serialize())
+
+
+async def _create_free_offer(
+    context,
+    cred_def_id: str,
+    connection_id: str = None,
+    auto_issue: bool = False,
+    auto_remove: bool = False,
+    preview_spec: dict = None,
+    comment: str = None,
+):
+    """Utility method to create a credential offer and related exchange record."""
+
+    if not cred_def_id:
+        raise web.HTTPBadRequest(reason="cred_def_id is required")
+
+    if auto_issue and not preview_spec:
+        raise web.HTTPBadRequest(
+            reason=("If auto_issue is set then credential_preview must be provided")
+        )
+
+    if preview_spec:
+        credential_preview = CredentialPreview.deserialize(preview_spec)
+        credential_proposal = CredentialProposal(
+            comment=comment,
+            credential_proposal=credential_preview,
+            cred_def_id=cred_def_id,
+        )
+        credential_proposal_dict = credential_proposal.serialize()
+    else:
+        credential_proposal_dict = None
+
+    credential_exchange_record = V10CredentialExchange(
+        connection_id=connection_id,
+        initiator=V10CredentialExchange.INITIATOR_SELF,
+        credential_definition_id=cred_def_id,
+        credential_proposal_dict=credential_proposal_dict,
+        auto_issue=auto_issue,
+        auto_remove=auto_remove,
+    )
+
+    credential_manager = CredentialManager(context)
+
+    (
+        credential_exchange_record,
+        credential_offer_message,
+    ) = await credential_manager.create_offer(
+        credential_exchange_record, comment=comment
+    )
+    return credential_exchange_record, credential_offer_message
+
+
+@docs(
+    tags=["issue-credential"],
+    summary="Create a credential offer, independent of any proposal",
+)
+@request_schema(V10CredentialOfferRequestSchema())
+@response_schema(CredentialOfferSchema(), 200)
+async def credential_exchange_create_free_offer(request: web.BaseRequest):
+    """
+    Request handler for creating free credential offer.
+
+    Unlike with `send-offer`, this credential exchange is not tied to a specific
+    connection. It must be dispatched out-of-band by the controller.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential exchange record
+
+    """
+    r_time = get_timer()
+
+    context = request.app["request_context"]
+
+    body = await request.json()
+
+    cred_def_id = body.get("cred_def_id")
+    auto_issue = body.get(
+        "auto_issue", context.settings.get("debug.auto_respond_credential_request")
+    )
+    auto_remove = body.get("auto_remove")
+    comment = body.get("comment")
+    preview_spec = body.get("credential_preview")
+    connection_id = body.get("connection_id")
+
+    wallet: BaseWallet = await context.inject(BaseWallet)
+    if connection_id:
+        connection_record = await ConnectionRecord.retrieve_by_id(
+            context, connection_id
+        )
+        conn_did = await wallet.get_local_did(connection_record.my_did)
+    else:
+        conn_did = await wallet.get_public_did()
+        if not conn_did:
+            raise web.HTTPBadRequest(reason="A public DID is required")
+        connection_id = None
+
+    endpoint = context.settings.get("default_endpoint")
+    if not endpoint:
+        raise web.HTTPBadRequest(reason="A public endpoint required")
+
+    (credential_exchange_record, credential_offer_message) = await _create_free_offer(
+        context,
+        cred_def_id,
+        connection_id,
+        auto_issue,
+        auto_remove,
+        preview_spec,
+        comment,
+    )
+
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_create_free_offer.END",
+        perf_counter=r_time,
+    )
+
+    oob_url = serialize_outofband(context, credential_offer_message, conn_did, endpoint)
+
+    response = {"record": credential_exchange_record.serialize(), "oob_url": oob_url}
+
+    return web.json_response(response)
 
 
 @docs(
