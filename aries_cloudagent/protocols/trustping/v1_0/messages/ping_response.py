@@ -27,7 +27,7 @@ class PingResponse(AgentMessage):
             comment: An optional comment string to include in the message
 
         """
-        super(PingResponse, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.comment = comment
 
 
