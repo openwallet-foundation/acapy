@@ -71,6 +71,14 @@ class RevRegUpdateTailsFileUriSchema(Schema):
     )
 
 
+class TailsFileResponseSchema(Schema):
+    """Response schema for get tails file request."""
+
+    type_ = fields.Constant(
+        description="Tails file type", constant="file", required=True, data_key="type"
+    )
+
+
 class RevRegsCreatedQueryStringSchema(Schema):
     """Query string parameters and validators for rev regs created request."""
 
@@ -253,8 +261,8 @@ async def get_active_registry(request: web.BaseRequest):
     tags=["revocation"],
     summary="Download the tails file of revocation registry",
     produces="application/octet-stream",
-    responses={200: {"description": "tails file"}},
 )
+@response_schema(TailsFileResponseSchema(), code=200, description="tails file")
 @match_info_schema(RevRegIdMatchInfoSchema())
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
