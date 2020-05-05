@@ -11,6 +11,14 @@ class TestProofRoutes(AsyncTestCase):
         self.mock_context = async_mock.MagicMock()
         self.test_instance = test_module.PresentationManager(self.mock_context)
 
+    async def test_validate_non_revoked(self):
+        non_revo = test_module.IndyProofReqNonRevokedSchema()
+        non_revo.validate({"from": 1234567890})
+        non_revo.validate({"to": 1234567890})
+        non_revo.validate({"from": 1234567890, "to": 1234567890})
+        with self.assertRaises(test_module.ValidationError):
+            non_revo.validate_fields({})
+
     async def test_presentation_exchange_list(self):
         mock = async_mock.MagicMock()
         mock.query = {

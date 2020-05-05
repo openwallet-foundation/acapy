@@ -20,3 +20,16 @@ class BaseError(Exception):
 
 class StartupError(BaseError):
     """Error raised when there is a problem starting the conductor."""
+
+
+class ProtocolDefinitionValidationError(BaseError):
+    """Error raised when there is a problem validating a protocol definition."""
+
+
+class ProtocolMinorVersionNotSupported(BaseError):
+    """
+    Minimum minor version protocol error.
+
+    Error raised when protocol support exists
+    but minimum minor version is higher than in @type parameter.
+    """

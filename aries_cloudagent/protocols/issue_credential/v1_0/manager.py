@@ -4,8 +4,6 @@ import json
 import logging
 from typing import Mapping, Text, Sequence, Tuple
 
-from indy.error import IndyError
-
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
 from .messages.credential_offer import CredentialOffer
@@ -16,7 +14,7 @@ from .models.credential_exchange import V10CredentialExchange
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
-from ....holder.base import BaseHolder
+from ....holder.base import BaseHolder, HolderError
 from ....issuer.base import BaseIssuer
 from ....issuer.indy import IssuerRevocationRegistryFullError
 from ....ledger.base import BaseLedger
@@ -83,8 +81,7 @@ class CredentialManager:
 
         Args:
             connection_id: Connection to create offer for
-            credential_proposal: The credential proposal with preview on
-                attribute values to use if auto_issue is enabled
+            credential_proposal: The credential proposal with preview
             auto_remove: Flag to automatically remove the record on completion
 
         Returns:
@@ -156,9 +153,7 @@ class CredentialManager:
             cred_def_id=cred_def_id,
             issuer_did=issuer_did,
         )
-        credential_proposal_message.assign_trace_decorator(
-            self.context.settings, trace,
-        )
+        credential_proposal_message.assign_trace_decorator(self.context.settings, trace)
 
         if auto_remove is None:
             auto_remove = not self.context.settings.get("preserve_exchange_records")
@@ -231,7 +226,7 @@ class CredentialManager:
                 credential_exchange_record.credential_proposal_dict
             )
             credential_proposal_message.assign_trace_decorator(
-                self.context.settings, credential_exchange_record.trace,
+                self.context.settings, credential_exchange_record.trace
             )
             cred_def_id = await self._match_sent_cred_def_id(
                 {
@@ -274,7 +269,7 @@ class CredentialManager:
             "thid": credential_exchange_record.thread_id
         }
         credential_offer_message.assign_trace_decorator(
-            self.context.settings, credential_exchange_record.trace,
+            self.context.settings, credential_exchange_record.trace
         )
 
         credential_exchange_record.thread_id = credential_offer_message._thread_id
@@ -422,7 +417,7 @@ class CredentialManager:
             "thid": credential_exchange_record.thread_id
         }
         credential_request_message.assign_trace_decorator(
-            self.context.settings, credential_exchange_record.trace,
+            self.context.settings, credential_exchange_record.trace
         )
 
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_SENT
@@ -560,7 +555,7 @@ class CredentialManager:
         )
         credential_message._thread = {"thid": credential_exchange_record.thread_id}
         credential_message.assign_trace_decorator(
-            self.context.settings, credential_exchange_record.trace,
+            self.context.settings, credential_exchange_record.trace
         )
 
         return (credential_exchange_record, credential_message)
@@ -655,7 +650,7 @@ class CredentialManager:
                 credential_id=credential_id,
                 rev_reg_def=revoc_reg_def,
             )
-        except IndyError as e:
+        except HolderError as e:
             self._logger.error(f"Error storing credential. {e.error_code}: {e.message}")
             raise e
 
@@ -676,7 +671,7 @@ class CredentialManager:
             credential_exchange_record.parent_thread_id,
         )
         credential_ack_message.assign_trace_decorator(
-            self.context.settings, credential_exchange_record.trace,
+            self.context.settings, credential_exchange_record.trace
         )
 
         if credential_exchange_record.auto_remove:

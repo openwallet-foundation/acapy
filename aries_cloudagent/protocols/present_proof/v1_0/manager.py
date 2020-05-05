@@ -4,12 +4,10 @@ import json
 import logging
 import time
 
-from indy.error import IndyError
-
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
-from ....holder.base import BaseHolder
+from ....holder.base import BaseHolder, HolderError
 from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
@@ -158,7 +156,7 @@ class PresentationManager:
             "thid": presentation_exchange_record.thread_id
         }
         presentation_request_message.assign_trace_decorator(
-            self.context.settings, presentation_exchange_record.trace,
+            self.context.settings, presentation_exchange_record.trace
         )
 
         presentation_exchange_record.thread_id = presentation_request_message._thread_id
@@ -283,7 +281,7 @@ class PresentationManager:
         req_preds = presentation_request.get("requested_predicates", {})
         for referent in preds_creds:
             requested_referents[referent] = {
-                "cred_id": preds_creds[referent]["cred_id"],
+                "cred_id": preds_creds[referent]["cred_id"]
             }
             if referent in req_preds and "non_revoked" in req_preds[referent]:
                 requested_referents[referent]["non_revoked"] = req_preds[referent][
@@ -389,7 +387,7 @@ class PresentationManager:
                         tails_local_path,
                     )
                 )
-            except IndyError as e:
+            except HolderError as e:
                 self._logger.error(
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )
@@ -427,7 +425,7 @@ class PresentationManager:
 
         presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
         presentation_message.assign_trace_decorator(
-            self.context.settings, presentation_exchange_record.trace,
+            self.context.settings, presentation_exchange_record.trace
         )
 
         # save presentation exchange state
@@ -604,10 +602,13 @@ class PresentationManager:
                 "thid": presentation_exchange_record.thread_id
             }
             presentation_ack_message.assign_trace_decorator(
-                self.context.settings, presentation_exchange_record.trace,
+                self.context.settings, presentation_exchange_record.trace
             )
 
-            await responder.send_reply(presentation_ack_message)
+            await responder.send_reply(
+                presentation_ack_message,
+                connection_id=presentation_exchange_record.connection_id,
+            )
         else:
             self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",

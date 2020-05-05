@@ -1,13 +1,16 @@
 """Handle connection information interface with non-secrets storage."""
 
-from marshmallow import fields
-from marshmallow.validate import OneOf
+from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
-from ...protocols.connections.messages.connection_invitation import ConnectionInvitation
-from ...protocols.connections.messages.connection_request import ConnectionRequest
+
+# FIXME: We shouldn't rely on a hardcoded message version here.
+from ...protocols.connections.v1_0.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 
@@ -24,12 +27,7 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
     WEBHOOK_TOPIC = "connections"
     LOG_STATE_FLAG = "debug.connections"
     CACHE_ENABLED = True
-    TAG_NAMES = {
-        "my_did",
-        "their_did",
-        "request_id",
-        "invitation_key",
-    }
+    TAG_NAMES = {"my_did", "their_did", "request_id", "invitation_key"}
 
     RECORD_TYPE = "connection"
     RECORD_TYPE_INVITATION = "connection_invitation"
@@ -299,7 +297,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
         required=False,
         description="Connection initiator: self, external, or multiuse",
         example=ConnectionRecord.INITIATOR_SELF,
-        validate=OneOf(["self", "external", "multiuse"]),
+        validate=validate.OneOf(["self", "external", "multiuse"]),
     )
     invitation_key = fields.Str(
         required=False, description="Public key for connection", **INDY_RAW_PUBLIC_KEY
@@ -318,7 +316,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
         required=False,
         description="Connection acceptance: manual or auto",
         example=ConnectionRecord.ACCEPT_AUTO,
-        validate=OneOf(["manual", "auto"]),
+        validate=validate.OneOf(["manual", "auto"]),
     )
     error_msg = fields.Str(
         required=False,
@@ -329,7 +327,7 @@ class ConnectionRecordSchema(BaseRecordSchema):
         required=False,
         description="Invitation mode: once, multi, or static",
         example=ConnectionRecord.INVITATION_MODE_ONCE,
-        validate=OneOf(["once", "multi", "static"]),
+        validate=validate.OneOf(["once", "multi", "static"]),
     )
     alias = fields.Str(
         required=False,

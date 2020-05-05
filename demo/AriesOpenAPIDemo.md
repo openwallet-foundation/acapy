@@ -491,7 +491,7 @@ Finally, we need put into the JSON the data values for the credential proposal s
       },
       {
         "name": "timestamp",
-        "value": 123456789
+        "value": "123456789"
       },
       {
         "name": "date",
@@ -586,11 +586,11 @@ The following table lists endpoints that you need to call ("REST service") and c
 | -------------------- | ---------------------- | ------------------ | ----- |
 | Send Credential Offer | **`POST /issue-credential/send-offer`** | | REST service |
 | Receive Offer | | <agent_cb>/issue_credential/ | callback |
-| Send Credential Request | | **`POST /issue-credential/records/{id}/send-request`** | REST service |
+| Send Credential Request | | **`POST /issue-credential/records/{cred_ex_id}/send-request`** | REST service |
 | Receive Request | <agent_cb>/issue_credential/ | | callback |
-| Issue Credential | **`POST /issue-credential/records/{id}/issue`** | | REST service |
+| Issue Credential | **`POST /issue-credential/records/{cred_ex_id}/issue`** | | REST service |
 | Receive Credential | | <agent_cb>/issue_credential/ | callback |
-| Store Credential | | **`POST /issue-credential/records/{id}/store`** | REST service |
+| Store Credential | | **`POST /issue-credential/records/{cred_ex_id}/store`** | REST service |
 | Receive Acknowledgement | <agent_cb>/issue_credential/ | | callback |
 | Store Credential Id | | | application function |
 

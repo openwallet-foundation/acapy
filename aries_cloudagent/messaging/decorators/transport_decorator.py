@@ -4,8 +4,7 @@ The transport decorator (~transport).
 This decorator allows changes to agent response behaviour and queue status updates.
 """
 
-from marshmallow import fields
-from marshmallow.validate import OneOf
+from marshmallow import fields, validate
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUIDFour
@@ -52,7 +51,7 @@ class TransportDecoratorSchema(BaseModelSchema):
         required=False,
         description="Return routing mode: none, all, or thread",
         example="all",
-        validate=OneOf(["none", "all", "thread"]),
+        validate=validate.OneOf(["none", "all", "thread"]),
     )
     return_route_thread = fields.Str(
         required=False,
