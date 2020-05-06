@@ -31,7 +31,7 @@ class LocalizationDecorator(BaseModel):
             catalogs: A list of URLs for localization resources
 
         """
-        super(LocalizationDecorator, self).__init__()
+        super().__init__()
         self.locale = locale
         self.localizable = list(localizable) if localizable else []
         self.catalogs = list(catalogs) if catalogs else []

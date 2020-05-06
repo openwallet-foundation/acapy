@@ -4,6 +4,7 @@ from unittest import TestCase
 from ...models.base import BaseModel, BaseModelSchema
 
 from ..base import BaseDecoratorSet
+from ..default import DecoratorSet, DEFAULT_MODELS
 
 
 class SimpleModel(BaseModel):
@@ -25,6 +26,10 @@ class SimpleModelSchema(BaseModelSchema):
 
 
 class TestDecoratorSet(TestCase):
+    def test_deco_set(self):
+        deco_set = DecoratorSet()
+        assert all(k in deco_set.models for k in DEFAULT_MODELS)
+
     def test_extract(self):
 
         decor_value = {}
