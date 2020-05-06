@@ -1,5 +1,7 @@
 import pytest
 
+from unittest import mock
+
 from aries_cloudagent.storage.error import (
     StorageDuplicateError,
     StorageError,
@@ -7,9 +9,9 @@ from aries_cloudagent.storage.error import (
     StorageSearchError,
 )
 
-from aries_cloudagent.storage.record import StorageRecord
-
+from aries_cloudagent.storage.indy import IndyStorageRecordSearch
 from aries_cloudagent.storage.basic import BasicStorage
+from aries_cloudagent.storage.record import StorageRecord
 
 
 @pytest.fixture()
@@ -26,6 +28,9 @@ def test_missing_record(tags={}):
 
 
 class TestBasicStorage:
+    def test_repr(self, store):
+        assert store.__class__.__name__ in str(store)
+
     @pytest.mark.asyncio
     async def test_add_required(self, store):
         with pytest.raises(StorageError):
@@ -121,7 +126,12 @@ class TestBasicStorage:
     async def test_search(self, store):
         record = test_record()
         await store.add_record(record)
+
+        # search
         search = store.search_records(record.type, {}, None)
+        assert search.__class__.__name__ in str(search)
+        assert search.handle is None or isinstance(search, IndyStorageRecordSearch)
+        assert not search.options
         await search.open()
         rows = await search.fetch(100)
         assert len(rows) == 1
@@ -132,6 +142,42 @@ class TestBasicStorage:
         assert found.tags == record.tags
         more = await search.fetch(100)
         assert len(more) == 0
+
+        # search again with fetch-all
+        search = store.search_records(record.type, {}, None)
+        await search.open()
+        rows = await search.fetch_all()
+        assert len(rows) == 1
+
+        # search again with fetch-all with mystery error
+        search = store.search_records(record.type, {}, None)
+        with async_mock.patch.object(
+            list, "pop", mock.MagicMock()
+        ) as mock_fetch:
+            mock_fetch.side_effect = IndexError("nope")
+            await search.open()
+            with pytest.raises(StopAsyncIteration):
+                await search.fetch_all()
+
+        # search again with fetch-single
+        search = store.search_records(record.type, {}, None)
+        await search.open()
+        row = await search.fetch_single()
+        assert row
+
+        # search again with fetch-single on no rows
+        search = store.search_records("NOT-MY-TYPE", {}, None)
+        await search.open()
+        with pytest.raises(StorageNotFoundError):
+            await search.fetch_single()
+
+        # search again with fetch-single on multiple rows
+        record = test_record()
+        await store.add_record(record)
+        search = store.search_records(record.type, {}, None)
+        async with search as s:
+            with pytest.raises(StorageDuplicateError):
+                await s.fetch_single()
 
     @pytest.mark.asyncio
     async def test_iter_search(self, store):
