@@ -31,7 +31,7 @@ class Ping(AgentMessage):
             comment: An optional comment string
 
         """
-        super(Ping, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.comment = comment
         self.response_requested = response_requested
 
