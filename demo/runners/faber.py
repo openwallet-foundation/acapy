@@ -125,8 +125,7 @@ class FaberAgent(DemoAgent):
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{presentation_exchange_id}/"
-                "verify-presentation"
+                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
 
@@ -269,7 +268,6 @@ async def main(
                     "trace": exchange_tracing,
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
-
                 # TODO issue an additional credential for Student ID
 
             elif option == "2":

@@ -76,6 +76,11 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         default=False,
     )
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
 
 
 class IndyProofReqSpecRestrictionsSchema(Schema):
@@ -207,6 +212,11 @@ class V10PresentationRequestRequestSchema(AdminAPIMessageTracingSchema):
     )
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
     comment = fields.Str(required=False)
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
 
 
 class IndyRequestedCredsRequestedAttrSchema(Schema):
@@ -278,6 +288,11 @@ class V10PresentationRequestSchema(AdminAPIMessageTracingSchema):
         required=True,
         keys=fields.Str(example="pred_referent"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyRequestedCredsRequestedPredSchema()),
+    )
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
     )
 
 

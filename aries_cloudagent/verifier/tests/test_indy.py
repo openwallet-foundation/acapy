@@ -286,7 +286,24 @@ class TestIndyVerifier(AsyncTestCase):
     def setUp(self):
         mock_ledger = async_mock.MagicMock(
             get_credential_definition=async_mock.CoroutineMock(
-                return_value={"...": "...", "value": {"revocation": None}}
+                return_value={
+                    "...": "...",
+                    "value": {
+                        "revocation": {
+                            "g": "1 ...",
+                            "g_dash": "1 ...",
+                            "h": "1 ...",
+                            "h0": "1 ...",
+                            "h1": "1 ...",
+                            "h2": "1 ...",
+                            "htilde": "1 ...",
+                            "h_cap": "1 ...",
+                            "u": "1 ...",
+                            "pk": "1 ...",
+                            "y": "1 ...",
+                        }
+                    },
+                }
             )
         )
         self.verifier = IndyVerifier(mock_ledger)
@@ -593,8 +610,6 @@ class TestIndyVerifier(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr_tamper_raw(self, mock_verify):
-        mock_verify.return_value = True
-
         INDY_PROOF_X = deepcopy(INDY_PROOF_NAME)
         INDY_PROOF_X["requested_proof"]["revealed_attrs"]["19_uuid"][
             "raw"
@@ -615,8 +630,6 @@ class TestIndyVerifier(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr_tamper_encoded(self, mock_verify):
-        mock_verify.return_value = True
-
         INDY_PROOF_X = deepcopy(INDY_PROOF_NAME)
         INDY_PROOF_X["requested_proof"]["revealed_attrs"]["19_uuid"][
             "encoded"
@@ -660,8 +673,6 @@ class TestIndyVerifier(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_pred_value(self, mock_verify):
-        mock_verify.return_value = True
-
         INDY_PROOF_X = deepcopy(INDY_PROOF_PRED_NAMES)
         INDY_PROOF_X["proof"]["proofs"][0]["primary_proof"]["ge_proofs"][0][
             "predicate"
@@ -682,8 +693,6 @@ class TestIndyVerifier(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_bypass_timestamp(self, mock_verify):
-        mock_verify.return_value = True
-
         INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
         INDY_PROOF_REQ_X["requested_attributes"]["18_uuid"].pop("non_revoked")
         INDY_PROOF_REQ_X["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
@@ -708,8 +717,6 @@ class TestIndyVerifier(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_pred_req_attr(self, mock_verify):
-        mock_verify.return_value = True
-
         INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
         INDY_PROOF_REQ_X["requested_predicates"]["18_busid_GE_uuid"]["name"] = "dummy"
 
@@ -728,8 +735,6 @@ class TestIndyVerifier(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_attr_groups(self, mock_verify):
-        mock_verify.return_value = True
-
         INDY_PROOF_X = deepcopy(INDY_PROOF_PRED_NAMES)
         INDY_PROOF_X["requested_proof"]["revealed_attr_groups"][
             "x_uuid"
