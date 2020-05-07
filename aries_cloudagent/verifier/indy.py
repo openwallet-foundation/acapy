@@ -69,11 +69,11 @@ class IndyVerifier(BaseVerifier):
             if not ident.get("timestamp"):
                 cred_def_id = ident["cred_def_id"]
                 cred_def = await self.ledger.get_credential_definition(cred_def_id)
-                if not cred_def["value"].get("revocation"):
+                if cred_def["value"].get("revocation"):
                     return (
                         PreVerifyResult.INCOMPLETE,
                         (
-                            f"Missing timestamp in presentation identifier #{ident} "
+                            f"Missing timestamp in presentation identifier #{index} "
                             f"for cred def id {cred_def_id}"
                         ),
                     )
