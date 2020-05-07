@@ -101,6 +101,11 @@ class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
         required=False,
     )
     comment = fields.Str(description="Human-readable comment", required=False)
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
 
 
 class V10CredentialProposalRequestOptSchema(V10CredentialProposalRequestSchemaBase):
@@ -145,6 +150,11 @@ class V10CredentialOfferRequestSchema(AdminAPIMessageTracingSchema):
     )
     comment = fields.Str(description="Human-readable comment", required=False)
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
 
 
 class V10CredentialIssueRequestSchema(Schema):
