@@ -446,8 +446,9 @@ async def _create_free_offer(
     auto_remove: bool = False,
     preview_spec: dict = None,
     comment: str = None,
+    trace_msg: bool = None,
 ):
-    """Utility method to create a credential offer and related exchange record."""
+    """Create a credential offer and related exchange record."""
 
     if not cred_def_id:
         raise web.HTTPBadRequest(reason="cred_def_id is required")
@@ -464,6 +465,9 @@ async def _create_free_offer(
             credential_proposal=credential_preview,
             cred_def_id=cred_def_id,
         )
+        credential_proposal.assign_trace_decorator(
+            context.settings, trace_msg,
+        )
         credential_proposal_dict = credential_proposal.serialize()
     else:
         credential_proposal_dict = None
@@ -475,6 +479,7 @@ async def _create_free_offer(
         credential_proposal_dict=credential_proposal_dict,
         auto_issue=auto_issue,
         auto_remove=auto_remove,
+        trace=trace_msg,
     )
 
     credential_manager = CredentialManager(context)
@@ -522,6 +527,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     connection_id = body.get("connection_id")
+    trace_msg = body.get("trace")
 
     wallet: BaseWallet = await context.inject(BaseWallet)
     if connection_id:
@@ -547,6 +553,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         auto_remove,
         preview_spec,
         comment,
+        trace_msg,
     )
 
     trace_event(
@@ -604,7 +611,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     preview_spec = body.get("credential_preview")
     if not preview_spec:
         raise web.HTTPBadRequest(reason=("Missing credential_preview"))
-
     trace_msg = body.get("trace")
 
     try:
@@ -617,34 +623,15 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden()
 
-    credential_preview = CredentialPreview.deserialize(preview_spec)
-    credential_proposal = CredentialProposal(
-        comment=comment,
-        credential_proposal=credential_preview,
-        cred_def_id=cred_def_id,
-    )
-    credential_proposal.assign_trace_decorator(
-        context.settings, trace_msg,
-    )
-    credential_proposal_dict = credential_proposal.serialize()
-
-    credential_exchange_record = V10CredentialExchange(
-        connection_id=connection_id,
-        initiator=V10CredentialExchange.INITIATOR_SELF,
-        credential_definition_id=cred_def_id,
-        credential_proposal_dict=credential_proposal_dict,
-        auto_issue=auto_issue,
-        auto_remove=auto_remove,
-        trace=trace_msg,
-    )
-
-    credential_manager = CredentialManager(context)
-
-    (
-        credential_exchange_record,
-        credential_offer_message,
-    ) = await credential_manager.create_offer(
-        credential_exchange_record, comment=comment
+    (credential_exchange_record, credential_offer_message) = await _create_free_offer(
+        context,
+        cred_def_id,
+        connection_id,
+        auto_issue,
+        auto_remove,
+        preview_spec,
+        comment,
+        trace_msg,
     )
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
