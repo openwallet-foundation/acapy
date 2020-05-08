@@ -229,7 +229,9 @@ class DemoAgent:
 
         if os.getenv("PUBLIC_TAILS_URL"):
             tails_file_url = f"{self.public_tails_url}/{revocation_registry_id}"
-            tails_file_external_url = f"{self.public_tails_url}/{revocation_registry_id}"
+            tails_file_external_url = (
+                f"{self.public_tails_url}/{revocation_registry_id}"
+            )
         elif RUN_MODE == "pwd":
             tails_file_external_url = f"http://{self.external_host}".replace(
                 "{PORT}", str(self.admin_port)

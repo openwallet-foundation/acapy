@@ -210,8 +210,12 @@ async def main(
 
         qr = QRCode()
         qr.add_data(connection["invitation_url"])
-        log_msg("Use the following JSON to accept the invite from another demo agent. Or use the QR code to connect from a mobile agent.")
-        log_msg(json.dumps(connection["invitation"]), label="Invitation Data:", color=None)
+        log_msg(
+            "Use the following JSON to accept the invite from another demo agent. Or use the QR code to connect from a mobile agent."
+        )
+        log_msg(
+            json.dumps(connection["invitation"]), label="Invitation Data:", color=None
+        )
         qr.print_ascii(invert=True)
 
         log_msg("Waiting for connection...")
