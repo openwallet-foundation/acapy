@@ -253,12 +253,10 @@ class DemoAgent:
 
         # if PUBLIC_TAILS_URL is specified, upload tails file to tails server
         if os.getenv("PUBLIC_TAILS_URL"):
-            b64_genesis = base64.b64encode(str.encode((await default_genesis_txns())))
             tails_server_hash = await self.admin_PUT_FILE(
-                tails_file,
+                {"genesis": await default_genesis_txns(), "tails": tails_file},
                 tails_file_url,
                 params=None,
-                headers={"X-Genesis-Transactions": b64_genesis.decode("utf-8")}
             )
             assert my_tails_hash == tails_server_hash.decode("utf-8")
             log_msg(f"Public tails file URL: {tails_file_url}")
@@ -545,11 +543,11 @@ class DemoAgent:
             self.log(f"Error during GET FILE {path}: {str(e)}")
             raise
 
-    async def admin_PUT_FILE(self, file, url, params=None, headers=None) -> bytes:
+    async def admin_PUT_FILE(self, files, url, params=None, headers=None) -> bytes:
         try:
             params = {k: v for (k, v) in (params or {}).items() if v is not None}
             resp = await self.client_session.request(
-                "PUT", url, params=params, data=file, headers=headers
+                "PUT", url, params=params, data=files, headers=headers
             )
             resp.raise_for_status()
             return await resp.read()
