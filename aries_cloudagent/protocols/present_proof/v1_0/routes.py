@@ -76,6 +76,11 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         default=False,
     )
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
 
 
 class IndyProofReqSpecRestrictionsSchema(Schema):
@@ -199,14 +204,26 @@ class IndyProofRequestSchema(Schema):
     non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
 
 
-class V10PresentationRequestRequestSchema(AdminAPIMessageTracingSchema):
-    """Request schema for sending a proof request."""
+class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
+    """Request schema for creating a proof request free of any connection."""
+
+    proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
+    comment = fields.Str(required=False)
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
+
+
+class V10PresentationSendRequestRequestSchema(
+    V10PresentationCreateRequestRequestSchema
+):
+    """Request schema for sending a proof request on a connection."""
 
     connection_id = fields.UUID(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
-    proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
-    comment = fields.Str(required=False)
 
 
 class IndyRequestedCredsRequestedAttrSchema(Schema):
@@ -278,6 +295,11 @@ class V10PresentationRequestSchema(AdminAPIMessageTracingSchema):
         required=True,
         keys=fields.Str(example="pred_referent"),  # marshmallow/apispec v3.0 ignores
         values=fields.Nested(IndyRequestedCredsRequestedPredSchema()),
+    )
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
     )
 
 
@@ -496,7 +518,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     Creates a presentation request not bound to any proposal or existing connection
     """,
 )
-@request_schema(V10PresentationRequestRequestSchema())
+@request_schema(V10PresentationCreateRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_create_request(request: web.BaseRequest):
     """
@@ -562,7 +584,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     tags=["present-proof"],
     summary="Sends a free presentation request not bound to any proposal",
 )
-@request_schema(V10PresentationRequestRequestSchema())
+@request_schema(V10PresentationSendRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_send_free_request(request: web.BaseRequest):
     """
@@ -638,7 +660,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     summary="Sends a presentation request in reference to a proposal",
 )
 @match_info_schema(PresExIdMatchInfoSchema())
-@request_schema(V10PresentationRequestRequestSchema())
+@request_schema(V10PresentationSendRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200)
 async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     """
