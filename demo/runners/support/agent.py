@@ -1,6 +1,5 @@
 import asyncio
 import asyncpg
-import base64
 import functools
 import json
 import logging

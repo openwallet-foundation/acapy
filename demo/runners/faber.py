@@ -14,7 +14,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # 
 
 from runners.support.agent import DemoAgent, default_genesis_txns
 from runners.support.utils import (
-    log_json,
     log_msg,
     log_status,
     log_timer,
