@@ -8,6 +8,8 @@ import indy.anoncreds
 from indy.error import IndyError
 
 from ..messaging.util import canon, encode
+from ..ledger.base import BaseLedger
+
 from .base import BaseVerifier
 
 LOGGER = logging.getLogger(__name__)
@@ -24,18 +26,17 @@ class PreVerifyResult(Enum):
 class IndyVerifier(BaseVerifier):
     """Indy verifier class."""
 
-    def __init__(self, wallet):
+    def __init__(self, ledger: BaseLedger):
         """
         Initialize an IndyVerifier instance.
 
         Args:
-            wallet: IndyWallet instance
+            ledger: ledger instance
 
         """
-        self.wallet = wallet
+        self.ledger = ledger
 
-    @staticmethod
-    def pre_verify(pres_req: dict, pres: dict) -> (PreVerifyResult, str):
+    async def pre_verify(self, pres_req: dict, pres: dict) -> (PreVerifyResult, str):
         """
         Check for essential components and tampering in presentation.
 
@@ -47,9 +48,16 @@ class IndyVerifier(BaseVerifier):
             pres: corresponding presentation
 
         Returns:
-            An instance of `PreVerifyResult` representing the validation result
+            A tuple with `PreVerifyResult` representing the validation result and
+            reason text for failure or None for OK.
 
         """
+        if not (
+            pres_req
+            and "requested_predicates" in pres_req
+            and "requested_attributes" in pres_req
+        ):
+            return (PreVerifyResult.INCOMPLETE, "Incomplete or missing proof request")
         if not pres:
             return (PreVerifyResult.INCOMPLETE, "No proof provided")
         if "requested_proof" not in pres:
@@ -57,9 +65,22 @@ class IndyVerifier(BaseVerifier):
         if "proof" not in pres:
             return (PreVerifyResult.INCOMPLETE, "Missing 'proof'")
 
+        for (index, ident) in enumerate(pres["identifiers"]):
+            if not ident.get("timestamp"):
+                cred_def_id = ident["cred_def_id"]
+                cred_def = await self.ledger.get_credential_definition(cred_def_id)
+                if cred_def["value"].get("revocation"):
+                    return (
+                        PreVerifyResult.INCOMPLETE,
+                        (
+                            f"Missing timestamp in presentation identifier #{index} "
+                            f"for cred def id {cred_def_id}"
+                        ),
+                    )
+
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
-            canon_attr = canon(req_pred["name"])
             try:
+                canon_attr = canon(req_pred["name"])
                 for ge_proof in pres["proof"]["proofs"][
                     pres["requested_proof"]["predicates"][uuid]["sub_proof_index"]
                 ]["primary_proof"]["ge_proofs"]:
@@ -171,7 +192,7 @@ class IndyVerifier(BaseVerifier):
             rev_reg_entries: revocation registry entries
         """
 
-        (pv_result, pv_msg) = self.pre_verify(presentation_request, presentation)
+        (pv_result, pv_msg) = await self.pre_verify(presentation_request, presentation)
         if pv_result != PreVerifyResult.OK:
             LOGGER.error(
                 f"Presentation on nonce={presentation_request['nonce']} "

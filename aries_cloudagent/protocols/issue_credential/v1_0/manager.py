@@ -81,8 +81,7 @@ class CredentialManager:
 
         Args:
             connection_id: Connection to create offer for
-            credential_proposal: The credential proposal with preview on
-                attribute values to use if auto_issue is enabled
+            credential_proposal: The credential proposal with preview
             auto_remove: Flag to automatically remove the record on completion
 
         Returns:

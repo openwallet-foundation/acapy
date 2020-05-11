@@ -257,7 +257,7 @@ class TestWalletRoutes(AsyncTestCase):
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
         self.ledger.update_endpoint_for_did = async_mock.CoroutineMock()
-        self.ledger._aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with async_mock.patch.object(

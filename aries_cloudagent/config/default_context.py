@@ -117,7 +117,7 @@ class DefaultContextBuilder(ContextBuilder):
             BaseVerifier,
             ClassProvider(
                 "aries_cloudagent.verifier.indy.IndyVerifier",
-                ClassProvider.Inject(BaseWallet),
+                ClassProvider.Inject(BaseLedger),
             ),
         )
 
