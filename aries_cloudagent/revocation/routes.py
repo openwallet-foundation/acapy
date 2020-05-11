@@ -16,7 +16,6 @@ from aiohttp_apispec import (
 from marshmallow import fields, Schema, validate
 
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.models.base import BaseModel, BaseModelSchema
 from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID
 from ..storage.base import BaseStorage, StorageNotFoundError
 
@@ -69,34 +68,6 @@ class RevRegUpdateTailsFileUriSchema(Schema):
             f"{INDY_REV_REG_ID['example']}/tails-file"
         ),
         required=True,
-    )
-
-
-class TailsFileResponse(BaseModel):
-    """Tails file response JSON schema specifier."""
-
-    class Meta:
-        """Tails file response JSON schema specifier metadata."""
-
-        schema_class = "TailsFileResponseSchema"
-
-    def __init__(self, type: str = None, **kwargs):
-        """Initializetails file response JSON schema specifier."""
-
-        super().__init__(**kwargs)
-        self.type = "file"
-
-
-class TailsFileResponseSchema(BaseModelSchema):
-    """Response schema for get tails file request."""
-
-    class Meta:
-        """TailsFileResponseSchema metadata."""
-
-        model_class = TailsFileResponse
-
-    type = fields.Constant(
-        description="Tails file type", constant="file", required=True
     )
 
 
@@ -282,9 +253,8 @@ async def get_active_registry(request: web.BaseRequest):
     tags=["revocation"],
     summary="Download the tails file of revocation registry",
     produces="application/octet-stream",
-    responses={200: {"description": "tails file", "schema": TailsFileResponseSchema()}},
+    responses={200: {"description": "tails file"}},
 )
-# @response_schema(TailsFileResponseSchema(), code=200, description="tails file")
 @match_info_schema(RevRegIdMatchInfoSchema())
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
@@ -308,6 +278,18 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
         raise web.HTTPNotFound() from e
 
     return web.FileResponse(path=revoc_registry.tails_local_path, status=200)
+
+
+def set_tails_file_binary_response_schema(app: web.Application):
+    """Fix up swagger spec to cite response schema for binary file."""
+
+    # aio_http-apispec polite API only works on schema for JSON objects, not files yet
+    try:
+        app._state["swagger_dict"]["paths"][
+            "/revocation/registry/{rev_reg_id}/tails-file"
+        ]["get"]["responses"]["200"]["schema"] = {"type": "string", "format": "binary"}
+    except KeyError:
+        pass  # route not registered: carry on
 
 
 @docs(
