@@ -58,6 +58,7 @@ PROOF_REQ_NONCE = "12345"
 
 NOW = int(time())
 
+
 class TestPresentationManager(AsyncTestCase):
     async def setUp(self):
         self.context = RequestContext(
@@ -69,14 +70,8 @@ class TestPresentationManager(AsyncTestCase):
         self.ledger.get_schema = async_mock.CoroutineMock(
             return_value=async_mock.MagicMock()
         )
-        self.ledger.get_credential_definition=async_mock.CoroutineMock(
-            return_value={
-                "value": {
-                    "revocation": {
-                        "...": "..."
-                    }
-                }
-            }
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value={"value": {"revocation": {"...": "..."}}}
         )
         self.ledger.get_revoc_reg_def = async_mock.CoroutineMock(
             return_value={
@@ -88,13 +83,9 @@ class TestPresentationManager(AsyncTestCase):
                 "value": {
                     "IssuanceType": "ISSUANCE_BY_DEFAULT",
                     "maxCredNum": 1000,
-                    "publicKeys": {
-                        "accumKey": {
-                            "z": "1 ...",
-                        }
-                    },
+                    "publicKeys": {"accumKey": {"z": "1 ..."}},
                     "tailsHash": "3MLjUFQz9x9n5u9rFu8Ba9C5bo4HNFjkPNc54jZPSNaZ",
-                    "tailsLocation": "http://sample.ca/path"
+                    "tailsLocation": "http://sample.ca/path",
                 },
             }
         )
@@ -102,39 +93,29 @@ class TestPresentationManager(AsyncTestCase):
             return_value=(
                 {
                     "ver": "1.0",
-                    "value": {
-                        "prevAccum": "1 ...",
-                        "accum": "21 ...",
-                        "issued": [1]
-                    }
+                    "value": {"prevAccum": "1 ...", "accum": "21 ...", "issued": [1]},
                 },
-                NOW
+                NOW,
             )
         )
         self.ledger.get_revoc_reg_entry = async_mock.CoroutineMock(
             return_value=(
                 {
                     "ver": "1.0",
-                    "value": {
-                        "prevAccum": "1 ...",
-                        "accum": "21 ...",
-                        "issued": [1]
-                    }
+                    "value": {"prevAccum": "1 ...", "accum": "21 ...", "issued": [1]},
                 },
-                NOW
+                NOW,
             )
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        self.holder.get_credentials_for_presentation_request_by_referent = (
-            async_mock.CoroutineMock(
-                return_value=(
-                    {
-                        "cred_info": {"referent": "dummy_reft"}
-                    },  # leave this comma: return a tuple
-                )
+        self.holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+            return_value=(
+                {
+                    "cred_info": {"referent": "dummy_reft"}
+                },  # leave this comma: return a tuple
             )
         )
         self.holder.get_credential = async_mock.CoroutineMock(
@@ -143,7 +124,7 @@ class TestPresentationManager(AsyncTestCase):
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
                     "rev_reg_id": RR_ID,
-                    "cred_rev_id": 1
+                    "cred_rev_id": 1,
                 }
             )
         )
@@ -151,13 +132,9 @@ class TestPresentationManager(AsyncTestCase):
         self.holder.create_revocation_state = async_mock.CoroutineMock(
             return_value=json.dumps(
                 {
-                    "witness": {
-                        "omega": "1 ..."
-                    },
-                    "rev_reg": {
-                        "accum": "21 ..."
-                    },
-                    "timestamp": NOW
+                    "witness": {"omega": "1 ..."},
+                    "rev_reg": {"accum": "21 ..."},
+                    "timestamp": NOW,
                 }
             )
         )
@@ -307,7 +284,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False)
+            ledger=await self.context.inject(BaseLedger, required=False),
         )
 
         exchange_in.presentation_request = indy_proof_req
@@ -328,9 +305,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as mock_attach_decorator, async_mock.patch.object(
             test_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(
-                return_value=more_magic_rr
-            )
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -355,7 +330,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False)
+            ledger=await self.context.inject(BaseLedger, required=False),
         )
 
         exchange_in.presentation_request = indy_proof_req
@@ -366,13 +341,11 @@ class TestPresentationManager(AsyncTestCase):
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        self.holder.get_credentials_for_presentation_request_by_referent = (
-            async_mock.CoroutineMock(
-                return_value=(
-                    {
-                        "cred_info": {"referent": "dummy_reft"}
-                    },  # leave this comma: return a tuple
-                )
+        self.holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+            return_value=(
+                {
+                    "cred_info": {"referent": "dummy_reft"}
+                },  # leave this comma: return a tuple
             )
         )
         self.holder.get_credential = async_mock.CoroutineMock(
@@ -381,7 +354,7 @@ class TestPresentationManager(AsyncTestCase):
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
                     "rev_reg_id": None,
-                    "cred_rev_id": None
+                    "cred_rev_id": None,
                 }
             )
         )
@@ -389,13 +362,9 @@ class TestPresentationManager(AsyncTestCase):
         self.holder.create_revocation_state = async_mock.CoroutineMock(
             return_value=json.dumps(
                 {
-                    "witness": {
-                        "omega": "1 ..."
-                    },
-                    "rev_reg": {
-                        "accum": "21 ..."
-                    },
-                    "timestamp": NOW
+                    "witness": {"omega": "1 ..."},
+                    "rev_reg": {"accum": "21 ..."},
+                    "timestamp": NOW,
                 }
             )
         )
@@ -414,9 +383,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as mock_attach_decorator, async_mock.patch.object(
             test_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(
-                return_value=more_magic_rr
-            )
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -441,7 +408,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False)
+            ledger=await self.context.inject(BaseLedger, required=False),
         )
 
         exchange_in.presentation_request = indy_proof_req
@@ -452,13 +419,11 @@ class TestPresentationManager(AsyncTestCase):
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        self.holder.get_credentials_for_presentation_request_by_referent = (
-            async_mock.CoroutineMock(
-                return_value=(
-                    {
-                        "cred_info": {"referent": "dummy_reft"}
-                    },  # leave this comma: return a tuple
-                )
+        self.holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+            return_value=(
+                {
+                    "cred_info": {"referent": "dummy_reft"}
+                },  # leave this comma: return a tuple
             )
         )
         self.holder.get_credential = async_mock.CoroutineMock(
@@ -467,13 +432,13 @@ class TestPresentationManager(AsyncTestCase):
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
                     "rev_reg_id": RR_ID,
-                    "cred_rev_id": 1
+                    "cred_rev_id": 1,
                 }
             )
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            side_effect=test_module.IndyError(706, {"message": "Nope"})
+            side_effect=test_module.HolderError(706, {"message": "Nope"})
         )
         self.context.injector.clear_binding(BaseHolder)
         self.context.injector.bind_instance(BaseHolder, self.holder)
@@ -490,9 +455,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as mock_attach_decorator, async_mock.patch.object(
             test_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(
-                return_value=more_magic_rr
-            )
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -502,10 +465,8 @@ class TestPresentationManager(AsyncTestCase):
                 indy_proof_req, holder=self.holder
             )
 
-            with self.assertRaises(test_module.IndyError):
-                await self.manager.create_presentation(
-                    exchange_in, req_creds
-                )
+            with self.assertRaises(test_module.HolderError):
+                await self.manager.create_presentation(exchange_in, req_creds)
 
     async def test_no_matching_creds_for_proof_req(self):
         exchange_in = V10PresentationExchange()
@@ -513,7 +474,7 @@ class TestPresentationManager(AsyncTestCase):
             name=PROOF_REQ_NAME,
             version=PROOF_REQ_VERSION,
             nonce=PROOF_REQ_NONCE,
-            ledger=await self.context.inject(BaseLedger, required=False)
+            ledger=await self.context.inject(BaseLedger, required=False),
         )
         self.holder.get_credentials_for_presentation_request_by_referent.return_value = ()
 
@@ -553,11 +514,11 @@ class TestPresentationManager(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [{"cred_def_id": CD_ID,}],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [{"cred_def_id": CD_ID,}],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                 },
             },
@@ -647,11 +608,11 @@ class TestPresentationManager(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [{"cred_def_id": CD_ID,}],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [{"cred_def_id": CD_ID,}],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                 },
             },
@@ -659,7 +620,7 @@ class TestPresentationManager(AsyncTestCase):
         self.context.message = async_mock.MagicMock()
         self.context.message.indy_proof = async_mock.MagicMock(
             return_value={
-                "proof": {"proofs": [],},
+                "proof": {"proofs": []},
                 "requested_proof": {
                     "revealed_attrs": {
                         "0_favourite_uuid": {
@@ -715,7 +676,7 @@ class TestPresentationManager(AsyncTestCase):
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation()
             retrieve_ex.assert_called_once_with(
-                self.context, {"thread_id": self.context.message._thread_id}, None,
+                self.context, {"thread_id": self.context.message._thread_id}, None
             )
             save_ex.assert_called_once()
 
@@ -745,14 +706,14 @@ class TestPresentationManager(AsyncTestCase):
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
                     "rev_reg_id": RR_ID,
-                    "timestamp": NOW
+                    "timestamp": NOW,
                 },
                 {  # cover multiple instances of same rev reg
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
                     "rev_reg_id": RR_ID,
-                    "timestamp": NOW
-                }
+                    "timestamp": NOW,
+                },
             ]
         }
 

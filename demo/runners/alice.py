@@ -29,7 +29,7 @@ class AliceAgent(DemoAgent):
         self, http_port: int, admin_port: int, no_auto: bool = False, **kwargs
     ):
         super().__init__(
-            "Alice Agent",
+            "Alice.Agent",
             http_port,
             admin_port,
             prefix="Alice",
@@ -123,7 +123,11 @@ class AliceAgent(DemoAgent):
                 f"/present-proof/records/{presentation_exchange_id}/credentials"
             )
             if credentials:
-                for row in sorted(credentials, key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]), reverse=True):
+                for row in sorted(
+                    credentials,
+                    key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
+                    reverse=True,
+                ):
                     for referent in row["presentation_referents"]:
                         if referent not in credentials_by_reft:
                             credentials_by_reft[referent] = row
@@ -144,8 +148,7 @@ class AliceAgent(DemoAgent):
                     predicates[referent] = {
                         "cred_id": credentials_by_reft[referent]["cred_info"][
                             "referent"
-                        ],
-                        "revealed": True,
+                        ]
                     }
 
             log_status("#25 Generate the proof")
@@ -231,8 +234,8 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
 
         with log_timer("Startup duration:"):
             await agent.start_process()
-        log_msg("Admin url is at:", agent.admin_url)
-        log_msg("Endpoint url is at:", agent.endpoint)
+        log_msg("Admin URL is at:", agent.admin_url)
+        log_msg("Endpoint URL is at:", agent.endpoint)
 
         log_status("#9 Input faber.py invitation details")
         await input_invitation(agent)
@@ -297,17 +300,29 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
-    ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in ("false", "0")
+    ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in (
+        "false",
+        "0",
+    )
     PYDEVD_PYCHARM_HOST = os.getenv("PYDEVD_PYCHARM_HOST", "localhost")
-    PYDEVD_PYCHARM_CONTROLLER_PORT = int(os.getenv("PYDEVD_PYCHARM_CONTROLLER_PORT", 5001))
+    PYDEVD_PYCHARM_CONTROLLER_PORT = int(
+        os.getenv("PYDEVD_PYCHARM_CONTROLLER_PORT", 5001)
+    )
 
     if ENABLE_PYDEVD_PYCHARM:
         try:
             import pydevd_pycharm
 
-            print(f"Alice remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}")
-            pydevd_pycharm.settrace(host=PYDEVD_PYCHARM_HOST, port=PYDEVD_PYCHARM_CONTROLLER_PORT,
-                                    stdoutToServer=True, stderrToServer=True, suspend=False)
+            print(
+                f"Alice remote debugging to {PYDEVD_PYCHARM_HOST}:{PYDEVD_PYCHARM_CONTROLLER_PORT}"
+            )
+            pydevd_pycharm.settrace(
+                host=PYDEVD_PYCHARM_HOST,
+                port=PYDEVD_PYCHARM_CONTROLLER_PORT,
+                stdoutToServer=True,
+                stderrToServer=True,
+                suspend=False,
+            )
         except ImportError:
             print("pydevd_pycharm library was not found")
 

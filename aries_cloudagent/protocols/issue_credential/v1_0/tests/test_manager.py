@@ -726,8 +726,7 @@ class TestCredentialManager(AsyncTestCase):
                     async_mock.MagicMock(
                         get_registry=async_mock.CoroutineMock(
                             return_value=async_mock.MagicMock(
-                                tails_local_path="dummy-path",
-                                max_creds=1000
+                                tails_local_path="dummy-path", max_creds=1000
                             )
                         ),
                         mark_full=async_mock.CoroutineMock(),
@@ -893,7 +892,7 @@ class TestCredentialManager(AsyncTestCase):
                             )
                         ),
                         revoc_reg_id=REV_REG_ID,
-                        mark_full=async_mock.CoroutineMock()
+                        mark_full=async_mock.CoroutineMock(),
                     )
                 ]
             )
@@ -1085,11 +1084,11 @@ class TestCredentialManager(AsyncTestCase):
         cred_id = "cred-id"
         holder = async_mock.MagicMock()
         holder.store_credential = async_mock.CoroutineMock(
-            side_effect=test_module.IndyError(706, {"message": "Nope"})
+            side_effect=test_module.HolderError(706, {"message": "Nope"})
         )
         self.context.injector.bind_instance(BaseHolder, holder)
 
-        with self.assertRaises(test_module.IndyError):
+        with self.assertRaises(test_module.HolderError):
             await self.manager.store_credential(
                 credential_exchange_record=stored_exchange, credential_id=cred_id
             )

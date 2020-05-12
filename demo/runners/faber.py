@@ -36,7 +36,7 @@ class FaberAgent(DemoAgent):
         self, http_port: int, admin_port: int, no_auto: bool = False, **kwargs
     ):
         super().__init__(
-            "Faber Agent",
+            "Faber.Agent",
             http_port,
             admin_port,
             prefix="Faber",
@@ -77,8 +77,7 @@ class FaberAgent(DemoAgent):
 
         self.log(
             "Credential: state = {}, credential_exchange_id = {}".format(
-                state,
-                credential_exchange_id,
+                state, credential_exchange_id,
             )
         )
 
@@ -105,13 +104,9 @@ class FaberAgent(DemoAgent):
                 rev_reg_id = cred_ex_rec.get("revoc_reg_id")
                 cred_rev_id = cred_ex_rec.get("revocation_id")
                 if rev_reg_id:
-                    self.log(
-                        f"Revocation registry id: {rev_reg_id}"
-                    )
+                    self.log(f"Revocation registry ID: {rev_reg_id}")
                 if cred_rev_id:
-                    self.log(
-                        f"Credential revocation id: {cred_rev_id}"
-                    )
+                    self.log(f"Credential revocation ID: {cred_rev_id}")
             except ClientError:
                 pass
 
@@ -130,8 +125,7 @@ class FaberAgent(DemoAgent):
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{presentation_exchange_id}/"
-                "verify-presentation"
+                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
 
@@ -167,8 +161,8 @@ async def main(
 
         with log_timer("Startup duration:"):
             await agent.start_process()
-        log_msg("Admin url is at:", agent.admin_url)
-        log_msg("Endpoint url is at:", agent.endpoint)
+        log_msg("Admin URL is at:", agent.admin_url)
+        log_msg("Endpoint URL is at:", agent.endpoint)
 
         # Create a schema
         with log_timer("Publish schema/cred def duration:"):
@@ -196,13 +190,9 @@ async def main(
                 log_status(
                     "#5/6 Create and publish the revocation registry on the ledger"
                 )
-                revocation_registry_id = await (
-                    agent.create_and_publish_revocation_registry(
-                        credential_definition_id, TAILS_FILE_COUNT
-                    )
+                await agent.create_and_publish_revocation_registry(
+                    credential_definition_id, TAILS_FILE_COUNT
                 )
-        else:
-            revocation_registry_id = None
 
         # TODO add an additional credential for Student ID
 
@@ -222,6 +212,7 @@ async def main(
         log_msg("Waiting for connection...")
         await agent.detect_connection()
 
+        exchange_tracing = False
         options = (
             "    (1) Issue Credential\n"
             "    (2) Send Proof Request\n"
@@ -233,11 +224,22 @@ async def main(
                 "    (5) Publish Revocations\n"
                 "    (6) Add Revocation Registry\n"
             )
-        options += "    (X) Exit?\n[1/2/3/{}X] ".format("4/5/6/" if revocation else "")
+        options += "    (T) Toggle tracing on credential/proof exchange\n"
+        options += "    (X) Exit?\n[1/2/3/{}T/X] ".format(
+            "4/5/6/" if revocation else ""
+        )
         async for option in prompt_loop(options):
+            option = option.strip()
             if option is None or option in "xX":
                 break
 
+            elif option in "tT":
+                exchange_tracing = not exchange_tracing
+                log_msg(
+                    ">>> Credential/Proof Exchange Tracing is {}".format(
+                        "ON" if exchange_tracing else "OFF"
+                    )
+                )
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
 
@@ -263,10 +265,9 @@ async def main(
                     "comment": f"Offer on cred def id {credential_definition_id}",
                     "auto_remove": False,
                     "credential_preview": cred_preview,
-                    "revoc_reg_id": revocation_registry_id,
+                    "trace": exchange_tracing,
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
-
                 # TODO issue an additional credential for Student ID
 
             elif option == "2":
@@ -315,6 +316,7 @@ async def main(
                 proof_request_web_request = {
                     "connection_id": agent.connection_id,
                     "proof_request": indy_proof_request,
+                    "trace": exchange_tracing,
                 }
                 await agent.admin_POST(
                     "/present-proof/send-request", proof_request_web_request
@@ -326,10 +328,11 @@ async def main(
                     f"/connections/{agent.connection_id}/send-message", {"content": msg}
                 )
             elif option == "4" and revocation:
-                rev_reg_id = await prompt("Enter revocation registry id: ")
-                cred_rev_id = await prompt("Enter credential revocation id: ")
+                rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
+                cred_rev_id = (await prompt("Enter credential revocation ID: ")).strip()
                 publish = json.dumps(
-                    await prompt("Publish now? [Y/N]: ", default="N") in ('yY')
+                    (await prompt("Publish now? [Y/N]: ", default="N")).strip()
+                    in ("yY")
                 )
                 try:
                     await agent.admin_POST(
@@ -349,17 +352,15 @@ async def main(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["results"]),
                             "y" if len(resp) == 1 else "ies",
-                            json.dumps([k for k in resp["results"]], indent=4)
+                            json.dumps([k for k in resp["results"]], indent=4),
                         )
                     )
                 except ClientError:
                     pass
             elif option == "6" and revocation:
                 log_status("#19 Add another revocation registry")
-                revocation_registry_id = await (
-                    agent.create_and_publish_revocation_registry(
-                        credential_definition_id, TAILS_FILE_COUNT
-                    )
+                await agent.create_and_publish_revocation_registry(
+                    credential_definition_id, TAILS_FILE_COUNT
                 )
 
         if show_timing:

@@ -33,8 +33,8 @@ EVENT_LOGGER.addHandler(event_stream_handler)
 EVENT_LOGGER.propagate = False
 
 TRACE_TARGET = os.getenv("TRACE_TARGET")
-TRACE_TAG    = os.getenv("TRACE_TAG")
-TRACE_ENABLED = True if TRACE_TARGET else False
+TRACE_TAG = os.getenv("TRACE_TAG")
+TRACE_ENABLED = os.getenv("TRACE_ENABLED")
 
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
@@ -169,7 +169,9 @@ class DemoAgent:
         self.did = None
         self.wallet_stats = []
 
-    async def register_schema_and_creddef(self, schema_name, version, schema_attrs, support_revocation: bool = False):
+    async def register_schema_and_creddef(
+        self, schema_name, version, schema_attrs, support_revocation: bool = False
+    ):
         # Create a schema
         schema_body = {
             "schema_name": schema_name,
@@ -184,7 +186,7 @@ class DemoAgent:
         # Create a cred def for the schema
         credential_definition_body = {
             "schema_id": schema_id,
-            "support_revocation": support_revocation
+            "support_revocation": support_revocation,
         }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
@@ -195,19 +197,23 @@ class DemoAgent:
         log_msg("Cred def ID:", credential_definition_id)
         return schema_id, credential_definition_id
 
-    async def create_and_publish_revocation_registry(self, credential_def_id, max_cred_num):
+    async def create_and_publish_revocation_registry(
+        self, credential_def_id, max_cred_num
+    ):
         revoc_response = await self.admin_POST(
             "/revocation/create-registry",
             {
                 "credential_definition_id": credential_def_id,
-                "max_cred_num": max_cred_num
-            }
+                "max_cred_num": max_cred_num,
+            },
         )
         revocation_registry_id = revoc_response["result"]["revoc_reg_id"]
         tails_hash = revoc_response["result"]["tails_hash"]
 
         # get the tails file from "GET /revocation/registry/{id}/tails-file"
-        tails_file = await self.admin_GET_FILE(f"/revocation/registry/{revocation_registry_id}/tails-file")
+        tails_file = await self.admin_GET_FILE(
+            f"/revocation/registry/{revocation_registry_id}/tails-file"
+        )
         hasher = hashlib.sha256()
         hasher.update(tails_file)
         my_tails_hash = base58.b58encode(hasher.digest()).decode("utf-8")
@@ -217,7 +223,9 @@ class DemoAgent:
         # Real app should publish tails file somewhere and update the revocation registry with the URI.
         # But for the demo, assume the agent's admin end-points are accessible to the other agents
         # Update the revocation registry with the public URL to the tails file
-        tails_file_admin_url = f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        tails_file_admin_url = (
+            f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        )
         tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
         if RUN_MODE == "pwd":
             tails_file_external_url = f"http://{self.external_host}".replace(
@@ -225,12 +233,12 @@ class DemoAgent:
             )
         else:
             tails_file_external_url = f"http://127.0.0.1:{self.admin_port}"
-        tails_file_external_url += f"/revocation/registry/{revocation_registry_id}/tails-file"
+        tails_file_external_url += (
+            f"/revocation/registry/{revocation_registry_id}/tails-file"
+        )
         revoc_updated_response = await self.admin_PATCH(
             f"/revocation/registry/{revocation_registry_id}",
-            {
-                "tails_public_uri": tails_file_url
-            }
+            {"tails_public_uri": tails_file_url},
         )
         tails_public_uri = revoc_updated_response["result"]["tails_public_uri"]
         assert tails_public_uri == tails_file_url
@@ -243,8 +251,12 @@ class DemoAgent:
             log_msg(f"External host Tails File URL: {tails_file_external_url}")
             log_msg(f"================")
             log_msg(f"mkdir -p ./revocation/registry/{revocation_registry_id}/")
-            log_msg(f"curl -X GET \"{tails_file_external_url}\" --output ./revocation/registry/{revocation_registry_id}/tails-file.bin")
-            log_msg(f"base64 revocation/registry/{revocation_registry_id}/tails-file.bin >revocation/registry/{revocation_registry_id}/tails-file")
+            log_msg(
+                f'curl -X GET "{tails_file_external_url}" --output ./revocation/registry/{revocation_registry_id}/tails-file.bin'
+            )
+            log_msg(
+                f"base64 revocation/registry/{revocation_registry_id}/tails-file.bin >revocation/registry/{revocation_registry_id}/tails-file"
+            )
             log_msg(f"================")
 
         revoc_publish_response = await self.admin_POST(
@@ -266,6 +278,7 @@ class DemoAgent:
             ("--wallet-type", self.wallet_type),
             ("--wallet-name", self.wallet_name),
             ("--wallet-key", self.wallet_key),
+            "--preserve-exchange-records",
         ]
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
@@ -293,7 +306,22 @@ class DemoAgent:
                     ("--trace",),
                     ("--trace-target", self.trace_target),
                     ("--trace-tag", self.trace_tag),
-                    ("--trace-label", self.label+".trace"),
+                    ("--trace-label", self.label + ".trace"),
+                ]
+            )
+        else:
+            # set the tracing parameters but don't enable tracing
+            result.extend(
+                [
+                    (
+                        "--trace-target",
+                        self.trace_target if self.trace_target else "log",
+                    ),
+                    (
+                        "--trace-tag",
+                        self.trace_tag if self.trace_tag else "acapy.events",
+                    ),
+                    ("--trace-label", self.label + ".trace"),
                 ]
             )
         if self.extra_args:
@@ -496,7 +524,9 @@ class DemoAgent:
             self.log(f"Error during POST {path}: {str(e)}")
             raise
 
-    async def admin_PATCH(self, path, data=None, text=False, params=None) -> ClientResponse:
+    async def admin_PATCH(
+        self, path, data=None, text=False, params=None
+    ) -> ClientResponse:
         try:
             return await self.admin_request("PATCH", path, data, text, params)
         except ClientError as e:
@@ -506,7 +536,9 @@ class DemoAgent:
     async def admin_GET_FILE(self, path, params=None) -> bytes:
         try:
             params = {k: v for (k, v) in (params or {}).items() if v is not None}
-            resp = await self.client_session.request("GET", self.admin_url + path, params=params)
+            resp = await self.client_session.request(
+                "GET", self.admin_url + path, params=params
+            )
             resp.raise_for_status()
             return await resp.read()
         except ClientError as e:

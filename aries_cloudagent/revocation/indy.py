@@ -4,6 +4,7 @@ from typing import Sequence
 
 from ..config.injection_context import InjectionContext
 from ..ledger.base import BaseLedger
+from ..storage.base import StorageNotFoundError
 
 from .error import RevocationNotSupportedError
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
@@ -52,8 +53,7 @@ class IndyRevocation:
         return record
 
     async def get_active_issuer_rev_reg_record(
-        self,
-        cred_def_id: str
+        self, cred_def_id: str
     ) -> "IssuerRevRegRecord":
         """Return the current active registry for issuing a given credential definition.
 
@@ -63,11 +63,13 @@ class IndyRevocation:
             cred_def_id: ID of the base credential definition
         """
         current = await IssuerRevRegRecord.query_by_cred_def_id(
-            self._context,
-            cred_def_id,
-            IssuerRevRegRecord.STATE_ACTIVE
+            self._context, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
         )
-        return current[0] if current else None
+        if current:
+            return current[0]
+        raise StorageNotFoundError(
+            f"No active issuer revocation record found for cred def id {cred_def_id}"
+        )
 
     async def get_issuer_rev_reg_record(
         self, revoc_reg_id: str

@@ -44,5 +44,5 @@ class CredentialAckHandler(BaseHandler):
             context.settings,
             context.message,
             outcome="CredentialAckHandler.handle.END",
-            perf_counter=r_time
+            perf_counter=r_time,
         )

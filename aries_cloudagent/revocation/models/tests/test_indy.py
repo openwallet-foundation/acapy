@@ -10,16 +10,10 @@ from ..indy import NonRevocationInterval
 FROM = 1000000000
 TO = 1234567890
 
-INTERVAL_FROM = NonRevocationInterval(
-    fro=FROM
-)
-INTERVAL_TO = NonRevocationInterval(
-    to=TO
-)
-INTERVAL = NonRevocationInterval(
-    fro=FROM,
-    to=TO
-)
+INTERVAL_FROM = NonRevocationInterval(fro=FROM)
+INTERVAL_TO = NonRevocationInterval(to=TO)
+INTERVAL = NonRevocationInterval(fro=FROM, to=TO)
+
 
 class TestInterval(TestCase):
     """Non-revocation interval tests"""
