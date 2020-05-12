@@ -105,13 +105,13 @@ class TestPluginRegistry(AsyncTestCase):
             load_module.assert_has_calls(calls)
         assert mod.routes.register.call_count == 1
 
-    async def test_set_openapi_file_responses(self):
+    async def test_post_process_routes(self):
         mod_name = "test_mod"
         mod = async_mock.MagicMock()
         mod.__name__ = mod_name
         app = async_mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.set_openapi_file_responses = async_mock.MagicMock()
+        mod.routes.post_process_routes = async_mock.MagicMock()
         definition = async_mock.MagicMock()
         definition.versions = [
             {
@@ -127,30 +127,30 @@ class TestPluginRegistry(AsyncTestCase):
             "load_module",
             async_mock.MagicMock(side_effect=[definition, mod.routes]),
         ) as load_module:
-            self.registry.set_openapi_file_responses(app)
+            self.registry.post_process_routes(app)
 
             calls = [
                 call("definition", mod_name),
                 call(f"{mod_name}.{definition.versions[0]['path']}.routes"),
             ]
             load_module.assert_has_calls(calls)
-        assert mod.routes.set_openapi_file_responses.call_count == 1
+        assert mod.routes.post_process_routes.call_count == 1
 
         with async_mock.patch.object(
             ClassLoader,
             "load_module",
             async_mock.MagicMock(side_effect=[definition, ModuleLoadError()]),
         ) as load_module:
-            self.registry.set_openapi_file_responses(app)
+            self.registry.post_process_routes(app)
 
             calls = [
                 call("definition", mod_name),
                 call(f"{mod_name}.{definition.versions[0]['path']}.routes"),
             ]
             load_module.assert_has_calls(calls)
-        assert mod.routes.set_openapi_file_responses.call_count == 1
+        assert mod.routes.post_process_routes.call_count == 1
 
-    async def test_set_openapi_file_responses_mod_no_version(self):
+    async def test_post_process_routes_mod_no_version(self):
         mod_name = "test_mod"
         mod = async_mock.MagicMock()
         mod.__name__ = mod_name
@@ -163,22 +163,22 @@ class TestPluginRegistry(AsyncTestCase):
             "load_module",
             async_mock.MagicMock(side_effect=[None, mod.routes]),
         ) as load_module:
-            self.registry.set_openapi_file_responses(app)
+            self.registry.post_process_routes(app)
 
             calls = [call("definition", mod_name), call(f"{mod_name}.routes")]
             load_module.assert_has_calls(calls)
-        assert mod.routes.set_openapi_file_responses.call_count == 1
+        assert mod.routes.post_process_routes.call_count == 1
 
         with async_mock.patch.object(
             ClassLoader,
             "load_module",
             async_mock.MagicMock(side_effect=[None, ModuleLoadError()]),
         ) as load_module:
-            self.registry.set_openapi_file_responses(app)
+            self.registry.post_process_routes(app)
 
             calls = [call("definition", mod_name), call(f"{mod_name}.routes")]
             load_module.assert_has_calls(calls)
-        assert mod.routes.set_openapi_file_responses.call_count == 1
+        assert mod.routes.post_process_routes.call_count == 1
 
     async def test_validate_version_not_a_list(self):
         mod_name = "test_mod"

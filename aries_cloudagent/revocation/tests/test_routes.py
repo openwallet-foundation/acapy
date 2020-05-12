@@ -390,7 +390,7 @@ class TestRevocationRoutes(AsyncTestCase):
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
 
-    async def test_set_openapi_file_responses(self):
+    async def test_post_process_routes(self):
         mock_app = async_mock.MagicMock(
             _state={
                 "swagger_dict": {
@@ -402,7 +402,7 @@ class TestRevocationRoutes(AsyncTestCase):
                 }
             }
         )
-        test_module.set_openapi_file_responses(mock_app)
+        test_module.post_process_routes(mock_app)
         assert mock_app._state["swagger_dict"]["paths"][
             "/revocation/registry/{rev_reg_id}/tails-file"
         ]["get"]["responses"]["200"]["schema"] == {"type": "string", "format": "binary"}

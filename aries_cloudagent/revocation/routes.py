@@ -378,7 +378,7 @@ async def register(app: web.Application):
     )
 
 
-def set_openapi_file_responses(app: web.Application):
+def post_process_routes(app: web.Application):
     """Set binary file responses within OpenAPI specification."""
 
     # aio_http-apispec polite API only works on schema for JSON objects, not files yet
