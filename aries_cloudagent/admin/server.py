@@ -19,7 +19,6 @@ from marshmallow import fields, Schema
 from ..config.injection_context import InjectionContext
 from ..core.plugin_registry import PluginRegistry
 from ..messaging.responder import BaseResponder
-from ..revocation.routes import set_tails_file_binary_response_schema
 from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
@@ -257,7 +256,12 @@ class AdminServer(BaseAdminServer):
         self.app = await self.make_application()
         runner = web.AppRunner(self.app)
         await runner.setup()
-        set_tails_file_binary_response_schema(self.app)  # aiohttp_apispec needs hack
+
+        plugin_registry: PluginRegistry = await self.context.inject(
+            PluginRegistry, required=False
+        )
+        if plugin_registry:
+            plugin_registry.set_openapi_file_responses(self.app)
 
         self.site = web.TCPSite(runner, host=self.host, port=self.port)
 
