@@ -272,7 +272,7 @@ class PluginRegistry:
                 if mod and hasattr(mod, "register"):
                     await mod.register(app)
 
-    def set_openapi_file_responses(self, app):
+    def post_process_routes(self, app):
         """Call route binary file response OpenAPI fixups if applicable."""
         for plugin in self._plugins.values():
             definition = ClassLoader.load_module("definition", plugin.__name__)
@@ -286,8 +286,8 @@ class PluginRegistry:
                     except ModuleLoadError as e:
                         LOGGER.error("Error loading admin routes: %s", e)
                         continue
-                    if mod and hasattr(mod, "set_openapi_file_responses"):
-                        mod.set_openapi_file_responses(app)
+                    if mod and hasattr(mod, "post_process_routes"):
+                        mod.post_process_routes(app)
             else:
                 # Set binary file responses for routes not in a versioned package.
                 try:
@@ -295,8 +295,8 @@ class PluginRegistry:
                 except ModuleLoadError as e:
                     LOGGER.error("Error loading admin routes: %s", e)
                     continue
-                if mod and hasattr(mod, "set_openapi_file_responses"):
-                    mod.set_openapi_file_responses(app)
+                if mod and hasattr(mod, "post_process_routes"):
+                    mod.post_process_routes(app)
 
     def __repr__(self) -> str:
         """Return a string representation for this class."""

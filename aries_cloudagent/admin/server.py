@@ -261,7 +261,7 @@ class AdminServer(BaseAdminServer):
             PluginRegistry, required=False
         )
         if plugin_registry:
-            plugin_registry.set_openapi_file_responses(self.app)
+            plugin_registry.post_process_routes(self.app)
 
         self.site = web.TCPSite(runner, host=self.host, port=self.port)
 
