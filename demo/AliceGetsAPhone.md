@@ -1,6 +1,6 @@
 # Alice Gets a Mobile Agent! <!-- omit in toc -->
 
-In this demo, we'll again use our familiar Faber ACA-Py agent to issue credentials to Alice, but this time Alice will use a mobile wallet. To do this we need to run the Faber agent on a publicly accessible port (we'll use Play With Docker), and Alice will need a compatible mobile wallet. We'll provide pointers to where you can get them. As well, we'll also show how you can run through this sequence with credential revocation activated, so you can see how the mobile wallets handle that.
+In this demo, we'll again use our familiar Faber ACA-Py agent to issue credentials to Alice, but this time Alice will use a mobile wallet. To do this we need to run the Faber agent on a publicly accessible port, and Alice will need a compatible mobile wallet. We'll provide pointers to where you can get them. This demo also introduces revocation of credentials.
 
 # Contents <!-- omit in toc -->
 
@@ -23,158 +23,79 @@ In this demo, we'll again use our familiar Faber ACA-Py agent to issue credentia
 
 ## Getting Started
 
-To get started with this demo using a browser, go to [Play With Docker](https://labs.play-with-docker.com/), start a terminal session. Don't know about Play with Docker? Check [this out](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker) to learn more. Once in your terminal session, use git to get this repository cloned on the instance.
+This demo will be run on your local machine and demonstrate credential exchange and proof exchange as well as revocation with a mobile agent.
 
-```bash
-git clone https://github.com/hyperledger/aries-cloudagent-python
-cd aries-cloudagent-python/demo
+If you are not familiar with how revocation is currently implemented in Hyperledger Indy, [this article](https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation) provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds.
 
-```
+### Get a mobile agent
 
 Of course for this, you need to have a mobile agent. To find, install and setup a compatible mobile agent, follow the instructions [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
 
+### Run an instance of von-tails-server in docker
+
+For revocation to function, we need another component running that is used to store what are called tails files. In a project directory, run:
+
+```bash
+git clone git@github.com:bcgov/von-tails-server.git
+cd von-tails-server/docker
+./manage build && ./manage start GENESIS_URL=http://test.bcovrin.vonx.io/genesis
+```
+
+This will run the required components for the tails server to function and make a tails server available on port 6543.
+
+### Expose services publicly using ngrok
+
+Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accesible url for some services on your machine. The easiest way to do this is with [ngrok](https://ngrok.com/). Once ngrok is installed, create 2 tunnels to your local machine:
+
+```bash
+ngrok http 8020
+```
+
+```bash
+ngrok http 6543
+```
+
+You will see something like this for each process:
+
+```
+Forwarding                    http://abc123.ngrok.io -> http://localhost:8020
+Forwarding                    https://abc123.ngrok.io -> http://localhost:8020
+```
+
+```
+Forwarding                    http://def456.ngrok.io -> http://localhost:6543
+Forwarding                    https://def456.ngrok.io -> http://localhost:6543
+```
+
+
+This creates public urls for ports 8020 and 6543 on your local machine. Keep those 2 processes running as we'll come back to them in a moment.
+
+
 ### Running Locally in Docker
 
-Unlike the ACA-Py to ACA-Py Alice/Faber demos we've run in the past, the ACA-Py to Mobile Alice scenario has an extra requirement&mdash;the ACA-Py inbound agent-to-agent transport must be publicly accessible. This is a given with Play With Docker, but trickier to do when you are running on your local machine. It can be done with something like ngrok, but we're leaving that as an exercise for the user.  If you do get it working and have instructions, please drop us a note or make a PR against this document.
+Then, navigate to [The demo direcory](/demo) and run `PUBLIC_TAILS_URL=https://def456.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ADMIN_ENDPOINT=https://abc123.ngrok.io ./run_demo faber --revocation --events`
 
-### Testing with Revocation
-
-Want to run this with revocation active? It's an option! Throughout the process we'll call out differences if you want to use revocation. Note that to use revocation with these instructions, you need a pretty good understanding of GitHub, so be warned. If this is your first run through this demo, we recommend skipping revocation and trying it on a subsequent run through. Jump down to here if you **aren't** going to use revocation.
-
-Still here? There are some extra things you need to do to run with revocation enabled. If you are not familiar with how revocation is currently implemented in Hyperledger Indy, [this article](https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation) provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds. Further, when using a mobile agent, mobile OSes require that all HTTP requests go over HTTPS, which Play with Docker doesn't support. So for this exercise, we're going to create our own "tails server" on the fly using GitHub.
-
-#### Setting up a Public GitHub Tails Server
-
-There are a number of ways to get the tails file posted on an HTTPS web service.  We're going to use GitHub. If you ideas for other/easier ways to do this, please let us us know.
-
-We're going to use GitHub by having you create a `tails-files` repo in your personal GitHub account. We're assuming that you have your own GitHub account and repo, and that you can push updates to it. Do **NOT** do this from your Play with Docker terminal session as your GitHub credentials are not available in that environment and you should **NOT** make them available.
-
-1. Create your tails server by creating a public github repository called `tails-files` in your personal GitHub account.
-
-<details>
-    <summary>Click here to view screenshot (github.com)</summary>
-    <img src="./collateral/revocation-1-github-repo.png" alt="Github repo">
-</details>
-
-2. On your **local machine** where you have a git/github setup, open a terminal session and clone the repo to your local file system. To clone the repo, do the following, **replacing** `# NAME` with your own GitHub id:
-
-> NOTE: Do not use Play With Docker for this because you must **NEVER** enter your credentials into a Play With Docker terminal session.
->
-
-```bash
-git clone https://github.com/# NAME/tails-files.git
-cd tails-files
-
-```
-
-You will get an error if you forget to replace `# NAME` with your GitHub account name.
-
-Keep this terminal session open, as we'll use it later to retrieve the tails files from Play With Docker and commit them to GitHub.
-
-That's enough for getting started with revocation. On with the instructions!
-
-## Run `faber` With Extra Parameters
-
-The first step is to start the ACA-Py Faber agent. This is done differently if you are using revocation or not.
-
-If you are not using revocation, use this command:
-
-```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events
-```
-
-If you are running and including revocation, use this command, replacing `# NAME` with the GitHub account in which you created the tails-file repo:
-
-```bash
-PUBLIC_TAILS_URL=https://github.com/# NAME/tails-files/raw/master TAILS_FILE_COUNT=10 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events --revocation
-```
-
-If this generated an error, check if you replaced `# NAME` with that of your GitHub account.
+You _must_ use the https urls. And make sure the urls are mapped correctly: `PUBLIC_TAILS_URL` should point to the url mapped to port `6534` and `ADMIN_ENDPOINT` to `8020`.
 
 The `Preparing agent image...` step on the first run takes a bit of time, so while we wait, let's look at the details of the commands. Running Faber is similar to the instructions in the [Aries OpenAPI Demo](./AriesOpenAPIDemo.md) "Play with Docker" section, except:
 
 - We are using the BCovrin Test network because that is a network that the mobile agents can be configured to use.
-- We are running in "auto" mode, so we will no manual acknowledgements.
-- Play with Docker exposes the Agent's' port (in this case port 8021 of the container) on a public URL that the mobile app can access.
+- We are running in "auto" mode, so we will make no manual acknowledgements.
 - The revocation related changes:
   - The `PUBLIC_TAILS_URL` environment variable is the address of your tails server (must be `https`).
-  - The `TAILS_FILE_COUNT` environment variable is the size of the tails file that ACA-Py will create per revocation registry.
   - The `--revocation` parameter to the `./run-demo` script activates the ACA-Py revocation issuance.
+  - The `ADMIN_ENDPOINT` variable instructs the agent to form its invitation url using this public provided endpoint
+
+As part of its startup process, the agent will publish a revocation registry to the ledger.
 
 <details>
-    <summary>Click here to view screenshot of th revocation registry on the ledger</summary>
+    <summary>Click here to view screenshot of the revocation registry on the ledger</summary>
     <img src="./collateral/revocation-2-ledger.png" alt="Ledger">
-</details>
-
-### Revocation Only: Copy the Tails File to GitHub
-
-Skip this step if you are not using revocation. Jump ahead to [here](#copy-the-faber-invitation).
-
-As the agent starts up, the tails file is published by the Faber agent itself to a local, non-HTTPS location. Before going further, you need to manually copy the file to github to make it available via https. Follow these steps to do that:
-
-1. Scroll back in the terminal looking for something like the following in the logs:
-
-```
-Revocation Registry ID: EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2
-Revocation Registry Tails File Admin URL: http://127.0.0.1:8021/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file
-Revocation Registry Tails File URL: https://github.com/ianco/tails-files/raw/master/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file
-================
-mkdir -p revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/
-curl -X GET "http://127.0.0.1:8021/revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file" --output revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file.bin
-base64 revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file.bin >revocation/registry/EiqZU8H9QiFchygR5r3FhJ:4:EiqZU8H9QiFchygR5r3FhJ:3:CL:4420:default:CL_ACCUM:b32580f5-ed8c-4e55-a4e6-8da8c02634b2/tails-file
-================
-```
-
-There are three terminal commands that you will run in your **local system** terminal session. The commands are the ones in between the "================" markers that you will run in sequence. Read about all three commands before copying/pasting/running them, as the second command may need to be altered slightly and the third skipped.
-
-1. Go to your local system terminal session and make sure you are in the root folder of the clone of the `tails-file` repo you created.
-   
-2. Run the first one to (`mkdir...`) create the tails-file folder in your local github repo clone.
-
-2. If the mobile agent you have expects the file to be base64-encoded:
-   1. Copy, paste and run the second (`curl...`) and third (`base64...`) commands as is.
-
-3. If the mobile agent you have expects the file to be as generated by the Indy SDK:
-   1. Copy, paste and then edit the second (`curl...`) command and **remove the ".bin" at the end of the command** before running.
-   2. Don't execute the third command (`base64...`) at all.
-
-4. Add, commit and push the file from your local system to GitHub by running the following steps:
-
-```bash
-git add .
-git commit -s -m "New tails file"
-git push
-
-```
-
-That's it!  You are now serving your tails file on a secure https connection. There's got to be an easier way...
-
-## Copy the Faber Invitation
-
-When the Faber agent starts up it automatically creates an invitation.  We will copy the "url" format of the invitation for the next step.  Copy all the text between the quotes (do not include the quotes) - the copied text should be a properly formatted URL.
-
-<details>
-    <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-0-invitation-1.png" alt="Select Invitation URL">
-</details>
-
-## Create a QR Code from the Invitation
-
-To get the invitation to the agent, we need to convert the URL into a QR code that your mobile agent will read. Normally, the UI for the Faber agent would do this, but since we are just using the command line, we will use an online QR Code generator for that.
-
-Open [https://www.the-qrcode-generator.com/](https://www.the-qrcode-generator.com/) in a new browser window, and:
-
-- Select the "URL" option
-- Paste your invitation url into the provided input field
-
-<details>
-    <summary>Click here to view screenshot</summary>
-    <img src="./collateral/S-0-invitation-2.png" alt="Generate QR Code">
 </details>
 
 ## Accept the Invitation
 
-On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code.  The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.
+When the Faber agent starts up it automatically creates an invitation and generates a QR code on the screen. On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code.  The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.
 
 <details>
     <summary>Click here to view screenshot</summary>
@@ -276,7 +197,7 @@ In the Faber console window, the proof should be received as validated.
 
 ## Revoke the Credential and Send Another Proof Request
 
-If you have enabled revocation, you can try revoking the credential pending publication (`faber` options `4` and `5`). For the revocation step, You will need the revocation registry identifier and the credential revocation identifier (with is 1 for the first credential you issues), as the Faber agent logged them to the console at credential issue.
+If you have enabled revocation, you can try revoking the credential pending publication (`faber` options `4` and `5`). For the revocation step, You will need the revocation registry identifier and the credential revocation identifier (which is 1 for the first credential you issues), as the Faber agent logged them to the console at credential issue.
 
 Once that is done, try sending another proof request and see what happens! Experiment with immediate and pending publication.
 
