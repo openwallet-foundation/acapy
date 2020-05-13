@@ -2,6 +2,7 @@
 
 # based on code developed by Sovrin:  https://github.com/hyperledger/aries-acapy-plugin-toolbox
 
+# if a tails network is specified, there should be an associated ngrok as well ...
 if ! [ -z "$TAILS_NGROK_NAME" ]; then
     echo "ngrok end point [$TAILS_NGROK_NAME]"
     NGROK_ENDPOINT=null
@@ -17,7 +18,6 @@ if ! [ -z "$TAILS_NGROK_NAME" ]; then
     done
 
     export PUBLIC_TAILS_URL=$NGROK_ENDPOINT
-
     echo "fetched tails server end point [$PUBLIC_TAILS_URL]"
 fi
 
