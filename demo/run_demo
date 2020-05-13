@@ -188,6 +188,12 @@ if ! [ -z "$TRACE_TARGET" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e TRACE_TAG=${TRACE_TAG}"
   DOCKER_ENV="${DOCKER_ENV} -e TRACE_ENABLED=${TRACE_ENABLED}"
 fi
+# if $TAILS_NETWORK is specified it will override any previously specified $DOCKER_NET
+if ! [ -z "$TAILS_NETWORK" ]; then
+  DOCKER_NET="${TAILS_NETWORK}"
+  DOCKER_ENV="${DOCKER_ENV} -e TAILS_NETWORK=${TAILS_NETWORK}"
+  DOCKER_ENV="${DOCKER_ENV} -e TAILS_NGROK_NAME=ngrok-tails-server"
+fi
 if ! [ -z "$PUBLIC_TAILS_URL" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"
 fi
