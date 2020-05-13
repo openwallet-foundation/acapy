@@ -698,6 +698,14 @@ class TransportGroup(ArgumentGroup):
             to hold messages for delivery to agents without an endpoint. This\
             option will require additional memory to store messages in the queue.",
         )
+        parser.add_argument(
+            "--max-outbound-retry",
+            default=4,
+            type=ByteSize(min_size=1),
+            help="Set the maximum retry number for undelivered outbound\
+            messages. Increasing this number might cause to increase the\
+            accumulated messages in message queue. Default value is 4.",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract transport settings."""
@@ -710,6 +718,8 @@ class TransportGroup(ArgumentGroup):
             settings["default_label"] = args.label
         if args.max_message_size:
             settings["transport.max_message_size"] = args.max_message_size
+        if args.max_outbound_retry:
+            settings["transport.max_outbound_retry"] = args.max_outbound_retry
 
         return settings
 
