@@ -1,16 +1,17 @@
 # Alice Gets a Mobile Agent! <!-- omit in toc -->
 
-In this demo, we'll again use our familiar Faber ACA-Py agent to issue credentials to Alice, but this time Alice will use a mobile wallet. To do this we need to run the Faber agent on a publicly accessible port, and Alice will need a compatible mobile wallet. We'll provide pointers to where you can get them. This demo also introduces revocation of credentials.
+In this demo, we'll again use our familiar Faber ACA-Py agent to issue credentials to Alice, but this time Alice will use a mobile wallet. To do this we need to run the Faber agent on a publicly accessible port, and Alice will need a compatible mobile wallet. We'll provide pointers to where you can get them.
+
+This demo also introduces revocation of credentials.
 
 # Contents <!-- omit in toc -->
 
 - [Getting Started](#getting-started)
+  - [Get a mobile agent](#get-a-mobile-agent)
   - [Running Locally in Docker](#running-locally-in-docker)
   - [Running in Play With Docker](#running-in-play-with-docker)
-  - [Testing with Revocation](#testing-with-revocation)
-    - [Setting up a Public GitHub Tails Server](#setting-up-a-public-github-tails-server)
+  - [Run an instance of indy-tails-server](#run-an-instance-of-indy-tails-server)
 - [Run `faber` With Extra Parameters](#run-faber-with-extra-parameters)
-  - [Revocation Only: Copy the Tails File to GitHub](#revocation-only-copy-the-tails-file-to-github)
 - [Copy the Faber Invitation](#copy-the-faber-invitation)
 - [Create a QR Code from the Invitation](#create-a-qr-code-from-the-invitation)
 - [Accept the Invitation](#accept-the-invitation)
@@ -22,9 +23,10 @@ In this demo, we'll again use our familiar Faber ACA-Py agent to issue credentia
 - [Revoke the Credential and Send Another Proof Request](#revoke-the-credential-and-send-another-proof-request)
 - [Conclusion](#conclusion)
 
+
 ## Getting Started
 
-This demo will be run on your local machine and demonstrate credential exchange and proof exchange as well as revocation with a mobile agent.
+This demo can be run on your local machine or on Play with Docker (PWD), and will demonstrate credential exchange and proof exchange as well as revocation with a mobile agent.  Both approaches (running locally and on PWD) will be described, for the most part the commands are the same, but there are a couple of different parameters you need to provide when starting up.
 
 If you are not familiar with how revocation is currently implemented in Hyperledger Indy, [this article](https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation) provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds.
 
@@ -34,7 +36,19 @@ If you are not familiar with how revocation is currently implemented in Hyperled
 Of course for this, you need to have a mobile agent. To find, install and setup a compatible mobile agent, follow the instructions [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
 
 
-### Install ngrok and jq
+### Running Locally in Docker
+
+Open a new bash shell and in a project directory run the following:
+
+```bash
+git clone https://github.com/hyperledger/aries-cloudagent-python.git
+cd aries-cloudagent-python
+```
+
+There are a couple of extra steps you need to take to prepare to run the Faber agent locally:
+
+
+#### Install ngrok and jq
 
 (ngrok)[https://ngrok.com/] is used to expose public endpoints for services running locally on your computer.
 
@@ -45,32 +59,7 @@ You can install ngrok from (here)[https://ngrok.com/]
 You can download jq releases (here)[https://github.com/stedolan/jq/releases]
 
 
-### Run an instance of von-tails-server in docker
-
-For revocation to function, we need another component running that is used to store what are called tails files.
-
-Open a new bash shell, and in a project directory, run:
-
-```bash
-git clone https://github.com/bcgov/indy-tails-server.git
-cd indy-tails-server/docker
-./manage build
-GENESIS_URL=http://test.bcovrin.vonx.io/genesis ./manage start
-```
-
-This will run the required components for the tails server to function and make a tails server available on port 6543.
-
-This will also automatically start an ngrok server that will expose a public url for your tails server - this is required to support mobile agents.  The docker output will look something like this:
-
-```bash
-ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel" obj=tunnels name="command_line (http)" addr=http://tails-server:6543 url=http://c5789aa0.ngrok.io
-ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://tails-server:6543 url=https://c5789aa0.ngrok.io
-```
-
-Note the server name in the `url=https://c5789aa0.ngrok.io` parameter (`https://c5789aa0.ngrok.io`) - this is the external url for your tails server.  Make sure you use the `https` url!
-
-
-### Expose services publicly using ngrok
+#### Expose services publicly using ngrok
 
 Note that this is only required when running docker on your local machine.  When you run on PWD a public endpoint for your agent is exposed automatically.
 
@@ -96,13 +85,64 @@ Note that an ngrok process was created automatically for your tails server.
 Keep those processes running as we'll come back to them in a moment.
 
 
-### Running Locally in Docker
+### Running in Play With Docker
 
-Navigate to [The demo direcory](/demo) and run:
+To run the necessary terminal sessions in your browser, go to the Docker playground service [Play with Docker](https://labs.play-with-docker.com/). Don't know about Play with Docker? Check [this out](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker) to learn more.
+
+Open a new bash shell and in a project directory run the following:
+
+```bash
+git clone https://github.com/hyperledger/aries-cloudagent-python.git
+cd aries-cloudagent-python
+```
+
+
+### Run an instance of indy-tails-server
+
+For revocation to function, we need another component running that is used to store what are called tails files.
+
+If you are not running with revocation enabled you can skip this step.
+
+Open a new bash shell, and in a project directory, run:
+
+```bash
+git clone https://github.com/bcgov/indy-tails-server.git
+cd indy-tails-server/docker
+./manage build
+GENESIS_URL=http://test.bcovrin.vonx.io/genesis ./manage start
+```
+
+This will run the required components for the tails server to function and make a tails server available on port 6543.
+
+This will also automatically start an ngrok server that will expose a public url for your tails server - this is required to support mobile agents.  The docker output will look something like this:
+
+```bash
+ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel" obj=tunnels name="command_line (http)" addr=http://tails-server:6543 url=http://c5789aa0.ngrok.io
+ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://tails-server:6543 url=https://c5789aa0.ngrok.io
+```
+
+Note the server name in the `url=https://c5789aa0.ngrok.io` parameter (`https://c5789aa0.ngrok.io`) - this is the external url for your tails server.  Make sure you use the `https` url!
+
+
+### Run `faber` With Extra Parameters
+
+If you are running in a *local bash shell*, navigate to [The demo direcory](/demo) and run:
 
 ```bash
 TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
+
+The `TAILS_NETWORK` parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).
+
+If you are running in *Play with Docker*, navigate to [The demo direcory](/demo) and run:
+
+```bash
+PUBLIC_TAILS_URL=https://def456.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+```
+
+The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server.  This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
+
+Note that you _must_ use the `https` url for the tails server endpoint.
 
 The `Preparing agent image...` step on the first run takes a bit of time, so while we wait, let's look at the details of the commands. Running Faber is similar to the instructions in the [Aries OpenAPI Demo](./AriesOpenAPIDemo.md) "Play with Docker" section, except:
 
@@ -110,9 +150,8 @@ The `Preparing agent image...` step on the first run takes a bit of time, so whi
 - We are running in "auto" mode, so we will make no manual acknowledgements.
 - The revocation related changes:
   - The `TAILS_NETWORK` parameter tells the `./run_demo` script how to connect to the tails server and determine the public ngrok endpoint.
-  - The `--revocation` parameter to the `./run-demo` script activates the ACA-Py revocation issuance.
   - The `PUBLIC_TAILS_URL` environment variable is the address of your tails server (must be `https`).
-  - The `AGENT_ENDPOINT` variable instructs the agent to form its invitation url using this public provided endpoint
+  - The `--revocation` parameter to the `./run-demo` script activates the ACA-Py revocation issuance.
 
 As part of its startup process, the agent will publish a revocation registry to the ledger.
 
@@ -120,21 +159,6 @@ As part of its startup process, the agent will publish a revocation registry to 
     <summary>Click here to view screenshot of the revocation registry on the ledger</summary>
     <img src="./collateral/revocation-2-ledger.png" alt="Ledger">
 </details>
-
-
-### Running in Play With Docker
-
-To run the necessary terminal sessions in your browser, go to the Docker playground service [Play with Docker](https://labs.play-with-docker.com/). Don't know about Play with Docker? Check [this out](https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker) to learn more.
-
-Navigate to [The demo direcory](/demo) and run:
-
-```bash
-PUBLIC_TAILS_URL=https://def456.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
-```
-
-You _must_ use the https url for the tails server endpoint.
-
-Note that you *don't* need to run ngrok when running on Play With Docker, since PWD itself exposes a public endpoint for your agent.
 
 
 ## Accept the Invitation
@@ -158,6 +182,7 @@ The mobile agent will give you feedback on the connection process, something lik
 </details>
 
 Switch your browser back to Play with Docker. You should see that the connection has been established, and there is a prompt for what actions you want to take, e.g. "Issue Credential", "Send Proof Request" and so on.
+
 
 ## Issue a Credential
 
