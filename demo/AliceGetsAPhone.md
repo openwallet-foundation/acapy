@@ -12,8 +12,6 @@ This demo also introduces revocation of credentials.
   - [Running in Play With Docker](#running-in-play-with-docker)
   - [Run an instance of indy-tails-server](#run-an-instance-of-indy-tails-server)
 - [Run `faber` With Extra Parameters](#run-faber-with-extra-parameters)
-- [Copy the Faber Invitation](#copy-the-faber-invitation)
-- [Create a QR Code from the Invitation](#create-a-qr-code-from-the-invitation)
 - [Accept the Invitation](#accept-the-invitation)
 - [Issue a Credential](#issue-a-credential)
   - [Accept the Credential](#accept-the-credential)
@@ -42,26 +40,28 @@ Open a new bash shell and in a project directory run the following:
 
 ```bash
 git clone https://github.com/hyperledger/aries-cloudagent-python.git
-cd aries-cloudagent-python
+cd aries-cloudagent-python/demo
 ```
+
+We'll come back to this in a minute, when we start the `faber` agent!
 
 There are a couple of extra steps you need to take to prepare to run the Faber agent locally:
 
 
 #### Install ngrok and jq
 
-(ngrok)[https://ngrok.com/] is used to expose public endpoints for services running locally on your computer.
+[ngrok](https://ngrok.com/) is used to expose public endpoints for services running locally on your computer.
 
-(jq)[https://github.com/stedolan/jq] is a json parser that is used to automatically detect the endpoints exposed by ngrok.
+[jq](https://github.com/stedolan/jq) is a json parser that is used to automatically detect the endpoints exposed by ngrok.
 
-You can install ngrok from (here)[https://ngrok.com/]
+You can install ngrok from [here](https://ngrok.com/)
 
-You can download jq releases (here)[https://github.com/stedolan/jq/releases]
+You can download jq releases [here](https://github.com/stedolan/jq/releases)
 
 
 #### Expose services publicly using ngrok
 
-Note that this is only required when running docker on your local machine.  When you run on PWD a public endpoint for your agent is exposed automatically.
+Note that this is *only required when running docker on your local machine*.  When you run on PWD a public endpoint for your agent is exposed automatically.
 
 Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accesible url for some services on your machine. The easiest way to do this is with [ngrok](https://ngrok.com/). Once ngrok is installed, create a tunnel to your local machine:
 
@@ -80,9 +80,9 @@ Forwarding                    https://abc123.ngrok.io -> http://localhost:8020
 
 This creates a public url for ports 8020 on your local machine. 
 
-Note that an ngrok process was created automatically for your tails server.
+Note that an ngrok process is created automatically for your tails server.
 
-Keep those processes running as we'll come back to them in a moment.
+Keep this process running as we'll come back to it in a moment.
 
 
 ### Running in Play With Docker
@@ -93,8 +93,10 @@ Open a new bash shell and in a project directory run the following:
 
 ```bash
 git clone https://github.com/hyperledger/aries-cloudagent-python.git
-cd aries-cloudagent-python
+cd aries-cloudagent-python/demo
 ```
+
+We'll come back to this in a minute, when we start the `faber` agent!
 
 
 ### Run an instance of indy-tails-server
