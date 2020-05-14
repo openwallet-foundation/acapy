@@ -185,7 +185,7 @@ The mobile agent will give you feedback on the connection process, something lik
 
 Switch your browser back to Play with Docker. You should see that the connection has been established, and there is a prompt for what actions you want to take, e.g. "Issue Credential", "Send Proof Request" and so on.
 
-Tip:  If your screen is too small to display the QR code (this can happen in Play With Docker because the shell is only given a small portion of the browser) you can copy the invitation url to a site like https://www.the-qrcode-generator.com/ to convert the invitation url into a QR code that you can scan.  Make sure you select the `URL` option, and copy the `invitation_url`, which will look something loke:
+Tip:  If your screen is too small to display the QR code (this can happen in Play With Docker because the shell is only given a small portion of the browser) you can copy the invitation url to a site like https://www.the-qrcode-generator.com/ to convert the invitation url into a QR code that you can scan.  Make sure you select the `URL` option, and copy the `invitation_url`, which will look something like:
 
 ```bash
 https://abfde260.ngrok.io?c_i=eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZjI2ZjA2YTItNWU1Mi00YTA5LWEwMDctOTNkODBiZTYyNGJlIiwgInJlY2lwaWVudEtleXMiOiBbIjlQRFE2alNXMWZwZkM5UllRWGhCc3ZBaVJrQmVKRlVhVmI0QnRQSFdWbTFXIl0sICJsYWJlbCI6ICJGYWJlci5BZ2VudCIsICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cHM6Ly9hYmZkZTI2MC5uZ3Jvay5pbyJ9
@@ -282,7 +282,7 @@ In the Faber console window, the proof should be received as validated.
 
 ## Revoke the Credential and Send Another Proof Request
 
-If you have enabled revocation, you can try revoking the credential pending publication (`faber` options `4` and `5`). For the revocation step, You will need the revocation registry identifier and the credential revocation identifier (which is 1 for the first credential you issues), as the Faber agent logged them to the console at credential issue.
+If you have enabled revocation, you can try revoking the credential pending publication (`faber` options `4` and `5`). For the revocation step, You will need the revocation registry identifier and the credential revocation identifier (which is 1 for the first credential you issued), as the Faber agent logged them to the console at credential issue.
 
 Once that is done, try sending another proof request and see what happens! Experiment with immediate and pending publication.
 
