@@ -1,4 +1,5 @@
 import asyncio
+import pytest
 import json
 
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
@@ -6,11 +7,12 @@ from aiohttp import web
 from asynctest import mock as async_mock
 
 from ...outbound.message import OutboundMessage
-from ...wire_format import JsonWireFormat
+from ...wire_format import BaseWireFormat, JsonWireFormat
 
 from ..http import HttpTransport
 from ..message import InboundMessage
 from ..session import InboundSession
+from .. import http as test_module
 
 
 class TestHttpTransport(AioHTTPTestCase):
@@ -18,7 +20,9 @@ class TestHttpTransport(AioHTTPTestCase):
         self.message_results = []
         self.port = unused_port()
         self.session = None
-        self.transport = HttpTransport("0.0.0.0", self.port, self.create_session)
+        self.transport = HttpTransport(
+            "0.0.0.0", self.port, self.create_session, max_message_size=65535
+        )
         self.transport.wire_format = JsonWireFormat()
         self.result_event = None
         self.response_message = None
@@ -59,6 +63,17 @@ class TestHttpTransport(AioHTTPTestCase):
         return self.transport.make_application()
 
     @unittest_run_loop
+    async def test_start_x(self):
+        with async_mock.patch.object(
+            test_module.web, "TCPSite", async_mock.MagicMock()
+        ) as mock_site:
+            mock_site.return_value = async_mock.MagicMock(
+                start=async_mock.CoroutineMock(side_effect=OSError())
+            )
+            with pytest.raises(test_module.InboundTransportSetupError):
+                await self.transport.start()
+
+    @unittest_run_loop
     async def test_send_message(self):
         await self.transport.start()
 
@@ -85,5 +100,56 @@ class TestHttpTransport(AioHTTPTestCase):
 
         async with self.client.post("/", json=test_message) as resp:
             assert await resp.json() == {"response": "ok"}
+
+        await self.transport.stop()
+
+    @unittest_run_loop
+    async def test_send_message_outliers(self):
+        await self.transport.start()
+
+        test_message = {"test": "message"}
+        with async_mock.patch.object(
+            test_module.HttpTransport, "create_session", async_mock.CoroutineMock()
+        ) as mock_session:
+            mock_session.return_value = async_mock.MagicMock(
+                receive=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        receipt=async_mock.MagicMock(direct_response_requested=True)
+                    )
+                ),
+                can_respond=True,
+                clear_response=async_mock.MagicMock(),
+                wait_response=async_mock.CoroutineMock(return_value=b"Hello world"),
+            )
+            async with self.client.post("/", data=test_message) as resp:
+                result = await resp.text()
+            assert result == "Hello world"
+
+            mock_session.return_value = async_mock.MagicMock(
+                receive=async_mock.CoroutineMock(
+                    side_effect=test_module.MessageParseError()
+                ),
+            )
+            async with self.client.post("/", data=test_message) as resp:
+                status = resp.status
+                result = await resp.text()
+            assert status == 400
+            assert str(status) in result
+
+        await self.transport.stop()
+
+    @unittest_run_loop
+    async def test_invite_message_handler(self):
+        await self.transport.start()
+
+        request = async_mock.MagicMock(query={"c_i": "dummy"})
+        resp = await self.transport.invite_message_handler(request)
+        assert b"You have received a connection invitation" in resp.body
+        assert resp.status == 200
+
+        request = async_mock.MagicMock(query={})
+        resp = await self.transport.invite_message_handler(request)
+        assert resp.body is None
+        assert resp.status == 200
 
         await self.transport.stop()
