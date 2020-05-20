@@ -1286,9 +1286,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(ConnectionManagerError):
                 await self.manager.establish_inbound(
-                    mock_conn,
-                    inbound_conn_id,
-                    async_mock.CoroutineMock()
+                    mock_conn, inbound_conn_id, async_mock.CoroutineMock()
                 )
 
     async def test_establish_inbound_router_not_ready(self):
@@ -1313,9 +1311,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(ConnectionManagerError):
                 await self.manager.establish_inbound(
-                    mock_conn,
-                    inbound_conn_id,
-                    async_mock.CoroutineMock()
+                    mock_conn, inbound_conn_id, async_mock.CoroutineMock()
                 )
 
     async def test_update_inbound(self):
