@@ -36,7 +36,7 @@ TRACE_TARGET = os.getenv("TRACE_TARGET")
 TRACE_TAG = os.getenv("TRACE_TAG")
 TRACE_ENABLED = os.getenv("TRACE_ENABLED")
 
-ADMIN_ENDPOINT = os.getenv("ADMIN_ENDPOINT")
+AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT")
 
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
@@ -135,8 +135,8 @@ class DemoAgent:
         self.trace_tag = TRACE_TAG
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
-        if ADMIN_ENDPOINT:
-            self.endpoint = ADMIN_ENDPOINT
+        if AGENT_ENDPOINT:
+            self.endpoint = AGENT_ENDPOINT
         elif RUN_MODE == "pwd":
             self.endpoint = f"http://{self.external_host}".replace(
                 "{PORT}", str(http_port)
