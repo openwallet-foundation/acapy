@@ -295,9 +295,7 @@ async def main(
             invite = await faber.get_invite()
 
             if routing:
-                conn_id = await alice.receive_invite(
-                    invite, auto_accept=False
-                )
+                conn_id = await alice.receive_invite(invite, auto_accept=False)
                 await alice.establish_inbound(conn_id, alice_router_conn_id)
                 await alice.accept_invite(conn_id)
                 await asyncio.wait_for(alice.detect_connection(), 30)
