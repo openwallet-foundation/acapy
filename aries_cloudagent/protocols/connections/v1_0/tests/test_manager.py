@@ -1235,7 +1235,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
             state = await self.manager.establish_inbound(
-                mock_conn, inbound_conn_id, None
+                mock_conn, inbound_conn_id, async_mock.CoroutineMock()
             )
             assert state == ConnectionRecord.ROUTING_STATE_REQUEST
 
@@ -1260,7 +1260,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
             state = await self.manager.establish_inbound(
-                mock_conn, inbound_conn_id, None
+                mock_conn, inbound_conn_id, async_mock.CoroutineMock()
             )
             assert state == ConnectionRecord.ROUTING_STATE_REQUEST
 
@@ -1285,7 +1285,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
 
             with self.assertRaises(ConnectionManagerError):
-                await self.manager.establish_inbound(mock_conn, inbound_conn_id, None)
+                await self.manager.establish_inbound(
+                    mock_conn,
+                    inbound_conn_id,
+                    async_mock.CoroutineMock()
+                )
 
     async def test_establish_inbound_router_not_ready(self):
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -1308,7 +1312,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
             with self.assertRaises(ConnectionManagerError):
-                await self.manager.establish_inbound(mock_conn, inbound_conn_id, None)
+                await self.manager.establish_inbound(
+                    mock_conn,
+                    inbound_conn_id,
+                    async_mock.CoroutineMock()
+                )
 
     async def test_update_inbound(self):
         with async_mock.patch.object(

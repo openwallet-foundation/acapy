@@ -29,8 +29,7 @@ from ....messaging.valid import (
 )
 from ....storage.error import StorageNotFoundError
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from ...problem_report.v1_0.message import ProblemReport
+from ...problem_report.v1.message import ProblemReport
 
 from .manager import CredentialManager
 from .messages.credential_proposal import CredentialProposal

@@ -9,8 +9,7 @@ from aries_cloudagent.messaging.responder import MockResponder
 from aries_cloudagent.storage.base import BaseStorage
 from aries_cloudagent.storage.basic import BasicStorage
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from aries_cloudagent.protocols.connections.v1_0.messages.connection_invitation import (
+from aries_cloudagent.protocols.connections.v1.messages.connection_invitation import (
     ConnectionInvitation,
 )
 

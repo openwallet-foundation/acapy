@@ -14,11 +14,10 @@ from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
-from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
-from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
-from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
+from ..protocols.actionmenu.latest.base_service import BaseMenuService
+from ..protocols.actionmenu.latest.driver_service import DriverMenuService
+from ..protocols.introduction.latest.base_service import BaseIntroductionService
+from ..protocols.introduction.latest.demo_service import DemoIntroductionService
 
 from ..storage.base import BaseStorage
 from ..storage.provider import StorageProvider

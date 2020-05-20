@@ -7,8 +7,7 @@ from aries_cloudagent.messaging.base_handler import (
     RequestContext,
 )
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from aries_cloudagent.protocols.connections.v1_0.manager import ConnectionManager
+from aries_cloudagent.protocols.connections.v1.manager import ConnectionManager
 
 from ..messages.forward_invitation import ForwardInvitation
 

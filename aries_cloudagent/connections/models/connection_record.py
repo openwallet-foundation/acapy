@@ -6,11 +6,12 @@ from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from ...protocols.connections.v1_0.messages.connection_invitation import (
+from ...protocols.connections.latest.messages.connection_invitation import (
     ConnectionInvitation,
 )
-from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
+from ...protocols.connections.latest.messages.connection_request import (
+    ConnectionRequest,
+)
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 

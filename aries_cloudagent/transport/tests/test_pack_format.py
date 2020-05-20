@@ -4,8 +4,7 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ...config.injection_context import InjectionContext
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from ...protocols.routing.v1_0.message_types import FORWARD
+from ...protocols.routing.latest.message_types import FORWARD
 from ...wallet.base import BaseWallet
 from ...wallet.basic import BasicWallet
 

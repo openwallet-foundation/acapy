@@ -22,9 +22,8 @@ from ..messaging.responder import BaseResponder
 from ..messaging.util import datetime_now
 from .error import ProtocolMinorVersionNotSupported
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from ..protocols.connections.v1_0.manager import ConnectionManager
-from ..protocols.problem_report.v1_0.message import ProblemReport
+from ..protocols.connections.latest.manager import ConnectionManager
+from ..protocols.problem_report.latest.message import ProblemReport
 
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
