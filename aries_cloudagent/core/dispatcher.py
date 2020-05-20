@@ -81,7 +81,7 @@ class Dispatcher:
             timing = task.timing
             if "queued" in timing:
                 self.collector.log(
-                    f"Dispatcher:queued", timing["unqueued"] - timing["queued"]
+                    "Dispatcher:queued", timing["unqueued"] - timing["queued"]
                 )
             if task.ident:
                 self.collector.log(task.ident, timing["ended"] - timing["started"])
