@@ -296,8 +296,11 @@ class ConnectionManager:
 
         # Create connection request message
         if not my_endpoint:
-            my_endpoints = [self.context.settings.get("default_endpoint")]
-            my_endpoints.extend(self.context.settings.get("additional_endpoints"))
+            my_endpoints = []
+            default_endpoint = self.context.settings.get("default_endpoint")
+            if default_endpoint:
+                my_endpoints.append(default_endpoint)
+            my_endpoints.extend(self.context.settings.get("additional_endpoints", []))
         else:
             my_endpoints = [my_endpoint]
         did_doc = await self.create_did_document(
@@ -478,8 +481,11 @@ class ConnectionManager:
 
         # Create connection response message
         if not my_endpoint:
-            my_endpoints = [self.context.settings.get("default_endpoint")]
-            my_endpoints.extend(self.context.settings.get("additional_endpoints"))
+            my_endpoints = []
+            default_endpoint = self.context.settings.get("default_endpoint")
+            if default_endpoint:
+                my_endpoints.append(default_endpoint)
+            my_endpoints.extend(self.context.settings.get("additional_endpoints", []))
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints
         )

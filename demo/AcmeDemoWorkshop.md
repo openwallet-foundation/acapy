@@ -123,6 +123,13 @@ Now we need to handle receipt of the proof.  Locate the code that handles receiv
 then replace the ```# TODO``` comment and the ```pass``` statement:
 
 ```
+            log_status("#27 Process the proof provided by X")
+            log_status("#28 Check if proof is valid")
+            proof = await self.admin_POST(
+                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
+            )
+            self.log("Proof = ", proof["verified"])
+
             # if presentation is a degree schema (proof of education),
             # check values received
             pres_req = message["presentation_request"]
@@ -147,7 +154,7 @@ then replace the ```# TODO``` comment and the ```pass``` statement:
                 self.log("#28.1 Received ", message["presentation_request"]["name"])
 ```
 
-Right now this just prints out information received in the proof, but in "real life" your application could do something useful with this information.
+Right now this just verifies the proof received and prints out the attributes it reveals, but in "real life" your application could do something useful with this information.
 
 Now you can run the Faber/Alice/Acme script from the "Preview of the Acme Controller" section above, and you should see Acme receive a proof from Alice!
 
@@ -260,9 +267,6 @@ with the following code:
                 {
                     "comment": f"Issuing credential, exchange {credential_exchange_id}",
                     "credential_preview": cred_preview
-                    # "credential_preview": CredentialPreview(
-                    #     attributes=CredAttrSpec.list_plain(cred_attrs)
-                    # ).serialize()
                 }
             )
 ```

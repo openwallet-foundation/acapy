@@ -6,13 +6,14 @@ import random
 import sys
 import time
 
+from qrcode import QRCode
+
 from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from runners.support.agent import DemoAgent, default_genesis_txns
 from runners.support.utils import (
-    log_json,
     log_msg,
     log_status,
     log_timer,
@@ -125,8 +126,7 @@ class FaberAgent(DemoAgent):
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{presentation_exchange_id}/"
-                "verify-presentation"
+                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
 
@@ -205,10 +205,16 @@ async def main(
             connection = await agent.admin_POST("/connections/create-invitation")
 
         agent.connection_id = connection["connection_id"]
-        log_json(connection, label="Invitation response:")
-        log_msg("*****************")
-        log_msg(json.dumps(connection["invitation"]), label="Invitation:", color=None)
-        log_msg("*****************")
+
+        qr = QRCode()
+        qr.add_data(connection["invitation_url"])
+        log_msg(
+            "Use the following JSON to accept the invite from another demo agent. Or use the QR code to connect from a mobile agent."
+        )
+        log_msg(
+            json.dumps(connection["invitation"]), label="Invitation Data:", color=None
+        )
+        qr.print_ascii(invert=True)
 
         log_msg("Waiting for connection...")
         await agent.detect_connection()
@@ -269,7 +275,6 @@ async def main(
                     "trace": exchange_tracing,
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
-
                 # TODO issue an additional credential for Student ID
 
             elif option == "2":

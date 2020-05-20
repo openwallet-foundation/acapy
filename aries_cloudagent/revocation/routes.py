@@ -376,3 +376,17 @@ async def register(app: web.Application):
             web.post("/revocation/registry/{rev_reg_id}/publish", publish_registry),
         ]
     )
+
+
+def post_process_routes(app: web.Application):
+    """Set binary file responses within OpenAPI specification."""
+
+    # aio_http-apispec polite API only works on schema for JSON objects, not files yet
+    methods = app._state["swagger_dict"]["paths"].get(
+        "/revocation/registry/{rev_reg_id}/tails-file"
+    )
+    if methods:
+        methods["get"]["responses"]["200"]["schema"] = {
+            "type": "string",
+            "format": "binary",
+        }

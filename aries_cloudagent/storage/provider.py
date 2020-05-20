@@ -20,7 +20,6 @@ class StorageProvider(BaseProvider):
 
     async def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create and return the storage instance."""
-
         wallet: BaseWallet = await injector.inject(BaseWallet)
 
         wallet_type = settings.get_value("wallet.type", default="basic").lower()
