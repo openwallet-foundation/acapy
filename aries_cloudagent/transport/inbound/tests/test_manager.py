@@ -6,6 +6,7 @@ from ....config.injection_context import InjectionContext
 
 from ...outbound.message import OutboundMessage
 
+from ...wire_format import BaseWireFormat
 from ..base import InboundTransportConfiguration, InboundTransportRegistrationError
 from ..manager import InboundTransportManager
 
@@ -17,6 +18,12 @@ class TestInboundTransportManager(AsyncTestCase):
 
         config = InboundTransportConfiguration(module="http", host="0.0.0.0", port=80)
         mgr.register(config)
+
+        config = InboundTransportConfiguration(
+            module="no_such_package.http", host="0.0.0.0", port=80
+        )
+        with self.assertRaises(InboundTransportRegistrationError):
+            mgr.register(config)
 
         config = InboundTransportConfiguration(
             module="notransport", host="0.0.0.0", port=80
@@ -31,6 +38,7 @@ class TestInboundTransportManager(AsyncTestCase):
         test_port = 80
         context.update_settings(
             {
+                "transport.max_message_size": 65535,
                 "transport.inbound_configs": [[test_module, test_host, test_port]],
                 "transport.enable_undelivered_queue": True,
             }
@@ -66,20 +74,22 @@ class TestInboundTransportManager(AsyncTestCase):
         transport.stop.assert_awaited_once_with()
 
     async def test_create_session(self):
-        context = InjectionContext()
+        context = InjectionContext(enforce_typing=False)
+        test_wire_format = async_mock.MagicMock()
+        context.injector.bind_instance(BaseWireFormat, test_wire_format)
+
         test_inbound_handler = async_mock.CoroutineMock()
         mgr = InboundTransportManager(context, test_inbound_handler)
         test_transport = "http"
         test_accept = True
         test_can_respond = True
         test_client_info = {"client": "info"}
-        test_wire_format = async_mock.MagicMock()
+        mgr.session_limit = asyncio.Semaphore(16)
         session = await mgr.create_session(
             test_transport,
             accept_undelivered=test_accept,
             can_respond=test_can_respond,
             client_info=test_client_info,
-            wire_format=test_wire_format,
         )
 
         assert session.accept_undelivered == test_accept
@@ -120,6 +130,12 @@ class TestInboundTransportManager(AsyncTestCase):
             assert mgr.return_to_session(test_outbound) is False
             mock_accept.assert_called_once_with(test_outbound)
 
+        with async_mock.patch.object(
+            session, "accept_response", return_value=True
+        ) as mock_accept:
+            assert mgr.return_to_session(test_outbound) is True
+            mock_accept.assert_called_once_with(test_outbound)
+
     async def test_close_return(self):
         context = InjectionContext()
         test_return = async_mock.MagicMock()
@@ -133,6 +149,24 @@ class TestInboundTransportManager(AsyncTestCase):
 
         session.close()
         test_return.assert_called_once_with(session.context, test_outbound)
+
+    async def test_dispatch_complete_undelivered(self):
+        context = InjectionContext()
+        mgr = InboundTransportManager(context, None)
+        test_wire_format = async_mock.MagicMock(
+            parse_message=async_mock.CoroutineMock(return_value=("payload", "receipt"))
+        )
+        session = await mgr.create_session(
+            "http", wire_format=test_wire_format, accept_undelivered=True
+        )
+        inbound_msg = await session.parse_inbound("payload")
+        mgr.dispatch_complete(inbound_msg, None)
+
+    async def test_close_x(self):
+        context = InjectionContext()
+        mgr = InboundTransportManager(context, None)
+        mock_session = async_mock.MagicMock(response_buffer=async_mock.MagicMock())
+        mgr.closed_session(mock_session)
 
     async def test_process_undelivered(self):
         context = InjectionContext()
@@ -158,3 +192,15 @@ class TestInboundTransportManager(AsyncTestCase):
             mgr.process_undelivered(session)
             mock_accept.assert_called_once_with(test_outbound)
         assert not mgr.undelivered_queue.has_message_for_key(test_verkey)
+
+    async def test_return_undelivered_false(self):
+        context = InjectionContext()
+        context.update_settings({"transport.enable_undelivered_queue": False})
+        test_verkey = "test-verkey"
+        test_wire_format = async_mock.MagicMock()
+        mgr = InboundTransportManager(context, None)
+        await mgr.setup()
+
+        test_outbound = OutboundMessage(payload=None)
+        test_outbound.reply_to_verkey = test_verkey
+        assert not mgr.return_undelivered(test_outbound)
