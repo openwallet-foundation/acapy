@@ -2,6 +2,7 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ...config.injection_context import InjectionContext
 from ...messaging.error import MessageParseError
+from ...utils.classloader import ClassLoader
 
 from ..protocol_registry import ProtocolRegistry
 
@@ -62,6 +63,82 @@ class TestProtocolRegistry(AsyncTestCase):
         assert len(published) == 1
         assert published[0]["pid"] == self.test_protocol
         assert published[0]["roles"] == ["ROLE"]
+
+    async def test_disclosed_str(self):
+        self.registry.register_message_types(
+            {self.test_message_type: self.test_message_handler}
+        )
+        self.registry.register_controllers({self.test_protocol: "mock-class-name"})
+        protocols = [self.test_protocol]
+        ctx = InjectionContext()
+
+        class Mockery:
+            def __init__(self, protocol):
+                self.protocol = protocol
+
+            async def check_access(self, context):
+                return False
+
+        with async_mock.patch.object(
+            ClassLoader, "load_class", async_mock.MagicMock()
+        ) as load_class:
+            load_class.return_value = Mockery
+            published = await self.registry.prepare_disclosed(ctx, protocols)
+            assert not published
+
+    def test_resolve_message_class_str(self):
+        self.registry.register_message_types(
+            {self.test_message_type: self.test_message_handler}
+        )
+        mock_class = async_mock.MagicMock()
+        with async_mock.patch.object(
+            ClassLoader, "load_class", async_mock.MagicMock()
+        ) as load_class:
+            load_class.return_value = mock_class
+            result = self.registry.resolve_message_class(self.test_message_type)
+            assert result == mock_class
+
+    def test_resolve_message_class_no_major_version_support(self):
+        result = self.registry.resolve_message_class("proto/1.2/hello")
+        assert result is None
+
+    def test_resolve_message_load_class_str(self):
+        message_type_a = "proto/1.2/aaa"
+        self.registry.register_message_types(
+            {message_type_a: self.test_message_handler},
+            version_definition={
+                "major_version": 1,
+                "minimum_minor_version": 0,
+                "current_minor_version": 2,
+                "path": "v1_2",
+            },
+        )
+        mock_class = async_mock.MagicMock()
+        with async_mock.patch.object(
+            ClassLoader, "load_class", async_mock.MagicMock()
+        ) as load_class:
+            load_class.side_effect = [mock_class, mock_class]
+            result = self.registry.resolve_message_class("proto/1.1/aaa")
+            assert result == mock_class
+
+    def test_resolve_message_load_class_none(self):
+        message_type_a = "proto/1.2/aaa"
+        self.registry.register_message_types(
+            {message_type_a: self.test_message_handler},
+            version_definition={
+                "major_version": 1,
+                "minimum_minor_version": 0,
+                "current_minor_version": 2,
+                "path": "v1_2",
+            },
+        )
+        mock_class = async_mock.MagicMock()
+        with async_mock.patch.object(
+            ClassLoader, "load_class", async_mock.MagicMock()
+        ) as load_class:
+            load_class.side_effect = [mock_class, mock_class]
+            result = self.registry.resolve_message_class("proto/1.2/bbb")
+            assert result is None
 
     def test_repr(self):
         assert type(repr(self.registry)) is str
