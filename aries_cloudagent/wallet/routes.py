@@ -313,3 +313,24 @@ async def register(app: web.Application):
             web.post("/wallet/tag-policy/{cred_def_id}", wallet_set_tagging_policy),
         ]
     )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "wallet",
+            "description": "DID and tag policy management",
+            "externalDocs": {
+                "description": "Design",
+                "url": (
+                    "https://github.com/hyperledger/indy-sdk/tree/"
+                    "master/docs/design/003-wallet-storage"
+                ),
+            },
+        }
+    )
