@@ -355,6 +355,55 @@ class IndyWallet(BaseWallet):
         await self.get_signing_key(verkey)  # throw exception if key is undefined
         await indy.crypto.set_key_metadata(self.handle, verkey, meta_json)
 
+    async def rotate_keys_start(self, did: str, next_seed: str = None) -> str:
+        """
+        Begin key rotation for DID that wallet owns: generate new keys.
+
+        Args:
+            did: signing DID 
+            next_seed: incoming replacement seed (default random)
+
+        Returns:
+            The new verification key
+
+        """
+        try:
+            verkey = await indy.did.replace_keys_start(
+                self.handle,
+                did,
+                json.dumps(
+                    {
+                        "seed": (
+                            bytes_to_b64(validate_seed(next_seed)) if next_seed else {}}
+                        )
+                    }
+                )
+            )
+        except IndyError as x_indy:
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet {} error".format(self.name), WalletError
+            ) from x_indy
+
+        return verkey
+
+    async def rotate_keys_apply(self, did: str) -> DIDInfo:
+        """
+        Apply temporary keys as main for DID that wallet owns.
+
+        Args:
+            did: signing DID 
+
+        Returns:
+            DIDInfo with new verification key and metadata for DID
+
+        """
+        try:
+            await did.replace_keys_apply(self.handle, self.did)
+        except IndyError as x_indy:
+            raise IndyErrorHandler.wrap_error(
+                x_indy, "Wallet {} error".format(self.name), WalletError
+            ) from x_indy
+
     async def create_local_did(
         self, seed: str = None, did: str = None, metadata: dict = None
     ) -> DIDInfo:
