@@ -26,6 +26,7 @@ from aries_cloudagent.messaging.valid import (
 from aries_cloudagent.storage.error import StorageNotFoundError
 
 from .manager import ConnectionManager
+from .message_types import SPEC_URI
 from .messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
@@ -515,4 +516,19 @@ async def register(app: web.Application):
             ),
             web.post("/connections/{conn_id}/remove", connections_remove),
         ]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "connection",
+            "description": "Connection management",
+            "externalDocs": {"description": "Specification", "url": SPEC_URI},
+        }
     )

@@ -379,7 +379,24 @@ async def register(app: web.Application):
 
 
 def post_process_routes(app: web.Application):
-    """Set binary file responses within OpenAPI specification."""
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "revocation",
+            "description": "Revocation registry management",
+            "externalDocs": {
+                "description": "Overview",
+                "url": (
+                    "https://github.com/hyperledger/indy-hipe/tree/"
+                    "master/text/0011-cred-revocation"
+                ),
+            },
+        }
+    )
 
     # aio_http-apispec polite API only works on schema for JSON objects, not files yet
     methods = app._state["swagger_dict"]["paths"].get(
