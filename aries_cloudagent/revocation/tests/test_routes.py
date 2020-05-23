@@ -406,3 +406,5 @@ class TestRevocationRoutes(AsyncTestCase):
         assert mock_app._state["swagger_dict"]["paths"][
             "/revocation/registry/{rev_reg_id}/tails-file"
         ]["get"]["responses"]["200"]["schema"] == {"type": "string", "format": "binary"}
+
+        assert "tags" in mock_app._state["swagger_dict"]
