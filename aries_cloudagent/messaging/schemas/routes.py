@@ -170,8 +170,31 @@ async def schemas_get_schema(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-    app.add_routes([web.post("/schemas", schemas_send_schema)])
-    app.add_routes([web.get("/schemas/created", schemas_created, allow_head=False)])
     app.add_routes(
-        [web.get("/schemas/{schema_id}", schemas_get_schema, allow_head=False)]
+        [
+            web.post("/schemas", schemas_send_schema),
+            web.get("/schemas/created", schemas_created, allow_head=False),
+            web.get("/schemas/{schema_id}", schemas_get_schema, allow_head=False),
+        ]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "schema",
+            "description": "Schema operations",
+            "externalDocs": {
+                "description": "Specification",
+                "url": (
+                    "https://github.com/hyperledger/indy-node/blob/master/"
+                    "design/anoncreds.md#schema"
+                ),
+            },
+        }
     )

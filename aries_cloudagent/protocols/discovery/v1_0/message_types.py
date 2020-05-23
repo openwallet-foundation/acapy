@@ -1,5 +1,9 @@
 """Message type identifiers for Feature Discovery."""
 
+SPEC_URI = (
+    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "9b7ab9814f2e7d1108f74aca6f3d2e5d62899473/features/0031-discover-features"
+)
 PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/discover-features/1.0"
 
 DISCLOSE = f"{PROTOCOL_URI}/disclose"
