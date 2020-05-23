@@ -137,7 +137,7 @@ class BasicWallet(BaseWallet):
             raise WalletNotFoundError("Key not found: {}".format(verkey))
         self._keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
-    async def rotate_keys_start(self, did: str, next_seed: str = None) -> str:
+    async def rotate_did_keys_start(self, did: str, next_seed: str = None) -> str:
         """
         Begin key rotation for DID that wallet owns: generate new keys.
 
@@ -155,13 +155,10 @@ class BasicWallet(BaseWallet):
         if did not in self._local_dids:
             raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
 
-        key_info = await self.create_signing_key(
-            next_seed,
-            {"did": did}
-        )
+        key_info = await self.create_signing_key(next_seed, {"did": did})
         return key_info.verkey
 
-    async def rotate_keys_apply(self, did: str) -> None:
+    async def rotate_did_keys_apply(self, did: str) -> None:
         """
         Apply temporary keys as main for DID that wallet owns.
 
@@ -175,19 +172,21 @@ class BasicWallet(BaseWallet):
         """
         if did not in self._local_dids:
             raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
-        temp_keys = [k for k in self._keys if k["metadata"].get("did") == did]
+        temp_keys = [
+            k for k in self._keys if self._keys[k]["metadata"].get("did") == did
+        ]
         if not temp_keys:
             raise WalletError("Key rotation not in progress for DID: {}".format(did))
         verkey_enc = temp_keys[0]
 
         self._local_dids[did].update(
             {
-                "seed": self._keys[verkey_enc]["metadata"]["next_seed"],
+                "seed": self._keys[verkey_enc]["seed"],
                 "secret": self._keys[verkey_enc]["secret"],
-                "verkey": verkey_enc
+                "verkey": verkey_enc,
             }
         )
-        self._keys.remove(verkey_enc)
+        self._keys.pop(verkey_enc)
         return DIDInfo(did, verkey_enc, self._local_dids[did]["metadata"].copy())
 
     async def create_local_did(

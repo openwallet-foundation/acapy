@@ -355,7 +355,7 @@ class IndyWallet(BaseWallet):
         await self.get_signing_key(verkey)  # throw exception if key is undefined
         await indy.crypto.set_key_metadata(self.handle, verkey, meta_json)
 
-    async def rotate_keys_start(self, did: str, next_seed: str = None) -> str:
+    async def rotate_did_keys_start(self, did: str, next_seed: str = None) -> str:
         """
         Begin key rotation for DID that wallet owns: generate new keys.
 
@@ -372,21 +372,21 @@ class IndyWallet(BaseWallet):
                 self.handle,
                 did,
                 json.dumps(
-                    {
-                        "seed": (
-                            bytes_to_b64(validate_seed(next_seed)) if next_seed else {}}
-                        )
-                    }
-                )
+                    {"seed": bytes_to_b64(validate_seed(next_seed))}
+                    if next_seed
+                    else {}
+                ),
             )
         except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletItemNotFound:
+                raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
             raise IndyErrorHandler.wrap_error(
                 x_indy, "Wallet {} error".format(self.name), WalletError
             ) from x_indy
 
         return verkey
 
-    async def rotate_keys_apply(self, did: str) -> DIDInfo:
+    async def rotate_did_keys_apply(self, did: str) -> DIDInfo:
         """
         Apply temporary keys as main for DID that wallet owns.
 
@@ -398,8 +398,10 @@ class IndyWallet(BaseWallet):
 
         """
         try:
-            await did.replace_keys_apply(self.handle, self.did)
+            await indy.did.replace_keys_apply(self.handle, did)
         except IndyError as x_indy:
+            if x_indy.error_code == ErrorCode.WalletItemNotFound:
+                raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
             raise IndyErrorHandler.wrap_error(
                 x_indy, "Wallet {} error".format(self.name), WalletError
             ) from x_indy

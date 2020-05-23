@@ -37,14 +37,14 @@ class DIDResultSchema(Schema):
 class DIDListSchema(Schema):
     """Result schema for connection list."""
 
-    results = fields.List(fields.Nested(DIDSchema()), description="DID list",)
+    results = fields.List(fields.Nested(DIDSchema()), description="DID list")
 
 
 class GetTagPolicyResultSchema(Schema):
     """Result schema for tagging policy get request."""
 
     taggables = fields.List(
-        fields.Str(description="Taggable attribute", example="score",),
+        fields.Str(description="Taggable attribute", example="score"),
         description=(
             "List of attributes taggable for credential search under current policy"
         ),
@@ -55,7 +55,7 @@ class SetTagPolicyRequestSchema(Schema):
     """Request schema for tagging policy set request."""
 
     taggables = fields.List(
-        fields.Str(description="Taggable attribute", example="score",),
+        fields.Str(description="Taggable attribute", example="score"),
         description="List of attributes to set taggable for credential search",
     )
 
@@ -63,7 +63,7 @@ class SetTagPolicyRequestSchema(Schema):
 class DIDListQueryStringSchema(Schema):
     """Parameters and validators for DID list request query string."""
 
-    did = fields.Str(description="DID of interest", required=False, **INDY_DID,)
+    did = fields.Str(description="DID of interest", required=False, **INDY_DID)
     verkey = fields.Str(
         description="Verification key of interest",
         required=False,
@@ -72,10 +72,10 @@ class DIDListQueryStringSchema(Schema):
     public = fields.Boolean(description="Whether DID is on the ledger", required=False)
 
 
-class SetPublicDIDQueryStringSchema(Schema):
+class DIDQueryStringSchema(Schema):
     """Parameters and validators for set public DID request query string."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID,)
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
 
 class CredDefIdMatchInfoSchema(Schema):
@@ -201,10 +201,8 @@ async def wallet_get_public_did(request: web.BaseRequest):
     return web.json_response({"result": format_did_info(info)})
 
 
-@docs(
-    tags=["wallet"], summary="Assign the current public DID",
-)
-@querystring_schema(SetPublicDIDQueryStringSchema())
+@docs(tags=["wallet"], summary="Assign the current public DID")
+@querystring_schema(DIDQueryStringSchema())
 @response_schema(DIDResultSchema, 200)
 async def wallet_set_public_did(request: web.BaseRequest):
     """
@@ -225,7 +223,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest()
     try:
-        _ = await wallet.get_local_did(did)
+        await wallet.get_local_did(did)
     except WalletError:
         # DID not found or not in valid format
         raise web.HTTPBadRequest()
@@ -239,6 +237,35 @@ async def wallet_set_public_did(request: web.BaseRequest):
                 await ledger.update_endpoint_for_did(info.did, endpoint)
 
     return web.json_response({"result": format_did_info(info)})
+
+
+@docs(tags=["wallet"], summary="Rotate keys for a local non-public DID")
+@querystring_schema(DIDQueryStringSchema())
+async def wallet_rotate_did_keys(request: web.BaseRequest):
+    """
+    Request handler for rotating local DID keys.
+    """
+    context = request.app["request_context"]
+    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    if not wallet:
+        raise web.HTTPForbidden()
+    did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest()
+    try:
+        did_info = await wallet.get_local_did(did)
+    except WalletError:
+        # DID not found or not in valid format
+        raise web.HTTPBadRequest()
+    else:
+        if did_info.metadata.get("public", False):
+            # call from ledger API to propagate through ledger NYM transaction
+            raise web.HTTPBadRequest()
+
+    await wallet.rotate_did_keys_start(did)  # do not take seed over the wire
+    await wallet.rotate_did_keys_apply(did)
+
+    return web.json_response({})
 
 
 @docs(tags=["wallet"], summary="Get the tagging policy for a credential definition")
@@ -305,6 +332,7 @@ async def register(app: web.Application):
             web.post("/wallet/did/create", wallet_create_did),
             web.get("/wallet/did/public", wallet_get_public_did, allow_head=False),
             web.post("/wallet/did/public", wallet_set_public_did),
+            web.patch("/wallet/did/local/rotate-keys", wallet_rotate_did_keys),
             web.get(
                 "/wallet/tag-policy/{cred_def_id}",
                 wallet_get_tagging_policy,

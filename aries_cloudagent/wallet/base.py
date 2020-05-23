@@ -102,7 +102,7 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
-    async def rotate_keys_start(self, did: str, next_seed: str = None) -> str:
+    async def rotate_did_keys_start(self, did: str, next_seed: str = None) -> str:
         """
         Begin key rotation for DID that wallet owns: generate new keys.
 
@@ -119,7 +119,7 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
-    async def rotate_keys_apply(self, did: str) -> None:
+    async def rotate_did_keys_apply(self, did: str) -> None:
         """
         Apply temporary keys as main for DID that wallet owns.
 
