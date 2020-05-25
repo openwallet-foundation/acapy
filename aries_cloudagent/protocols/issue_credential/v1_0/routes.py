@@ -65,6 +65,45 @@ class V10CredentialStoreRequestSchema(Schema):
     credential_id = fields.Str(required=False)
 
 
+class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
+    """Base class for request schema for sending credential proposal admin message."""
+
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        required=False,
+        **INDY_CRED_DEF_ID,
+    )
+    schema_id = fields.Str(
+        description="Schema identifier", required=False, **INDY_SCHEMA_ID
+    )
+    schema_issuer_did = fields.Str(
+        description="Schema issuer DID", required=False, **INDY_DID
+    )
+    schema_name = fields.Str(
+        description="Schema name", required=False, example="preferences"
+    )
+    schema_version = fields.Str(
+        description="Schema version", required=False, **INDY_VERSION
+    )
+    issuer_did = fields.Str(
+        description="Credential issuer DID", required=False, **INDY_DID
+    )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the credential exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+    )
+    comment = fields.Str(description="Human-readable comment", required=False)
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
+    credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
+
+
 class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     """Base class for request schema for sending credential proposal admin message."""
 
@@ -285,6 +324,75 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
     except StorageNotFoundError:
         raise web.HTTPNotFound()
     return web.json_response(record.serialize())
+
+
+@docs(
+    tags=["issue-credential"],
+    summary="Send holder a credential, automating entire flow",
+)
+@request_schema(V10CredentialCreateSchema())
+@response_schema(V10CredentialExchangeSchema(), 200)
+async def credential_exchange_create(request: web.BaseRequest):
+    """
+    Request handler for creating a credential from attr values.
+
+    The internal credential record will be created without the credential
+    being sent to any connection. This can be used in conjunction with
+    the `oob` protocols to bind messages to an out of band message.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential exchange record
+
+    """
+    r_time = get_timer()
+
+    context = request.app["request_context"]
+
+    body = await request.json()
+
+    comment = body.get("comment")
+    preview_spec = body.get("credential_proposal")
+    if not preview_spec:
+        raise web.HTTPBadRequest(reason="credential_proposal must be provided")
+    auto_remove = body.get("auto_remove")
+    trace_msg = body.get("trace")
+    preview = CredentialPreview.deserialize(preview_spec)
+
+    credential_proposal = CredentialProposal(
+        comment=comment,
+        credential_proposal=preview,
+        **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
+    )
+    credential_proposal.assign_trace_decorator(
+        context.settings, trace_msg,
+    )
+
+    trace_event(
+        context.settings,
+        credential_proposal,
+        outcome="credential_exchange_create.START",
+    )
+
+    credential_manager = CredentialManager(context)
+
+    (
+        credential_exchange_record,
+        credential_offer_message,
+    ) = await credential_manager.prepare_send(
+        None, credential_proposal=credential_proposal, auto_remove=auto_remove,
+    )
+
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_create.END",
+        perf_counter=r_time,
+    )
+
+    return web.json_response(credential_exchange_record.serialize())
 
 
 @docs(
@@ -932,6 +1040,7 @@ async def register(app: web.Application):
                 credential_exchange_retrieve,
                 allow_head=False,
             ),
+            web.post("/issue-credential/create", credential_exchange_create),
             web.post("/issue-credential/send", credential_exchange_send),
             web.post(
                 "/issue-credential/send-proposal", credential_exchange_send_proposal
