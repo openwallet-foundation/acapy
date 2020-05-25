@@ -172,6 +172,9 @@ class AdminServer(BaseAdminServer):
             @web.middleware
             async def check_token(request, handler):
                 header_admin_api_key = request.headers.get("x-api-key")
+                # always allow websockets here
+                if request.path == "/ws":
+                    return await handler(request)
                 if not header_admin_api_key:
                     raise web.HTTPUnauthorized()
 
@@ -355,6 +358,17 @@ class AdminServer(BaseAdminServer):
         queue = BasicMessageQueue()
         loop = asyncio.get_event_loop()
 
+        admin_api_key = self.context.settings.get("admin.admin_api_key")
+        admin_insecure_mode = self.context.settings.get("admin.admin_insecure_mode")
+        if admin_insecure_mode:
+            # open to send websocket messages without api key auth
+            queue.api_key_authenticated = True
+        else:
+            header_admin_api_key = request.headers.get("x-api-key")
+            if header_admin_api_key == admin_api_key:
+                # authenticated via http header
+                queue.api_key_authenticated = True
+
         try:
             self.websocket_queues[socket_id] = queue
             await queue.enqueue(
@@ -372,7 +386,7 @@ class AdminServer(BaseAdminServer):
             )
 
             closed = False
-            receive = loop.create_task(ws.receive())
+            receive = loop.create_task(ws.receive_json())
             send = loop.create_task(queue.dequeue(timeout=5.0))
 
             while not closed:
@@ -384,9 +398,22 @@ class AdminServer(BaseAdminServer):
                         closed = True
 
                     if receive.done():
-                        # ignored
                         if not closed:
-                            receive = loop.create_task(ws.receive())
+                            msg_received = None
+                            msg_api_key = None
+                            try:
+                                # this call can re-raise exeptions from inside the task
+                                msg_received = receive.result()
+                                msg_api_key = msg_received.get("x-api-key")
+                            except Exception as ex:
+                                LOGGER.error("Exception in websocket receiving task:")
+                                LOGGER.exception(ex)
+                            if admin_api_key:
+                                if admin_api_key == msg_api_key:
+                                    # authenticated via websocket message
+                                    queue.api_key_authenticated = True
+
+                            receive = loop.create_task(ws.receive_json())
 
                     if send.done():
                         try:
@@ -397,7 +424,10 @@ class AdminServer(BaseAdminServer):
                         if msg is None:
                             # we send fake pings because the JS client
                             # can't detect real ones
-                            msg = {"topic": "ping"}
+                            msg = {
+                                "topic": "ping",
+                                "authenticated": queue.api_key_authenticated,
+                            }
                         if not closed:
                             if msg:
                                 await ws.send_json(msg)
@@ -441,4 +471,5 @@ class AdminServer(BaseAdminServer):
                     )
 
         for queue in self.websocket_queues.values():
-            await queue.enqueue({"topic": topic, "payload": payload})
+            if queue.api_key_authenticated:
+                await queue.enqueue({"topic": topic, "payload": payload})

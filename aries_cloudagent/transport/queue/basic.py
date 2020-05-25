@@ -14,6 +14,7 @@ class BasicMessageQueue(BaseMessageQueue):
         self.queue = self.make_queue()
         self.logger = logging.getLogger(__name__)
         self.stop_event = asyncio.Event()
+        self.api_key_authenticated = False
 
     def make_queue(self):
         """Create the queue instance."""
