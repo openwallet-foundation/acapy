@@ -12,6 +12,13 @@ from .models.invitation import Invitation as InvitationModel
 from .messages.invitation import Invitation as InvitationMessage
 from .messages.service import Service as ServiceMessage
 
+from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange import (
+    V10CredentialExchange,
+)
+
+
+SUPPORTED_ATTACHMENTS = {"credential-offer": V10CredentialExchange}
+
 
 class OutOfBandManagerError(BaseError):
     """Out of band error."""
@@ -42,7 +49,11 @@ class OutOfBandManager:
         return self._context
 
     async def create_invitation(
-        self, my_label: str = None, my_endpoint: str = None, multi_use: bool = False,
+        self,
+        my_label: str = None,
+        my_endpoint: str = None,
+        multi_use: bool = False,
+        attachments: list = None,
     ) -> Tuple[InvitationModel, InvitationMessage]:
         """
         Generate new out of band invitation.
@@ -56,6 +67,8 @@ class OutOfBandManager:
             my_endpoint: endpoint where other party can reach me
             public: set to create an invitation from the public DID
             multi_use: set to True to create an invitation for multiple use
+            attachments: list of dicts in the form of
+                {"id": "jh5k23j5gh2123", "type": "credential-offer"}
 
         Returns:
             A tuple of the new `InvitationModel` and out of band `InvitationMessage`
@@ -69,6 +82,14 @@ class OutOfBandManager:
         if not my_endpoint:
             my_endpoint = self.context.settings.get("default_endpoint")
 
+        message_attachments = []
+        for attachment in attachments:
+            if attachment["type"] == "credential-offer":
+                model_cls = SUPPORTED_ATTACHMENTS[attachment["type"]]
+                instance_id = SUPPORTED_ATTACHMENTS[attachment["id"]]
+                model = await model_cls.retrieve_by_id(self.context, instance_id)
+                message_attachments.append(model.credential_offer)
+
         # Create and store new invitation key
         connection_key = await wallet.create_signing_key()
         service = ServiceMessage(
@@ -78,7 +99,9 @@ class OutOfBandManager:
             routing_keys=[],
             service_endpoint=my_endpoint,
         )
-        invitation_message = InvitationMessage(label=my_label, service=[service])
+        invitation_message = InvitationMessage(
+            label=my_label, service=[service], request_attach=message_attachments
+        )
 
         # Create record
         invitation_model = InvitationModel(
