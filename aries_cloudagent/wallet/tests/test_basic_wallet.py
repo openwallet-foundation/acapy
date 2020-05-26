@@ -103,20 +103,25 @@ class TestBasicWallet:
             _ = await wallet.create_local_did("invalid-seed", None)
 
     @pytest.mark.asyncio
-    async def test_rotate_did_keys(self, wallet):
+    async def test_rotate_did_keypair(self, wallet):
         with pytest.raises(WalletNotFoundError):
-            await wallet.rotate_did_keys_start(self.test_did)
+            await wallet.rotate_did_keypair_start(self.test_did)
 
         with pytest.raises(WalletNotFoundError):
-            await wallet.rotate_did_keys_apply(self.test_did)
+            await wallet.rotate_did_keypair_apply(self.test_did)
 
         info = await wallet.create_local_did(self.test_seed, self.test_did)
 
         with pytest.raises(WalletError):
-            await wallet.rotate_did_keys_apply(self.test_did)
+            await wallet.rotate_did_keypair_apply(self.test_did)
 
-        await wallet.rotate_did_keys_start(self.test_did)
-        await wallet.rotate_did_keys_apply(self.test_did)
+        new_verkey = await wallet.rotate_did_keypair_start(self.test_did)
+        assert info.verkey != new_verkey
+        await wallet.rotate_did_keypair_apply(self.test_did)
+
+        new_info = await wallet.get_local_did(self.test_did)
+        assert new_info.did == self.test_did
+        assert new_info.verkey != info.verkey
 
     @pytest.mark.asyncio
     async def test_create_local_with_did(self, wallet):

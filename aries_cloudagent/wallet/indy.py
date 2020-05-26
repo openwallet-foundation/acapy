@@ -355,12 +355,12 @@ class IndyWallet(BaseWallet):
         await self.get_signing_key(verkey)  # throw exception if key is undefined
         await indy.crypto.set_key_metadata(self.handle, verkey, meta_json)
 
-    async def rotate_did_keys_start(self, did: str, next_seed: str = None) -> str:
+    async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
         """
-        Begin key rotation for DID that wallet owns: generate new keys.
+        Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:
-            did: signing DID 
+            did: signing DID
             next_seed: incoming replacement seed (default random)
 
         Returns:
@@ -386,12 +386,12 @@ class IndyWallet(BaseWallet):
 
         return verkey
 
-    async def rotate_did_keys_apply(self, did: str) -> DIDInfo:
+    async def rotate_did_keypair_apply(self, did: str) -> DIDInfo:
         """
-        Apply temporary keys as main for DID that wallet owns.
+        Apply temporary keypair as main for DID that wallet owns.
 
         Args:
-            did: signing DID 
+            did: signing DID
 
         Returns:
             DIDInfo with new verification key and metadata for DID

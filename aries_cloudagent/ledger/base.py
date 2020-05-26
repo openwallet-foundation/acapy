@@ -68,6 +68,15 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     def nym_to_did(self, nym: str) -> str:
         """Format a nym with the ledger's DID prefix."""
 
+    @abstractmethod
+    async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
+        """
+        Rotate keypair for public DID: create new key, submit to ledger, update wallet.
+
+        Args:
+            next_seed: seed for incoming ed25519 keypair (default random)
+        """
+
     def did_to_nym(self, did: str) -> str:
         """Remove the ledger's DID prefix to produce a nym."""
         if did:

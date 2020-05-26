@@ -137,12 +137,12 @@ class BasicWallet(BaseWallet):
             raise WalletNotFoundError("Key not found: {}".format(verkey))
         self._keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
-    async def rotate_did_keys_start(self, did: str, next_seed: str = None) -> str:
+    async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
         """
-        Begin key rotation for DID that wallet owns: generate new keys.
+        Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:
-            did: signing DID 
+            did: signing DID
             next_seed: incoming replacement seed (default random)
 
         Returns:
@@ -158,12 +158,12 @@ class BasicWallet(BaseWallet):
         key_info = await self.create_signing_key(next_seed, {"did": did})
         return key_info.verkey
 
-    async def rotate_did_keys_apply(self, did: str) -> None:
+    async def rotate_did_keypair_apply(self, did: str) -> None:
         """
-        Apply temporary keys as main for DID that wallet owns.
+        Apply temporary keypair as main for DID that wallet owns.
 
         Args:
-            did: signing DID 
+            did: signing DID
 
         Raises:
             WalletNotFoundError: if wallet does not own DID

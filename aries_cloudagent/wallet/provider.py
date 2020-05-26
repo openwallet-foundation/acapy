@@ -27,6 +27,8 @@ class WalletProvider(BaseProvider):
         wallet_cfg = {}
         if "wallet.key" in settings:
             wallet_cfg["key"] = settings["wallet.key"]
+        if "wallet.rekey" in settings:
+            wallet_cfg["rekey"] = settings["wallet.rekey"]
         if "wallet.name" in settings:
             wallet_cfg["name"] = settings["wallet.name"]
         if "wallet.storage_type" in settings:
