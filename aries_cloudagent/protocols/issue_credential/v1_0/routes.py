@@ -284,7 +284,9 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
             context, credential_exchange_id
         )
     except StorageNotFoundError:
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(
+            reason=f"No record of credential exchange id {credential_exchange_id}"
+        )
     return web.json_response(record.serialize())
 
 
@@ -558,9 +560,14 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
-    credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
-        context, credential_exchange_id
-    )
+    try:
+        credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
+            context, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound(
+            reason=f"No record of credential exchange id {credential_exchange_id}"
+        )
     assert credential_exchange_record.state == (
         V10CredentialExchange.STATE_PROPOSAL_RECEIVED
     )
@@ -615,9 +622,14 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
-    credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
-        context, credential_exchange_id
-    )
+    try:
+        credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
+            context, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound(
+            reason=f"No record of credential exchange id {credential_exchange_id}"
+        )
     connection_id = credential_exchange_record.connection_id
 
     assert credential_exchange_record.state == (
@@ -682,9 +694,14 @@ async def credential_exchange_issue(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="credential_preview must be provided")
 
     credential_exchange_id = request.match_info["cred_ex_id"]
-    cred_exch_record = await V10CredentialExchange.retrieve_by_id(
-        context, credential_exchange_id
-    )
+    try:
+        cred_exch_record = await V10CredentialExchange.retrieve_by_id(
+            context, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound(
+            reason=f"No record of credential exchange id {credential_exchange_id}"
+        )
     connection_id = cred_exch_record.connection_id
 
     assert cred_exch_record.state == V10CredentialExchange.STATE_REQUEST_RECEIVED
@@ -754,9 +771,14 @@ async def credential_exchange_store(request: web.BaseRequest):
         credential_id = None
 
     credential_exchange_id = request.match_info["cred_ex_id"]
-    credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
-        context, credential_exchange_id
-    )
+    try:
+        credential_exchange_record = await V10CredentialExchange.retrieve_by_id(
+            context, credential_exchange_id
+        )
+    except StorageNotFoundError:
+        raise web.HTTPNotFound(
+            reason=f"No record of credential exchange id {credential_exchange_id}"
+        )
     connection_id = credential_exchange_record.connection_id
 
     assert credential_exchange_record.state == (
@@ -865,7 +887,9 @@ async def credential_exchange_remove(request: web.BaseRequest):
             context, credential_exchange_id
         )
     except StorageNotFoundError:
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(
+            reason=f"No record of credential exchange id {credential_exchange_id}"
+        )
     await credential_exchange_record.delete_record(context)
     return web.json_response({})
 
@@ -896,7 +920,9 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
             context, credential_exchange_id
         )
     except StorageNotFoundError:
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(
+            reason=f"No record of credential exchange id {credential_exchange_id}"
+        )
 
     error_result = ProblemReport(explain_ltxt=body["explain_ltxt"])
     error_result.assign_thread_id(credential_exchange_record.thread_id)
