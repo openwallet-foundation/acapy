@@ -35,6 +35,7 @@ from ....utils.outofband import serialize_outofband
 from ...problem_report.v1_0.message import ProblemReport
 
 from .manager import CredentialManager
+from .message_types import SPEC_URI
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_offer import CredentialOfferSchema
 from .messages.inner.credential_preview import (
@@ -1084,4 +1085,19 @@ async def register(app: web.Application):
                 credential_exchange_problem_report,
             ),
         ]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "issue-credential",
+            "description": "Credential issue, revocation",
+            "externalDocs": {"description": "Specification", "url": SPEC_URI},
+        }
     )

@@ -376,3 +376,34 @@ async def register(app: web.Application):
             web.post("/revocation/registry/{rev_reg_id}/publish", publish_registry),
         ]
     )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "revocation",
+            "description": "Revocation registry management",
+            "externalDocs": {
+                "description": "Overview",
+                "url": (
+                    "https://github.com/hyperledger/indy-hipe/tree/"
+                    "master/text/0011-cred-revocation"
+                ),
+            },
+        }
+    )
+
+    # aio_http-apispec polite API only works on schema for JSON objects, not files yet
+    methods = app._state["swagger_dict"]["paths"].get(
+        "/revocation/registry/{rev_reg_id}/tails-file"
+    )
+    if methods:
+        methods["get"]["responses"]["200"]["schema"] = {
+            "type": "string",
+            "format": "binary",
+        }

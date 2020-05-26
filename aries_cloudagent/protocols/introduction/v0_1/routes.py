@@ -73,3 +73,14 @@ async def register(app: web.Application):
     app.add_routes(
         [web.post("/connections/{conn_id}/start-introduction", introduction_start)]
     )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {"name": "introduction", "description": "Introduction of known parties"}
+    )
