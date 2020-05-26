@@ -40,6 +40,8 @@ class TestArgParse(AsyncTestCase):
                 "80",
                 "--outbound-transport",
                 "http",
+                "--max-outbound-retry",
+                "5",
             ]
         )
 
@@ -50,6 +52,7 @@ class TestArgParse(AsyncTestCase):
 
         assert settings.get("transport.inbound_configs") == [["http", "0.0.0.0", "80"]]
         assert settings.get("transport.outbound_configs") == ["http"]
+        assert result.max_outbound_retry == 5
 
     def test_bytesize(self):
         bs = ByteSize()

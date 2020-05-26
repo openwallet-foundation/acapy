@@ -1,5 +1,9 @@
 """Message and inner object type identifiers for Connections."""
 
+SPEC_URI = (
+    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "4fae574c03f9f1013db30bf2c0c676b1122f7149/features/0037-present-proof"
+)
 PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0"
 
 # Message types

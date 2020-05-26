@@ -63,6 +63,8 @@ class QueuedOutboundMessage:
 class OutboundTransportManager:
     """Outbound transport manager class."""
 
+    MAX_RETRY_COUNT = 4
+
     def __init__(
         self, context: InjectionContext, handle_not_delivered: Callable = None
     ):
@@ -85,6 +87,8 @@ class OutboundTransportManager:
         self.running_transports = {}
         self.task_queue = TaskQueue(max_active=200)
         self._process_task: asyncio.Task = None
+        if self.context.settings.get("transport.max_outbound_retry"):
+            self.MAX_RETRY_COUNT = self.context.settings["transport.max_outbound_retry"]
 
     async def setup(self):
         """Perform setup operations."""
@@ -249,7 +253,7 @@ class OutboundTransportManager:
             raise OutboundDeliveryError("No supported transport for outbound message")
 
         queued = QueuedOutboundMessage(context, outbound, target, transport_id)
-        queued.retries = 4
+        queued.retries = self.MAX_RETRY_COUNT
         self.outbound_new.append(queued)
         self.process_queued()
 

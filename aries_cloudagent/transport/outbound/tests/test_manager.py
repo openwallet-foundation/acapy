@@ -20,9 +20,17 @@ class TestOutboundTransportManager(AsyncTestCase):
         mgr = OutboundTransportManager(InjectionContext())
         mgr.register("http")
         assert mgr.get_registered_transport_for_scheme("http")
+        assert mgr.MAX_RETRY_COUNT == 4
 
         with self.assertRaises(OutboundTransportRegistrationError):
             mgr.register("http")
+
+    def test_maximum_retry_count(self):
+        context = InjectionContext()
+        context.update_settings({"transport.max_outbound_retry": 5})
+        mgr = OutboundTransportManager(context)
+        mgr.register("http")
+        assert mgr.MAX_RETRY_COUNT == 5
 
     async def test_setup(self):
         context = InjectionContext()

@@ -256,6 +256,13 @@ class AdminServer(BaseAdminServer):
         self.app = await self.make_application()
         runner = web.AppRunner(self.app)
         await runner.setup()
+
+        plugin_registry: PluginRegistry = await self.context.inject(
+            PluginRegistry, required=False
+        )
+        if plugin_registry:
+            plugin_registry.post_process_routes(self.app)
+
         self.site = web.TCPSite(runner, host=self.host, port=self.port)
 
         try:
