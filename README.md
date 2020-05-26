@@ -72,7 +72,7 @@ If you are an experienced decentralized identity developer that knows Indy, are 
 
 ### Architectural Deep Dive
 
-The ACA-Py team presented an architectural deep dive webinar that can be viewed [here](https://zoom.us/recording/play/Pr-gdxAUVciy7MtPE9tkNAuSLT_Pl_NEYMeW2XxQRitjXtQajl3X5y7L_A1CCRee?autoplay=true&startTime=1563894122000). Slides from the webinar can be found [here](https://docs.google.com/presentation/d/1K7qiQkVi4n-lpJ3nUZY27OniUEM0c8HAIk4imCWCx5Q/edit#slide=id.g5d43fe05cc_0_77).
+The ACA-Py team presented an architectural deep dive webinar that can be viewed [here](https://youtu.be/FXTQEtB4fto). Slides from the webinar can be found [here](https://docs.google.com/presentation/d/1K7qiQkVi4n-lpJ3nUZY27OniUEM0c8HAIk4imCWCx5Q/edit#slide=id.g5d43fe05cc_0_77).
 
 ### Getting Started Guide
 

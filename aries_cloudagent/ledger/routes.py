@@ -240,3 +240,24 @@ async def register(app: web.Application):
             web.post("/ledger/taa/accept", ledger_accept_taa),
         ]
     )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "ledger",
+            "description": "Interaction with ledger",
+            "externalDocs": {
+                "description": "Overview",
+                "url": (
+                    "https://hyperledger-indy.readthedocs.io/projects/plenum/"
+                    "en/latest/storage.html#ledger"
+                ),
+            },
+        }
+    )

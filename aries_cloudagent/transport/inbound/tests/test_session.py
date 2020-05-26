@@ -1,4 +1,5 @@
 import asyncio
+import pytest
 
 from asynctest import TestCase, mock as async_mock
 
@@ -139,6 +140,10 @@ class TestInboundSession(TestCase):
         assert test_verkey in sess.reply_verkeys
         assert test_thread_id in sess.reply_thread_ids
 
+        assert receipt.in_time is None
+        receipt.connection_id = "dummy"
+        assert receipt.connection_id == "dummy"
+
     def test_select_outbound(self):
         test_ctx = InjectionContext()
         test_session_id = "session-id"
@@ -195,6 +200,28 @@ class TestInboundSession(TestCase):
             assert result is encode.return_value
 
         sess.clear_response()
+        assert not sess.response_buffer
+
+        sess.close()
+        assert await asyncio.wait_for(sess.wait_response(), 0.1) is None
+
+    async def test_wait_response_x(self):
+        test_ctx = InjectionContext()
+        sess = InboundSession(
+            context=test_ctx, inbound_handler=None, session_id=None, wire_format=None,
+        )
+        test_msg = OutboundMessage(payload=None)
+        sess.set_response(test_msg)
+        assert sess.response_event.is_set()
+        assert sess.response_buffered
+
+        with async_mock.patch.object(
+            sess, "encode_outbound", async_mock.CoroutineMock()
+        ) as encode:
+            encode.side_effect = WireFormatError()
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(sess.wait_response(), 0.1)
+
         assert not sess.response_buffer
 
         sess.close()

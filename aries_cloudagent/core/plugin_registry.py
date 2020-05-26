@@ -49,13 +49,13 @@ class PluginRegistry:
                 "Versions list must define at least one version module"
             )
 
+        if not all(type(v) is dict for v in version_list):
+            raise ProtocolDefinitionValidationError(
+                "Element of versions definition list is not of type dict"
+            )
+
         for version_dict in version_list:
             # Dicts must have correct format
-            is_dict = type(version_dict) is dict
-            if not is_dict:
-                raise ProtocolDefinitionValidationError(
-                    "Element of versions definition list is not of type dict"
-                )
 
             try:
                 type(version_dict["major_version"]) is int and type(
@@ -133,7 +133,7 @@ class PluginRegistry:
 
             # Make an exception for non-protocol modules
             # that contain admin routes and for old-style protocol
-            # modules with out version support
+            # modules without version support
             routes = ClassLoader.load_module("routes", module_name)
             message_types = ClassLoader.load_module("message_types", module_name)
             if routes or message_types:

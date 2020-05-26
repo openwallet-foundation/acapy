@@ -33,6 +33,7 @@ from ....storage.error import StorageNotFoundError
 from ....indy.util import generate_pr_nonce
 
 from .manager import PresentationManager
+from .message_types import SPEC_URI
 from .messages.inner.presentation_preview import (
     PresentationPreview,
     PresentationPreviewSchema,
@@ -919,4 +920,19 @@ async def register(app: web.Application):
                 presentation_exchange_remove,
             ),
         ]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "present-proof",
+            "description": "Proof presentation",
+            "externalDocs": {"description": "Specification", "url": SPEC_URI},
+        }
     )

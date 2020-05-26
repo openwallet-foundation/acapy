@@ -7,6 +7,8 @@ from marshmallow import fields, Schema
 
 from aries_cloudagent.core.protocol_registry import ProtocolRegistry
 
+from .message_types import SPEC_URI
+
 
 class QueryResultSchema(Schema):
     """Result schema for the protocol list."""
@@ -51,3 +53,18 @@ async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes([web.get("/features", query_features, allow_head=False)])
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "server",
+            "description": "Feature discovery",
+            "externalDocs": {"description": "Specification", "url": SPEC_URI},
+        }
+    )

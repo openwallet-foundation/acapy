@@ -27,7 +27,7 @@ from ..protocols.connections.latest.manager import (
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
-from ..transport.outbound.manager import OutboundTransportManager
+from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
 from ..utils.task_queue import CompletedTask, TaskQueue
@@ -277,9 +277,9 @@ class Conductor:
             "task_pending": self.dispatcher.task_queue.current_pending,
         }
         for m in self.outbound_transport_manager.outbound_buffer:
-            if m.state == m.STATE_ENCODE:
+            if m.state == QueuedOutboundMessage.STATE_ENCODE:
                 stats["out_encode"] += 1
-            if m.state == m.STATE_DELIVER:
+            if m.state == QueuedOutboundMessage.STATE_DELIVER:
                 stats["out_deliver"] += 1
         return stats
 

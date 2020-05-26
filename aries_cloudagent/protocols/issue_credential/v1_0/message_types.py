@@ -1,5 +1,9 @@
 """Message and inner object type identifiers for Connections."""
 
+SPEC_URI = (
+    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "bb42a6c35e0d5543718fb36dd099551ab192f7b0/features/0036-issue-credential"
+)
 PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0"
 
 # Message types
