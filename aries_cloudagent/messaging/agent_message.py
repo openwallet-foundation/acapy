@@ -295,7 +295,10 @@ class AgentMessage(BaseModel):
             thid: The thread identifier
             pthid: The parent thread identifier
         """
-        self._thread = ThreadDecorator(thid=thid, pthid=pthid)
+        if thid or pthid:
+            self._thread = ThreadDecorator(thid=thid, pthid=pthid)
+        else:
+            self._thread = None
 
     @property
     def _trace(self) -> TraceDecorator:
