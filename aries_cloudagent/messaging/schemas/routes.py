@@ -13,8 +13,9 @@ from aiohttp_apispec import (
 
 from marshmallow import fields, Schema
 
-from ...issuer.base import BaseIssuer
+from ...issuer.base import BaseIssuer, IssuerError
 from ...ledger.base import BaseLedger
+from ...ledger.error import LedgerError
 from ...storage.base import BaseStorage
 from ..valid import NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
 from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
@@ -105,11 +106,14 @@ async def schemas_send_schema(request: web.BaseRequest):
     ledger: BaseLedger = await context.inject(BaseLedger)
     issuer: BaseIssuer = await context.inject(BaseIssuer)
     async with ledger:
-        schema_id, schema_def = await shield(
-            ledger.create_and_send_schema(
-                issuer, schema_name, schema_version, attributes
+        try:
+            schema_id, schema_def = await shield(
+                ledger.create_and_send_schema(
+                    issuer, schema_name, schema_version, attributes
+                )
             )
-        )
+        except (IssuerError, LedgerError) as err:
+            raise web.HTTPBadRequest(reason=err.roll_up)
 
     return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
@@ -163,7 +167,10 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     ledger: BaseLedger = await context.inject(BaseLedger)
     async with ledger:
-        schema = await ledger.get_schema(schema_id)
+        try:
+            schema = await ledger.get_schema(schema_id)
+        except LedgerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up)
 
     return web.json_response({"schema": schema})
 
