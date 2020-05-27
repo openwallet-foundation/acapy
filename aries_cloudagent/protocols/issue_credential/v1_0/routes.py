@@ -451,27 +451,16 @@ async def _create_free_offer(
 ):
     """Create a credential offer and related exchange record."""
 
-    if not cred_def_id:
-        raise web.HTTPBadRequest(reason="cred_def_id is required")
-
-    if auto_issue and not preview_spec:
-        raise web.HTTPBadRequest(
-            reason=("If auto_issue is set then credential_preview must be provided")
-        )
-
-    if preview_spec:
-        credential_preview = CredentialPreview.deserialize(preview_spec)
-        credential_proposal = CredentialProposal(
-            comment=comment,
-            credential_proposal=credential_preview,
-            cred_def_id=cred_def_id,
-        )
-        credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
-        )
-        credential_proposal_dict = credential_proposal.serialize()
-    else:
-        credential_proposal_dict = None
+    credential_preview = CredentialPreview.deserialize(preview_spec)
+    credential_proposal = CredentialProposal(
+        comment=comment,
+        credential_proposal=credential_preview,
+        cred_def_id=cred_def_id,
+    )
+    credential_proposal.assign_trace_decorator(
+        context.settings, trace_msg,
+    )
+    credential_proposal_dict = credential_proposal.serialize()
 
     credential_exchange_record = V10CredentialExchange(
         connection_id=connection_id,
@@ -521,12 +510,18 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     body = await request.json()
 
     cred_def_id = body.get("cred_def_id")
+    if not cred_def_id:
+        raise web.HTTPBadRequest(reason="cred_def_id is required")
+
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
     auto_remove = body.get("auto_remove")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
+    if not preview_spec:
+        raise web.HTTPBadRequest(reason=("Missing credential_preview"))
+
     connection_id = body.get("connection_id")
     trace_msg = body.get("trace")
 
