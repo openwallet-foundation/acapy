@@ -441,13 +441,15 @@ class CredentialManager:
         credential_request_message = self.context.message
         assert len(credential_request_message.requests_attach or []) == 1
         credential_request = credential_request_message.indy_cred_req(0)
+        connection_id = (
+            self.context.connection_record
+            and self.context.connection_record.connection_id
+        )
 
         (
             credential_exchange_record
         ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
-            self.context,
-            self.context.connection_record.connection_id,
-            credential_request_message._thread_id,
+            self.context, connection_id, credential_request_message._thread_id
         )
         credential_exchange_record.credential_request = credential_request
         credential_exchange_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
