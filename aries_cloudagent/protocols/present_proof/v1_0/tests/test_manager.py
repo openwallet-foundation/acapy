@@ -438,7 +438,7 @@ class TestPresentationManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            side_effect=test_module.HolderError(706, {"message": "Nope"})
+            side_effect=test_module.HolderError("Problem", {"message": "Nope"})
         )
         self.context.injector.clear_binding(BaseHolder)
         self.context.injector.bind_instance(BaseHolder, self.holder)
