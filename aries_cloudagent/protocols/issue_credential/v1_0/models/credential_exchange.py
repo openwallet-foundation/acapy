@@ -137,7 +137,9 @@ class V10CredentialExchange(BaseExchangeRecord):
             record = await cls.retrieve_by_id(context, record_id)
         else:
             record = await cls.retrieve_by_tag_filter(
-                context, {"thread_id": thread_id}, {"connection_id": connection_id}
+                context,
+                {"thread_id": thread_id},
+                {"connection_id": connection_id} if connection_id else None,
             )
             await cls.set_cached_key(context, cache_key, record.credential_exchange_id)
         return record
