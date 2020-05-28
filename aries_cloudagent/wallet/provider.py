@@ -27,6 +27,8 @@ class WalletProvider(BaseProvider):
         wallet_cfg = {}
         if "wallet.key" in settings:
             wallet_cfg["key"] = settings["wallet.key"]
+        if "wallet.rekey" in settings:
+            wallet_cfg["rekey"] = settings["wallet.rekey"]
         if "wallet.name" in settings:
             wallet_cfg["name"] = settings["wallet.name"]
         if "wallet.storage_type" in settings:
@@ -38,4 +40,11 @@ class WalletProvider(BaseProvider):
             wallet_cfg["storage_creds"] = settings["wallet.storage_creds"]
         wallet = ClassLoader.load_class(wallet_class)(wallet_cfg)
         await wallet.open()
+
+        if "wallet.rekey" in settings:
+            await wallet.close()
+            await wallet.open()
+            LOGGER.info(
+                "Rotated wallet %s master encryption key", wallet_cfg.get("name", "")
+            )
         return wallet

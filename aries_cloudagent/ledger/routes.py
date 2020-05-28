@@ -6,8 +6,9 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, Schema, validate
 
 from ..messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..wallet.error import WalletError
 from .base import BaseLedger
-from .error import LedgerTransactionError
+from .error import BadLedgerRequestError, LedgerTransactionError
 
 
 class AMLRecordSchema(Schema):
@@ -113,6 +114,27 @@ async def register_ledger_nym(request: web.BaseRequest):
         except LedgerTransactionError as e:
             raise web.HTTPForbidden(text=e.message)
     return web.json_response({"success": success})
+
+
+@docs(tags=["ledger"], summary="Rotate key pair for public DID.")
+async def rotate_public_did_keypair(request: web.BaseRequest):
+    """
+    Request handler for rotating key pair associated with public DID.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    ledger = await context.inject(BaseLedger, required=False)
+    if not ledger:
+        raise web.HTTPForbidden()
+    async with ledger:
+        try:
+            await ledger.rotate_public_did_keypair()  # do not take seed over the wire
+        except (WalletError, BadLedgerRequestError):
+            raise web.HTTPBadRequest()
+
+    return web.json_response({})
 
 
 @docs(
@@ -234,6 +256,7 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/ledger/register-nym", register_ledger_nym),
+            web.patch("/ledger/rotate-public-did-keypair", rotate_public_did_keypair),
             web.get("/ledger/did-verkey", get_did_verkey, allow_head=False),
             web.get("/ledger/did-endpoint", get_did_endpoint, allow_head=False),
             web.get("/ledger/taa", ledger_get_taa, allow_head=False),
