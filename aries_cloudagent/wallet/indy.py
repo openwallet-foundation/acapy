@@ -46,7 +46,7 @@ class IndyWallet(BaseWallet):
 
         if not config:
             config = {}
-        super(IndyWallet, self).__init__(config)
+        super().__init__(config)
         self._auto_create = config.get("auto_create", True)
         self._auto_remove = config.get("auto_remove", False)
         self._created = False
@@ -56,6 +56,8 @@ class IndyWallet(BaseWallet):
         self._key_derivation_method = (
             config.get("key_derivation_method") or self.DEFAULT_KEY_DERIVIATION
         )
+        self._rekey = config.get("rekey")
+        self._rekey_derivation_method = config.get("key_derivation_method")
         self._name = config.get("name") or self.DEFAULT_NAME
         self._storage_type = config.get("storage_type") or self.DEFAULT_STORAGE_TYPE
         self._storage_config = config.get("storage_config", None)
@@ -150,10 +152,17 @@ class IndyWallet(BaseWallet):
         ret = {
             "key": self._key,
             "key_derivation_method": self._key_derivation_method,
+            # rekey
+            # rekey_derivation_method
             # storage_credentials
         }
+        if self._rekey:
+            ret["rekey"] = self._rekey
+        if self._rekey_derivation_method:
+            ret["rekey_derivation_method"] = self._rekey_derivation_method
         if self._storage_creds is not None:
             ret["storage_credentials"] = json.loads(self._storage_creds)
+
         return ret
 
     async def create(self, replace: bool = False):
@@ -231,6 +240,12 @@ class IndyWallet(BaseWallet):
                     config=json.dumps(self._wallet_config),
                     credentials=json.dumps(self._wallet_access),
                 )
+                if self._rekey:
+                    self._key = self._rekey
+                    self._rekey = None
+                if self._rekey_derivation_method:
+                    self._key_derivation_method = self._rekey_derivation_method
+                    self._rekey_derivation_method = None
                 break
             except IndyError as x_indy:
                 if x_indy.error_code == ErrorCode.WalletNotFoundError:
