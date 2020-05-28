@@ -678,9 +678,17 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         raise web.HTTPNotFound(
             reason=f"No record of credential exchange id {credential_exchange_id}"
         )
-    assert credential_exchange_record.state == (
+
+    if credential_exchange_record.state != (
         V10CredentialExchange.STATE_PROPOSAL_RECEIVED
-    )
+    ):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Credential exchange {credential_exchange_id} "
+                f"in {credential_exchange_record.state} state "
+                f"(must be {V10CredentialExchange.STATE_PROPOSAL_RECEIVED})"
+            )
+        )
 
     connection_id = credential_exchange_record.connection_id
     try:
@@ -742,9 +750,14 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         )
     connection_id = credential_exchange_record.connection_id
 
-    assert credential_exchange_record.state == (
-        V10CredentialExchange.STATE_OFFER_RECEIVED
-    )
+    if credential_exchange_record.state != (V10CredentialExchange.STATE_OFFER_RECEIVED):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Credential exchange {credential_exchange_id} "
+                f"in {credential_exchange_record.state} state "
+                f"(must be {V10CredentialExchange.STATE_OFFER_RECEIVED})"
+            )
+        )
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -814,7 +827,14 @@ async def credential_exchange_issue(request: web.BaseRequest):
         )
     connection_id = cred_exch_record.connection_id
 
-    assert cred_exch_record.state == V10CredentialExchange.STATE_REQUEST_RECEIVED
+    if cred_exch_record.state != (V10CredentialExchange.STATE_REQUEST_RECEIVED):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Credential exchange {credential_exchange_id} "
+                f"in {cred_exch_record.state} state "
+                f"(must be {V10CredentialExchange.STATE_REQUEST_RECEIVED})"
+            )
+        )
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
@@ -891,9 +911,16 @@ async def credential_exchange_store(request: web.BaseRequest):
         )
     connection_id = credential_exchange_record.connection_id
 
-    assert credential_exchange_record.state == (
+    if credential_exchange_record.state != (
         V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
-    )
+    ):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Credential exchange {credential_exchange_id} "
+                f"in {credential_exchange_record.state} state "
+                f"(must be {V10CredentialExchange.STATE_CREDENTIAL_RECEIVED})"
+            )
+        )
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
