@@ -17,4 +17,13 @@ class TestBaseError(AsyncTestCase):
         err = BaseError(MESSAGE, error_code=CODE)
         assert err.error_code == CODE
         assert err.message == MESSAGE.strip()
-        assert err.roll_up == "(-1) Not enough space. Clear 10MB."
+        assert err.roll_up == "Not enough space. Clear 10MB"
+
+        iox = IOError("hello")
+        keyx = KeyError("world")
+        osx = OSError("oh\nno")
+        osx.__cause__ = keyx
+        iox.__cause__ = osx
+        err.__cause__ = iox
+
+        assert err.roll_up == "Not enough space. Clear 10MB. hello. oh. no. world"

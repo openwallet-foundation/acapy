@@ -17,6 +17,7 @@ from aries_cloudagent.connections.models.connection_record import (
     ConnectionRecord,
     ConnectionRecordSchema,
 )
+from aries_cloudagent.messaging.models.base import BaseModelError
 from aries_cloudagent.messaging.valid import (
     ENDPOINT,
     INDY_DID,
@@ -334,7 +335,11 @@ async def connections_receive_invitation(request: web.BaseRequest):
         raise web.HTTPForbidden()
     connection_mgr = ConnectionManager(context)
     invitation_json = await request.json()
-    invitation = ConnectionInvitation.deserialize(invitation_json)
+    try:
+        invitation = ConnectionInvitation.deserialize(invitation_json)
+    except BaseModelError as x:
+        raise web.HTTPBadRequest(reason=x.roll_up)
+
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
 
