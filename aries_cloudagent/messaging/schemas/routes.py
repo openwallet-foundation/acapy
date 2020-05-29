@@ -103,7 +103,13 @@ async def schemas_send_schema(request: web.BaseRequest):
     schema_version = body.get("schema_version")
     attributes = body.get("attributes")
 
-    ledger: BaseLedger = await context.inject(BaseLedger)
+    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
+
     issuer: BaseIssuer = await context.inject(BaseIssuer)
     async with ledger:
         try:
@@ -165,7 +171,13 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     schema_id = request.match_info["schema_id"]
 
-    ledger: BaseLedger = await context.inject(BaseLedger)
+    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
+
     async with ledger:
         try:
             schema = await ledger.get_schema(schema_id)

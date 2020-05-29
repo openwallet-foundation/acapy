@@ -94,7 +94,10 @@ async def register_ledger_nym(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
-        raise web.HTTPForbidden()
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     verkey = request.query.get("verkey")
@@ -151,7 +154,10 @@ async def get_did_verkey(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
-        raise web.HTTPForbidden()
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     if not did:
@@ -176,7 +182,10 @@ async def get_did_endpoint(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
-        raise web.HTTPForbidden()
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     if not did:
@@ -203,7 +212,10 @@ async def ledger_get_taa(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger or ledger.LEDGER_TYPE != "indy":
-        raise web.HTTPForbidden()
+        reason = "No indy ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     taa_info = await ledger.get_txn_author_agreement()
     accepted = None

@@ -146,7 +146,8 @@ class Conductor:
         public_did = await wallet_config(context)
 
         # Configure the ledger
-        await ledger_config(context, public_did)
+        if not await ledger_config(context, public_did):
+            LOGGER.warning("No ledger configured")
 
         # Start up transports
         try:
