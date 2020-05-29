@@ -221,30 +221,26 @@ class CredentialManager:
             A tuple (credential exchange record, credential offer message)
 
         """
-        if credential_exchange_record.credential_proposal_dict:
-            credential_proposal_message = CredentialProposal.deserialize(
-                credential_exchange_record.credential_proposal_dict
-            )
-            credential_proposal_message.assign_trace_decorator(
-                self.context.settings, credential_exchange_record.trace
-            )
-            cred_def_id = await self._match_sent_cred_def_id(
-                {
-                    t: getattr(credential_proposal_message, t)
-                    for t in CRED_DEF_TAGS
-                    if getattr(credential_proposal_message, t)
-                }
-            )
-
-            cred_preview = credential_proposal_message.credential_proposal
-        else:
-            cred_def_id = credential_exchange_record.credential_definition_id
-            cred_preview = None
 
         async def _create(cred_def_id):
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
+
+        credential_proposal_message = CredentialProposal.deserialize(
+            credential_exchange_record.credential_proposal_dict
+        )
+        credential_proposal_message.assign_trace_decorator(
+            self.context.settings, credential_exchange_record.trace
+        )
+        cred_def_id = await self._match_sent_cred_def_id(
+            {
+                t: getattr(credential_proposal_message, t)
+                for t in CRED_DEF_TAGS
+                if getattr(credential_proposal_message, t)
+            }
+        )
+        cred_preview = credential_proposal_message.credential_proposal
 
         credential_offer = None
         cache_key = f"credential_offer::{cred_def_id}"
@@ -301,15 +297,12 @@ class CredentialManager:
         schema_id = indy_offer["schema_id"]
         cred_def_id = indy_offer["cred_def_id"]
 
-        if credential_preview:
-            credential_proposal_dict = CredentialProposal(
-                comment=credential_offer_message.comment,
-                credential_proposal=credential_preview,
-                schema_id=schema_id,
-                cred_def_id=cred_def_id,
-            ).serialize()
-        else:
-            credential_proposal_dict = None
+        credential_proposal_dict = CredentialProposal(
+            comment=credential_offer_message.comment,
+            credential_proposal=credential_preview,
+            schema_id=schema_id,
+            cred_def_id=cred_def_id,
+        ).serialize()
 
         # Get credential exchange record (holder sent proposal first)
         # or create it (issuer sent offer first)
