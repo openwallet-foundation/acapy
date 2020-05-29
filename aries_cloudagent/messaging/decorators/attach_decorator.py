@@ -227,7 +227,7 @@ class AttachDecoratorData(BaseModel):
         sha256_: str = None,
         links_: Union[list, str] = None,
         base64_: str = None,
-        json_: str = None,
+        json_: dict = None,
     ):
         """
         Initialize decorator data.
@@ -243,7 +243,7 @@ class AttachDecoratorData(BaseModel):
             sha256_: optional sha-256 hash for content
             links_: list or single URL of hyperlinks
             base64_: base64 encoded content for inclusion
-            json_: json-dumped content for inclusion
+            json_: dict content for inclusion as json
 
         """
         if jws_:
@@ -475,7 +475,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         required=False,
         data_key="jws",
     )
-    json_ = fields.Str(
+    json_ = fields.Dict(
         description="JSON-serialized data",
         required=False,
         example='{"sample": "content"}',
@@ -586,6 +586,42 @@ class AttachDecorator(BaseModel):
             data=AttachDecoratorData(
                 base64_=bytes_to_b64(json.dumps(indy_dict).encode())
             ),
+        )
+
+    @classmethod
+    def from_aries_msg(
+        cls,
+        message: dict,
+        *,
+        ident: str = None,
+        description: str = None,
+        filename: str = None,
+        lastmod_time: str = None,
+        byte_count: int = None,
+    ):
+        """
+        Create `AttachDecorator` instance from an aries message.
+
+        Given message object (dict), JSON dump, and embed
+        it as data; mark `application/json` MIME type.
+
+        Args:
+            message: aries message (dict) data structure
+            ident: optional attachment identifier (default random UUID4)
+            description: optional attachment description
+            filename: optional attachment filename
+            lastmod_time: optional attachment last modification time
+            byte_count: optional attachment byte count
+
+        """
+        return AttachDecorator(
+            ident=ident or str(uuid.uuid4()),
+            description=description,
+            filename=filename,
+            mime_type="application/json",
+            lastmod_time=lastmod_time,
+            byte_count=byte_count,
+            data=AttachDecoratorData(json_=message),
         )
 
 

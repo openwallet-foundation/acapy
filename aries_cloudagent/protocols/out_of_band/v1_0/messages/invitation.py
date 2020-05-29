@@ -47,9 +47,18 @@ class Invitation(AgentMessage):
         """
         super().__init__(_id=_id, **kwargs)
         self.label = label
-        self.handshake_protocols = list(handshake_protocols) if handshake_protocols else []
+        self.handshake_protocols = (
+            list(handshake_protocols) if handshake_protocols else []
+        )
         self.request_attach = list(request_attach) if request_attach else []
         self.service = list(service) if service else []
+
+    @classmethod
+    def wrap_message(cls, message: dict) -> AttachDecorator:
+        """Convert an aries message to an attachment decorator."""
+        return AttachDecorator.from_aries_msg(
+            message=message, ident="request-0"
+        )
 
 
 class InvitationSchema(AgentMessageSchema):

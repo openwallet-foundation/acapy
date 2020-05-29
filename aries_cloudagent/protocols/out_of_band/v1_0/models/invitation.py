@@ -5,6 +5,8 @@ from marshmallow import fields
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
+from ..messages.invitation import InvitationSchema as InvitationMessageSchema
+
 
 class Invitation(BaseExchangeRecord):
     """Represents an out of band invitation flow."""
@@ -48,12 +50,7 @@ class Invitation(BaseExchangeRecord):
         """Accessor for the JSON record value generated for this invitation."""
         return {
             prop: getattr(self, prop)
-            for prop in (
-                "invitation_id",
-                "invitation",
-                "state",
-                "trace"
-            )
+            for prop in ("invitation_id", "invitation", "state", "trace")
         }
 
 
@@ -66,9 +63,7 @@ class InvitationSchema(BaseExchangeSchema):
         model_class = Invitation
 
     invitation_id = fields.Str(
-        required=False,
-        description="Invitation identifier",
-        example=UUIDFour.EXAMPLE,
+        required=False, description="Invitation identifier", example=UUIDFour.EXAMPLE,
     )
     state = fields.Str(
         required=False,
@@ -76,5 +71,6 @@ class InvitationSchema(BaseExchangeSchema):
         example=Invitation.STATE_AWAIT_RESPONSE,
     )
     invitation = fields.Dict(
-        required=False, description="Out of band invitation object"
+        required=False,
+        description="Out of band invitation object",
     )

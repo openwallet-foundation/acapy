@@ -75,6 +75,7 @@ class OutOfBandManager:
             instances
 
         """
+
         if not my_label:
             my_label = self.context.settings.get("default_label")
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -85,10 +86,14 @@ class OutOfBandManager:
         message_attachments = []
         for attachment in attachments:
             if attachment["type"] == "credential-offer":
-                model_cls = SUPPORTED_ATTACHMENTS[attachment["type"]]
-                instance_id = SUPPORTED_ATTACHMENTS[attachment["id"]]
-                model = await model_cls.retrieve_by_id(self.context, instance_id)
-                message_attachments.append(model.credential_offer)
+                instance_id = attachment["id"]
+                model = await V10CredentialExchange.retrieve_by_id(
+                    self.context, instance_id
+                )
+                # Wrap as attachment decorators
+                message_attachments.append(
+                    InvitationMessage.wrap_message(model.credential_offer_dict)
+                )
 
         # Create and store new invitation key
         connection_key = await wallet.create_signing_key()

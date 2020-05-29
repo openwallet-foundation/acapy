@@ -1,6 +1,7 @@
 """Connection handling admin routes."""
 
 import json
+import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema
@@ -9,9 +10,15 @@ from marshmallow import fields, Schema
 
 from .manager import OutOfBandManager
 
+LOGGER = logging.getLogger(__name__)
+
 
 class InvitationCreateRequestSchema(Schema):
-    attachments = fields.Dict(required=False)
+    class AttachmentDefSchema(Schema):
+        _id = fields.String(data_key="id")
+        _type = fields.String(data_key="type")
+
+    attachments = fields.Nested(AttachmentDefSchema, many=True, required=False)
 
 
 @docs(

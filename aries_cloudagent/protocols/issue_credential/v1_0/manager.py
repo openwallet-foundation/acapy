@@ -279,6 +279,11 @@ class CredentialManager:
         ]
         credential_exchange_record.state = V10CredentialExchange.STATE_OFFER_SENT
         credential_exchange_record.credential_offer = credential_offer
+
+        credential_exchange_record.credential_offer_dict = (
+            credential_offer_message.serialize()
+        )
+
         await credential_exchange_record.save(
             self.context, reason="create credential offer"
         )
