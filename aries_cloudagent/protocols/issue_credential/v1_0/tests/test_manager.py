@@ -291,9 +291,19 @@ class TestCredentialManager(AsyncTestCase):
     async def test_create_free_offer(self):
         connection_id = "test_conn_id"
         comment = "comment"
+        schema_id_parts = SCHEMA_ID.split(":")
+
+        preview = CredentialPreview(
+            attributes=(CredAttrSpec(name="attr", value="value"),)
+        )
+        proposal = CredentialProposal(
+            credential_proposal=preview, cred_def_id=CRED_DEF_ID, schema_id=None
+        )
 
         exchange = V10CredentialExchange(
-            credential_definition_id=CRED_DEF_ID, role=V10CredentialExchange.ROLE_ISSUER
+            credential_definition_id=CRED_DEF_ID,
+            role=V10CredentialExchange.ROLE_ISSUER,
+            credential_proposal_dict=proposal.serialize(),
         )
 
         with async_mock.patch.object(
@@ -312,6 +322,24 @@ class TestCredentialManager(AsyncTestCase):
                 return_value=json.dumps(cred_offer)
             )
             self.context.injector.bind_instance(BaseIssuer, issuer)
+
+            self.storage = BasicStorage()
+            self.context.injector.bind_instance(BaseStorage, self.storage)
+            cred_def_record = StorageRecord(
+                CRED_DEF_SENT_RECORD_TYPE,
+                CRED_DEF_ID,
+                {
+                    "schema_id": SCHEMA_ID,
+                    "schema_issuer_did": schema_id_parts[0],
+                    "schema_name": schema_id_parts[-2],
+                    "schema_version": schema_id_parts[-1],
+                    "issuer_did": TEST_DID,
+                    "cred_def_id": CRED_DEF_ID,
+                    "epoch": str(int(time())),
+                },
+            )
+            storage: BaseStorage = await self.context.inject(BaseStorage)
+            await storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
                 credential_exchange_record=exchange, comment=comment
@@ -491,11 +519,15 @@ class TestCredentialManager(AsyncTestCase):
             proposal = CredentialProposal.deserialize(exchange.credential_proposal_dict)
             assert proposal.credential_proposal.attributes == preview.attributes
 
-    async def test_receive_offer_non_proposed(self):
+    async def test_receive_free_offer(self):
         connection_id = "test_conn_id"
         indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
+        preview = CredentialPreview(
+            attributes=(CredAttrSpec(name="attr", value="value"),)
+        )
+
         offer = CredentialOffer(
-            credential_preview=None,
+            credential_preview=preview,
             offers_attach=[CredentialOffer.wrap_indy_offer(indy_offer)],
         )
         self.context.message = offer
@@ -518,7 +550,7 @@ class TestCredentialManager(AsyncTestCase):
             assert exchange.role == V10CredentialExchange.ROLE_HOLDER
             assert exchange.state == V10CredentialExchange.STATE_OFFER_RECEIVED
             assert exchange.credential_offer == indy_offer
-            assert exchange.credential_proposal_dict is None
+            assert exchange.credential_proposal_dict
 
     async def test_create_request(self):
         connection_id = "test_conn_id"
