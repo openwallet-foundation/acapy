@@ -14,7 +14,7 @@ class BaseError(Exception):
     @property
     def message(self) -> str:
         """Accessor for the error message."""
-        return self.args[0].strip() if self.args else ""
+        return str(self.args[0]).strip() if self.args else ""
 
     @property
     def roll_up(self) -> str:
@@ -23,10 +23,22 @@ class BaseError(Exception):
 
         For display: aiohttp.web errors truncate after newline.
         """
-        line = "{}{}".format(
-            "({}) ".format(self.error_code) if self.error_code else "",
-            re.sub(r"\n\s*", ". ", self.args[0]) if self.args else "",
-        )
+
+        def flatten(exc: Exception):
+            ret = ".".join(
+                (
+                    re.sub(r"\n\s*", ". ", str(exc.args[0]).strip()).strip()
+                    if exc.args
+                    else ""
+                ).rsplit(".", 1)
+            )
+            return ret
+
+        line = flatten(self)
+        err = self
+        while err.__cause__:
+            err = err.__cause__
+            line += ". {}".format(flatten(err))
         return line.strip()
 
 

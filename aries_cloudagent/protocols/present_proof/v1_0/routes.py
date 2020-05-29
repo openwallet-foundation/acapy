@@ -16,6 +16,7 @@ from marshmallow.exceptions import ValidationError
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder
 from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.models.base import BaseModelError
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_DID,
@@ -374,8 +375,8 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
         record = await V10PresentationExchange.retrieve_by_id(
             context, presentation_exchange_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up)
     return web.json_response(record.serialize())
 
 
@@ -408,8 +409,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
             context, presentation_exchange_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up)
 
     start = request.query.get("start")
     count = request.query.get("count")
@@ -464,25 +465,25 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     body = await request.json()
-
+    comment = body.get("comment")
     connection_id = body.get("connection_id")
+
+    # Aries#0037 calls it a proposal in the proposal struct but it's of type preview
+    presentation_preview = body.get("presentation_proposal")
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+        presentation_proposal_message = PresentationProposal(
+            comment=comment,
+            presentation_proposal=PresentationPreview.deserialize(presentation_preview),
+        )
+    except (BaseModelError, StorageNotFoundError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-    comment = body.get("comment")
-    # Aries#0037 calls it a proposal in the proposal struct but it's of type preview
-    presentation_preview = body.get("presentation_proposal")
-    presentation_proposal_message = PresentationProposal(
-        comment=comment,
-        presentation_proposal=PresentationPreview.deserialize(presentation_preview),
-    )
     trace_msg = body.get("trace")
     presentation_proposal_message.assign_trace_decorator(
         context.settings, trace_msg,
@@ -610,11 +611,11 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+    except StorageNotFoundError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     comment = body.get("comment")
     indy_proof_request = body.get("proof_request")
@@ -693,11 +694,11 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+    except StorageNotFoundError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     presentation_manager = PresentationManager(context)
 
@@ -753,11 +754,11 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+    except StorageNotFoundError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     assert (
         presentation_exchange_record.state
@@ -822,11 +823,11 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+    except StorageNotFoundError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     assert (
         presentation_exchange_record.state
@@ -864,8 +865,8 @@ async def presentation_exchange_remove(request: web.BaseRequest):
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
             context, presentation_exchange_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up)
 
     await presentation_exchange_record.delete_record(context)
     return web.json_response({})
