@@ -8,6 +8,7 @@ from aiohttp_apispec import docs, match_info_schema, request_schema
 from marshmallow import fields, Schema
 
 from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.messaging.models.base import BaseModelError
 from aries_cloudagent.messaging.valid import UUIDFour
 from aries_cloudagent.storage.error import StorageNotFoundError
 
@@ -185,8 +186,8 @@ async def actionmenu_send(request: web.BaseRequest):
     LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
     try:
         msg = Menu.deserialize(menu_json["menu"])
-    except Exception:
-        LOGGER.exception("Exception deserializing menu")
+    except BaseModelError as err:
+        LOGGER.exception("Exception deserializing menu: %s", err.roll_up)
         raise
 
     try:
