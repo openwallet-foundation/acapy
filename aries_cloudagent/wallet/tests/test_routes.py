@@ -9,6 +9,7 @@ from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet, DIDInfo
 
 from .. import routes as test_module
+from ..error import WalletNotFoundError
 
 
 class TestWalletRoutes(AsyncTestCase):
@@ -277,6 +278,57 @@ class TestWalletRoutes(AsyncTestCase):
                 {"result": format_did_info.return_value}
             )
             assert result is json_response.return_value
+
+    async def test_rotate_did_keypair(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": "did"}
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.wallet.get_local_did = async_mock.CoroutineMock(
+                return_value=DIDInfo("did", "verkey", {"public": False})
+            )
+            self.wallet.rotate_did_keypair_start = async_mock.CoroutineMock()
+            self.wallet.rotate_did_keypair_apply = async_mock.CoroutineMock()
+
+            await test_module.wallet_rotate_did_keypair(request)
+            json_response.assert_called_once_with({})
+
+    async def test_rotate_did_keypair_missing_wallet(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": "did"}
+        self.context.injector.clear_binding(BaseWallet)
+
+        with self.assertRaises(HTTPForbidden):
+            await test_module.wallet_rotate_did_keypair(request)
+
+    async def test_rotate_did_keypair_no_query_did(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {}
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.wallet_rotate_did_keypair(request)
+
+    async def test_rotate_did_keypair_did_not_local(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": "did"}
+
+        self.wallet.get_local_did = async_mock.CoroutineMock(
+            side_effect=WalletNotFoundError("Unknown DID")
+        )
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.wallet_rotate_did_keypair(request)
+
+        self.wallet.get_local_did = async_mock.CoroutineMock(
+            return_value=DIDInfo("did", "verkey", {"public": True})
+        )
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.wallet_rotate_did_keypair(request)
 
     async def test_get_catpol(self):
         request = async_mock.MagicMock()

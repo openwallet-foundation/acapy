@@ -19,11 +19,42 @@ from aries_cloudagent.ledger.indy import (
     LedgerConfigError,
     LedgerError,
     LedgerTransactionError,
+    Role,
     TAA_ACCEPTED_RECORD_TYPE,
 )
 from aries_cloudagent.storage.indy import IndyStorage
 from aries_cloudagent.storage.record import StorageRecord
 from aries_cloudagent.wallet.base import DIDInfo
+
+
+class TestRole(AsyncTestCase):
+    async def test_role(self):
+        assert Role.get(2) is Role.STEWARD
+        assert Role.get(0) is Role.TRUSTEE
+        assert Role.get(101) is Role.ENDORSER
+        assert Role.get(201) is Role.NETWORK_MONITOR
+        assert Role.get(None) is Role.USER
+        assert Role.get(-1) is None
+        assert Role.get("user") is Role.USER
+        assert Role.get("steward") is Role.STEWARD
+        assert Role.get("trustee") is Role.TRUSTEE
+        assert Role.get("endorser") is Role.ENDORSER
+        assert Role.get("network_monitor") is Role.NETWORK_MONITOR
+        assert Role.get("ROLE_REMOVE") is None
+
+        assert Role.STEWARD.to_indy_num_str() == "2"
+        assert Role.TRUSTEE.to_indy_num_str() == "0"
+        assert Role.ENDORSER.to_indy_num_str() == "101"
+        assert Role.NETWORK_MONITOR.to_indy_num_str() == "201"
+        assert Role.USER.to_indy_num_str() is None
+        assert Role.ROLE_REMOVE.to_indy_num_str() == ""
+
+        assert Role.STEWARD.token() == "STEWARD"
+        assert Role.TRUSTEE.token() == "TRUSTEE"
+        assert Role.ENDORSER.token() == "ENDORSER"
+        assert Role.NETWORK_MONITOR.token() == "NETWORK_MONITOR"
+        assert Role.USER.token() is None
+        assert Role.ROLE_REMOVE.to_indy_num_str() == ""
 
 
 @pytest.mark.indy
@@ -1813,6 +1844,99 @@ class TestIndyLedger(AsyncTestCase):
                     self.test_did, self.test_verkey, "alias", None
                 )
             assert "read only" in str(context.exception)
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("indy.ledger.build_get_nym_request")
+    @async_mock.patch("indy.ledger.build_get_txn_request")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.register_nym")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    async def test_rotate_public_did_keypair(
+        self,
+        mock_submit,
+        mock_register_nym,
+        mock_build_get_txn_request,
+        mock_build_get_nym_request,
+        mock_close,
+        mock_open,
+    ):
+        mock_wallet = async_mock.MagicMock(
+            get_public_did=async_mock.CoroutineMock(return_value=self.test_did_info),
+            rotate_did_keypair_start=async_mock.CoroutineMock(
+                return_value=self.test_verkey
+            ),
+            rotate_did_keypair_apply=async_mock.CoroutineMock(return_value=None),
+        )
+        mock_wallet.WALLET_TYPE = "indy"
+        mock_submit.side_effect = [
+            json.dumps({"result": {"data": json.dumps({"seqNo": 1234})}}),
+            json.dumps(
+                {
+                    "result": {
+                        "data": {"txn": {"data": {"role": "101", "alias": "Billy"}}}
+                    }
+                }
+            ),
+        ]
+
+        ledger = IndyLedger("name", mock_wallet)
+        async with ledger:
+            await ledger.rotate_public_did_keypair()
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("indy.ledger.build_get_nym_request")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    async def test_rotate_public_did_keypair_no_nym(
+        self, mock_submit, mock_build_get_nym_request, mock_close, mock_open
+    ):
+        mock_wallet = async_mock.MagicMock(
+            get_public_did=async_mock.CoroutineMock(return_value=self.test_did_info),
+            rotate_did_keypair_start=async_mock.CoroutineMock(
+                return_value=self.test_verkey
+            ),
+            rotate_did_keypair_apply=async_mock.CoroutineMock(return_value=None),
+        )
+        mock_wallet.WALLET_TYPE = "indy"
+        mock_submit.return_value = json.dumps({"result": {"data": json.dumps(None)}})
+
+        ledger = IndyLedger("name", mock_wallet)
+        async with ledger:
+            with self.assertRaises(BadLedgerRequestError):
+                await ledger.rotate_public_did_keypair()
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("indy.ledger.build_get_nym_request")
+    @async_mock.patch("indy.ledger.build_get_txn_request")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.register_nym")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    async def test_rotate_public_did_keypair_corrupt_nym_txn(
+        self,
+        mock_submit,
+        mock_register_nym,
+        mock_build_get_txn_request,
+        mock_build_get_nym_request,
+        mock_close,
+        mock_open,
+    ):
+        mock_wallet = async_mock.MagicMock(
+            get_public_did=async_mock.CoroutineMock(return_value=self.test_did_info),
+            rotate_did_keypair_start=async_mock.CoroutineMock(
+                return_value=self.test_verkey
+            ),
+            rotate_did_keypair_apply=async_mock.CoroutineMock(return_value=None),
+        )
+        mock_wallet.WALLET_TYPE = "indy"
+        mock_submit.side_effect = [
+            json.dumps({"result": {"data": json.dumps({"seqNo": 1234})}}),
+            json.dumps({"result": {"data": None}}),
+        ]
+
+        ledger = IndyLedger("name", mock_wallet)
+        async with ledger:
+            with self.assertRaises(BadLedgerRequestError):
+                await ledger.rotate_public_did_keypair()
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")

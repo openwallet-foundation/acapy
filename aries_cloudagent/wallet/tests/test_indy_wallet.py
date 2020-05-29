@@ -82,6 +82,30 @@ class TestIndyWallet(test_basic_wallet.TestBasicWallet):
             assert "outlier" in str(excinfo.value)
 
     @pytest.mark.asyncio
+    async def test_rotate_did_keypair_x(self, wallet):
+        info = await wallet.create_local_did(self.test_seed, self.test_did)
+
+        with async_mock.patch.object(
+            indy.did, "replace_keys_start", async_mock.CoroutineMock()
+        ) as mock_repl_start:
+            mock_repl_start.side_effect = test_module.IndyError(
+                test_module.ErrorCode.CommonIOError, {"message": "outlier"}
+            )
+            with pytest.raises(test_module.WalletError) as excinfo:
+                await wallet.rotate_did_keypair_start(self.test_did)
+            assert "outlier" in str(excinfo.value)
+
+        with async_mock.patch.object(
+            indy.did, "replace_keys_apply", async_mock.CoroutineMock()
+        ) as mock_repl_apply:
+            mock_repl_apply.side_effect = test_module.IndyError(
+                test_module.ErrorCode.CommonIOError, {"message": "outlier"}
+            )
+            with pytest.raises(test_module.WalletError) as excinfo:
+                await wallet.rotate_did_keypair_apply(self.test_did)
+            assert "outlier" in str(excinfo.value)
+
+    @pytest.mark.asyncio
     async def test_create_signing_key_x(self, wallet):
         with async_mock.patch.object(
             indy.crypto, "create_key", async_mock.CoroutineMock()

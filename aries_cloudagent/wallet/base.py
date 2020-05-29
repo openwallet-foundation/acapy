@@ -102,6 +102,37 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
+    async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
+        """
+        Begin key rotation for DID that wallet owns: generate new keypair.
+
+        Args:
+            did: signing DID
+            next_seed: seed for incoming ed25519 key pair (default random)
+
+        Returns:
+            The new verification key
+
+        Raises:
+            WalletNotFoundError: if wallet does not own DID
+
+        """
+
+    @abstractmethod
+    async def rotate_did_keypair_apply(self, did: str) -> None:
+        """
+        Apply temporary keypair as main for DID that wallet owns.
+
+        Args:
+            did: signing DID
+
+        Raises:
+            WalletNotFoundError: if wallet does not own DID
+            WalletError: if wallet has not started key rotation
+
+        """
+
+    @abstractmethod
     async def create_local_did(
         self, seed: str = None, did: str = None, metadata: dict = None
     ) -> DIDInfo:
