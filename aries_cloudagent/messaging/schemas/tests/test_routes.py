@@ -65,6 +65,22 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 {"schema_id": SCHEMA_ID, "schema": {"schema": "def"}}
             )
 
+    async def test_send_schema_no_ledger(self):
+        mock_request = async_mock.MagicMock(
+            app=self.app,
+            json=async_mock.CoroutineMock(
+                return_value={
+                    "schema_name": "schema_name",
+                    "schema_version": "1.0",
+                    "attributes": ["table", "drink", "colour"],
+                }
+            ),
+        )
+
+        self.context.injector.clear_binding(BaseLedger)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.schemas_send_schema(mock_request)
+
     async def test_send_schema_x_ledger(self):
         mock_request = async_mock.MagicMock(
             app=self.app,
@@ -102,6 +118,18 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             result = await test_module.schemas_get_schema(mock_request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with({"schema": {"schema": "def"}})
+
+    async def test_get_schema_no_ledger(self):
+        mock_request = async_mock.MagicMock(
+            app=self.app, match_info={"schema_id": SCHEMA_ID},
+        )
+        self.ledger.get_schema = async_mock.CoroutineMock(
+            side_effect=test_module.LedgerError("Down for routine maintenance")
+        )
+
+        self.context.injector.clear_binding(BaseLedger)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.schemas_get_schema(mock_request)
 
     async def test_get_schema_x_ledger(self):
         mock_request = async_mock.MagicMock(
