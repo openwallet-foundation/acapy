@@ -9,7 +9,7 @@ from aries_cloudagent.connections.models.connection_record import ConnectionReco
 from aries_cloudagent.messaging.valid import UUIDFour
 from aries_cloudagent.storage.error import StorageNotFoundError
 
-
+from .message_types import SPEC_URI
 from .messages.ping import Ping
 
 
@@ -70,4 +70,19 @@ async def register(app: web.Application):
 
     app.add_routes(
         [web.post("/connections/{conn_id}/send-ping", connections_send_ping)]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "trustping",
+            "description": "Trust-ping over connection",
+            "externalDocs": {"description": "Specification", "url": SPEC_URI},
+        }
     )

@@ -31,6 +31,9 @@ class TestLedgerRoutes(AsyncTestCase):
             await test_module.register_ledger_nym(request)
 
         with self.assertRaises(HTTPForbidden):
+            await test_module.rotate_public_did_keypair(request)
+
+        with self.assertRaises(HTTPForbidden):
             await test_module.get_did_verkey(request)
 
         with self.assertRaises(HTTPForbidden):
@@ -109,6 +112,32 @@ class TestLedgerRoutes(AsyncTestCase):
         )
         with self.assertRaises(HTTPForbidden):
             await test_module.register_ledger_nym(request)
+
+    async def test_rotate_public_did_keypair(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.rotate_public_did_keypair = async_mock.CoroutineMock()
+
+            await test_module.rotate_public_did_keypair(request)
+            json_response.assert_called_once_with({})
+
+    async def test_rotate_public_did_keypair_public_wallet_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.rotate_public_did_keypair = async_mock.CoroutineMock(
+                side_effect=test_module.WalletError("Exception")
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.rotate_public_did_keypair(request)
 
     async def test_taa_forbidden(self):
         request = async_mock.MagicMock()
@@ -210,3 +239,8 @@ class TestLedgerRoutes(AsyncTestCase):
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
+
+    async def test_post_process_routes(self):
+        mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
+        test_module.post_process_routes(mock_app)
+        assert "tags" in mock_app._state["swagger_dict"]

@@ -13,7 +13,6 @@ from .. import routes as test_module
 
 
 SCHEMA_ID = "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0"
-CRED_DEF_ID = "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
 
 
 class TestCredentialDefinitionRoutes(AsyncTestCase):
@@ -22,11 +21,11 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.ledger.create_and_send_credential_definition = async_mock.CoroutineMock(
-            return_value=(CRED_DEF_ID, {"cred": "def"})
+        self.ledger.create_and_send_schema = async_mock.CoroutineMock(
+            return_value=(SCHEMA_ID, {"schema": "def"})
         )
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
-            return_value={"cred": "def"}
+        self.ledger.get_schema = async_mock.CoroutineMock(
+            return_value={"schema": "def"}
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
@@ -37,7 +36,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.storage.search_records = async_mock.MagicMock(
             return_value=async_mock.MagicMock(
                 fetch_all=async_mock.CoroutineMock(
-                    return_value=[async_mock.MagicMock(value=CRED_DEF_ID)]
+                    return_value=[async_mock.MagicMock(value=SCHEMA_ID)]
                 )
             )
         )
@@ -47,81 +46,101 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             "request_context": self.context,
         }
 
-    async def test_send_credential_definition(self):
+    async def test_send_schema(self):
         mock_request = async_mock.MagicMock(
             app=self.app,
             json=async_mock.CoroutineMock(
                 return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": False,
-                    "tag": "tag",
+                    "schema_name": "schema_name",
+                    "schema_version": "1.0",
+                    "attributes": ["table", "drink", "colour"],
                 }
             ),
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.credential_definitions_send_credential_definition(
-                mock_request
-            )
+            result = await test_module.schemas_send_schema(mock_request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
-                {"credential_definition_id": CRED_DEF_ID}
+                {"schema_id": SCHEMA_ID, "schema": {"schema": "def"}}
             )
 
-    async def test_send_credential_definition_no_ledger(self):
+    async def test_send_schema_no_ledger(self):
         mock_request = async_mock.MagicMock(
             app=self.app,
             json=async_mock.CoroutineMock(
                 return_value={
-                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-                    "support_revocation": False,
-                    "tag": "tag",
+                    "schema_name": "schema_name",
+                    "schema_version": "1.0",
+                    "attributes": ["table", "drink", "colour"],
                 }
             ),
         )
 
         self.context.injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.credential_definitions_send_credential_definition(
-                mock_request
-            )
+            await test_module.schemas_send_schema(mock_request)
+
+    async def test_send_schema_x_ledger(self):
+        mock_request = async_mock.MagicMock(
+            app=self.app,
+            json=async_mock.CoroutineMock(
+                return_value={
+                    "schema_name": "schema_name",
+                    "schema_version": "1.0",
+                    "attributes": ["table", "drink", "colour"],
+                }
+            ),
+        )
+        self.ledger.create_and_send_schema = async_mock.CoroutineMock(
+            side_effect=test_module.LedgerError("Down for routine maintenance")
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.schemas_send_schema(mock_request)
 
     async def test_created(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"cred_def_id": CRED_DEF_ID},
+            app=self.app, match_info={"schema_id": SCHEMA_ID},
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.credential_definitions_created(mock_request)
+            result = await test_module.schemas_created(mock_request)
             assert result == mock_response.return_value
-            mock_response.assert_called_once_with(
-                {"credential_definition_ids": [CRED_DEF_ID]}
-            )
+            mock_response.assert_called_once_with({"schema_ids": [SCHEMA_ID]})
 
-    async def test_get_credential_definition(self):
+    async def test_get_schema(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"cred_def_id": CRED_DEF_ID},
+            app=self.app, match_info={"schema_id": SCHEMA_ID},
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.credential_definitions_get_credential_definition(
-                mock_request
-            )
+            result = await test_module.schemas_get_schema(mock_request)
             assert result == mock_response.return_value
-            mock_response.assert_called_once_with(
-                {"credential_definition": {"cred": "def"}}
-            )
+            mock_response.assert_called_once_with({"schema": {"schema": "def"}})
 
-    async def test_get_credential_definition_no_ledger(self):
+    async def test_get_schema_no_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"cred_def_id": CRED_DEF_ID},
+            app=self.app, match_info={"schema_id": SCHEMA_ID},
+        )
+        self.ledger.get_schema = async_mock.CoroutineMock(
+            side_effect=test_module.LedgerError("Down for routine maintenance")
         )
 
         self.context.injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.credential_definitions_get_credential_definition(
-                mock_request
-            )
+            await test_module.schemas_get_schema(mock_request)
+
+    async def test_get_schema_x_ledger(self):
+        mock_request = async_mock.MagicMock(
+            app=self.app, match_info={"schema_id": SCHEMA_ID},
+        )
+        self.ledger.get_schema = async_mock.CoroutineMock(
+            side_effect=test_module.LedgerError("Down for routine maintenance")
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.schemas_get_schema(mock_request)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()

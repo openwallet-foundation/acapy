@@ -8,6 +8,7 @@ from aiohttp_apispec import docs, match_info_schema, request_schema
 from marshmallow import fields, Schema
 
 from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.messaging.models.base import BaseModelError
 from aries_cloudagent.messaging.valid import UUIDFour
 from aries_cloudagent.storage.error import StorageNotFoundError
 
@@ -185,8 +186,8 @@ async def actionmenu_send(request: web.BaseRequest):
     LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
     try:
         msg = Menu.deserialize(menu_json["menu"])
-    except Exception:
-        LOGGER.exception("Exception deserializing menu")
+    except BaseModelError as err:
+        LOGGER.exception("Exception deserializing menu: %s", err.roll_up)
         raise
 
     try:
@@ -215,4 +216,15 @@ async def register(app: web.Application):
             web.post("/action-menu/{conn_id}/request", actionmenu_request),
             web.post("/connections/{conn_id}/send-menu", actionmenu_send),
         ]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {"name": "action-menu", "description": "Menu interaction over connection"}
     )

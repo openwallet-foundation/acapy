@@ -1,21 +1,45 @@
 """Common exception classes."""
 
+import re
+
 
 class BaseError(Exception):
     """Generic exception class which other exceptions should inherit from."""
 
-    error_code = None
-
     def __init__(self, *args, error_code: str = None, **kwargs):
         """Initialize a BaseError instance."""
         super().__init__(*args, **kwargs)
-        if error_code:
-            self.error_code = error_code
+        self.error_code = error_code if error_code else None
 
     @property
     def message(self) -> str:
         """Accessor for the error message."""
-        return self.args and self.args[0]
+        return str(self.args[0]).strip() if self.args else ""
+
+    @property
+    def roll_up(self) -> str:
+        """
+        Accessor for nested error messages rolled into one line.
+
+        For display: aiohttp.web errors truncate after newline.
+        """
+
+        def flatten(exc: Exception):
+            ret = ".".join(
+                (
+                    re.sub(r"\n\s*", ". ", str(exc.args[0]).strip()).strip()
+                    if exc.args
+                    else ""
+                ).rsplit(".", 1)
+            )
+            return ret
+
+        line = flatten(self)
+        err = self
+        while err.__cause__:
+            err = err.__cause__
+            line += ". {}".format(flatten(err))
+        return line.strip()
 
 
 class StartupError(BaseError):

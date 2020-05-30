@@ -200,6 +200,31 @@ class TestConnectionRoutes(AsyncTestCase):
             await test_module.connections_receive_invitation(mock_req)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
+    async def test_connections_receive_invitation_bad(self):
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+        mock_req = async_mock.MagicMock()
+        mock_req.app = {
+            "request_context": context,
+        }
+        mock_req.json = async_mock.CoroutineMock()
+        mock_req.query = {
+            "auto_accept": "true",
+            "alias": "alias",
+        }
+
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.serialize = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.ConnectionInvitation, "deserialize", autospec=True
+        ) as mock_inv_deser, async_mock.patch.object(
+            test_module, "ConnectionManager", autospec=True
+        ) as mock_conn_mgr:
+            mock_inv_deser.side_effect = test_module.BaseModelError()
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.connections_receive_invitation(mock_req)
+
     async def test_connections_receive_invitation_forbidden(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
         context.update_settings({"admin.no_receive_invites": True})
@@ -445,3 +470,8 @@ class TestConnectionRoutes(AsyncTestCase):
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
+
+    async def test_post_process_routes(self):
+        mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
+        test_module.post_process_routes(mock_app)
+        assert "tags" in mock_app._state["swagger_dict"]

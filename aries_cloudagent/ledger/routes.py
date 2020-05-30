@@ -6,8 +6,9 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, Schema, validate
 
 from ..messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..wallet.error import WalletError
 from .base import BaseLedger
-from .error import LedgerTransactionError
+from .error import BadLedgerRequestError, LedgerTransactionError
 
 
 class AMLRecordSchema(Schema):
@@ -93,7 +94,10 @@ async def register_ledger_nym(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
-        raise web.HTTPForbidden()
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     verkey = request.query.get("verkey")
@@ -115,6 +119,27 @@ async def register_ledger_nym(request: web.BaseRequest):
     return web.json_response({"success": success})
 
 
+@docs(tags=["ledger"], summary="Rotate key pair for public DID.")
+async def rotate_public_did_keypair(request: web.BaseRequest):
+    """
+    Request handler for rotating key pair associated with public DID.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    ledger = await context.inject(BaseLedger, required=False)
+    if not ledger:
+        raise web.HTTPForbidden()
+    async with ledger:
+        try:
+            await ledger.rotate_public_did_keypair()  # do not take seed over the wire
+        except (WalletError, BadLedgerRequestError):
+            raise web.HTTPBadRequest()
+
+    return web.json_response({})
+
+
 @docs(
     tags=["ledger"], summary="Get the verkey for a DID from the ledger.",
 )
@@ -129,7 +154,10 @@ async def get_did_verkey(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
-        raise web.HTTPForbidden()
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     if not did:
@@ -154,7 +182,10 @@ async def get_did_endpoint(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
-        raise web.HTTPForbidden()
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     if not did:
@@ -181,7 +212,10 @@ async def ledger_get_taa(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger or ledger.LEDGER_TYPE != "indy":
-        raise web.HTTPForbidden()
+        reason = "No indy ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     taa_info = await ledger.get_txn_author_agreement()
     accepted = None
@@ -234,9 +268,31 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/ledger/register-nym", register_ledger_nym),
+            web.patch("/ledger/rotate-public-did-keypair", rotate_public_did_keypair),
             web.get("/ledger/did-verkey", get_did_verkey, allow_head=False),
             web.get("/ledger/did-endpoint", get_did_endpoint, allow_head=False),
             web.get("/ledger/taa", ledger_get_taa, allow_head=False),
             web.post("/ledger/taa/accept", ledger_accept_taa),
         ]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "ledger",
+            "description": "Interaction with ledger",
+            "externalDocs": {
+                "description": "Overview",
+                "url": (
+                    "https://hyperledger-indy.readthedocs.io/projects/plenum/"
+                    "en/latest/storage.html#ledger"
+                ),
+            },
+        }
     )

@@ -744,7 +744,14 @@ class WalletGroup(ArgumentGroup):
             "--wallet-key",
             type=str,
             metavar="<wallet-key>",
-            help="Specifies the master key value to use for opening the wallet.",
+            help="Specifies the master key value to use to open the wallet.",
+        )
+        parser.add_argument(
+            "--wallet-rekey",
+            type=str,
+            metavar="<wallet-rekey>",
+            help="Specifies a new master key value to which to rotate and to\
+            open the wallet next time.",
         )
         parser.add_argument(
             "--wallet-name",
@@ -801,6 +808,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.seed"] = args.seed
         if args.wallet_key:
             settings["wallet.key"] = args.wallet_key
+        if args.wallet_rekey:
+            settings["wallet.rekey"] = args.wallet_rekey
         if args.wallet_name:
             settings["wallet.name"] = args.wallet_name
         if args.wallet_storage_type:

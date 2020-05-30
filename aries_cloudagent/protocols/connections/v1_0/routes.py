@@ -17,6 +17,7 @@ from aries_cloudagent.connections.models.connection_record import (
     ConnectionRecord,
     ConnectionRecordSchema,
 )
+from aries_cloudagent.messaging.models.base import BaseModelError
 from aries_cloudagent.messaging.valid import (
     ENDPOINT,
     INDY_DID,
@@ -26,6 +27,7 @@ from aries_cloudagent.messaging.valid import (
 from aries_cloudagent.storage.error import StorageNotFoundError
 
 from .manager import ConnectionManager
+from .message_types import SPEC_URI
 from .messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
@@ -333,7 +335,11 @@ async def connections_receive_invitation(request: web.BaseRequest):
         raise web.HTTPForbidden()
     connection_mgr = ConnectionManager(context)
     invitation_json = await request.json()
-    invitation = ConnectionInvitation.deserialize(invitation_json)
+    try:
+        invitation = ConnectionInvitation.deserialize(invitation_json)
+    except BaseModelError as x:
+        raise web.HTTPBadRequest(reason=x.roll_up)
+
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
 
@@ -515,4 +521,19 @@ async def register(app: web.Application):
             ),
             web.post("/connections/{conn_id}/remove", connections_remove),
         ]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "connection",
+            "description": "Connection management",
+            "externalDocs": {"description": "Specification", "url": SPEC_URI},
+        }
     )
