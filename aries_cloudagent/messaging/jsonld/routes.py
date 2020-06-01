@@ -3,19 +3,23 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
-from aries_cloudagent.messaging.jsonld.credential import sign_credential, verify_credential
+from aries_cloudagent.messaging.jsonld.credential \
+    import sign_credential, verify_credential
 from aries_cloudagent.wallet.base import BaseWallet
 
 from marshmallow import fields, Schema
+
 
 class SignRequestSchema(Schema):
     """Request schema for signing a jsonld doc."""
     verkey = fields.Str(required=True, description="verkey to use for signing")
     doc = fields.Dict(required=True, description="JSON-LD Doc to sign")
 
+
 class SignResponseSchema(Schema):
     """Response schema for a signed jsonld doc."""
     signed_doc = fields.Dict(required=True)
+
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
 @request_schema(SignRequestSchema())
@@ -43,7 +47,8 @@ async def sign(request: web.BaseRequest):
         credential = doc['credential']
         signature_options = doc['options']
 
-        document_with_proof = await sign_credential(credential, signature_options, verkey, wallet)
+        document_with_proof = \
+            await sign_credential(credential, signature_options, verkey, wallet)
 
         response['signed_doc'] = document_with_proof
     except Exception as e:
@@ -52,11 +57,11 @@ async def sign(request: web.BaseRequest):
     return web.json_response(response)
 
 
-
 class VerifyRequestSchema(Schema):
     """Request schema for signing a jsonld doc."""
     verkey = fields.Str(required=True, description="verkey to use for doc verification")
     doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
+
 
 class VerifyResponseSchema(Schema):
     """Response schema for verification result."""

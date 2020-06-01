@@ -1,15 +1,11 @@
-import datetime
 import json
-from pyld import jsonld
 from aries_cloudagent.wallet.util import (
     b58_to_bytes,
     b64_to_bytes,
     b64_to_str,
     bytes_to_b58,
     bytes_to_b64,
-    set_urlsafe_b64,
     str_to_b64,
-    unpad,
 )
 
 from .create_verify_data import create_verify_data
@@ -17,6 +13,7 @@ from .create_verify_data import create_verify_data
 
 MULTIBASE_B58_BTC = "z"
 MULTICODEC_ED25519_PUB = b"\xed"
+
 
 def did_key(verkey: str) -> str:
     """Qualify verkey into DID key if need be."""
@@ -28,11 +25,14 @@ def did_key(verkey: str) -> str:
         MULTICODEC_ED25519_PUB + b58_to_bytes(verkey)
     )
 
+
 def b64encode(str):
     return str_to_b64(str, urlsafe=True, pad=False)
 
+
 def b64decode(bytes):
     return b64_to_str(bytes, urlsafe=True)
+
 
 def create_jws(encoded_header, verify_data):
     return (encoded_header + ".").encode('utf-8') + verify_data
@@ -57,12 +57,12 @@ async def jws_sign(verify_data, verkey, wallet):
 
 
 def verify_jws_header(header):
-    if not( header['alg'] == "EdDSA" and
-      header['b64'] == False and
-      isinstance(header['crit'], list) and
-      len(header['crit']) == 1 and
-      header['crit'][0] == "b64"
-    ) and len(header) == 3:
+    if not(header['alg'] == "EdDSA" and
+           header['b64'] is False and
+           isinstance(header['crit'], list) and
+           len(header['crit']) == 1 and
+           header['crit'][0] == "b64"
+           ) and len(header) == 3:
         raise Exception("Invalid JWS header parameters for Ed25519Signature2018.")
 
 
