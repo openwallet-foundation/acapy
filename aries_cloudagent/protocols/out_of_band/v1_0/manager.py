@@ -110,8 +110,15 @@ class OutOfBandManager:
                 service_endpoint=my_endpoint,
             )
 
+        handshake_protocols = []
+        if include_handshake:
+            handshake_protocols.append("https://didcomm.org/didexchange/1.0")
+
         invitation_message = InvitationMessage(
-            label=my_label, service=[service], request_attach=message_attachments
+            label=my_label,
+            service=[service],
+            request_attach=message_attachments,
+            handshake_protocols=handshake_protocols,
         )
 
         # Create record

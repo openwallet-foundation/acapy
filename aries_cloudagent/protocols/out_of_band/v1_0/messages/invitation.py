@@ -2,7 +2,7 @@
 
 from typing import Sequence, Text, Union
 
-from marshmallow import fields
+from marshmallow import fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -94,4 +94,23 @@ class InvitationSchema(AgentMessageSchema):
     request_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="request~attach"
     )
-    service = ServiceField(ServiceSchema, required=False, many=True)
+    # service = ServiceField(ServiceSchema, required=False, many=True)
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """
+        Validate schema fields.
+        Args:
+            data: The data to validate
+        Raises:
+            ValidationError: If any of the fields do not validate
+        """
+        handshake_protocols = data.get("handshake_protocols")
+        request_attach = data.get("request_attach")
+        if not (
+            (handshake_protocols and len(handshake_protocols) > 0)
+            and (request_attach and len(request_attach) > 0)
+        ):
+            raise ValidationError(
+                "Model must include handshake_protocols or request_attach or both"
+            )
