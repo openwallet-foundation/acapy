@@ -12,12 +12,17 @@ from .models.invitation import Invitation as InvitationModel
 from .messages.invitation import Invitation as InvitationMessage
 from .messages.service import Service as ServiceMessage
 
+
 from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 
-
-SUPPORTED_ATTACHMENTS = {"credential-offer": V10CredentialExchange}
+from aries_cloudagent.protocols.present_proof.v1_0.messages.presentation_request import (
+    PresentationRequest,
+)
+from aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange import (
+    V10PresentationExchange,
+)
 
 
 class OutOfBandManagerError(BaseError):
@@ -96,6 +101,15 @@ class OutOfBandManager:
                     # Wrap as attachment decorators
                     message_attachments.append(
                         InvitationMessage.wrap_message(model.credential_offer_dict)
+                    )
+                if attachment["type"] == "present-proof":
+                    instance_id = attachment["id"]
+                    model = await V10PresentationExchange.retrieve_by_id(
+                        self.context, instance_id
+                    )
+                    # Wrap as attachment decorators
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(model.presentation_request_dict)
                     )
 
         if use_public_did:

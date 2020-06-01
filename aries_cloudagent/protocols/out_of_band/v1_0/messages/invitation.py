@@ -78,6 +78,7 @@ class ServiceField(fields.Nested):
                 raise ServiceFieldSerializationError(
                     f"Incompatible service element type: {type(el)} "
                 )
+
         return serialized_elements
 
 
@@ -94,7 +95,7 @@ class InvitationSchema(AgentMessageSchema):
     request_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="request~attach"
     )
-    # service = ServiceField(ServiceSchema, required=False, many=True)
+    service = ServiceField(ServiceSchema, required=False, many=True)
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
