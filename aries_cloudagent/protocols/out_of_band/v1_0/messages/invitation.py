@@ -1,6 +1,6 @@
 """A credential content message."""
 
-from typing import Sequence, Text
+from typing import Sequence, Text, Union
 
 from marshmallow import fields
 
@@ -15,6 +15,10 @@ from .service import Service, ServiceSchema
 from ..message_types import PROTOCOL_PACKAGE, INVITATION
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.invitation_handler.InvitationHandler"
+
+
+class ServiceFieldSerializationError(Exception):
+    pass
 
 
 class Invitation(AgentMessage):
@@ -35,7 +39,7 @@ class Invitation(AgentMessage):
         label: str = None,
         handshake_protocols: Sequence[Text] = None,
         request_attach: Sequence[AttachDecorator] = None,
-        service: Sequence[Service] = None,
+        service: Sequence[Union[Service, Text]] = None,
         **kwargs,
     ):
         """
@@ -56,9 +60,25 @@ class Invitation(AgentMessage):
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
         """Convert an aries message to an attachment decorator."""
-        return AttachDecorator.from_aries_msg(
-            message=message, ident="request-0"
-        )
+        return AttachDecorator.from_aries_msg(message=message, ident="request-0")
+
+
+class ServiceField(fields.Nested):
+    def _serialize(self, value, attr, obj, **kwargs):
+        if not value:
+            return []
+
+        serialized_elements = []
+        for el in value:
+            if type(el) is str:
+                serialized_elements.append(el)
+            elif type(el) is Service:
+                serialized_elements.append(el.serialize())
+            else:
+                raise ServiceFieldSerializationError(
+                    f"Incompatible service element type: {type(el)} "
+                )
+        return serialized_elements
 
 
 class InvitationSchema(AgentMessageSchema):
@@ -74,4 +94,4 @@ class InvitationSchema(AgentMessageSchema):
     request_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="request~attach"
     )
-    service = fields.Nested(ServiceSchema, required=False, many=True)
+    service = ServiceField(ServiceSchema, required=False, many=True)

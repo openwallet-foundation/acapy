@@ -19,6 +19,7 @@ class InvitationCreateRequestSchema(Schema):
         _type = fields.String(data_key="type")
 
     attachments = fields.Nested(AttachmentDefSchema, many=True, required=False)
+    include_handshake = fields.Boolean(default=False)
 
 
 @docs(
@@ -41,13 +42,15 @@ async def invitation_create(request: web.BaseRequest):
     body = await request.json()
 
     attachments = body.get("attachments")
-
+    include_handshake = body.get("include_handshake")
     multi_use = json.loads(request.query.get("multi_use", "false"))
     # base_url = context.settings.get("invite_base_url")
 
     oob_mgr = OutOfBandManager(context)
     invitation = await oob_mgr.create_invitation(
-        multi_use=multi_use, attachments=attachments
+        multi_use=multi_use,
+        attachments=attachments,
+        include_handshake=include_handshake,
     )
 
     return web.json_response(invitation.serialize())

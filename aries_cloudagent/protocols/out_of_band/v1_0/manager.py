@@ -52,6 +52,8 @@ class OutOfBandManager:
         self,
         my_label: str = None,
         my_endpoint: str = None,
+        use_public_did: bool = False,
+        include_handshake: bool = False,
         multi_use: bool = False,
         attachments: list = None,
     ) -> Tuple[InvitationModel, InvitationMessage]:
@@ -76,36 +78,42 @@ class OutOfBandManager:
 
         """
 
-        if not my_label:
-            my_label = self.context.settings.get("default_label")
         wallet: BaseWallet = await self.context.inject(BaseWallet)
 
+        if not my_label:
+            my_label = self.context.settings.get("default_label")
         if not my_endpoint:
             my_endpoint = self.context.settings.get("default_endpoint")
 
         message_attachments = []
-        for attachment in attachments:
-            if attachment["type"] == "credential-offer":
-                instance_id = attachment["id"]
-                model = await V10CredentialExchange.retrieve_by_id(
-                    self.context, instance_id
-                )
-                # Wrap as attachment decorators
-                message_attachments.append(
-                    InvitationMessage.wrap_message(model.credential_offer_dict)
-                )
+        if attachments:
+            for attachment in attachments:
+                if attachment["type"] == "credential-offer":
+                    instance_id = attachment["id"]
+                    model = await V10CredentialExchange.retrieve_by_id(
+                        self.context, instance_id
+                    )
+                    # Wrap as attachment decorators
+                    message_attachments.append(
+                        InvitationMessage.wrap_message(model.credential_offer_dict)
+                    )
 
-        # Create and store new invitation key
-        connection_key = await wallet.create_signing_key()
-        service = ServiceMessage(
-            id="#inline",
-            type="did-communication",
-            recipient_keys=[connection_key.verkey],
-            routing_keys=[],
-            service_endpoint=my_endpoint,
-        )
+        if use_public_did:
+            service = ServiceMessage(public_did=await wallet.get_public_did())
+        else:
+            connection_key = await wallet.create_signing_key()
+            service = ServiceMessage(
+                id="#inline",
+                type="did-communication",
+                recipient_keys=[connection_key.verkey],
+                routing_keys=[],
+                service_endpoint=my_endpoint,
+            )
+
         invitation_message = InvitationMessage(
-            label=my_label, service=[service], request_attach=message_attachments
+            label=my_label,
+            service=[service, "asd", service],
+            request_attach=message_attachments,
         )
 
         # Create record
