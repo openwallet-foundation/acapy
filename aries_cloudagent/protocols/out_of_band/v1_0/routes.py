@@ -10,6 +10,9 @@ from marshmallow import fields, Schema
 
 from .manager import OutOfBandManager
 
+from .messages.invitation import InvitationSchema
+
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -21,6 +24,10 @@ class InvitationCreateRequestSchema(Schema):
     attachments = fields.Nested(AttachmentDefSchema, many=True, required=False)
     include_handshake = fields.Boolean(default=False)
     use_public_did = fields.Boolean(default=False)
+
+
+class InvitationSchema(InvitationSchema):
+    service = fields.Field()
 
 
 @docs(
@@ -59,6 +66,28 @@ async def invitation_create(request: web.BaseRequest):
     return web.json_response(invitation.serialize())
 
 
+@docs(
+    tags=["out-of-band"], summary="Create a new connection invitation",
+)
+@request_schema(InvitationSchema())
+async def invitation_receive(request: web.BaseRequest):
+    """
+    Request handler for creating a new connection invitation.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The out of band invitation details
+
+    """
+    context = request.app["request_context"]
+
+    body = await request.json()
+
+    return web.json_response()
+
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -66,5 +95,6 @@ async def register(app: web.Application):
             # web.get("/out-of-band", invitation_list),
             # web.get("/out-of-band/{id}", invitation_retrieve),
             web.post("/out-of-band/create-invitation", invitation_create),
+            web.post("/out-of-band/receive-invitation", invitation_receive),
         ]
     )

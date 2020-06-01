@@ -110,7 +110,7 @@ class InvitationSchema(AgentMessageSchema):
         request_attach = data.get("request_attach")
         if not (
             (handshake_protocols and len(handshake_protocols) > 0)
-            and (request_attach and len(request_attach) > 0)
+            or (request_attach and len(request_attach) > 0)
         ):
             raise ValidationError(
                 "Model must include handshake_protocols or request_attach or both"
