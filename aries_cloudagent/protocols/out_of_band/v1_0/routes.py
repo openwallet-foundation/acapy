@@ -20,6 +20,7 @@ class InvitationCreateRequestSchema(Schema):
 
     attachments = fields.Nested(AttachmentDefSchema, many=True, required=False)
     include_handshake = fields.Boolean(default=False)
+    use_public_did = fields.Boolean(default=False)
 
 
 @docs(
@@ -43,6 +44,7 @@ async def invitation_create(request: web.BaseRequest):
 
     attachments = body.get("attachments")
     include_handshake = body.get("include_handshake")
+    use_public_did = body.get("use_public_did")
     multi_use = json.loads(request.query.get("multi_use", "false"))
     # base_url = context.settings.get("invite_base_url")
 
@@ -51,6 +53,7 @@ async def invitation_create(request: web.BaseRequest):
         multi_use=multi_use,
         attachments=attachments,
         include_handshake=include_handshake,
+        use_public_did=use_public_did,
     )
 
     return web.json_response(invitation.serialize())

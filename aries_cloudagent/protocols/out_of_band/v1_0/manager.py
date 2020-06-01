@@ -99,7 +99,7 @@ class OutOfBandManager:
                     )
 
         if use_public_did:
-            service = ServiceMessage(public_did=await wallet.get_public_did())
+            service = (await wallet.get_public_did()).did
         else:
             connection_key = await wallet.create_signing_key()
             service = ServiceMessage(
@@ -111,9 +111,7 @@ class OutOfBandManager:
             )
 
         invitation_message = InvitationMessage(
-            label=my_label,
-            service=[service, "asd", service],
-            request_attach=message_attachments,
+            label=my_label, service=[service], request_attach=message_attachments
         )
 
         # Create record
