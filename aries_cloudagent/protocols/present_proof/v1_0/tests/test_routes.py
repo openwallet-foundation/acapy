@@ -36,7 +36,9 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.query = async_mock.CoroutineMock()
             mock_presentation_exchange.query.return_value = [mock_presentation_exchange]
             mock_presentation_exchange.serialize = async_mock.MagicMock()
-            mock_presentation_exchange.serialize.return_value = {"hello": "world"}
+            mock_presentation_exchange.serialize.return_value = {
+                "thread_id": "sample-thread-id"
+            }
 
             with async_mock.patch.object(
                 test_module.web, "json_response"
@@ -140,7 +142,7 @@ class TestProofRoutes(AsyncTestCase):
             mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock()
             mock_pres_ex.retrieve_by_id.return_value = mock_pres_ex
             mock_pres_ex.serialize = async_mock.MagicMock()
-            mock_pres_ex.serialize.return_value = {"hello": "world"}
+            mock_pres_ex.serialize.return_value = {"thread_id": "sample-thread-id"}
 
             with async_mock.patch.object(
                 test_module.web, "json_response"
@@ -278,7 +280,9 @@ class TestProofRoutes(AsyncTestCase):
             )
 
             mock_presentation_exchange.serialize = async_mock.MagicMock()
-            mock_presentation_exchange.serialize.return_value = {"hello": "world"}
+            mock_presentation_exchange.serialize.return_value = {
+                "thread_id": "sample-thread-id"
+            }
 
             mock_presentation_manager.return_value.create_exchange_for_request = async_mock.CoroutineMock(
                 return_value=mock_presentation_exchange
@@ -329,7 +333,9 @@ class TestProofRoutes(AsyncTestCase):
             )
 
             mock_presentation_exchange.serialize = async_mock.MagicMock()
-            mock_presentation_exchange.serialize.return_value = {"hello": "world"}
+            mock_presentation_exchange.serialize.return_value = {
+                "thread_id": "sample-thread-id"
+            }
 
             mock_presentation_manager.return_value.create_exchange_for_request = async_mock.CoroutineMock(
                 return_value=mock_presentation_exchange
@@ -420,8 +426,9 @@ class TestProofRoutes(AsyncTestCase):
                 return_value=mock_presentation_exchange
             )
             mock_presentation_exchange.serialize = async_mock.MagicMock()
-            mock_presentation_exchange.serialize.return_value = {"hello": "world"}
-
+            mock_presentation_exchange.serialize.return_value = {
+                "thread_id": "sample-thread-id"
+            }
             mock_connection_record.is_ready = True
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
@@ -511,6 +518,33 @@ class TestProofRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.presentation_exchange_send_bound_request(mock)
 
+    async def test_presentation_exchange_send_bound_request_bad_state(self):
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock(
+            return_value={
+                "connection_id": "dummy",
+                "comment": "dummy",
+                "proof_request": {},
+            }
+        )
+        mock.match_info = {"pres_ex_id": "dummy"}
+
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": self.mock_context,
+        }
+
+        with async_mock.patch.object(
+            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_exchange:
+            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
+                )
+            )
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.presentation_exchange_send_bound_request(mock)
+
     async def test_presentation_exchange_send_presentation(self):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock(
@@ -542,11 +576,14 @@ class TestProofRoutes(AsyncTestCase):
                 test_module.V10PresentationExchange.STATE_REQUEST_RECEIVED
             )
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_presentation_exchange
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
+                    connection_id="dummy",
+                    serialize=async_mock.MagicMock(
+                        return_value={"thread_id": "sample-thread-id"}
+                    ),
+                )
             )
-            mock_presentation_exchange.connection_id = "dummy"
-            mock_presentation_exchange.serialize = async_mock.MagicMock()
-            mock_presentation_exchange.serialize.return_value = {"hello": "world"}
 
             mock_connection_record.is_ready = True
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -580,11 +617,12 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_presentation_exchange:
-
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_presentation_exchange
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
+                    connection_id="dummy",
+                )
             )
-            mock_presentation_exchange.connection_id = "dummy"
 
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -608,11 +646,12 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_presentation_exchange:
-
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_presentation_exchange
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
+                    connection_id="dummy",
+                )
             )
-            mock_presentation_exchange.connection_id = "dummy"
 
             mock_connection_record.is_ready = False
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -620,6 +659,27 @@ class TestProofRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.presentation_exchange_send_presentation(mock)
+
+    async def test_presentation_exchange_send_presentation_bad_state(self):
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock()
+        mock.match_info = {"pres_ex_id": "dummy"}
+
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": self.mock_context,
+        }
+
+        with async_mock.patch.object(
+            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_exchange:
+            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
+                )
+            )
+            with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.presentation_exchange_send_presentation(mock)
 
     async def test_presentation_exchange_verify_presentation(self):
@@ -635,17 +695,16 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_presentation_manager, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_presentation_exchange:
-
-            mock_presentation_exchange.state = (
-                test_module.V10PresentationExchange.STATE_PRESENTATION_RECEIVED
-            )
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_presentation_exchange
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
+                    connection_id="dummy",
+                    thread_id="dummy",
+                    serialize=async_mock.MagicMock(
+                        return_value={"thread_id": "sample-thread-id"}
+                    ),
+                )
             )
-            mock_presentation_exchange.connection_id = "dummy"
-            mock_presentation_exchange.thread_id = "dummy"
-            mock_presentation_exchange.serialize = async_mock.MagicMock()
-            mock_presentation_exchange.serialize.return_value = {"hello": "world"}
 
             mock_connection_record.is_ready = True
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -653,16 +712,14 @@ class TestProofRoutes(AsyncTestCase):
             )
 
             mock_presentation_manager.return_value.verify_presentation = async_mock.CoroutineMock(
-                return_value=mock_presentation_exchange
+                return_value=mock_presentation_exchange.retrieve_by_id.return_value
             )
 
             with async_mock.patch.object(
                 test_module.web, "json_response"
             ) as mock_response:
                 await test_module.presentation_exchange_verify_presentation(mock)
-                mock_response.assert_called_once_with(
-                    mock_presentation_exchange.serialize.return_value
-                )
+                mock_response.assert_called_once_with({"thread_id": "sample-thread-id"})
 
     async def test_presentation_exchange_verify_presentation_not_found(self):
         mock = async_mock.MagicMock()
@@ -677,9 +734,11 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_presentation_exchange:
 
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_presentation_exchange
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
+                    connection_id="dummy",
+                )
             )
-            mock_presentation_exchange.connection_id = "dummy"
 
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -699,11 +758,12 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_presentation_exchange:
-
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_presentation_exchange
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
+                    connection_id="dummy",
+                )
             )
-            mock_presentation_exchange.connection_id = "dummy"
 
             mock_connection_record.is_ready = False
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -711,6 +771,27 @@ class TestProofRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.presentation_exchange_verify_presentation(mock)
+
+    async def test_presentation_exchange_verify_presentation_bad_state(self):
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock()
+        mock.match_info = {"pres_ex_id": "dummy"}
+
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": self.mock_context,
+        }
+
+        with async_mock.patch.object(
+            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_exchange:
+            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
+                )
+            )
+            with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.presentation_exchange_verify_presentation(mock)
 
     async def test_presentation_exchange_remove(self):
@@ -722,12 +803,13 @@ class TestProofRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_presentation_exchange:
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock()
-            mock_presentation_exchange.retrieve_by_id.return_value = (
-                mock_presentation_exchange
+            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    state=mock_presentation_exchange.STATE_VERIFIED,
+                    connection_id="dummy",
+                    delete_record=async_mock.CoroutineMock(),
+                )
             )
-
-            mock_presentation_exchange.delete_record = async_mock.CoroutineMock()
 
             with async_mock.patch.object(
                 test_module.web, "json_response"

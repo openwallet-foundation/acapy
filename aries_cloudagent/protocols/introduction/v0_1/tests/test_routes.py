@@ -81,6 +81,44 @@ class TestIntroductionRoutes(AsyncTestCase):
             )
             mock_response.assert_called_once_with({})
 
+    async def test_introduction_start_x(self):
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+
+        mock_req = async_mock.MagicMock()
+        mock_req.app = {"request_context": context, "outbound_message_router": None}
+        mock_req.json = async_mock.CoroutineMock(
+            return_value={
+                "my_seed": "my_seed",
+                "my_did": "my_did",
+                "their_seed": "their_seed",
+                "their_did": "their_did",
+                "their_verkey": "their_verkey",
+                "their_endpoint": "their_endpoint",
+                "their_role": "their_role",
+                "alias": "alias",
+            }
+        )
+        mock_req.match_info = {"conn_id": "dummy"}
+        mock_req.query = {
+            "target_connection_id": "dummy",
+            "message": "Hello",
+        }
+
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.serialize = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            context, "inject", async_mock.CoroutineMock()
+        ) as mock_ctx_inject:
+            mock_ctx_inject.return_value = async_mock.MagicMock(
+                start_introduction=async_mock.CoroutineMock(
+                    side_effect=test_module.IntroductionError()
+                )
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.introduction_start(mock_req)
+
     async def test_register(self):
         mock_app = async_mock.MagicMock()
         mock_app.add_routes = async_mock.MagicMock()

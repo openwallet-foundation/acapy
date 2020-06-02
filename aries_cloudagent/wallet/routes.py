@@ -115,7 +115,7 @@ async def wallet_did_list(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason="No wallet available")
     filter_did = request.query.get("did")
     filter_verkey = request.query.get("verkey")
     filter_public = json.loads(request.query.get("public", json.dumps(None)))
@@ -175,8 +175,12 @@ async def wallet_create_did(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
-    info = await wallet.create_local_did()
+        raise web.HTTPForbidden(reason="No wallet available")
+    try:
+        info = await wallet.create_local_did()
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({"result": format_did_info(info)})
 
 
@@ -196,8 +200,12 @@ async def wallet_get_public_did(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
-    info = await wallet.get_public_did()
+        raise web.HTTPForbidden(reason="No wallet available")
+    try:
+        info = await wallet.get_public_did()
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({"result": format_did_info(info)})
 
 
@@ -218,15 +226,15 @@ async def wallet_set_public_did(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
     if not did:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason="Request query must include DID")
     try:
         await wallet.get_local_did(did)
-    except WalletError:
+    except WalletError as err:
         # DID not found or not in valid format
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
     info = await wallet.set_public_did(did)
     if info:
         # Publish endpoint if necessary
@@ -255,19 +263,19 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
     if not did:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason="Request query must include DID")
     try:
         did_info = await wallet.get_local_did(did)
-    except WalletError:
+    except WalletError as err:
         # DID not found or not in valid format
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
     else:
         if did_info.metadata.get("public", False):
             # call from ledger API to propagate through ledger NYM transaction
-            raise web.HTTPBadRequest()
+            raise web.HTTPBadRequest(reason=f"DID {did} is public")
 
     await wallet.rotate_did_keypair_start(did)  # do not take seed over the wire
     await wallet.rotate_did_keypair_apply(did)
@@ -295,8 +303,15 @@ async def wallet_get_tagging_policy(request: web.BaseRequest):
 
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet or wallet.WALLET_TYPE != "indy":
-        raise web.HTTPForbidden()
-    result = await wallet.get_credential_definition_tag_policy(credential_definition_id)
+        raise web.HTTPForbidden(reason="No indy wallet available")
+
+    try:
+        result = await wallet.get_credential_definition_tag_policy(
+            credential_definition_id
+        )
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({"taggables": result})
 
 
@@ -323,10 +338,14 @@ async def wallet_set_tagging_policy(request: web.BaseRequest):
 
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet or wallet.WALLET_TYPE != "indy":
-        raise web.HTTPForbidden()
-    await wallet.set_credential_definition_tag_policy(
-        credential_definition_id, taggables
-    )
+        raise web.HTTPForbidden(reason="No indy wallet available")
+    try:
+        await wallet.set_credential_definition_tag_policy(
+            credential_definition_id, taggables
+        )
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({})
 
 

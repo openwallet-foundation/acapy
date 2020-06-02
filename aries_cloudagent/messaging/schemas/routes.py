@@ -119,7 +119,7 @@ async def schemas_send_schema(request: web.BaseRequest):
                 )
             )
         except (IssuerError, LedgerError) as err:
-            raise web.HTTPBadRequest(reason=err.roll_up)
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
@@ -182,7 +182,7 @@ async def schemas_get_schema(request: web.BaseRequest):
         try:
             schema = await ledger.get_schema(schema_id)
         except LedgerError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up)
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"schema": schema})
 
