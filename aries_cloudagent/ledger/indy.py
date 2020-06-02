@@ -197,7 +197,8 @@ class IndyLedger(BaseLedger):
 
             if exc:
                 self.logger.error("Exception when closing pool ledger")
-                self.ref_count += 1
+                self.ref_count += 1  # if we are here, we should have self.ref_lock
+                self.close_task = None
                 raise IndyErrorHandler.wrap_error(
                     exc, "Exception when closing pool ledger", LedgerError
                 )
