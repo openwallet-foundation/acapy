@@ -181,13 +181,31 @@ class IndyLedger(BaseLedger):
     async def close(self):
         """Close the pool ledger."""
         if self.opened:
-            with IndyErrorHandler("Exception when closing pool ledger", LedgerError):
-                await indy.pool.close_pool_ledger(self.pool_handle)
-            self.pool_handle = None
-            self.opened = False
+            exc = None
+            for attempt in range(3):
+                try:
+                    await indy.pool.close_pool_ledger(self.pool_handle)
+                except IndyError as err:
+                    await asyncio.sleep(0.01)
+                    exc = err
+                    continue
+
+                self.pool_handle = None
+                self.opened = False
+                exc = None
+                break
+
+            if exc:
+                self.logger.error("Exception when closing pool ledger")
+                self.ref_count += 1
+                raise IndyErrorHandler.wrap_error(
+                    exc,
+                    "Exception when closing pool ledger",
+                    LedgerError
+                )
 
     async def _context_open(self):
-        """Open the wallet if necessary and increase the number of active references."""
+        """Open the ledger if necessary and increase the number of active references."""
         async with self.ref_lock:
             if self.close_task:
                 self.close_task.cancel()
@@ -197,7 +215,7 @@ class IndyLedger(BaseLedger):
             self.ref_count += 1
 
     async def _context_close(self):
-        """Release the wallet reference and schedule closing of the pool ledger."""
+        """Release the reference and schedule closing of the pool ledger."""
 
         async def closer(timeout: int):
             """Close the pool ledger after a timeout."""
