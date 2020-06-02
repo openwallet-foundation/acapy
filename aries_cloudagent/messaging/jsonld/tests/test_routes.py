@@ -31,45 +31,41 @@ class TestJSONLDRoutes(AsyncTestCase):
                 return_value={  # posted json
                     "verkey": "5yKdnU7ToTjAoRNDzfuzVTfWBH38qyhE1b9xh4v8JaWF",  # pulled from the did:key in example
                     "doc": {
-                      "@context": [
-                        "https://www.w3.org/2018/credentials/v1",
-                        "https://www.w3.org/2018/credentials/examples/v1"
-                      ],
-                      "id": "http://example.gov/credentials/3732",
-                      "type": ["VerifiableCredential", "UniversityDegreeCredential"],
-                      "issuer": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
-                      "issuanceDate": "2020-03-10T04:24:12.164Z",
-                      "credentialSubject": {
-                        "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
-                        "degree": {
-                          "type": "BachelorDegree",
-                          "name": "Bachelor of Science and Arts"
-                        }
-                      },
-                      "proof": {
-                        "type": "Ed25519Signature2018",
-                        "created": "2020-04-10T21:35:35Z",
-                        "verificationMethod": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
-                        "proofPurpose": "assertionMethod",
-                        "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..l9d0YHjcFAH2H4dB9xlWFZQLUpixVCWJk0eOt4CXQe1NXKWZwmhmn9OQp6YxX0a2LffegtYESTCJEoGVXLqWAA"
-                      }
-                    }
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            "https://www.w3.org/2018/credentials/examples/v1",
+                        ],
+                        "id": "http://example.gov/credentials/3732",
+                        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+                        "issuer": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+                        "issuanceDate": "2020-03-10T04:24:12.164Z",
+                        "credentialSubject": {
+                            "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+                            "degree": {
+                                "type": "BachelorDegree",
+                                "name": "Bachelor of Science and Arts",
+                            },
+                        },
+                        "proof": {
+                            "type": "Ed25519Signature2018",
+                            "created": "2020-04-10T21:35:35Z",
+                            "verificationMethod": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+                            "proofPurpose": "assertionMethod",
+                            "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..l9d0YHjcFAH2H4dB9xlWFZQLUpixVCWJk0eOt4CXQe1NXKWZwmhmn9OQp6YxX0a2LffegtYESTCJEoGVXLqWAA",
+                        },
+                    },
                 }
             ),
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.verify(
-                mock_request
-            )
+            result = await test_module.verify(mock_request)
             assert result == mock_response.return_value
-            mock_response.assert_called_once_with( #expected response
-                {"valid": True}
-            )
+            mock_response.assert_called_once_with({"valid": True})  # expected response
 
     async def test_sign_credential(self):
 
-        wallet: BaseWallet = await self.app['request_context'].inject(BaseWallet)
+        wallet: BaseWallet = await self.app["request_context"].inject(BaseWallet)
 
         did_info = await wallet.create_local_did()
 
@@ -80,38 +76,39 @@ class TestJSONLDRoutes(AsyncTestCase):
                     "verkey": did_info.verkey,
                     "doc": {
                         "credential": {
-                          "@context": [
-                            "https://www.w3.org/2018/credentials/v1",
-                            "https://www.w3.org/2018/credentials/examples/v1"
-                          ],
-                          "id": "http://example.gov/credentials/3732",
-                          "type": ["VerifiableCredential", "UniversityDegreeCredential"],
-                          "issuer": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
-                          "issuanceDate": "2020-03-10T04:24:12.164Z",
-                          "credentialSubject": {
-                            "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
-                            "degree": {
-                              "type": "BachelorDegree",
-                              "name": "Bachelor of Science and Arts"
-                            }
-                          }
+                            "@context": [
+                                "https://www.w3.org/2018/credentials/v1",
+                                "https://www.w3.org/2018/credentials/examples/v1",
+                            ],
+                            "id": "http://example.gov/credentials/3732",
+                            "type": [
+                                "VerifiableCredential",
+                                "UniversityDegreeCredential",
+                            ],
+                            "issuer": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+                            "issuanceDate": "2020-03-10T04:24:12.164Z",
+                            "credentialSubject": {
+                                "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+                                "degree": {
+                                    "type": "BachelorDegree",
+                                    "name": "Bachelor of Science and Arts",
+                                },
+                            },
                         },
-                      "options": {
-                        "type": "Ed25519Signature2018",
-                        "created": "2020-04-10T21:35:35Z",
-                        "verificationMethod": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
-                        "proofPurpose": "assertionMethod",
-                      }
-                    }
+                        "options": {
+                            "type": "Ed25519Signature2018",
+                            "created": "2020-04-10T21:35:35Z",
+                            "verificationMethod": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+                            "proofPurpose": "assertionMethod",
+                        },
+                    },
                 }
             ),
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.sign(
-                mock_request
-            )
+            result = await test_module.sign(mock_request)
             assert result == mock_response.return_value
             mock_response.assert_called_once()
-            assert 'signed_doc' in mock_response.call_args[0][0]
-            assert 'error' not in mock_response.call_args[0][0]
+            assert "signed_doc" in mock_response.call_args[0][0]
+            assert "error" not in mock_response.call_args[0][0]

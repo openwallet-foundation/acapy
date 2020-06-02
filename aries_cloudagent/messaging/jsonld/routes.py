@@ -3,8 +3,10 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
-from aries_cloudagent.messaging.jsonld.credential \
-    import sign_credential, verify_credential
+from aries_cloudagent.messaging.jsonld.credential import (
+    sign_credential,
+    verify_credential,
+)
 from aries_cloudagent.wallet.base import BaseWallet
 
 from marshmallow import fields, Schema
@@ -12,12 +14,14 @@ from marshmallow import fields, Schema
 
 class SignRequestSchema(Schema):
     """Request schema for signing a jsonld doc."""
+
     verkey = fields.Str(required=True, description="verkey to use for signing")
     doc = fields.Dict(required=True, description="JSON-LD Doc to sign")
 
 
 class SignResponseSchema(Schema):
     """Response schema for a signed jsonld doc."""
+
     signed_doc = fields.Dict(required=True)
 
 
@@ -32,9 +36,7 @@ async def sign(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    response = {
-
-    }
+    response = {}
     try:
         context = request.app["request_context"]
         wallet: BaseWallet = await context.inject(BaseWallet)
@@ -44,27 +46,30 @@ async def sign(request: web.BaseRequest):
         body = await request.json()
         verkey = body.get("verkey")
         doc = body.get("doc")
-        credential = doc['credential']
-        signature_options = doc['options']
+        credential = doc["credential"]
+        signature_options = doc["options"]
 
-        document_with_proof = \
-            await sign_credential(credential, signature_options, verkey, wallet)
+        document_with_proof = await sign_credential(
+            credential, signature_options, verkey, wallet
+        )
 
-        response['signed_doc'] = document_with_proof
+        response["signed_doc"] = document_with_proof
     except Exception as e:
-        response['error'] = str(e)
+        response["error"] = str(e)
 
     return web.json_response(response)
 
 
 class VerifyRequestSchema(Schema):
     """Request schema for signing a jsonld doc."""
+
     verkey = fields.Str(required=True, description="verkey to use for doc verification")
     doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
 
 
 class VerifyResponseSchema(Schema):
     """Response schema for verification result."""
+
     valid = fields.Bool(required=True)
 
 
@@ -79,9 +84,7 @@ async def verify(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    response = {
-        "valid": False
-    }
+    response = {"valid": False}
     try:
         context = request.app["request_context"]
         wallet: BaseWallet = await context.inject(BaseWallet)

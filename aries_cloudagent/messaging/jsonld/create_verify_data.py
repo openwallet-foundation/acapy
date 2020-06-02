@@ -7,24 +7,20 @@ import hashlib
 
 
 def _canonize(data):
-    return jsonld.normalize(data, {
-        'algorithm': 'URDNA2015',
-        'format': 'application/n-quads'
-    })
+    return jsonld.normalize(
+        data, {"algorithm": "URDNA2015", "format": "application/n-quads"}
+    )
 
 
 def _sha256(data):
-    return hashlib.sha256(data.encode('ascii')).hexdigest()
+    return hashlib.sha256(data.encode("ascii")).hexdigest()
 
 
 def _cannonize_signature_options(signatureOptions):
-    _signatureOptions = {
-        **signatureOptions,
-        "@context": "https://w3id.org/security/v2"
-    }
-    _signatureOptions.pop('jws', None)
-    _signatureOptions.pop('signatureValue', None)
-    _signatureOptions.pop('proofValue', None)
+    _signatureOptions = {**signatureOptions, "@context": "https://w3id.org/security/v2"}
+    _signatureOptions.pop("jws", None)
+    _signatureOptions.pop("signatureValue", None)
+    _signatureOptions.pop("proofValue", None)
     return _canonize(_signatureOptions)
 
 
@@ -39,49 +35,49 @@ class DroppedAttributeException(Exception):
 
 
 def create_verify_data(data, signature_options):
-    if 'creator' in signature_options:
-        signature_options['verificationMethod'] = signature_options['creator']
+    if "creator" in signature_options:
+        signature_options["verificationMethod"] = signature_options["creator"]
 
-    if not signature_options['verificationMethod']:
+    if not signature_options["verificationMethod"]:
         raise Exception("signature_options.verificationMethod is required")
 
-    if 'created' not in signature_options:
-        signature_options['created'] = \
-            datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if "created" not in signature_options:
+        signature_options["created"] = datetime.datetime.now(
+            datetime.timezone.utc
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    if 'type' not in signature_options \
-            or signature_options['type'] != "Ed25519Signature2018":
-        signature_options['type'] = "Ed25519Signature2018"
+    if (
+        "type" not in signature_options
+        or signature_options["type"] != "Ed25519Signature2018"
+    ):
+        signature_options["type"] = "Ed25519Signature2018"
 
     [expanded] = jsonld.expand(data)
     framed = jsonld.compact(
-        expanded,
-        "https://w3id.org/security/v2",
-        {"skipExpansion": True}
+        expanded, "https://w3id.org/security/v2", {"skipExpansion": True}
     )
 
     # Detect any dropped attributes during the expand/contract step.
 
     if len(data) != len(framed):
         raise DroppedAttributeException("Extra Attribute Detected")
-    if 'proof' in data \
-            and 'proof' in framed \
-            and len(data['proof']) != len(framed['proof']):
+    if (
+        "proof" in data
+        and "proof" in framed
+        and len(data["proof"]) != len(framed["proof"])
+    ):
         raise DroppedAttributeException("Extra Attribute Detected")
-    if 'credentialSubject' in data \
-            and 'https://www.w3.org/2018/credentials#credentialSubject' in framed \
-            and len(data['credentialSubject']) != \
-            len(framed['https://www.w3.org/2018/credentials#credentialSubject']):
+    if (
+        "credentialSubject" in data
+        and "https://www.w3.org/2018/credentials#credentialSubject" in framed
+        and len(data["credentialSubject"])
+        != len(framed["https://www.w3.org/2018/credentials#credentialSubject"])
+    ):
         raise DroppedAttributeException("Extra Attribute Detected")
 
-    cannonized_signature_options = _cannonize_signature_options(
-        signature_options
-    )
+    cannonized_signature_options = _cannonize_signature_options(signature_options)
     hash_of_cannonized_signature_options = _sha256(cannonized_signature_options)
     cannonized_document = _cannonize_document(framed)
     hash_of_cannonized_document = _sha256(cannonized_document)
 
-    return (
-        framed,
-        hash_of_cannonized_signature_options + hash_of_cannonized_document
-    )
+    return (framed, hash_of_cannonized_signature_options + hash_of_cannonized_document)

@@ -35,15 +35,11 @@ def b64decode(bytes):
 
 
 def create_jws(encoded_header, verify_data):
-    return (encoded_header + ".").encode('utf-8') + verify_data
+    return (encoded_header + ".").encode("utf-8") + verify_data
 
 
 async def jws_sign(verify_data, verkey, wallet):
-    header = {
-        "alg": "EdDSA",
-        "b64": False,
-        "crit": ["b64"]
-    }
+    header = {"alg": "EdDSA", "b64": False, "crit": ["b64"]}
 
     encoded_header = b64encode(json.dumps(header))
 
@@ -57,17 +53,21 @@ async def jws_sign(verify_data, verkey, wallet):
 
 
 def verify_jws_header(header):
-    if not(header['alg'] == "EdDSA" and
-           header['b64'] is False and
-           isinstance(header['crit'], list) and
-           len(header['crit']) == 1 and
-           header['crit'][0] == "b64"
-           ) and len(header) == 3:
+    if (
+        not (
+            header["alg"] == "EdDSA"
+            and header["b64"] is False
+            and isinstance(header["crit"], list)
+            and len(header["crit"]) == 1
+            and header["crit"][0] == "b64"
+        )
+        and len(header) == 3
+    ):
         raise Exception("Invalid JWS header parameters for Ed25519Signature2018.")
 
 
 async def jws_verify(verify_data, signature, public_key, wallet):
-    encoded_header, _,  encoded_signature = signature.partition("..")
+    encoded_header, _, encoded_signature = signature.partition("..")
     decoded_header = json.loads(b64decode(encoded_header))
 
     verify_jws_header(decoded_header)
@@ -85,18 +85,12 @@ async def sign_credential(credential, signature_options, verkey, wallet):
     framed, verify_data_hex_string = create_verify_data(credential, signature_options)
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
     jws = await jws_sign(verify_data_bytes, verkey, wallet)
-    document_with_proof = {
-        **credential,
-        "proof": {
-            **signature_options,
-            "jws": jws
-        }
-    }
+    document_with_proof = {**credential, "proof": {**signature_options, "jws": jws}}
     return document_with_proof
 
 
 async def verify_credential(doc, verkey, wallet):
-    framed, verify_data_hex_string = create_verify_data(doc, doc['proof'])
+    framed, verify_data_hex_string = create_verify_data(doc, doc["proof"])
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
-    valid = await jws_verify(verify_data_bytes, framed['proof']['jws'], verkey, wallet)
+    valid = await jws_verify(verify_data_bytes, framed["proof"]["jws"], verkey, wallet)
     return valid
