@@ -199,9 +199,7 @@ class IndyLedger(BaseLedger):
                 self.logger.error("Exception when closing pool ledger")
                 self.ref_count += 1
                 raise IndyErrorHandler.wrap_error(
-                    exc,
-                    "Exception when closing pool ledger",
-                    LedgerError
+                    exc, "Exception when closing pool ledger", LedgerError
                 )
 
     async def _context_open(self):
