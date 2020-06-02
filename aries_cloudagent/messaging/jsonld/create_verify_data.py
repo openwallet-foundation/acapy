@@ -1,5 +1,10 @@
-# ported from
-# https://github.com/transmute-industries/Ed25519Signature2018/blob/master/src/createVerifyData/index.js
+"""
+Contains the functions needed to produce and verify a json-ld signature.
+This file was ported from
+https://github.com/transmute-industries/Ed25519Signature2018/blob/master/src/createVerifyData/index.js
+"""
+
+
 import datetime
 
 from pyld import jsonld
@@ -31,10 +36,14 @@ def _cannonize_document(doc):
 
 
 class DroppedAttributeException(Exception):
+    """Exception used to track that an attribute was removed."""
+
     pass
 
 
 def create_verify_data(data, signature_options):
+    """Encapsulates the process of constructing the string used during sign and verify."""
+
     if "creator" in signature_options:
         signature_options["verificationMethod"] = signature_options["creator"]
 

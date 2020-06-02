@@ -1,3 +1,7 @@
+"""
+sign and verify functions for json-ld based credentials
+"""
+
 import json
 from aries_cloudagent.wallet.util import (
     b58_to_bytes,
@@ -27,18 +31,23 @@ def did_key(verkey: str) -> str:
 
 
 def b64encode(str):
+    """ URLSafe B64 Encode. """
     return str_to_b64(str, urlsafe=True, pad=False)
 
 
 def b64decode(bytes):
+    """ URLSafe B64 Decode. """
     return b64_to_str(bytes, urlsafe=True)
 
 
 def create_jws(encoded_header, verify_data):
+    """ Compose JWS. """
     return (encoded_header + ".").encode("utf-8") + verify_data
 
 
 async def jws_sign(verify_data, verkey, wallet):
+    """ Sign JWS. """
+
     header = {"alg": "EdDSA", "b64": False, "crit": ["b64"]}
 
     encoded_header = b64encode(json.dumps(header))
@@ -53,6 +62,8 @@ async def jws_sign(verify_data, verkey, wallet):
 
 
 def verify_jws_header(header):
+    """ Check header requirements. """
+
     if (
         not (
             header["alg"] == "EdDSA"
@@ -67,6 +78,8 @@ def verify_jws_header(header):
 
 
 async def jws_verify(verify_data, signature, public_key, wallet):
+    """ Detatched jws verify handling."""
+
     encoded_header, _, encoded_signature = signature.partition("..")
     decoded_header = json.loads(b64decode(encoded_header))
 
@@ -82,6 +95,8 @@ async def jws_verify(verify_data, signature, public_key, wallet):
 
 
 async def sign_credential(credential, signature_options, verkey, wallet):
+    """ Sign Credential. """
+
     framed, verify_data_hex_string = create_verify_data(credential, signature_options)
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
     jws = await jws_sign(verify_data_bytes, verkey, wallet)
@@ -90,6 +105,8 @@ async def sign_credential(credential, signature_options, verkey, wallet):
 
 
 async def verify_credential(doc, verkey, wallet):
+    """ Verify credential. """
+
     framed, verify_data_hex_string = create_verify_data(doc, doc["proof"])
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
     valid = await jws_verify(verify_data_bytes, framed["proof"]["jws"], verkey, wallet)
