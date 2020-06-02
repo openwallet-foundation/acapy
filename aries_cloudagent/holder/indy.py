@@ -243,15 +243,17 @@ class IndyHolder(BaseHolder):
             credential_json = await indy.anoncreds.prover_get_credential(
                 self.wallet.handle, credential_id
             )
-        except IndyError as e:
-            if e.error_code == ErrorCode.WalletItemNotFound:
+        except IndyError as err:
+            if err.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError(
-                    "Credential not found in the wallet: {}".format(credential_id)
+                    "Credential {} not found in wallet {}".format(
+                        credential_id, self.wallet.name
+                    )
                 )
             else:
                 raise IndyErrorHandler.wrap_error(
-                    e, "Error when fetching credential", HolderError
-                ) from e
+                    err, f"Error when fetching credential {credential_id}", HolderError
+                ) from err
 
         return credential_json
 
@@ -277,15 +279,17 @@ class IndyHolder(BaseHolder):
             await indy.anoncreds.prover_delete_credential(
                 self.wallet.handle, credential_id
             )
-        except IndyError as e:
-            if e.error_code == ErrorCode.WalletItemNotFound:
+        except IndyError as err:
+            if err.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError(
-                    "Credential not found in the wallet: {}".format(credential_id)
+                    "Credential {} not found in wallet {}".format(
+                        credential_id, self.wallet.name
+                    )
                 )
             else:
                 raise IndyErrorHandler.wrap_error(
-                    e, "Error when deleting credential", HolderError
-                ) from e
+                    err, "Error when deleting credential", HolderError
+                ) from err
 
     async def get_mime_type(
         self, credential_id: str, attr: str = None

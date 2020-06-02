@@ -376,7 +376,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
             context, presentation_exchange_id
         )
     except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up)
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     return web.json_response(record.serialize())
 
 
@@ -410,7 +410,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             context, presentation_exchange_id
         )
     except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up)
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     start = request.query.get("start")
     count = request.query.get("count")
@@ -479,7 +479,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
             presentation_proposal=PresentationPreview.deserialize(presentation_preview),
         )
     except (BaseModelError, StorageNotFoundError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
@@ -612,7 +612,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
             context, connection_id
         )
     except StorageNotFoundError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
@@ -684,9 +684,16 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
         context, presentation_exchange_id
     )
-    assert presentation_exchange_record.state == (
+    if presentation_exchange_record.state != (
         V10PresentationExchange.STATE_PROPOSAL_RECEIVED
-    )
+    ):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {presentation_exchange_id} "
+                f"in {presentation_exchange_record.state} state "
+                f"(must be {V10PresentationExchange.STATE_PROPOSAL_RECEIVED})"
+            )
+        )
     body = await request.json()
 
     connection_id = body.get("connection_id")
@@ -695,7 +702,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
             context, connection_id
         )
     except StorageNotFoundError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
@@ -746,6 +753,16 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
     presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
         context, presentation_exchange_id
     )
+    if presentation_exchange_record.state != (
+        V10PresentationExchange.STATE_REQUEST_RECEIVED
+    ):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {presentation_exchange_id} "
+                f"in {presentation_exchange_record.state} state "
+                f"(must be {V10PresentationExchange.STATE_REQUEST_RECEIVED})"
+            )
+        )
 
     body = await request.json()
 
@@ -755,14 +772,10 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
             context, connection_id
         )
     except StorageNotFoundError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
-
-    assert (
-        presentation_exchange_record.state
-    ) == V10PresentationExchange.STATE_REQUEST_RECEIVED
 
     presentation_manager = PresentationManager(context)
 
@@ -817,6 +830,17 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
         context, presentation_exchange_id
     )
+    if presentation_exchange_record.state != (
+        V10PresentationExchange.STATE_PRESENTATION_RECEIVED
+    ):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {presentation_exchange_id} "
+                f"in {presentation_exchange_record.state} state "
+                f"(must be {V10PresentationExchange.STATE_PRESENTATION_RECEIVED})"
+            )
+        )
+
     connection_id = presentation_exchange_record.connection_id
 
     try:
@@ -824,14 +848,10 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
             context, connection_id
         )
     except StorageNotFoundError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
-
-    assert (
-        presentation_exchange_record.state
-    ) == V10PresentationExchange.STATE_PRESENTATION_RECEIVED
 
     presentation_manager = PresentationManager(context)
 
@@ -866,7 +886,7 @@ async def presentation_exchange_remove(request: web.BaseRequest):
             context, presentation_exchange_id
         )
     except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up)
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     await presentation_exchange_record.delete_record(context)
     return web.json_response({})

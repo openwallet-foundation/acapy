@@ -6,9 +6,11 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, Schema, validate
 
 from ..messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..storage.error import StorageError
 from ..wallet.error import WalletError
 from .base import BaseLedger
-from .error import BadLedgerRequestError, LedgerTransactionError
+from .indy import Role
+from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 
 
 class AMLRecordSchema(Schema):
@@ -69,7 +71,7 @@ class RegisterLedgerNymQueryStringSchema(Schema):
         description="Role",
         required=False,
         validate=validate.OneOf(
-            ["TRUSTEE", "STEWARD", "ENDORSER", "NETWORK_MONITOR", "reset"]
+            [r.name for r in Role if isinstance(r.value[0], int)] + ["reset"]
         ),
     )
 
@@ -102,7 +104,9 @@ async def register_ledger_nym(request: web.BaseRequest):
     did = request.query.get("did")
     verkey = request.query.get("verkey")
     if not did or not verkey:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(
+            reason="Request query must include both did and verkey"
+        )
 
     alias = request.query.get("alias")
     role = request.query.get("role")
@@ -114,8 +118,8 @@ async def register_ledger_nym(request: web.BaseRequest):
         try:
             await ledger.register_nym(did, verkey, alias, role)
             success = True
-        except LedgerTransactionError as e:
-            raise web.HTTPForbidden(text=e.message)
+        except LedgerTransactionError as err:
+            raise web.HTTPForbidden(reason=err.roll_up)
     return web.json_response({"success": success})
 
 
@@ -130,12 +134,15 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
-        raise web.HTTPForbidden()
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
     async with ledger:
         try:
             await ledger.rotate_public_did_keypair()  # do not take seed over the wire
-        except (WalletError, BadLedgerRequestError):
-            raise web.HTTPBadRequest()
+        except (WalletError, BadLedgerRequestError) as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 
@@ -161,11 +168,15 @@ async def get_did_verkey(request: web.BaseRequest):
 
     did = request.query.get("did")
     if not did:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
-        r = await ledger.get_key_for_did(did)
-    return web.json_response({"verkey": r})
+        try:
+            result = await ledger.get_key_for_did(did)
+        except LedgerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"verkey": result})
 
 
 @docs(
@@ -189,10 +200,14 @@ async def get_did_endpoint(request: web.BaseRequest):
 
     did = request.query.get("did")
     if not did:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
-        r = await ledger.get_endpoint_for_did(did)
+        try:
+            r = await ledger.get_endpoint_for_did(did)
+        except LedgerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({"endpoint": r})
 
 
@@ -247,18 +262,25 @@ async def ledger_accept_taa(request: web.BaseRequest):
     context = request.app["request_context"]
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger or ledger.LEDGER_TYPE != "indy":
-        raise web.HTTPForbidden()
+        reason = "No indy ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
 
     accept_input = await request.json()
     taa_info = await ledger.get_txn_author_agreement()
     if not taa_info["taa_required"]:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason=f"Ledger {ledger.pool_name} TAA not available")
     taa_record = {
         "version": accept_input["version"],
         "text": accept_input["text"],
         "digest": ledger.taa_digest(accept_input["version"], accept_input["text"]),
     }
-    await ledger.accept_txn_author_agreement(taa_record, accept_input["mechanism"])
+    try:
+        await ledger.accept_txn_author_agreement(taa_record, accept_input["mechanism"])
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({})
 
 

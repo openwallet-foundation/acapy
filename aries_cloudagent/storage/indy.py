@@ -105,7 +105,9 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError("Record not found: {}".format(record_id))
+                raise StorageNotFoundError(
+                    f"{record_type} record not found: {record_id}"
+                )
             raise StorageError(str(x_indy))
         result = json.loads(result_json)
         return StorageRecord(
@@ -135,7 +137,7 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError("Record not found: {}".format(record.id))
+                raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
 
     async def update_record_tags(self, record: StorageRecord, tags: Mapping):
@@ -159,7 +161,7 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError("Record not found: {}".format(record.id))
+                raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
 
     async def delete_record_tags(
@@ -202,7 +204,7 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError("Record not found: {}".format(record.id))
+                raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
 
     def search_records(

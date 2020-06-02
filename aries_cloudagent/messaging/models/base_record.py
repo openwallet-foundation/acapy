@@ -62,7 +62,7 @@ class BaseRecord(BaseModel):
         """Initialize a new BaseRecord."""
         if not self.RECORD_TYPE:
             raise TypeError(
-                "Can't instantiate abstract class {} with no RECORD_TYPE".format(
+                "Cannot instantiate abstract class {} with no RECORD_TYPE".format(
                     self.__class__.__name__
                 )
             )
@@ -241,10 +241,20 @@ class BaseRecord(BaseModel):
             vals = json.loads(record.value)
             if match_post_filter(vals, post_filter):
                 if found:
-                    raise StorageDuplicateError("Multiple records located")
+                    raise StorageDuplicateError(
+                        "Multiple {} records located for {}{}".format(
+                            cls.__name__,
+                            tag_filter,
+                            f", {post_filter}" if post_filter else "",
+                        )
+                    )
                 found = cls.from_storage(record.id, vals)
         if not found:
-            raise StorageNotFoundError("Record not found")
+            raise StorageNotFoundError(
+                "{} record not found for {}{}".format(
+                    cls.__name__, tag_filter, f", {post_filter}" if post_filter else ""
+                )
+            )
         return found
 
     @classmethod

@@ -45,8 +45,8 @@ async def connections_send_message(request: web.BaseRequest):
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if connection.is_ready:
         msg = BasicMessage(content=params["content"])
