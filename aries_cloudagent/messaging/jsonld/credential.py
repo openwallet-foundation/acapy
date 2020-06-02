@@ -29,12 +29,12 @@ def did_key(verkey: str) -> str:
 
 
 def b64encode(str):
-    """URLSafe B64 Encode."""
+    """Url Safe B64 Encode."""
     return str_to_b64(str, urlsafe=True, pad=False)
 
 
 def b64decode(bytes):
-    """URLSafe B64 Decode."""
+    """Url Safe B64 Decode."""
     return b64_to_str(bytes, urlsafe=True)
 
 
