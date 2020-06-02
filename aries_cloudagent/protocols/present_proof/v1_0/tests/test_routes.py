@@ -216,20 +216,11 @@ class TestProofRoutes(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager:
+        ) as mock_connection_record:
 
             # Emulate storage not found (bad connection id)
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
-            )
-
-            mock_presentation_manager.return_value.create_exchange_for_proposal = (
-                async_mock.CoroutineMock()
-            )
-            mock_presentation_manager.return_value.create_exchange_for_proposal.return_value = (
-                async_mock.MagicMock()
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -247,19 +238,14 @@ class TestProofRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "ConnectionRecord", autospec=True
         ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager:
+            test_module, "PresentationPreview", autospec=True
+        ) as mock_preview, async_mock.patch.object(
+            test_module, "PresentationProposal", autospec=True
+        ) as mock_proposal:
+            mock_preview.deserialize = async_mock.CoroutineMock()
 
-            # Emulate connection not ready
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_connection_record.retrieve_by_id.return_value.is_ready = False
-
-            mock_presentation_manager.return_value.create_exchange_for_proposal = (
-                async_mock.CoroutineMock()
-            )
-            mock_presentation_manager.return_value.create_exchange_for_proposal.return_value = (
-                async_mock.MagicMock()
-            )
 
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.presentation_exchange_send_proposal(mock)
