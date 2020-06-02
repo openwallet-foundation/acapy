@@ -1,6 +1,4 @@
-"""
-sign and verify functions for json-ld based credentials
-"""
+"""Sign and verify functions for json-ld based credentials."""
 
 import json
 from aries_cloudagent.wallet.util import (
@@ -31,22 +29,22 @@ def did_key(verkey: str) -> str:
 
 
 def b64encode(str):
-    """ URLSafe B64 Encode. """
+    """URLSafe B64 Encode."""
     return str_to_b64(str, urlsafe=True, pad=False)
 
 
 def b64decode(bytes):
-    """ URLSafe B64 Decode. """
+    """URLSafe B64 Decode."""
     return b64_to_str(bytes, urlsafe=True)
 
 
 def create_jws(encoded_header, verify_data):
-    """ Compose JWS. """
+    """Compose JWS."""
     return (encoded_header + ".").encode("utf-8") + verify_data
 
 
 async def jws_sign(verify_data, verkey, wallet):
-    """ Sign JWS. """
+    """Sign JWS."""
 
     header = {"alg": "EdDSA", "b64": False, "crit": ["b64"]}
 
@@ -62,7 +60,7 @@ async def jws_sign(verify_data, verkey, wallet):
 
 
 def verify_jws_header(header):
-    """ Check header requirements. """
+    """Check header requirements."""
 
     if (
         not (
@@ -78,7 +76,7 @@ def verify_jws_header(header):
 
 
 async def jws_verify(verify_data, signature, public_key, wallet):
-    """ Detatched jws verify handling."""
+    """Detatched jws verify handling."""
 
     encoded_header, _, encoded_signature = signature.partition("..")
     decoded_header = json.loads(b64decode(encoded_header))
@@ -95,7 +93,7 @@ async def jws_verify(verify_data, signature, public_key, wallet):
 
 
 async def sign_credential(credential, signature_options, verkey, wallet):
-    """ Sign Credential. """
+    """Sign Credential."""
 
     framed, verify_data_hex_string = create_verify_data(credential, signature_options)
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
@@ -105,7 +103,7 @@ async def sign_credential(credential, signature_options, verkey, wallet):
 
 
 async def verify_credential(doc, verkey, wallet):
-    """ Verify credential. """
+    """Verify credential."""
 
     framed, verify_data_hex_string = create_verify_data(doc, doc["proof"])
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)

@@ -1,5 +1,6 @@
 """
 Contains the functions needed to produce and verify a json-ld signature.
+
 This file was ported from
 https://github.com/transmute-industries/Ed25519Signature2018/blob/master/src/createVerifyData/index.js
 """
@@ -42,7 +43,7 @@ class DroppedAttributeException(Exception):
 
 
 def create_verify_data(data, signature_options):
-    """Encapsulates the process of constructing the string used during sign and verify."""
+    """Encapsulate the process of constructing the string used during sign and verify."""
 
     if "creator" in signature_options:
         signature_options["verificationMethod"] = signature_options["creator"]
