@@ -110,7 +110,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = async_mock.MagicMock(
                 start_introduction=async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError()
+                    side_effect=test_module.IntroductionError()
                 )
             )
 

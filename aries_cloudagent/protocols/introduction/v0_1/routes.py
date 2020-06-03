@@ -60,9 +60,7 @@ async def introduction_start(request: web.BaseRequest):
         BaseIntroductionService, required=False
     )
     if not service:
-        raise web.HTTPForbidden(
-            reason="Configuration does not include introduction service"
-        )
+        raise web.HTTPForbidden(reason="Introduction service not available")
 
     try:
         await service.start_introduction(

@@ -225,7 +225,7 @@ class IndyIssuer(BaseIssuer):
                 f"Revocation registry {revoc_reg_id} is full: cannot create credential"
             )
             raise IssuerRevocationRegistryFullError(
-                f"Revocation registry {revoc_reg_id} full"
+                f"Revocation registry {revoc_reg_id} is full"
             )
         except IndyError as error:
             raise IndyErrorHandler.wrap_error(

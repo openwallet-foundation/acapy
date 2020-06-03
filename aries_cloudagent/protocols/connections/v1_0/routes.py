@@ -277,8 +277,6 @@ async def connections_retrieve(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(result)
-
 
 @docs(
     tags=["connection"], summary="Create a new connection invitation",
@@ -304,7 +302,7 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden(
-            reason="Configuration does not include invitation creation on public DID"
+            reason="Configuration does not include public invitations"
         )
     base_url = context.settings.get("invite_base_url")
 
@@ -348,7 +346,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
     context = request.app["request_context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(
-            reason="Configuration does not include invitation receipt"
+            reason="Configuration does not allow receipt of invitations"
         )
     connection_mgr = ConnectionManager(context)
     invitation_json = await request.json()
@@ -357,7 +355,6 @@ async def connections_receive_invitation(request: web.BaseRequest):
         invitation = ConnectionInvitation.deserialize(invitation_json)
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
-
         connection = await connection_mgr.receive_invitation(
             invitation, auto_accept=auto_accept, alias=alias
         )

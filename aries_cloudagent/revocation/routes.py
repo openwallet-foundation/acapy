@@ -19,7 +19,7 @@ from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID
 from ..storage.base import BaseStorage, StorageNotFoundError
 
-from .error import RevocationNotSupportedError
+from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .models.revocation_registry import RevocationRegistry
@@ -140,7 +140,9 @@ async def revocation_create_registry(request: web.BaseRequest):
         tag_query={"cred_def_id": credential_definition_id},
     ).fetch_all()
     if not found:
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(
+            reason=f"Not issuer of credential definition id {credential_definition_id}"
+        )
 
     try:
         issuer_did = credential_definition_id.split(":")[0]
@@ -213,8 +215,8 @@ async def get_registry(request: web.BaseRequest):
     try:
         revoc = IndyRevocation(context)
         revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
-    except StorageNotFoundError as e:
-        raise web.HTTPNotFound() from e
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.json_response({"result": revoc_registry.serialize()})
 
@@ -243,8 +245,8 @@ async def get_active_registry(request: web.BaseRequest):
     try:
         revoc = IndyRevocation(context)
         revoc_registry = await revoc.get_active_issuer_rev_reg_record(cred_def_id)
-    except StorageNotFoundError as e:
-        raise web.HTTPNotFound() from e
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.json_response({"result": revoc_registry.serialize()})
 
@@ -274,8 +276,8 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     try:
         revoc = IndyRevocation(context)
         revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
-    except StorageNotFoundError as e:
-        raise web.HTTPNotFound() from e
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.FileResponse(path=revoc_registry.tails_local_path, status=200)
 
@@ -302,13 +304,16 @@ async def publish_registry(request: web.BaseRequest):
     try:
         revoc = IndyRevocation(context)
         revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
-    except StorageNotFoundError as e:
-        raise web.HTTPNotFound() from e
 
-    await revoc_registry.publish_registry_definition(context)
-    LOGGER.debug("published registry definition: %s", registry_id)
-    await revoc_registry.publish_registry_entry(context)
-    LOGGER.debug("published registry entry: %s", registry_id)
+        await revoc_registry.publish_registry_definition(context)
+        LOGGER.debug("published registry definition: %s", registry_id)
+
+        await revoc_registry.publish_registry_entry(context)
+        LOGGER.debug("published registry entry: %s", registry_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except RevocationError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": revoc_registry.serialize()})
 
@@ -341,10 +346,11 @@ async def update_registry(request: web.BaseRequest):
     try:
         revoc = IndyRevocation(context)
         revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
-    except StorageNotFoundError as e:
-        raise web.HTTPNotFound() from e
-
-    await revoc_registry.set_tails_file_public_uri(context, tails_public_uri)
+        await revoc_registry.set_tails_file_public_uri(context, tails_public_uri)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except RevocationError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": revoc_registry.serialize()})
 
