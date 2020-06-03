@@ -28,7 +28,7 @@ from ....messaging.valid import (
     UUIDFour,
     UUID4,
 )
-from ....storage.error import StorageNotFoundError
+from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....utils.outofband import serialize_outofband
 
@@ -263,8 +263,13 @@ async def credential_exchange_list(request: web.BaseRequest):
     for param_name in ("connection_id", "role", "state"):
         if param_name in request.query and request.query[param_name] != "":
             post_filter[param_name] = request.query[param_name]
-    records = await V10CredentialExchange.query(context, tag_filter, post_filter)
-    return web.json_response({"results": [record.serialize() for record in records]})
+    try:
+        records = await V10CredentialExchange.query(context, tag_filter, post_filter)
+        results = [record.serialize() for record in records]
+    except (StorageError, BaseModelError)  as err:
+        raise web.HTTPBadRequest(reason=roll_up) from err
+
+    return web.json_response({"results": results})
 
 
 @docs(tags=["issue-credential"], summary="Fetch a single credential exchange record")
@@ -287,9 +292,18 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
         record = await V10CredentialExchange.retrieve_by_id(
             context, credential_exchange_id
         )
+<<<<<<< HEAD
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     return web.json_response(record.serialize())
+=======
+        result = record.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response(result)
+>>>>>>> work in progress
 
 
 @docs(
@@ -327,12 +341,20 @@ async def credential_exchange_send(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="credential_proposal must be provided")
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
+<<<<<<< HEAD
+=======
+
+>>>>>>> work in progress
     try:
         preview = CredentialPreview.deserialize(preview_spec)
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
+<<<<<<< HEAD
     except (BaseModelError, StorageNotFoundError) as err:
+=======
+    except (StorageNotFoundError, BadRequest) as err:
+>>>>>>> work in progress
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
@@ -352,13 +374,18 @@ async def credential_exchange_send(request: web.BaseRequest):
     )
 
     credential_manager = CredentialManager(context)
-
-    (
-        credential_exchange_record,
-        credential_offer_message,
-    ) = await credential_manager.prepare_send(
-        connection_id, credential_proposal=credential_proposal, auto_remove=auto_remove,
-    )
+    try:
+        (
+            credential_exchange_record,
+            credential_offer_message
+        ) = await credential_manager.prepare_send(
+            connection_id,
+            credential_proposal=credential_proposal,
+            auto_remove=auto_remove
+        )
+        result = credential_exchange_record.serialize()
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
     await outbound_handler(
         credential_offer_message, connection_id=credential_exchange_record.connection_id
     )
@@ -370,7 +397,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         perf_counter=r_time,
     )
 
-    return web.json_response(credential_exchange_record.serialize())
+    return web.json_response(result)
 
 
 @docs(tags=["issue-credential"], summary="Send issuer a credential proposal")

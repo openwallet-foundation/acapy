@@ -59,7 +59,6 @@ class TestIntroductionRoutes(AsyncTestCase):
             "target_connection_id": "dummy",
             "message": "Hello",
         }
-
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
 
@@ -103,7 +102,10 @@ class TestIntroductionRoutes(AsyncTestCase):
             "target_connection_id": "dummy",
             "message": "Hello",
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> work in progress
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
 
@@ -112,7 +114,11 @@ class TestIntroductionRoutes(AsyncTestCase):
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = async_mock.MagicMock(
                 start_introduction=async_mock.CoroutineMock(
+<<<<<<< HEAD
                     side_effect=test_module.IntroductionError()
+=======
+                    side_effect=test_module.StorageError()
+>>>>>>> work in progress
                 )
             )
 

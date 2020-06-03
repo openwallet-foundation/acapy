@@ -8,6 +8,7 @@ from aiohttp_apispec import docs, match_info_schema, querystring_schema
 from marshmallow import fields, Schema
 
 from ....messaging.valid import UUIDFour
+from ....storage.error import StorageError
 
 from .base_service import BaseIntroductionService, IntroductionError
 
@@ -59,13 +60,23 @@ async def introduction_start(request: web.BaseRequest):
         BaseIntroductionService, required=False
     )
     if not service:
+<<<<<<< HEAD
         raise web.HTTPForbidden(reason="Introduction service not available")
+=======
+        raise web.HTTPForbidden(
+            reason="Configuration does not include introduction service"
+        )
+>>>>>>> work in progress
 
     try:
         await service.start_introduction(
             init_connection_id, target_connection_id, message, outbound_handler
         )
+<<<<<<< HEAD
     except IntroductionError as err:
+=======
+    except (IntroductionError, StorageError) as err:
+>>>>>>> work in progress
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
