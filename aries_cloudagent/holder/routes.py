@@ -113,8 +113,8 @@ async def credentials_get(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     try:
         credential = await holder.get_credential(credential_id)
-    except WalletNotFoundError:
-        raise web.HTTPNotFound()
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     credential_json = json.loads(credential)
     return web.json_response(credential_json)
@@ -140,8 +140,8 @@ async def credentials_remove(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     try:
         await holder.delete_credential(credential_id)
-    except WalletNotFoundError:
-        raise web.HTTPNotFound()
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.json_response({})
 
@@ -178,8 +178,8 @@ async def credentials_list(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     try:
         credentials = await holder.get_credentials(start, count, wql)
-    except HolderError as x_holder:
-        raise web.HTTPBadRequest(reason=x_holder.message)
+    except HolderError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": credentials})
 

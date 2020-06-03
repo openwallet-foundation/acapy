@@ -73,6 +73,13 @@ class TestWalletRoutes(AsyncTestCase):
             )
             assert result is json_response.return_value
 
+    async def test_create_did_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        self.wallet.create_local_did.side_effect = test_module.WalletError()
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.wallet_create_did(request)
+
     async def test_did_list(self):
         request = async_mock.MagicMock()
         request.app = self.app
@@ -210,6 +217,13 @@ class TestWalletRoutes(AsyncTestCase):
                 {"result": format_did_info.return_value}
             )
             assert result is json_response.return_value
+
+    async def test_get_public_did_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        self.wallet.get_public_did.side_effect = test_module.WalletError()
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.wallet_get_public_did(request)
 
     async def test_set_public_did(self):
         request = async_mock.MagicMock()
@@ -353,6 +367,17 @@ class TestWalletRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.wallet_get_tagging_policy(request)
 
+    async def test_get_catpol_wallet_err(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+
+        self.wallet.WALLET_TYPE = "indy"
+        self.wallet.get_credential_definition_tag_policy = async_mock.CoroutineMock(
+            side_effect=test_module.WalletError()
+        )
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.wallet_get_tagging_policy(request)
+
     async def test_set_catpol(self):
         request = async_mock.MagicMock()
         request.app = self.app
@@ -380,6 +405,20 @@ class TestWalletRoutes(AsyncTestCase):
 
         self.wallet.WALLET_TYPE = "rich-corinthian-leather"
         with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.wallet_set_tagging_policy(request)
+
+    async def test_set_catpol_wallet_err(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.json = async_mock.CoroutineMock(
+            return_value={"taggables": ["a", "b", "c"]}
+        )
+
+        self.wallet.WALLET_TYPE = "indy"
+        self.wallet.set_credential_definition_tag_policy = async_mock.CoroutineMock(
+            side_effect=test_module.WalletError()
+        )
+        with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.wallet_set_tagging_policy(request)
 
     async def test_register(self):

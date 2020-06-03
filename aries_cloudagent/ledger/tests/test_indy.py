@@ -186,6 +186,24 @@ class TestIndyLedger(AsyncTestCase):
         assert ledger.pool_handle == None
 
     @async_mock.patch("indy.pool.set_protocol_version")
+    @async_mock.patch("indy.pool.open_pool_ledger")
+    @async_mock.patch("indy.pool.close_pool_ledger")
+    async def test_aenter_aexit_close_x(
+        self, mock_close_pool, mock_open_ledger, mock_set_proto
+    ):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.WALLET_TYPE = "indy"
+        mock_close_pool.side_effect = IndyError(ErrorCode.PoolLedgerTimeout)
+        ledger = IndyLedger("name", mock_wallet)
+
+        with self.assertRaises(LedgerError):
+            async with ledger as l:
+                assert l.pool_handle == mock_open_ledger.return_value
+
+        assert ledger.pool_handle == mock_open_ledger.return_value
+        assert ledger.ref_count == 1
+
+    @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.create_pool_ledger_config")
     @async_mock.patch("indy.pool.open_pool_ledger")
     @async_mock.patch("indy.pool.close_pool_ledger")
