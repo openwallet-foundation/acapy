@@ -310,10 +310,10 @@ async def publish_registry(request: web.BaseRequest):
 
         await revoc_registry.publish_registry_entry(context)
         LOGGER.debug("published registry entry: %s", registry_id)
-    except StorageNotFoundError as x_stor:
-        raise web.HTTPNotFound(reason=x_stor.roll_up) from x_stor
-    except RevocationError as x_revo:
-        raise web.HTTPBadRequest(reason=x_revo.roll_up) from x_revo
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except RevocationError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": revoc_registry.serialize()})
 
@@ -347,10 +347,10 @@ async def update_registry(request: web.BaseRequest):
         revoc = IndyRevocation(context)
         revoc_registry = await revoc.get_issuer_rev_reg_record(registry_id)
         await revoc_registry.set_tails_file_public_uri(context, tails_public_uri)
-    except StorageNotFoundError as x_stor:
-        raise web.HTTPNotFound(reason=x_stor.roll_up) from x_stor
-    except RevocationError as x_revo:
-        raise web.HTTPBadRequest(reason=x_revo.roll_up) from x_revo
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except RevocationError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": revoc_registry.serialize()})
 
