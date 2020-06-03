@@ -241,10 +241,10 @@ class TestActionMenuRoutes(AsyncTestCase):
 
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_menu.deserialize = async_mock.MagicMock(
-                side_effect=ValueError("cannot deserialize")
+                side_effect=test_module.BaseModelError("cannot deserialize")
             )
 
-            with self.assertRaises(ValueError):
+            with self.assertRaises(test_module.BaseModelError):
                 await test_module.actionmenu_send(mock_request)
 
     async def test_actionmenu_send_no_conn_record(self):
