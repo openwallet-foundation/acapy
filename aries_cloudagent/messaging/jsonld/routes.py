@@ -40,7 +40,6 @@ async def sign(request: web.BaseRequest):
     try:
         context = request.app["request_context"]
         wallet: BaseWallet = await context.inject(BaseWallet)
-        wallet: BaseWallet = await context.inject(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden()
 
