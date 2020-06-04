@@ -268,8 +268,8 @@ async def credential_exchange_list(request: web.BaseRequest):
     try:
         records = await V10CredentialExchange.query(context, tag_filter, post_filter)
         results = [record.serialize() for record in records]
-    except (StorageError, BaseModelError)  as err:
-        raise web.HTTPBadRequest(reason=roll_up) from err
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": results})
 
@@ -359,17 +359,17 @@ async def credential_exchange_send(request: web.BaseRequest):
         trace_event(
             context.settings,
             credential_proposal,
-            outcome="credential_exchange_send.START"
+            outcome="credential_exchange_send.START",
         )
 
         credential_manager = CredentialManager(context)
         (
             credential_exchange_record,
-            credential_offer_message
+            credential_offer_message,
         ) = await credential_manager.prepare_send(
             connection_id,
             credential_proposal=credential_proposal,
-            auto_remove=auto_remove
+            auto_remove=auto_remove,
         )
         result = credential_exchange_record.serialize()
     except (StorageError, BaseModelError) as err:
@@ -467,38 +467,35 @@ async def _create_free_offer(
 ):
     """Create a credential offer and related exchange record."""
 
-    try:
-        credential_preview = CredentialPreview.deserialize(preview_spec)
-        credential_proposal = CredentialProposal(
-            comment=comment,
-            credential_proposal=credential_preview,
-            cred_def_id=cred_def_id,
-        )
-        credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
-        )
-        credential_proposal_dict = credential_proposal.serialize()
+    credential_preview = CredentialPreview.deserialize(preview_spec)
+    credential_proposal = CredentialProposal(
+        comment=comment,
+        credential_proposal=credential_preview,
+        cred_def_id=cred_def_id,
+    )
+    credential_proposal.assign_trace_decorator(
+        context.settings, trace_msg,
+    )
+    credential_proposal_dict = credential_proposal.serialize()
 
-        credential_exchange_record = V10CredentialExchange(
-            connection_id=connection_id,
-            initiator=V10CredentialExchange.INITIATOR_SELF,
-            credential_definition_id=cred_def_id,
-            credential_proposal_dict=credential_proposal_dict,
-            auto_issue=auto_issue,
-            auto_remove=auto_remove,
-            trace=trace_msg,
-        )
+    credential_exchange_record = V10CredentialExchange(
+        connection_id=connection_id,
+        initiator=V10CredentialExchange.INITIATOR_SELF,
+        credential_definition_id=cred_def_id,
+        credential_proposal_dict=credential_proposal_dict,
+        auto_issue=auto_issue,
+        auto_remove=auto_remove,
+        trace=trace_msg,
+    )
 
-        credential_manager = CredentialManager(context)
+    credential_manager = CredentialManager(context)
 
-        (
-            credential_exchange_record,
-            credential_offer_message,
-        ) = await credential_manager.create_offer(
-            credential_exchange_record, comment=comment
-        )
-    except BaseModelError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    (
+        credential_exchange_record,
+        credential_offer_message,
+    ) = await credential_manager.create_offer(
+        credential_exchange_record, comment=comment
+    )
 
     return (credential_exchange_record, credential_offer_message)
 
@@ -564,25 +561,28 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     if not endpoint:
         raise web.HTTPBadRequest(reason="A public endpoint required")
 
-    (credential_exchange_record, credential_offer_message) = await _create_free_offer(
-        context,
-        cred_def_id,
-        connection_id,
-        auto_issue,
-        auto_remove,
-        preview_spec,
-        comment,
-        trace_msg,
-    )
-
-    trace_event(
-        context.settings,
-        credential_offer_message,
-        outcome="credential_exchange_create_free_offer.END",
-        perf_counter=r_time,
-    )
-
     try:
+        (
+            credential_exchange_record,
+            credential_offer_message,
+        ) = await _create_free_offer(
+            context,
+            cred_def_id,
+            connection_id,
+            auto_issue,
+            auto_remove,
+            preview_spec,
+            comment,
+            trace_msg,
+        )
+
+        trace_event(
+            context.settings,
+            credential_offer_message,
+            outcome="credential_exchange_create_free_offer.END",
+            perf_counter=r_time,
+        )
+
         oob_url = serialize_outofband(
             context, credential_offer_message, conn_did, endpoint
         )
@@ -647,7 +647,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
         (
             credential_exchange_record,
-            credential_offer_message
+            credential_offer_message,
         ) = await _create_free_offer(
             context,
             cred_def_id,
@@ -732,8 +732,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             credential_exchange_record,
             credential_offer_message,
         ) = await credential_manager.create_offer(
-            credential_exchange_record,
-            comment=None
+            credential_exchange_record, comment=None
         )
 
         result = credential_exchange_record.serialize()
@@ -887,7 +886,9 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
         result = credential_exchange_record.serialize()
     except (
-        StorageNotFoundError, IssuerRevocationRegistryFullError, BaseModelError
+        StorageNotFoundError,
+        IssuerRevocationRegistryFullError,
+        BaseModelError,
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

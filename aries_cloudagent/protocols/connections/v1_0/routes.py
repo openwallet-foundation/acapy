@@ -277,6 +277,8 @@ async def connections_retrieve(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    return web.json_response(result)
+
 
 @docs(
     tags=["connection"], summary="Create a new connection invitation",
@@ -511,7 +513,9 @@ async def connections_create_static(request: web.BaseRequest):
     connection_mgr = ConnectionManager(context)
     try:
         (
-            my_info, their_info, connection
+            my_info,
+            their_info,
+            connection,
         ) = await connection_mgr.create_static_connection(
             my_seed=body.get("my_seed") or None,
             my_did=body.get("my_did") or None,

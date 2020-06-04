@@ -251,9 +251,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
             page_size: Size of page to return
 
         """
-        super().__init__(
-            store, type_filter, tag_query, page_size, options
-        )
+        super().__init__(store, type_filter, tag_query, page_size, options)
         self._handle = None
 
     @property
