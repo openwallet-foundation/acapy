@@ -266,8 +266,8 @@ async def credential_exchange_list(request: web.BaseRequest):
     try:
         records = await V10CredentialExchange.query(context, tag_filter, post_filter)
         results = [record.serialize() for record in records]
-    except (StorageError, BaseModelError)  as err:
-        raise web.HTTPBadRequest(reason=roll_up) from err
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": results})
 
@@ -360,6 +360,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
+<<<<<<< HEAD
     credential_proposal = CredentialProposal(
         comment=comment,
         credential_proposal=preview,
@@ -372,16 +373,23 @@ async def credential_exchange_send(request: web.BaseRequest):
     trace_event(
         context.settings, credential_proposal, outcome="credential_exchange_send.START",
     )
+=======
+        trace_event(
+            context.settings,
+            credential_proposal,
+            outcome="credential_exchange_send.START",
+        )
+>>>>>>> raise 400 series on exceptions within protocols
 
     credential_manager = CredentialManager(context)
     try:
         (
             credential_exchange_record,
-            credential_offer_message
+            credential_offer_message,
         ) = await credential_manager.prepare_send(
             connection_id,
             credential_proposal=credential_proposal,
-            auto_remove=auto_remove
+            auto_remove=auto_remove,
         )
         result = credential_exchange_record.serialize()
     except (StorageError, BaseModelError) as err:
@@ -502,8 +510,20 @@ async def _create_free_offer(
         auto_remove=auto_remove,
         trace=trace_msg,
     )
+<<<<<<< HEAD
 
     credential_manager = CredentialManager(context)
+=======
+
+    credential_manager = CredentialManager(context)
+
+    (
+        credential_exchange_record,
+        credential_offer_message,
+    ) = await credential_manager.create_offer(
+        credential_exchange_record, comment=comment
+    )
+>>>>>>> raise 400 series on exceptions within protocols
 
     (
         credential_exchange_record,
@@ -572,27 +592,40 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     if not endpoint:
         raise web.HTTPBadRequest(reason="A public endpoint required")
 
-    (credential_exchange_record, credential_offer_message) = await _create_free_offer(
-        context,
-        cred_def_id,
-        connection_id,
-        auto_issue,
-        auto_remove,
-        preview_spec,
-        comment,
-        trace_msg,
-    )
+    try:
+        (
+            credential_exchange_record,
+            credential_offer_message,
+        ) = await _create_free_offer(
+            context,
+            cred_def_id,
+            connection_id,
+            auto_issue,
+            auto_remove,
+            preview_spec,
+            comment,
+            trace_msg,
+        )
 
-    trace_event(
-        context.settings,
-        credential_offer_message,
-        outcome="credential_exchange_create_free_offer.END",
-        perf_counter=r_time,
-    )
+        trace_event(
+            context.settings,
+            credential_offer_message,
+            outcome="credential_exchange_create_free_offer.END",
+            perf_counter=r_time,
+        )
 
+<<<<<<< HEAD
     oob_url = serialize_outofband(context, credential_offer_message, conn_did, endpoint)
 
     response = {"record": credential_exchange_record.serialize(), "oob_url": oob_url}
+=======
+        oob_url = serialize_outofband(
+            context, credential_offer_message, conn_did, endpoint
+        )
+        result = credential_exchange_record.serialize()
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+>>>>>>> raise 400 series on exceptions within protocols
 
     return web.json_response(response)
 
@@ -650,6 +683,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
+<<<<<<< HEAD
     (credential_exchange_record, credential_offer_message) = await _create_free_offer(
         context,
         cred_def_id,
@@ -660,6 +694,24 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         comment,
         trace_msg,
     )
+=======
+        (
+            credential_exchange_record,
+            credential_offer_message,
+        ) = await _create_free_offer(
+            context,
+            cred_def_id,
+            connection_id,
+            auto_issue,
+            auto_remove,
+            preview_spec,
+            comment,
+            trace_msg,
+        )
+        result = credential_exchange_record.serialize()
+    except (StorageNotFoundError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+>>>>>>> raise 400 series on exceptions within protocols
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
 
@@ -728,7 +780,17 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
+<<<<<<< HEAD
     credential_manager = CredentialManager(context)
+=======
+        credential_manager = CredentialManager(context)
+        (
+            credential_exchange_record,
+            credential_offer_message,
+        ) = await credential_manager.create_offer(
+            credential_exchange_record, comment=None
+        )
+>>>>>>> raise 400 series on exceptions within protocols
 
     (
         credential_exchange_record,
@@ -885,10 +947,21 @@ async def credential_exchange_issue(request: web.BaseRequest):
             comment=comment,
             credential_values=credential_preview.attr_dict(decode=False),
         )
+<<<<<<< HEAD
     except IssuerRevocationRegistryFullError as err:
         raise web.HTTPBadRequest(
             reason=f"Revocation registry {connection_record.revoc_reg_id} is full"
         ) from err
+=======
+
+        result = credential_exchange_record.serialize()
+    except (
+        StorageNotFoundError,
+        IssuerRevocationRegistryFullError,
+        BaseModelError,
+    ) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+>>>>>>> raise 400 series on exceptions within protocols
 
     await outbound_handler(credential_issue_message, connection_id=connection_id)
 

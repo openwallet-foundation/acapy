@@ -548,7 +548,7 @@ class TestConnectionRoutes(AsyncTestCase):
         }
         mock_req.match_info = {"conn_id": "dummy"}
         mock_conn_rec = async_mock.MagicMock(
-            delete_record = async_mock.CoroutineMock(
+            delete_record=async_mock.CoroutineMock(
                 side_effect=test_module.StorageError()
             )
         )
