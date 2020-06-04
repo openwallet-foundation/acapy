@@ -266,8 +266,8 @@ async def connections_retrieve(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     try:
         record = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     return web.json_response(record.serialize())
 
 
@@ -294,7 +294,9 @@ async def connections_create_invitation(request: web.BaseRequest):
     multi_use = json.loads(request.query.get("multi_use", "false"))
 
     if public and not context.settings.get("public_invites"):
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(
+            reason="Configuration does not include public invitations"
+        )
     base_url = context.settings.get("invite_base_url")
 
     connection_mgr = ConnectionManager(context)
@@ -332,13 +334,15 @@ async def connections_receive_invitation(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     if context.settings.get("admin.no_receive_invites"):
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(
+            reason="Configuration does not allow receipt of invitations"
+        )
     connection_mgr = ConnectionManager(context)
     invitation_json = await request.json()
     try:
         invitation = ConnectionInvitation.deserialize(invitation_json)
-    except BaseModelError as x:
-        raise web.HTTPBadRequest(reason=x.roll_up)
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
@@ -371,8 +375,8 @@ async def connections_accept_invitation(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     connection_mgr = ConnectionManager(context)
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
@@ -403,8 +407,8 @@ async def connections_accept_request(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     connection_mgr = ConnectionManager(context)
     my_endpoint = request.query.get("my_endpoint") or None
     response = await connection_mgr.create_response(connection, my_endpoint)
@@ -429,8 +433,8 @@ async def connections_establish_inbound(request: web.BaseRequest):
     inbound_connection_id = request.match_info["ref_id"]
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     connection_mgr = ConnectionManager(context)
     await connection_mgr.establish_inbound(
         connection, inbound_connection_id, outbound_handler
@@ -451,8 +455,8 @@ async def connections_remove(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
     await connection.delete_record(context)
     return web.json_response({})
 

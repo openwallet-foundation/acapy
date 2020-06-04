@@ -53,11 +53,11 @@ async def connections_send_ping(request: web.BaseRequest):
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if not connection.is_ready:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason=f"Connection {connection_id} not ready")
 
     msg = Ping(comment=comment)
     await outbound_handler(msg, connection_id=connection_id)

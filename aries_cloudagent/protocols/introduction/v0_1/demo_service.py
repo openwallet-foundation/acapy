@@ -45,20 +45,28 @@ class DemoIntroductionService(BaseIntroductionService):
                 self._context, init_connection_id
             )
         except StorageNotFoundError:
-            raise IntroductionError("Initiator connection not found")
+            raise IntroductionError(
+                f"Initiator connection {init_connection_id} not found"
+            )
 
         if init_connection.state != "active":
-            raise IntroductionError("Initiator connection is not active")
+            raise IntroductionError(
+                f"Initiator connection {init_connection_id} not active"
+            )
 
         try:
             target_connection = await ConnectionRecord.retrieve_by_id(
                 self._context, target_connection_id
             )
         except StorageNotFoundError:
-            raise IntroductionError("Target connection not found")
+            raise IntroductionError(
+                "Target connection {target_connection_id} not found"
+            )
 
         if target_connection.state != "active":
-            raise IntroductionError("Target connection is not active")
+            raise IntroductionError(
+                "Target connection {target_connection_id} not active"
+            )
 
         msg = InvitationRequest(responder=init_connection.their_label, message=message)
 
