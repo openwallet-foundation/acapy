@@ -13,23 +13,6 @@ from .. import routes as test_module
 
 
 class TestCredentialRoutes(AsyncTestCase):
-    async def test_attribute_mime_types_get(self):
-        mock = async_mock.MagicMock()
-        mock.match_info = {"credential_id": "dummy"}
-        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
-        holder = async_mock.MagicMock()
-        holder.get_mime_type = async_mock.CoroutineMock(return_value=None)
-        context.injector.bind_instance(BaseHolder, holder)
-
-        mock.app = {
-            "request_context": context,
-        }
-        mock.app["request_context"].settings = {}
-
-        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            await test_module.attribute_mime_types_get(mock)
-            mock_response.assert_called_once_with(holder.get_mime_type.return_value)
-
     async def test_credential_exchange_list(self):
         mock = async_mock.MagicMock()
         mock.query = {
