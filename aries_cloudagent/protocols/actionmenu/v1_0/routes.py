@@ -10,7 +10,7 @@ from marshmallow import fields, Schema
 from aries_cloudagent.connections.models.connection_record import ConnectionRecord
 from aries_cloudagent.messaging.models.base import BaseModelError
 from aries_cloudagent.messaging.valid import UUIDFour
-from aries_cloudagent.storage.error import StorageNotFoundError
+from aries_cloudagent.storage.error import StorageError, StorageNotFoundError
 
 from .messages.menu import Menu
 from .messages.menu_request import MenuRequest
@@ -91,7 +91,11 @@ async def actionmenu_close(request: web.BaseRequest):
             reason=f"No {MENU_RECORD_TYPE} record found for connection {connection_id}"
         )
 
-    await save_connection_menu(None, connection_id, context)
+    try:
+        await save_connection_menu(None, connection_id, context)
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({})
 
 
@@ -190,7 +194,7 @@ async def actionmenu_send(request: web.BaseRequest):
         msg = Menu.deserialize(menu_json["menu"])
     except BaseModelError as err:
         LOGGER.exception("Exception deserializing menu: %s", err.roll_up)
-        raise
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)

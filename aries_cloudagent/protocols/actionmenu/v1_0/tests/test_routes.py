@@ -23,6 +23,23 @@ class TestActionMenuRoutes(AsyncTestCase):
             res = await test_module.actionmenu_close(mock_request)
             mock_response.assert_called_once_with({})
 
+    async def test_actionmenu_close_x(self):
+        mock_request = async_mock.MagicMock()
+        mock_request.json = async_mock.CoroutineMock()
+
+        mock_request.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": "context",
+        }
+
+        test_module.retrieve_connection_menu = async_mock.CoroutineMock()
+        test_module.save_connection_menu = async_mock.CoroutineMock(
+            side_effect=test_module.StorageError()
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.actionmenu_close(mock_request)
+
     async def test_actionmenu_close_not_found(self):
         mock_request = async_mock.MagicMock()
         mock_request.json = async_mock.CoroutineMock()
@@ -244,7 +261,7 @@ class TestActionMenuRoutes(AsyncTestCase):
                 side_effect=test_module.BaseModelError("cannot deserialize")
             )
 
-            with self.assertRaises(test_module.BaseModelError):
+            with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.actionmenu_send(mock_request)
 
     async def test_actionmenu_send_no_conn_record(self):
