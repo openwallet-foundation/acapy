@@ -7,10 +7,10 @@ from aiohttp_apispec import docs, match_info_schema, request_schema
 
 from marshmallow import fields, Schema
 
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.messaging.models.base import BaseModelError
-from aries_cloudagent.messaging.valid import UUIDFour
-from aries_cloudagent.storage.error import StorageError, StorageNotFoundError
+from ....connections.models.connection_record import ConnectionRecord
+from ....messaging.models.base import BaseModelError
+from ....messaging.valid import UUIDFour
+from ....storage.error import StorageError, StorageNotFoundError
 
 from .messages.menu import Menu
 from .messages.menu_request import MenuRequest

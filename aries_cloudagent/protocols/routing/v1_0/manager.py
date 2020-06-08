@@ -3,11 +3,11 @@
 import json
 from typing import Sequence
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.core.error import BaseError
-from aries_cloudagent.messaging.util import time_now
-from aries_cloudagent.storage.base import BaseStorage, StorageRecord
-from aries_cloudagent.storage.error import (
+from ....config.injection_context import InjectionContext
+from ....core.error import BaseError
+from ....messaging.util import time_now
+from ....storage.base import BaseStorage, StorageRecord
+from ....storage.error import (
     StorageError,
     StorageDuplicateError,
     StorageNotFoundError,

@@ -32,7 +32,6 @@ from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....utils.outofband import serialize_outofband
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ...problem_report.v1_0.message import ProblemReport
 
 from .manager import CredentialManager

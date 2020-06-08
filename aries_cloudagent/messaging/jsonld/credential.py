@@ -1,7 +1,7 @@
 """Sign and verify functions for json-ld based credentials."""
 
 import json
-from aries_cloudagent.wallet.util import (
+from ...wallet.util import (
     b58_to_bytes,
     b64_to_bytes,
     b64_to_str,

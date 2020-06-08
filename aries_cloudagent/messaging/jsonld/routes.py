@@ -3,11 +3,11 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
-from aries_cloudagent.messaging.jsonld.credential import (
+from ...messaging.jsonld.credential import (
     sign_credential,
     verify_credential,
 )
-from aries_cloudagent.wallet.base import BaseWallet
+from ...wallet.base import BaseWallet
 
 from marshmallow import fields, Schema
 
