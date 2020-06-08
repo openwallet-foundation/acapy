@@ -232,10 +232,17 @@ with the following code:
                     "date": date.isoformat(date.today()),
                     "position": "CEO"
                 }
+                cred_preview = {
+                    "@type": CRED_PREVIEW_TYPE,
+                    "attributes": [
+                        {"name": n, "value": v} for (n, v) in cred_attrs.items()
+                    ],
+                }
                 offer_request = {
                     "connection_id": agent.connection_id,
                     "cred_def_id": credential_definition_id,
                     "comment": f"Offer on cred def id {credential_definition_id}",
+                    "credential_preview": cred_preview
                 }
                 await agent.admin_POST(
                     "/issue-credential/send-offer",
