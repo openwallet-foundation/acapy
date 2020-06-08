@@ -134,6 +134,21 @@ class TestInboundSession(TestCase):
             thread_id=test_thread_id,
             sender_verkey=test_verkey,
         )
+
+        receipt.recipient_did = "dummy"
+        assert receipt.recipient_did == "dummy"
+        receipt.recipient_did_public = True
+        assert receipt.recipient_did_public
+        receipt.recipient_did = None
+        receipt.recipient_did_public = None
+        assert receipt.recipient_did is None
+        assert receipt.recipient_did_public is None
+        receipt.sender_did = "dummy"
+        assert receipt.sender_did == "dummy"
+        receipt.sender_did = None
+        assert receipt.sender_did is None
+        assert "direct_response_mode" in str(receipt)
+
         message = InboundMessage(payload=None, receipt=receipt)
         sess.process_inbound(message)
         assert sess.reply_mode == receipt.direct_response_mode

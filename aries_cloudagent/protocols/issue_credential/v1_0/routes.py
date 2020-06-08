@@ -34,7 +34,6 @@ from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
 from ....utils.outofband import serialize_outofband
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ...problem_report.v1_0.message import ProblemReport
 
 from .manager import CredentialManager

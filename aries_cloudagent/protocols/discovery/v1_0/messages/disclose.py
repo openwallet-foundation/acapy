@@ -4,7 +4,7 @@ from typing import Mapping, Sequence
 
 from marshmallow import fields, Schema, validate
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import DISCLOSE, PROTOCOL_PACKAGE
 

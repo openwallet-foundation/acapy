@@ -2,10 +2,9 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, response_schema
-
 from marshmallow import fields, Schema
 
-from aries_cloudagent.core.protocol_registry import ProtocolRegistry
+from ....core.protocol_registry import ProtocolRegistry
 
 from .message_types import SPEC_URI
 

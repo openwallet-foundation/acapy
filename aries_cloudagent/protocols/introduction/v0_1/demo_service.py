@@ -3,8 +3,8 @@
 import json
 import logging
 
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.storage.base import (
+from ....connections.models.connection_record import ConnectionRecord
+from ....storage.base import (
     BaseStorage,
     StorageRecord,
     StorageNotFoundError,
