@@ -9,7 +9,6 @@ from ...core.protocol_registry import ProtocolRegistry
 from ...messaging.agent_message import AgentMessage, AgentMessageSchema
 from ...messaging.util import datetime_now
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ...protocols.problem_report.v1_0.message import ProblemReport
 
 from ...transport.inbound.message import InboundMessage

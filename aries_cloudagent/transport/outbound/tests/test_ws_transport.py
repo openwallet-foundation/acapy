@@ -46,3 +46,9 @@ class TestWsTransport(AioHTTPTestCase):
         transport = WsTransport()
         await asyncio.wait_for(send_message(transport, "{}", endpoint=server_addr), 5.0)
         assert self.message_results == [{}]
+
+        self.message_results.clear()
+        await asyncio.wait_for(
+            send_message(transport, b"{}", endpoint=server_addr), 5.0
+        )
+        assert self.message_results == [{}]

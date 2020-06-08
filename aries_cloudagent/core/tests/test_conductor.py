@@ -17,7 +17,6 @@ from ...connections.models.diddoc import (
 )
 from ...core.protocol_registry import ProtocolRegistry
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ...protocols.connections.v1_0.manager import ConnectionManager
 from ...storage.base import BaseStorage
 from ...storage.basic import BasicStorage

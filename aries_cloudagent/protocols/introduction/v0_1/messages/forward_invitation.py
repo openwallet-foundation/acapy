@@ -2,10 +2,8 @@
 
 from marshmallow import fields
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
-
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from aries_cloudagent.protocols.connections.v1_0.messages.connection_invitation import (
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )

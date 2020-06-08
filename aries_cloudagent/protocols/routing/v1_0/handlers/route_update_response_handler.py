@@ -1,15 +1,13 @@
 """Handler for incoming route-update-response messages."""
 
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.messaging.base_handler import (
+from .....connections.models.connection_record import ConnectionRecord
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
     RequestContext,
 )
-
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from aries_cloudagent.protocols.connections.v1_0.manager import ConnectionManager
+from .....protocols.connections.v1_0.manager import ConnectionManager
 
 from ..messages.route_update_response import RouteUpdateResponse
 from ..models.route_update import RouteUpdate
