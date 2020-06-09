@@ -216,7 +216,7 @@ async def register(app: web.Application):
         [
             web.get("/credential/{credential_id}", credentials_get, allow_head=False),
             web.get(
-                "/issue-credential/mime-types/{credential_id}",
+                "/credential/mime-types/{credential_id}",
                 credentials_attr_mime_types_get,
                 allow_head=False,
             ),
