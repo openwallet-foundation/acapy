@@ -19,8 +19,6 @@ from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..messaging.responder import BaseResponder
-
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,

@@ -59,7 +59,6 @@ class TestIntroductionRoutes(AsyncTestCase):
             "target_connection_id": "dummy",
             "message": "Hello",
         }
-
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
 
@@ -103,7 +102,6 @@ class TestIntroductionRoutes(AsyncTestCase):
             "target_connection_id": "dummy",
             "message": "Hello",
         }
-
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
 
