@@ -1,13 +1,17 @@
 import asyncio
+import pytest
 
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from aiohttp import web
+from asynctest import mock as async_mock
 
 from ....config.injection_context import InjectionContext
 from ....utils.stats import Collector
 
 from ...outbound.message import OutboundMessage
+from ...wire_format import JsonWireFormat
 
+from ..base import OutboundTransportError
 from ..http import HttpTransport
 
 
@@ -38,6 +42,7 @@ class TestHttpTransport(AioHTTPTestCase):
                 await transport.handle_message(self.context, payload, endpoint)
 
         transport = HttpTransport()
+
         await asyncio.wait_for(send_message(transport, "{}", endpoint=server_addr), 5.0)
         assert self.message_results == [{}]
 
@@ -61,3 +66,29 @@ class TestHttpTransport(AioHTTPTestCase):
             "outbound-http:connect": 1,
             "outbound-http:POST": 1,
         }
+
+    @unittest_run_loop
+    async def test_transport_coverage(self):
+        transport = HttpTransport()
+        assert transport.wire_format is None
+        transport.wire_format = JsonWireFormat()
+        assert transport.wire_format is not None
+
+        await transport.start()
+
+        with pytest.raises(OutboundTransportError):
+            await transport.handle_message(None, None, None)
+
+        with async_mock.patch.object(
+            transport, "client_session", async_mock.MagicMock()
+        ) as mock_session:
+            mock_response = async_mock.MagicMock(status=404)
+            mock_session.post = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    __aenter__=async_mock.CoroutineMock(return_value=mock_response)
+                )
+            )
+            with pytest.raises(OutboundTransportError):
+                await transport.handle_message(None, "dummy", "http://localhost")
+
+        await transport.__aexit__(KeyError, KeyError("just a drill"), None)
