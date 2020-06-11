@@ -27,6 +27,9 @@ class TestBasicQueue(AsyncTestCase):
         with self.assertRaises(asyncio.TimeoutError):
             await queue.dequeue(timeout=0)
 
+        queue.task_done()
+        await queue.join()
+
     async def test_async_iter(self):
         queue = BasicMessageQueue()
 
