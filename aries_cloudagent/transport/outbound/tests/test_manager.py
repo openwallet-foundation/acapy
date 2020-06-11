@@ -22,8 +22,13 @@ class TestOutboundTransportManager(AsyncTestCase):
         assert mgr.get_registered_transport_for_scheme("http")
         assert mgr.MAX_RETRY_COUNT == 4
 
+        assert mgr.get_registered_transport_for_scheme("xmpp") is None
+
         with self.assertRaises(OutboundTransportRegistrationError):
             mgr.register("http")
+
+        with self.assertRaises(OutboundTransportRegistrationError):
+            mgr.register("no.such.module.path")
 
     def test_maximum_retry_count(self):
         context = InjectionContext()
@@ -67,6 +72,7 @@ class TestOutboundTransportManager(AsyncTestCase):
         assert mgr.get_running_transport_for_scheme("http") == "transport_cls"
 
         message = OutboundMessage(payload="{}")
+        assert "payload" in str(message)
         message.target = ConnectionTarget(
             endpoint="http://localhost",
             recipient_keys=[1, 2],
@@ -89,10 +95,32 @@ class TestOutboundTransportManager(AsyncTestCase):
             transport.wire_format.encode_message.return_value,
             message.target.endpoint,
         )
+
+        with self.assertRaises(OutboundDeliveryError):
+            mgr.get_running_transport_for_endpoint("localhost")
+
+        message.target = ConnectionTarget(
+            endpoint="localhost", recipient_keys=[1, 2], routing_keys=[3], sender_key=4,
+        )
+        with self.assertRaises(OutboundDeliveryError) as context:
+            mgr.enqueue_message(send_context, message)
+        assert "No supported transport" in str(context.exception)
+
         await mgr.stop()
 
         assert mgr.get_running_transport_for_scheme("http") is None
         transport.stop.assert_awaited_once_with()
+
+    async def test_stop_cancel(self):
+        context = InjectionContext()
+        context.update_settings({"transport.outbound_configs": ["http"]})
+        mgr = OutboundTransportManager(context)
+        mgr._process_task = async_mock.MagicMock(
+            done=async_mock.MagicMock(return_value=False), cancel=async_mock.MagicMock()
+        )
+        mgr.running_transports = {}
+        await mgr.stop()
+        mgr._process_task.cancel.assert_called_once()
 
     async def test_enqueue_webhook(self):
         context = InjectionContext()
@@ -126,3 +154,42 @@ class TestOutboundTransportManager(AsyncTestCase):
             assert json.loads(queued.payload) == test_payload
             assert queued.retries == test_attempts - 1
             assert queued.state == QueuedOutboundMessage.STATE_PENDING
+
+    async def test_process_done_x(self):
+        mock_task = async_mock.MagicMock(
+            done=async_mock.MagicMock(return_value=True),
+            exception=async_mock.MagicMock(return_value=KeyError("No such key")),
+        )
+        context = InjectionContext()
+        mgr = OutboundTransportManager(context)
+
+        with async_mock.patch.object(
+            mgr, "_process_task", async_mock.MagicMock()
+        ) as mock_mgr_process:
+            mock_mgr_process.done = async_mock.MagicMock(return_value=True)
+            mgr._process_done(mock_task)
+
+    async def test_process_finished_x(self):
+        mock_queued = async_mock.MagicMock(retries=1)
+        mock_task = async_mock.MagicMock(exc_info=(KeyError, KeyError("nope"), None),)
+        context = InjectionContext()
+        mgr = OutboundTransportManager(context)
+
+        with async_mock.patch.object(
+            mgr, "process_queued", async_mock.MagicMock()
+        ) as mock_mgr_process:
+            mgr.finished_encode(mock_queued, mock_task)
+            mgr.finished_deliver(mock_queued, mock_task)
+            mgr.finished_deliver(mock_queued, mock_task)
+
+    async def test_process_loop_x(self):
+        mock_queued = async_mock.MagicMock(
+            state=QueuedOutboundMessage.STATE_DONE, error=KeyError()
+        )
+
+        context = InjectionContext()
+        mock_handle_not_delivered = async_mock.MagicMock()
+        mgr = OutboundTransportManager(context, mock_handle_not_delivered)
+        mgr.outbound_buffer.append(mock_queued)
+
+        await mgr._process_loop()
