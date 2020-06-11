@@ -14,7 +14,6 @@ from json.decoder import JSONDecodeError
 from marshmallow import fields, Schema
 
 from ....connections.models.connection_record import ConnectionRecord
-from ....holder.base import BaseHolder
 from ....issuer.indy import IssuerRevocationRegistryFullError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
@@ -50,10 +49,6 @@ from .models.credential_exchange import (
 )
 
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
-
-
-class V10AttributeMimeTypesResultSchema(Schema):
-    """Result schema for credential attribute MIME types by credential definition."""
 
 
 class V10CredentialExchangeListResultSchema(Schema):
@@ -220,27 +215,6 @@ class CredExIdMatchInfoSchema(Schema):
     cred_ex_id = fields.Str(
         description="Credential exchange identifier", required=True, **UUID4
     )
-
-
-@docs(tags=["issue-credential"], summary="Get attribute MIME types from wallet")
-@match_info_schema(CredIdMatchInfoSchema())
-@response_schema(V10AttributeMimeTypesResultSchema(), 200)
-async def attribute_mime_types_get(request: web.BaseRequest):
-    """
-    Request handler for getting credential attribute MIME types.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The MIME types response
-
-    """
-    context = request.app["request_context"]
-    credential_id = request.match_info["credential_id"]
-    holder: BaseHolder = await context.inject(BaseHolder)
-
-    return web.json_response(await holder.get_mime_type(credential_id))
 
 
 @docs(tags=["issue-credential"], summary="Fetch all credential exchange records")
@@ -1112,11 +1086,6 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get(
-                "/issue-credential/mime-types/{credential_id}",
-                attribute_mime_types_get,
-                allow_head=False,
-            ),
             web.get(
                 "/issue-credential/records", credential_exchange_list, allow_head=False
             ),
