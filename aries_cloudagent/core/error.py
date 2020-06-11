@@ -25,21 +25,26 @@ class BaseError(Exception):
         """
 
         def flatten(exc: Exception):
-            ret = ".".join(
+            return ".".join(
                 (
-                    re.sub(r"\n\s*", ". ", str(exc.args[0]).strip()).strip()
-                    if exc.args
-                    else ""
+                    re.sub(
+                        r"\n\s*",
+                        ". ",
+                        (
+                            str(exc.args[0]).strip()
+                            if exc.args
+                            else exc.__class__.__name__
+                        ),
+                    ).strip()
                 ).rsplit(".", 1)
             )
-            return ret
 
         line = flatten(self)
         err = self
         while err.__cause__:
             err = err.__cause__
             line += ". {}".format(flatten(err))
-        return line.strip()
+        return f"{line.strip()}."
 
 
 class StartupError(BaseError):
