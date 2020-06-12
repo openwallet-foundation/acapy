@@ -11,7 +11,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 from json.decoder import JSONDecodeError
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, validate
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....issuer.indy import IssuerRevocationRegistryFullError
@@ -49,6 +49,43 @@ from .models.credential_exchange import (
 )
 
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+
+
+class V10CredentialExchangeListQueryStringSchema(Schema):
+    """Parameters and validators for credential exchange list query."""
+
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=False,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+    thread_id = fields.UUID(
+        description="Thread identifier",
+        required=False,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+    role = fields.Str(
+        description="Role assigned in credential exchange",
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(V10CredentialExchange, m)
+                for m in vars(V10CredentialExchange)
+                if m.startswith("ROLE_")
+            ]
+        ),
+    )
+    state = fields.Str(
+        description="Credential exchange state",
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(V10CredentialExchange, m)
+                for m in vars(V10CredentialExchange)
+                if m.startswith("STATE_")
+            ]
+        ),
+    )
 
 
 class V10CredentialExchangeListResultSchema(Schema):
@@ -218,6 +255,7 @@ class CredExIdMatchInfoSchema(Schema):
 
 
 @docs(tags=["issue-credential"], summary="Fetch all credential exchange records")
+@querystring_schema(V10CredentialExchangeListQueryStringSchema)
 @response_schema(V10CredentialExchangeListResultSchema(), 200)
 async def credential_exchange_list(request: web.BaseRequest):
     """
@@ -234,10 +272,12 @@ async def credential_exchange_list(request: web.BaseRequest):
     tag_filter = {}
     if "thread_id" in request.query and request.query["thread_id"] != "":
         tag_filter["thread_id"] = request.query["thread_id"]
-    post_filter = {}
-    for param_name in ("connection_id", "role", "state"):
-        if param_name in request.query and request.query[param_name] != "":
-            post_filter[param_name] = request.query[param_name]
+    post_filter = {
+        k: request.query[k]
+        for k in ("connection_id", "role", "state")
+        if request.query.get(k, "") != ""
+    }
+
     try:
         records = await V10CredentialExchange.query(context, tag_filter, post_filter)
         results = [record.serialize() for record in records]
@@ -709,7 +749,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         )
 
         result = credential_exchange_record.serialize()
-    except (StorageNotFoundError, BaseModelError) as err:
+    except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
@@ -778,7 +818,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         )
 
         result = credential_exchange_record.serialize()
-    except (StorageNotFoundError, BaseModelError) as err:
+    except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(credential_request_message, connection_id=connection_id)
@@ -858,11 +898,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         )
 
         result = credential_exchange_record.serialize()
-    except (
-        StorageNotFoundError,
-        IssuerRevocationRegistryFullError,
-        BaseModelError,
-    ) as err:
+    except (StorageError, IssuerRevocationRegistryFullError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(credential_issue_message, connection_id=connection_id)
@@ -940,7 +976,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         )
 
         result = credential_exchange_record.serialize()
-    except (StorageNotFoundError, BaseModelError) as err:
+    except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(credential_stored_message, connection_id=connection_id)
@@ -979,7 +1015,7 @@ async def credential_exchange_revoke(request: web.BaseRequest):
     credential_manager = CredentialManager(context)
     try:
         await credential_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
-    except (RevocationError, StorageNotFoundError) as err:
+    except (RevocationError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
@@ -1004,7 +1040,7 @@ async def credential_exchange_publish_revocations(request: web.BaseRequest):
 
     try:
         results = await credential_manager.publish_pending_revocations()
-    except (RevocationError, StorageNotFoundError) as err:
+    except (RevocationError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response({"results": results})
 
