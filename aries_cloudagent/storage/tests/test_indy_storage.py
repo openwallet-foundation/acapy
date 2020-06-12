@@ -11,7 +11,7 @@ from asynctest import mock as async_mock
 
 from aries_cloudagent.wallet import indy as test_wallet
 from aries_cloudagent.wallet.indy import IndyWallet
-from aries_cloudagent.storage.error import StorageError
+from aries_cloudagent.storage.error import StorageError, StorageSearchError
 from aries_cloudagent.storage.indy import IndyStorage
 from aries_cloudagent.storage.record import StorageRecord
 
@@ -206,6 +206,85 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
 
                 with pytest.raises(test_module.StorageError):
                     await storage.delete_record(rec)
+
+    @pytest.mark.asyncio
+    async def test_storage_search_x(self):
+        with async_mock.patch.object(
+            test_wallet, "load_postgres_plugin", async_mock.MagicMock()
+        ) as mock_load, async_mock.patch.object(
+            indy.wallet, "create_wallet", async_mock.CoroutineMock()
+        ) as mock_create, async_mock.patch.object(
+            indy.wallet, "open_wallet", async_mock.CoroutineMock()
+        ) as mock_open, async_mock.patch.object(
+            indy.anoncreds, "prover_create_master_secret", async_mock.CoroutineMock()
+        ) as mock_master, async_mock.patch.object(
+            indy.wallet, "close_wallet", async_mock.CoroutineMock()
+        ) as mock_close, async_mock.patch.object(
+            indy.wallet, "delete_wallet", async_mock.CoroutineMock()
+        ) as mock_delete:
+            fake_wallet = IndyWallet(
+                {
+                    "auto_create": True,
+                    "auto_remove": True,
+                    "name": "test_pg_wallet",
+                    "key": await IndyWallet.generate_wallet_key(),
+                    "key_derivation_method": "RAW",
+                    "storage_type": "postgres_storage",
+                    "storage_config": json.dumps({"url": "dummy"}),
+                    "storage_creds": json.dumps(
+                        {
+                            "account": "postgres",
+                            "password": "mysecretpassword",
+                            "admin_account": "postgres",
+                            "admin_password": "mysecretpassword",
+                        }
+                    ),
+                }
+            )
+            await fake_wallet.open()
+            storage = IndyStorage(fake_wallet)
+
+            search = storage.search_records("connection")
+            with pytest.raises(StorageSearchError):
+                await search.fetch(10)
+
+            with async_mock.patch.object(
+                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_open_search, async_mock.patch.object(
+                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_close_search:
+                mock_indy_open_search.side_effect = test_module.IndyError("no open")
+                search = storage.search_records("connection")
+                with pytest.raises(StorageSearchError):
+                    await search.open()
+                await search.close()
+
+            with async_mock.patch.object(
+                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_open_search, async_mock.patch.object(
+                indy.non_secrets,
+                "fetch_wallet_search_next_records",
+                async_mock.CoroutineMock(),
+            ) as mock_indy_fetch, async_mock.patch.object(
+                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_close_search:
+                mock_indy_fetch.side_effect = test_module.IndyError("no fetch")
+                search = storage.search_records("connection")
+                await search.open()
+                with pytest.raises(StorageSearchError):
+                    await search.fetch(10)
+                await search.close()
+
+            with async_mock.patch.object(
+                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_open_search, async_mock.patch.object(
+                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+            ) as mock_indy_close_search:
+                mock_indy_close_search.side_effect = test_module.IndyError("no close")
+                search = storage.search_records("connection")
+                await search.open()
+                with pytest.raises(StorageSearchError):
+                    await search.close()
 
     # TODO get these to run in docker ci/cd
     @pytest.mark.asyncio
