@@ -182,16 +182,17 @@ class TestIndyHolder(AsyncTestCase):
     async def test_get_credentials(
         self, mock_close_cred_search, mock_fetch_credentials, mock_search_credentials
     ):
+        SIZE = 300
         mock_search_credentials.return_value = ("search_handle", 350)
         mock_fetch_credentials.side_effect = [
-            json.dumps([0] * 256),
-            json.dumps([1] * 44)
+            json.dumps([0] * IndyHolder.CHUNK),
+            json.dumps([1] * (SIZE % IndyHolder.CHUNK)),
         ]
 
         mock_wallet = async_mock.MagicMock()
         holder = IndyHolder(mock_wallet)
 
-        credentials = await holder.get_credentials(0, 300, {})
+        credentials = await holder.get_credentials(0, SIZE, {})
 
         mock_search_credentials.assert_called_once_with(
             mock_wallet.handle, json.dumps({})
@@ -200,7 +201,14 @@ class TestIndyHolder(AsyncTestCase):
         assert mock_fetch_credentials.call_count == 2
         mock_close_cred_search.assert_called_once_with("search_handle")
 
-        assert len(credentials) == 300
+        assert len(credentials) == SIZE
+
+        mock_fetch_credentials.side_effect = [
+            json.dumps([0] * IndyHolder.CHUNK),
+            json.dumps([1] * (SIZE % IndyHolder.CHUNK)),
+        ]
+        credentials = await holder.get_credentials(0, 0, {})  # check 0 default to all
+        assert len(credentials) == SIZE
 
     @async_mock.patch("indy.anoncreds.prover_search_credentials")
     @async_mock.patch("indy.anoncreds.prover_fetch_credentials")
@@ -230,34 +238,45 @@ class TestIndyHolder(AsyncTestCase):
         mock_prover_fetch_credentials_for_proof_req,
         mock_prover_search_credentials_for_proof_req,
     ):
+        SIZE = 300
+        SKIP = 50
         mock_prover_search_credentials_for_proof_req.return_value = "search_handle"
-        mock_prover_fetch_credentials_for_proof_req.return_value = (
-            '[{"cred_info": {"referent": "asdb"}}]'
-        )
+        mock_prover_fetch_credentials_for_proof_req.side_effect = [
+            json.dumps([{"cred_info": {"referent": f"skip-{i}"}} for i in range(SKIP)]),
+            json.dumps(
+                [
+                    {"cred_info": {"referent": f"reft-{i}"}}
+                    for i in range(IndyHolder.CHUNK)
+                ]
+            ),
+            json.dumps(
+                [
+                    {"cred_info": {"referent": f"reft-{IndyHolder.CHUNK + i}"}}
+                    for i in range(SIZE % IndyHolder.CHUNK)
+                ]
+            ),
+        ]
 
         mock_wallet = async_mock.MagicMock()
         holder = IndyHolder(mock_wallet)
 
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            {"p": "r"}, ("asdb",), 2, 3, {"e": "q"}
+            {"proof": "req"}, ("asdb",), 50, SIZE, {"extra": "query"}
         )
 
         mock_prover_search_credentials_for_proof_req.assert_called_once_with(
-            mock_wallet.handle, json.dumps({"p": "r"}), json.dumps({"e": "q"})
+            mock_wallet.handle,
+            json.dumps({"proof": "req"}),
+            json.dumps({"extra": "query"}),
         )
 
-        assert mock_prover_fetch_credentials_for_proof_req.call_args_list == [
-            (("search_handle", "asdb", 2),),
-            (("search_handle", "asdb", 3),),
-        ]
-
+        assert mock_prover_fetch_credentials_for_proof_req.call_count == 3
         mock_prover_close_credentials_search_for_proof_req.assert_called_once_with(
             "search_handle"
         )
 
-        assert credentials == (
-            {"cred_info": {"referent": "asdb"}, "presentation_referents": ["asdb"]},
-        )
+        assert len(credentials) == SIZE
+        assert all("reft-" in cred["cred_info"]["referent"] for cred in credentials)
 
     @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
     @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
