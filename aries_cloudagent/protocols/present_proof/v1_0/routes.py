@@ -10,7 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, Schema, validates_schema
+from marshmallow import fields, Schema, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ....connections.models.connection_record import ConnectionRecord
@@ -50,6 +50,43 @@ from .models.presentation_exchange import (
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST
 
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+
+
+class V10PresentationExchangeListQueryStringSchema(Schema):
+    """Parameters and validators for presentation exchange list query."""
+
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=False,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+    thread_id = fields.UUID(
+        description="Thread identifier",
+        required=False,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+    role = fields.Str(
+        description="Role assigned in presentation exchange",
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(V10PresentationExchange, m)
+                for m in vars(V10PresentationExchange)
+                if m.startswith("ROLE_")
+            ]
+        ),
+    )
+    state = fields.Str(
+        description="Presentation exchange state",
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(V10PresentationExchange, m)
+                for m in vars(V10PresentationExchange)
+                if m.startswith("STATE_")
+            ]
+        ),
+    )
 
 
 class V10PresentationExchangeListSchema(Schema):
@@ -332,6 +369,7 @@ class PresExIdMatchInfoSchema(Schema):
 
 
 @docs(tags=["present-proof"], summary="Fetch all present-proof exchange records")
+@querystring_schema(V10PresentationExchangeListQueryStringSchema)
 @response_schema(V10PresentationExchangeListSchema(), 200)
 async def presentation_exchange_list(request: web.BaseRequest):
     """
@@ -351,7 +389,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
     post_filter = {
         k: request.query[k]
         for k in ("connection_id", "role", "state")
-        if request.query[k] != ""
+        if request.query.get(k, "") != ""
     }
 
     try:
@@ -386,7 +424,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
         result = record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except BaseModelError as err:
+    except (BaseModelError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result)
@@ -725,7 +763,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError as err:
+    except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
@@ -821,7 +859,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
             comment=body.get("comment"),
         )
         result = presentation_exchange_record.serialize()
-    except (LedgerError, HolderError, BaseModelError) as err:
+    except (LedgerError, HolderError, BaseModelError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     trace_msg = body.get("trace")
@@ -879,7 +917,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError as err:
+    except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
@@ -947,11 +985,6 @@ async def register(app: web.Application):
                 presentation_exchange_credentials_list,
                 allow_head=False,
             ),
-            # web.get(
-            # "/present-proof/records/{pres_ex_id}/credentials/{referent}",
-            # presentation_exchange_credentials_list,
-            # allow_head=False
-            # ),
             web.post(
                 "/present-proof/send-proposal", presentation_exchange_send_proposal,
             ),
