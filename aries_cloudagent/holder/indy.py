@@ -137,27 +137,44 @@ class IndyHolder(BaseHolder):
             wql: wql query dict
 
         """
+
+        async def fetch(limit):
+            """Fetch up to limit (default smaller of all remaining or 256) creds."""
+            creds = []
+            chunk = min(record_count, limit or record_count, 256)
+            cardinality = min(limit or record_count, record_count)
+
+            with IndyErrorHandler(
+                "Error fetching credentials from wallet", HolderError
+            ):
+                while len(creds) < cardinality:
+                    batch = json.loads(
+                        await indy.anoncreds.prover_fetch_credentials(
+                            search_handle, chunk
+                        )
+                    )
+                    print(f'  .. fetched batch: {len(batch)}')
+                    creds.extend(batch)
+                    if len(batch) < chunk:
+                        break
+            return creds
+
         with IndyErrorHandler(
             "Error when constructing wallet credential query", HolderError
         ):
             (
                 search_handle,
-                record_count,
+                record_count
             ) = await indy.anoncreds.prover_search_credentials(
                 self.wallet.handle, json.dumps(wql)
             )
 
-        # We need to move the database cursor position manually...
         if start > 0:
-            # TODO: move cursor in chunks to avoid exploding memory
-            await indy.anoncreds.prover_fetch_credentials(search_handle, start)
+            # must move database cursor manually
+            await fetch(start)
+        credentials = await fetch(count)
 
-        credentials_json = await indy.anoncreds.prover_fetch_credentials(
-            search_handle, count
-        )
         await indy.anoncreds.prover_close_credentials_search(search_handle)
-
-        credentials = json.loads(credentials_json)
         return credentials
 
     async def get_credentials_for_presentation_request_by_referent(
