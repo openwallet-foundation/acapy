@@ -212,7 +212,7 @@ class IndyHolder(BaseHolder):
                             search_handle, reft, CHUNK
                         )
                     )
-                    creds.extend(batch)  # TODO: filter preds here if indy doesn't?
+                    creds.extend(batch)
                     if len(batch) < CHUNK:
                         break
             return creds

@@ -21,10 +21,10 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_DID,
+    INDY_EXTRA_WQL,
     INDY_PREDICATE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
-    INDY_WQL,
     INT_EPOCH,
     NATURAL_NUM,
     UUIDFour,
@@ -356,7 +356,9 @@ class CredentialsFetchQueryStringSchema(Schema):
         description="Maximum number to retrieve", required=False, **NATURAL_NUM
     )
     extra_query = fields.Str(
-        description="(JSON) WQL extra query", required=False, **INDY_WQL,
+        description="(JSON) object mapping referents to extra WQL queries",
+        required=False,
+        **INDY_EXTRA_WQL,
     )
 
 
