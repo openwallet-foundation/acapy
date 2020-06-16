@@ -24,6 +24,7 @@ class IndyHolder(BaseHolder):
     """Indy holder class."""
 
     RECORD_TYPE_MIME_TYPES = "attribute-mime-types"
+    CHUNK = 256
 
     def __init__(self, wallet):
         """
@@ -137,6 +138,27 @@ class IndyHolder(BaseHolder):
             wql: wql query dict
 
         """
+
+        async def fetch(limit):
+            """Fetch up to limit (default smaller of all remaining or 256) creds."""
+            creds = []
+            CHUNK = min(record_count, limit or record_count, IndyHolder.CHUNK)
+            cardinality = min(limit or record_count, record_count)
+
+            with IndyErrorHandler(
+                "Error fetching credentials from wallet", HolderError
+            ):
+                while len(creds) < cardinality:
+                    batch = json.loads(
+                        await indy.anoncreds.prover_fetch_credentials(
+                            search_handle, CHUNK
+                        )
+                    )
+                    creds.extend(batch)
+                    if len(batch) < CHUNK:
+                        break
+            return creds
+
         with IndyErrorHandler(
             "Error when constructing wallet credential query", HolderError
         ):
@@ -147,17 +169,12 @@ class IndyHolder(BaseHolder):
                 self.wallet.handle, json.dumps(wql)
             )
 
-        # We need to move the database cursor position manually...
         if start > 0:
-            # TODO: move cursor in chunks to avoid exploding memory
-            await indy.anoncreds.prover_fetch_credentials(search_handle, start)
+            # must move database cursor manually
+            await fetch(start)
+        credentials = await fetch(count)
 
-        credentials_json = await indy.anoncreds.prover_fetch_credentials(
-            search_handle, count
-        )
         await indy.anoncreds.prover_close_credentials_search(search_handle)
-
-        credentials = json.loads(credentials_json)
         return credentials
 
     async def get_credentials_for_presentation_request_by_referent(
@@ -180,6 +197,26 @@ class IndyHolder(BaseHolder):
 
         """
 
+        async def fetch(reft, limit):
+            """Fetch up to limit (default smaller of all remaining or 256) creds."""
+            creds = []
+            CHUNK = min(IndyHolder.CHUNK, limit or IndyHolder.CHUNK)
+
+            with IndyErrorHandler(
+                f"Error fetching credentials from wallet for presentation request",
+                HolderError,
+            ):
+                while not limit or len(creds) < limit:
+                    batch = json.loads(
+                        await indy.anoncreds.prover_fetch_credentials_for_proof_req(
+                            search_handle, reft, CHUNK
+                        )
+                    )
+                    creds.extend(batch)
+                    if len(batch) < CHUNK:
+                        break
+            return creds
+
         with IndyErrorHandler(
             "Error when constructing wallet credential query", HolderError
         ):
@@ -200,18 +237,10 @@ class IndyHolder(BaseHolder):
 
         try:
             for reft in referents:
-                # We need to move the database cursor position manually...
+                # must move database cursor manually
                 if start > 0:
-                    # TODO: move cursors in chunks to avoid exploding memory
-                    await indy.anoncreds.prover_fetch_credentials_for_proof_req(
-                        search_handle, reft, start
-                    )
-                (
-                    credentials_json
-                ) = await indy.anoncreds.prover_fetch_credentials_for_proof_req(
-                    search_handle, reft, count
-                )
-                credentials = json.loads(credentials_json)
+                    await fetch(reft, start)
+                credentials = await fetch(reft, count - len(creds_dict))
                 for cred in credentials:
                     cred_id = cred["cred_info"]["referent"]
                     if cred_id not in creds_dict:
@@ -219,7 +248,8 @@ class IndyHolder(BaseHolder):
                         creds_dict[cred_id] = cred
                     else:
                         creds_dict[cred_id]["presentation_referents"].add(reft)
-
+                if len(creds_dict) >= count:
+                    break
         finally:
             # Always close
             await indy.anoncreds.prover_close_credentials_search_for_proof_req(

@@ -79,7 +79,9 @@ class ConnectionStaticRequestSchema(Schema):
         description="URL endpoint for the other party", required=False, **ENDPOINT
     )
     their_role = fields.Str(
-        description="Role to assign to this connection", required=False
+        description="Role to assign to this connection",
+        required=False,
+        example="Point of contact",
     )
     their_label = fields.Str(
         description="Label to assign to this connection", required=False
@@ -130,7 +132,7 @@ class ConnectionsListQueryStringSchema(Schema):
     their_role = fields.Str(
         description="Their assigned connection role",
         required=False,
-        example="Interlocutor",
+        example="Point of contact",
     )
 
 

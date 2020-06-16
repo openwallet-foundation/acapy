@@ -1,10 +1,9 @@
 import asyncio
 import json
+import pytest
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-
-import pytest
 
 from aries_cloudagent.cache.basic import BasicCache
 from aries_cloudagent.issuer.base import BaseIssuer, IssuerError
@@ -148,12 +147,12 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.WALLET_TYPE = "indy"
         ledger = IndyLedger("name", mock_wallet)
 
-        async with ledger as l:
+        async with ledger as led:
             mock_set_proto.assert_called_once_with(2)
             mock_open_ledger.assert_called_once_with("name", "{}")
-            assert l == ledger
+            assert led == ledger
             mock_close_pool.assert_not_called()
-            assert l.pool_handle == mock_open_ledger.return_value
+            assert led.pool_handle == mock_open_ledger.return_value
 
         mock_close_pool.assert_called_once()
         assert ledger.pool_handle == None
@@ -197,8 +196,8 @@ class TestIndyLedger(AsyncTestCase):
         ledger = IndyLedger("name", mock_wallet)
 
         with self.assertRaises(LedgerError):
-            async with ledger as l:
-                assert l.pool_handle == mock_open_ledger.return_value
+            async with ledger as led:
+                assert led.pool_handle == mock_open_ledger.return_value
 
         assert ledger.pool_handle == mock_open_ledger.return_value
         assert ledger.ref_count == 1
@@ -2383,6 +2382,16 @@ class TestIndyLedger(AsyncTestCase):
             assert s_id_long == s_id_short
 
     def test_error_handler(self):
-        with self.assertRaises(LedgerTransactionError):
+        try:  # with self.assertRaises() makes a copy of exception, loses traceback!
             with IndyErrorHandler("message", LedgerTransactionError):
-                raise IndyError(error_code=1)
+                try:
+                    1 / 0
+                except ZeroDivisionError as zx:
+                    ix = IndyError(error_code=1, error_details={"message": "bye"})
+                    ix.__traceback__ = zx.__traceback__
+                    raise ix
+        except LedgerTransactionError as err:
+            assert type(err) == LedgerTransactionError
+            assert type(err.__cause__) == IndyError
+            assert err.__traceback__
+            assert "bye" in err.message

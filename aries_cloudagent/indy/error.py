@@ -22,7 +22,7 @@ class IndyErrorHandler:
     def __exit__(self, err_type, err_value, err_traceback):
         """Exit the context manager."""
         if isinstance(err_value, IndyError):
-            raise self.wrap_error(
+            raise IndyErrorHandler.wrap_error(
                 err_value, self.message, self.error_cls
             ) from err_value
 
@@ -38,5 +38,6 @@ class IndyErrorHandler:
         indy_message = hasattr(err_value, "message") and err_value.message
         if indy_message:
             err_msg += f": {indy_message}"
-        # TODO: may wish to attach backtrace when available
-        return error_cls(err_msg)
+        err = error_cls(err_msg)
+        err.__traceback__ = err_value.__traceback__
+        return err

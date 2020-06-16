@@ -79,7 +79,7 @@ class CredentialsListSchema(Schema):
 
 
 class CredentialsListQueryStringSchema(Schema):
-    """Parameters and validators for query string with DID only."""
+    """Parameters and validators for query string in credentials list query."""
 
     start = fields.Int(description="Start index", required=False, **WHOLE_NUM,)
     count = fields.Int(

@@ -247,7 +247,7 @@ class IndyISO8601DateTime(Regexp):
 class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value as potential WQL query."""
 
-    EXAMPLE = json.dumps({"name": "Alex"})
+    EXAMPLE = json.dumps({"attr::name::value": "Alex"})
     PATTERN = r"^{.*}$"
 
     def __init__(self):
@@ -262,6 +262,33 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
 
         super().__call__(value or "")
         message = "Value {input} is not a valid WQL query".format(input=value)
+
+        try:
+            json.loads(value)
+        except Exception:
+            raise ValidationError(message)
+
+        return value
+
+
+class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
+    """Validate value as potential extra WQL query in cred search for proof req."""
+
+    EXAMPLE = json.dumps({"0_drink_uuid": {"attr::drink::value": "martini"}})
+    PATTERN = r'^{\s*".*?"\s*:\s*{.*?}\s*(,\s*".*?"\s*:\s*{.*?}\s*)*\s*}$'
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            IndyExtraWQL.PATTERN, error="Value {input} is not a valid extra WQL query",
+        )
+
+    def __call__(self, value):
+        """Validate input value."""
+
+        super().__call__(value or "")
+        message = "Value {input} is not a valid extra WQL query".format(input=value)
 
         try:
             json.loads(value)
@@ -406,6 +433,7 @@ INDY_ISO8601_DATETIME = {
     "example": IndyISO8601DateTime.EXAMPLE,
 }
 INDY_WQL = {"validate": IndyWQL(), "example": IndyWQL.EXAMPLE}
+INDY_EXTRA_WQL = {"validate": IndyExtraWQL(), "example": IndyExtraWQL.EXAMPLE}
 BASE64 = {"validate": Base64(), "example": Base64.EXAMPLE}
 BASE64URL = {"validate": Base64URL(), "example": Base64URL.EXAMPLE}
 BASE64URL_NO_PAD = {"validate": Base64URLNoPad(), "example": Base64URLNoPad.EXAMPLE}
