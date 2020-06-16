@@ -269,9 +269,7 @@ class IndyLedger(BaseLedger):
 
         if not self.pool_handle:
             raise ClosedPoolError(
-                "Cannot sign and submit request to closed pool {}".format(
-                    self.pool_name
-                )
+                f"Cannot sign and submit request to closed pool '{self.pool_name}'"
             )
 
         if sign is None or sign:

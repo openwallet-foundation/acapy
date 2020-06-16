@@ -326,40 +326,26 @@ class PresentationPreview(BaseModel):
                 proof_req["requested_attributes"][
                     "self_{}_uuid".format(canon(attr_spec.name))
                 ] = {"name": canon(attr_spec.name)}
-            else:
-                cd_id = attr_spec.cred_def_id
-                revoc_support = bool(
-                    ledger
-                    and (await ledger.get_credential_definition(cd_id))["value"].get(
-                        "revocation"
+                continue
+
+            cd_id = attr_spec.cred_def_id
+            revoc_support = False
+            if ledger:
+                async with ledger:
+                    revoc_support = (await ledger.get_credential_definition(cd_id))[
+                        "value"
+                    ].get("revocation")
+
+            interval = non_revoc(cd_id) if revoc_support else None
+
+            if attr_spec.referent:
+                if attr_spec.referent in attr_specs_names:
+                    attr_specs_names[attr_spec.referent]["names"].append(
+                        canon(attr_spec.name)
                     )
-                )
-
-                interval = non_revoc(cd_id) if revoc_support else None
-
-                if attr_spec.referent:
-                    if attr_spec.referent in attr_specs_names:
-                        attr_specs_names[attr_spec.referent]["names"].append(
-                            canon(attr_spec.name)
-                        )
-                    else:
-                        attr_specs_names[attr_spec.referent] = {
-                            "names": [canon(attr_spec.name)],
-                            "restrictions": [{"cred_def_id": cd_id}],
-                            **{
-                                "non_revoked": interval.serialize()
-                                for _ in [""]
-                                if revoc_support
-                            },
-                        }
                 else:
-                    proof_req["requested_attributes"][
-                        "{}_{}_uuid".format(
-                            len(proof_req["requested_attributes"]),
-                            canon(attr_spec.name),
-                        )
-                    ] = {
-                        "name": canon(attr_spec.name),
+                    attr_specs_names[attr_spec.referent] = {
+                        "names": [canon(attr_spec.name)],
                         "restrictions": [{"cred_def_id": cd_id}],
                         **{
                             "non_revoked": interval.serialize()
@@ -367,6 +353,21 @@ class PresentationPreview(BaseModel):
                             if revoc_support
                         },
                     }
+            else:
+                proof_req["requested_attributes"][
+                    "{}_{}_uuid".format(
+                        len(proof_req["requested_attributes"]), canon(attr_spec.name),
+                    )
+                ] = {
+                    "name": canon(attr_spec.name),
+                    "restrictions": [{"cred_def_id": cd_id}],
+                    **{
+                        "non_revoked": interval.serialize()
+                        for _ in [""]
+                        if revoc_support
+                    },
+                }
+
         for (reft, attr_spec) in attr_specs_names.items():
             proof_req["requested_attributes"][
                 "{}_{}_uuid".format(
@@ -376,12 +377,12 @@ class PresentationPreview(BaseModel):
 
         for pred_spec in self.predicates:
             cd_id = pred_spec.cred_def_id
-            revoc_support = bool(
-                ledger
-                and (await ledger.get_credential_definition(cd_id))["value"].get(
-                    "revocation"
-                )
-            )
+            revoc_support = False
+            if ledger:
+                async with ledger:
+                    revoc_support = (await ledger.get_credential_definition(cd_id))[
+                        "value"
+                    ].get("revocation")
 
             interval = non_revoc(cd_id) if revoc_support else None
 
