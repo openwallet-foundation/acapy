@@ -736,9 +736,17 @@ class WalletGroup(ArgumentGroup):
             "--seed",
             type=str,
             metavar="<wallet-seed>",
-            help="Specifies the seed to use for the creation of a public DID\
-            for the agent to use with a Hyperledger Indy ledger. The DID\
-            must already exist on the ledger.",
+            help="Specifies the seed to use for the creation of a public\
+            DID for the agent to use with a Hyperledger Indy ledger, or a local\
+            ('--wallet-local-did') DID. If public, the DID must already exist\
+            on the ledger.",
+        )
+        parser.add_argument(
+            "--wallet-local-did",
+            action="store_true",
+            help="If this parameter is set, provisions the wallet with a\
+            local DID from the '--seed' parameter, instead of a public DID\
+            to use with a Hyperledger Indy ledger.",
         )
         parser.add_argument(
             "--wallet-key",
@@ -787,7 +795,7 @@ class WalletGroup(ArgumentGroup):
             "--wallet-storage-creds",
             type=str,
             metavar="<storage-creds>",
-            help='Specify the storage credentials to use for the wallet.\
+            help='Specifies the storage credentials to use for the wallet.\
             This is required if you are for using \'postgres_storage\' wallet\
             For example, \'{"account":"postgres","password":\
             "mysecretpassword","admin_account":"postgres","admin_password":\
@@ -806,6 +814,8 @@ class WalletGroup(ArgumentGroup):
         settings = {}
         if args.seed:
             settings["wallet.seed"] = args.seed
+        if args.wallet_local_did:
+            settings["wallet.local_did"] = True
         if args.wallet_key:
             settings["wallet.key"] = args.wallet_key
         if args.wallet_rekey:

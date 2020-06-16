@@ -25,6 +25,7 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
         print("Wallet name:", wallet.name)
 
     wallet_seed = context.settings.get("wallet.seed")
+    wallet_local_did = context.settings.get("wallet.local_did")
     public_did_info = await wallet.get_public_did()
     public_did = None
 
@@ -45,13 +46,20 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
                     + f" public did {public_did}"
                 )
     elif wallet_seed:
-        public_did_info = await wallet.create_public_did(seed=wallet_seed)
-        public_did = public_did_info.did
-        if provision:
-            print(f"Created new public DID: {public_did}")
-            print(f"Verkey: {public_did_info.verkey}")
+        if wallet_local_did:
+            local_did_info = await wallet.create_local_did(seed=wallet_seed)
+            local_did = local_did_info.did
+            if provision:
+                print(f"Created new local DID: {local_did}")
+                print(f"Verkey: {local_did_info.verkey}")
+        else:
+            public_did_info = await wallet.create_public_did(seed=wallet_seed)
+            public_did = public_did_info.did
+            if provision:
+                print(f"Created new public DID: {public_did}")
+                print(f"Verkey: {public_did_info.verkey}")
 
-    if provision and not public_did:
+    if provision and not wallet_local_did and not public_did:
         print("No public DID")
 
     # Debug settings
