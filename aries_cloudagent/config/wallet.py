@@ -28,22 +28,29 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
     public_did_info = await wallet.get_public_did()
     public_did = None
 
+    # checks for public did info and sets it or else it alerts that it did not find a public did
+
     if public_did_info:
-        public_did = public_did_info.did
-        if wallet_seed and seed_to_did(wallet_seed) != public_did:
-            if context.settings.get("wallet.replace_public_did"):
-                replace_did_info = await wallet.create_local_did(wallet_seed)
-                public_did = replace_did_info.did
-                await wallet.set_public_did(public_did)
-                print(f"Created new public DID: {public_did}")
-                print(f"Verkey: {replace_did_info.verkey}")
-            else:
-                # If we already have a registered public did and it doesn't match
-                # the one derived from `wallet_seed` then we error out.
-                raise ConfigError(
-                    "New seed provided which doesn't match the registered"
-                    + f" public did {public_did}"
-                )
+        public_did = public_did_info
+    else:
+        print("No public DID")
+
+    # same logic is kept but now it is not inhibited by having to have a public did to continue
+     
+    if wallet_seed and seed_to_did(wallet_seed) != public_did:
+        if context.settings.get("wallet.replace_public_did"):
+            replace_did_info = await wallet.create_local_did(wallet_seed)
+            public_did = replace_did_info.did
+            await wallet.set_public_did(public_did)
+            print(f"Created new public DID: {public_did}")
+            print(f"Verkey: {replace_did_info.verkey}")
+        else:
+            # If we already have a registered public did and it doesn't match
+            # the one derived from `wallet_seed` then we error out.
+            raise ConfigError(
+                "New seed provided which doesn't match the registered"
+                + f" public did {public_did}"
+            )
     elif wallet_seed:
         public_did_info = await wallet.create_public_did(seed=wallet_seed)
         public_did = public_did_info.did
