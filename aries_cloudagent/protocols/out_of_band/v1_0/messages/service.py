@@ -19,8 +19,8 @@ class Service(BaseModel):
     def __init__(
         self,
         *,
-        id: str = None,
-        type: str = None,
+        _id: str = None,
+        _type: str = None,
         did: str = None,
         recipient_keys: Sequence[str] = None,
         routing_keys: Sequence[str] = None,
@@ -37,8 +37,8 @@ class Service(BaseModel):
             routing_keys: A list of routing keys
             service_endpoint: An endpoint for the connection
         """
-        self._id = id
-        self._type = type
+        self._id = _id
+        self._type = _type
         self.did = did
         self.recipient_keys = list(recipient_keys) if recipient_keys else []
         self.routing_keys = list(routing_keys) if routing_keys else []

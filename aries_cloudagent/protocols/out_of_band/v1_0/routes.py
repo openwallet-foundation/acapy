@@ -82,10 +82,12 @@ async def invitation_receive(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-
     body = await request.json()
 
-    return web.json_response()
+    oob_mgr = OutOfBandManager(context)
+    invitation = await oob_mgr.receive_invitation(invitation=body)
+
+    return web.json_response(invitation.serialize())
 
 
 async def register(app: web.Application):

@@ -2,7 +2,7 @@
 
 from typing import Sequence, Text, Union
 
-from marshmallow import fields, validates_schema, ValidationError
+from marshmallow import fields, validates_schema, ValidationError, pre_load, post_dump
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -39,7 +39,10 @@ class Invitation(AgentMessage):
         label: str = None,
         handshake_protocols: Sequence[Text] = None,
         request_attach: Sequence[AttachDecorator] = None,
-        service: Sequence[Union[Service, Text]] = None,
+        # When loading, we sort service in the two lists
+        service: Sequence[Union[Service, Text]] = [],
+        service_blocks: Sequence[Service] = [],
+        service_dids: Sequence[Text] = [],
         **kwargs,
     ):
         """
@@ -55,31 +58,25 @@ class Invitation(AgentMessage):
             list(handshake_protocols) if handshake_protocols else []
         )
         self.request_attach = list(request_attach) if request_attach else []
-        self.service = list(service) if service else []
+
+        # In order to accept and validate both string entries and
+        # dict block entries, we include both in schema and manipulate
+        # data in pre_load and post_dump
+        self.service_blocks = list(service_blocks) if service_blocks else []
+        self.service_dids = list(service_dids) if service_dids else []
+
+        # In the case of loading, we need to sort
+        # the entries into relevant lists for schema validation
+        for s in service:
+            if type(s) is Service:
+                self.service_blocks.append(s)
+            if type(s) is str:
+                self.service_dids.append(s)
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
         """Convert an aries message to an attachment decorator."""
         return AttachDecorator.from_aries_msg(message=message, ident="request-0")
-
-
-class ServiceField(fields.Nested):
-    def _serialize(self, value, attr, obj, **kwargs):
-        if not value:
-            return []
-
-        serialized_elements = []
-        for el in value:
-            if type(el) is str:
-                serialized_elements.append(el)
-            elif type(el) is Service:
-                serialized_elements.append(el.serialize())
-            else:
-                raise ServiceFieldSerializationError(
-                    f"Incompatible service element type: {type(el)} "
-                )
-
-        return serialized_elements
 
 
 class InvitationSchema(AgentMessageSchema):
@@ -95,7 +92,9 @@ class InvitationSchema(AgentMessageSchema):
     request_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="request~attach"
     )
-    service = ServiceField(ServiceSchema, required=False, many=True)
+
+    service_blocks = fields.Nested(ServiceSchema, many=True)
+    service_dids = fields.List(fields.String, many=True)
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
@@ -113,5 +112,43 @@ class InvitationSchema(AgentMessageSchema):
             or (request_attach and len(request_attach) > 0)
         ):
             raise ValidationError(
-                "Model must include handshake_protocols or request_attach or both"
+                "Model must include non-empty "
+                + "handshake_protocols or request_attach or both"
             )
+
+        # service = data.get("service")
+        # if not ((service and len(service) > 0)):
+        #     raise ValidationError(
+        #         "Model must include non-empty service array"
+        #     )
+
+    @pre_load
+    def pre_load(self, data, **kwargs):
+        # if "service_dids" not in data:
+        data["service_dids"] = []
+        # if "service_blocks" not in data:
+        data["service_blocks"] = []
+
+        for service_entry in data["service"]:
+            if type(service_entry) is str:
+                data["service_dids"].append(service_entry)
+            if type(service_entry) is Service:
+                data["service_blocks"].append(service_entry)
+
+        del data["service"]
+
+        return data
+
+    @post_dump
+    def post_dump(self, data, **kwargs):
+        data["service"] = []
+
+        for service_entry in data["service_dids"]:
+            data["service"].append(service_entry)
+        for service_entry in data["service_blocks"]:
+            data["service"].append(service_entry)
+
+        del data["service_dids"]
+        del data["service_blocks"]
+
+        return data
