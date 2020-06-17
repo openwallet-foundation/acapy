@@ -14,6 +14,8 @@ from .models.revocation_registry import RevocationRegistry
 class IndyRevocation:
     """Class for managing Indy credential revocation."""
 
+    REV_REG_CACHE = {}
+
     def __init__(self, context: InjectionContext):
         """Initialize the IndyRevocation instance."""
         self._context = context
@@ -89,8 +91,13 @@ class IndyRevocation:
 
     async def get_ledger_registry(self, revoc_reg_id: str) -> "RevocationRegistry":
         """Get a revocation registry from the ledger, fetching as necessary."""
+        if revoc_reg_id in IndyRevocation.REV_REG_CACHE:
+            return IndyRevocation.REV_REG_CACHE[revoc_reg_id]
+
         ledger: BaseLedger = await self._context.inject(BaseLedger)
         async with ledger:
-            revoc_reg_def = await ledger.get_revoc_reg_def(revoc_reg_id)
-            # TODO apply caching here?
-            return RevocationRegistry.from_definition(revoc_reg_def, True)
+            rev_reg = RevocationRegistry.from_definition(
+                await ledger.get_revoc_reg_def(revoc_reg_id), True
+            )
+            IndyRevocation.REV_REG_CACHE[revoc_reg_id] = rev_reg
+            return rev_reg
