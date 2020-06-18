@@ -322,6 +322,7 @@ class TestPredicate(TestCase):
         assert Predicate.get("GT").value.yes("1", "0")
         assert Predicate.get("GT").value.no("0", "0")
 
+
 class TestPresPredSpec(TestCase):
     """Presentation predicate specification tests"""
 
@@ -383,7 +384,7 @@ class TestPresPredSpec(TestCase):
         pred_spec_a.threshold = 0
         pred_spec_a.cred_def_id = None
         assert pred_spec_a != pred_spec_b
-        
+
 
 @pytest.mark.indy
 class TestPresentationPreviewAsync(AsyncTestCase):

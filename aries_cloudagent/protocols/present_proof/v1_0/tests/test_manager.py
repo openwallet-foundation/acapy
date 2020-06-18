@@ -567,9 +567,7 @@ class TestPresentationManager(AsyncTestCase):
             nonce=PROOF_REQ_NONCE,
             ledger=await self.context.inject(BaseLedger, required=False),
         )
-        get_creds = async_mock.CoroutineMock(
-            return_value=()
-        )
+        get_creds = async_mock.CoroutineMock(return_value=())
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
         with self.assertRaises(ValueError):
