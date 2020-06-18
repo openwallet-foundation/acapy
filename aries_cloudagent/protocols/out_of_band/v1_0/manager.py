@@ -14,6 +14,10 @@ from .messages.invitation import Invitation as InvitationMessage
 from .messages.service import Service as ServiceMessage
 
 from aries_cloudagent.protocols.connections.v1_0.manager import ConnectionManager
+from aries_cloudagent.protocols.connections.v1_0.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+
 
 from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
@@ -138,8 +142,11 @@ class OutOfBandManager:
 
         handshake_protocols = []
         if include_handshake:
-            handshake_protocols.append("https://didcomm.org/connections/1.0")
+            # handshake_protocols.append("https://didcomm.org/connections/1.0")
             # handshake_protocols.append("https://didcomm.org/didexchange/1.0")
+            handshake_protocols.append(
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+            )
 
         invitation_message = InvitationMessage(
             label=my_label,
@@ -167,35 +174,61 @@ class OutOfBandManager:
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
 
+        # New message format
         invitation_message = InvitationMessage.deserialize(invitation)
 
-        
+        if (
+            len(invitation_message.handshake_protocols) != 1
+            or invitation_message.handshake_protocols[0]
+            != "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+        ):
+            raise Exception("asdasdas")
 
+        if len(invitation_message.request_attach) != 0:
+            raise Exception("asdasdas")
 
-        services = []
-        for service in invitation["service"]:
-            # If service is a string, assume it is a valid did
-            if type(service) is str:
-                verkey = await ledger.get_key_for_did(service)
-                endpoint = await ledger.get_endpoint_for_did(service)
-                service = ServiceMessage(
-                    id="#inline",
-                    type="did-communication",
-                    recipient_keys=[verkey],
-                    routing_keys=[],
-                    service_endpoint=endpoint,
-                )
-                services.append(service)
-            # If service is a dict, assume it is a valid Service decorator
-            elif type(service) is dict:
-                service = ServiceMessage.deserialize(service)
-                service.append(service)
-            else:
-                raise OutOfBandManager(
-                    f"Item in service list is not str or dict, it is {type(service)}"
-                )
+        if (
+            len(invitation_message.service_blocks)
+            + len(invitation_message.service_dids)
+            != 1
+        ):
+            raise Exception("asdasdas")
 
+        # Get the single service item
+        if len(invitation_message.service_blocks):
+            service = invitation_message.service_blocks[0]
+        else:
+            # If it's in the did format, we need to convert to a full service block
+            service_did = invitation_message.service_dids[0]
+            async with ledger:
+                verkey = await ledger.get_key_for_did(service_did)
+                endpoint = await ledger.get_endpoint_for_did(service_did)
+            service = ServiceMessage.deserialize(
+                {
+                    "id": "#inline",
+                    "type": "did-communication",
+                    "recipientKeys": [verkey],
+                    "routingKeys": [],
+                    "serviceEndpoint": endpoint,
+                }
+            )
 
+        # We now have the old message format
+        connection_invitation = ConnectionInvitation.deserialize(
+            {
+                "@id": invitation_message._id,
+                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "label": invitation_message.label,
+                "recipientKeys": service.recipient_keys,
+                "serviceEndpoint": service.service_endpoint,
+                "routingKeys": service.routing_keys,
+            }
+        )
+
+        connection_mgr = ConnectionManager(self.context)
+        connection = await connection_mgr.receive_invitation(connection_invitation)
+
+        return connection
         # Iterate over handshake protocols if exists
 
         # Try to resolve each protocol type and form connection
