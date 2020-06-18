@@ -244,11 +244,10 @@ class CredentialManager:
         # vet attributes
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
-            credential_definition = await ledger.get_credential_definition(
-                credential_definition_id
-            )
+            credential_definition = await ledger.get_credential_definition(cred_def_id)
         cred_def_attrs = {
-            attr for attr in credential_definition["value"]["primary"]["r"]
+            attr
+            for attr in credential_definition["value"]["primary"]["r"]
             if attr != "master_secret"
         }
         preview_attrs = {attr for attr in cred_preview.attr_dict()}

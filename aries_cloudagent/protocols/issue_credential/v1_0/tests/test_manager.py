@@ -258,6 +258,24 @@ class TestCredentialManager(AsyncTestCase):
         self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
             return_value=SCHEMA_ID
         )
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value={
+                "ver": "1.0",
+                "id": CRED_DEF_ID,
+                "schemaId": SCHEMA_ID,
+                "type": "CL",
+                "tag": "default",
+                "value": {
+                    "primary": {
+                        "n": "...",
+                        "s": "...",
+                        "r": {"master_secret": "...", "attr": "value"},
+                        "rctxt": "...",
+                    },
+                    "revocation": None,
+                },
+            }
+        )
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -310,8 +328,24 @@ class TestCredentialManager(AsyncTestCase):
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
             self.ledger.get_credential_definition = async_mock.CoroutineMock(
-                return_value={"value": {}}
+                return_value={
+                    "ver": "1.0",
+                    "id": CRED_DEF_ID,
+                    "schemaId": SCHEMA_ID,
+                    "type": "CL",
+                    "tag": "default",
+                    "value": {
+                        "primary": {
+                            "n": "...",
+                            "s": "...",
+                            "r": {"master_secret": "...", "attr": "value"},
+                            "rctxt": "...",
+                        },
+                        "revocation": None,
+                    },
+                }
             )
+
             self.cache = BasicCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
 
@@ -361,6 +395,84 @@ class TestCredentialManager(AsyncTestCase):
                 credential_exchange_record=exchange, comment=comment
             )  # once more to cover case where offer is available in cache
 
+    async def test_create_free_offer_attr_mismatch(self):
+        connection_id = "test_conn_id"
+        comment = "comment"
+        schema_id_parts = SCHEMA_ID.split(":")
+
+        preview = CredentialPreview(
+            attributes=(CredAttrSpec(name="attr", value="value"),)
+        )
+        proposal = CredentialProposal(
+            credential_proposal=preview, cred_def_id=CRED_DEF_ID, schema_id=None
+        )
+
+        exchange = V10CredentialExchange(
+            credential_definition_id=CRED_DEF_ID,
+            role=V10CredentialExchange.ROLE_ISSUER,
+            credential_proposal_dict=proposal.serialize(),
+        )
+
+        with async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as save_ex:
+            self.ledger.get_credential_definition = async_mock.CoroutineMock(
+                return_value={
+                    "ver": "1.0",
+                    "id": CRED_DEF_ID,
+                    "schemaId": SCHEMA_ID,
+                    "type": "CL",
+                    "tag": "default",
+                    "value": {
+                        "primary": {
+                            "n": "...",
+                            "s": "...",
+                            "r": {
+                                "master_secret": "...",
+                                "attr": "value",
+                                "extra": "cred-def-attr",
+                            },
+                            "rctxt": "...",
+                        },
+                        "revocation": None,
+                    },
+                }
+            )
+
+            self.cache = BasicCache()
+            self.context.injector.bind_instance(BaseCache, self.cache)
+
+            cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
+
+            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
+            issuer.create_credential_offer = async_mock.CoroutineMock(
+                return_value=json.dumps(cred_offer)
+            )
+            self.context.injector.bind_instance(BaseIssuer, issuer)
+
+            self.storage = BasicStorage()
+            self.context.injector.bind_instance(BaseStorage, self.storage)
+            cred_def_record = StorageRecord(
+                CRED_DEF_SENT_RECORD_TYPE,
+                CRED_DEF_ID,
+                {
+                    "schema_id": SCHEMA_ID,
+                    "schema_issuer_did": schema_id_parts[0],
+                    "schema_name": schema_id_parts[-2],
+                    "schema_version": schema_id_parts[-1],
+                    "issuer_did": TEST_DID,
+                    "cred_def_id": CRED_DEF_ID,
+                    "epoch": str(int(time())),
+                },
+            )
+            storage: BaseStorage = await self.context.inject(BaseStorage)
+            await storage.add_record(cred_def_record)
+
+            with self.assertRaises(CredentialManagerError):
+                await self.manager.create_offer(
+                    credential_exchange_record=exchange, comment=comment
+                )
+
     async def test_create_bound_offer(self):
         TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
         schema_id_parts = SCHEMA_ID.split(":")
@@ -376,6 +488,24 @@ class TestCredentialManager(AsyncTestCase):
             credential_proposal_dict=proposal.serialize(),
             role=V10CredentialExchange.ROLE_ISSUER,
         )
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value={
+                "ver": "1.0",
+                "id": CRED_DEF_ID,
+                "schemaId": SCHEMA_ID,
+                "type": "CL",
+                "tag": "default",
+                "value": {
+                    "primary": {
+                        "n": "...",
+                        "s": "...",
+                        "r": {"master_secret": "...", "attr": "value"},
+                        "rctxt": "...",
+                    },
+                    "revocation": None,
+                },
+            }
+        )
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -384,9 +514,6 @@ class TestCredentialManager(AsyncTestCase):
         ) as get_cached_key, async_mock.patch.object(
             V10CredentialExchange, "set_cached_key", autospec=True
         ) as set_cached_key:
-            self.ledger.get_credential_definition = async_mock.CoroutineMock(
-                return_value={"value": {}}
-            )
             get_cached_key.return_value = None
             cred_offer = {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID}
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
