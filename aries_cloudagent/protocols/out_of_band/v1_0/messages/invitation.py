@@ -133,7 +133,7 @@ class InvitationSchema(AgentMessageSchema):
         for service_entry in data["service"]:
             if type(service_entry) is str:
                 data["service_dids"].append(service_entry)
-            if type(service_entry) is Service:
+            if type(service_entry) is dict:
                 data["service_blocks"].append(service_entry)
 
         del data["service"]

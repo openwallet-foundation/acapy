@@ -133,8 +133,8 @@ class OutOfBandManager:
             #     service_endpoint=my_endpoint,
             # )
             service = ServiceMessage(
-                id="#inline",
-                type="did-communication",
+                _id="#inline",
+                _type="did-communication",
                 recipient_keys=connection_invitation.recipient_keys,
                 routing_keys=connection_invitation.routing_keys,
                 service_endpoint=connection_invitation.endpoint,
