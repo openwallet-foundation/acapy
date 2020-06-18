@@ -600,7 +600,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
             context, credential_offer_message, conn_did, endpoint
         )
         result = credential_exchange_record.serialize()
-    except BaseModelError as err:
+    except (BaseModelError, CredentialManagerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     response = {"record": result, "oob_url": oob_url}
@@ -672,7 +672,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             trace_msg,
         )
         result = credential_exchange_record.serialize()
-    except (StorageNotFoundError, BaseModelError) as err:
+    except (
+        StorageNotFoundError, BaseModelError, CredentialManagerError, LedgerError
+    ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
@@ -749,7 +751,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         )
 
         result = credential_exchange_record.serialize()
-    except (StorageError, BaseModelError) as err:
+    except (StorageError, BaseModelError, CredentialManagerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
