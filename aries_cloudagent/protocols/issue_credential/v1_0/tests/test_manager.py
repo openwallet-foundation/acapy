@@ -52,7 +52,12 @@ CRED_DEF = {
         "primary": {
             "n": "...",
             "s": "...",
-            "r": {"master_secret": "...", "number": "...", "remainder": "..."},
+            "r": {
+                "master_secret": "...",
+                "legalName": "...",
+                "jurisdictionId": "...",
+                "incorporationDate": "...",
+            },
             "rctxt": "...",
             "z": "...",
         },
@@ -108,6 +113,9 @@ class TestCredentialManager(AsyncTestCase):
             return_value=REV_REG_DEF
         )
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
+            return_value=SCHEMA_ID
+        )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.manager = CredentialManager(self.context)
@@ -152,7 +160,11 @@ class TestCredentialManager(AsyncTestCase):
     async def test_prepare_send(self):
         connection_id = "test_conn_id"
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legalName", value="value"),
+                CredAttrSpec(name="jurisdictionId", value="value"),
+                CredAttrSpec(name="incorporationDate", value="value"),
+            )
         )
         proposal = CredentialProposal(
             credential_proposal=preview, cred_def_id=CRED_DEF_ID, schema_id=SCHEMA_ID
@@ -178,7 +190,11 @@ class TestCredentialManager(AsyncTestCase):
         connection_id = "test_conn_id"
         comment = "comment"
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legalName", value="value"),
+                CredAttrSpec(name="jurisdictionId", value="value"),
+                CredAttrSpec(name="incorporationDate", value="value"),
+            )
         )
 
         self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
@@ -250,32 +266,14 @@ class TestCredentialManager(AsyncTestCase):
         comment = "comment"
 
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legalName", value="value"),
+                CredAttrSpec(name="jurisdictionId", value="value"),
+                CredAttrSpec(name="incorporationDate", value="value"),
+            )
         )
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = connection_id
-
-        self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
-            return_value=SCHEMA_ID
-        )
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
-            return_value={
-                "ver": "1.0",
-                "id": CRED_DEF_ID,
-                "schemaId": SCHEMA_ID,
-                "type": "CL",
-                "tag": "default",
-                "value": {
-                    "primary": {
-                        "n": "...",
-                        "s": "...",
-                        "r": {"master_secret": "...", "attr": "value"},
-                        "rctxt": "...",
-                    },
-                    "revocation": None,
-                },
-            }
-        )
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -312,7 +310,11 @@ class TestCredentialManager(AsyncTestCase):
         schema_id_parts = SCHEMA_ID.split(":")
 
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legalName", value="value"),
+                CredAttrSpec(name="jurisdictionId", value="value"),
+                CredAttrSpec(name="incorporationDate", value="value"),
+            )
         )
         proposal = CredentialProposal(
             credential_proposal=preview, cred_def_id=CRED_DEF_ID, schema_id=None
@@ -327,24 +329,6 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
-            self.ledger.get_credential_definition = async_mock.CoroutineMock(
-                return_value={
-                    "ver": "1.0",
-                    "id": CRED_DEF_ID,
-                    "schemaId": SCHEMA_ID,
-                    "type": "CL",
-                    "tag": "default",
-                    "value": {
-                        "primary": {
-                            "n": "...",
-                            "s": "...",
-                            "r": {"master_secret": "...", "attr": "value"},
-                            "rctxt": "...",
-                        },
-                        "revocation": None,
-                    },
-                }
-            )
 
             self.cache = BasicCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
@@ -401,7 +385,11 @@ class TestCredentialManager(AsyncTestCase):
         schema_id_parts = SCHEMA_ID.split(":")
 
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legal name", value="value"),
+                CredAttrSpec(name="jurisdiction id", value="value"),
+                CredAttrSpec(name="incorporation date", value="value"),
+            )
         )
         proposal = CredentialProposal(
             credential_proposal=preview, cred_def_id=CRED_DEF_ID, schema_id=None
@@ -416,29 +404,6 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
-            self.ledger.get_credential_definition = async_mock.CoroutineMock(
-                return_value={
-                    "ver": "1.0",
-                    "id": CRED_DEF_ID,
-                    "schemaId": SCHEMA_ID,
-                    "type": "CL",
-                    "tag": "default",
-                    "value": {
-                        "primary": {
-                            "n": "...",
-                            "s": "...",
-                            "r": {
-                                "master_secret": "...",
-                                "attr": "value",
-                                "extra": "cred-def-attr",
-                            },
-                            "rctxt": "...",
-                        },
-                        "revocation": None,
-                    },
-                }
-            )
-
             self.cache = BasicCache()
             self.context.injector.bind_instance(BaseCache, self.cache)
 
@@ -476,35 +441,20 @@ class TestCredentialManager(AsyncTestCase):
     async def test_create_bound_offer(self):
         TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
         schema_id_parts = SCHEMA_ID.split(":")
-        cred_def_id = f"{TEST_DID}:3:CL:18:tag"
         connection_id = "test_conn_id"
         comment = "comment"
 
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legalName", value="value"),
+                CredAttrSpec(name="jurisdictionId", value="value"),
+                CredAttrSpec(name="incorporationDate", value="value"),
+            )
         )
         proposal = CredentialProposal(credential_proposal=preview)
         exchange = V10CredentialExchange(
             credential_proposal_dict=proposal.serialize(),
             role=V10CredentialExchange.ROLE_ISSUER,
-        )
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
-            return_value={
-                "ver": "1.0",
-                "id": CRED_DEF_ID,
-                "schemaId": SCHEMA_ID,
-                "type": "CL",
-                "tag": "default",
-                "value": {
-                    "primary": {
-                        "n": "...",
-                        "s": "...",
-                        "r": {"master_secret": "...", "attr": "value"},
-                        "rctxt": "...",
-                    },
-                    "revocation": None,
-                },
-            }
         )
 
         with async_mock.patch.object(
@@ -565,7 +515,11 @@ class TestCredentialManager(AsyncTestCase):
         comment = "comment"
 
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legalName", value="value"),
+                CredAttrSpec(name="jurisdictionId", value="value"),
+                CredAttrSpec(name="incorporationDate", value="value"),
+            )
         )
         proposal = CredentialProposal(credential_proposal=preview)
         exchange = V10CredentialExchange(
@@ -602,7 +556,11 @@ class TestCredentialManager(AsyncTestCase):
         thread_id = "thread-id"
 
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legalName", value="value"),
+                CredAttrSpec(name="jurisdictionId", value="value"),
+                CredAttrSpec(name="incorporationDate", value="value"),
+            )
         )
         proposal = CredentialProposal(credential_proposal=preview)
 
@@ -650,7 +608,11 @@ class TestCredentialManager(AsyncTestCase):
         connection_id = "test_conn_id"
         indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
         preview = CredentialPreview(
-            attributes=(CredAttrSpec(name="attr", value="value"),)
+            attributes=(
+                CredAttrSpec(name="legalName", value="value"),
+                CredAttrSpec(name="jurisdictionId", value="value"),
+                CredAttrSpec(name="incorporationDate", value="value"),
+            )
         )
 
         offer = CredentialOffer(

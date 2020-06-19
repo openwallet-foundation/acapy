@@ -244,17 +244,14 @@ class CredentialManager:
         # vet attributes
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
-            credential_definition = await ledger.get_credential_definition(cred_def_id)
-        cred_def_attrs = {
-            attr
-            for attr in credential_definition["value"]["primary"]["r"]
-            if attr != "master_secret"
-        }
+            schema_id = await ledger.credential_definition_id2schema_id()
+            schema = await ledger.get_schema(schema_id)
+        schema_attrs = {attr for attr in schema["attrNames"]}
         preview_attrs = {attr for attr in cred_preview.attr_dict()}
-        if preview_attrs != cred_def_attrs:
+        if preview_attrs != schema_attrs:
             raise CredentialManagerError(
                 f"Preview attributes {preview_attrs} "
-                f"mismatch corresponding schema attributes {cred_def_attrs}"
+                f"mismatch corresponding schema attributes {schema_attrs}"
             )
 
         credential_offer = None
