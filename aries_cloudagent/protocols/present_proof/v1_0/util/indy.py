@@ -45,7 +45,7 @@ async def indy_proof_req_preview2indy_requested_creds(
 
         # match returned creds against any preview values
         if len(credentials) == 1:
-            cred_id = credentials[0]["cred_info"]["referent"]
+            cred_match = credentials[0]
         else:
             if preview:
                 for cred in sorted(
@@ -58,7 +58,7 @@ async def indy_proof_req_preview2indy_requested_creds(
                         name=name,
                         value=value,
                     ):
-                        cred_id = cred["cred_info"]["referent"]
+                        cred_match = cred
                         break
                 else:
                     raise ValueError(
@@ -69,11 +69,16 @@ async def indy_proof_req_preview2indy_requested_creds(
                         + f"proposed preview."
                     )
             else:
-                cred_id = min(cred["cred_info"]["referent"] for cred in credentials)
-        req_creds["requested_attributes"][referent] = {
-            "cred_id": cred_id,
-            "revealed": True,  # TODO allow specification of unrevealed attrs?
-        }
+                cred_match = min(credentials, key=lambda c: c["cred_info"]["referent"])
+        if "restrictions" in indy_proof_request["requested_attributes"][referent]:
+            req_creds["requested_attributes"][referent] = {
+                "cred_id": cred_match["cred_info"]["referent"],
+                "revealed": True,
+            }
+        else:
+            req_creds["self_attested_attributes"][referent] = cred_match["cred_info"][
+                "attrs"
+            ][indy_proof_request["requested_attributes"][referent]["name"]]
 
     for referent in indy_proof_request["requested_predicates"]:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
@@ -90,13 +95,15 @@ async def indy_proof_req_preview2indy_requested_creds(
                 + f"referent {referent} did not produce any credentials."
             )
 
-        if len(credentials) == 1:
-            cred_id = credentials[0]["cred_info"]["referent"]
+        cred_match = min(credentials, key=lambda c: c["cred_info"]["referent"])
+        if "restrictions" in indy_proof_request["requested_predicates"][referent]:
+            req_creds["requested_predicates"][referent] = {
+                "cred_id": cred_match["cred_info"]["referent"],
+                "revealed": True,
+            }
         else:
-            cred_id = min(cred["cred_info"]["referent"] for cred in credentials)
-        req_creds["requested_predicates"][referent] = {
-            "cred_id": cred_id,
-            "revealed": True,  # TODO allow specification of unrevealed attrs?
-        }
+            req_creds["self_attested_attributes"][referent] = cred_match["cred_info"][
+                "attrs"
+            ][indy_proof_request["requested_predicates"][referent]["name"]]
 
     return req_creds
