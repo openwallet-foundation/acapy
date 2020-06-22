@@ -40,9 +40,7 @@ class SchemaSendResultsSchema(Schema):
     """Results schema for schema send request."""
 
     schema_id = fields.Str(
-        description="Schema identifier",
-        required=True,
-        **INDY_SCHEMA_ID
+        description="Schema identifier", required=True, **INDY_SCHEMA_ID
     )
     schema = fields.Dict(description="Schema result", required=True)
 
@@ -85,7 +83,7 @@ class SchemaIdMatchInfoSchema(Schema):
         description="Schema identifier",
         required=True,
         validate=Regexp(rf"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
-        example=INDY_SCHEMA_ID["example"]
+        example=INDY_SCHEMA_ID["example"],
     )
 
 
