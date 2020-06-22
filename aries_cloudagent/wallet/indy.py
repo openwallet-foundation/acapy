@@ -671,6 +671,7 @@ class IndyWallet(BaseWallet):
         from_verkey = unpacked.get("sender_verkey", None)
         return message, from_verkey, to_verkey
 
+    '''
     async def get_credential_definition_tag_policy(self, credential_definition_id: str):
         """Return the tag policy for a given credential definition ID."""
         try:
@@ -716,6 +717,7 @@ class IndyWallet(BaseWallet):
             raise IndyErrorHandler.wrap_error(
                 x_indy, "Wallet {} error".format(self.name), WalletError
             ) from x_indy
+    '''
 
     @classmethod
     async def generate_wallet_key(self, seed: str = None) -> str:

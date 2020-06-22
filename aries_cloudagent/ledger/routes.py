@@ -173,6 +173,8 @@ async def get_did_verkey(request: web.BaseRequest):
     async with ledger:
         try:
             result = await ledger.get_key_for_did(did)
+            if not result:
+                raise web.HTTPNotFound(reason=f"DID {did} is not on the ledger")
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 

@@ -59,6 +59,14 @@ class TestLedgerRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.get_did_verkey(request)
 
+    async def test_get_verkey_did_not_public(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did}
+        self.ledger.get_key_for_did.return_value = None
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.get_did_verkey(request)
+
     async def test_get_verkey_x(self):
         request = async_mock.MagicMock()
         request.app = self.app
@@ -195,6 +203,16 @@ class TestLedgerRoutes(AsyncTestCase):
             taa_info["taa_accepted"] = accepted
             json_response.assert_called_once_with({"result": taa_info})
             assert result is json_response.return_value
+
+    async def test_get_taa_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+
+        self.ledger.LEDGER_TYPE = "indy"
+        self.ledger.get_txn_author_agreement.side_effect = test_module.LedgerError()
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.ledger_get_taa(request)
 
     async def test_taa_accept_not_required(self):
         request = async_mock.MagicMock()
