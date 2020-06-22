@@ -119,6 +119,16 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             assert result == mock_response.return_value
             mock_response.assert_called_once_with({"schema": {"schema": "def"}})
 
+    async def test_get_schema_on_seq_no(self):
+        mock_request = async_mock.MagicMock(
+            app=self.app, match_info={"schema_id": "12345"},
+        )
+
+        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
+            result = await test_module.schemas_get_schema(mock_request)
+            assert result == mock_response.return_value
+            mock_response.assert_called_once_with({"schema": {"schema": "def"}})
+
     async def test_get_schema_no_ledger(self):
         mock_request = async_mock.MagicMock(
             app=self.app, match_info={"schema_id": SCHEMA_ID},
