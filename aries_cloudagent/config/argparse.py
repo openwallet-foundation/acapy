@@ -789,17 +789,23 @@ class WalletGroup(ArgumentGroup):
             metavar="<storage-config>",
             help="Specifies the storage configuration to use for the wallet.\
             This is required if you are for using 'postgres_storage' wallet\
-            storage type. For example, '{\"url\":\"localhost:5432\"}'.",
+            storage type. For example, '{\"url\":\"localhost:5432\",\
+            \"wallet_scheme\":\"MultiWalletSingleTable\"}'. This\
+            configuration maps to the indy sdk postgres plugin\
+            (PostgresConfig).",
         )
         parser.add_argument(
             "--wallet-storage-creds",
             type=str,
             metavar="<storage-creds>",
-            help='Specifies the storage credentials to use for the wallet.\
+            help="Specifies the storage credentials to use for the wallet.\
             This is required if you are for using \'postgres_storage\' wallet\
-            For example, \'{"account":"postgres","password":\
-            "mysecretpassword","admin_account":"postgres","admin_password":\
-            "mysecretpassword"}\'',
+            For example, '{\"account\":\"postgres\",\"password\":\
+            \"mysecretpassword\",\"admin_account\":\"postgres\",\
+            \"admin_password\":\"mysecretpassword\"}'. This configuration maps\
+            to the indy sdk postgres plugin (PostgresCredentials). NOTE:\
+            admin_user must have the CREATEDB role or else initialization\
+            will fail.",
         )
         parser.add_argument(
             "--replace-public-did",
