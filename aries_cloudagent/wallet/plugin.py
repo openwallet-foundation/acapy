@@ -31,7 +31,8 @@ def load_postgres_plugin(storage_config, storage_creds, raise_exc=False):
                 "Invalid stringified JSON input, check storage_config and storage_creds")
             if raise_exc:
                 raise OSError(
-                    f"Invalid stringified JSON input, check storage_config and storage_creds")
+                    f"Invalid stringified JSON input,"
+                    "check storage_config and storage_creds")
             else:
                 raise SystemExit(1)
 
