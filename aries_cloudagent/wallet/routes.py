@@ -41,7 +41,7 @@ class DIDListSchema(Schema):
     results = fields.List(fields.Nested(DIDSchema()), description="DID list")
 
 
-class DidEndpointSchema(Schema):
+class DIDEndpointSchema(Schema):
     """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
@@ -251,7 +251,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Update endpoint in wallet and, if public, on ledger")
-@request_schema(DidEndpointSchema)
+@request_schema(DIDEndpointSchema)
 async def wallet_set_did_endpoint(request: web.BaseRequest):
     """
     Request handler for setting an endpoint for a public or local DID.
@@ -273,8 +273,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         metadata = {**did_info.metadata}
         if "endpoint" in metadata:
             metadata.pop("endpoint")
-        if endpoint:
-            metadata["endpoint"] = endpoint
+        metadata["endpoint"] = endpoint  # set null to clear so making public sends null
 
         wallet_public_didinfo = await wallet.get_public_did()
         if wallet_public_didinfo and wallet_public_didinfo.did == did:
@@ -299,7 +298,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
 @querystring_schema(DIDQueryStringSchema())
-@response_schema(DidEndpointSchema, 200)
+@response_schema(DIDEndpointSchema, 200)
 async def wallet_get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting the current DID endpoint from the wallet.
