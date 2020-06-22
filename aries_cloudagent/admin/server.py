@@ -135,6 +135,10 @@ class AdminServer(BaseAdminServer):
             task_queue: An optional task queue for handlers
         """
         self.app = None
+        self.admin_api_key = context.settings.get("admin.admin_api_key")
+        self.admin_insecure_mode = bool(
+            context.settings.get("admin.admin_insecure_mode")
+        )
         self.host = host
         self.port = port
         self.conductor_stats = conductor_stats
@@ -156,26 +160,28 @@ class AdminServer(BaseAdminServer):
 
         middlewares = [validation_middleware]
 
-        admin_api_key = self.context.settings.get("admin.admin_api_key")
-        admin_insecure_mode = self.context.settings.get("admin.admin_insecure_mode")
-
         # admin-token and admin-token are mutually exclusive and required.
         # This should be enforced during parameter parsing but to be sure,
         # we check here.
-        assert admin_insecure_mode or admin_api_key
-        assert not (admin_insecure_mode and admin_api_key)
+        assert self.admin_insecure_mode ^ bool(self.admin_api_key)
+
+        def is_unprotected_path(path: str):
+            return path in [
+                "/api/doc",
+                "/api/docs/swagger.json",
+                "/favicon.ico",
+            ] or path.startswith("/static/swagger/")
 
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
-        if admin_api_key:
+        if self.admin_api_key:
 
             @web.middleware
             async def check_token(request, handler):
                 header_admin_api_key = request.headers.get("x-api-key")
-                if not header_admin_api_key:
-                    raise web.HTTPUnauthorized()
+                valid_key = self.admin_api_key == header_admin_api_key
 
-                if admin_api_key == header_admin_api_key:
+                if valid_key or is_unprotected_path(request.rel_url.path.lower()):
                     return await handler(request)
                 else:
                     raise web.HTTPUnauthorized()
@@ -283,6 +289,12 @@ class AdminServer(BaseAdminServer):
 
     async def on_startup(self, app: web.Application):
         """Perform webserver startup actions."""
+        if self.admin_api_key:
+            swagger = app["swagger_dict"]
+            swagger["securityDefinitions"] = {
+                "ApiKeyHeader": {"type": "apiKey", "in": "header", "name": "X-API-KEY"}
+            }
+            swagger["security"] = [{"ApiKeyHeader": []}]
 
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
     @response_schema(AdminModulesSchema(), 200)
