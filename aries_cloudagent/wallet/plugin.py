@@ -28,7 +28,10 @@ def load_postgres_plugin(storage_config, storage_creds, raise_exc=False):
             json.loads(storage_creds)
         except json.decoder.JSONDecodeError:
             LOGGER.error("Invalid stringified JSON input, check storage_config and storage_creds")
-            raise SystemExit(1)
+            if raise_exc:
+                raise OSError(f"Invalid stringified JSON input, check storage_config and storage_creds")
+            else:
+                raise SystemExit(1)
 
         LOGGER.info("Initializing postgres wallet")
         stg_lib = cdll.LoadLibrary("libindystrgpostgres" + file_ext())
