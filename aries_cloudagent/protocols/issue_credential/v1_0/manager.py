@@ -181,7 +181,6 @@ class CredentialManager:
             The resulting credential exchange record, created
 
         """
-        # go to cred def via ledger to get authoritative schema id
         credential_proposal_message = self.context.message
         connection_id = self.context.connection_record.connection_id
 
@@ -241,6 +240,19 @@ class CredentialManager:
             }
         )
         cred_preview = credential_proposal_message.credential_proposal
+
+        # vet attributes
+        ledger: BaseLedger = await self.context.inject(BaseLedger)
+        async with ledger:
+            schema_id = await ledger.credential_definition_id2schema_id()
+            schema = await ledger.get_schema(schema_id)
+        schema_attrs = {attr for attr in schema["attrNames"]}
+        preview_attrs = {attr for attr in cred_preview.attr_dict()}
+        if preview_attrs != schema_attrs:
+            raise CredentialManagerError(
+                f"Preview attributes {preview_attrs} "
+                f"mismatch corresponding schema attributes {schema_attrs}"
+            )
 
         credential_offer = None
         cache_key = f"credential_offer::{cred_def_id}"
