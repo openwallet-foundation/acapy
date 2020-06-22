@@ -244,7 +244,7 @@ class CredentialManager:
         # vet attributes
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         async with ledger:
-            schema_id = await ledger.credential_definition_id2schema_id()
+            schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
         schema_attrs = {attr for attr in schema["attrNames"]}
         preview_attrs = {attr for attr in cred_preview.attr_dict()}
