@@ -11,33 +11,15 @@ Subpackages
 
 .. toctree::
 
-    aries_cloudagent.protocols.connections.handlers
-    aries_cloudagent.protocols.connections.messages
-    aries_cloudagent.protocols.connections.models
+    aries_cloudagent.protocols.connections.v1_0
 
 Submodules
 ----------
 
-aries\_cloudagent\.protocols\.connections\.manager module
----------------------------------------------------------
+aries\_cloudagent\.protocols\.connections\.definition module
+------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.connections.manager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.connections\.message\_types module
-----------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.connections.message_types
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.connections\.routes module
---------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.connections.routes
+.. automodule:: aries_cloudagent.protocols.connections.definition
     :members:
     :undoc-members:
     :show-inheritance:

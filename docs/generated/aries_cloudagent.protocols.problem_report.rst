@@ -6,29 +6,20 @@ aries\_cloudagent\.protocols\.problem\_report package
     :undoc-members:
     :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+
+    aries_cloudagent.protocols.problem_report.v1_0
+
 Submodules
 ----------
 
-aries\_cloudagent\.protocols\.problem\_report\.handler module
--------------------------------------------------------------
+aries\_cloudagent\.protocols\.problem\_report\.definition module
+----------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.problem_report.handler
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.problem\_report\.message module
--------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.problem_report.message
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.problem\_report\.message\_types module
---------------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.problem_report.message_types
+.. automodule:: aries_cloudagent.protocols.problem_report.definition
     :members:
     :undoc-members:
     :show-inheritance:

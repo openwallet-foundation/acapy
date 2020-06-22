@@ -11,24 +11,15 @@ Subpackages
 
 .. toctree::
 
-    aries_cloudagent.protocols.discovery.handlers
-    aries_cloudagent.protocols.discovery.messages
+    aries_cloudagent.protocols.discovery.v1_0
 
 Submodules
 ----------
 
-aries\_cloudagent\.protocols\.discovery\.message\_types module
---------------------------------------------------------------
+aries\_cloudagent\.protocols\.discovery\.definition module
+----------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.discovery.message_types
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.discovery\.routes module
-------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.discovery.routes
+.. automodule:: aries_cloudagent.protocols.discovery.definition
     :members:
     :undoc-members:
     :show-inheritance:
