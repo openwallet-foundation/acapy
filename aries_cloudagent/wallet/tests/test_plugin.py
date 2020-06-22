@@ -93,3 +93,36 @@ class TestWalletCrypto(AsyncTestCase):
                 test_module.load_postgres_plugin(
                     storage_config, storage_creds, raise_exc=False
                 )
+
+    def test_load_postgres_plugin_bad_json_x_raise(self):
+        storage_config = '{\"wallet_scheme\":\"MultiWalletSingleTable\"}'
+        storage_creds = '\"account\":\"test\"'
+        mock_stg_lib = async_mock.MagicMock(
+            postgresstorage_init=async_mock.MagicMock(return_value=0),
+            init_storagetype=async_mock.MagicMock(return_value=2),
+        )
+        with async_mock.patch.object(
+            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        ) as mock_load:
+            mock_load.return_value = mock_stg_lib
+            with self.assertRaises(OSError) as context:
+                test_module.load_postgres_plugin(
+                    storage_config, storage_creds, raise_exc=True
+                )
+            assert "Invalid stringified JSON input" in str(context.exception)
+
+    def test_load_postgres_plugin_bad_json_x_exit(self):
+        storage_config = '\"wallet_scheme\":\"MultiWalletSingleTable\"'
+        storage_creds = '{\"account\":\"test\"}'
+        mock_stg_lib = async_mock.MagicMock(
+            postgresstorage_init=async_mock.MagicMock(return_value=0),
+            init_storagetype=async_mock.MagicMock(return_value=2),
+        )
+        with async_mock.patch.object(
+            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        ) as mock_load:
+            mock_load.return_value = mock_stg_lib
+            with self.assertRaises(SystemExit):
+                test_module.load_postgres_plugin(
+                    storage_config, storage_creds, raise_exc=False
+                )
