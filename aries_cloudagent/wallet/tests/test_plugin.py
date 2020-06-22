@@ -16,8 +16,8 @@ class TestWalletCrypto(AsyncTestCase):
         assert test_module.file_ext()
 
     def test_load_postgres_plugin(self):
-        storage_config = '{\"wallet_scheme\":\"MultiWalletSingleTable\"}'
-        storage_creds = '{\"account\":\"test\"}'
+        storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
+        storage_creds = '{"account":"test"}'
         mock_stg_lib = async_mock.MagicMock(
             postgresstorage_init=async_mock.MagicMock(return_value=0),
             init_storagetype=async_mock.MagicMock(return_value=0),
@@ -31,8 +31,8 @@ class TestWalletCrypto(AsyncTestCase):
             assert test_module.LOADED
 
     def test_load_postgres_plugin_init_x_raise(self):
-        storage_config = '{\"wallet_scheme\":\"MultiWalletSingleTable\"}'
-        storage_creds = '{\"account\":\"test\"}'
+        storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
+        storage_creds = '{"account":"test"}'
         mock_stg_lib = async_mock.MagicMock(
             postgresstorage_init=async_mock.MagicMock(return_value=2)
         )
@@ -47,8 +47,8 @@ class TestWalletCrypto(AsyncTestCase):
             assert "unable to load postgres" in str(context.exception)
 
     def test_load_postgres_plugin_init_x_exit(self):
-        storage_config = '{\"wallet_scheme\":\"MultiWalletSingleTable\"}'
-        storage_creds = '{\"account\":\"test\"}'
+        storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
+        storage_creds = '{"account":"test"}'
         mock_stg_lib = async_mock.MagicMock(
             postgresstorage_init=async_mock.MagicMock(return_value=2)
         )
@@ -62,8 +62,8 @@ class TestWalletCrypto(AsyncTestCase):
                 )
 
     def test_load_postgres_plugin_config_x_raise(self):
-        storage_config = '{\"wallet_scheme\":\"MultiWalletSingleTable\"}'
-        storage_creds = '{\"account\":\"test\"}'
+        storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
+        storage_creds = '{"account":"test"}'
         mock_stg_lib = async_mock.MagicMock(
             postgresstorage_init=async_mock.MagicMock(return_value=0),
             init_storagetype=async_mock.MagicMock(return_value=2),
@@ -79,8 +79,8 @@ class TestWalletCrypto(AsyncTestCase):
             assert "unable to configure postgres" in str(context.exception)
 
     def test_load_postgres_plugin_config_x_exit(self):
-        storage_config = '{\"wallet_scheme\":\"MultiWalletSingleTable\"}'
-        storage_creds = '{\"account\":\"test\"}'
+        storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
+        storage_creds = '{"account":"test"}'
         mock_stg_lib = async_mock.MagicMock(
             postgresstorage_init=async_mock.MagicMock(return_value=0),
             init_storagetype=async_mock.MagicMock(return_value=2),
@@ -95,8 +95,8 @@ class TestWalletCrypto(AsyncTestCase):
                 )
 
     def test_load_postgres_plugin_bad_json_x_raise(self):
-        storage_config = '{\"wallet_scheme\":\"MultiWalletSingleTable\"}'
-        storage_creds = '\"account\":\"test\"'
+        storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
+        storage_creds = '"account":"test"'
         mock_stg_lib = async_mock.MagicMock(
             postgresstorage_init=async_mock.MagicMock(return_value=0),
             init_storagetype=async_mock.MagicMock(return_value=2),
@@ -112,8 +112,8 @@ class TestWalletCrypto(AsyncTestCase):
             assert "Invalid stringified JSON input" in str(context.exception)
 
     def test_load_postgres_plugin_bad_json_x_exit(self):
-        storage_config = '\"wallet_scheme\":\"MultiWalletSingleTable\"'
-        storage_creds = '{\"account\":\"test\"}'
+        storage_config = '"wallet_scheme":"MultiWalletSingleTable"'
+        storage_creds = '{"account":"test"}'
         mock_stg_lib = async_mock.MagicMock(
             postgresstorage_init=async_mock.MagicMock(return_value=0),
             init_storagetype=async_mock.MagicMock(return_value=2),
