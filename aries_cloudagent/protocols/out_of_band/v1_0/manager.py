@@ -32,6 +32,10 @@ class OutOfBandManagerError(BaseError):
     """Out of band error."""
 
 
+class OutOfBandManagerNotImplementedError(BaseError):
+    """Out of band error for unimplemented functionality."""
+
+
 class OutOfBandManager:
     """Class for managing out of band messages."""
 
@@ -120,8 +124,11 @@ class OutOfBandManager:
                         InvitationMessage.wrap_message(model.presentation_request_dict)
                     )
                 else:
-                    raise Exception("asdxzczxc")
+                    raise OutOfBandManagerError(
+                        f"Unknown attachment type: {attachment['type']}"
+                    )
 
+        # We plug into existing connection structure during migration phase
         if use_public_did:
             # service = (await wallet.get_public_did()).did
             service = connection_invitation.did
@@ -179,7 +186,8 @@ class OutOfBandManager:
         # New message format
         invitation_message = InvitationMessage.deserialize(invitation)
 
-        # The following logic adheres to 
+        # Convert to old format and pass to relevant manager
+        # The following logic adheres to Aries RFC 0496
 
         # There must be exactly 1 service entry
         if (
@@ -187,7 +195,7 @@ class OutOfBandManager:
             + len(invitation_message.service_dids)
             != 1
         ):
-            raise Exception("asdasdas")
+            raise OutOfBandManagerError("service array must have exactly one element")
 
         # Get the single service item
         if len(invitation_message.service_blocks):
@@ -216,9 +224,11 @@ class OutOfBandManager:
         ):
 
             if len(invitation_message.request_attach) != 0:
-                raise Exception("asdasdas")
+                raise OutOfBandManagerError(
+                    "request block must be empty for invitation message type."
+                )
 
-            # We now have the old message format
+            # Convert to the old message format
             connection_invitation = ConnectionInvitation.deserialize(
                 {
                     "@id": invitation_message._id,
@@ -238,19 +248,12 @@ class OutOfBandManager:
             and invitation_message.request_attach[0].data.json["@type"]
             == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/request-presentation"
         ):
-            pass
+            raise OutOfBandManagerNotImplementedError(
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/request-presentation "
+                + "request type not implemented."
+            )
         else:
             # Invalid shim oob inv
             raise Exception("ASD")
 
         return connection
-        # Iterate over handshake protocols if exists
-
-        # Try to resolve each protocol type and form connection
-        # Break after first connection formed in order
-
-        # If handshake protocols not empty and no connection formed, raise exception
-
-        # Iterate of request attach and try to process each entity
-        # If handshake protocols not empty, use previously formed connection
-        # If empty, use ephemeral
