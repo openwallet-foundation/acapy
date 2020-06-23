@@ -332,6 +332,24 @@ class TestAttachDecorator(TestCase):
         assert lynx_str != links
 
 
+    def test_indy_dict(self):
+        deco_aries = AttachDecorator.from_aries_msg(
+            message=INDY_CRED, ident=IDENT, description=DESCRIPTION,
+        )
+        assert deco_aries.mime_type == "application/json"
+        assert hasattr(deco_aries.data, "json_")
+        assert deco_aries.data.base64 is None
+        assert deco_aries.data.json is not None
+        assert deco_aries.data.links is None
+        assert deco_aries.data.sha256 is None
+        assert deco_aries.data.json == INDY_CRED
+        assert deco_aries.ident == IDENT
+        assert deco_aries.description == DESCRIPTION
+
+        deco_aries_auto_id = AttachDecorator.from_aries_msg(message=INDY_CRED)
+        assert deco_aries_auto_id.ident
+
+
 @pytest.mark.indy
 class TestAttachDecoratorSignature:
     @pytest.mark.asyncio
