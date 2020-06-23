@@ -10,26 +10,28 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, Schema, validates_schema
+from marshmallow import fields, Schema, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ....connections.models.connection_record import ConnectionRecord
-from ....holder.base import BaseHolder
+from ....holder.base import BaseHolder, HolderError
+from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.models.base import BaseModelError
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_DID,
+    INDY_EXTRA_WQL,
     INDY_PREDICATE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
-    INDY_WQL,
     INT_EPOCH,
     NATURAL_NUM,
     UUIDFour,
     UUID4,
     WHOLE_NUM,
 )
-from ....storage.error import StorageNotFoundError
+from ....storage.error import StorageError, StorageNotFoundError
 from ....indy.util import generate_pr_nonce
 
 from .manager import PresentationManager
@@ -48,6 +50,43 @@ from .models.presentation_exchange import (
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST
 
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+
+
+class V10PresentationExchangeListQueryStringSchema(Schema):
+    """Parameters and validators for presentation exchange list query."""
+
+    connection_id = fields.UUID(
+        description="Connection identifier",
+        required=False,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+    thread_id = fields.UUID(
+        description="Thread identifier",
+        required=False,
+        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+    )
+    role = fields.Str(
+        description="Role assigned in presentation exchange",
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(V10PresentationExchange, m)
+                for m in vars(V10PresentationExchange)
+                if m.startswith("ROLE_")
+            ]
+        ),
+    )
+    state = fields.Str(
+        description="Presentation exchange state",
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(V10PresentationExchange, m)
+                for m in vars(V10PresentationExchange)
+                if m.startswith("STATE_")
+            ]
+        ),
+    )
 
 
 class V10PresentationExchangeListSchema(Schema):
@@ -317,7 +356,9 @@ class CredentialsFetchQueryStringSchema(Schema):
         description="Maximum number to retrieve", required=False, **NATURAL_NUM
     )
     extra_query = fields.Str(
-        description="(JSON) WQL extra query", required=False, **INDY_WQL,
+        description="(JSON) object mapping referents to extra WQL queries",
+        required=False,
+        **INDY_EXTRA_WQL,
     )
 
 
@@ -330,6 +371,7 @@ class PresExIdMatchInfoSchema(Schema):
 
 
 @docs(tags=["present-proof"], summary="Fetch all present-proof exchange records")
+@querystring_schema(V10PresentationExchangeListQueryStringSchema)
 @response_schema(V10PresentationExchangeListSchema(), 200)
 async def presentation_exchange_list(request: web.BaseRequest):
     """
@@ -346,12 +388,19 @@ async def presentation_exchange_list(request: web.BaseRequest):
     tag_filter = {}
     if "thread_id" in request.query and request.query["thread_id"] != "":
         tag_filter["thread_id"] = request.query["thread_id"]
-    post_filter = {}
-    for param_name in ("connection_id", "role", "state"):
-        if param_name in request.query and request.query[param_name] != "":
-            post_filter[param_name] = request.query[param_name]
-    records = await V10PresentationExchange.query(context, tag_filter, post_filter)
-    return web.json_response({"results": [record.serialize() for record in records]})
+    post_filter = {
+        k: request.query[k]
+        for k in ("connection_id", "role", "state")
+        if request.query.get(k, "") != ""
+    }
+
+    try:
+        records = await V10PresentationExchange.query(context, tag_filter, post_filter)
+        results = [record.serialize() for record in records]
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"results": results})
 
 
 @docs(tags=["present-proof"], summary="Fetch a single presentation exchange record")
@@ -374,9 +423,13 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
         record = await V10PresentationExchange.retrieve_by_id(
             context, presentation_exchange_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
-    return web.json_response(record.serialize())
+        result = record.serialize()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (BaseModelError, StorageError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(result)
 
 
 @docs(
@@ -408,8 +461,8 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
             context, presentation_exchange_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     start = request.query.get("start")
     count = request.query.get("count")
@@ -423,13 +476,16 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     count = int(count) if isinstance(count, str) else 10
 
     holder: BaseHolder = await context.inject(BaseHolder)
-    credentials = await holder.get_credentials_for_presentation_request_by_referent(
-        presentation_exchange_record.presentation_request,
-        presentation_referents,
-        start,
-        count,
-        extra_query,
-    )
+    try:
+        credentials = await holder.get_credentials_for_presentation_request_by_referent(
+            presentation_exchange_record.presentation_request,
+            presentation_referents,
+            start,
+            count,
+            extra_query,
+        )
+    except HolderError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     presentation_exchange_record.log_state(
         context,
@@ -464,25 +520,25 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     body = await request.json()
-
+    comment = body.get("comment")
     connection_id = body.get("connection_id")
+
+    # Aries#0037 calls it a proposal in the proposal struct but it's of type preview
+    presentation_preview = body.get("presentation_proposal")
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+        presentation_proposal_message = PresentationProposal(
+            comment=comment,
+            presentation_proposal=PresentationPreview.deserialize(presentation_preview),
+        )
+    except (StorageNotFoundError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-    comment = body.get("comment")
-    # Aries#0037 calls it a proposal in the proposal struct but it's of type preview
-    presentation_preview = body.get("presentation_proposal")
-    presentation_proposal_message = PresentationProposal(
-        comment=comment,
-        presentation_proposal=PresentationPreview.deserialize(presentation_preview),
-    )
     trace_msg = body.get("trace")
     presentation_proposal_message.assign_trace_decorator(
         context.settings, trace_msg,
@@ -492,14 +548,17 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     )
 
     presentation_manager = PresentationManager(context)
-
-    (
-        presentation_exchange_record
-    ) = await presentation_manager.create_exchange_for_proposal(
-        connection_id=connection_id,
-        presentation_proposal_message=presentation_proposal_message,
-        auto_present=auto_present,
-    )
+    try:
+        (
+            presentation_exchange_record
+        ) = await presentation_manager.create_exchange_for_proposal(
+            connection_id=connection_id,
+            presentation_proposal_message=presentation_proposal_message,
+            auto_present=auto_present,
+        )
+        result = presentation_exchange_record.serialize()
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(presentation_proposal_message, connection_id=connection_id)
 
@@ -510,7 +569,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         perf_counter=r_time,
     )
 
-    return web.json_response(presentation_exchange_record.serialize())
+    return web.json_response(result)
 
 
 @docs(
@@ -562,13 +621,16 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     )
 
     presentation_manager = PresentationManager(context)
-
-    (
-        presentation_exchange_record
-    ) = await presentation_manager.create_exchange_for_request(
-        connection_id=None, presentation_request_message=presentation_request_message
-    )
-
+    try:
+        (
+            presentation_exchange_record
+        ) = await presentation_manager.create_exchange_for_request(
+            connection_id=None,
+            presentation_request_message=presentation_request_message,
+        )
+        result = presentation_exchange_record.serialize()
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
     await outbound_handler(presentation_request_message, connection_id=None)
 
     trace_event(
@@ -578,7 +640,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         perf_counter=r_time,
     )
 
-    return web.json_response(presentation_exchange_record.serialize())
+    return web.json_response(result)
 
 
 @docs(
@@ -610,11 +672,11 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+    except StorageNotFoundError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     comment = body.get("comment")
     indy_proof_request = body.get("proof_request")
@@ -636,13 +698,16 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     )
 
     presentation_manager = PresentationManager(context)
-
-    (
-        presentation_exchange_record
-    ) = await presentation_manager.create_exchange_for_request(
-        connection_id=connection_id,
-        presentation_request_message=presentation_request_message,
-    )
+    try:
+        (
+            presentation_exchange_record
+        ) = await presentation_manager.create_exchange_for_request(
+            connection_id=connection_id,
+            presentation_request_message=presentation_request_message,
+        )
+        result = presentation_exchange_record.serialize()
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(presentation_request_message, connection_id=connection_id)
 
@@ -653,7 +718,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         perf_counter=r_time,
     )
 
-    return web.json_response(presentation_exchange_record.serialize())
+    return web.json_response(result)
 
 
 @docs(
@@ -683,9 +748,16 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
         context, presentation_exchange_id
     )
-    assert presentation_exchange_record.state == (
+    if presentation_exchange_record.state != (
         V10PresentationExchange.STATE_PROPOSAL_RECEIVED
-    )
+    ):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {presentation_exchange_id} "
+                f"in {presentation_exchange_record.state} state "
+                f"(must be {V10PresentationExchange.STATE_PROPOSAL_RECEIVED})"
+            )
+        )
     body = await request.json()
 
     connection_id = body.get("connection_id")
@@ -693,23 +765,28 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     presentation_manager = PresentationManager(context)
+    try:
+        (
+            presentation_exchange_record,
+            presentation_request_message,
+        ) = await presentation_manager.create_bound_request(
+            presentation_exchange_record
+        )
+        result = presentation_exchange_record.serialize()
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    (
-        presentation_exchange_record,
-        presentation_request_message,
-    ) = await presentation_manager.create_bound_request(presentation_exchange_record)
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
         context.settings, trace_msg,
     )
-
     await outbound_handler(presentation_request_message, connection_id=connection_id)
 
     trace_event(
@@ -719,7 +796,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         perf_counter=r_time,
     )
 
-    return web.json_response(presentation_exchange_record.serialize())
+    return web.json_response(result)
 
 
 @docs(tags=["present-proof"], summary="Sends a proof presentation")
@@ -745,6 +822,16 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
     presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
         context, presentation_exchange_id
     )
+    if presentation_exchange_record.state != (
+        V10PresentationExchange.STATE_REQUEST_RECEIVED
+    ):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {presentation_exchange_id} "
+                f"in {presentation_exchange_record.state} state "
+                f"(must be {V10PresentationExchange.STATE_REQUEST_RECEIVED})"
+            )
+        )
 
     body = await request.json()
 
@@ -753,35 +840,34 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+    except StorageNotFoundError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
-
-    assert (
-        presentation_exchange_record.state
-    ) == V10PresentationExchange.STATE_REQUEST_RECEIVED
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     presentation_manager = PresentationManager(context)
+    try:
+        (
+            presentation_exchange_record,
+            presentation_message,
+        ) = await presentation_manager.create_presentation(
+            presentation_exchange_record,
+            {
+                "self_attested_attributes": body.get("self_attested_attributes"),
+                "requested_attributes": body.get("requested_attributes"),
+                "requested_predicates": body.get("requested_predicates"),
+            },
+            comment=body.get("comment"),
+        )
+        result = presentation_exchange_record.serialize()
+    except (LedgerError, HolderError, BaseModelError, StorageError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    (
-        presentation_exchange_record,
-        presentation_message,
-    ) = await presentation_manager.create_presentation(
-        presentation_exchange_record,
-        {
-            "self_attested_attributes": body.get("self_attested_attributes"),
-            "requested_attributes": body.get("requested_attributes"),
-            "requested_predicates": body.get("requested_predicates"),
-        },
-        comment=body.get("comment"),
-    )
     trace_msg = body.get("trace")
     presentation_message.assign_trace_decorator(
         context.settings, trace_msg,
     )
-
     await outbound_handler(presentation_message, connection_id=connection_id)
 
     trace_event(
@@ -791,7 +877,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         perf_counter=r_time,
     )
 
-    return web.json_response(presentation_exchange_record.serialize())
+    return web.json_response(result)
 
 
 @docs(tags=["present-proof"], summary="Verify a received presentation")
@@ -816,27 +902,37 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
         context, presentation_exchange_id
     )
+    if presentation_exchange_record.state != (
+        V10PresentationExchange.STATE_PRESENTATION_RECEIVED
+    ):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {presentation_exchange_id} "
+                f"in {presentation_exchange_record.state} state "
+                f"(must be {V10PresentationExchange.STATE_PRESENTATION_RECEIVED})"
+            )
+        )
+
     connection_id = presentation_exchange_record.connection_id
 
     try:
         connection_record = await ConnectionRecord.retrieve_by_id(
             context, connection_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPBadRequest()
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not connection_record.is_ready:
-        raise web.HTTPForbidden()
-
-    assert (
-        presentation_exchange_record.state
-    ) == V10PresentationExchange.STATE_PRESENTATION_RECEIVED
+        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     presentation_manager = PresentationManager(context)
-
-    presentation_exchange_record = await presentation_manager.verify_presentation(
-        presentation_exchange_record
-    )
+    try:
+        presentation_exchange_record = await presentation_manager.verify_presentation(
+            presentation_exchange_record
+        )
+        result = presentation_exchange_record.serialize()
+    except (LedgerError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     trace_event(
         context.settings,
@@ -845,7 +941,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
         perf_counter=r_time,
     )
 
-    return web.json_response(presentation_exchange_record.serialize())
+    return web.json_response(result)
 
 
 @docs(tags=["present-proof"], summary="Remove an existing presentation exchange record")
@@ -864,10 +960,12 @@ async def presentation_exchange_remove(request: web.BaseRequest):
         presentation_exchange_record = await V10PresentationExchange.retrieve_by_id(
             context, presentation_exchange_id
         )
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+        await presentation_exchange_record.delete_record(context)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    await presentation_exchange_record.delete_record(context)
     return web.json_response({})
 
 
@@ -889,11 +987,6 @@ async def register(app: web.Application):
                 presentation_exchange_credentials_list,
                 allow_head=False,
             ),
-            # web.get(
-            # "/present-proof/records/{pres_ex_id}/credentials/{referent}",
-            # presentation_exchange_credentials_list,
-            # allow_head=False
-            # ),
             web.post(
                 "/present-proof/send-proposal", presentation_exchange_send_proposal,
             ),

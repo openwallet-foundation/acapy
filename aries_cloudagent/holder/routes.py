@@ -19,6 +19,10 @@ from ..messaging.valid import (
 from ..wallet.error import WalletNotFoundError
 
 
+class AttributeMimeTypesResultSchema(Schema):
+    """Result schema for credential attribute MIME type."""
+
+
 class RawEncCredAttrSchema(Schema):
     """Credential attribute schema."""
 
@@ -75,7 +79,7 @@ class CredentialsListSchema(Schema):
 
 
 class CredentialsListQueryStringSchema(Schema):
-    """Parameters and validators for query string with DID only."""
+    """Parameters and validators for query string in credentials list query."""
 
     start = fields.Int(description="Start index", required=False, **WHOLE_NUM,)
     count = fields.Int(
@@ -113,11 +117,32 @@ async def credentials_get(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     try:
         credential = await holder.get_credential(credential_id)
-    except WalletNotFoundError:
-        raise web.HTTPNotFound()
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     credential_json = json.loads(credential)
     return web.json_response(credential_json)
+
+
+@docs(tags=["credentials"], summary="Get attribute MIME types from wallet")
+@match_info_schema(CredIdMatchInfoSchema())
+@response_schema(AttributeMimeTypesResultSchema(), 200)
+async def credentials_attr_mime_types_get(request: web.BaseRequest):
+    """
+    Request handler for getting credential attribute MIME types.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The MIME types response
+
+    """
+    context = request.app["request_context"]
+    credential_id = request.match_info["credential_id"]
+    holder: BaseHolder = await context.inject(BaseHolder)
+
+    return web.json_response(await holder.get_mime_type(credential_id))
 
 
 @docs(tags=["credentials"], summary="Remove a credential from the wallet by id")
@@ -140,8 +165,8 @@ async def credentials_remove(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     try:
         await holder.delete_credential(credential_id)
-    except WalletNotFoundError:
-        raise web.HTTPNotFound()
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.json_response({})
 
@@ -178,8 +203,8 @@ async def credentials_list(request: web.BaseRequest):
     holder: BaseHolder = await context.inject(BaseHolder)
     try:
         credentials = await holder.get_credentials(start, count, wql)
-    except HolderError as x_holder:
-        raise web.HTTPBadRequest(reason=x_holder.message)
+    except HolderError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": credentials})
 
@@ -190,6 +215,11 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get("/credential/{credential_id}", credentials_get, allow_head=False),
+            web.get(
+                "/credential/mime-types/{credential_id}",
+                credentials_attr_mime_types_get,
+                allow_head=False,
+            ),
             web.post("/credential/{credential_id}/remove", credentials_remove),
             web.get("/credentials", credentials_list, allow_head=False),
         ]

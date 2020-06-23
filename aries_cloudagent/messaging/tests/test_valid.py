@@ -15,6 +15,7 @@ from ..valid import (
     INDY_CRED_DEF_ID,
     INDY_DID,
     INT_EPOCH,
+    INDY_EXTRA_WQL,
     INDY_ISO8601_DATETIME,
     INDY_PREDICATE,
     INDY_RAW_PUBLIC_KEY,
@@ -281,6 +282,38 @@ class TestValid(TestCase):
         INDY_WQL["validate"](json.dumps({"a": "1234"}))
         INDY_WQL["validate"](json.dumps({"a": "1234", "b": {"$not": "0"}}))
         INDY_WQL["validate"](json.dumps({"$or": {"a": "1234", "b": "0"}}))
+
+    def test_indy_extra_wql(self):
+        non_xwqls = [
+            "nope",
+            "[a, b, c]",
+            "{1, 2, 3}",
+            set(),
+            '"Hello World"',
+            None,
+            "null",
+            "true",
+            False,
+            "{}",
+            '{"no": "referent"}',
+            '{"no": "referent", "another": "non-referent"}',
+            '{"uuid": {"too many: "braces"}}}',
+        ]
+        for non_xwql in non_xwqls:
+            with self.assertRaises(ValidationError):
+                INDY_EXTRA_WQL["validate"](non_xwql)
+
+        INDY_EXTRA_WQL["validate"](json.dumps({"uuid0": {"name::ident::marker": "1"}}))
+        INDY_EXTRA_WQL["validate"](
+            json.dumps(
+                {
+                    "uuid0": {"attr::ident::marker": "1"},
+                    "uuid1": {"attr::member::value": "655321"},
+                    "uuid2": {"attr::code::value": {"$in": ["abc", "def", "ghi"]}},
+                    "uuid3": {"attr::score::value": {"$neq": "0"}},
+                }
+            )
+        )
 
     def test_base64(self):
         non_base64s = [

@@ -736,15 +736,30 @@ class WalletGroup(ArgumentGroup):
             "--seed",
             type=str,
             metavar="<wallet-seed>",
-            help="Specifies the seed to use for the creation of a public DID\
-            for the agent to use with a Hyperledger Indy ledger. The DID\
-            must already exist on the ledger.",
+            help="Specifies the seed to use for the creation of a public\
+            DID for the agent to use with a Hyperledger Indy ledger, or a local\
+            ('--wallet-local-did') DID. If public, the DID must already exist\
+            on the ledger.",
+        )
+        parser.add_argument(
+            "--wallet-local-did",
+            action="store_true",
+            help="If this parameter is set, provisions the wallet with a\
+            local DID from the '--seed' parameter, instead of a public DID\
+            to use with a Hyperledger Indy ledger.",
         )
         parser.add_argument(
             "--wallet-key",
             type=str,
             metavar="<wallet-key>",
-            help="Specifies the master key value to use for opening the wallet.",
+            help="Specifies the master key value to use to open the wallet.",
+        )
+        parser.add_argument(
+            "--wallet-rekey",
+            type=str,
+            metavar="<wallet-rekey>",
+            help="Specifies a new master key value to which to rotate and to\
+            open the wallet next time.",
         )
         parser.add_argument(
             "--wallet-name",
@@ -772,19 +787,25 @@ class WalletGroup(ArgumentGroup):
             "--wallet-storage-config",
             type=str,
             metavar="<storage-config>",
-            help="Specifies the storage configuration to use for the wallet.\
-            This is required if you are for using 'postgres_storage' wallet\
-            storage type. For example, '{\"url\":\"localhost:5432\"}'.",
+            help='Specifies the storage configuration to use for the wallet.\
+            This is required if you are for using \'postgres_storage\' wallet\
+            storage type. For example, \'{"url":"localhost:5432",\
+            "wallet_scheme":"MultiWalletSingleTable"}\'. This\
+            configuration maps to the indy sdk postgres plugin\
+            (PostgresConfig).',
         )
         parser.add_argument(
             "--wallet-storage-creds",
             type=str,
             metavar="<storage-creds>",
-            help='Specify the storage credentials to use for the wallet.\
+            help='Specifies the storage credentials to use for the wallet.\
             This is required if you are for using \'postgres_storage\' wallet\
             For example, \'{"account":"postgres","password":\
-            "mysecretpassword","admin_account":"postgres","admin_password":\
-            "mysecretpassword"}\'',
+            "mysecretpassword","admin_account":"postgres",\
+            "admin_password":"mysecretpassword"}\'. This configuration maps\
+            to the indy sdk postgres plugin (PostgresCredentials). NOTE:\
+            admin_user must have the CREATEDB role or else initialization\
+            will fail.',
         )
         parser.add_argument(
             "--replace-public-did",
@@ -799,8 +820,12 @@ class WalletGroup(ArgumentGroup):
         settings = {}
         if args.seed:
             settings["wallet.seed"] = args.seed
+        if args.wallet_local_did:
+            settings["wallet.local_did"] = True
         if args.wallet_key:
             settings["wallet.key"] = args.wallet_key
+        if args.wallet_rekey:
+            settings["wallet.rekey"] = args.wallet_rekey
         if args.wallet_name:
             settings["wallet.name"] = args.wallet_name
         if args.wallet_storage_type:

@@ -68,6 +68,24 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 {"credential_definition_id": CRED_DEF_ID}
             )
 
+    async def test_send_credential_definition_no_ledger(self):
+        mock_request = async_mock.MagicMock(
+            app=self.app,
+            json=async_mock.CoroutineMock(
+                return_value={
+                    "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+                    "support_revocation": False,
+                    "tag": "tag",
+                }
+            ),
+        )
+
+        self.context.injector.clear_binding(BaseLedger)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.credential_definitions_send_credential_definition(
+                mock_request
+            )
+
     async def test_created(self):
         mock_request = async_mock.MagicMock(
             app=self.app, match_info={"cred_def_id": CRED_DEF_ID},
@@ -94,9 +112,25 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 {"credential_definition": {"cred": "def"}}
             )
 
+    async def test_get_credential_definition_no_ledger(self):
+        mock_request = async_mock.MagicMock(
+            app=self.app, match_info={"cred_def_id": CRED_DEF_ID},
+        )
+
+        self.context.injector.clear_binding(BaseLedger)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.credential_definitions_get_credential_definition(
+                mock_request
+            )
+
     async def test_register(self):
         mock_app = async_mock.MagicMock()
         mock_app.add_routes = async_mock.MagicMock()
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
+
+    async def test_post_process_routes(self):
+        mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
+        test_module.post_process_routes(mock_app)
+        assert "tags" in mock_app._state["swagger_dict"]

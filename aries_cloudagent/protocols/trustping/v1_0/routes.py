@@ -5,9 +5,9 @@ from aiohttp_apispec import docs, match_info_schema, request_schema, response_sc
 
 from marshmallow import fields, Schema
 
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.messaging.valid import UUIDFour
-from aries_cloudagent.storage.error import StorageNotFoundError
+from ....connections.models.connection_record import ConnectionRecord
+from ....messaging.valid import UUIDFour
+from ....storage.error import StorageNotFoundError
 
 from .message_types import SPEC_URI
 from .messages.ping import Ping
@@ -53,11 +53,11 @@ async def connections_send_ping(request: web.BaseRequest):
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if not connection.is_ready:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason=f"Connection {connection_id} not ready")
 
     msg = Ping(comment=comment)
     await outbound_handler(msg, connection_id=connection_id)

@@ -17,9 +17,11 @@ Subpackages
     aries_cloudagent.config
     aries_cloudagent.core
     aries_cloudagent.holder
+    aries_cloudagent.indy
     aries_cloudagent.issuer
     aries_cloudagent.ledger
     aries_cloudagent.messaging
+    aries_cloudagent.revocation
     aries_cloudagent.storage
     aries_cloudagent.transport
     aries_cloudagent.utils

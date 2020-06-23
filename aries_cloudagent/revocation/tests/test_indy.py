@@ -155,3 +155,10 @@ class TestIndyRevocation(AsyncTestCase):
         ) as mock_from_def:
             result = await self.revoc.get_ledger_registry("dummy")
             assert result == mock_from_def.return_value
+            assert "dummy" in IndyRevocation.REV_REG_CACHE
+
+            await self.revoc.get_ledger_registry("dummy")
+
+        mock_from_def.assert_called_once_with(
+            self.ledger.get_revoc_reg_def.return_value, True
+        )

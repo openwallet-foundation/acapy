@@ -1,7 +1,7 @@
 """Handler for incoming query messages."""
 
-from aries_cloudagent.core.protocol_registry import ProtocolRegistry
-from aries_cloudagent.messaging.base_handler import (
+from .....core.protocol_registry import ProtocolRegistry
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     RequestContext,

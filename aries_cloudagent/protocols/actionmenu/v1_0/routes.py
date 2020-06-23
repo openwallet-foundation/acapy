@@ -7,15 +7,16 @@ from aiohttp_apispec import docs, match_info_schema, request_schema
 
 from marshmallow import fields, Schema
 
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.messaging.valid import UUIDFour
-from aries_cloudagent.storage.error import StorageNotFoundError
+from ....connections.models.connection_record import ConnectionRecord
+from ....messaging.models.base import BaseModelError
+from ....messaging.valid import UUIDFour
+from ....storage.error import StorageError, StorageNotFoundError
 
 from .messages.menu import Menu
 from .messages.menu_request import MenuRequest
 from .messages.perform import Perform
 from .models.menu_option import MenuOptionSchema
-from .util import retrieve_connection_menu, save_connection_menu
+from .util import MENU_RECORD_TYPE, retrieve_connection_menu, save_connection_menu
 
 LOGGER = logging.getLogger(__name__)
 
@@ -86,9 +87,15 @@ async def actionmenu_close(request: web.BaseRequest):
 
     menu = await retrieve_connection_menu(connection_id, context)
     if not menu:
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(
+            reason=f"No {MENU_RECORD_TYPE} record found for connection {connection_id}"
+        )
 
-    await save_connection_menu(None, connection_id, context)
+    try:
+        await save_connection_menu(None, connection_id, context)
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({})
 
 
@@ -128,15 +135,15 @@ async def actionmenu_perform(request: web.BaseRequest):
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if connection.is_ready:
         msg = Perform(name=params["name"], params=params.get("params"))
         await outbound_handler(msg, connection_id=connection_id)
         return web.json_response({})
 
-    raise web.HTTPForbidden()
+    raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
 
 @docs(tags=["action-menu"], summary="Request the active menu")
@@ -155,16 +162,16 @@ async def actionmenu_request(request: web.BaseRequest):
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
+    except StorageNotFoundError as err:
         LOGGER.debug("Connection not found for action menu request: %s", connection_id)
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if connection.is_ready:
         msg = MenuRequest()
         await outbound_handler(msg, connection_id=connection_id)
         return web.json_response({})
 
-    raise web.HTTPForbidden()
+    raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
 
 @docs(tags=["action-menu"], summary="Send an action menu to a connection")
@@ -185,23 +192,23 @@ async def actionmenu_send(request: web.BaseRequest):
     LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
     try:
         msg = Menu.deserialize(menu_json["menu"])
-    except Exception:
-        LOGGER.exception("Exception deserializing menu")
-        raise
+    except BaseModelError as err:
+        LOGGER.exception("Exception deserializing menu: %s", err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
+    except StorageNotFoundError as err:
         LOGGER.debug(
             "Connection not found for action menu send request: %s", connection_id
         )
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if connection.is_ready:
         await outbound_handler(msg, connection_id=connection_id)
         return web.json_response({})
 
-    raise web.HTTPForbidden()
+    raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
 
 async def register(app: web.Application):

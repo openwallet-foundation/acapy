@@ -5,7 +5,7 @@ import json
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    match_info_schema,
+    # match_info_schema,
     querystring_schema,
     request_schema,
     response_schema,
@@ -14,10 +14,11 @@ from aiohttp_apispec import (
 from marshmallow import fields, Schema
 
 from ..ledger.base import BaseLedger
-from ..messaging.valid import INDY_CRED_DEF_ID, INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..ledger.error import LedgerError
+from ..messaging.valid import ENDPOINT, INDY_CRED_DEF_ID, INDY_DID, INDY_RAW_PUBLIC_KEY
 
 from .base import DIDInfo, BaseWallet
-from .error import WalletError
+from .error import WalletError, WalletNotFoundError
 
 
 class DIDSchema(Schema):
@@ -37,33 +38,22 @@ class DIDResultSchema(Schema):
 class DIDListSchema(Schema):
     """Result schema for connection list."""
 
-    results = fields.List(fields.Nested(DIDSchema()), description="DID list",)
+    results = fields.List(fields.Nested(DIDSchema()), description="DID list")
 
 
-class GetTagPolicyResultSchema(Schema):
-    """Result schema for tagging policy get request."""
+class DIDEndpointSchema(Schema):
+    """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
-    taggables = fields.List(
-        fields.Str(description="Taggable attribute", example="score",),
-        description=(
-            "List of attributes taggable for credential search under current policy"
-        ),
-    )
-
-
-class SetTagPolicyRequestSchema(Schema):
-    """Request schema for tagging policy set request."""
-
-    taggables = fields.List(
-        fields.Str(description="Taggable attribute", example="score",),
-        description="List of attributes to set taggable for credential search",
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    endpoint = fields.Str(
+        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
     )
 
 
 class DIDListQueryStringSchema(Schema):
     """Parameters and validators for DID list request query string."""
 
-    did = fields.Str(description="DID of interest", required=False, **INDY_DID,)
+    did = fields.Str(description="DID of interest", required=False, **INDY_DID)
     verkey = fields.Str(
         description="Verification key of interest",
         required=False,
@@ -72,10 +62,10 @@ class DIDListQueryStringSchema(Schema):
     public = fields.Boolean(description="Whether DID is on the ledger", required=False)
 
 
-class SetPublicDIDQueryStringSchema(Schema):
+class DIDQueryStringSchema(Schema):
     """Parameters and validators for set public DID request query string."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID,)
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
 
 class CredDefIdMatchInfoSchema(Schema):
@@ -115,7 +105,7 @@ async def wallet_did_list(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason="No wallet available")
     filter_did = request.query.get("did")
     filter_verkey = request.query.get("verkey")
     filter_public = json.loads(request.query.get("public", json.dumps(None)))
@@ -163,7 +153,7 @@ async def wallet_did_list(request: web.BaseRequest):
 @response_schema(DIDResultSchema, 200)
 async def wallet_create_did(request: web.BaseRequest):
     """
-    Request handler for creating a new wallet DID.
+    Request handler for creating a new local DID in the wallet.
 
     Args:
         request: aiohttp request object
@@ -175,8 +165,12 @@ async def wallet_create_did(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
-    info = await wallet.create_local_did()
+        raise web.HTTPForbidden(reason="No wallet available")
+    try:
+        info = await wallet.create_local_did()
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({"result": format_did_info(info)})
 
 
@@ -196,15 +190,17 @@ async def wallet_get_public_did(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
-    info = await wallet.get_public_did()
+        raise web.HTTPForbidden(reason="No wallet available")
+    try:
+        info = await wallet.get_public_did()
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({"result": format_did_info(info)})
 
 
-@docs(
-    tags=["wallet"], summary="Assign the current public DID",
-)
-@querystring_schema(SetPublicDIDQueryStringSchema())
+@docs(tags=["wallet"], summary="Assign the current public DID")
+@querystring_schema(DIDQueryStringSchema())
 @response_schema(DIDResultSchema, 200)
 async def wallet_set_public_did(request: web.BaseRequest):
     """
@@ -220,58 +216,123 @@ async def wallet_set_public_did(request: web.BaseRequest):
     context = request.app["request_context"]
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
     if not did:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+
     try:
-        _ = await wallet.get_local_did(did)
-    except WalletError:
-        # DID not found or not in valid format
-        raise web.HTTPBadRequest()
-    info = await wallet.set_public_did(did)
-    if info:
-        # Publish endpoint if necessary
-        endpoint = context.settings.get("default_endpoint")
         ledger = await context.inject(BaseLedger, required=False)
-        if ledger:
+        if not ledger:
+            reason = f"No ledger available"
+            if not context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
+
+        async with ledger:
+            if not await ledger.get_key_for_did(did):
+                raise web.HTTPNotFound(reason=f"DID {did} is not public")
+
+        did_info = await wallet.get_local_did(did)
+        info = await wallet.set_public_did(did)
+        if info:
+            # Publish endpoint if necessary
+            endpoint = did_info.metadata.get(
+                "endpoint", context.settings.get("default_endpoint")
+            )
             async with ledger:
                 await ledger.update_endpoint_for_did(info.did, endpoint)
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (LedgerError, WalletError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": format_did_info(info)})
 
 
-@docs(tags=["wallet"], summary="Get the tagging policy for a credential definition")
-@match_info_schema(CredDefIdMatchInfoSchema())
-@response_schema(GetTagPolicyResultSchema())
-async def wallet_get_tagging_policy(request: web.BaseRequest):
+@docs(tags=["wallet"], summary="Update endpoint in wallet and, if public, on ledger")
+@request_schema(DIDEndpointSchema)
+async def wallet_set_did_endpoint(request: web.BaseRequest):
     """
-    Request handler for getting the tag policy associated with a cred def.
+    Request handler for setting an endpoint for a public or local DID.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    wallet: BaseWallet = await context.inject(BaseWallet, required=False)
+    if not wallet:
+        raise web.HTTPForbidden(reason="No wallet available")
+
+    body = await request.json()
+    did = body["did"]
+    endpoint = body.get("endpoint")
+
+    try:
+        did_info = await wallet.get_local_did(did)
+        metadata = {**did_info.metadata}
+        if "endpoint" in metadata:
+            metadata.pop("endpoint")
+        metadata["endpoint"] = endpoint  # set null to clear so making public sends null
+
+        wallet_public_didinfo = await wallet.get_public_did()
+        if wallet_public_didinfo and wallet_public_didinfo.did == did:
+            # if public DID, set endpoint on ledger first
+            ledger = await context.inject(BaseLedger, required=False)
+            if not ledger:
+                reason = f"No ledger available but DID {did} is public"
+                if not context.settings.get_value("wallet.type"):
+                    reason += ": missing wallet-type?"
+                raise web.HTTPForbidden(reason=reason)
+            async with ledger:
+                await ledger.update_endpoint_for_did(did, endpoint)
+
+        await wallet.replace_local_did_metadata(did, metadata)
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (LedgerError, WalletError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({})
+
+
+@docs(tags=["wallet"], summary="Query DID endpoint in wallet")
+@querystring_schema(DIDQueryStringSchema())
+@response_schema(DIDEndpointSchema, 200)
+async def wallet_get_did_endpoint(request: web.BaseRequest):
+    """
+    Request handler for getting the current DID endpoint from the wallet.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        A JSON object containing the tagging policy
+        The updated DID info
 
     """
     context = request.app["request_context"]
-
-    credential_definition_id = request.match_info["cred_def_id"]
-
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
-    if not wallet or wallet.WALLET_TYPE != "indy":
-        raise web.HTTPForbidden()
-    result = await wallet.get_credential_definition_tag_policy(credential_definition_id)
-    return web.json_response({"taggables": result})
+    if not wallet:
+        raise web.HTTPForbidden(reason="No wallet available")
+    did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+    try:
+        did_info = await wallet.get_local_did(did)
+        endpoint = did_info.metadata.get("endpoint")
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"did": did, "endpoint": endpoint})
 
 
-@docs(tags=["wallet"], summary="Set the tagging policy for a credential definition")
-@match_info_schema(CredDefIdMatchInfoSchema())
-@request_schema(SetTagPolicyRequestSchema())
-async def wallet_set_tagging_policy(request: web.BaseRequest):
+@docs(tags=["wallet"], summary="Rotate keypair for a local non-public DID")
+@querystring_schema(DIDQueryStringSchema())
+async def wallet_rotate_did_keypair(request: web.BaseRequest):
     """
-    Request handler for setting the tag policy associated with a cred def.
+    Request handler for rotating local DID keypair.
 
     Args:
         request: aiohttp request object
@@ -281,18 +342,24 @@ async def wallet_set_tagging_policy(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-
-    credential_definition_id = request.match_info["cred_def_id"]
-
-    body = await request.json()
-    taggables = body.get("taggables")  # None for all attrs, [] for no attrs
-
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
-    if not wallet or wallet.WALLET_TYPE != "indy":
-        raise web.HTTPForbidden()
-    await wallet.set_credential_definition_tag_policy(
-        credential_definition_id, taggables
-    )
+    if not wallet:
+        raise web.HTTPForbidden(reason="No wallet available")
+    did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+    try:
+        did_info = await wallet.get_local_did(did)
+        if did_info.metadata.get("public", False):
+            # call from ledger API instead to propagate through ledger NYM transaction
+            raise web.HTTPBadRequest(reason=f"DID {did} is public")
+        await wallet.rotate_did_keypair_start(did)  # do not take seed over the wire
+        await wallet.rotate_did_keypair_apply(did)
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({})
 
 
@@ -305,12 +372,11 @@ async def register(app: web.Application):
             web.post("/wallet/did/create", wallet_create_did),
             web.get("/wallet/did/public", wallet_get_public_did, allow_head=False),
             web.post("/wallet/did/public", wallet_set_public_did),
+            web.post("/wallet/set-did-endpoint", wallet_set_did_endpoint),
             web.get(
-                "/wallet/tag-policy/{cred_def_id}",
-                wallet_get_tagging_policy,
-                allow_head=False,
+                "/wallet/get-did-endpoint", wallet_get_did_endpoint, allow_head=False
             ),
-            web.post("/wallet/tag-policy/{cred_def_id}", wallet_set_tagging_policy),
+            web.patch("/wallet/did/local/rotate-keypair", wallet_rotate_did_keypair),
         ]
     )
 

@@ -2,8 +2,6 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 import pytest
 
-from aiohttp.web import HTTPBadRequest, HTTPForbidden
-
 from ...config.injection_context import InjectionContext
 from ...ledger.base import BaseLedger
 
@@ -14,6 +12,7 @@ class TestLedgerRoutes(AsyncTestCase):
     def setUp(self):
         self.context = InjectionContext(enforce_typing=False)
         self.ledger = async_mock.create_autospec(BaseLedger)
+        self.ledger.pool_name = "pool.0"
         self.context.injector.bind_instance(BaseLedger, self.ledger)
         self.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -27,13 +26,16 @@ class TestLedgerRoutes(AsyncTestCase):
         request = async_mock.MagicMock(app=self.app,)
         self.context.injector.clear_binding(BaseLedger)
 
-        with self.assertRaises(HTTPForbidden):
+        with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.register_ledger_nym(request)
 
-        with self.assertRaises(HTTPForbidden):
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.rotate_public_did_keypair(request)
+
+        with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.get_did_verkey(request)
 
-        with self.assertRaises(HTTPForbidden):
+        with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.get_did_endpoint(request)
 
     async def test_get_verkey(self):
@@ -54,7 +56,23 @@ class TestLedgerRoutes(AsyncTestCase):
         request = async_mock.MagicMock()
         request.app = self.app
         request.query = {"no": "did"}
-        with self.assertRaises(HTTPBadRequest):
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.get_did_verkey(request)
+
+    async def test_get_verkey_did_not_public(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did}
+        self.ledger.get_key_for_did.return_value = None
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.get_did_verkey(request)
+
+    async def test_get_verkey_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did}
+        self.ledger.get_key_for_did.side_effect = test_module.LedgerError()
+        with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.get_did_verkey(request)
 
     async def test_get_endpoint(self):
@@ -75,8 +93,16 @@ class TestLedgerRoutes(AsyncTestCase):
         request = async_mock.MagicMock()
         request.app = self.app
         request.query = {"no": "did"}
-        with self.assertRaises(HTTPBadRequest):
+        with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.get_did_endpoint(request)
+
+    async def test_get_endpoint_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did}
+        self.ledger.get_endpoint_for_did.side_effect = test_module.LedgerError()
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            result = await test_module.get_did_endpoint(request)
 
     async def test_register_nym(self):
         request = async_mock.MagicMock(
@@ -97,7 +123,7 @@ class TestLedgerRoutes(AsyncTestCase):
         request = async_mock.MagicMock()
         request.app = self.app
         request.query = {"no": "did"}
-        with self.assertRaises(HTTPBadRequest):
+        with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.register_ledger_nym(request)
 
     async def test_register_nym_ledger_txn_error(self):
@@ -107,14 +133,40 @@ class TestLedgerRoutes(AsyncTestCase):
         self.ledger.register_nym.side_effect = test_module.LedgerTransactionError(
             "Error"
         )
-        with self.assertRaises(HTTPForbidden):
+        with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.register_ledger_nym(request)
+
+    async def test_rotate_public_did_keypair(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.rotate_public_did_keypair = async_mock.CoroutineMock()
+
+            await test_module.rotate_public_did_keypair(request)
+            json_response.assert_called_once_with({})
+
+    async def test_rotate_public_did_keypair_public_wallet_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.rotate_public_did_keypair = async_mock.CoroutineMock(
+                side_effect=test_module.WalletError("Exception")
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.rotate_public_did_keypair(request)
 
     async def test_taa_forbidden(self):
         request = async_mock.MagicMock()
         request.app = self.app
 
-        with self.assertRaises(HTTPForbidden):
+        with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.ledger_get_taa(request)
 
     async def test_get_taa(self):
@@ -152,6 +204,16 @@ class TestLedgerRoutes(AsyncTestCase):
             json_response.assert_called_once_with({"result": taa_info})
             assert result is json_response.return_value
 
+    async def test_get_taa_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+
+        self.ledger.LEDGER_TYPE = "indy"
+        self.ledger.get_txn_author_agreement.side_effect = test_module.LedgerError()
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.ledger_get_taa(request)
+
     async def test_taa_accept_not_required(self):
         request = async_mock.MagicMock()
         request.app = self.app
@@ -163,7 +225,7 @@ class TestLedgerRoutes(AsyncTestCase):
             }
         )
 
-        with self.assertRaises(HTTPBadRequest):
+        with self.assertRaises(test_module.web.HTTPBadRequest):
             self.ledger.LEDGER_TYPE = "indy"
             self.ledger.get_txn_author_agreement.return_value = {"taa_required": False}
             await test_module.ledger_accept_taa(request)
@@ -201,7 +263,23 @@ class TestLedgerRoutes(AsyncTestCase):
         request.app = self.app
 
         self.ledger.LEDGER_TYPE = "not-indy"
-        with self.assertRaises(HTTPForbidden):
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.ledger_accept_taa(request)
+
+    async def test_accept_taa_x(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.json = async_mock.CoroutineMock(
+            return_value={
+                "version": "version",
+                "text": "text",
+                "mechanism": "mechanism",
+            }
+        )
+        self.ledger.LEDGER_TYPE = "indy"
+        self.ledger.get_txn_author_agreement.return_value = {"taa_required": True}
+        self.ledger.accept_txn_author_agreement.side_effect = test_module.StorageError()
+        with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.ledger_accept_taa(request)
 
     async def test_register(self):
