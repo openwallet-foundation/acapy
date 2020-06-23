@@ -140,7 +140,7 @@ class BaseModel(ABC):
             A dict representation of this model, or a JSON string if as_string is True
 
         """
-        schema = self.Schema()
+        schema = self.Schema(unknown=EXCLUDE)
         try:
             return schema.dumps(self) if as_string else schema.dump(self)
         except ValidationError as e:
@@ -148,6 +148,13 @@ class BaseModel(ABC):
             raise BaseModelError(
                 f"{self.__class__.__name__} schema validation failed"
             ) from e
+
+    def validate(self):
+        schema = self.Schema(unknown=EXCLUDE)
+        errors = schema.validate(self.serialize())
+        if errors:
+            raise ValidationError(errors)
+        return self
 
     @classmethod
     def from_json(cls, json_repr: Union[str, bytes]):

@@ -110,7 +110,7 @@ class OutOfBandManager:
                     message_attachments.append(
                         InvitationMessage.wrap_message(model.credential_offer_dict)
                     )
-                if attachment["type"] == "present-proof":
+                elif attachment["type"] == "present-proof":
                     instance_id = attachment["id"]
                     model = await V10PresentationExchange.retrieve_by_id(
                         self.context, instance_id
@@ -119,6 +119,8 @@ class OutOfBandManager:
                     message_attachments.append(
                         InvitationMessage.wrap_message(model.presentation_request_dict)
                     )
+                else:
+                    raise Exception("asdxzczxc")
 
         if use_public_did:
             # service = (await wallet.get_public_did()).did
@@ -138,7 +140,7 @@ class OutOfBandManager:
                 recipient_keys=connection_invitation.recipient_keys,
                 routing_keys=connection_invitation.routing_keys,
                 service_endpoint=connection_invitation.endpoint,
-            )
+            ).validate()
 
         handshake_protocols = []
         if include_handshake:
@@ -153,7 +155,7 @@ class OutOfBandManager:
             service=[service],
             request_attach=message_attachments,
             handshake_protocols=handshake_protocols,
-        )
+        ).validate()
 
         # Create record
         invitation_model = InvitationModel(
@@ -177,16 +179,9 @@ class OutOfBandManager:
         # New message format
         invitation_message = InvitationMessage.deserialize(invitation)
 
-        if (
-            len(invitation_message.handshake_protocols) != 1
-            or invitation_message.handshake_protocols[0]
-            != "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
-        ):
-            raise Exception("asdasdas")
+        # The following logic adheres to 
 
-        if len(invitation_message.request_attach) != 0:
-            raise Exception("asdasdas")
-
+        # There must be exactly 1 service entry
         if (
             len(invitation_message.service_blocks)
             + len(invitation_message.service_dids)
@@ -213,20 +208,40 @@ class OutOfBandManager:
                 }
             )
 
-        # We now have the old message format
-        connection_invitation = ConnectionInvitation.deserialize(
-            {
-                "@id": invitation_message._id,
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
-                "label": invitation_message.label,
-                "recipientKeys": service.recipient_keys,
-                "serviceEndpoint": service.service_endpoint,
-                "routingKeys": service.routing_keys,
-            }
-        )
+        # If we are dealing with an invitation
+        if (
+            len(invitation_message.handshake_protocols) == 1
+            and invitation_message.handshake_protocols[0]
+            == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+        ):
 
-        connection_mgr = ConnectionManager(self.context)
-        connection = await connection_mgr.receive_invitation(connection_invitation)
+            if len(invitation_message.request_attach) != 0:
+                raise Exception("asdasdas")
+
+            # We now have the old message format
+            connection_invitation = ConnectionInvitation.deserialize(
+                {
+                    "@id": invitation_message._id,
+                    "@type": invitation_message.handshake_protocols[0],
+                    "label": invitation_message.label,
+                    "recipientKeys": service.recipient_keys,
+                    "serviceEndpoint": service.service_endpoint,
+                    "routingKeys": service.routing_keys,
+                }
+            )
+
+            connection_mgr = ConnectionManager(self.context)
+            connection = await connection_mgr.receive_invitation(connection_invitation)
+
+        elif (
+            len(invitation_message.request_attach) == 1
+            and invitation_message.request_attach[0].data.json["@type"]
+            == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/request-presentation"
+        ):
+            pass
+        else:
+            # Invalid shim oob inv
+            raise Exception("ASD")
 
         return connection
         # Iterate over handshake protocols if exists

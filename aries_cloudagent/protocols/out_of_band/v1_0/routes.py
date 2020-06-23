@@ -6,6 +6,8 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema
 
+from aries_cloudagent.storage.error import StorageNotFoundError
+
 from marshmallow import fields, Schema
 
 from .manager import OutOfBandManager
@@ -56,12 +58,16 @@ async def invitation_create(request: web.BaseRequest):
     # base_url = context.settings.get("invite_base_url")
 
     oob_mgr = OutOfBandManager(context)
-    invitation = await oob_mgr.create_invitation(
-        multi_use=multi_use,
-        attachments=attachments,
-        include_handshake=include_handshake,
-        use_public_did=use_public_did,
-    )
+
+    try:
+        invitation = await oob_mgr.create_invitation(
+            multi_use=multi_use,
+            attachments=attachments,
+            include_handshake=include_handshake,
+            use_public_did=use_public_did,
+        )
+    except StorageNotFoundError:
+        raise web.HTTPBadRequest()
 
     return web.json_response(invitation.serialize())
 
@@ -69,7 +75,7 @@ async def invitation_create(request: web.BaseRequest):
 @docs(
     tags=["out-of-band"], summary="Create a new connection invitation",
 )
-@request_schema(InvitationSchema())
+# @request_schema(InvitationSchema())
 async def invitation_receive(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
@@ -85,6 +91,7 @@ async def invitation_receive(request: web.BaseRequest):
     body = await request.json()
 
     oob_mgr = OutOfBandManager(context)
+
     invitation = await oob_mgr.receive_invitation(invitation=body)
 
     return web.json_response(invitation.serialize())
