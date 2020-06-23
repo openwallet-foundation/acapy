@@ -17,10 +17,6 @@ from ..message_types import PROTOCOL_PACKAGE, INVITATION
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.invitation_handler.InvitationHandler"
 
 
-class ServiceFieldSerializationError(Exception):
-    pass
-
-
 class Invitation(AgentMessage):
     """Class representing an out of band invitation message."""
 
@@ -101,6 +97,7 @@ class InvitationSchema(AgentMessageSchema):
     def validate_fields(self, data, **kwargs):
         """
         Validate schema fields.
+
         Args:
             data: The data to validate
         Raises:
@@ -125,9 +122,8 @@ class InvitationSchema(AgentMessageSchema):
 
     @pre_load
     def pre_load(self, data, **kwargs):
-        # if "service_dids" not in data:
+        """Pre load hook."""
         data["service_dids"] = []
-        # if "service_blocks" not in data:
         data["service_blocks"] = []
 
         for service_entry in data["service"]:
@@ -142,6 +138,7 @@ class InvitationSchema(AgentMessageSchema):
 
     @post_dump
     def post_dump(self, data, **kwargs):
+        """Post dump hook."""
         data["service"] = []
 
         for service_entry in data["service_dids"]:

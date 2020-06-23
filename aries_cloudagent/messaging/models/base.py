@@ -150,6 +150,7 @@ class BaseModel(ABC):
             ) from e
 
     def validate(self):
+        """Validate a constructed model."""
         schema = self.Schema(unknown=EXCLUDE)
         errors = schema.validate(self.serialize())
         if errors:

@@ -20,7 +20,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class InvitationCreateRequestSchema(Schema):
+    """Invitation create request Schema."""
+
     class AttachmentDefSchema(Schema):
+        """Attachment Schema."""
+
         _id = fields.String(data_key="id")
         _type = fields.String(data_key="type")
 
@@ -30,6 +34,8 @@ class InvitationCreateRequestSchema(Schema):
 
 
 class InvitationSchema(InvitationSchema):
+    """Invitation Schema."""
+
     service = fields.Field()
 
 

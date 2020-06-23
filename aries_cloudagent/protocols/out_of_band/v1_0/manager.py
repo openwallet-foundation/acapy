@@ -6,7 +6,6 @@ from typing import Tuple
 
 from aries_cloudagent.config.injection_context import InjectionContext
 from aries_cloudagent.core.error import BaseError
-from aries_cloudagent.wallet.base import BaseWallet
 from aries_cloudagent.ledger.base import BaseLedger
 
 from .models.invitation import Invitation as InvitationModel
@@ -177,9 +176,7 @@ class OutOfBandManager:
     async def receive_invitation(
         self, invitation: InvitationMessage
     ) -> Tuple[InvitationModel, InvitationMessage]:
-        """
-        Receive an out of band invitation message.
-        """
+        """Receive an out of band invitation message."""
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
 
@@ -246,10 +243,12 @@ class OutOfBandManager:
         elif (
             len(invitation_message.request_attach) == 1
             and invitation_message.request_attach[0].data.json["@type"]
-            == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/request-presentation"
+            == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
+            + "/present-proof/1.0/request-presentation"
         ):
             raise OutOfBandManagerNotImplementedError(
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/request-presentation "
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
+                + "/present-proof/1.0/request-presentation "
                 + "request type not implemented."
             )
         else:

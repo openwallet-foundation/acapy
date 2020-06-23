@@ -1,11 +1,9 @@
-"""Model for out of band invitations"""
+"""Model for out of band invitations."""
 
 from marshmallow import fields
 
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
-
-from ..messages.invitation import InvitationSchema as InvitationMessageSchema
 
 
 class Invitation(BaseExchangeRecord):
@@ -71,6 +69,5 @@ class InvitationSchema(BaseExchangeSchema):
         example=Invitation.STATE_AWAIT_RESPONSE,
     )
     invitation = fields.Dict(
-        required=False,
-        description="Out of band invitation object",
+        required=False, description="Out of band invitation object",
     )
