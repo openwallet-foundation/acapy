@@ -4,7 +4,7 @@ from asynctest import mock as async_mock
 from aiohttp import web as aio_web
 
 from .....config.injection_context import InjectionContext
-from .....storage.error import StorageNotFoundError
+from .....storage.error import StorageNotFoundError, StorageError
 from .....holder.base import BaseHolder
 from .....messaging.request_context import RequestContext
 from .....wallet.base import DIDInfo
@@ -148,6 +148,66 @@ class TestCredentialRoutes(AsyncTestCase):
 
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.credential_exchange_retrieve(mock)
+
+
+    async def test_credential_exchange_create(self):
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock()
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": context,
+        }
+        mock.app["request_context"].settings = {}
+
+        with async_mock.patch.object(
+            test_module, "ConnectionRecord", autospec=True
+        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "CredentialManager", autospec=True
+        ) as mock_credential_manager, async_mock.patch.object(
+            test_module.CredentialPreview, "deserialize", autospec=True
+        ), async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_credential_manager.return_value.create_offer = (
+                async_mock.CoroutineMock()
+            )
+
+            mock_credential_manager.return_value.create_offer.return_value = (
+                async_mock.CoroutineMock(),
+                async_mock.CoroutineMock(),
+            )
+
+            mock_cred_ex_record = async_mock.MagicMock()
+            mock_cred_offer = async_mock.MagicMock()
+
+            mock_credential_manager.return_value.prepare_send.return_value = (
+                mock_cred_ex_record,
+                mock_cred_offer,
+            )
+
+            await test_module.credential_exchange_create(mock)
+
+            mock_response.assert_called_once_with(
+                mock_cred_ex_record.serialize.return_value
+            )
+
+
+    async def test_credential_exchange_create_no_proposal(self):
+        conn_id = "connection-id"
+
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock(return_value={"connection_id": conn_id})
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": context,
+        }
+        mock.app["request_context"].settings = {}
+
+        with self.assertRaises(test_module.web.HTTPBadRequest) as context:
+            await test_module.credential_exchange_create(mock)
+        assert "credential_proposal" in str(context.exception)
 
     async def test_credential_exchange_send(self):
         mock = async_mock.MagicMock()

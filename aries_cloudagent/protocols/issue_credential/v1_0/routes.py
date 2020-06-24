@@ -389,31 +389,35 @@ async def credential_exchange_create(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="credential_proposal must be provided")
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
-    preview = CredentialPreview.deserialize(preview_spec)
 
-    credential_proposal = CredentialProposal(
-        comment=comment,
-        credential_proposal=preview,
-        **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
-    )
-    credential_proposal.assign_trace_decorator(
-        context.settings, trace_msg,
-    )
+    try:
+        preview = CredentialPreview.deserialize(preview_spec)
 
-    trace_event(
-        context.settings,
-        credential_proposal,
-        outcome="credential_exchange_create.START",
-    )
+        credential_proposal = CredentialProposal(
+            comment=comment,
+            credential_proposal=preview,
+            **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
+        )
+        credential_proposal.assign_trace_decorator(
+            context.settings, trace_msg,
+        )
 
-    credential_manager = CredentialManager(context)
+        trace_event(
+            context.settings,
+            credential_proposal,
+            outcome="credential_exchange_create.START",
+        )
 
-    (
-        credential_exchange_record,
-        credential_offer_message,
-    ) = await credential_manager.prepare_send(
-        None, credential_proposal=credential_proposal, auto_remove=auto_remove,
-    )
+        credential_manager = CredentialManager(context)
+
+        (
+            credential_exchange_record,
+            credential_offer_message,
+        ) = await credential_manager.prepare_send(
+            None, credential_proposal=credential_proposal, auto_remove=auto_remove,
+        )
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     trace_event(
         context.settings,
