@@ -2,8 +2,7 @@
 
 import logging
 
-from typing import Tuple
-
+from aries_cloudagent.connections.models.connection_record import ConnectionRecord
 from aries_cloudagent.config.injection_context import InjectionContext
 from aries_cloudagent.core.error import BaseError
 from aries_cloudagent.ledger.base import BaseLedger
@@ -67,7 +66,7 @@ class OutOfBandManager:
         include_handshake: bool = False,
         multi_use: bool = False,
         attachments: list = None,
-    ) -> Tuple[InvitationModel, InvitationMessage]:
+    ) -> InvitationModel:
         """
         Generate new out of band invitation.
 
@@ -175,7 +174,7 @@ class OutOfBandManager:
 
     async def receive_invitation(
         self, invitation: InvitationMessage
-    ) -> Tuple[InvitationModel, InvitationMessage]:
+    ) -> ConnectionRecord:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -195,7 +194,7 @@ class OutOfBandManager:
             raise OutOfBandManagerError("service array must have exactly one element")
 
         # Get the single service item
-        if len(invitation_message.service_blocks):
+        if invitation_message.service_blocks:
             service = invitation_message.service_blocks[0]
         else:
             # If it's in the did format, we need to convert to a full service block
@@ -252,7 +251,6 @@ class OutOfBandManager:
                 + "request type not implemented."
             )
         else:
-            # Invalid shim oob inv
-            raise Exception("ASD")
+            raise OutOfBandManagerError("Invalid request type")
 
         return connection
