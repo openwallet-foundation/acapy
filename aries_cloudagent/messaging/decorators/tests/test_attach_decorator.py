@@ -331,7 +331,6 @@ class TestAttachDecorator(TestCase):
         assert lynx_str == lynx_list
         assert lynx_str != links
 
-
     def test_indy_dict(self):
         deco_aries = AttachDecorator.from_aries_msg(
             message=INDY_CRED, ident=IDENT, description=DESCRIPTION,

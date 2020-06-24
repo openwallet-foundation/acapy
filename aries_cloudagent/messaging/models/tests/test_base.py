@@ -44,4 +44,3 @@ class TestBase(AsyncTestCase):
         model = ModelImpl(attr="succeeds")
         model = model.validate()
         assert model.attr == "succeeds"
-

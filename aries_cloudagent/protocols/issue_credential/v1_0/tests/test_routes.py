@@ -149,7 +149,6 @@ class TestCredentialRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.credential_exchange_retrieve(mock)
 
-
     async def test_credential_exchange_create(self):
         mock = async_mock.MagicMock()
         mock.json = async_mock.CoroutineMock()
@@ -191,7 +190,6 @@ class TestCredentialRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(
                 mock_cred_ex_record.serialize.return_value
             )
-
 
     async def test_credential_exchange_create_no_proposal(self):
         conn_id = "connection-id"
