@@ -218,6 +218,35 @@ class TestAdminServerSecure(AioHTTPTestCase):
         result = await resp.json()
         assert isinstance(result, dict)
 
+    @unittest_run_loop
+    async def test_websocket_with_api_key_message(self):
+        async with self.client.ws_connect("/ws") as ws:
+            result = await ws.receive_json()
+            assert result["topic"] == "settings"
+
+            ping1 = await ws.receive_json()
+            assert ping1["topic"] == "ping"
+            assert ping1["authenticated"] == False
+
+            await ws.send_json({"dummy": ""})
+            ping2 = await ws.receive_json()
+            assert ping2["authenticated"] == False
+
+            await ws.send_json({"x-api-key": self.TEST_API_KEY})
+            ping3 = await ws.receive_json()
+            assert ping3["authenticated"] == True
+
+    @unittest_run_loop
+    async def test_websocket_with_api_key_header(self):
+        async with self.client.ws_connect(
+            "/ws", headers={"x-api-key": self.TEST_API_KEY}
+        ) as ws:
+            result = await ws.receive_json()
+            assert result["topic"] == "settings"
+
+            ping1 = await ws.receive_json()
+            assert ping1["authenticated"] == True
+
 
 class TestAdminServerWebhook(AioHTTPTestCase):
     async def setUpAsync(self):
