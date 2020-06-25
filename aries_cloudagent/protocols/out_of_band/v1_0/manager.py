@@ -237,7 +237,9 @@ class OutOfBandManager:
             )
 
             connection_mgr = ConnectionManager(self.context)
-            connection = await connection_mgr.receive_invitation(connection_invitation)
+            connection = await connection_mgr.receive_invitation(
+                connection_invitation, auto_accept=True
+            )
 
         elif (
             len(invitation_message.request_attach) == 1
