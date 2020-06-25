@@ -97,8 +97,8 @@ class OutOfBandManager:
 
         if not my_label:
             my_label = self.context.settings.get("default_label")
-        if not my_endpoint:
-            my_endpoint = self.context.settings.get("default_endpoint")
+        # if not my_endpoint:
+        #     my_endpoint = self.context.settings.get("default_endpoint")
 
         message_attachments = []
         if attachments:

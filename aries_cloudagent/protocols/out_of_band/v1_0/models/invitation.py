@@ -1,5 +1,7 @@
 """Model for out of band invitations."""
 
+from typing import Any
+
 from marshmallow import fields
 
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
@@ -37,6 +39,10 @@ class Invitation(BaseExchangeRecord):
         self.invitation = invitation
         self.state = state
         self.trace = trace
+
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
 
     @property
     def invitation_id(self) -> str:
