@@ -768,6 +768,28 @@ class TestCredentialManager(AsyncTestCase):
 
             assert ret_exchange.state == V10CredentialExchange.STATE_REQUEST_SENT
 
+    async def test_create_request_bad_state(self):
+        connection_id = "test_conn_id"
+        indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
+        indy_cred_req = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
+        thread_id = "thread-id"
+        holder_did = "did"
+
+        stored_exchange = V10CredentialExchange(
+            credential_exchange_id="dummy-cxid",
+            connection_id=connection_id,
+            credential_definition_id=CRED_DEF_ID,
+            credential_offer=indy_offer,
+            initiator=V10CredentialExchange.INITIATOR_SELF,
+            role=V10CredentialExchange.ROLE_HOLDER,
+            state=V10CredentialExchange.STATE_PROPOSAL_SENT,
+            schema_id=SCHEMA_ID,
+            thread_id=thread_id,
+        )
+
+        with self.assertRaises(CredentialManagerError):
+            await self.manager.create_request(stored_exchange, holder_did)
+
     async def test_create_request_no_nonce(self):
         connection_id = "test_conn_id"
         indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
@@ -782,6 +804,7 @@ class TestCredentialManager(AsyncTestCase):
             credential_offer=indy_offer,
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_HOLDER,
+            state=V10CredentialExchange.STATE_OFFER_RECEIVED,
             schema_id=SCHEMA_ID,
             thread_id=thread_id,
         )
@@ -953,6 +976,29 @@ class TestCredentialManager(AsyncTestCase):
             assert ret_cred_issue.indy_credential() == cred
             assert ret_exchange.state == V10CredentialExchange.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
+
+    async def test_issue_credential_request_bad_state(self):
+        connection_id = "test_conn_id"
+        indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
+        thread_id = "thread-id"
+        cred_values = {"attr": "value"}
+
+        stored_exchange = V10CredentialExchange(
+            credential_exchange_id="dummy-cxid",
+            connection_id=connection_id,
+            credential_definition_id=CRED_DEF_ID,
+            credential_offer=indy_offer,
+            initiator=V10CredentialExchange.INITIATOR_SELF,
+            role=V10CredentialExchange.ROLE_HOLDER,
+            state=V10CredentialExchange.STATE_PROPOSAL_SENT,
+            schema_id=SCHEMA_ID,
+            thread_id=thread_id,
+        )
+
+        with self.assertRaises(CredentialManagerError):
+            await self.manager.issue_credential(
+                stored_exchange, credential_values=cred_values
+            )
 
     async def test_issue_credential_no_active_rr(self):
         connection_id = "test_conn_id"
@@ -1148,6 +1194,29 @@ class TestCredentialManager(AsyncTestCase):
             assert ret_exchange.credential == stored_cred
             assert ret_exchange.state == V10CredentialExchange.STATE_ACKED
             assert ret_cred_ack._thread_id == thread_id
+
+    async def test_store_credential_bad_state(self):
+        connection_id = "test_conn_id"
+        cred = {"cred_def_id": CRED_DEF_ID}
+        cred_req_meta = {"req": "meta"}
+        thread_id = "thread-id"
+
+        stored_exchange = V10CredentialExchange(
+            credential_exchange_id="dummy-cxid",
+            connection_id=connection_id,
+            credential_definition_id=CRED_DEF_ID,
+            credential_request_metadata=cred_req_meta,
+            credential_proposal_dict=None,
+            raw_credential=cred,
+            initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
+            role=V10CredentialExchange.ROLE_HOLDER,
+            state=V10CredentialExchange.STATE_OFFER_RECEIVED,
+            thread_id=thread_id,
+        )
+        cred_id = "cred-id"
+
+        with self.assertRaises(CredentialManagerError):
+            await self.manager.store_credential(stored_exchange, credential_id=cred_id)
 
     async def test_store_credential_no_preview(self):
         connection_id = "test_conn_id"
