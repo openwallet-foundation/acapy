@@ -47,6 +47,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         state: str = None,
         presentation_proposal_dict: dict = None,  # serialized pres proposal message
         presentation_request: dict = None,  # indy proof req
+        presentation_request_dict: dict = None,  # serialized pres request message
         presentation: dict = None,  # indy proof
         verified: str = None,
         auto_present: bool = False,
@@ -63,6 +64,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         self.state = state
         self.presentation_proposal_dict = presentation_proposal_dict
         self.presentation_request = presentation_request  # indy proof req
+        self.presentation_request_dict = presentation_request_dict
         self.presentation = presentation  # indy proof
         self.verified = verified
         self.auto_present = auto_present
@@ -84,6 +86,7 @@ class V10PresentationExchange(BaseExchangeRecord):
                 "initiator",
                 "presentation_proposal_dict",
                 "presentation_request",
+                "presentation_request_dict",
                 "presentation",
                 "role",
                 "state",
@@ -145,6 +148,9 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
     presentation_request = fields.Dict(
         required=False,
         description="(Indy) presentation request (also known as proof request)",
+    )
+    presentation_request_dict = fields.Dict(
+        required=False, description="Serialized presentation request message"
     )
     presentation = fields.Dict(
         required=False, description="(Indy) presentation (also known as proof)"
