@@ -1377,7 +1377,7 @@ class TestCredentialManager(AsyncTestCase):
                             },
                         }
                     ),
-                    []
+                    [],
                 )
             )
             self.context.injector.bind_instance(BaseIssuer, issuer)

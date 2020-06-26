@@ -202,12 +202,7 @@ class TestValid(TestCase):
         )  # long
 
     def test_cred_rev_id(self):
-        non_cred_rev_ids = [
-            "Wg",
-            "0",
-            "-5",
-            "3.14"
-        ]
+        non_cred_rev_ids = ["Wg", "0", "-5", "3.14"]
         for non_cred_rev_id in non_cred_rev_ids:
             with self.assertRaises(ValidationError):
                 INDY_CRED_REV_ID["validate"](non_cred_rev_id)

@@ -279,6 +279,9 @@ class CredentialManager:
         cred_ex_record.credential_definition_id = credential_offer["cred_def_id"]
         cred_ex_record.state = V10CredentialExchange.STATE_OFFER_SENT
         cred_ex_record.credential_offer = credential_offer
+
+        cred_ex_record.credential_offer_dict = credential_offer_message.serialize()
+
         await cred_ex_record.save(self.context, reason="create credential offer")
 
         return (cred_ex_record, credential_offer_message)
@@ -584,7 +587,7 @@ class CredentialManager:
         return cred_ex_record
 
     async def store_credential(
-        self, cred_ex_record: V10CredentialExchange, credential_id: str = None,
+        self, cred_ex_record: V10CredentialExchange, credential_id: str = None
     ) -> Tuple[V10CredentialExchange, CredentialAck]:
         """
         Store a credential in holder wallet; send ack to issuer.
@@ -662,7 +665,7 @@ class CredentialManager:
 
         credential_ack_message = CredentialAck()
         credential_ack_message.assign_thread_id(
-            cred_ex_record.thread_id, cred_ex_record.parent_thread_id,
+            cred_ex_record.thread_id, cred_ex_record.parent_thread_id
         )
         credential_ack_message.assign_trace_decorator(
             self.context.settings, cred_ex_record.trace
@@ -728,9 +731,7 @@ class CredentialManager:
             # pick up pending revocations on input revocation registry
             crids = list(set(registry_record.pending_pub + [cred_rev_id]))
             (delta_json, _) = await issuer.revoke_credentials(
-                registry_record.revoc_reg_id,
-                registry_record.tails_local_path,
-                crids
+                registry_record.revoc_reg_id, registry_record.tails_local_path, crids
             )
             if delta_json:
                 registry_record.revoc_reg_entry = json.loads(delta_json)
@@ -785,7 +786,7 @@ class CredentialManager:
                 (delta_json, failed_crids) = await issuer.revoke_credentials(
                     registry_record.revoc_reg_id,
                     registry_record.tails_local_path,
-                    crids
+                    crids,
                 )
                 registry_record.revoc_reg_entry = json.loads(delta_json)
                 await registry_record.publish_registry_entry(self.context)
@@ -829,9 +830,7 @@ class CredentialManager:
         registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
         for registry_record in registry_records:
             rrid = registry_record.revoc_reg_id
-            await registry_record.clear_pending(
-                self.context, (purge or {}).get(rrid)
-            )
+            await registry_record.clear_pending(self.context, (purge or {}).get(rrid))
             if registry_record.pending_pub:
                 result[rrid] = registry_record.pending_pub
 
