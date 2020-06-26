@@ -51,7 +51,7 @@ class CredentialOfferHandler(BaseHandler):
         # If auto respond is turned on, automatically reply with credential request
         if context.settings.get("debug.auto_respond_credential_offer"):
             (_, credential_request_message) = await credential_manager.create_request(
-                credential_exchange_record=credential_exchange_record,
+                cred_ex_record=credential_exchange_record,
                 holder_did=context.connection_record.my_did,
             )
             await responder.send_reply(credential_request_message)

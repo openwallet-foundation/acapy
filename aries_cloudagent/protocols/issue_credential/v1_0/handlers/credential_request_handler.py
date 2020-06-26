@@ -58,7 +58,7 @@ class CredentialRequestHandler(BaseHandler):
                     cred_exchange_rec,
                     credential_issue_message,
                 ) = await credential_manager.issue_credential(
-                    credential_exchange_record=cred_exchange_rec,
+                    cred_ex_record=cred_exchange_rec,
                     comment=context.message.comment,
                     credential_values=CredentialProposal.deserialize(
                         cred_exchange_rec.credential_proposal_dict
