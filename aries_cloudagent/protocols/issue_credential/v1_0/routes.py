@@ -14,7 +14,7 @@ from json.decoder import JSONDecodeError
 from marshmallow import fields, Schema, validate
 
 from ....connections.models.connection_record import ConnectionRecord
-from ....issuer.indy import IssuerRevocationRegistryFullError
+from ....issuer.base import IssuerError, IssuerRevocationRegistryFullError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
@@ -1021,7 +1021,7 @@ async def credential_exchange_revoke(request: web.BaseRequest):
     credential_manager = CredentialManager(context)
     try:
         await credential_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
-    except (RevocationError, StorageError) as err:
+    except (CredentialManagerError, RevocationError, StorageError, IssuerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
@@ -1046,7 +1046,7 @@ async def credential_exchange_publish_revocations(request: web.BaseRequest):
 
     try:
         results = await credential_manager.publish_pending_revocations()
-    except (RevocationError, StorageError) as err:
+    except (RevocationError, StorageError, IssuerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response({"results": results})
 

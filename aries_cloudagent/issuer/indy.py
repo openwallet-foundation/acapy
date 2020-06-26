@@ -211,7 +211,7 @@ class IndyIssuer(BaseIssuer):
             (
                 credential_json,
                 credential_revocation_id,
-                revoc_reg_delta_json,
+                _,  # rev_reg_delta_json only figures if rev reg is ISSUANCE_ON_DEMAND
             ) = await indy.anoncreds.issuer_create_credential(
                 self.wallet.handle,
                 json.dumps(credential_offer),
@@ -254,10 +254,21 @@ class IndyIssuer(BaseIssuer):
         result_json = None
         for cred_revoc_id in cred_revoc_ids:
             with IndyErrorHandler("Exception when revoking credential", IssuerError):
-                # may throw AnoncredsInvalidUserRevocId if using ISSUANCE_ON_DEMAND
-                delta_json = await indy.anoncreds.issuer_revoke_credential(
-                    self.wallet.handle, tails_reader_handle, revoc_reg_id, cred_revoc_id
-                )
+                try:
+                    delta_json = await indy.anoncreds.issuer_revoke_credential(
+                        self.wallet.handle,
+                        tails_reader_handle,
+                        revoc_reg_id,
+                        cred_revoc_id,
+                    )
+                except IndyError as error:
+                    if error.error_code == ErrorCode.AnoncredsInvalidUserRevocId:
+                        self.logger.error(
+                            "Abstaining from revoking credential on "
+                            f"rev reg id {revoc_reg_id}, "
+                            f"cred rev id={cred_revoc_id}: already revoked"
+                        )
+                        continue
                 if result_json:
                     result_json = await self.merge_revocation_registry_deltas(
                         result_json, delta_json

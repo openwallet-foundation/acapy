@@ -302,7 +302,12 @@ class IssuerRevRegRecord(BaseRecord):
         Args:
             context: The injection context to use
         """
-        return await cls.query(context, None, None, {"pending_pub": []})
+        return await cls.query(
+            context=context,
+            tag_filter=None,
+            post_filter_positive=None,
+            post_filter_negative={"pending_pub": []},
+        )
 
     @classmethod
     async def retrieve_by_revoc_reg_id(

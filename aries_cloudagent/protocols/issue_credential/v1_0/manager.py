@@ -724,7 +724,8 @@ class CredentialManager:
         Args:
             rev_reg_id: revocation registry id
             cred_rev_id: credential revocation id
-            publish: whether to publish the resulting revocation registry delta
+            publish: whether to publish the resulting revocation registry delta,
+                along with any revocations pending against it
 
         """
         issuer: BaseIssuer = await self.context.inject(BaseIssuer)
@@ -737,16 +738,19 @@ class CredentialManager:
             )
 
         if publish:
-            # create entry and send to ledger
+            # pick up pending revocations on input revocation registry
+            revoke_idxs = list(set(registry_record.pending_pub + [cred_rev_id]))
             delta = json.loads(
                 await issuer.revoke_credentials(
-                    rev_reg_id, registry_record.tails_local_path, [cred_rev_id]
+                    registry_record.revoc_reg_id,
+                    registry_record.tails_local_path,
+                    revoke_idxs,
                 )
             )
+            registry_record.revoc_reg_entry = delta
+            await registry_record.publish_registry_entry(self.context)
+            await registry_record.clear_pending(self.context)
 
-            if delta:
-                registry_record.revoc_reg_entry = delta
-                await registry_record.publish_registry_entry(self.context)
         else:
             await registry_record.mark_pending(self.context, cred_rev_id)
 
@@ -763,14 +767,16 @@ class CredentialManager:
 
         registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
         for registry_record in registry_records:
-            revoke_idxs = list(registry_record.pending_pub)
+            revoke_idxs = registry_record.pending_pub
             if revoke_idxs:
-                delta_json = await issuer.revoke_credentials(
-                    registry_record.revoc_reg_id,
-                    registry_record.tails_local_path,
-                    revoke_idxs,
+                delta = json.loads(
+                    await issuer.revoke_credentials(
+                        registry_record.revoc_reg_id,
+                        registry_record.tails_local_path,
+                        revoke_idxs,
+                    )
                 )
-                registry_record.revoc_reg_entry = json.loads(delta_json)
+                registry_record.revoc_reg_entry = delta
                 await registry_record.publish_registry_entry(self.context)
                 result[registry_record.revoc_reg_id] = revoke_idxs
                 await registry_record.clear_pending(self.context)

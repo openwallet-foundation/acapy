@@ -1255,6 +1255,7 @@ class TestCredentialManager(AsyncTestCase):
                 revoc_reg_id=REV_REG_ID,
                 tails_local_path=TAILS_LOCAL,
                 publish_registry_entry=async_mock.CoroutineMock(),
+                clear_pending=async_mock.CoroutineMock(),
             )
             revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
                 return_value=mock_issuer_rev_reg_record
