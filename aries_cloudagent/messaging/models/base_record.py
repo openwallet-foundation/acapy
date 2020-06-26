@@ -311,16 +311,16 @@ class BaseRecord(BaseModel):
         try:
             self.updated_at = time_now()
             storage: BaseStorage = await context.inject(BaseStorage)
-            if not self._id:
-                self._id = str(uuid.uuid4())
-                self.created_at = self.updated_at
-                await storage.add_record(self.storage_record)
-                new_record = True
-            else:
+            if self._id:
                 record = self.storage_record
                 await storage.update_record_value(record, record.value)
                 await storage.update_record_tags(record, record.tags)
                 new_record = False
+            else:
+                self._id = str(uuid.uuid4())
+                self.created_at = self.updated_at
+                await storage.add_record(self.storage_record)
+                new_record = True
         finally:
             params = {self.RECORD_TYPE: self.serialize()}
             if log_params:
