@@ -17,12 +17,13 @@ from marshmallow import fields, Schema, validate
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....core.error import BaseError
-from ....issuer.indy import IssuerRevocationRegistryFullError
+from ....issuer.base import IssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
+    INDY_CRED_REV_ID,
     INDY_DID,
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
@@ -251,15 +252,36 @@ class V10CredentialProblemReportRequestSchema(Schema):
     explain_ltxt = fields.Str(required=True)
 
 
-class V10PublishRevocationsResultSchema(Schema):
-    """Result schema for revocation publication API call."""
+class V10PublishRevocationsSchema(Schema):
+    """Request and result schema for revocation publication API call."""
 
-    results = fields.Dict(
+    rrid2crid = fields.Dict(
+        required=False,
         keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
         values=fields.List(
-            fields.Str(description="Credential revocation identifier", example="23")
+            fields.Str(
+                description="Credential revocation identifier", **INDY_CRED_REV_ID
+            )
         ),
-        description="Credential revocation ids published by revocation registry id",
+        description="Credential revocation ids by revocation registry id",
+    )
+
+
+class V10ClearPendingRevocationsRequestSchema(Schema):
+    """Request schema for clear pending revocations API call."""
+
+    purge = fields.Dict(
+        required=False,
+        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        values=fields.List(
+            fields.Str(
+                description="Credential revocation identifier", **INDY_CRED_REV_ID
+            )
+        ),
+        description=(
+            "Credential revocation ids by revocation registry id: omit for all, "
+            "specify null or empty list for all pending per revocation registry"
+        ),
     )
 
 
@@ -1054,12 +1076,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         )
 
         result = cred_ex_record.serialize()
-    except (
-        StorageError,
-        IssuerRevocationRegistryFullError,
-        BaseModelError,
-        CredentialManagerError,
-    ) as err:
+    except (StorageError, IssuerError, BaseModelError, CredentialManagerError) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
@@ -1173,14 +1190,21 @@ async def credential_exchange_revoke(request: web.BaseRequest):
     credential_manager = CredentialManager(context)
     try:
         await credential_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
-    except (RevocationError, StorageError) as err:
+    except (
+        CredentialManagerError,
+        RevocationError,
+        StorageError,
+        IssuerError,
+        LedgerError,
+    ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 
 
 @docs(tags=["issue-credential"], summary="Publish pending revocations to ledger")
-@response_schema(V10PublishRevocationsResultSchema(), 200)
+@request_schema(V10PublishRevocationsSchema())
+@response_schema(V10PublishRevocationsSchema(), 200)
 async def credential_exchange_publish_revocations(request: web.BaseRequest):
     """
     Request handler for publishing pending revocations to the ledger.
@@ -1193,14 +1217,43 @@ async def credential_exchange_publish_revocations(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    body = await request.json()
+    rrid2crid = body.get("rrid2crid")
 
     credential_manager = CredentialManager(context)
 
     try:
-        results = await credential_manager.publish_pending_revocations()
-    except (RevocationError, StorageError) as err:
+        results = await credential_manager.publish_pending_revocations(rrid2crid)
+    except (RevocationError, StorageError, IssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"results": results})
+    return web.json_response({"rrid2crid": results})
+
+
+@docs(tags=["issue-credential"], summary="Clear pending revocations")
+@request_schema(V10ClearPendingRevocationsRequestSchema())
+@response_schema(V10PublishRevocationsSchema(), 200)
+async def credential_exchange_clear_pending_revocations(request: web.BaseRequest):
+    """
+    Request handler for clearing pending revocations.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Credential revocation ids still pending revocation by revocation registry id.
+
+    """
+    context = request.app["request_context"]
+    body = await request.json()
+    purge = body.get("purge")
+
+    credential_manager = CredentialManager(context)
+
+    try:
+        results = await credential_manager.clear_pending_revocations(purge)
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response({"rrid2crid": results})
 
 
 @docs(
@@ -1317,6 +1370,10 @@ async def register(app: web.Application):
             web.post(
                 "/issue-credential/publish-revocations",
                 credential_exchange_publish_revocations,
+            ),
+            web.post(
+                "/issue-credential/clear-pending-revocations",
+                credential_exchange_clear_pending_revocations,
             ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/remove",

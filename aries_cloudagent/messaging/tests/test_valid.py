@@ -13,8 +13,8 @@ from ..valid import (
     DID_KEY,
     ENDPOINT,
     INDY_CRED_DEF_ID,
+    INDY_CRED_REV_ID,
     INDY_DID,
-    INT_EPOCH,
     INDY_EXTRA_WQL,
     INDY_ISO8601_DATETIME,
     INDY_PREDICATE,
@@ -23,6 +23,7 @@ from ..valid import (
     INDY_SCHEMA_ID,
     INDY_VERSION,
     INDY_WQL,
+    INT_EPOCH,
     NATURAL_NUM,
     JWS_HEADER_KID,
     JWT,
@@ -199,6 +200,15 @@ class TestValid(TestCase):
             "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:"
             "Q4zqM7aXqm7gDQkUVLng9h:2:bc-reg:1.0:tag:CL_ACCUM:0"
         )  # long
+
+    def test_cred_rev_id(self):
+        non_cred_rev_ids = ["Wg", "0", "-5", "3.14"]
+        for non_cred_rev_id in non_cred_rev_ids:
+            with self.assertRaises(ValidationError):
+                INDY_CRED_REV_ID["validate"](non_cred_rev_id)
+
+        INDY_CRED_REV_ID["validate"]("1")
+        INDY_CRED_REV_ID["validate"]("99999999")
 
     def test_version(self):
         non_versions = ["-1", "", "3_5", "3.5a"]

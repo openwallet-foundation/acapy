@@ -146,11 +146,27 @@ class TestRecord(AsyncTestCase):
         rec = IssuerRevRegRecord()
         await rec.mark_pending(self.context, "1")
         await rec.mark_pending(self.context, "2")
+        await rec.mark_pending(self.context, "3")
+        await rec.mark_pending(self.context, "4")
 
         found = await IssuerRevRegRecord.query_by_pending(self.context)
         assert len(found) == 1 and found[0] == rec
 
-        await rec.clear_pending(self.context)
+        await rec.clear_pending(self.context, ["1", "2"])
+        assert rec.pending_pub == ["3", "4"]
+        found = await IssuerRevRegRecord.query_by_pending(self.context)
+        assert found
+
+        await rec.clear_pending(self.context, [])
+        assert rec.pending_pub == []
+        found = await IssuerRevRegRecord.query_by_pending(self.context)
+        assert not found
+
+        await rec.mark_pending(self.context, "5")
+        await rec.mark_pending(self.context, "6")
+
+        await rec.clear_pending(self.context, [])
+        assert rec.pending_pub == []
         found = await IssuerRevRegRecord.query_by_pending(self.context)
         assert not found
 

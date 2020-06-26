@@ -100,7 +100,9 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_hash = tails_hash
         self.tails_local_path = tails_local_path
         self.tails_public_uri = tails_public_uri
-        self.pending_pub = sorted(list(set(pending_pub))) if pending_pub else []
+        self.pending_pub = (
+            sorted(list(set(pending_pub))) if pending_pub else []
+        )  # order for eq comparison between instances
 
     @property
     def record_id(self) -> str:
@@ -257,10 +259,22 @@ class IssuerRevRegRecord(BaseRecord):
 
         await self.save(context, reason="Marked pending revocation")
 
-    async def clear_pending(self, context: InjectionContext) -> None:
-        """Clear any pending revocations and save any resulting record change."""
+    async def clear_pending(
+        self, context: InjectionContext, cred_rev_ids: Sequence[str] = None
+    ) -> None:
+        """Clear pending revocations and save any resulting record change.
+
+        Args:
+            context: The injection context to use
+            cred_rev_ids: Credential revocation identifiers to clear; default all
+        """
         if self.pending_pub:
-            self.pending_pub.clear()
+            if cred_rev_ids:
+                self.pending_pub = [
+                    r for r in self.pending_pub if r not in cred_rev_ids
+                ]
+            else:
+                self.pending_pub.clear()
             await self.save(context, reason="Cleared pending revocations")
 
     async def get_registry(self) -> RevocationRegistry:
@@ -302,7 +316,12 @@ class IssuerRevRegRecord(BaseRecord):
         Args:
             context: The injection context to use
         """
-        return await cls.query(context, None, None, {"pending_pub": []})
+        return await cls.query(
+            context=context,
+            tag_filter=None,
+            post_filter_positive=None,
+            post_filter_negative={"pending_pub": []},
+        )
 
     @classmethod
     async def retrieve_by_revoc_reg_id(
