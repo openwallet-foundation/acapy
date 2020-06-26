@@ -209,7 +209,8 @@ async def main(
         qr = QRCode()
         qr.add_data(connection["invitation_url"])
         log_msg(
-            "Use the following JSON to accept the invite from another demo agent. Or use the QR code to connect from a mobile agent."
+            "Use the following JSON to accept the invite from another demo agent."
+            " Or use the QR code to connect from a mobile agent."
         )
         log_msg(
             json.dumps(connection["invitation"]), label="Invitation Data:", color=None
@@ -236,7 +237,9 @@ async def main(
             "4/5/6/" if revocation else ""
         )
         async for option in prompt_loop(options):
-            option = option.strip()
+            if option is not None:
+                option = option.strip()
+
             if option is None or option in "xX":
                 break
 
