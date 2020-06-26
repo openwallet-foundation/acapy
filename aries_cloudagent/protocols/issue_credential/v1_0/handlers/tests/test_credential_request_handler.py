@@ -79,9 +79,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
             mock_cred_mgr.return_value.issue_credential.assert_called_once_with(
-                credential_exchange_record=cred_ex_rec,
-                comment=None,
-                credential_values=ATTR_DICT,
+                cred_ex_record=cred_ex_rec, comment=None, credential_values=ATTR_DICT,
             )
 
         mock_cred_mgr.assert_called_once_with(request_context)
