@@ -212,6 +212,21 @@ class IndyRevRegId(Regexp):
         )
 
 
+class IndyCredRevId(Regexp):
+    """Validate value against indy credential revocation identifier specification."""
+
+    EXAMPLE = "12345"
+    PATTERN = rf"^[1-9][0-9]*$"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            IndyCredRevId.PATTERN,
+            error="Value {input} is not an indy credential revocation identifier",
+        )
+
+
 class IndyPredicate(OneOf):
     """Validate value against indy predicate."""
 
@@ -426,6 +441,7 @@ INDY_RAW_PUBLIC_KEY = {
 INDY_SCHEMA_ID = {"validate": IndySchemaId(), "example": IndySchemaId.EXAMPLE}
 INDY_CRED_DEF_ID = {"validate": IndyCredDefId(), "example": IndyCredDefId.EXAMPLE}
 INDY_REV_REG_ID = {"validate": IndyRevRegId(), "example": IndyRevRegId.EXAMPLE}
+INDY_CRED_REV_ID = {"validate": IndyCredRevId(), "example": IndyCredRevId.EXAMPLE}
 INDY_VERSION = {"validate": IndyVersion(), "example": IndyVersion.EXAMPLE}
 INDY_PREDICATE = {"validate": IndyPredicate(), "example": IndyPredicate.EXAMPLE}
 INDY_ISO8601_DATETIME = {

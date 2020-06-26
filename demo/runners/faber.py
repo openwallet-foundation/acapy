@@ -353,13 +353,13 @@ async def main(
             elif option == "5" and revocation:
                 try:
                     resp = await agent.admin_POST(
-                        "/issue-credential/publish-revocations"
+                        "/issue-credential/publish-revocations", {}
                     )
                     agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
-                            len(resp["results"]),
+                            len(resp["rrid2crid"]),
                             "y" if len(resp) == 1 else "ies",
-                            json.dumps([k for k in resp["results"]], indent=4),
+                            json.dumps([k for k in resp["rrid2crid"]], indent=4),
                         )
                     )
                 except ClientError:

@@ -143,7 +143,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def revoke_credentials(
         self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
-    ) -> str:
+    ) -> (str, Sequence[str]):
         """
         Revoke a set of credentials in a revocation registry.
 
@@ -153,7 +153,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
             cred_revoc_ids: sequences of credential indexes in the revocation registry
 
         Returns:
-            the combined revocation delta
+            Tuple with the combined revocation delta, list of cred rev ids not revoked
 
         """
 

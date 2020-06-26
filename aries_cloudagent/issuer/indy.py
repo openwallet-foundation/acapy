@@ -236,7 +236,7 @@ class IndyIssuer(BaseIssuer):
 
     async def revoke_credentials(
         self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
-    ) -> str:
+    ) -> (str, Sequence[str]):
         """
         Revoke a set of credentials in a revocation registry.
 
@@ -246,9 +246,10 @@ class IndyIssuer(BaseIssuer):
             cred_revoc_ids: sequences of credential indexes in the revocation registry
 
         Returns:
-            the combined revocation delta
+            Tuple with the combined revocation delta, list of cred rev ids not revoked
 
         """
+        failed_crids = []
         tails_reader_handle = await create_tails_reader(tails_file_path)
 
         result_json = None
@@ -265,10 +266,18 @@ class IndyIssuer(BaseIssuer):
                     if error.error_code == ErrorCode.AnoncredsInvalidUserRevocId:
                         self.logger.error(
                             "Abstaining from revoking credential on "
-                            f"rev reg id {revoc_reg_id}, "
-                            f"cred rev id={cred_revoc_id}: already revoked"
+                            f"rev reg id {revoc_reg_id}, cred rev id={cred_revoc_id}: "
+                            "already revoked or not yet issued"
                         )
-                        continue
+                    else:
+                        self.logger.error(
+                            IndyErrorHandler.wrap_error(
+                                error, "Revocation error", IssuerError
+                            ).roll_up
+                        )
+                    failed_crids.append(cred_revoc_id)
+                    continue
+
                 if result_json:
                     result_json = await self.merge_revocation_registry_deltas(
                         result_json, delta_json
@@ -276,7 +285,7 @@ class IndyIssuer(BaseIssuer):
                 else:
                     result_json = delta_json
 
-        return result_json
+        return (result_json, failed_crids)
 
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
