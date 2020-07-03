@@ -482,8 +482,12 @@ class DemoAgent:
         async with self.client_session.request(
             method, self.admin_url + path, json=data, params=params
         ) as resp:
-            resp.raise_for_status()
             resp_text = await resp.text()
+            try:
+                resp.raise_for_status()
+            except Exception as e:
+                # try to retrieve and print text in case the agent is returning an error
+                raise Exception(f"Error {resp_text}") from e
             if not resp_text and not text:
                 return None
             if not text:

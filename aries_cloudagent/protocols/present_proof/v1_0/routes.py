@@ -185,10 +185,15 @@ class IndyProofReqAttrSpecSchema(Schema):
     """Schema for attribute specification in indy proof request."""
 
     name = fields.String(
-        example="favouriteDrink", description="Attribute name", required=True
+        example="favouriteDrink", description="Attribute name", required=False
+    )
+    names = fields.List(
+        fields.String(),
+        example="[favouriteDrink, age]", description="Attribute name group",
+        required=False
     )
     restrictions = fields.List(
-        fields.Nested(IndyProofReqSpecRestrictionsSchema()),
+        fields.Dict(),  # fields.Nested(IndyProofReqSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
         required=False,
     )
@@ -206,7 +211,7 @@ class IndyProofReqPredSpecSchema(Schema):
     )
     p_value = fields.Integer(description="Threshold value", required=True)
     restrictions = fields.List(
-        fields.Nested(IndyProofReqSpecRestrictionsSchema()),
+        fields.Dict(),  # fields.Nested(IndyProofReqSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
         required=False,
     )
