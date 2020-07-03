@@ -189,8 +189,9 @@ class IndyProofReqAttrSpecSchema(Schema):
     )
     names = fields.List(
         fields.String(),
-        example="[favouriteDrink, age]", description="Attribute name group",
-        required=False
+        example="[favouriteDrink, age]",
+        description="Attribute name group",
+        required=False,
     )
     restrictions = fields.List(
         fields.Dict(),  # fields.Nested(IndyProofReqSpecRestrictionsSchema()),
