@@ -13,11 +13,34 @@ class TestProofRoutes(AsyncTestCase):
 
     async def test_validate_non_revoked(self):
         non_revo = test_module.IndyProofReqNonRevokedSchema()
-        non_revo.validate({"from": 1234567890})
-        non_revo.validate({"to": 1234567890})
-        non_revo.validate({"from": 1234567890, "to": 1234567890})
+        non_revo.validate_fields({"from": 1234567890})
+        non_revo.validate_fields({"to": 1234567890})
+        non_revo.validate_fields({"from": 1234567890, "to": 1234567890})
         with self.assertRaises(test_module.ValidationError):
             non_revo.validate_fields({})
+
+    async def test_validate_proof_req_attr_spec(self):
+        aspec = test_module.IndyProofReqAttrSpecSchema()
+        aspec.validate_fields({"name": "attr0"})
+        aspec.validate_fields(
+            {
+                "names": ["attr0", "attr1"],
+                "restrictions": [{"attr::attr1::value": "my-value"}],
+            }
+        )
+        aspec.validate_fields(
+            {"name": "attr0", "restrictions": [{"schema_name": "preferences"}]}
+        )
+        with self.assertRaises(test_module.ValidationError):
+            aspec.validate_fields({})
+        with self.assertRaises(test_module.ValidationError):
+            aspec.validate_fields({"name": "attr0", "names": ["attr1", "attr2"]})
+        with self.assertRaises(test_module.ValidationError):
+            aspec.validate_fields({"names": ["attr1", "attr2"]})
+        with self.assertRaises(test_module.ValidationError):
+            aspec.validate_fields({"names": ["attr0", "attr1"], "restrictions": []})
+        with self.assertRaises(test_module.ValidationError):
+            aspec.validate_fields({"names": ["attr0", "attr1"], "restrictions": [{}]})
 
     async def test_presentation_exchange_list(self):
         mock = async_mock.MagicMock()

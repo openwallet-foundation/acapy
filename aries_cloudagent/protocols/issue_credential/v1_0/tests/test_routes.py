@@ -203,6 +203,44 @@ class TestCredentialRoutes(AsyncTestCase):
                 mock_cred_ex_record.serialize.return_value
             )
 
+    async def test_credential_exchange_create_x(self):
+        mock = async_mock.MagicMock()
+        mock.json = async_mock.CoroutineMock()
+        context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+        mock.app = {
+            "outbound_message_router": async_mock.CoroutineMock(),
+            "request_context": context,
+        }
+        mock.app["request_context"].settings = {}
+
+        with async_mock.patch.object(
+            test_module, "ConnectionRecord", autospec=True
+        ) as mock_connection_record, async_mock.patch.object(
+            test_module, "CredentialManager", autospec=True
+        ) as mock_credential_manager, async_mock.patch.object(
+            test_module.CredentialPreview, "deserialize", autospec=True
+        ), async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_credential_manager.return_value.create_offer = (
+                async_mock.CoroutineMock()
+            )
+
+            mock_credential_manager.return_value.create_offer.return_value = (
+                async_mock.CoroutineMock(),
+                async_mock.CoroutineMock(),
+            )
+
+            mock_cred_ex_record = async_mock.MagicMock()
+            mock_cred_offer = async_mock.MagicMock()
+
+            mock_credential_manager.return_value.prepare_send.side_effect = (
+                test_module.StorageError()
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.credential_exchange_create(mock)
+
     async def test_credential_exchange_create_no_proposal(self):
         conn_id = "connection-id"
 
