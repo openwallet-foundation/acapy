@@ -123,7 +123,7 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
     )
 
 
-class IndyProofReqSpecRestrictionsSchema(Schema):
+class IndyProofReqPredSpecRestrictionsSchema(Schema):
     """Schema for restrictions in attr or pred specifier indy proof request."""
 
     schema_id = fields.String(
@@ -185,14 +185,63 @@ class IndyProofReqAttrSpecSchema(Schema):
     """Schema for attribute specification in indy proof request."""
 
     name = fields.String(
-        example="favouriteDrink", description="Attribute name", required=True
+        example="favouriteDrink", description="Attribute name", required=False
+    )
+    names = fields.List(
+        fields.String(example="age"),
+        description="Attribute name group",
+        required=False,
     )
     restrictions = fields.List(
-        fields.Nested(IndyProofReqSpecRestrictionsSchema()),
-        description="If present, credential must satisfy one of given restrictions",
+        fields.Dict(
+            keys=fields.Str(
+                validate=validate.Regexp(
+                    "^schema_id|"
+                    "schema_issuer_did|"
+                    "schema_name|"
+                    "schema_version|"
+                    "issuer_did|"
+                    "cred_def_id|"
+                    "attr::.+::value$"  # indy does not support attr::...::marker here
+                ),
+                example="cred_def_id",  # marshmallow/apispec v3.0 ignores
+            ),
+            values=fields.Str(example=INDY_CRED_DEF_ID["example"]),
+        ),
+        description=(
+            "If present, credential must satisfy one of given restrictions: specify "
+            "schema_id, schema_issuer_did, schema_name, schema_version, "
+            "issuer_did, cred_def_id, and/or attr::<attribute-name>::value "
+            "where <attribute-name> represents a credential attribute name"
+        ),
         required=False,
     )
     non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """
+        Validate schema fields.
+
+        Data must have exactly one of name or names; if names then restrictions are
+        mandatory.
+
+        Args:
+            data: The data to validate
+
+        Raises:
+            ValidationError: if data has both or neither of name and names
+
+        """
+        if ("name" in data) == ("names" in data):
+            raise ValidationError(
+                "Attribute specification must have either name or names but not both"
+            )
+        restrictions = data.get("restrictions")
+        if ("names" in data) and (not restrictions or all(not r for r in restrictions)):
+            raise ValidationError(
+                "Attribute specification on 'names' must have non-empty restrictions"
+            )
 
 
 class IndyProofReqPredSpecSchema(Schema):
@@ -206,7 +255,7 @@ class IndyProofReqPredSpecSchema(Schema):
     )
     p_value = fields.Integer(description="Threshold value", required=True)
     restrictions = fields.List(
-        fields.Nested(IndyProofReqSpecRestrictionsSchema()),
+        fields.Nested(IndyProofReqPredSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
         required=False,
     )

@@ -321,6 +321,18 @@ async def main(
                         for req_pred in req_preds
                     },
                 }
+                # test with an attribute group with attribute value restrictions
+                # indy_proof_request["requested_attributes"] = {
+                #     "n_group_attrs": {
+                #         "names": ["name", "degree", "timestamp", "date"],
+                #         "restrictions": [
+                #             {
+                #                 "issuer_did": agent.did,
+                #                 "attr::name::value": "Alice Smith"
+                #             }
+                #         ]
+                #     }
+                # }
                 if revocation:
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
