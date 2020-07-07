@@ -45,7 +45,9 @@ class TestRecord(AsyncTestCase):
         REV_REG_ID = f"{TestRecord.test_did}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
         rec = IssuerRevRegRecord(
-            issuer_did=TestRecord.test_did, cred_def_id=CRED_DEF_ID
+            issuer_did=TestRecord.test_did,
+            cred_def_id=CRED_DEF_ID,
+            revoc_reg_id=REV_REG_ID
         )
         issuer = async_mock.MagicMock(BaseIssuer)
         self.context.injector.bind_instance(BaseIssuer, issuer)
@@ -56,7 +58,7 @@ class TestRecord(AsyncTestCase):
             mock_create_store_rr.side_effect = IssuerError("Not this time")
 
             with self.assertRaises(RevocationError):
-                await rec.generate_registry(self.context, None)
+                await rec.generate_registry(self.context)
 
         issuer.create_and_store_revocation_registry.return_value = (
             REV_REG_ID,
@@ -71,7 +73,7 @@ class TestRecord(AsyncTestCase):
             json.dumps({"revoc_reg_entry": "dummy-entry"}),
         )
 
-        await rec.generate_registry(self.context, None)
+        await rec.generate_registry(self.context)
 
         assert rec.revoc_reg_id == REV_REG_ID
         assert rec.state == IssuerRevRegRecord.STATE_GENERATED
@@ -133,7 +135,7 @@ class TestRecord(AsyncTestCase):
         )
 
         with self.assertRaises(RevocationError) as x_state:
-            await rec_full.generate_registry(self.context, None)
+            await rec_full.generate_registry(self.context)
 
         with self.assertRaises(RevocationError) as x_state:
             await rec_full.publish_registry_definition(self.context)
