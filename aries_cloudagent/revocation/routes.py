@@ -22,7 +22,6 @@ from ..storage.base import BaseStorage, StorageNotFoundError
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
-from .models.revocation_registry import RevocationRegistry
 
 
 LOGGER = logging.getLogger(__name__)
@@ -155,9 +154,7 @@ async def revocation_create_registry(request: web.BaseRequest):
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
-    await shield(
-        registry_record.generate_registry(context, RevocationRegistry.get_temp_dir())
-    )
+    await shield(registry_record.generate_registry(context))
 
     return web.json_response({"result": registry_record.serialize()})
 

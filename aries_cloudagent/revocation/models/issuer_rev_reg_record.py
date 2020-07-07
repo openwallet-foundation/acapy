@@ -4,12 +4,14 @@ import json
 import logging
 import uuid
 
+from os.path import join
 from typing import Any, Sequence
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext
+from ...indy.util import indy_client_dir
 from ...issuer.base import BaseIssuer, IssuerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
@@ -132,7 +134,7 @@ class IssuerRevRegRecord(BaseRecord):
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise RevocationError("URI {} is not a valid URL".format(url))
 
-    async def generate_registry(self, context: InjectionContext, base_dir: str):
+    async def generate_registry(self, context: InjectionContext):
         """Create the credential registry definition and tails file."""
         if not self.tag:
             self.tag = self._id or str(uuid.uuid4())
@@ -145,6 +147,7 @@ class IssuerRevRegRecord(BaseRecord):
             )
 
         issuer: BaseIssuer = await context.inject(BaseIssuer)
+        tails_dir = indy_client_dir(join("tails", self.revoc_reg_id), create=True)
 
         LOGGER.debug("create revocation registry with size:", self.max_cred_num)
 
@@ -159,7 +162,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.revoc_def_type,
                 self.tag,
                 self.max_cred_num,
-                base_dir,
+                tails_dir,
                 self.issuance_type,
             )
         except IssuerError as err:
