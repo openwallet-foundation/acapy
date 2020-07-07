@@ -746,11 +746,12 @@ class IndyLedger(BaseLedger):
         data_json = (json.loads(response_json))["result"]["data"]
         return json.loads(data_json)["verkey"] if data_json else None
 
-    async def get_endpoint_for_did(self, did: str) -> str:
+    async def get_endpoint_for_did(self, did: str, endpoint_type='endpoint') -> str:
         """Fetch the endpoint for a ledger DID.
 
         Args:
             did: The DID to look up on the ledger or in the cache
+            endpoint_type: The type of the endpoint (default 'endpoint')
         """
         nym = self.did_to_nym(did)
         public_info = await self.wallet.get_public_did()
@@ -763,28 +764,39 @@ class IndyLedger(BaseLedger):
         data_json = json.loads(response_json)["result"]["data"]
         if data_json:
             endpoint = json.loads(data_json).get("endpoint", None)
-            address = endpoint.get("endpoint", None) if endpoint else None
+            if endpoint_type != 'all':
+                address = endpoint.get(endpoint_type, None) if endpoint else None
+            else:
+                address = endpoint
         else:
             address = None
 
         return address
 
-    async def update_endpoint_for_did(self, did: str, endpoint: str) -> bool:
+    async def update_endpoint_for_did(self, did: str, endpoint: str, endpoint_type='endpoint') -> bool:
         """Check and update the endpoint on the ledger.
 
         Args:
             did: The ledger DID
             endpoint: The endpoint address
+            endpoint_type: The type of the endpoint (default 'endpoint')
         """
-        exist_endpoint = await self.get_endpoint_for_did(did)
-        if exist_endpoint != endpoint:
+        exist_endpoints = await self.get_endpoint_for_did(did, 'all')
+        
+        if exist_endpoints.get(endpoint_type, None) != endpoint:
             if self.read_only:
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
                 )
 
             nym = self.did_to_nym(did)
-            attr_json = json.dumps({"endpoint": {"endpoint": endpoint}})
+
+            if exist_endpoints:
+                exist_endpoints[endpoint_type] = endpoint
+                attr_json = json.dumps({"endpoint":exist_endpoints})
+            else:
+                attr_json = json.dumps({"endpoint": {endpoint_type: endpoint}})
+
             with IndyErrorHandler(
                 "Exception when building attribute request", LedgerError
             ):

@@ -46,8 +46,9 @@ class DIDEndpointSchema(Schema):
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
-    )
+        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT)
+    endpoint_type = fields.Str(
+        description="Endpoint type to set", required=False)
 
 
 class DIDListQueryStringSchema(Schema):
@@ -267,6 +268,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     body = await request.json()
     did = body["did"]
     endpoint = body.get("endpoint")
+    endpoint_type = body.get("endpoint_type")
 
     try:
         did_info = await wallet.get_local_did(did)
@@ -285,7 +287,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
                     reason += ": missing wallet-type?"
                 raise web.HTTPForbidden(reason=reason)
             async with ledger:
-                await ledger.update_endpoint_for_did(did, endpoint)
+                await ledger.update_endpoint_for_did(did, endpoint, endpoint_type)
 
         await wallet.replace_local_did_metadata(did, metadata)
     except WalletNotFoundError as err:

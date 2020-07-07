@@ -81,6 +81,12 @@ class QueryStringDIDSchema(Schema):
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
+class QueryStringEndpointSchema(Schema):
+    """Parameters and validators for query string with DID only."""
+
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    endpoint_type = fields.Str(description="Endpoint type of interest (default 'endpoint')", required=False)
+
 
 @docs(
     tags=["ledger"], summary="Send a NYM registration to the ledger.",
@@ -184,7 +190,7 @@ async def get_did_verkey(request: web.BaseRequest):
 @docs(
     tags=["ledger"], summary="Get the endpoint for a DID from the ledger.",
 )
-@querystring_schema(QueryStringDIDSchema())
+@querystring_schema(QueryStringEndpointSchema())
 async def get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -201,12 +207,16 @@ async def get_did_endpoint(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
+    if request.query.get("endpoint_type"):
+        endpoint_type = request.query.get("endpoint_type")
+    else:
+        endpoint_type = 'endpoint'
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
         try:
-            r = await ledger.get_endpoint_for_did(did)
+            r = await ledger.get_endpoint_for_did(did, endpoint_type)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
