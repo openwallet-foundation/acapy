@@ -376,7 +376,7 @@ class PresentationManager:
                 revocation_states[rev_reg_id] = {}
 
             rev_reg = revocation_registries[rev_reg_id]
-            tails_local_path = await rev_reg.get_or_fetch_local_tails_path(self.context)
+            tails_local_path = await rev_reg.get_or_fetch_local_tails_path()
 
             try:
                 revocation_states[rev_reg_id][delta_timestamp] = json.loads(

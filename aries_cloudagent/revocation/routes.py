@@ -120,7 +120,7 @@ async def revocation_create_registry(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The revocation registry identifier
+        The issuer revocation registry record
 
     """
     context = request.app["request_context"]
