@@ -636,9 +636,7 @@ class CredentialManager:
 
         if revoc_reg_def:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
-            if not revoc_reg.has_local_tails_file(self.context):
-                await revoc_reg.retrieve_tails(self.context)
-
+            await revoc_reg.get_or_fetch_local_tails_path()
         try:
             credential_id = await holder.store_credential(
                 credential_definition,
