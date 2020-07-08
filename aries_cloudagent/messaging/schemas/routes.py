@@ -3,23 +3,14 @@
 from asyncio import shield
 
 from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    match_info_schema,
-    querystring_schema,
-    request_schema,
-    response_schema,
-)
+from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
-from marshmallow.validate import Regexp
 
-from ...issuer.base import BaseIssuer, IssuerError
 from ...ledger.base import BaseLedger
-from ...ledger.error import LedgerError
 from ...storage.base import BaseStorage
-from ..valid import B58, NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
-from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
+from ..valid import INDY_SCHEMA_ID, INDY_VERSION
+from .util import SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 
 
 class SchemaSendRequestSchema(Schema):
@@ -39,10 +30,8 @@ class SchemaSendRequestSchema(Schema):
 class SchemaSendResultsSchema(Schema):
     """Results schema for schema send request."""
 
-    schema_id = fields.Str(
-        description="Schema identifier", required=True, **INDY_SCHEMA_ID
-    )
-    schema = fields.Dict(description="Schema result", required=True)
+    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
+    schema = fields.Dict(description="Schema result")
 
 
 class SchemaSchema(Schema):
@@ -59,7 +48,7 @@ class SchemaSchema(Schema):
         description="Schema attribute names",
         data_key="attrNames",
     )
-    seqNo = fields.Int(description="Schema sequence number", **NATURAL_NUM)
+    seqNo = fields.Integer(description="Schema sequence number", example=999)
 
 
 class SchemaGetResultsSchema(Schema):
@@ -73,17 +62,6 @@ class SchemasCreatedResultsSchema(Schema):
 
     schema_ids = fields.List(
         fields.Str(description="Schema identifiers", **INDY_SCHEMA_ID)
-    )
-
-
-class SchemaIdMatchInfoSchema(Schema):
-    """Path parameters and validators for request taking schema id."""
-
-    schema_id = fields.Str(
-        description="Schema identifier",
-        required=True,
-        validate=Regexp(rf"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
-        example=INDY_SCHEMA_ID["example"],
     )
 
 
@@ -101,7 +79,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         The schema id sent
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     body = await request.json()
 
@@ -109,31 +87,23 @@ async def schemas_send_schema(request: web.BaseRequest):
     schema_version = body.get("schema_version")
     attributes = body.get("attributes")
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
-
-    issuer: BaseIssuer = await context.inject(BaseIssuer)
+    ledger: BaseLedger = await context.inject(BaseLedger)
     async with ledger:
-        try:
-            schema_id, schema_def = await shield(
-                ledger.create_and_send_schema(
-                    issuer, schema_name, schema_version, attributes
-                )
-            )
-        except (IssuerError, LedgerError) as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+        schema_id, schema_def = await shield(
+            ledger.create_and_send_schema(schema_name, schema_version, attributes)
+        )
 
     return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
 
 @docs(
-    tags=["schema"], summary="Search for matching schema that agent originated",
+    tags=["schema"],
+    parameters=[
+        {"name": p, "in": "query", "schema": {"type": "string"}, "required": False}
+        for p in SCHEMA_TAGS
+    ],
+    summary="Search for matching schema that agent originated",
 )
-@querystring_schema(SchemaQueryStringSchema())
 @response_schema(SchemasCreatedResultsSchema(), 200)
 async def schemas_created(request: web.BaseRequest):
     """
@@ -146,21 +116,18 @@ async def schemas_created(request: web.BaseRequest):
         The identifiers of matching schemas
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     storage = await context.inject(BaseStorage)
     found = await storage.search_records(
         type_filter=SCHEMA_SENT_RECORD_TYPE,
-        tag_query={
-            tag: request.query[tag] for tag in SCHEMA_TAGS if tag in request.query
-        },
+        tag_query={p: request.query[p] for p in SCHEMA_TAGS if p in request.query},
     ).fetch_all()
 
     return web.json_response({"schema_ids": [record.value for record in found]})
 
 
 @docs(tags=["schema"], summary="Gets a schema from the ledger")
-@match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultsSchema(), 200)
 async def schemas_get_schema(request: web.BaseRequest):
     """
@@ -173,53 +140,19 @@ async def schemas_get_schema(request: web.BaseRequest):
         The schema details.
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
-    schema_id = request.match_info["schema_id"]
+    schema_id = request.match_info["id"]
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
-
+    ledger: BaseLedger = await context.inject(BaseLedger)
     async with ledger:
-        try:
-            schema = await ledger.get_schema(schema_id)
-        except LedgerError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+        schema = await ledger.get_schema(schema_id)
 
     return web.json_response({"schema": schema})
 
 
 async def register(app: web.Application):
     """Register routes."""
-    app.add_routes(
-        [
-            web.post("/schemas", schemas_send_schema),
-            web.get("/schemas/created", schemas_created, allow_head=False),
-            web.get("/schemas/{schema_id}", schemas_get_schema, allow_head=False),
-        ]
-    )
-
-
-def post_process_routes(app: web.Application):
-    """Amend swagger API."""
-
-    # Add top-level tags description
-    if "tags" not in app._state["swagger_dict"]:
-        app._state["swagger_dict"]["tags"] = []
-    app._state["swagger_dict"]["tags"].append(
-        {
-            "name": "schema",
-            "description": "Schema operations",
-            "externalDocs": {
-                "description": "Specification",
-                "url": (
-                    "https://github.com/hyperledger/indy-node/blob/master/"
-                    "design/anoncreds.md#schema"
-                ),
-            },
-        }
-    )
+    app.add_routes([web.post("/schemas", schemas_send_schema)])
+    app.add_routes([web.get("/schemas/created", schemas_created)])
+    app.add_routes([web.get("/schemas/{id}", schemas_get_schema)])

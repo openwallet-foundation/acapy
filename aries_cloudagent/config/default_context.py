@@ -2,7 +2,7 @@
 
 from .base_context import ContextBuilder
 from .injection_context import InjectionContext
-from .provider import CachedProvider, ClassProvider, StatsProvider
+from .provider import CachedProvider, ClassProvider, StatsProvider, DynamicProvider
 
 from ..cache.base import BaseCache
 from ..cache.basic import BasicCache
@@ -13,12 +13,10 @@ from ..ledger.provider import LedgerProvider
 from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
-
-from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
-from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
-from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
-from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
-
+from ..protocols.actionmenu.base_service import BaseMenuService
+from ..protocols.actionmenu.driver_service import DriverMenuService
+from ..protocols.introduction.base_service import BaseIntroductionService
+from ..protocols.introduction.demo_service import DemoIntroductionService
 from ..storage.base import BaseStorage
 from ..storage.provider import StorageProvider
 from ..transport.wire_format import BaseWireFormat
@@ -56,15 +54,15 @@ class DefaultContextBuilder(ContextBuilder):
 
         context.injector.bind_provider(
             BaseStorage,
-            CachedProvider(
-                StatsProvider(
-                    StorageProvider(), ("add_record", "get_record", "search_records")
-                )
-            ),
+            #CachedProvider(
+            StatsProvider(
+                StorageProvider(), ("add_record", "get_record", "search_records")
+            )
+            #),
         )
         context.injector.bind_provider(
             BaseWallet,
-            CachedProvider(
+            DynamicProvider(
                 StatsProvider(
                     WalletProvider(),
                     (
@@ -74,23 +72,24 @@ class DefaultContextBuilder(ContextBuilder):
                         # "unpack_message",
                         "get_local_did",
                     ),
-                )
+                ),
+                'wallet.name'
             ),
         )
 
         context.injector.bind_provider(
             BaseLedger,
-            CachedProvider(
-                StatsProvider(
-                    LedgerProvider(),
-                    (
-                        "create_and_send_credential_definition",
-                        "create_and_send_schema",
-                        "get_credential_definition",
-                        "get_schema",
-                    ),
-                )
-            ),
+            #CachedProvider(
+            StatsProvider(
+                LedgerProvider(),
+                (
+                    "create_and_send_credential_definition",
+                    "create_and_send_schema",
+                    "get_credential_definition",
+                    "get_schema",
+                ),
+            )
+            #),
         )
         context.injector.bind_provider(
             BaseIssuer,
@@ -116,7 +115,7 @@ class DefaultContextBuilder(ContextBuilder):
             BaseVerifier,
             ClassProvider(
                 "aries_cloudagent.verifier.indy.IndyVerifier",
-                ClassProvider.Inject(BaseLedger),
+                ClassProvider.Inject(BaseWallet),
             ),
         )
 
@@ -151,7 +150,6 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_package("aries_cloudagent.protocols")
 
         # Currently providing admin routes only
-        plugin_registry.register_plugin("aries_cloudagent.holder")
         plugin_registry.register_plugin("aries_cloudagent.ledger")
         plugin_registry.register_plugin(
             "aries_cloudagent.messaging.credential_definitions"

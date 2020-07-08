@@ -14,16 +14,16 @@ class FetchError(BaseError):
 
 
 async def fetch_stream(
-    url: str,
-    *,
-    headers: dict = None,
-    retry: bool = True,
-    max_attempts: int = 5,
-    interval: float = 1.0,
-    backoff: float = 0.25,
-    request_timeout: float = 10.0,
-    connector: BaseConnector = None,
-    session: ClientSession = None,
+        url: str,
+        *,
+        headers: dict = None,
+        retry: bool = True,
+        max_attempts: int = 5,
+        interval: float = 1.0,
+        backoff: float = 0.25,
+        request_timeout: float = 10.0,
+        connector: BaseConnector = None,
+        session: ClientSession = None
 ):
     """Fetch from an HTTP server with automatic retries and timeouts.
 
@@ -88,7 +88,7 @@ async def fetch(
     """
     limit = max_attempts if retry else 1
     if not session:
-        session = ClientSession(connector=connector, connector_owner=(not connector))
+        session = ClientSession(connector=connector, connector_owner=(not connector), trust_env=True)
     async with session:
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:

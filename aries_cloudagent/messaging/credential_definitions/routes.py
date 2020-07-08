@@ -3,23 +3,16 @@
 from asyncio import shield
 
 from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    match_info_schema,
-    querystring_schema,
-    request_schema,
-    response_schema,
-)
+from aiohttp_apispec import docs, request_schema, response_schema
 
 from marshmallow import fields, Schema
 
-from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 
 from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
 
-from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
+from .util import CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
 
 class CredentialDefinitionSendRequestSchema(Schema):
@@ -87,16 +80,6 @@ class CredentialDefinitionsCreatedResultsSchema(Schema):
     )
 
 
-class CredDefIdMatchInfoSchema(Schema):
-    """Path parameters and validators for request taking cred def id."""
-
-    cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        required=True,
-        **INDY_CRED_DEF_ID
-    )
-
-
 @docs(
     tags=["credential-definition"],
     summary="Sends a credential definition to the ledger",
@@ -114,7 +97,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         The credential definition identifier
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     body = await request.json()
 
@@ -122,22 +105,11 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
-
-    issuer: BaseIssuer = await context.inject(BaseIssuer)
+    ledger: BaseLedger = await context.inject(BaseLedger)
     async with ledger:
         credential_definition_id, credential_definition = await shield(
             ledger.create_and_send_credential_definition(
-                issuer,
-                schema_id,
-                signature_type=None,
-                tag=tag,
-                support_revocation=support_revocation,
+                schema_id, tag=tag, support_revocation=support_revocation
             )
         )
 
@@ -146,9 +118,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
 @docs(
     tags=["credential-definition"],
+    parameters=[
+        {"name": p, "in": "query", "schema": {"type": "string"}, "required": False}
+        for p in CRED_DEF_TAGS
+    ],
     summary="Search for matching credential definitions that agent originated",
 )
-@querystring_schema(CredDefQueryStringSchema())
 @response_schema(CredentialDefinitionsCreatedResultsSchema(), 200)
 async def credential_definitions_created(request: web.BaseRequest):
     """
@@ -161,14 +136,12 @@ async def credential_definitions_created(request: web.BaseRequest):
         The identifiers of matching credential definitions.
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     storage = await context.inject(BaseStorage)
     found = await storage.search_records(
         type_filter=CRED_DEF_SENT_RECORD_TYPE,
-        tag_query={
-            tag: request.query[tag] for tag in CRED_DEF_TAGS if tag in request.query
-        },
+        tag_query={p: request.query[p] for p in CRED_DEF_TAGS if p in request.query},
     ).fetch_all()
 
     return web.json_response(
@@ -180,7 +153,6 @@ async def credential_definitions_created(request: web.BaseRequest):
     tags=["credential-definition"],
     summary="Gets a credential definition from the ledger",
 )
-@match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultsSchema(), 200)
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
     """
@@ -193,17 +165,11 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
         The credential definition details.
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
-    credential_definition_id = request.match_info["cred_def_id"]
+    credential_definition_id = request.match_info["id"]
 
-    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
-
+    ledger: BaseLedger = await context.inject(BaseLedger)
     async with ledger:
         credential_definition = await ledger.get_credential_definition(
             credential_definition_id
@@ -219,37 +185,17 @@ async def register(app: web.Application):
             web.post(
                 "/credential-definitions",
                 credential_definitions_send_credential_definition,
-            ),
-            web.get(
-                "/credential-definitions/created",
-                credential_definitions_created,
-                allow_head=False,
-            ),
-            web.get(
-                "/credential-definitions/{cred_def_id}",
-                credential_definitions_get_credential_definition,
-                allow_head=False,
-            ),
+            )
         ]
     )
-
-
-def post_process_routes(app: web.Application):
-    """Amend swagger API."""
-
-    # Add top-level tags description
-    if "tags" not in app._state["swagger_dict"]:
-        app._state["swagger_dict"]["tags"] = []
-    app._state["swagger_dict"]["tags"].append(
-        {
-            "name": "credential-definition",
-            "description": "Credential definition operations",
-            "externalDocs": {
-                "description": "Specification",
-                "url": (
-                    "https://github.com/hyperledger/indy-node/blob/master/"
-                    "design/anoncreds.md#cred_def"
-                ),
-            },
-        }
+    app.add_routes(
+        [web.get("/credential-definitions/created", credential_definitions_created,)]
+    )
+    app.add_routes(
+        [
+            web.get(
+                "/credential-definitions/{id}",
+                credential_definitions_get_credential_definition,
+            )
+        ]
     )
