@@ -2,7 +2,6 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
-import json
 import hashlib
 import re
 from base64 import b64encode
@@ -16,8 +15,8 @@ from ..wallet.error import WalletError, WalletDuplicateError
 # from ..storage.record import StorageRecord
 from ..storage.error import StorageNotFoundError
 
-from ..protocols.connections.manager import ConnectionManager
-from ..protocols.connections.routes import (
+from ..protocols.connections.v1_0.manager import ConnectionManager
+from ..protocols.connections.v1_0.routes import (
     InvitationResultSchema,
 )
 
@@ -26,7 +25,7 @@ from ..connections.models.connection_record import (
     ConnectionRecordSchema,
 )
 
-from ..protocols.connections.messages.connection_invitation import (
+from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
@@ -94,7 +93,6 @@ async def wallet_handler_add_wallet(request: web.BaseRequest):
         HTTPBadRequest: if no name is provided to identify new wallet.
         HTTPBadRequest: if a not supported wallet type is specified.
     """
-    #context = request["context"]
     context = request.app["request_context"]
 
     body = await request.json()
@@ -116,15 +114,6 @@ async def wallet_handler_add_wallet(request: web.BaseRequest):
         await wallet_handler.add_instance(config, context)
     except WalletDuplicateError:
         raise web.HTTPBadRequest(reason="Wallet with specified name already exists.")
-
-
-    # try:
-    #     await wallet_handler.add_wallet(WALLET_TYPES[wallet_type], config)
-    # except WalletDuplicateError:
-    #     raise web.HTTPBadRequest(reason="Wallet with specified name already exists")
-    # except WalletError:
-    #     raise web.HTTPUnauthorized(
-    #         reason="Specified wallet already exists and credentials do not match")
 
     return web.Response(body='created', status=201)
 
@@ -232,7 +221,6 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     """
     context = request["context"]
-    accept = request.query.get("accept")
     alias = request.query.get("alias")
     public = request.query.get("public")
     multi_use = request.query.get("multi_use")
@@ -246,18 +234,10 @@ async def connections_create_invitation(request: web.BaseRequest):
     handle = await wallet_handler.generate_path_mapping(wallet.name)
 
     endpoint = context.settings.get("default_endpoint") + "/" + handle
-    #if context.settings.get('path_mapping'):
-    #    paths = context.settings.get('path_mapping')
-    #else:
-    #    paths = {}
-
-    # paths[handle] = wallet.name
-    # config = {'path_mapping': paths}
-    # context.update_settings(config)
 
     connection_mgr = ConnectionManager(context)
     connection, invitation = await connection_mgr.create_invitation(
-        accept=accept, public=bool(public), multi_use=bool(multi_use), alias=alias,
+        public=bool(public), multi_use=bool(multi_use), alias=alias,
         my_endpoint=endpoint
     )
     result = {
@@ -310,10 +290,9 @@ async def connections_receive_invitation(request: web.BaseRequest):
     connection_mgr = ConnectionManager(context)
     invitation_json = await request.json()
     invitation = ConnectionInvitation.deserialize(invitation_json)
-    accept = request.query.get("accept")
     alias = request.query.get("alias")
     connection = await connection_mgr.receive_invitation(
-        invitation, accept=accept, alias=alias
+        invitation, alias=alias
     )
     wallet_handler: WalletHandler = await context.inject(WalletHandler)
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)

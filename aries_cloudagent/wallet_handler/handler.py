@@ -1,10 +1,8 @@
 """Multi wallet handler implementation of BaseWallet interface."""
 
 import json
-import logging
 import re
 import time
-from typing import Sequence
 
 import indy.anoncreds
 import indy.did
@@ -13,7 +11,7 @@ import hashlib
 from indy.error import IndyError, ErrorCode
 from base64 import b64encode
 
-from ..wallet.base import BaseWallet, KeyInfo, DIDInfo
+from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError, WalletDuplicateError
 from ..wallet.plugin import load_postgres_plugin
 from ..utils.classloader import ClassLoader
@@ -23,8 +21,8 @@ from ..connections.models.connection_record import (
     ConnectionRecord,
 )
 
-from .error import WalletAccessError, KeyNotFoundError
-from .error import WalletNotFoundError, WalletMissmatchError
+from .error import KeyNotFoundError
+from .error import WalletNotFoundError
 from .error import DuplicateMappingError
 
 
@@ -132,7 +130,6 @@ class WalletHandler():
         instances = await self.get_instances()
         if wallet not in instances:
             raise WalletNotFoundError('Requested not exisiting wallet instance.')
-        #await self._provider._open_for_request.wait()
         self._provider._requested_instance = wallet
 
     async def delete_instance(self, id: str):

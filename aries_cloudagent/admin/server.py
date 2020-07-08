@@ -29,11 +29,8 @@ from ..wallet_handler.error import WalletNotFoundError
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
-from contextvars import ContextVar
 
 LOGGER = logging.getLogger(__name__)
-
-VAR = ContextVar('VAR', default='default')
 
 
 class AdminModulesSchema(Schema):
