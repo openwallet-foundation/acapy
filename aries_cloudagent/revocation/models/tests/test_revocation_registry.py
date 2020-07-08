@@ -93,10 +93,7 @@ class TestRevocationRegistry(AsyncTestCase):
         with async_mock.patch.object(Path, "is_file", autospec=True) as mock_is_file:
             mock_is_file.return_value = True
 
-            assert (
-                await rev_reg_loc.get_or_fetch_local_tails_path()
-                == TAILS_LOCAL
-            )
+            assert await rev_reg_loc.get_or_fetch_local_tails_path() == TAILS_LOCAL
 
         rmtree(TAILS_DIR, ignore_errors=True)
         assert not rev_reg_loc.has_local_tails_file()

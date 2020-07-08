@@ -1,5 +1,7 @@
 import json
 
+from os.path import join
+
 import indy.anoncreds
 import indy.blob_storage
 
@@ -8,6 +10,7 @@ import pytest
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....config.injection_context import InjectionContext
+from ....indy.util import indy_client_dir
 from ....issuer.base import BaseIssuer, IssuerError
 from ....issuer.indy import IndyIssuer
 from ....ledger.base import BaseLedger
@@ -19,6 +22,7 @@ from ...error import RevocationError
 
 from ..issuer_rev_reg_record import IssuerRevRegRecord
 from ..revocation_registry import RevocationRegistry
+from .. import issuer_rev_reg_record as test_module
 
 
 class TestRecord(AsyncTestCase):
@@ -47,7 +51,7 @@ class TestRecord(AsyncTestCase):
         rec = IssuerRevRegRecord(
             issuer_did=TestRecord.test_did,
             cred_def_id=CRED_DEF_ID,
-            revoc_reg_id=REV_REG_ID
+            revoc_reg_id=REV_REG_ID,
         )
         issuer = async_mock.MagicMock(BaseIssuer)
         self.context.injector.bind_instance(BaseIssuer, issuer)
@@ -73,13 +77,17 @@ class TestRecord(AsyncTestCase):
             json.dumps({"revoc_reg_entry": "dummy-entry"}),
         )
 
-        await rec.generate_registry(self.context)
+        with async_mock.patch.object(
+            test_module, "move", async_mock.MagicMock()
+        ) as mock_move:
+            await rec.generate_registry(self.context)
 
         assert rec.revoc_reg_id == REV_REG_ID
         assert rec.state == IssuerRevRegRecord.STATE_GENERATED
         assert rec.tails_hash == "59NY25UEV8a5CzNkXFQMppwofUxtYtf4FDp1h9xgeLcK"
-        assert rec.tails_local_path == "point at infinity"
-
+        assert rec.tails_local_path == join(
+            indy_client_dir(join("tails", REV_REG_ID)), rec.tails_hash
+        )
         with self.assertRaises(RevocationError):
             await rec.set_tails_file_public_uri(self.context, "dummy")
 
