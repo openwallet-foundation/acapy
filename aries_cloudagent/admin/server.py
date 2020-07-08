@@ -6,12 +6,7 @@ from typing import Callable, Coroutine, Sequence, Set
 import uuid
 
 from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    response_schema,
-    setup_aiohttp_apispec,
-    validation_middleware,
-)
+from aiohttp_apispec import docs, response_schema, setup_aiohttp_apispec
 import aiohttp_cors
 
 from marshmallow import fields, Schema
@@ -24,12 +19,16 @@ from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..wallet_handler import WalletHandler
+from ..wallet_handler.error import WalletNotFoundError
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
+from contextvars import ContextVar
 
 LOGGER = logging.getLogger(__name__)
 
+VAR = ContextVar('VAR', default='default')
 
 class AdminModulesSchema(Schema):
     """Schema for the modules endpoint."""
@@ -135,10 +134,6 @@ class AdminServer(BaseAdminServer):
             task_queue: An optional task queue for handlers
         """
         self.app = None
-        self.admin_api_key = context.settings.get("admin.admin_api_key")
-        self.admin_insecure_mode = bool(
-            context.settings.get("admin.admin_insecure_mode")
-        )
         self.host = host
         self.port = port
         self.conductor_stats = conductor_stats
@@ -158,31 +153,28 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = [validation_middleware]
+        middlewares = []
+
+        admin_api_key = self.context.settings.get("admin.admin_api_key")
+        admin_insecure_mode = self.context.settings.get("admin.admin_insecure_mode")
 
         # admin-token and admin-token are mutually exclusive and required.
         # This should be enforced during parameter parsing but to be sure,
         # we check here.
-        assert self.admin_insecure_mode ^ bool(self.admin_api_key)
-
-        def is_unprotected_path(path: str):
-            return path in [
-                "/api/doc",
-                "/api/docs/swagger.json",
-                "/favicon.ico",
-                "/ws",  # ws handler checks authentication
-            ] or path.startswith("/static/swagger/")
+        assert admin_insecure_mode or admin_api_key
+        assert not (admin_insecure_mode and admin_api_key)
 
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
-        if self.admin_api_key:
+        if admin_api_key:
 
             @web.middleware
             async def check_token(request, handler):
                 header_admin_api_key = request.headers.get("x-api-key")
-                valid_key = self.admin_api_key == header_admin_api_key
+                if not header_admin_api_key:
+                    raise web.HTTPUnauthorized()
 
-                if valid_key or is_unprotected_path(request.path):
+                if admin_api_key == header_admin_api_key:
                     return await handler(request)
                 else:
                     raise web.HTTPUnauthorized()
@@ -209,17 +201,53 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(collect_stats)
 
+        @web.middleware
+        async def activate_wallet(request, handler):
+            # TODO: Enable authentication in swagger docs page
+            if request.path == '/api/doc' or 'swagger' in request.path:
+                return await handler(request)
+            context = request.app["request_context"].copy()
+
+            # For a custodial agent we need to inject the correct wallet into 
+            # the request
+            ext_plugins = self.context.settings.get_value("external_plugins")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+
+                wallet_handler: WalletHandler = await context.inject(WalletHandler)
+                # TODO: Authorization concept.
+                header_auth = request.headers.get("Authorization")
+                if not header_auth:
+                        
+                    raise web.HTTPUnauthorized()
+
+                # Request instance and lock request of wallet provider so that
+                # no other task can interfere
+                try:
+                    await wallet_handler.set_instance(header_auth)
+                except WalletNotFoundError:
+                    raise web.HTTPUnauthorized(
+                        reason=
+                        'Specified authorization does not match any.')
+
+            request['context'] = context
+            # Perform request.
+            response = await handler(request)
+
+            return response
+
+        middlewares.append(activate_wallet)
+
         app = web.Application(middlewares=middlewares)
         app["request_context"] = self.context
         app["outbound_message_router"] = self.responder.send
 
         app.add_routes(
             [
-                web.get("/", self.redirect_handler, allow_head=False),
-                web.get("/plugins", self.plugins_handler, allow_head=False),
-                web.get("/status", self.status_handler, allow_head=False),
+                web.get("/", self.redirect_handler),
+                web.get("/plugins", self.plugins_handler),
+                web.get("/status", self.status_handler),
                 web.post("/status/reset", self.status_reset_handler),
-                web.get("/ws", self.websocket_handler, allow_head=False),
+                web.get("/ws", self.websocket_handler),
             ]
         )
 
@@ -263,13 +291,6 @@ class AdminServer(BaseAdminServer):
         self.app = await self.make_application()
         runner = web.AppRunner(self.app)
         await runner.setup()
-
-        plugin_registry: PluginRegistry = await self.context.inject(
-            PluginRegistry, required=False
-        )
-        if plugin_registry:
-            plugin_registry.post_process_routes(self.app)
-
         self.site = web.TCPSite(runner, host=self.host, port=self.port)
 
         try:
@@ -290,12 +311,6 @@ class AdminServer(BaseAdminServer):
 
     async def on_startup(self, app: web.Application):
         """Perform webserver startup actions."""
-        if self.admin_api_key:
-            swagger = app["swagger_dict"]
-            swagger["securityDefinitions"] = {
-                "ApiKeyHeader": {"type": "apiKey", "in": "header", "name": "X-API-KEY"}
-            }
-            swagger["security"] = [{"ApiKeyHeader": []}]
 
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
     @response_schema(AdminModulesSchema(), 200)
@@ -368,21 +383,12 @@ class AdminServer(BaseAdminServer):
         queue = BasicMessageQueue()
         loop = asyncio.get_event_loop()
 
-        if self.admin_insecure_mode:
-            # open to send websocket messages without api key auth
-            queue.authenticated = True
-        else:
-            header_admin_api_key = request.headers.get("x-api-key")
-            # authenticated via http header?
-            queue.authenticated = header_admin_api_key == self.admin_api_key
-
         try:
             self.websocket_queues[socket_id] = queue
             await queue.enqueue(
                 {
                     "topic": "settings",
                     "payload": {
-                        "authenticated": queue.authenticated,
                         "label": self.context.settings.get("default_label"),
                         "endpoint": self.context.settings.get("default_endpoint"),
                         "no_receive_invites": self.context.settings.get(
@@ -394,7 +400,7 @@ class AdminServer(BaseAdminServer):
             )
 
             closed = False
-            receive = loop.create_task(ws.receive_json())
+            receive = loop.create_task(ws.receive())
             send = loop.create_task(queue.dequeue(timeout=5.0))
 
             while not closed:
@@ -406,22 +412,9 @@ class AdminServer(BaseAdminServer):
                         closed = True
 
                     if receive.done():
+                        # ignored
                         if not closed:
-                            msg_received = None
-                            msg_api_key = None
-                            try:
-                                # this call can re-raise exeptions from inside the task
-                                msg_received = receive.result()
-                                msg_api_key = msg_received.get("x-api-key")
-                            except Exception:
-                                LOGGER.exception(
-                                    "Exception in websocket receiving task:"
-                                )
-                            if self.admin_api_key and self.admin_api_key == msg_api_key:
-                                # authenticated via websocket message
-                                queue.authenticated = True
-
-                            receive = loop.create_task(ws.receive_json())
+                            receive = loop.create_task(ws.receive())
 
                     if send.done():
                         try:
@@ -432,10 +425,7 @@ class AdminServer(BaseAdminServer):
                         if msg is None:
                             # we send fake pings because the JS client
                             # can't detect real ones
-                            msg = {
-                                "topic": "ping",
-                                "authenticated": queue.authenticated,
-                            }
+                            msg = {"topic": "ping"}
                         if not closed:
                             if msg:
                                 await ws.send_json(msg)
@@ -479,5 +469,4 @@ class AdminServer(BaseAdminServer):
                     )
 
         for queue in self.websocket_queues.values():
-            if queue.authenticated or topic in ("ping", "settings"):
-                await queue.enqueue({"topic": topic, "payload": payload})
+            await queue.enqueue({"topic": topic, "payload": payload})
