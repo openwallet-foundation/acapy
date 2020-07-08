@@ -1167,8 +1167,7 @@ class TestCredentialManager(AsyncTestCase):
 
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    has_local_tails_file=async_mock.MagicMock(return_value=False),
-                    retrieve_tails=async_mock.CoroutineMock(return_value=None),
+                    get_or_fetch_local_tails_path=async_mock.CoroutineMock()
                 )
             )
             ret_exchange, ret_cred_ack = await self.manager.store_credential(
