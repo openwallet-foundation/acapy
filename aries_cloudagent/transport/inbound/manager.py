@@ -78,8 +78,8 @@ class InboundTransportManager:
 
         """
         try:
-            if '.' in config.module:
-                package, module = config.module.split('.', 1)
+            if "." in config.module:
+                package, module = config.module.split(".", 1)
             else:
                 package = MODULE_BASE_PATH
                 module = config.module

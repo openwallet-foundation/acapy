@@ -4,25 +4,29 @@ import logging
 
 from typing import Sequence, Tuple
 
-from ...cache.base import BaseCache
-from ...connections.models.connection_record import ConnectionRecord
-from ...connections.models.connection_target import ConnectionTarget
-from ...connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from ...config.base import InjectorError
-from ...config.injection_context import InjectionContext
-from ...core.error import BaseError
-from ...ledger.base import BaseLedger
-from ...messaging.responder import BaseResponder
-from ...storage.base import BaseStorage
-from ...storage.error import StorageError, StorageNotFoundError
-from ...storage.record import StorageRecord
-from ...transport.inbound.receipt import MessageReceipt
-from ...wallet.base import BaseWallet, DIDInfo
-from ...wallet.crypto import create_keypair, seed_to_did
-from ...wallet.error import WalletNotFoundError
-from ...wallet.util import bytes_to_b58
-
-from ..routing.manager import RoutingManager
+from ....cache.base import BaseCache
+from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.connection_target import ConnectionTarget
+from ....connections.models.diddoc import (
+    DIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
+from ....config.base import InjectorError
+from ....config.injection_context import InjectionContext
+from ....core.error import BaseError
+from ....ledger.base import BaseLedger
+from ....messaging.responder import BaseResponder
+from ....storage.base import BaseStorage
+from ....storage.error import StorageError, StorageNotFoundError
+from ....storage.record import StorageRecord
+from ....transport.inbound.receipt import MessageReceipt
+from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.crypto import create_keypair, seed_to_did
+from ....wallet.error import WalletNotFoundError
+from ....wallet.util import bytes_to_b58
+from ....protocols.routing.v1_0.manager import RoutingManager
 
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
@@ -67,7 +71,7 @@ class ConnectionManager:
         my_label: str = None,
         my_endpoint: str = None,
         their_role: str = None,
-        accept: str = None,
+        auto_accept: bool = None,
         public: bool = False,
         multi_use: bool = False,
         alias: str = None,
@@ -109,8 +113,9 @@ class ConnectionManager:
             my_label: label for this connection
             my_endpoint: endpoint where other party can reach me
             their_role: a role to assign the connection
-            accept: set to 'auto' to auto-accept a corresponding connection request
-            public: set to True to create an invitation from the public DID
+            auto_accept: auto-accept a corresponding connection request
+                (None to use config)
+            public: set to create an invitation from the public DID
             multi_use: set to True to create an invitation for multiple use
             alias: optional alias to apply to connection for later use
 
@@ -149,8 +154,17 @@ class ConnectionManager:
 
         if not my_endpoint:
             my_endpoint = self.context.settings.get("default_endpoint")
-        if not accept and self.context.settings.get("debug.auto_accept_requests"):
-            accept = ConnectionRecord.ACCEPT_AUTO
+        accept = (
+            ConnectionRecord.ACCEPT_AUTO
+            if (
+                auto_accept
+                or (
+                    auto_accept is None
+                    and self.context.settings.get("debug.auto_accept_requests")
+                )
+            )
+            else ConnectionRecord.ACCEPT_MANUAL
+        )
 
         # Create and store new invitation key
         connection_key = await wallet.create_signing_key()
@@ -182,7 +196,7 @@ class ConnectionManager:
         self,
         invitation: ConnectionInvitation,
         their_role: str = None,
-        accept: str = None,
+        auto_accept: bool = None,
         alias: str = None,
     ) -> ConnectionRecord:
         """
@@ -191,7 +205,7 @@ class ConnectionManager:
         Args:
             invitation: The `ConnectionInvitation` to store
             their_role: The role assigned to this connection
-            accept: set to 'auto' to auto-accept the invitation
+            auto_accept: set to auto-accept the invitation (None to use config)
             alias: optional alias to set on the record
 
         Returns:
@@ -204,8 +218,17 @@ class ConnectionManager:
             if not invitation.endpoint:
                 raise ConnectionManagerError("Invitation must contain an endpoint")
 
-        if accept is None and self.context.settings.get("debug.auto_accept_invites"):
-            accept = ConnectionRecord.ACCEPT_AUTO
+        accept = (
+            ConnectionRecord.ACCEPT_AUTO
+            if (
+                auto_accept
+                or (
+                    auto_accept is None
+                    and self.context.settings.get("debug.auto_accept_invites")
+                )
+            )
+            else ConnectionRecord.ACCEPT_MANUAL
+        )
 
         # Create connection record
         connection = ConnectionRecord(
@@ -271,8 +294,11 @@ class ConnectionManager:
 
         # Create connection request message
         if not my_endpoint:
-            my_endpoints = [self.context.settings.get("default_endpoint")]
-            my_endpoints.extend(self.context.settings.get("additional_endpoints"))
+            my_endpoints = []
+            default_endpoint = self.context.settings.get("default_endpoint")
+            if default_endpoint:
+                my_endpoints.append(default_endpoint)
+            my_endpoints.extend(self.context.settings.get("additional_endpoints", []))
         else:
             my_endpoints = [my_endpoint]
         did_doc = await self.create_did_document(
@@ -453,10 +479,11 @@ class ConnectionManager:
 
         # Create connection response message
         if not my_endpoint:
-            my_endpoints = [self.context.settings.get("default_endpoint")]
-            my_endpoints.extend(self.context.settings.get("additional_endpoints"))
-        else:
-            my_endpoints = [my_endpoint]
+            my_endpoints = []
+            default_endpoint = self.context.settings.get("default_endpoint")
+            if default_endpoint:
+                my_endpoints.append(default_endpoint)
+            my_endpoints.extend(self.context.settings.get("additional_endpoints", []))
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints
         )
@@ -465,6 +492,7 @@ class ConnectionManager:
         )
         # Assign thread information
         response.assign_thread_from(request)
+        response.assign_trace_from(request)
         # Sign connection field using the invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)
@@ -769,7 +797,7 @@ class ConnectionManager:
                 )
 
         return await self.find_connection(
-            receipt.sender_did, receipt.recipient_did, receipt.recipient_verkey, True,
+            receipt.sender_did, receipt.recipient_did, receipt.recipient_verkey, True
         )
 
     async def create_did_document(
@@ -848,7 +876,7 @@ class ConnectionManager:
                 "IndyAgent",
                 [pk],
                 routing_keys,
-                svc_endpoint
+                svc_endpoint,
             )
             did_doc.set(service)
 
@@ -973,10 +1001,8 @@ class ConnectionManager:
         results = None
 
         if (
-            connection.state in (
-                ConnectionRecord.STATE_INVITATION,
-                ConnectionRecord.STATE_REQUEST
-            )
+            connection.state
+            in (ConnectionRecord.STATE_INVITATION, ConnectionRecord.STATE_REQUEST)
             and connection.initiator == ConnectionRecord.INITIATOR_EXTERNAL
         ):
             invitation = await connection.retrieve_invitation(self.context)

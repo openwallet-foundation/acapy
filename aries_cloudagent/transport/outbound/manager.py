@@ -14,6 +14,8 @@ from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundErro
 from ...utils.stats import Collector
 from ...utils.task_queue import CompletedTask, TaskQueue, task_exc_info
 
+from ...utils.tracing import trace_event, get_timer
+
 from ..wire_format import BaseWireFormat
 from ...wallet_handler import WalletHandler
 
@@ -62,6 +64,8 @@ class QueuedOutboundMessage:
 class OutboundTransportManager:
     """Outbound transport manager class."""
 
+    MAX_RETRY_COUNT = 4
+
     def __init__(
         self, context: InjectionContext, handle_not_delivered: Callable = None
     ):
@@ -84,6 +88,8 @@ class OutboundTransportManager:
         self.running_transports = {}
         self.task_queue = TaskQueue(max_active=200)
         self._process_task: asyncio.Task = None
+        if self.context.settings.get("transport.max_outbound_retry"):
+            self.MAX_RETRY_COUNT = self.context.settings["transport.max_outbound_retry"]
 
     async def setup(self):
         """Perform setup operations."""
@@ -248,7 +254,7 @@ class OutboundTransportManager:
             raise OutboundDeliveryError("No supported transport for outbound message")
 
         queued = QueuedOutboundMessage(context, outbound, target, transport_id)
-        queued.retries = 4
+        queued.retries = self.MAX_RETRY_COUNT
         self.outbound_new.append(queued)
         self.process_queued()
 
@@ -308,7 +314,7 @@ class OutboundTransportManager:
 
         while True:
             self.outbound_event.clear()
-            loop_time = time.perf_counter()
+            loop_time = get_timer()
             upd_buffer = []
 
             for queued in self.outbound_buffer:
@@ -334,7 +340,20 @@ class OutboundTransportManager:
 
                 if deliver:
                     queued.state = QueuedOutboundMessage.STATE_DELIVER
+                    p_time = trace_event(
+                        self.context.settings,
+                        queued.message if queued.message else queued.payload,
+                        outcome="OutboundTransportManager.DELIVER.START."
+                        + queued.endpoint,
+                    )
                     self.deliver_queued_message(queued)
+                    trace_event(
+                        self.context.settings,
+                        queued.message if queued.message else queued.payload,
+                        outcome="OutboundTransportManager.DELIVER.END."
+                        + queued.endpoint,
+                        perf_counter=p_time,
+                    )
 
                 upd_buffer.append(queued)
 
@@ -350,7 +369,18 @@ class OutboundTransportManager:
                         new_pending += 1
                     else:
                         queued.state = QueuedOutboundMessage.STATE_ENCODE
+                        p_time = trace_event(
+                            self.context.settings,
+                            queued.message if queued.message else queued.payload,
+                            outcome="OutboundTransportManager.ENCODE.START",
+                        )
                         self.encode_queued_message(queued)
+                        trace_event(
+                            self.context.settings,
+                            queued.message if queued.message else queued.payload,
+                            outcome="OutboundTransportManager.ENCODE.END",
+                            perf_counter=p_time,
+                        )
                 else:
                     new_pending += 1
 
@@ -424,15 +454,14 @@ class OutboundTransportManager:
             if queued.retries:
                 LOGGER.error(
                     ">>> Posting error: %s; Re-queue failed message ...",
-                    queued.endpoint
+                    queued.endpoint,
                 )
                 queued.retries -= 1
                 queued.state = QueuedOutboundMessage.STATE_RETRY
                 queued.retry_at = time.perf_counter() + 10
             else:
                 LOGGER.exception(
-                    "Outbound message could not be delivered",
-                    exc_info=queued.error,
+                    "Outbound message could not be delivered", exc_info=queued.error,
                 )
                 LOGGER.error(">>> NOT Re-queued, state is DONE, failed to deliver msg.")
                 queued.state = QueuedOutboundMessage.STATE_DONE
