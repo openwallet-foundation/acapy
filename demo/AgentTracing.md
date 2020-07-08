@@ -85,7 +85,7 @@ When `Exchange Tracing` is `ON`, all exchanges will include tracing.
 
 ## Logging Trace Events to an EFK Stack
 
-You can use the `EFK` stack in the `EFK` sub-directory as a target for trace events, just start the EFK stack using the docker-compose file and then in two separate bash shells, startup the demo as follows:
+You can use the `EFK` stack in the [EFK sub-directory](./EFK-stack) as a target for trace events, just start the EFK stack using the docker-compose file and then in two separate bash shells, startup the demo as follows:
 
 ```bash
 DOCKER_NET=efk-stack_efk_net TRACE_TARGET_URL=fluentd:8088 ./run_demo faber --trace-http
