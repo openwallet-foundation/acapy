@@ -209,7 +209,8 @@ async def main(
         qr = QRCode()
         qr.add_data(connection["invitation_url"])
         log_msg(
-            "Use the following JSON to accept the invite from another demo agent. Or use the QR code to connect from a mobile agent."
+            "Use the following JSON to accept the invite from another demo agent."
+            " Or use the QR code to connect from a mobile agent."
         )
         log_msg(
             json.dumps(connection["invitation"]), label="Invitation Data:", color=None
@@ -236,7 +237,9 @@ async def main(
             "4/5/6/" if revocation else ""
         )
         async for option in prompt_loop(options):
-            option = option.strip()
+            if option is not None:
+                option = option.strip()
+
             if option is None or option in "xX":
                 break
 
@@ -318,6 +321,18 @@ async def main(
                         for req_pred in req_preds
                     },
                 }
+                # test with an attribute group with attribute value restrictions
+                # indy_proof_request["requested_attributes"] = {
+                #     "n_group_attrs": {
+                #         "names": ["name", "degree", "timestamp", "date"],
+                #         "restrictions": [
+                #             {
+                #                 "issuer_did": agent.did,
+                #                 "attr::name::value": "Alice Smith"
+                #             }
+                #         ]
+                #     }
+                # }
                 if revocation:
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
@@ -353,13 +368,13 @@ async def main(
             elif option == "5" and revocation:
                 try:
                     resp = await agent.admin_POST(
-                        "/issue-credential/publish-revocations"
+                        "/issue-credential/publish-revocations", {}
                     )
                     agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
-                            len(resp["results"]),
+                            len(resp["rrid2crid"]),
                             "y" if len(resp) == 1 else "ies",
-                            json.dumps([k for k in resp["results"]], indent=4),
+                            json.dumps([k for k in resp["rrid2crid"]], indent=4),
                         )
                     )
                 except ClientError:

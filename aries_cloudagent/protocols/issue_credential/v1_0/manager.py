@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Mapping, Text, Sequence, Tuple
+from typing import Mapping, Sequence, Text, Tuple
 
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
@@ -279,6 +279,9 @@ class CredentialManager:
         cred_ex_record.credential_definition_id = credential_offer["cred_def_id"]
         cred_ex_record.state = V10CredentialExchange.STATE_OFFER_SENT
         cred_ex_record.credential_offer = credential_offer
+
+        cred_ex_record.credential_offer_dict = credential_offer_message.serialize()
+
         await cred_ex_record.save(self.context, reason="create credential offer")
 
         return (cred_ex_record, credential_offer_message)
@@ -584,7 +587,7 @@ class CredentialManager:
         return cred_ex_record
 
     async def store_credential(
-        self, cred_ex_record: V10CredentialExchange, credential_id: str = None,
+        self, cred_ex_record: V10CredentialExchange, credential_id: str = None
     ) -> Tuple[V10CredentialExchange, CredentialAck]:
         """
         Store a credential in holder wallet; send ack to issuer.
@@ -662,7 +665,7 @@ class CredentialManager:
 
         credential_ack_message = CredentialAck()
         credential_ack_message.assign_thread_id(
-            cred_ex_record.thread_id, cred_ex_record.parent_thread_id,
+            cred_ex_record.thread_id, cred_ex_record.parent_thread_id
         )
         credential_ack_message.assign_trace_decorator(
             self.context.settings, cred_ex_record.trace
@@ -711,7 +714,8 @@ class CredentialManager:
         Args:
             rev_reg_id: revocation registry id
             cred_rev_id: credential revocation id
-            publish: whether to publish the resulting revocation registry delta
+            publish: whether to publish the resulting revocation registry delta,
+                along with any revocations pending against it
 
         """
         issuer: BaseIssuer = await self.context.inject(BaseIssuer)
@@ -724,42 +728,110 @@ class CredentialManager:
             )
 
         if publish:
-            # create entry and send to ledger
-            delta = json.loads(
-                await issuer.revoke_credentials(
-                    rev_reg_id, registry_record.tails_local_path, [cred_rev_id]
-                )
+            # pick up pending revocations on input revocation registry
+            crids = list(set(registry_record.pending_pub + [cred_rev_id]))
+            (delta_json, _) = await issuer.revoke_credentials(
+                registry_record.revoc_reg_id, registry_record.tails_local_path, crids
             )
-
-            if delta:
-                registry_record.revoc_reg_entry = delta
+            if delta_json:
+                registry_record.revoc_reg_entry = json.loads(delta_json)
                 await registry_record.publish_registry_entry(self.context)
+                await registry_record.clear_pending(self.context)
+
         else:
             await registry_record.mark_pending(self.context, cred_rev_id)
 
-    async def publish_pending_revocations(self) -> Mapping[Text, Sequence[Text]]:
+    async def publish_pending_revocations(
+        self, rrid2crid: Mapping[Text, Sequence[Text]] = None
+    ) -> Mapping[Text, Sequence[Text]]:
         """
         Publish pending revocations to the ledger.
 
+        Args:
+            rrid2crid: Mapping from revocation registry identifiers to all credential
+                revocation identifiers within each to publish. Specify null/empty map
+                for all revocation registries. Specify empty sequence per revocation
+                registry identifier for all pending within the revocation registry;
+                e.g.,
+
+            ::
+
+                {} - publish all pending revocations from all revocation registries
+                {
+                    "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:0": [],
+                    "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:1": ["1", "2"]
+                } - publish:
+                    - all pending revocations from all revocation registry tagged 0
+                    - pending ["1", "2"] from revocation registry tagged 1
+                    - no pending revocations from any other revocation registries.
+
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
-
         result = {}
-
         issuer: BaseIssuer = await self.context.inject(BaseIssuer)
 
         registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
         for registry_record in registry_records:
-            revoke_idxs = list(registry_record.pending_pub)
-            if revoke_idxs:
-                delta_json = await issuer.revoke_credentials(
+            rrid = registry_record.revoc_reg_id
+            crids = []
+            if not rrid2crid:
+                crids = registry_record.pending_pub
+            elif rrid in rrid2crid:
+                crids = [
+                    crid
+                    for crid in registry_record.pending_pub
+                    if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
+                ]
+            if crids:
+                (delta_json, failed_crids) = await issuer.revoke_credentials(
                     registry_record.revoc_reg_id,
                     registry_record.tails_local_path,
-                    revoke_idxs,
+                    crids,
                 )
                 registry_record.revoc_reg_entry = json.loads(delta_json)
                 await registry_record.publish_registry_entry(self.context)
-                result[registry_record.revoc_reg_id] = revoke_idxs
-                await registry_record.clear_pending(self.context)
+                published = [crid for crid in crids if crid not in failed_crids]
+                result[registry_record.revoc_reg_id] = published
+                await registry_record.clear_pending(self.context, published)
+
+        return result
+
+    async def clear_pending_revocations(
+        self, purge: Mapping[Text, Sequence[Text]] = None
+    ) -> Mapping[Text, Sequence[Text]]:
+        """
+        Clear pending revocation publications.
+
+        Args:
+            purge: Mapping from revocation registry identifiers to all credential
+                revocation identifiers within each to clear. Specify null/empty map
+                for all revocation registries. Specify empty sequence per revocation
+                registry identifier for all pending within the revocation registry;
+                e.g.,
+
+            ::
+
+                {} - clear all pending revocations from all revocation registries
+                {
+                    "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:0": [],
+                    "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:1": ["1", "2"]
+                } - clear:
+                    - all pending revocations from all revocation registry tagged 0
+                    - pending ["1", "2"] from revocation registry tagged 1
+                    - no pending revocations from any other revocation registries.
+
+        Returns:
+            mapping from revocation registry id to its remaining
+            cred rev ids still marked pending, omitting revocation registries
+            with no remaining pending publications.
+
+        """
+        result = {}
+        registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
+        for registry_record in registry_records:
+            rrid = registry_record.revoc_reg_id
+            await registry_record.clear_pending(self.context, (purge or {}).get(rrid))
+            if registry_record.pending_pub:
+                result[rrid] = registry_record.pending_pub
 
         return result

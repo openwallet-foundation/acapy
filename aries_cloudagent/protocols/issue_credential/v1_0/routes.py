@@ -17,12 +17,13 @@ from marshmallow import fields, Schema, validate
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....core.error import BaseError
-from ....issuer.indy import IssuerRevocationRegistryFullError
+from ....issuer.base import IssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
+    INDY_CRED_REV_ID,
     INDY_DID,
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
@@ -105,6 +106,45 @@ class V10CredentialStoreRequestSchema(Schema):
     """Request schema for sending a credential store admin message."""
 
     credential_id = fields.Str(required=False)
+
+
+class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
+    """Base class for request schema for sending credential proposal admin message."""
+
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        required=False,
+        **INDY_CRED_DEF_ID,
+    )
+    schema_id = fields.Str(
+        description="Schema identifier", required=False, **INDY_SCHEMA_ID
+    )
+    schema_issuer_did = fields.Str(
+        description="Schema issuer DID", required=False, **INDY_DID
+    )
+    schema_name = fields.Str(
+        description="Schema name", required=False, example="preferences"
+    )
+    schema_version = fields.Str(
+        description="Schema version", required=False, **INDY_VERSION
+    )
+    issuer_did = fields.Str(
+        description="Credential issuer DID", required=False, **INDY_DID
+    )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the credential exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+    )
+    comment = fields.Str(description="Human-readable comment", required=False)
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
+    credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
 
 class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
@@ -212,15 +252,36 @@ class V10CredentialProblemReportRequestSchema(Schema):
     explain_ltxt = fields.Str(required=True)
 
 
-class V10PublishRevocationsResultSchema(Schema):
-    """Result schema for revocation publication API call."""
+class V10PublishRevocationsSchema(Schema):
+    """Request and result schema for revocation publication API call."""
 
-    results = fields.Dict(
+    rrid2crid = fields.Dict(
+        required=False,
         keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
         values=fields.List(
-            fields.Str(description="Credential revocation identifier", example="23")
+            fields.Str(
+                description="Credential revocation identifier", **INDY_CRED_REV_ID
+            )
         ),
-        description="Credential revocation ids published by revocation registry id",
+        description="Credential revocation ids by revocation registry id",
+    )
+
+
+class V10ClearPendingRevocationsRequestSchema(Schema):
+    """Request schema for clear pending revocations API call."""
+
+    purge = fields.Dict(
+        required=False,
+        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        values=fields.List(
+            fields.Str(
+                description="Credential revocation identifier", **INDY_CRED_REV_ID
+            )
+        ),
+        description=(
+            "Credential revocation ids by revocation registry id: omit for all, "
+            "specify null or empty list for all pending per revocation registry"
+        ),
     )
 
 
@@ -344,6 +405,79 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
         await internal_error(err, web.HTTPBadRequest, cred_ex_record, outbound_handler)
 
     return web.json_response(result)
+
+
+@docs(
+    tags=["issue-credential"],
+    summary="Send holder a credential, automating entire flow",
+)
+@request_schema(V10CredentialCreateSchema())
+@response_schema(V10CredentialExchangeSchema(), 200)
+async def credential_exchange_create(request: web.BaseRequest):
+    """
+    Request handler for creating a credential from attr values.
+
+    The internal credential record will be created without the credential
+    being sent to any connection. This can be used in conjunction with
+    the `oob` protocols to bind messages to an out of band message.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential exchange record
+
+    """
+    r_time = get_timer()
+
+    context = request.app["request_context"]
+
+    body = await request.json()
+
+    comment = body.get("comment")
+    preview_spec = body.get("credential_proposal")
+    if not preview_spec:
+        raise web.HTTPBadRequest(reason="credential_proposal must be provided")
+    auto_remove = body.get("auto_remove")
+    trace_msg = body.get("trace")
+
+    try:
+        preview = CredentialPreview.deserialize(preview_spec)
+
+        credential_proposal = CredentialProposal(
+            comment=comment,
+            credential_proposal=preview,
+            **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
+        )
+        credential_proposal.assign_trace_decorator(
+            context.settings, trace_msg,
+        )
+
+        trace_event(
+            context.settings,
+            credential_proposal,
+            outcome="credential_exchange_create.START",
+        )
+
+        credential_manager = CredentialManager(context)
+
+        (
+            credential_exchange_record,
+            credential_offer_message,
+        ) = await credential_manager.prepare_send(
+            None, credential_proposal=credential_proposal, auto_remove=auto_remove,
+        )
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    trace_event(
+        context.settings,
+        credential_offer_message,
+        outcome="credential_exchange_create.END",
+        perf_counter=r_time,
+    )
+
+    return web.json_response(credential_exchange_record.serialize())
 
 
 @docs(
@@ -942,12 +1076,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         )
 
         result = cred_ex_record.serialize()
-    except (
-        StorageError,
-        IssuerRevocationRegistryFullError,
-        BaseModelError,
-        CredentialManagerError,
-    ) as err:
+    except (StorageError, IssuerError, BaseModelError, CredentialManagerError) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
@@ -1061,14 +1190,21 @@ async def credential_exchange_revoke(request: web.BaseRequest):
     credential_manager = CredentialManager(context)
     try:
         await credential_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
-    except (RevocationError, StorageError) as err:
+    except (
+        CredentialManagerError,
+        RevocationError,
+        StorageError,
+        IssuerError,
+        LedgerError,
+    ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 
 
 @docs(tags=["issue-credential"], summary="Publish pending revocations to ledger")
-@response_schema(V10PublishRevocationsResultSchema(), 200)
+@request_schema(V10PublishRevocationsSchema())
+@response_schema(V10PublishRevocationsSchema(), 200)
 async def credential_exchange_publish_revocations(request: web.BaseRequest):
     """
     Request handler for publishing pending revocations to the ledger.
@@ -1081,14 +1217,43 @@ async def credential_exchange_publish_revocations(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+    body = await request.json()
+    rrid2crid = body.get("rrid2crid")
 
     credential_manager = CredentialManager(context)
 
     try:
-        results = await credential_manager.publish_pending_revocations()
-    except (RevocationError, StorageError) as err:
+        results = await credential_manager.publish_pending_revocations(rrid2crid)
+    except (RevocationError, StorageError, IssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"results": results})
+    return web.json_response({"rrid2crid": results})
+
+
+@docs(tags=["issue-credential"], summary="Clear pending revocations")
+@request_schema(V10ClearPendingRevocationsRequestSchema())
+@response_schema(V10PublishRevocationsSchema(), 200)
+async def credential_exchange_clear_pending_revocations(request: web.BaseRequest):
+    """
+    Request handler for clearing pending revocations.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Credential revocation ids still pending revocation by revocation registry id.
+
+    """
+    context = request.app["request_context"]
+    body = await request.json()
+    purge = body.get("purge")
+
+    credential_manager = CredentialManager(context)
+
+    try:
+        results = await credential_manager.clear_pending_revocations(purge)
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response({"rrid2crid": results})
 
 
 @docs(
@@ -1177,6 +1342,7 @@ async def register(app: web.Application):
                 credential_exchange_retrieve,
                 allow_head=False,
             ),
+            web.post("/issue-credential/create", credential_exchange_create),
             web.post("/issue-credential/send", credential_exchange_send),
             web.post(
                 "/issue-credential/send-proposal", credential_exchange_send_proposal
@@ -1204,6 +1370,10 @@ async def register(app: web.Application):
             web.post(
                 "/issue-credential/publish-revocations",
                 credential_exchange_publish_revocations,
+            ),
+            web.post(
+                "/issue-credential/clear-pending-revocations",
+                credential_exchange_clear_pending_revocations,
             ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/remove",

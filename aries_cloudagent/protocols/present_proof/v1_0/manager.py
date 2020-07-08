@@ -190,6 +190,7 @@ class PresentationManager:
             role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_REQUEST_SENT,
             presentation_request=presentation_request_message.indy_proof_request(),
+            presentation_request_dict=presentation_request_message.serialize(),
             trace=(presentation_request_message._trace is not None),
         )
         await presentation_exchange_record.save(

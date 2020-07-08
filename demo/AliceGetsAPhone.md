@@ -284,7 +284,7 @@ In the Faber console window, the proof should be received as validated.
 
 If you have enabled revocation, you can try revoking the credential pending publication (`faber` options `4` and `5`). For the revocation step, You will need the revocation registry identifier and the credential revocation identifier (which is 1 for the first credential you issued), as the Faber agent logged them to the console at credential issue.
 
-Once that is done, try sending another proof request and see what happens! Experiment with immediate and pending publication.
+Once that is done, try sending another proof request and see what happens! Experiment with immediate and pending publication. Note that immediate publication also publishes any pending revocations on its revocation registry.
 
 <details>
     <summary>Click here to view screenshot</summary>
