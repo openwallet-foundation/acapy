@@ -1,6 +1,6 @@
 # Using Tracing in ACA-PY
 
-The aca-py agent supports message tracing, according to the (Tracing RFC)[https://github.com/hyperledger/aries-rfcs/tree/master/features/0034-message-tracing].
+The aca-py agent supports message tracing, according to the [Tracing RFC](https://github.com/hyperledger/aries-rfcs/tree/master/features/0034-message-tracing).
 
 Tracing can be enabled globally, for all messages/events, or it can be enabled on an exchange-by-exchange basis.
 
@@ -53,28 +53,33 @@ Parameters:
 
 When running the Faber controller, tracing can be enabled using the `T` menu option:
 
-```
+```bash
 Faber      | Connected
     (1) Issue Credential
     (2) Send Proof Request
     (3) Send Message
     (T) Toggle tracing on credential/proof exchange
-    (X) Exit?                                                                                                                                                              
-[1/2/3/T/X] t                                                                                                                                                              
+    (X) Exit?
+[1/2/3/T/X] t
+
 >>> Credential/Proof Exchange Tracing is ON
     (1) Issue Credential
     (2) Send Proof Request
     (3) Send Message
     (T) Toggle tracing on credential/proof exchange
-    (X) Exit?                                                                                                                                                              
-[1/2/3/T/X] t                                                                                                                                                              
+    (X) Exit?
+
+[1/2/3/T/X] t
+
 >>> Credential/Proof Exchange Tracing is OFF
     (1) Issue Credential
     (2) Send Proof Request
     (3) Send Message
     (T) Toggle tracing on credential/proof exchange
-    (X) Exit?                                                                                                                                                              
-[1/2/3/T/X]                                                                                                                                      ```
+    (X) Exit?
+
+[1/2/3/T/X]
+```
 
 When `Exchange Tracing` is `ON`, all exchanges will include tracing.
 
