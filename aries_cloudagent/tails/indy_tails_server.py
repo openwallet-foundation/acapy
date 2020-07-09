@@ -2,10 +2,11 @@
 
 import aiohttp
 
-from .base import TailsServer
+from .base import BaseTailsServer
+from .error import TailsServerNotConfiguredError
 
 
-class IndyTailsServer(TailsServer):
+class IndyTailsServer(BaseTailsServer):
     """Indy tails server interface."""
 
     async def upload_tails_file(
@@ -19,15 +20,20 @@ class IndyTailsServer(TailsServer):
         """
 
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
-        tails_server_base_url = context.settings.get("tails.base_url")
+        tails_server_base_url = context.settings.get("tails_server_base_url")
 
-        session = aiohttp.ClientSession()
+        if not tails_server_base_url:
+            raise TailsServerNotConfiguredError(
+                "tails_server_base_url setting is not set"
+            )
+
         with open(tails_file_path, "rb") as tails_file:
-            async with session.put(
-                f"{tails_server_base_url}/{revo_reg_def_id}",
-                data={"genesis": genesis_transactions, "tails": tails_file},
-            ) as resp:
-                return resp
+            async with aiohttp.ClientSession() as session:
+                async with session.put(
+                    f"{tails_server_base_url}/{revo_reg_def_id}",
+                    data={"genesis": genesis_transactions, "tails": tails_file},
+                ) as resp:
+                    return resp
 
     async def download_tails_file(self, revo_reg_def_id: str, location: str) -> str:
         """Download tails file from tails server.

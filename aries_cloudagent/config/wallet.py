@@ -70,4 +70,7 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
     if test_seed:
         await wallet.create_local_did(test_seed)
 
+    if public_did:
+        context.settings["wallet.public_did"] = public_did
+
     return public_did
