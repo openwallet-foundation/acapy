@@ -634,9 +634,7 @@ class CredentialManager:
 
         if revoc_reg_def:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
-            if not revoc_reg.has_local_tails_file(self.context):
-                await revoc_reg.retrieve_tails(self.context)
-
+            await revoc_reg.get_or_fetch_local_tails_path()
         try:
             credential_id = await holder.store_credential(
                 credential_definition,
@@ -726,6 +724,9 @@ class CredentialManager:
             )
 
         if publish:
+            rev_reg = await revoc.get_ledger_registry(rev_reg_id)
+            await rev_reg.get_or_fetch_local_tails_path()
+
             # pick up pending revocations on input revocation registry
             crids = list(set(registry_record.pending_pub + [cred_rev_id]))
             (delta_json, _) = await issuer.revoke_credentials(
