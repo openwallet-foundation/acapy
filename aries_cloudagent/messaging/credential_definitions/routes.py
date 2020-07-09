@@ -173,11 +173,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
         except RevocationNotSupportedError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
-        await shield(
-            registry_record.generate_registry(
-                context, RevocationRegistry.get_temp_dir()
-            )
-        )
+        await shield(registry_record.generate_registry(context))
         try:
             await registry_record.set_tails_file_public_uri(
                 context, f"{tails_base_url}/{registry_record.revoc_reg_id}"
@@ -186,9 +182,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             await registry_record.publish_registry_entry(context)
 
             tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
-            await tails_server.upload_tails_file(
+            upload_success, reason = await tails_server.upload_tails_file(
                 context, registry_record.revoc_reg_id, registry_record.tails_local_path
             )
+            if not upload_success:
+                raise web.HTTPInternalServerError(
+                    reason=f"Tails file failed to upload: {reason}"
+                )
         except RevocationError as e:
             raise web.HTTPBadRequest(reason=e.message)
 
