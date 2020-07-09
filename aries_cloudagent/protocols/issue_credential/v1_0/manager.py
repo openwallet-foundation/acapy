@@ -453,11 +453,7 @@ class CredentialManager:
         return cred_ex_record
 
     async def issue_credential(
-        self,
-        cred_ex_record: V10CredentialExchange,
-        *,
-        comment: str = None,
-        credential_values: dict,
+        self, cred_ex_record: V10CredentialExchange, *, comment: str = None,
     ) -> Tuple[V10CredentialExchange, CredentialIssue]:
         """
         Issue a credential.
@@ -466,7 +462,6 @@ class CredentialManager:
             cred_ex_record: The credential exchange record
                 for which to issue a credential
             comment: optional human-readable comment pertaining to credential issue
-            credential_values: dict of credential attribute {name: value} pairs
 
         Returns:
             Tuple: (Updated credential exchange record, credential message)
@@ -518,6 +513,9 @@ class CredentialManager:
             else:
                 tails_path = None
 
+            credential_values = CredentialProposal.deserialize(
+                cred_ex_record.credential_proposal_dict
+            ).credential_proposal.attr_dict(decode=False)
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             try:
                 (
