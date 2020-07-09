@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod, ABCMeta
 from ..config.injection_context import InjectionContext
 
 
-class TailsServer(ABC, metaclass=ABCMeta):
+class BaseTailsServer(ABC, metaclass=ABCMeta):
     """Base class for tails server interface."""
 
     @abstractmethod
@@ -18,18 +18,6 @@ class TailsServer(ABC, metaclass=ABCMeta):
             revo_reg_def_id: The Revocation registry definition ID
             tails_file: The path to the tails file to upload
         """
-
-        context.settings.get()
-
-        with open(genesis_path, "rb") as genesis_file:
-            async with session.put(
-                f"{tails_server_url}/{revo_reg_def['id']}",
-                data={
-                    "genesis": genesis_file,
-                    "tails": file_sender(revo_reg_def["value"]["tailsLocation"]),
-                },
-            ) as resp:
-                return resp
 
     @abstractmethod
     async def download_tails_file(
