@@ -137,7 +137,7 @@ class TestProofRoutes(AsyncTestCase):
                         )
                     )
                 )
-            )
+            ),
         }
 
         with async_mock.patch.object(
@@ -162,13 +162,11 @@ class TestProofRoutes(AsyncTestCase):
                 inject=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
                         get_credentials_for_presentation_request_by_referent=(
-                            async_mock.CoroutineMock(
-                                return_value=returned_credentials
-                            )
+                            async_mock.CoroutineMock(return_value=returned_credentials)
                         )
                     )
                 )
-            )
+            ),
         }
 
         with async_mock.patch.object(
@@ -199,13 +197,11 @@ class TestProofRoutes(AsyncTestCase):
                 inject=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
                         get_credentials_for_presentation_request_by_referent=(
-                            async_mock.CoroutineMock(
-                                return_value=returned_credentials
-                            )
+                            async_mock.CoroutineMock(return_value=returned_credentials)
                         )
                     )
                 )
-            )
+            ),
         }
 
         with async_mock.patch.object(
@@ -272,9 +268,8 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        mock_pres_ex_rec=async_mock.MagicMock(
-            connection_id="abc123",
-            thread_id="thid123"
+        mock_pres_ex_rec = async_mock.MagicMock(
+            connection_id="abc123", thread_id="thid123"
         )
         with async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
@@ -1003,7 +998,7 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": async_mock.MagicMock(settings={})
+            "request_context": async_mock.MagicMock(settings={}),
         }
 
         with async_mock.patch.object(
