@@ -243,7 +243,6 @@ class V10CredentialIssueRequestSchema(Schema):
     """Request schema for sending credential issue admin message."""
 
     comment = fields.Str(description="Human-readable comment", required=False)
-    credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
 class V10CredentialProblemReportRequestSchema(Schema):
@@ -1042,9 +1041,6 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     body = await request.json()
     comment = body.get("comment")
-    preview_spec = body.get("credential_preview")
-    if not preview_spec:
-        raise web.HTTPBadRequest(reason="credential_preview must be provided")
 
     credential_exchange_id = request.match_info["cred_ex_id"]
     try:
@@ -1063,17 +1059,11 @@ async def credential_exchange_issue(request: web.BaseRequest):
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-        credential_preview = CredentialPreview.deserialize(preview_spec)
-
         credential_manager = CredentialManager(context)
         (
             cred_ex_record,
             credential_issue_message,
-        ) = await credential_manager.issue_credential(
-            cred_ex_record,
-            comment=comment,
-            credential_values=credential_preview.attr_dict(decode=False),
-        )
+        ) = await credential_manager.issue_credential(cred_ex_record, comment=comment)
 
         result = cred_ex_record.serialize()
     except (StorageError, IssuerError, BaseModelError, CredentialManagerError) as err:
