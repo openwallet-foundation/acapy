@@ -11,7 +11,7 @@ class BaseTailsServer(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def upload_tails_file(
         self, context: InjectionContext, revo_reg_def_id: str, tails_file_path: str
-    ) -> str:
+    ) -> (bool, str):
         """Upload tails file to tails server.
 
         Args:
