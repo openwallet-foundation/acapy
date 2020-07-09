@@ -11,7 +11,7 @@ class IndyTailsServer(BaseTailsServer):
 
     async def upload_tails_file(
         self, context, revo_reg_def_id: str, tails_file_path: str
-    ) -> str:
+    ) -> (bool, str):
         """Upload tails file to tails server.
 
         Args:
@@ -33,7 +33,10 @@ class IndyTailsServer(BaseTailsServer):
                     f"{tails_server_base_url}/{revo_reg_def_id}",
                     data={"genesis": genesis_transactions, "tails": tails_file},
                 ) as resp:
-                    return resp
+                    if resp.status == 200:
+                        return True, None
+                    else:
+                        return False, resp.reason
 
     async def download_tails_file(self, revo_reg_def_id: str, location: str) -> str:
         """Download tails file from tails server.
