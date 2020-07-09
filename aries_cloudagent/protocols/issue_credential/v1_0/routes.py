@@ -2,8 +2,6 @@
 
 import json
 
-from typing import Coroutine, Union
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -16,7 +14,6 @@ from json.decoder import JSONDecodeError
 from marshmallow import fields, Schema, validate
 
 from ....connections.models.connection_record import ConnectionRecord
-from ....core.error import BaseError
 from ....issuer.base import IssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
@@ -38,6 +35,7 @@ from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
 from ....utils.outofband import serialize_outofband
 
+from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
 
 from .manager import CredentialManager, CredentialManagerError
@@ -318,29 +316,6 @@ class CredExIdMatchInfoSchema(Schema):
     )
 
 
-async def send_problem_report(
-    loc_text: str, connection_id: str, thread_id: str, outbound_handler: Coroutine
-):
-    """Send problem report."""
-    error_result = ProblemReport(explain_ltxt=loc_text)
-    error_result.assign_thread_id(thread_id)
-    await outbound_handler(error_result, connection_id=connection_id)
-
-
-async def internal_error(
-    err: BaseError,
-    http_error_class,
-    record: Union[ConnectionRecord, V10CredentialExchange],
-    outbound_handler: Coroutine,
-):
-    """Send problem report and raise corresponding HTTP error."""
-    if record:
-        await send_problem_report(
-            err.roll_up, record.connection_id, record.thread_id, outbound_handler
-        )
-    raise http_error_class(reason=err.roll_up) from err
-
-
 @docs(tags=["issue-credential"], summary="Fetch all credential exchange records")
 @querystring_schema(V10CredentialExchangeListQueryStringSchema)
 @response_schema(V10CredentialExchangeListResultSchema(), 200)
@@ -400,7 +375,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
         result = cred_ex_record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except BaseModelError as err:
+    except (BaseModelError, StorageError) as err:
         await internal_error(err, web.HTTPBadRequest, cred_ex_record, outbound_handler)
 
     return web.json_response(result)
@@ -1066,7 +1041,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         ) = await credential_manager.issue_credential(cred_ex_record, comment=comment)
 
         result = cred_ex_record.serialize()
-    except (StorageError, IssuerError, BaseModelError, CredentialManagerError) as err:
+    except (BaseModelError, CredentialManagerError, IssuerError, StorageError) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,

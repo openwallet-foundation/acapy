@@ -169,12 +169,13 @@ class IndyHolder(BaseHolder):
                 self.wallet.handle, json.dumps(wql)
             )
 
-        if start > 0:
-            # must move database cursor manually
-            await fetch(start)
-        credentials = await fetch(count)
+            if start > 0:
+                # must move database cursor manually
+                await fetch(start)
+            credentials = await fetch(count)
 
-        await indy.anoncreds.prover_close_credentials_search(search_handle)
+            await indy.anoncreds.prover_close_credentials_search(search_handle)
+
         return credentials
 
     async def get_credentials_for_presentation_request_by_referent(
@@ -228,33 +229,33 @@ class IndyHolder(BaseHolder):
                 )
             )
 
-        if not referents:
-            referents = (
-                *presentation_request["requested_attributes"],
-                *presentation_request["requested_predicates"],
-            )
-        creds_dict = OrderedDict()
+            if not referents:
+                referents = (
+                    *presentation_request["requested_attributes"],
+                    *presentation_request["requested_predicates"],
+                )
+            creds_dict = OrderedDict()
 
-        try:
-            for reft in referents:
-                # must move database cursor manually
-                if start > 0:
-                    await fetch(reft, start)
-                credentials = await fetch(reft, count - len(creds_dict))
-                for cred in credentials:
-                    cred_id = cred["cred_info"]["referent"]
-                    if cred_id not in creds_dict:
-                        cred["presentation_referents"] = {reft}
-                        creds_dict[cred_id] = cred
-                    else:
-                        creds_dict[cred_id]["presentation_referents"].add(reft)
-                if len(creds_dict) >= count:
-                    break
-        finally:
-            # Always close
-            await indy.anoncreds.prover_close_credentials_search_for_proof_req(
-                search_handle
-            )
+            try:
+                for reft in referents:
+                    # must move database cursor manually
+                    if start > 0:
+                        await fetch(reft, start)
+                    credentials = await fetch(reft, count - len(creds_dict))
+                    for cred in credentials:
+                        cred_id = cred["cred_info"]["referent"]
+                        if cred_id not in creds_dict:
+                            cred["presentation_referents"] = {reft}
+                            creds_dict[cred_id] = cred
+                        else:
+                            creds_dict[cred_id]["presentation_referents"].add(reft)
+                    if len(creds_dict) >= count:
+                        break
+            finally:
+                # Always close
+                await indy.anoncreds.prover_close_credentials_search_for_proof_req(
+                    search_handle
+                )
 
         for cred in creds_dict.values():
             cred["presentation_referents"] = list(cred["presentation_referents"])
