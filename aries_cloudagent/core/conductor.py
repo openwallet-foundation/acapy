@@ -86,6 +86,13 @@ class Conductor:
         )
         await self.outbound_transport_manager.setup()
 
+        # Configure the wallet
+        public_did = await wallet_config(context)
+
+        # Configure the ledger
+        if not await ledger_config(context, public_did):
+            LOGGER.warning("No ledger configured")
+
         # Admin API
         if context.settings.get("admin.enabled"):
             try:
@@ -140,13 +147,6 @@ class Conductor:
 
         context = self.context
 
-        # Configure the wallet
-        public_did = await wallet_config(context)
-
-        # Configure the ledger
-        if not await ledger_config(context, public_did):
-            LOGGER.warning("No ledger configured")
-
         # Start up transports
         try:
             await self.inbound_transport_manager.start()
@@ -172,6 +172,9 @@ class Conductor:
 
         # Get agent label
         default_label = context.settings.get("default_label")
+
+        # Get public did
+        public_did = context.settings.get("wallet.public_did")
 
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
