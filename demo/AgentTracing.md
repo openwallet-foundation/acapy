@@ -53,7 +53,7 @@ Parameters:
 
 When running the Faber controller, tracing can be enabled using the `T` menu option:
 
-```bash
+```
 Faber      | Connected
     (1) Issue Credential
     (2) Send Proof Request
