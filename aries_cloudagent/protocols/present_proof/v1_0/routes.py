@@ -836,7 +836,6 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     presentation_manager = PresentationManager(context)
-    pres_ex_record = None
     try:
         (
             pres_ex_record,
@@ -913,7 +912,6 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     presentation_manager = PresentationManager(context)
-    pres_ex_record = None
     try:
         (
             pres_ex_record,

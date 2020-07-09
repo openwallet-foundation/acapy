@@ -787,12 +787,13 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
+            mock_presentation_exchange.connection_id = "abc123"
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_presentation_exchange
             )
             mock_presentation_exchange.serialize = async_mock.MagicMock()
             mock_presentation_exchange.serialize.return_value = {
-                "thread_id": "sample-thread-id"
+                "thread_id": "sample-thread-id",
             }
             mock_connection_record.is_ready = True
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
