@@ -4,12 +4,15 @@ import json
 import logging
 import uuid
 
+from os.path import join
+from shutil import move
 from typing import Any, Sequence
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext
+from ...indy.util import indy_client_dir
 from ...issuer.base import BaseIssuer, IssuerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
@@ -132,7 +135,7 @@ class IssuerRevRegRecord(BaseRecord):
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise RevocationError("URI {} is not a valid URL".format(url))
 
-    async def generate_registry(self, context: InjectionContext, base_dir: str):
+    async def generate_registry(self, context: InjectionContext):
         """Create the credential registry definition and tails file."""
         if not self.tag:
             self.tag = self._id or str(uuid.uuid4())
@@ -145,6 +148,7 @@ class IssuerRevRegRecord(BaseRecord):
             )
 
         issuer: BaseIssuer = await context.inject(BaseIssuer)
+        tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
         LOGGER.debug("create revocation registry with size:", self.max_cred_num)
 
@@ -159,7 +163,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.revoc_def_type,
                 self.tag,
                 self.max_cred_num,
-                base_dir,
+                tails_hopper_dir,
                 self.issuance_type,
             )
         except IssuerError as err:
@@ -170,7 +174,12 @@ class IssuerRevRegRecord(BaseRecord):
         self.revoc_reg_entry = json.loads(revoc_reg_entry_json)
         self.state = IssuerRevRegRecord.STATE_GENERATED
         self.tails_hash = self.revoc_reg_def["value"]["tailsHash"]
-        self.tails_local_path = self.revoc_reg_def["value"]["tailsLocation"]
+
+        tails_dir = indy_client_dir(join("tails", self.revoc_reg_id), create=True)
+        tails_path = join(tails_dir, self.tails_hash)
+        move(join(tails_hopper_dir, self.tails_hash), tails_path)
+        self.tails_local_path = tails_path
+
         await self.save(context, reason="Generated registry")
 
     async def set_tails_file_public_uri(
