@@ -10,6 +10,7 @@ from shutil import rmtree
 import base58
 
 from ....config.injection_context import InjectionContext
+from ....indy.util import indy_client_dir
 from ....storage.base import BaseStorage
 from ....storage.basic import BasicStorage
 
@@ -23,9 +24,9 @@ from .. import revocation_registry as test_module
 TEST_DID = "FkjWznKwA4N1JEp2iPiKPG"
 CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag1"
-TAILS_DIR = "/tmp/indy/revocation/tails_files"
+TAILS_DIR = indy_client_dir("tails")
 TAILS_HASH = "8UW1Sz5cqoUnK9hqQk7nvtKK65t7Chu3ui866J23sFyJ"
-TAILS_LOCAL = f"{TAILS_DIR}/{TAILS_HASH}"
+TAILS_LOCAL = f"{TAILS_DIR}{REV_REG_ID}/{TAILS_HASH}"
 REV_REG_DEF = {
     "ver": "1.0",
     "id": REV_REG_ID,
@@ -47,15 +48,6 @@ REV_REG_DEF = {
 
 
 class TestRevocationRegistry(AsyncTestCase):
-    def setUp(self):
-        self.context = InjectionContext(
-            settings={"holder.revocation.tails_files.path": TAILS_DIR},
-            enforce_typing=False,
-        )
-
-        self.storage = BasicStorage()
-        self.context.injector.bind_instance(BaseStorage, self.storage)
-
     def tearDown(self):
         rmtree(TAILS_DIR, ignore_errors=True)
 
@@ -66,14 +58,11 @@ class TestRevocationRegistry(AsyncTestCase):
         for public in (True, False):
             rev_reg = RevocationRegistry.from_definition(REV_REG_DEF, public_def=public)
             if public:
-                assert not rev_reg.tails_local_path
+                assert rev_reg.tails_local_path
                 assert rev_reg.tails_public_uri
             else:
                 assert rev_reg.tails_local_path
                 assert not rev_reg.tails_public_uri
-
-    async def test_temp_dir(self):
-        assert RevocationRegistry.get_temp_dir()
 
     async def test_properties(self):
         rev_reg = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
@@ -96,26 +85,23 @@ class TestRevocationRegistry(AsyncTestCase):
         rr_def_public["value"]["tailsLocation"] = "http://sample.ca:8088/path"
         rev_reg_pub = RevocationRegistry.from_definition(rr_def_public, public_def=True)
 
-        assert rev_reg_pub.get_receiving_tails_local_path(self.context) == TAILS_LOCAL
+        assert rev_reg_pub.get_receiving_tails_local_path() == TAILS_LOCAL
 
         rev_reg_loc = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
-        assert rev_reg_loc.get_receiving_tails_local_path(self.context) == TAILS_LOCAL
+        assert rev_reg_loc.get_receiving_tails_local_path() == TAILS_LOCAL
 
         with async_mock.patch.object(Path, "is_file", autospec=True) as mock_is_file:
             mock_is_file.return_value = True
 
-            assert (
-                await rev_reg_loc.get_or_fetch_local_tails_path(self.context)
-                == TAILS_LOCAL
-            )
+            assert await rev_reg_loc.get_or_fetch_local_tails_path() == TAILS_LOCAL
 
         rmtree(TAILS_DIR, ignore_errors=True)
-        assert not rev_reg_loc.has_local_tails_file(self.context)
+        assert not rev_reg_loc.has_local_tails_file()
 
     async def test_retrieve_tails(self):
         rev_reg = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
         with self.assertRaises(RevocationError) as x_retrieve:
-            await rev_reg.retrieve_tails(self.context)
+            await rev_reg.retrieve_tails()
             assert x_retrieve.message.contains("Tails file public URI is empty")
 
         rr_def_public = deepcopy(REV_REG_DEF)
@@ -134,7 +120,7 @@ class TestRevocationRegistry(AsyncTestCase):
             )
 
             with self.assertRaises(RevocationError) as x_retrieve:
-                await rev_reg.retrieve_tails(self.context)
+                await rev_reg.retrieve_tails()
                 assert x_retrieve.message.contains("Error retrieving tails file")
 
             rmtree(TAILS_DIR, ignore_errors=True)
@@ -155,7 +141,7 @@ class TestRevocationRegistry(AsyncTestCase):
             )
 
             with self.assertRaises(RevocationError) as x_retrieve:
-                await rev_reg.retrieve_tails(self.context)
+                await rev_reg.retrieve_tails()
                 assert x_retrieve.message.contains(
                     "The hash of the downloaded tails file does not match."
                 )
@@ -185,6 +171,6 @@ class TestRevocationRegistry(AsyncTestCase):
             mock_b58enc.return_value = async_mock.MagicMock(
                 decode=async_mock.MagicMock(return_value=TAILS_HASH)
             )
-            await rev_reg.get_or_fetch_local_tails_path(self.context)
+            await rev_reg.get_or_fetch_local_tails_path()
 
             rmtree(TAILS_DIR, ignore_errors=True)

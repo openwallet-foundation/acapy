@@ -475,6 +475,11 @@ class DemoAgent:
                     f"to handle webhook on topic {topic}"
                 )
 
+    async def handle_problem_report(self, message):
+        self.log(
+            f"Received problem report: {message['explain-ltxt']}\n", source="stderr"
+        )
+
     async def admin_request(
         self, method, path, data=None, text=False, params=None
     ) -> ClientResponse:

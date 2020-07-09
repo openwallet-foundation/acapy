@@ -1186,8 +1186,7 @@ class TestCredentialManager(AsyncTestCase):
 
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    has_local_tails_file=async_mock.MagicMock(return_value=False),
-                    retrieve_tails=async_mock.CoroutineMock(return_value=None),
+                    get_or_fetch_local_tails_path=async_mock.CoroutineMock()
                 )
             )
             ret_exchange, ret_cred_ack = await self.manager.store_credential(
@@ -1379,8 +1378,14 @@ class TestCredentialManager(AsyncTestCase):
                 publish_registry_entry=async_mock.CoroutineMock(),
                 clear_pending=async_mock.CoroutineMock(),
             )
+            mock_rev_reg = async_mock.MagicMock(
+                get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+            )
             revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
                 return_value=mock_issuer_rev_reg_record
+            )
+            revoc.return_value.get_ledger_registry = async_mock.CoroutineMock(
+                return_value=mock_rev_reg
             )
 
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
