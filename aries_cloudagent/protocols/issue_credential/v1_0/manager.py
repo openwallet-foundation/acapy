@@ -453,11 +453,7 @@ class CredentialManager:
         return cred_ex_record
 
     async def issue_credential(
-        self,
-        cred_ex_record: V10CredentialExchange,
-        *,
-        comment: str = None,
-        credential_values: dict,
+        self, cred_ex_record: V10CredentialExchange, *, comment: str = None,
     ) -> Tuple[V10CredentialExchange, CredentialIssue]:
         """
         Issue a credential.
@@ -466,7 +462,6 @@ class CredentialManager:
             cred_ex_record: The credential exchange record
                 for which to issue a credential
             comment: optional human-readable comment pertaining to credential issue
-            credential_values: dict of credential attribute {name: value} pairs
 
         Returns:
             Tuple: (Updated credential exchange record, credential message)
@@ -518,6 +513,9 @@ class CredentialManager:
             else:
                 tails_path = None
 
+            credential_values = CredentialProposal.deserialize(
+                cred_ex_record.credential_proposal_dict
+            ).credential_proposal.attr_dict(decode=False)
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             try:
                 (
@@ -636,9 +634,7 @@ class CredentialManager:
 
         if revoc_reg_def:
             revoc_reg = RevocationRegistry.from_definition(revoc_reg_def, True)
-            if not revoc_reg.has_local_tails_file(self.context):
-                await revoc_reg.retrieve_tails(self.context)
-
+            await revoc_reg.get_or_fetch_local_tails_path()
         try:
             credential_id = await holder.store_credential(
                 credential_definition,
@@ -728,6 +724,9 @@ class CredentialManager:
             )
 
         if publish:
+            rev_reg = await revoc.get_ledger_registry(rev_reg_id)
+            await rev_reg.get_or_fetch_local_tails_path()
+
             # pick up pending revocations on input revocation registry
             crids = list(set(registry_record.pending_pub + [cred_rev_id]))
             (delta_json, _) = await issuer.revoke_credentials(
