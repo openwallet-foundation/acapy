@@ -8,20 +8,15 @@ from .. import routes as test_module
 
 
 class TestOutOfBandRoutes(AsyncTestCase):
-
     async def test_invitation_create(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.MagicMock()
-        }
-        request.query = {
-            "multi_use": "true"
-        }
+        request.app = {"request_context": async_mock.MagicMock()}
+        request.query = {"multi_use": "true"}
         request.json = async_mock.CoroutineMock(
             return_value={
                 "attachments": async_mock.MagicMock(),
                 "include_handshake": True,
-                "use_public_did": True
+                "use_public_did": True,
             }
         )
 
@@ -32,9 +27,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         ) as mock_json_response:
             mock_oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
-                    serialize=async_mock.MagicMock(
-                        return_value={"abc": "123"}
-                    )
+                    serialize=async_mock.MagicMock(return_value={"abc": "123"})
                 )
             )
 
@@ -43,17 +36,13 @@ class TestOutOfBandRoutes(AsyncTestCase):
 
     async def test_invitation_create_x(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.MagicMock()
-        }
-        request.query = {
-            "multi_use": "true"
-        }
+        request.app = {"request_context": async_mock.MagicMock()}
+        request.query = {"multi_use": "true"}
         request.json = async_mock.CoroutineMock(
             return_value={
                 "attachments": async_mock.MagicMock(),
                 "include_handshake": True,
-                "use_public_did": True
+                "use_public_did": True,
             }
         )
 
@@ -72,9 +61,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
 
     async def test_invitation_receive(self):
         request = async_mock.MagicMock()
-        request.app = {
-            "request_context": async_mock.MagicMock()
-        }
+        request.app = {"request_context": async_mock.MagicMock()}
         request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
@@ -84,9 +71,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         ) as mock_json_response:
             mock_oob_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
-                    serialize=async_mock.MagicMock(
-                        return_value={"abc": "123"}
-                    )
+                    serialize=async_mock.MagicMock(return_value={"abc": "123"})
                 )
             )
 
