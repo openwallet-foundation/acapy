@@ -112,3 +112,23 @@ async def register(app: web.Application):
             web.post("/out-of-band/receive-invitation", invitation_receive),
         ]
     )
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "out-of-band",
+            "description": "Out-of-band connections",
+            "externalDocs": {
+                "description": "Design",
+                "url": (
+                    "https://github.com/hyperledger/aries-rfcs/tree/"
+                    "2da7fc4ee043effa3a9960150e7ba8c9a4628b68/features/0434-outofband"
+                ),
+            },
+        }
+    )
