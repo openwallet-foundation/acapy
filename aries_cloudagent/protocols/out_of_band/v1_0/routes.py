@@ -113,6 +113,7 @@ async def register(app: web.Application):
         ]
     )
 
+
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
 
