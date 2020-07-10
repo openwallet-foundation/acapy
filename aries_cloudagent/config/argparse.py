@@ -604,12 +604,12 @@ class ProtocolGroup(ArgumentGroup):
             settings["timing.enabled"] = True
         if args.timing_log:
             settings["timing.log_file"] = args.timing_log
+        # note that you can configure tracing without actually enabling it
+        # this is to allow message- or exchange-specific tracing (vs global)
+        settings["trace.target"] = "log"
+        settings["trace.tag"] = ""
         if args.trace:
-            # note that you can configure tracing without actually enabling it
-            # this is to allow message- or exchange-specific tracing (vs global)
             settings["trace.enabled"] = True
-            settings["trace.target"] = "log"
-            settings["trace.tag"] = ""
         if args.trace_target:
             settings["trace.target"] = args.trace_target
         if args.trace_tag:
