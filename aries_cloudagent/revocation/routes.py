@@ -141,9 +141,7 @@ async def revocation_create_registry(request: web.BaseRequest):
         issuer_did = credential_definition_id.split(":")[0]
         revoc = IndyRevocation(context)
         registry_record = await revoc.init_issuer_registry(
-            credential_definition_id,
-            issuer_did,
-            max_cred_num=max_cred_num,
+            credential_definition_id, issuer_did, max_cred_num=max_cred_num,
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
