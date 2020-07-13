@@ -50,15 +50,11 @@ class IssuerRevRegRecord(BaseRecord):
     CACHE_ENABLED = False
     TAG_NAMES = {
         "cred_def_id",
-        "issuance_type",
         "issuer_did",
         "revoc_def_type",
         "revoc_reg_id",
         "state",
     }
-
-    ISSUANCE_BY_DEFAULT = "ISSUANCE_BY_DEFAULT"
-    ISSUANCE_ON_DEMAND = "ISSUANCE_ON_DEMAND"
 
     REVOC_DEF_TYPE_CL = "CL_ACCUM"
 
@@ -76,7 +72,6 @@ class IssuerRevRegRecord(BaseRecord):
         state: str = None,
         cred_def_id: str = None,
         error_msg: str = None,
-        issuance_type: str = None,
         issuer_did: str = None,
         max_cred_num: int = None,
         revoc_def_type: str = None,
@@ -96,7 +91,6 @@ class IssuerRevRegRecord(BaseRecord):
         )
         self.cred_def_id = cred_def_id
         self.error_msg = error_msg
-        self.issuance_type = issuance_type or self.ISSUANCE_BY_DEFAULT
         self.issuer_did = issuer_did
         self.max_cred_num = max_cred_num or DEFAULT_REGISTRY_SIZE
         self.revoc_def_type = revoc_def_type or self.REVOC_DEF_TYPE_CL
@@ -168,7 +162,6 @@ class IssuerRevRegRecord(BaseRecord):
                 self.tag,
                 self.max_cred_num,
                 tails_hopper_dir,
-                self.issuance_type,
             )
         except IssuerError as err:
             raise RevocationError() from err
@@ -409,17 +402,6 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         required=False,
         description="Error message",
         example="Revocation registry undefined",
-    )
-    issuance_type = fields.Str(
-        required=False,
-        description="Issuance type (ISSUANCE_BY_DEFAULT or ISSUANCE_ON_DEMAND)",
-        example=IssuerRevRegRecord.ISSUANCE_BY_DEFAULT,
-        validate=validate.OneOf(
-            [
-                IssuerRevRegRecord.ISSUANCE_BY_DEFAULT,
-                IssuerRevRegRecord.ISSUANCE_ON_DEMAND,
-            ]
-        ),
     )
     issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
     max_cred_num = fields.Int(
