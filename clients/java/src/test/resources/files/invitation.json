@@ -1,0 +1,13 @@
+{
+  "connection_id": "d16dc0bf-bd55-4dd3-842f-87b14760b95d",
+  "invitation": {
+    "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+    "@id": "aa949ea5-e7d6-4087-8246-c1f99a5c60d6",
+    "recipientKeys": [
+      "E7gc1zVooBTa4oGWb3Eh1iYUydtyM8bwBqoDRQsKA82D"
+    ],
+    "label": "JgLZdcogY4AksRvMomzDY8",
+    "serviceEndpoint": "https://mintgreenlucky.aries.test-corp.de:8080"
+  },
+  "invitation_url": "https://mintgreenlucky.aries.test-corp.de:8080?c_i=eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiYWE5NDllYTUtZTdkNi00MDg3LTgyNDYtYzFmOTlhNWM2MGQ2IiwgInJlY2lwaWVudEtleXMiOiBbIkU3Z2MxelZvb0JUYTRvR1diM0VoMWlZVXlkdHlNOGJ3QnFvRFJRc0tBODJEIl0sICJsYWJlbCI6ICJKZ0xaZGNvZ1k0QWtzUnZNb216RFk4IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwczovL21pbnRncmVlbmx1Y2t5LmFyaWVzLnRlc3QtY29ycC5kZTo4MDgwIn0="
+}

@@ -1,0 +1,13 @@
+{
+    "updated_at": "2020-06-16 09:42:54.540635Z",
+    "their_label": "Bob",
+    "created_at": "2020-06-16 09:42:54.499263Z",
+    "state": "request",
+    "request_id": "b1245a73-aa98-4511-910b-1d5da9429b9f",
+    "invitation_mode": "once",
+    "accept": "auto",
+    "connection_id": "ce43c882-029d-415e-af44-fa01168a5ad1",
+    "routing_state": "none",
+    "initiator": "external",
+    "my_did": "2jLadxcUa35JGjWvnUzH9m"
+}

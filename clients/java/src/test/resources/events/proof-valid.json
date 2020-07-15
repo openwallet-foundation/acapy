@@ -1,0 +1,580 @@
+{
+    "presentation": {
+        "proof": {
+            "proofs": [
+                {
+                    "primary_proof": {
+                        "eq_proof": {
+                            "revealed_attrs": {
+                                "city": "29996482935312948221842872761883755828257005115547874116663242491598699335805",
+                                "country": "15585966649011555461411234542245357822805664141688312278295077039326254115466",
+                                "email": "",
+                                "local_name": "",
+                                "name": "",
+                                "phone": "1906666666",
+                                "postal_code": "8000",
+                                "registration_country": "15585966649011555461411234542245357822805664141688312278295077039326254115466",
+                                "registration_number": "7141833266100818085673811317892922673112975813921315452314612676788544594532",
+                                "state": "29996482935312948221842872761883755828257005115547874116663242491598699335805",
+                                "street": "",
+                                "street_number": "4",
+                                "website": ""
+                            },
+                            "a_prime": "72036009659354327986346032922187193334303074587774200108483861343540591021606915773361462321722170726989430333881395281284483506571432185547694570502734971833507849506669241631207523962580636941722574265392801178971904489320388489269756874608099414137661898953476409347842668578778429368761727386507566442470785315728189923673319016980565347198449998852156698475552491312134278708762866303471432344303674916043232724291574129678309635399819111975648022771355808765565740813123743985707375338550271922891158645620610039746994380614679535718854628465042145462597014816266333629944459536196618823179848444880868975748249",
+                            "e": "166788178953907098325268469771057814269286448279503985057961754689400898996101164306624593398787309928978286385387551056550304095418604717",
+                            "v": "191010100347599178471190972333624668635181777014953480939425344591133731516027151910613589373761867362886540461005498035927543660247550855182129395511881424090595725864959561941150478485724778007805258801814762705246378652354964865695408064999724640627215741118842809748640934209925196736546577354919979490786818359896348793944154236705388340476348642977097452730485887443649537355776570757188939098282760184427399965596659483059857304154098990235804292390556249500741578676525895046220712413079507484252662995860022813833810427338984720759054908814821805418788543348743381783855899772920572517086204157075678850440388376853380208278483279248715241452551440108275974157424142284753612405405756415557003629199810361538485334682779280590462530434905979356999371901509423594527674782682710998290984837880580279539519846271336017393978199113632560172512748317056421627962195290721962319426561418325202963094639658082591385013",
+                            "m": {
+                                "master_secret": "9570342446170358732165056937401175302835536846219977291467455856124122473861026955631317196140545858580473608836911950316804086944754278944939783050329675190806233605326326545318"
+                            },
+                            "m2": "16110971772741686793356532316647700116465229855533047126194294989349971387696777515014764471611292365869341433716765335205660806909973619769186392739513370025966567078260175269232"
+                        },
+                        "ge_proofs": []
+                    },
+                    "non_revoc_proof": null
+                }
+            ],
+            "aggregated_proof": {
+                "c_hash": "87178483311295777675438041854302992068972688663659522176132132888574584289398",
+                "c_list": [
+                    [
+                        2,
+                        58,
+                        162,
+                        150,
+                        227,
+                        229,
+                        194,
+                        144,
+                        141,
+                        101,
+                        131,
+                        19,
+                        137,
+                        121,
+                        231,
+                        234,
+                        226,
+                        167,
+                        144,
+                        31,
+                        27,
+                        149,
+                        121,
+                        160,
+                        89,
+                        8,
+                        163,
+                        48,
+                        144,
+                        205,
+                        46,
+                        141,
+                        93,
+                        151,
+                        135,
+                        159,
+                        252,
+                        136,
+                        195,
+                        157,
+                        75,
+                        227,
+                        47,
+                        247,
+                        56,
+                        122,
+                        180,
+                        159,
+                        14,
+                        107,
+                        209,
+                        43,
+                        28,
+                        144,
+                        202,
+                        113,
+                        161,
+                        110,
+                        177,
+                        228,
+                        165,
+                        140,
+                        234,
+                        251,
+                        85,
+                        5,
+                        157,
+                        76,
+                        76,
+                        23,
+                        116,
+                        121,
+                        188,
+                        112,
+                        67,
+                        173,
+                        217,
+                        50,
+                        155,
+                        14,
+                        36,
+                        74,
+                        94,
+                        206,
+                        154,
+                        191,
+                        156,
+                        250,
+                        223,
+                        41,
+                        154,
+                        59,
+                        61,
+                        11,
+                        214,
+                        105,
+                        102,
+                        121,
+                        139,
+                        125,
+                        192,
+                        52,
+                        9,
+                        192,
+                        156,
+                        10,
+                        51,
+                        221,
+                        141,
+                        147,
+                        166,
+                        190,
+                        247,
+                        248,
+                        81,
+                        50,
+                        167,
+                        205,
+                        67,
+                        25,
+                        142,
+                        59,
+                        110,
+                        254,
+                        162,
+                        217,
+                        106,
+                        82,
+                        57,
+                        110,
+                        254,
+                        76,
+                        194,
+                        142,
+                        16,
+                        164,
+                        181,
+                        42,
+                        214,
+                        165,
+                        187,
+                        163,
+                        226,
+                        141,
+                        232,
+                        152,
+                        87,
+                        158,
+                        60,
+                        66,
+                        170,
+                        192,
+                        22,
+                        36,
+                        116,
+                        220,
+                        55,
+                        138,
+                        85,
+                        176,
+                        86,
+                        27,
+                        246,
+                        228,
+                        117,
+                        245,
+                        19,
+                        175,
+                        8,
+                        248,
+                        140,
+                        113,
+                        194,
+                        198,
+                        248,
+                        84,
+                        193,
+                        230,
+                        42,
+                        235,
+                        52,
+                        156,
+                        60,
+                        125,
+                        150,
+                        36,
+                        48,
+                        65,
+                        16,
+                        55,
+                        76,
+                        91,
+                        90,
+                        121,
+                        194,
+                        15,
+                        188,
+                        74,
+                        41,
+                        119,
+                        128,
+                        70,
+                        65,
+                        57,
+                        164,
+                        5,
+                        4,
+                        53,
+                        37,
+                        105,
+                        252,
+                        214,
+                        35,
+                        235,
+                        76,
+                        144,
+                        30,
+                        250,
+                        191,
+                        228,
+                        211,
+                        242,
+                        7,
+                        166,
+                        101,
+                        91,
+                        163,
+                        8,
+                        110,
+                        41,
+                        164,
+                        51,
+                        229,
+                        130,
+                        72,
+                        202,
+                        126,
+                        215,
+                        69,
+                        222,
+                        240,
+                        255,
+                        243,
+                        165,
+                        199,
+                        32,
+                        148,
+                        94,
+                        155,
+                        227,
+                        75,
+                        226,
+                        49,
+                        222,
+                        202,
+                        164,
+                        153
+                    ]
+                ]
+            }
+        },
+        "requested_proof": {
+            "revealed_attrs": {
+                "1_name_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "TestCorp",
+                    "encoded": ""
+                },
+                "8_website_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "https://www.test-corp.ch",
+                    "encoded": ""
+                },
+                "10_email_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "info@test-corp.ch",
+                    "encoded": ""
+                },
+                "3_street_number_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "4",
+                    "encoded": "4"
+                },
+                "4_city_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "Zürich",
+                    "encoded": "29996482935312948221842872761883755828257005115547874116663242491598699335805"
+                },
+                "2_street_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "Test Corp Campus",
+                    "encoded": ""
+                },
+                "9_phone_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "01906666666",
+                    "encoded": "1906666666"
+                },
+                "0_local_name_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "Test Corp Digital Solutions",
+                    "encoded": ""
+                },
+                "11_registration_number_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "12345678901266",
+                    "encoded": "7141833266100818085673811317892922673112975813921315452314612676788544594532"
+                },
+                "6_state_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "Zürich",
+                    "encoded": "29996482935312948221842872761883755828257005115547874116663242491598699335805"
+                },
+                "5_postal_code_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "8000",
+                    "encoded": "8000"
+                },
+                "12_registration_country_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "Switzerland",
+                    "encoded": "15585966649011555461411234542245357822805664141688312278295077039326254115466"
+                },
+                "7_country_uuid": {
+                    "sub_proof_index": 0,
+                    "raw": "Switzerland",
+                    "encoded": "15585966649011555461411234542245357822805664141688312278295077039326254115466"
+                }
+            },
+            "self_attested_attrs": {},
+            "unrevealed_attrs": {},
+            "predicates": {}
+        },
+        "identifiers": [
+            {
+                "schema_id": "CHysca6fY8n8ytCDLAJGZj:2:master_data:1.0",
+                "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                "rev_reg_id": null,
+                "timestamp": null
+            }
+        ]
+    },
+    "role": "verifier",
+    "presentation_exchange_id": "40dbc50e-affc-4fe1-8f4c-01b417fa762f",
+    "presentation_request": {
+        "name": "proof-request",
+        "version": "1.0",
+        "nonce": "577563400854684901001288",
+        "requested_attributes": {
+            "0_local_name_uuid": {
+                "name": "local_name",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "1_name_uuid": {
+                "name": "name",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "2_street_uuid": {
+                "name": "street",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "3_street_number_uuid": {
+                "name": "street_number",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "4_city_uuid": {
+                "name": "city",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "5_postal_code_uuid": {
+                "name": "postal_code",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "6_state_uuid": {
+                "name": "state",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "7_country_uuid": {
+                "name": "country",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "8_website_uuid": {
+                "name": "website",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "9_phone_uuid": {
+                "name": "phone",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "10_email_uuid": {
+                "name": "email",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "11_registration_number_uuid": {
+                "name": "registration_number",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            },
+            "12_registration_country_uuid": {
+                "name": "registration_country",
+                "restrictions": [
+                    {
+                        "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default"
+                    }
+                ]
+            }
+        },
+        "requested_predicates": {}
+    },
+    "updated_at": "2020-06-17 10:22:21.800627Z",
+    "connection_id": "4fb496dd-954e-475f-a7c7-69a12493cc07",
+    "created_at": "2020-06-17 10:22:20.153634Z",
+    "auto_present": false,
+    "trace": false,
+    "verified": "true",
+    "state": "verified",
+    "presentation_proposal_dict": {
+        "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/propose-presentation",
+        "@id": "0abe61c6-4375-470d-b109-926ad352e92f",
+        "presentation_proposal": {
+            "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/presentation-preview",
+            "attributes": [
+                {
+                    "name": "local_name",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "Test Corp Digital Solutions"
+                },
+                {
+                    "name": "name",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "TestCorp"
+                },
+                {
+                    "name": "street",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "Test Corp Campus"
+                },
+                {
+                    "name": "street_number",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "4"
+                },
+                {
+                    "name": "city",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "Zürich"
+                },
+                {
+                    "name": "postal_code",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "8000"
+                },
+                {
+                    "name": "state",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "Zürich"
+                },
+                {
+                    "name": "country",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "Switzerland"
+                },
+                {
+                    "name": "website",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "https://www.test-corp.ch"
+                },
+                {
+                    "name": "phone",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "01906666666"
+                },
+                {
+                    "name": "email",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "info@test-corp.ch"
+                },
+                {
+                    "name": "registration_number",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "12345678901266"
+                },
+                {
+                    "name": "registration_country",
+                    "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+                    "value": "Switzerland"
+                }
+            ],
+            "predicates": []
+        }
+    },
+    "initiator": "external",
+    "thread_id": "0abe61c6-4375-470d-b109-926ad352e92f"
+}

@@ -1,0 +1,86 @@
+{
+  "created_at": "2020-02-26 09:03:23.534066Z",
+  "thread_id": "331cd695-9e3c-4526-9690-b1aafc9e26b4",
+  "presentation_exchange_id": "08e7c2a9-36c1-4f0a-a893-28f5fe2acaa6",
+  "state": "proposal_sent",
+  "initiator": "self",
+  "auto_present": true,
+  "role": "prover",
+  "presentation_proposal_dict": {
+    "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/propose-presentation",
+    "@id": "331cd695-9e3c-4526-9690-b1aafc9e26b4",
+    "presentation_proposal": {
+      "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/presentation-preview",
+      "attributes": [
+        {
+          "name": "local_name",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "Test Corp Digital Solutions"
+        },
+        {
+          "name": "name",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "TestCorp"
+        },
+        {
+          "name": "street",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "Test Street"
+        },
+        {
+          "name": "street_number",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "200"
+        },
+        {
+          "name": "city",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "Zürich"
+        },
+        {
+          "name": "postal_code",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "8000"
+        },
+        {
+          "name": "state",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "Zürich"
+        },
+        {
+          "name": "country",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "Switzerland"
+        },
+        {
+          "name": "website",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "https://www.test-corp.ch"
+        },
+        {
+          "name": "phone",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "01906666666"
+        },
+        {
+          "name": "email",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "info@test-corp.ch"
+        },
+        {
+          "name": "registration_number",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "12345678901266"
+        },
+        {
+          "name": "registration_country",
+          "cred_def_id": "CHysca6fY8n8ytCDLAJGZj:3:CL:108:default",
+          "value": "Switzerland"
+        }
+      ],
+      "predicates": []
+    }
+  },
+  "connection_id": "00598f57-ff22-4961-ae33-32cd5770768c",
+  "updated_at": "2020-02-26 09:03:23.534066Z"
+}

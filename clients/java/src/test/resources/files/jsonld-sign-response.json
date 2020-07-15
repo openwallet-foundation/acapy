@@ -1,0 +1,29 @@
+{
+    "signed_doc": {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1"
+        ],
+        "id": "http://example.gov/credentials/3732",
+        "type": [
+            "VerifiableCredential",
+            "UniversityDegreeCredential"
+        ],
+        "issuer": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+        "issuanceDate": "2020-03-10T04:24:12.164Z",
+        "credentialSubject": {
+            "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+            "degree": {
+                "type": "BachelorDegree",
+                "name": "Bachelor of Science and Arts"
+            }
+        },
+        "proof": {
+            "type": "Ed25519Signature2018",
+            "created": "2020-04-10T21:35:35Z",
+            "verificationMethod": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd#z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..99Pjh3e50qsT-NJfARKMj7nmxOficvuMMSY_bt-30L0wHeBd1WLjTYXiTWCxVI6W_rhZjZJEaT14_mRyt2l7BA"
+        }
+    }
+}
