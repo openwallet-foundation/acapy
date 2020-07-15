@@ -39,9 +39,6 @@ Convenience library based on okhttp and gson to interact with aries cloud agent 
 | /jsonld/sign                               | :white_check_mark:           |
 | /jsonld/verify                             | :white_check_mark:           |
 
-# License
-Project source code files are made available under the Apache License, Version 2.0 (Apache-2.0), located in the LICENSE file. Project documentation files are made available under the Creative Commons Attribution 4.0 International License (CC-BY-4.0), available at http://creativecommons.org/licenses/by/4.0/.
-
 ## A Word on Credential Definintions
 
 The library assumes credentials and their related credential definitions are flat Pojo's like:
