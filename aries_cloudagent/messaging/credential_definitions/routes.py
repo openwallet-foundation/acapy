@@ -1,5 +1,6 @@
 """Credential definition admin routes."""
 
+import asyncio
 from asyncio import shield
 
 from aiohttp import web
@@ -20,7 +21,7 @@ from ...tails.base import BaseTailsServer
 
 from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
 
-from ...revocation.models.revocation_registry import RevocationRegistry
+from ...revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ...revocation.error import RevocationError, RevocationNotSupportedError
 from ...revocation.indy import IndyRevocation
 
@@ -189,15 +190,21 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 raise web.HTTPInternalServerError(
                     reason=f"Tails file failed to upload: {reason}"
                 )
+
+            pending_registry_record = await revoc.init_issuer_registry(
+                registry_record.cred_def_id,
+                registry_record.issuer_did,
+                issuance_by_default=True,
+                max_cred_num=registry_record.max_cred_num,
+            )
+            asyncio.ensure_future(
+                pending_registry_record.stage_pending_registry_definition(context)
+            )
+
         except RevocationError as e:
             raise web.HTTPBadRequest(reason=e.message)
 
-    response_json = {"credential_definition_id": credential_definition_id}
-
-    if registry_record:
-        response_json["revocation_registry_id"] = registry_record.revoc_reg_id
-
-    return web.json_response(response_json)
+    return web.json_response({"credential_definition_id": credential_definition_id})
 
 
 @docs(
