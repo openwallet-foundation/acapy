@@ -4,6 +4,7 @@ import json
 import logging
 import uuid
 
+from asyncio import shield
 from os.path import join
 from shutil import move
 from typing import Any, Sequence
@@ -11,6 +12,7 @@ from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
+from ...tails.base import BaseTailsServer
 from ...config.injection_context import InjectionContext
 from ...indy.util import indy_client_dir
 from ...issuer.base import BaseIssuer, IssuerError
@@ -43,6 +45,7 @@ class IssuerRevRegRecord(BaseRecord):
 
     RECORD_ID_NAME = "record_id"
     RECORD_TYPE = "issuer_rev_reg"
+    WEBHOOK_TOPIC = "revocation_registry"
     LOG_STATE_FLAG = "debug.revocation"
     CACHE_ENABLED = False
     TAG_NAMES = {
@@ -150,7 +153,7 @@ class IssuerRevRegRecord(BaseRecord):
         issuer: BaseIssuer = await context.inject(BaseIssuer)
         tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
-        LOGGER.debug("create revocation registry with size:", self.max_cred_num)
+        LOGGER.debug(f"create revocation registry with size: {self.max_cred_num}")
 
         try:
             (
@@ -197,6 +200,21 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_public_uri = tails_file_uri
         self.revoc_reg_def["value"]["tailsLocation"] = tails_file_uri
         await self.save(context, reason="Set tails file public URI")
+
+    async def stage_pending_registry_definition(
+        self, context: InjectionContext,
+    ):
+        await shield(self.generate_registry(context))
+        tails_base_url = context.settings.get("tails_server_base_url")
+        await self.set_tails_file_public_uri(
+            context, f"{tails_base_url}/{self.revoc_reg_id}",
+        )
+        await self.publish_registry_definition(context)
+
+        tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+        upload_success, reason = await tails_server.upload_tails_file(
+            context, self.revoc_reg_id, self.tails_local_path,
+        )
 
     async def publish_registry_definition(self, context: InjectionContext):
         """Send the revocation registry definition to the ledger."""

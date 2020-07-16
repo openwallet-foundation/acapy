@@ -1,5 +1,6 @@
 """Classes to manage credentials."""
 
+import asyncio
 import json
 import logging
 from typing import Mapping, Sequence, Text, Tuple
@@ -495,20 +496,53 @@ class CredentialManager:
                 )
 
             if credential_definition["value"].get("revocation"):
-                issuer_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
                     self.context,
                     cred_ex_record.credential_definition_id,
                     state=IssuerRevRegRecord.STATE_ACTIVE,
                 )
-                if not issuer_rev_regs:
-                    raise CredentialManagerError(
-                        "Cred def id {} has no active revocation registry".format(
-                            cred_ex_record.credential_definition_id
-                        )
+                if active_rev_regs:
+                    # We only expect one
+                    active_reg = active_rev_regs[0]
+                else:
+                    pending_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                        self.context,
+                        cred_ex_record.credential_definition_id,
+                        state=IssuerRevRegRecord.STATE_PUBLISHED,
                     )
+                    # This state is expected when a new revocation registry is
+                    # staged but has not been switched on yet
+                    if pending_rev_regs:
+                        await pending_rev_regs[0].publish_registry_entry(self.context)
+                        # Now it's active
+                        active_reg = pending_rev_regs[0]
+                        # Kick off a task to create and publish the next revocation
+                        # registry in the background. It is assumed that the size of
+                        # the registry is large enough so that this completes before
+                        # the current registry is full
+                        revoc = IndyRevocation(self.context)
+                        pending_registry_record = await revoc.init_issuer_registry(
+                            active_reg.cred_def_id,
+                            active_reg.issuer_did,
+                            issuance_by_default=True,
+                            max_cred_num=active_reg.max_cred_num,
+                        )
+                        asyncio.ensure_future(
+                            pending_registry_record.stage_pending_registry_definition(
+                                self.context
+                            )
+                        )
+                    # If there are no active revocation registries and no published
+                    # (pending) registries, we are in a bad state.
+                    else:
+                        raise CredentialManagerError(
+                            "Cred def id {} has no active revocation registry".format(
+                                cred_ex_record.credential_definition_id
+                            )
+                        )
 
-                registry = await issuer_rev_regs[0].get_registry()
-                cred_ex_record.revoc_reg_id = issuer_rev_regs[0].revoc_reg_id
+                registry = await active_reg.get_registry()
+                cred_ex_record.revoc_reg_id = active_reg.revoc_reg_id
                 tails_path = registry.tails_local_path
             else:
                 tails_path = None
@@ -532,10 +566,10 @@ class CredentialManager:
                 if registry and registry.max_creds == int(
                     cred_ex_record.revocation_id  # monotonic "1"-based
                 ):
-                    await issuer_rev_regs[0].mark_full(self.context)
+                    await active_reg.mark_full(self.context)
 
             except IssuerRevocationRegistryFullError:
-                await issuer_rev_regs[0].mark_full(self.context)
+                await active_reg.mark_full(self.context)
                 raise
 
             cred_ex_record.credential = json.loads(credential_json)
