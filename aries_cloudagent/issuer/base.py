@@ -7,7 +7,6 @@ from ..core.error import BaseError
 
 
 DEFAULT_CRED_DEF_TAG = "default"
-DEFAULT_ISSUANCE_TYPE = "ISSUANCE_BY_DEFAULT"
 DEFAULT_SIGNATURE_TYPE = "CL"
 
 
@@ -166,7 +165,6 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         tag: str,
         max_cred_num: int,
         tails_base_path: str,
-        issuance_type: str = None,
     ) -> Tuple[str, str, str]:
         """
         Create a new revocation registry and store it in the wallet.
@@ -178,7 +176,6 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
             tag: the unique revocation registry tag
             max_cred_num: the number of credentials supported in the registry
             tails_base_path: where to store the tails file
-            issuance_type: optionally override the issuance type
 
         Returns:
             A tuple of the revocation registry ID, JSON, and entry JSON
