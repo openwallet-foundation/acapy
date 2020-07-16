@@ -340,6 +340,7 @@ class AdminServer(BaseAdminServer):
 
         """
         status = {"version": __version__}
+        status["label"] = self.context.settings.get("default_label")
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
