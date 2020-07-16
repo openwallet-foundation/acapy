@@ -8,7 +8,7 @@ from aries_cloudagent.messaging.base_handler import (
     HandlerException,
     RequestContext,
 )
-
+from .....protocols.connections.v1_0.manager import ConnectionManager
 from ..manager import RoutingManager, RoutingManagerError
 from ..messages.forward import Forward
 
@@ -38,8 +38,20 @@ class ForwardHandler(BaseHandler):
             self._logger.exception("Error resolving recipient for forwarded message")
             return
 
+        # load connection
+        connection_mgr = ConnectionManager(self.context)
+        connection_targets = await connection_mgr.get_connection_targets(
+            connection_id=recipient.connection_id
+        )
+        # TODO: validate that there is 1 target, with 1 verkey. warn otherwise
+        connection_verkey = connection_targets[0].recipient_keys[0]
+
         # Note: not currently vetting the state of the connection here
         self._logger.info(
             f"Forwarding message to connection: {recipient.connection_id}"
         )
-        await responder.send(packed, connection_id=recipient.connection_id)
+        await responder.send(
+            packed,
+            connection_id=recipient.connection_id,
+            reply_to_verkey=connection_verkey
+        )
