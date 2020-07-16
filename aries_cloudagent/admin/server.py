@@ -28,6 +28,7 @@ from ..version import __version__
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -270,6 +271,7 @@ class AdminServer(BaseAdminServer):
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
 
+        self.app._state["swagger_dict"].get("tags", []).sort(key=lambda t: t["name"])
         self.site = web.TCPSite(runner, host=self.host, port=self.port)
 
         try:
