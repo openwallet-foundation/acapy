@@ -39,7 +39,7 @@ class ForwardHandler(BaseHandler):
             return
 
         # load connection
-        connection_mgr = ConnectionManager(self.context)
+        connection_mgr = ConnectionManager(context)
         connection_targets = await connection_mgr.get_connection_targets(
             connection_id=recipient.connection_id
         )
