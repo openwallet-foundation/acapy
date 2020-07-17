@@ -233,8 +233,10 @@ class DemoAgent:
         log_msg(f"Revocation Registry ID: {revocation_registry_id}")
         assert tails_hash == my_tails_hash
 
-        tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
-
+        tails_file_url = (
+            f"{self.public_tails_url}/revocation/registry/"
+            f"{revocation_registry_id}/tails-file"
+        )
         if os.getenv("PUBLIC_TAILS_URL"):
             tails_file_url = f"{self.public_tails_url}/{revocation_registry_id}"
             tails_file_external_url = (
