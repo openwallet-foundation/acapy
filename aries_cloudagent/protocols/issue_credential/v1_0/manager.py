@@ -506,8 +506,7 @@ class CredentialManager:
                     cred_ex_record.credential_definition_id,
                     state=IssuerRevRegRecord.STATE_STAGED,
                 )
-                # if not retries > 0:
-                #     raise IssuerRevocationRegistryFullError()
+
                 if staged_rev_regs and retries > 0:
                     # We know there is a staged registry that will be ready soon.
                     # So we wait and retry.
