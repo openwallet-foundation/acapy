@@ -37,11 +37,3 @@ class IndyTailsServer(BaseTailsServer):
                         return True, None
                     else:
                         return False, resp.reason
-
-    async def download_tails_file(self, revo_reg_def_id: str, location: str) -> str:
-        """Download tails file from tails server.
-
-        Args:
-            revo_reg_def_id: The Revocation registry definition ID
-            loction: Path to download destination
-        """
