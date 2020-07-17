@@ -69,11 +69,11 @@ class RevocationRegistry:
         }
         if public_def:
             init["tails_public_uri"] = tails_location
-            rev_reg = cls(reg_id, **init)  # currently ignored: def version, public keys
+            rev_reg = cls(reg_id, **init)  # ignores def ver, issuance type, public keys
             rev_reg.tails_local_path = rev_reg.get_receiving_tails_local_path()
         else:
             init["tails_local_path"] = tails_location
-            rev_reg = cls(reg_id, **init)  # currently ignored: def version, public keys
+            rev_reg = cls(reg_id, **init)  # ignores def ver, issuance type, public keys
 
         return rev_reg
 
