@@ -21,7 +21,6 @@ from ...tails.base import BaseTailsServer
 
 from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
 
-from ...revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ...revocation.error import RevocationError, RevocationNotSupportedError
 from ...revocation.indy import IndyRevocation
 
