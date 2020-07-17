@@ -454,7 +454,11 @@ class CredentialManager:
         return cred_ex_record
 
     async def issue_credential(
-        self, cred_ex_record: V10CredentialExchange, *, comment: str = None,
+        self,
+        cred_ex_record: V10CredentialExchange,
+        *,
+        comment: str = None,
+        retries: int = 5,
     ) -> Tuple[V10CredentialExchange, CredentialIssue]:
         """
         Issue a credential.
@@ -495,57 +499,39 @@ class CredentialManager:
                     cred_ex_record.credential_definition_id
                 )
 
+            tails_path = None
             if credential_definition["value"].get("revocation"):
-                active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                staged_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
                     self.context,
                     cred_ex_record.credential_definition_id,
-                    state=IssuerRevRegRecord.STATE_ACTIVE,
+                    state=IssuerRevRegRecord.STATE_STAGED,
                 )
-                if active_rev_regs:
-                    # We only expect one
-                    active_reg = active_rev_regs[0]
+                if staged_rev_regs:
+                    # We know there is a staged registry that will be ready soon.
+                    # So we wait and retry.
+                    await asyncio.sleep(1)
+                    return await self.issue_credential(
+                        cred_ex_record=cred_ex_record,
+                        comment=comment,
+                        retries=retries - 1,
+                    )
                 else:
-                    pending_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                    active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
                         self.context,
                         cred_ex_record.credential_definition_id,
-                        state=IssuerRevRegRecord.STATE_PUBLISHED,
+                        state=IssuerRevRegRecord.STATE_ACTIVE,
                     )
-                    # This state is expected when a new revocation registry is
-                    # staged but has not been switched on yet
-                    if pending_rev_regs:
-                        await pending_rev_regs[0].publish_registry_entry(self.context)
-                        # Now it's active
-                        active_reg = pending_rev_regs[0]
-                        # Kick off a task to create and publish the next revocation
-                        # registry in the background. It is assumed that the size of
-                        # the registry is large enough so that this completes before
-                        # the current registry is full
-                        revoc = IndyRevocation(self.context)
-                        pending_registry_record = await revoc.init_issuer_registry(
-                            active_reg.cred_def_id,
-                            active_reg.issuer_did,
-                            issuance_by_default=True,
-                            max_cred_num=active_reg.max_cred_num,
-                        )
-                        asyncio.ensure_future(
-                            pending_registry_record.stage_pending_registry_definition(
-                                self.context
-                            )
-                        )
-                    # If there are no active revocation registries and no published
-                    # (pending) registries, we are in a bad state.
-                    else:
+                    if not active_rev_regs:
                         raise CredentialManagerError(
                             "Cred def id {} has no active revocation registry".format(
                                 cred_ex_record.credential_definition_id
                             )
                         )
 
-                registry = await active_reg.get_registry()
-                cred_ex_record.revoc_reg_id = active_reg.revoc_reg_id
-                tails_path = registry.tails_local_path
-            else:
-                tails_path = None
+                    active_reg = active_rev_regs[0]
+                    registry = await active_reg.get_registry()
+                    cred_ex_record.revoc_reg_id = active_reg.revoc_reg_id
+                    tails_path = registry.tails_local_path
 
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
@@ -563,14 +549,75 @@ class CredentialManager:
                     cred_ex_record.revoc_reg_id,
                     tails_path,
                 )
+                # If the revocation registry is full
                 if registry and registry.max_creds == int(
                     cred_ex_record.revocation_id  # monotonic "1"-based
                 ):
-                    await active_reg.mark_full(self.context)
+                    # Check to see if we have a registry record staged and waiting
+                    pending_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                        self.context,
+                        cred_ex_record.credential_definition_id,
+                        state=IssuerRevRegRecord.STATE_PUBLISHED,
+                    )
+                    if pending_rev_regs:
+                        pending_rev_reg = pending_rev_regs[0]
+                        pending_rev_reg.state = IssuerRevRegRecord.STATE_STAGED
+                        await pending_rev_reg.save(
+                            self.context, reason="revocation registry staged"
+                        )
+
+                        # Make it active
+                        await pending_rev_reg.publish_registry_entry(self.context)
+                        # Kick off a task to create and publish the next revocation
+                        # registry in the background. It is assumed that the size of
+                        # the registry is large enough so that this completes before
+                        # the current registry is full
+                        revoc = IndyRevocation(self.context)
+                        pending_registry_record = await revoc.init_issuer_registry(
+                            active_reg.cred_def_id,
+                            active_reg.issuer_did,
+                            issuance_by_default=True,
+                            max_cred_num=active_reg.max_cred_num,
+                        )
+                        asyncio.ensure_future(
+                            pending_registry_record.stage_pending_registry_definition(
+                                self.context
+                            )
+                        )
+
+                        # Make the current registry full
+                        await active_reg.mark_full(self.context)
 
             except IssuerRevocationRegistryFullError:
-                await active_reg.mark_full(self.context)
-                raise
+                active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                    self.context,
+                    cred_ex_record.credential_definition_id,
+                    state=IssuerRevRegRecord.STATE_ACTIVE,
+                )
+                staged_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                    self.context,
+                    cred_ex_record.credential_definition_id,
+                    state=IssuerRevRegRecord.STATE_STAGED,
+                )
+                published_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                    self.context,
+                    cred_ex_record.credential_definition_id,
+                    state=IssuerRevRegRecord.STATE_PUBLISHED,
+                )
+                if (
+                    staged_rev_regs or active_rev_regs or published_rev_regs
+                ) and retries > 0:
+                    # We know there is a staged registry that will be ready soon.
+                    # So we wait and retry.
+                    await asyncio.sleep(1)
+                    return await self.issue_credential(
+                        cred_ex_record=cred_ex_record,
+                        comment=comment,
+                        retries=retries - 1,
+                    )
+                else:
+                    await active_reg.mark_full(self.context)
+                    raise
 
             cred_ex_record.credential = json.loads(credential_json)
 

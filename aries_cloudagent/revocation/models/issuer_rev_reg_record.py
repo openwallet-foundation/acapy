@@ -65,6 +65,7 @@ class IssuerRevRegRecord(BaseRecord):
     STATE_INIT = "init"
     STATE_GENERATED = "generated"
     STATE_PUBLISHED = "published"  # definition published
+    STATE_STAGED = "staged"
     STATE_ACTIVE = "active"  # first entry published
     STATE_FULL = "full"
 
@@ -223,7 +224,10 @@ class IssuerRevRegRecord(BaseRecord):
 
         self._check_url(self.tails_public_uri)
 
-        if self.state != IssuerRevRegRecord.STATE_GENERATED:
+        if self.state not in (
+            IssuerRevRegRecord.STATE_GENERATED,
+            IssuerRevRegRecord.STATE_STAGED,
+        ):
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot publish definition".format(
                     self.revoc_reg_id, self.state
@@ -251,6 +255,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state not in (
             IssuerRevRegRecord.STATE_PUBLISHED,
             IssuerRevRegRecord.STATE_ACTIVE,
+            IssuerRevRegRecord.STATE_STAGED,
             IssuerRevRegRecord.STATE_FULL,  # can still publish revocation deltas
         ):
             raise RevocationError(
@@ -267,7 +272,10 @@ class IssuerRevRegRecord(BaseRecord):
                 self.revoc_reg_entry,
                 self.issuer_did,
             )
-        if self.state == IssuerRevRegRecord.STATE_PUBLISHED:  # initial entry activates
+        if self.state in (
+            IssuerRevRegRecord.STATE_PUBLISHED,
+            IssuerRevRegRecord.STATE_STAGED,
+        ):  # initial entry activates
             self.state = IssuerRevRegRecord.STATE_ACTIVE
             await self.save(
                 context, reason="Published initial revocation registry entry"
