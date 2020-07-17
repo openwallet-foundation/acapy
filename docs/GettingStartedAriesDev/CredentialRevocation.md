@@ -64,9 +64,9 @@ These are the ACA-py steps and APIs involved to support credential revocation.
         "credential_exchange_id": credential_exchange_id
     }   
    ```
-0. Revoking credential
+0. Revoking credential (cred_rev_id is revocation_id from /issue-credential​/records)
     ```
-    POST /issue-credential/records/{cred_ex_id}/revoke
+    POST /issue-credential/revoke
     ```
 
 0. When asking for proof, specify the timespan when the credential is NOT revoked
