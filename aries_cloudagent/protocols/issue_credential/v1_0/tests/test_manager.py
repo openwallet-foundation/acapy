@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from asynctest import TestCase as AsyncTestCase
@@ -881,8 +882,6 @@ class TestCredentialManager(AsyncTestCase):
             return_value=(json.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
-
-        import asyncio
 
         with async_mock.patch.object(
             test_module, "IssuerRevRegRecord", autospec=True
