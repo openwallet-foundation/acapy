@@ -205,6 +205,7 @@ class IssuerRevRegRecord(BaseRecord):
     async def stage_pending_registry_definition(
         self, context: InjectionContext,
     ):
+        """Prepare registry definition for future use."""
         await shield(self.generate_registry(context))
         tails_base_url = context.settings.get("tails_server_base_url")
         await self.set_tails_file_public_uri(

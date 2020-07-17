@@ -882,9 +882,15 @@ class TestCredentialManager(AsyncTestCase):
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
+        import asyncio
+
         with async_mock.patch.object(
             test_module, "IssuerRevRegRecord", autospec=True
         ) as issuer_rr_rec, async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as revoc, async_mock.patch.object(
+            asyncio, "ensure_future", autospec=True
+        ) as asyncio_mock, async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
             issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
@@ -897,6 +903,8 @@ class TestCredentialManager(AsyncTestCase):
                         ),
                         mark_full=async_mock.CoroutineMock(),
                         revoc_reg_id=REV_REG_ID,
+                        save=async_mock.CoroutineMock(),
+                        publish_registry_entry=async_mock.CoroutineMock(),
                     )
                 ]
             )
