@@ -111,9 +111,11 @@ class DemoAgent:
         label: str = None,
         color: str = None,
         prefix: str = None,
+        tails_server_base_url: str = None,
         timing: bool = False,
         timing_log: str = None,
         postgres: bool = None,
+        revocation: bool = False,
         extra_args=None,
         **params,
     ):
@@ -129,6 +131,7 @@ class DemoAgent:
         self.timing = timing
         self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
+        self.tails_server_base_url = tails_server_base_url
         self.extra_args = extra_args
         self.trace_enabled = TRACE_ENABLED
         self.trace_target = TRACE_TARGET
@@ -174,7 +177,12 @@ class DemoAgent:
         self.wallet_stats = []
 
     async def register_schema_and_creddef(
-        self, schema_name, version, schema_attrs, support_revocation: bool = False
+        self,
+        schema_name,
+        version,
+        schema_attrs,
+        support_revocation: bool = False,
+        revocation_registry_size: int = None,
     ):
         # Create a schema
         schema_body = {
@@ -191,6 +199,7 @@ class DemoAgent:
         credential_definition_body = {
             "schema_id": schema_id,
             "support_revocation": support_revocation,
+            "revocation_registry_size": revocation_registry_size,
         }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
@@ -308,6 +317,9 @@ class DemoAgent:
                     ("--trace-label", self.label + ".trace"),
                 ]
             )
+
+        if self.tails_server_base_url:
+            result.append(("--tails-server-base-url", self.tails_server_base_url))
         else:
             # set the tracing parameters but don't enable tracing
             result.extend(
@@ -478,6 +490,11 @@ class DemoAgent:
     async def handle_problem_report(self, message):
         self.log(
             f"Received problem report: {message['explain-ltxt']}\n", source="stderr"
+        )
+
+    async def handle_revocation_registry(self, message):
+        self.log(
+            f"Revocation registry: {message['record_id']} state: {message['state']}"
         )
 
     async def admin_request(

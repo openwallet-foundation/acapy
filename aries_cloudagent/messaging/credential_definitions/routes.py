@@ -39,7 +39,7 @@ class CredentialDefinitionSendRequestSchema(Schema):
     support_revocation = fields.Boolean(
         required=False, description="Revocation supported flag"
     )
-    max_cred_num = fields.Int(required=False)
+    revocation_registry_size = fields.Int(required=False)
     tag = fields.Str(
         required=False,
         description="Credential definition identifier tag",
@@ -132,7 +132,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     schema_id = body.get("schema_id")
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
-    max_cred_num = body.get("max_cred_num")
+    revocation_registry_size = body.get("revocation_registry_size")
 
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger:
@@ -169,7 +169,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 credential_definition_id,
                 issuer_did,
                 issuance_by_default=ISSUANCE_BY_DEFAULT,
-                max_cred_num=max_cred_num,
+                max_cred_num=revocation_registry_size,
             )
 
         except RevocationNotSupportedError as e:
