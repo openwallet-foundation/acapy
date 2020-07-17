@@ -310,7 +310,15 @@ class AdminServer(BaseAdminServer):
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
 
-        self.app._state["swagger_dict"].get("tags", []).sort(key=lambda t: t["name"])
+        # order tags alphabetically, parameters deterministically and pythonically
+        swagger_dict = self.app._state["swagger_dict"]
+        swagger_dict.get("tags", []).sort(key=lambda t: t["name"])
+        for path in swagger_dict["paths"].values():
+            for method_spec in path.values():
+                method_spec["parameters"].sort(
+                    key=lambda p: (p["in"], not p["required"], p["name"])
+                )
+
         self.site = web.TCPSite(runner, host=self.host, port=self.port)
 
         try:
@@ -374,6 +382,7 @@ class AdminServer(BaseAdminServer):
 
         """
         status = {"version": __version__}
+        status["label"] = self.context.settings.get("default_label")
         collector: Collector = await self.context.inject(Collector, required=False)
         if collector:
             status["timing"] = collector.results
