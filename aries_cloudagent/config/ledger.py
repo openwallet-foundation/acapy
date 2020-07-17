@@ -41,7 +41,6 @@ async def ledger_config(
             context.settings[
                 "ledger.genesis_transactions"
             ] = await fetch_genesis_transactions(context.settings["ledger.genesis_url"])
-            LOGGER.info(context.settings)
         elif context.settings.get("ledger.genesis_file"):
             try:
                 genesis_path = context.settings["ledger.genesis_file"]
