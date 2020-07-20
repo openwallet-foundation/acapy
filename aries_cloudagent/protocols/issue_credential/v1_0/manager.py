@@ -550,6 +550,7 @@ class CredentialManager:
                     cred_ex_record.revoc_reg_id,
                     tails_path,
                 )
+
                 # If the revocation registry is full
                 if registry and registry.max_creds == int(
                     cred_ex_record.revocation_id  # monotonic "1"-based
@@ -585,8 +586,8 @@ class CredentialManager:
                             )
                         )
 
-                        # Make the current registry full
-                        await active_reg.mark_full(self.context)
+                    # Make the current registry full
+                    await active_reg.mark_full(self.context)
 
             except IssuerRevocationRegistryFullError:
                 active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
@@ -604,9 +605,11 @@ class CredentialManager:
                     cred_ex_record.credential_definition_id,
                     state=IssuerRevRegRecord.STATE_PUBLISHED,
                 )
+
                 if (
                     staged_rev_regs or active_rev_regs or published_rev_regs
                 ) and retries > 0:
+
                     # We know there is a staged registry that will be ready soon.
                     # So we wait and retry.
                     await asyncio.sleep(1)
