@@ -577,7 +577,6 @@ class CredentialManager:
                         pending_registry_record = await revoc.init_issuer_registry(
                             active_reg.cred_def_id,
                             active_reg.issuer_did,
-                            issuance_by_default=True,
                             max_cred_num=active_reg.max_cred_num,
                         )
                         asyncio.ensure_future(

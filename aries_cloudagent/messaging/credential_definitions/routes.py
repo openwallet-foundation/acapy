@@ -28,8 +28,6 @@ from ...ledger.error import LedgerError
 
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
-ISSUANCE_BY_DEFAULT = True
-
 
 class CredentialDefinitionSendRequestSchema(Schema):
     """Request schema for schema send request."""
@@ -167,7 +165,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             registry_record = await revoc.init_issuer_registry(
                 credential_definition_id,
                 issuer_did,
-                issuance_by_default=ISSUANCE_BY_DEFAULT,
                 max_cred_num=revocation_registry_size,
             )
 
@@ -193,7 +190,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             pending_registry_record = await revoc.init_issuer_registry(
                 registry_record.cred_def_id,
                 registry_record.issuer_did,
-                issuance_by_default=True,
                 max_cred_num=registry_record.max_cred_num,
             )
             asyncio.ensure_future(
