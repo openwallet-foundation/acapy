@@ -64,7 +64,6 @@ class AdminResponder(BaseResponder):
         context: InjectionContext,
         send: Coroutine,
         webhook: Coroutine,
-        conductor,
         **kwargs,
     ):
         """
@@ -78,7 +77,6 @@ class AdminResponder(BaseResponder):
         self._context = context
         self._send = send
         self._webhook = webhook
-        self._conductor = conductor
 
     async def send_outbound(self, message: OutboundMessage):
         """
@@ -152,7 +150,7 @@ class AdminServer(BaseAdminServer):
         context: InjectionContext,
         outbound_message_router: Coroutine,
         webhook_router: Callable,
-        conductor,
+        conductor_stop: Coroutine,
         task_queue: TaskQueue = None,
         conductor_stats: Coroutine = None,
     ):
@@ -165,7 +163,7 @@ class AdminServer(BaseAdminServer):
             context: The application context instance
             outbound_message_router: Coroutine for delivering outbound messages
             webhook_router: Callable for delivering webhooks
-            conductor: Conductor for this admin server
+            conductor_stop: Conductor (graceful) stop for shutdown API call
             task_queue: An optional task queue for handlers
         """
         self.app = None
@@ -175,6 +173,7 @@ class AdminServer(BaseAdminServer):
         )
         self.host = host
         self.port = port
+        self.conductor_stop = conductor_stop
         self.conductor_stats = conductor_stats
         self.loaded_modules = []
         self.task_queue = task_queue
@@ -188,7 +187,6 @@ class AdminServer(BaseAdminServer):
             self.context,
             outbound_message_router,
             self.send_webhook,
-            conductor=conductor,
         )
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
@@ -361,7 +359,6 @@ class AdminServer(BaseAdminServer):
             The module list response
 
         """
-        print('\n== plugins handler 1')
         registry: PluginRegistry = await self.context.inject(
             PluginRegistry, required=False
         )
@@ -454,9 +451,9 @@ class AdminServer(BaseAdminServer):
             The web response (empty production)
 
         """
-        AdminResponder.ready = False
+        self.app._state["ready"] = False
         loop = asyncio.get_event_loop()
-        asyncio.ensure_future(self._conductor.stop(), loop=loop)
+        asyncio.ensure_future(self.conductor_stop(), loop=loop)
 
         return web.json_response({})
 
@@ -541,6 +538,7 @@ class AdminServer(BaseAdminServer):
                             if msg:
                                 await ws.send_json(msg)
                             send = loop.create_task(queue.dequeue(timeout=5.0))
+
                 except asyncio.CancelledError:
                     closed = True
 

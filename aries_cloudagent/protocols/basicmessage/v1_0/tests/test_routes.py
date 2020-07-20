@@ -75,6 +75,13 @@ class TestBasicMessageRoutes(AsyncTestCase):
             await test_module.connections_send_message(mock_request)
             mock_basic_message.assert_not_called()
 
+    async def test_register(self):
+        mock_app = async_mock.MagicMock()
+        mock_app.add_routes = async_mock.MagicMock()
+
+        await test_module.register(mock_app)
+        mock_app.add_routes.assert_called_once()
+
     async def test_post_process_routes(self):
         mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
         test_module.post_process_routes(mock_app)
