@@ -1,6 +1,7 @@
 """Admin server classes."""
 
 import asyncio
+import json
 import logging
 from typing import Callable, Coroutine, Sequence, Set
 import uuid
@@ -30,6 +31,23 @@ from .error import AdminSetupError
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+@web.middleware
+async def forensic_middleware(request: web.BaseRequest, handler: Coroutine):
+    """Show input."""
+
+    print(f'\n==== REQUEST {request.url}')
+    print(f'Method: {request.method}')
+    print(f'Match-info: {json.dumps(request.match_info, indent=4)}')
+    print(f'Query: {json.dumps([q for q in request.query])}')
+    try:
+        body = await request.json()
+        print(f'Body: {json.dumps(body, indent=4)}')
+    except json.decoder.JSONDecodeError:
+        print(f'Body: no body')
+
+    return await handler(request)
 
 
 class AdminModulesSchema(Schema):
@@ -159,7 +177,7 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = [validation_middleware]
+        middlewares = [forensic_middleware, validation_middleware]
 
         # admin-token and admin-token are mutually exclusive and required.
         # This should be enforced during parameter parsing but to be sure,
