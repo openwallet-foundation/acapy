@@ -1,8 +1,10 @@
-import asyncio
+import json
 
-from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
-from aiohttp import web
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
+from aiohttp.test_utils import unused_port
+
+from asynctest import TestCase as AsyncTestCase
+from asynctest import create_autospec, mock as async_mock
 
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
@@ -10,15 +12,32 @@ from ...config.provider import ClassProvider
 from ...core.plugin_registry import PluginRegistry
 from ...core.protocol_registry import ProtocolRegistry
 from ...transport.outbound.message import OutboundMessage
+from ...utils.stats import Collector
+from ...utils.task_queue import TaskQueue
 
-from ..server import AdminServer, AdminSetupError
 from .. import server as test_module
+from ..server import AdminServer, AdminSetupError
 
 
-class TestAdminServerBasic(AsyncTestCase):
+class TestAdminServer(AsyncTestCase):
     async def setUp(self):
         self.message_results = []
         self.webhook_results = []
+        self.port = 0
+
+        self.connector = TCPConnector(limit=16, limit_per_host=4)
+        session_args = {
+            "cookie_jar": DummyCookieJar(),
+            "connector": self.connector
+        }
+        self.client_session = ClientSession(
+            cookie_jar=DummyCookieJar(), connector=self.connector
+        )
+
+    async def tearDown(self):
+        if self.client_session:
+            await self.client_session.close()
+            self.client_session = None
 
     def get_admin_server(
         self, settings: dict = None, context: InjectionContext = None
@@ -27,14 +46,30 @@ class TestAdminServerBasic(AsyncTestCase):
             context = InjectionContext()
         if settings:
             context.update_settings(settings)
+
+        # middleware is task queue xor collector: cover both over test suite
+        task_queue = (settings or {}).pop("task_queue", None)
+
+        plugin_registry = async_mock.MagicMock(
+            test_module.PluginRegistry, autospec=True
+        )
+        plugin_registry.post_process_routes=async_mock.MagicMock()
+        context.injector.bind_instance(test_module.PluginRegistry, plugin_registry)
+
+        collector = Collector()
+        context.injector.bind_instance(test_module.Collector, collector)
+
+        self.port = unused_port()
         return AdminServer(
             "0.0.0.0",
-            unused_port(),
+            self.port,
             context,
             self.outbound_message_router,
             self.webhook_router,
-            async_mock.MagicMock(
-                stop=async_mock.CoroutineMock()
+            conductor_stop=async_mock.CoroutineMock(),
+            task_queue=TaskQueue(max_active=4) if task_queue else None,
+            conductor_stats=(
+                None if task_queue else async_mock.CoroutineMock(return_value=[1, 2])
             )
         )
 
@@ -65,7 +100,17 @@ class TestAdminServerBasic(AsyncTestCase):
         }
         server = self.get_admin_server(settings)
         await server.start()
-        await server.stop()
+        with async_mock.patch.object(
+            server, "websocket_queues", async_mock.MagicMock()
+        ) as mock_wsq:
+            mock_wsq.values = async_mock.MagicMock(
+                return_value=[
+                    async_mock.MagicMock(
+                        stop=async_mock.MagicMock()
+                    )
+                ]
+            )
+            await server.stop()
 
         with async_mock.patch.object(
             web.TCPSite, "start", async_mock.CoroutineMock()
@@ -76,29 +121,41 @@ class TestAdminServerBasic(AsyncTestCase):
 
     async def test_responder_send(self):
         message = OutboundMessage(payload="{}")
-        admin_server = self.get_admin_server()
-        await admin_server.responder.send_outbound(message)
-        assert self.message_results == [(admin_server.context, message)]
+        server = self.get_admin_server()
+        await server.responder.send_outbound(message)
+        assert self.message_results == [(server.context, message)]
 
-    @unittest_run_loop
     async def test_responder_webhook(self):
-        admin_server = self.get_admin_server()
+        server = self.get_admin_server()
         test_url = "target_url"
         test_attempts = 99
-        admin_server.add_webhook_target(
+        server.add_webhook_target(
             target_url=test_url,
             topic_filter=["*"],  # cover vacuous filter
             max_attempts=test_attempts,
         )
         test_topic = "test_topic"
         test_payload = {"test": "TEST"}
-        await admin_server.responder.send_webhook(test_topic, test_payload)
-        assert self.webhook_results == [
-            (test_topic, test_payload, test_url, test_attempts)
-        ]
 
-        admin_server.remove_webhook_target(target_url=test_url)
-        assert test_url not in admin_server.webhook_targets
+        with async_mock.patch.object(
+            server, "websocket_queues", async_mock.MagicMock()
+        ) as mock_wsq:
+            mock_wsq.values = async_mock.MagicMock(
+                return_value=[
+                    async_mock.MagicMock(
+                        authenticated=True,
+                        enqueue=async_mock.CoroutineMock()
+                    )
+                ]
+            )
+
+            await server.responder.send_webhook(test_topic, test_payload)
+            assert self.webhook_results == [
+                (test_topic, test_payload, test_url, test_attempts)
+            ]
+
+        server.remove_webhook_target(target_url=test_url)
+        assert test_url not in server.webhook_targets
 
     async def test_import_routes(self):
         # this test just imports all default admin routes
@@ -109,205 +166,89 @@ class TestAdminServerBasic(AsyncTestCase):
         server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
         app = await server.make_application()
 
+    async def test_visit_insecure_mode(self):
+        settings = {
+            "admin.admin_insecure_mode": True,
+            "task_queue": True
+        }
+        server = self.get_admin_server(settings)
+        await server.start()
 
-class TestAdminServerClient(AioHTTPTestCase):
-    def setUp(self):
-        self.admin_server = None
-        self.message_results = []
-        self.webhook_results = []
-        super().setUp()
+        async with self.client_session.post(
+            f"http://127.0.0.1:{self.port}/status/reset", headers={}
+        ) as response:
+            assert response.status == 200
 
-    async def get_application(self):
-        """
-        Override the get_app method to return your application.
-        """
-        admin_server = await self.get_admin_server()
-        app = await admin_server.make_application()
-
-        # app._state = {"ready": True}  # avoid warning, ape the start for middleware
-
-        app._state = {"ready": True}
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, host=admin_server.host, port=admin_server.port)
-        await site.start()
-
-        admin_server.app = app
-        return admin_server.app
-
-    async def outbound_message_router(self, *args):
-        self.message_results.append(args)
-
-    def webhook_router(self, *args):
-        self.webhook_results.append(args)
-
-    async def get_admin_server(self) -> AdminServer:
-        if not self.admin_server:
-            context = InjectionContext()
-            context.settings["admin.admin_insecure_mode"] = True
-            self.admin_server = AdminServer(
-                "0.0.0.0",
-                unused_port(),
-                context,
-                self.outbound_message_router,
-                self.webhook_router,
-                async_mock.MagicMock(
-                    stop=async_mock.CoroutineMock()
-                )
-            )
-        return self.admin_server
-
-    # the unittest_run_loop decorator can be used in tandem with
-    # the AioHTTPTestCase to simplify running
-    # tests that are asynchronous
-    @unittest_run_loop
-    async def test_index(self):
-        resp = await self.client.request("GET", "/", allow_redirects=False)
-        assert resp.status == 302 
-
-    @unittest_run_loop
-    async def test_swagger(self):
-        resp = await self.client.request("GET", "/api/doc")
-        assert resp.status == 200
-        text = await resp.text()
-        assert "Swagger UI" in text
-
-    @unittest_run_loop
-    async def test_plugins(self):
-        print('\nSTART TEST PLUGINS')
-        test_registry = PluginRegistry()
-        test_plugin = "aries_cloudagent.protocols.trustping"
-        test_registry.register_plugin(test_plugin)
-        self.admin_server.context.injector.bind_instance(PluginRegistry, test_registry)
-        resp = await self.client.request("GET", "/plugins")
-        resp_dict = await resp.json()
-        assert test_plugin in resp_dict["result"]
-
-    '''
-    @unittest_run_loop
-    async def test_status(self):
-        resp = await self.client.request("GET", "/status")
-        result = await resp.json()
-        assert isinstance(result, dict)
-        resp = await self.client.request("POST", "/status/reset")
-        assert resp.status == 200
-
-    @unittest_run_loop
-    async def test_websocket(self):
-        async with self.client.ws_connect("/ws") as ws:
-            result = await ws.receive_json()
-            assert result["topic"] == "settings"
-
-
-class TestAdminServerSecure(AioHTTPTestCase):
-    TEST_API_KEY = "test-api-key"
-
-    async def get_application(self):
-        """
-        Override the get_app method to return your application.
-        """
-        return await self.get_admin_server().make_application()
-
-    async def outbound_message_router(self, *args):
-        raise Exception()
-
-    def webhook_router(self, *args):
-        raise Exception()
-
-    def get_admin_server(self) -> AdminServer:
-        context = InjectionContext()
-        context.settings["admin.admin_api_key"] = self.TEST_API_KEY
-        self.server = AdminServer(
-            "0.0.0.0",
-            unused_port(),
-            context,
-            self.outbound_message_router,
-            self.webhook_router,
-            async_mock.MagicMock(
-                stop=async_mock.CoroutineMock()
-            )
-        )
-        return self.server
-
-    @unittest_run_loop
-    async def test_status_insecure(self):
-        resp = await self.client.request("GET", "/status")
-        assert resp.status == 401
-
-    @unittest_run_loop
-    async def test_status_secure(self):
-        resp = await self.client.request(
-            "GET", "/status", headers={"x-api-key": self.TEST_API_KEY}
-        )
-        result = await resp.json()
-        assert isinstance(result, dict)
-
-    @unittest_run_loop
-    async def test_websocket_with_api_key_message(self):
-        async with self.client.ws_connect("/ws") as ws:
-            result = await ws.receive_json()
-            assert result["topic"] == "settings"
-
-            ping1 = await ws.receive_json()
-            assert ping1["topic"] == "ping"
-            assert ping1["authenticated"] == False
-
-            await ws.send_json({"dummy": ""})
-            ping2 = await ws.receive_json()
-            assert ping2["authenticated"] == False
-
-            await ws.send_json({"x-api-key": self.TEST_API_KEY})
-            ping3 = await ws.receive_json()
-            assert ping3["authenticated"] == True
-
-    @unittest_run_loop
-    async def test_websocket_with_api_key_header(self):
-        async with self.client.ws_connect(
-            "/ws", headers={"x-api-key": self.TEST_API_KEY}
+        async with self.client_session.ws_connect(
+            f"http://127.0.0.1:{self.port}/ws"
         ) as ws:
             result = await ws.receive_json()
             assert result["topic"] == "settings"
 
-            ping1 = await ws.receive_json()
-            assert ping1["authenticated"] == True
+        for path in (
+            "",
+            "plugins",
+            "status",
+            "status/live",
+            "status/ready",
+            "shutdown",  # mock conductor has magic-mock stop()
+        ):
+            async with self.client_session.get(
+                f"http://127.0.0.1:{self.port}/{path}", headers={}
+            ) as response:
+                assert response.status == 200
 
+        await server.stop()
 
-class TestAdminServerWebhook(AioHTTPTestCase):
-    async def setUpAsync(self):
-        self.hook_results = []
+    async def test_visit_secure_mode(self):
+        settings = {
+            "admin.admin_insecure_mode": False,
+            "admin.admin_api_key": "test-api-key",
+        }
+        server = self.get_admin_server(settings)
+        await server.start()
 
-    async def receive_hook(self, request):
-        topic = request.match_info["topic"]
-        payload = await request.json()
-        self.hook_results.append((topic, payload))
-        raise web.HTTPOk()
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"x-api-key": "wrong-key"}
+        ) as response:
+            assert response.status == 401
 
-    async def outbound_message_router(self, *args):
-        raise Exception()
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"x-api-key": "test-api-key"}
+        ) as response:
+            assert response.status == 200
 
-    def webhook_router(self, *args):
-        raise Exception()
+        async with self.client_session.ws_connect(
+            f"http://127.0.0.1:{self.port}/ws",
+            headers={"x-api-key": "test-api-key"}
+        ) as ws:
+            result = await ws.receive_json()
+            assert result["topic"] == "settings"
 
-    def get_admin_server(self) -> AdminServer:
-        context = InjectionContext()
-        context.settings["admin.admin_insecure_mode"] = True
-        server = AdminServer(
-            "0.0.0.0",
-            unused_port(),
-            context,
-            self.outbound_message_router,
-            self.webhook_router,
-            async_mock.MagicMock(
-                stop=async_mock.CoroutineMock()
-            )
-        )
-        return server
+        await server.stop()
 
-    async def get_application(self):
-        """
-        Override the get_app method to return your application.
-        """
-        app = web.Application()
-        app.add_routes([web.post("/topic/{topic}/", self.receive_hook)])
-        return app
-    '''
+    async def test_visit_shutting_down(self):
+        settings = {
+            "admin.admin_insecure_mode": True,
+        }
+        server = self.get_admin_server(settings)
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/shutdown", headers={}
+        ) as response:
+            assert response.status == 200
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status", headers={}
+        ) as response:
+            assert response.status == 503
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/live", headers={}
+        ) as response:
+            assert response.status == 200
+        await server.stop()
+
