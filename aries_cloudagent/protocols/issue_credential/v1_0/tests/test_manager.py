@@ -908,7 +908,7 @@ class TestCredentialManager(AsyncTestCase):
                 ]
             )
             (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
-                stored_exchange, comment=comment
+                stored_exchange, comment=comment, retries=0
             )
 
             save_ex.assert_called_once()
