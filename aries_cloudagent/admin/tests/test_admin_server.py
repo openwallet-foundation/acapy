@@ -26,10 +26,7 @@ class TestAdminServer(AsyncTestCase):
         self.port = 0
 
         self.connector = TCPConnector(limit=16, limit_per_host=4)
-        session_args = {
-            "cookie_jar": DummyCookieJar(),
-            "connector": self.connector
-        }
+        session_args = {"cookie_jar": DummyCookieJar(), "connector": self.connector}
         self.client_session = ClientSession(
             cookie_jar=DummyCookieJar(), connector=self.connector
         )
@@ -53,7 +50,7 @@ class TestAdminServer(AsyncTestCase):
         plugin_registry = async_mock.MagicMock(
             test_module.PluginRegistry, autospec=True
         )
-        plugin_registry.post_process_routes=async_mock.MagicMock()
+        plugin_registry.post_process_routes = async_mock.MagicMock()
         context.injector.bind_instance(test_module.PluginRegistry, plugin_registry)
 
         collector = Collector()
@@ -70,7 +67,7 @@ class TestAdminServer(AsyncTestCase):
             task_queue=TaskQueue(max_active=4) if task_queue else None,
             conductor_stats=(
                 None if task_queue else async_mock.CoroutineMock(return_value=[1, 2])
-            )
+            ),
         )
 
     async def outbound_message_router(self, *args):
@@ -104,11 +101,7 @@ class TestAdminServer(AsyncTestCase):
             server, "websocket_queues", async_mock.MagicMock()
         ) as mock_wsq:
             mock_wsq.values = async_mock.MagicMock(
-                return_value=[
-                    async_mock.MagicMock(
-                        stop=async_mock.MagicMock()
-                    )
-                ]
+                return_value=[async_mock.MagicMock(stop=async_mock.MagicMock())]
             )
             await server.stop()
 
@@ -143,8 +136,7 @@ class TestAdminServer(AsyncTestCase):
             mock_wsq.values = async_mock.MagicMock(
                 return_value=[
                     async_mock.MagicMock(
-                        authenticated=True,
-                        enqueue=async_mock.CoroutineMock()
+                        authenticated=True, enqueue=async_mock.CoroutineMock()
                     )
                 ]
             )
@@ -167,10 +159,7 @@ class TestAdminServer(AsyncTestCase):
         app = await server.make_application()
 
     async def test_visit_insecure_mode(self):
-        settings = {
-            "admin.admin_insecure_mode": True,
-            "task_queue": True
-        }
+        settings = {"admin.admin_insecure_mode": True, "task_queue": True}
         server = self.get_admin_server(settings)
         await server.start()
 
@@ -209,20 +198,18 @@ class TestAdminServer(AsyncTestCase):
         await server.start()
 
         async with self.client_session.get(
-            f"http://127.0.0.1:{self.port}/status",
-            headers={"x-api-key": "wrong-key"}
+            f"http://127.0.0.1:{self.port}/status", headers={"x-api-key": "wrong-key"}
         ) as response:
             assert response.status == 401
 
         async with self.client_session.get(
             f"http://127.0.0.1:{self.port}/status",
-            headers={"x-api-key": "test-api-key"}
+            headers={"x-api-key": "test-api-key"},
         ) as response:
             assert response.status == 200
 
         async with self.client_session.ws_connect(
-            f"http://127.0.0.1:{self.port}/ws",
-            headers={"x-api-key": "test-api-key"}
+            f"http://127.0.0.1:{self.port}/ws", headers={"x-api-key": "test-api-key"}
         ) as ws:
             result = await ws.receive_json()
             assert result["topic"] == "settings"
@@ -251,4 +238,3 @@ class TestAdminServer(AsyncTestCase):
         ) as response:
             assert response.status == 200
         await server.stop()
-
