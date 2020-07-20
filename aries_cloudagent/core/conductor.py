@@ -97,7 +97,7 @@ class Conductor:
                     context,
                     self.outbound_message_router,
                     self.webhook_router,
-                    self,
+                    self.stop,
                     self.dispatcher.task_queue,
                     self.get_stats,
                 )
