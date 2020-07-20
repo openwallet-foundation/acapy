@@ -60,11 +60,7 @@ class AdminResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
     def __init__(
-        self,
-        context: InjectionContext,
-        send: Coroutine,
-        webhook: Coroutine,
-        **kwargs,
+        self, context: InjectionContext, send: Coroutine, webhook: Coroutine, **kwargs,
     ):
         """
         Initialize an instance of `AdminResponder`.
@@ -184,9 +180,7 @@ class AdminServer(BaseAdminServer):
 
         self.context = context.start_scope("admin")
         self.responder = AdminResponder(
-            self.context,
-            outbound_message_router,
-            self.send_webhook,
+            self.context, outbound_message_router, self.send_webhook,
         )
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
