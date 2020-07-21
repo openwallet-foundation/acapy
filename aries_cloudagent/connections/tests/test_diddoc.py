@@ -67,6 +67,7 @@ class TestDIDDoc(AsyncTestCase):
         }
 
         dd = DIDDoc.deserialize(dd_in)
+        assert str(dd) == f"DIDDoc({canon_did(dd_in['id'])})"
         assert len(dd.pubkey) == len(dd_in["publicKey"])
         assert len(dd.authnkey) == len(dd_in["authentication"])
 
@@ -352,6 +353,7 @@ class TestDIDDoc(AsyncTestCase):
             dd.did,
             True,
         )
+        assert "PublicKey" in str(pk)
         dd.set(pk)
         assert len(dd.pubkey) == 2 + len(dd_in["publicKey"])
         assert canon_ref(dd.did, "99", "#") in dd.pubkey

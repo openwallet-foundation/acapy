@@ -247,7 +247,7 @@ class TestPresAttrSpec(TestCase):
 
         attr_spec = PresAttrSpec.deserialize(dump)
         assert type(attr_spec) == PresAttrSpec
-        assert attr_spec.name == "player"
+        assert canon(attr_spec.name) == "player"
 
         dump = json.dumps(
             {
@@ -260,7 +260,7 @@ class TestPresAttrSpec(TestCase):
 
         attr_spec = PresAttrSpec.deserialize(dump)
         assert type(attr_spec) == PresAttrSpec
-        assert attr_spec.name == "player"
+        assert canon(attr_spec.name) == "player"
 
     def test_serialize(self):
         """Test serialization."""
@@ -339,14 +339,14 @@ class TestPresPredSpec(TestCase):
 
         pred_spec = PresPredSpec.deserialize(dump)
         assert type(pred_spec) == PresPredSpec
-        assert pred_spec.name == "highscore"
+        assert canon(pred_spec.name) == "highscore"
 
     def test_serialize(self):
         """Test serialization."""
 
         pred_spec_dict = PRES_PREVIEW.predicates[0].serialize()
         assert pred_spec_dict == {
-            "name": "highscore",
+            "name": "highScore",
             "cred_def_id": CD_ID["score"],
             "predicate": ">=",
             "threshold": 1000000,
@@ -367,7 +367,6 @@ class TestPresPredSpec(TestCase):
             predicate=Predicate.GE.value.math,
             threshold=0,
         )
-
         assert pred_spec_a != pred_spec_b
 
         pred_spec_a.name = "b"
@@ -375,10 +374,15 @@ class TestPresPredSpec(TestCase):
 
         pred_spec_a.predicate = Predicate.LE.value.math
         assert pred_spec_a != pred_spec_b
-        pred_spec_a.predicate = Predicate.GE.value.math
 
+        pred_spec_a.predicate = Predicate.GE.value.math
         assert pred_spec_a == pred_spec_b
+
         pred_spec_a.threshold = 100
+        assert pred_spec_a != pred_spec_b
+
+        pred_spec_a.threshold = 0
+        pred_spec_a.cred_def_id = None
         assert pred_spec_a != pred_spec_b
 
 
@@ -390,38 +394,24 @@ class TestPresentationPreviewAsync(AsyncTestCase):
     async def test_to_indy_proof_request(self):
         """Test presentation preview to indy proof request."""
 
-        CANON_INDY_PROOF_REQ = deepcopy(INDY_PROOF_REQ)
-        for spec in CANON_INDY_PROOF_REQ["requested_attributes"].values():
-            spec["name"] = canon(spec["name"])
-        for spec in CANON_INDY_PROOF_REQ["requested_predicates"].values():
-            spec["name"] = canon(spec["name"])
-
-        pres_preview = deepcopy(PRES_PREVIEW)
-
-        indy_proof_req = await pres_preview.indy_proof_request(
+        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
             **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")}
         )
 
-        assert indy_proof_req == CANON_INDY_PROOF_REQ
+        assert indy_proof_req == INDY_PROOF_REQ
 
     @pytest.mark.asyncio
     async def test_to_indy_proof_request_attr_names(self):
         """Test presentation preview to indy proof request."""
 
-        CANON_INDY_PROOF_REQ_ATTR_NAMES = deepcopy(INDY_PROOF_REQ_ATTR_NAMES)
-        for spec in CANON_INDY_PROOF_REQ_ATTR_NAMES["requested_attributes"].values():
-            spec["names"] = [canon(name) for name in spec["names"]]
-
-        pres_preview = deepcopy(PRES_PREVIEW_ATTR_NAMES)
-
-        indy_proof_req = await pres_preview.indy_proof_request(
+        indy_proof_req = await PRES_PREVIEW_ATTR_NAMES.indy_proof_request(
             **{k: INDY_PROOF_REQ_ATTR_NAMES[k] for k in ("name", "version", "nonce")}
         )
 
-        assert indy_proof_req == CANON_INDY_PROOF_REQ_ATTR_NAMES
+        assert indy_proof_req == INDY_PROOF_REQ_ATTR_NAMES
 
     async def test_to_indy_proof_request_self_attested(self):
-        """Test presentation preview to inty proof request with self-attested values."""
+        """Test presentation preview to indy proof request with self-attested values."""
 
         pres_preview_selfie = deepcopy(PRES_PREVIEW)
         for attr_spec in pres_preview_selfie.attributes:
@@ -440,11 +430,7 @@ class TestPresentationPreviewAsync(AsyncTestCase):
     async def test_to_indy_proof_request_revo_default_interval(self):
         """Test pres preview to indy proof req with revocation support, defaults."""
 
-        canon_indy_proof_req = deepcopy(INDY_PROOF_REQ)
-        for spec in canon_indy_proof_req["requested_attributes"].values():
-            spec["name"] = canon(spec["name"])
-        for spec in canon_indy_proof_req["requested_predicates"].values():
-            spec["name"] = canon(spec["name"])
+        copy_indy_proof_req = deepcopy(INDY_PROOF_REQ)
 
         pres_preview = deepcopy(PRES_PREVIEW)
         mock_ledger = async_mock.MagicMock(
@@ -453,34 +439,30 @@ class TestPresentationPreviewAsync(AsyncTestCase):
             )
         )
 
-        indy_proof_req = await pres_preview.indy_proof_request(
+        indy_proof_req_revo = await pres_preview.indy_proof_request(
             **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
             ledger=mock_ledger,
         )
 
-        for uuid, attr_spec in indy_proof_req["requested_attributes"].items():
+        for uuid, attr_spec in indy_proof_req_revo["requested_attributes"].items():
             assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            canon_indy_proof_req["requested_attributes"][uuid][
+            copy_indy_proof_req["requested_attributes"][uuid][
                 "non_revoked"
             ] = attr_spec["non_revoked"]
-        for uuid, pred_spec in indy_proof_req["requested_predicates"].items():
+        for uuid, pred_spec in indy_proof_req_revo["requested_predicates"].items():
             assert set(pred_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            canon_indy_proof_req["requested_predicates"][uuid][
+            copy_indy_proof_req["requested_predicates"][uuid][
                 "non_revoked"
             ] = pred_spec["non_revoked"]
 
-        assert canon_indy_proof_req == indy_proof_req
+        assert copy_indy_proof_req == indy_proof_req_revo
 
     @pytest.mark.asyncio
     async def test_to_indy_proof_request_revo(self):
         """Test pres preview to indy proof req with revocation support, interval."""
 
         EPOCH_NOW = int(time())
-        canon_indy_proof_req = deepcopy(INDY_PROOF_REQ)
-        for spec in canon_indy_proof_req["requested_attributes"].values():
-            spec["name"] = canon(spec["name"])
-        for spec in canon_indy_proof_req["requested_predicates"].values():
-            spec["name"] = canon(spec["name"])
+        copy_indy_proof_req = deepcopy(INDY_PROOF_REQ)
 
         pres_preview = deepcopy(PRES_PREVIEW)
         mock_ledger = async_mock.MagicMock(
@@ -489,7 +471,7 @@ class TestPresentationPreviewAsync(AsyncTestCase):
             )
         )
 
-        indy_proof_req = await pres_preview.indy_proof_request(
+        indy_proof_req_revo = await pres_preview.indy_proof_request(
             **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
             ledger=mock_ledger,
             non_revoc_intervals={
@@ -498,18 +480,18 @@ class TestPresentationPreviewAsync(AsyncTestCase):
             },
         )
 
-        for uuid, attr_spec in indy_proof_req["requested_attributes"].items():
+        for uuid, attr_spec in indy_proof_req_revo["requested_attributes"].items():
             assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            canon_indy_proof_req["requested_attributes"][uuid][
+            copy_indy_proof_req["requested_attributes"][uuid][
                 "non_revoked"
             ] = attr_spec["non_revoked"]
-        for uuid, pred_spec in indy_proof_req["requested_predicates"].items():
+        for uuid, pred_spec in indy_proof_req_revo["requested_predicates"].items():
             assert set(pred_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            canon_indy_proof_req["requested_predicates"][uuid][
+            copy_indy_proof_req["requested_predicates"][uuid][
                 "non_revoked"
             ] = pred_spec["non_revoked"]
 
-        assert canon_indy_proof_req == indy_proof_req
+        assert copy_indy_proof_req == indy_proof_req_revo
 
     @pytest.mark.asyncio
     async def test_satisfaction(self):
@@ -559,7 +541,7 @@ class TestPresentationPreview(TestCase):
                     "value": "Richie Knucklez",
                 },
                 {
-                    "name": "screencapture",
+                    "name": "screenCapture",
                     "cred_def_id": CD_ID["score"],
                     "mime-type": "image/png",
                     "value": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
@@ -567,7 +549,7 @@ class TestPresentationPreview(TestCase):
             ],
             "predicates": [
                 {
-                    "name": "highscore",
+                    "name": "highScore",
                     "cred_def_id": CD_ID["score"],
                     "predicate": ">=",
                     "threshold": 1000000,
@@ -591,7 +573,7 @@ class TestPresentationPreview(TestCase):
                     "value": "Richie Knucklez",
                 },
                 {
-                    "name": "screencapture",
+                    "name": "screenCapture",
                     "cred_def_id": CD_ID["score"],
                     "mime-type": "image/png",
                     "value": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
@@ -599,7 +581,7 @@ class TestPresentationPreview(TestCase):
             ],
             "predicates": [
                 {
-                    "name": "highscore",
+                    "name": "highScore",
                     "cred_def_id": CD_ID["score"],
                     "predicate": ">=",
                     "threshold": 1000000,

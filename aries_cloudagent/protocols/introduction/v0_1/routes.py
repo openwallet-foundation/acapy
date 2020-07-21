@@ -3,31 +3,44 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs
+from aiohttp_apispec import docs, match_info_schema, querystring_schema
 
-from .base_service import BaseIntroductionService
+from marshmallow import fields, Schema
+
+from ....messaging.valid import UUIDFour
+from ....storage.error import StorageError
+
+from .base_service import BaseIntroductionService, IntroductionError
 
 LOGGER = logging.getLogger(__name__)
 
 
+class IntroStartQueryStringSchema(Schema):
+    """Query string parameters for request to start introduction."""
+
+    target_connection_id = fields.Str(
+        description="Target connection identifier",
+        required=True,
+        example=UUIDFour.EXAMPLE,
+    )
+    message = fields.Str(
+        description="Message", required=False, example="Allow me to introduce ..."
+    )
+
+
+class ConnIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
 @docs(
-    tags=["introduction"],
-    summary="Start an introduction between two connections",
-    parameters=[
-        {
-            "name": "target_connection_id",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": True,
-        },
-        {
-            "name": "message",
-            "in": "query",
-            "schema": {"type": "string"},
-            "required": False,
-        },
-    ],
+    tags=["introduction"], summary="Start an introduction between two connections",
 )
+@match_info_schema(ConnIdMatchInfoSchema())
+@querystring_schema(IntroStartQueryStringSchema())
 async def introduction_start(request: web.BaseRequest):
     """
     Request handler for starting an introduction.
@@ -39,7 +52,7 @@ async def introduction_start(request: web.BaseRequest):
     LOGGER.info("Introduction requested")
     context = request.app["request_context"]
     outbound_handler = request.app["outbound_message_router"]
-    init_connection_id = request.match_info["id"]
+    init_connection_id = request.match_info["conn_id"]
     target_connection_id = request.query.get("target_connection_id")
     message = request.query.get("message")
 
@@ -47,11 +60,15 @@ async def introduction_start(request: web.BaseRequest):
         BaseIntroductionService, required=False
     )
     if not service:
-        raise web.HTTPForbidden()
+        raise web.HTTPForbidden(reason="Introduction service not available")
 
-    await service.start_introduction(
-        init_connection_id, target_connection_id, message, outbound_handler
-    )
+    try:
+        await service.start_introduction(
+            init_connection_id, target_connection_id, message, outbound_handler
+        )
+    except (IntroductionError, StorageError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({})
 
 
@@ -59,5 +76,16 @@ async def register(app: web.Application):
     """Register routes."""
 
     app.add_routes(
-        [web.post("/connections/{id}/start-introduction", introduction_start)]
+        [web.post("/connections/{conn_id}/start-introduction", introduction_start)]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {"name": "introduction", "description": "Introduction of known parties"}
     )

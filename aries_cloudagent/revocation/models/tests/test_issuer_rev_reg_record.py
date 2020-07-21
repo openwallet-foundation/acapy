@@ -1,5 +1,7 @@
 import json
 
+from os.path import join
+
 import indy.anoncreds
 import indy.blob_storage
 
@@ -8,6 +10,7 @@ import pytest
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....config.injection_context import InjectionContext
+from ....indy.util import indy_client_dir
 from ....issuer.base import BaseIssuer, IssuerError
 from ....issuer.indy import IndyIssuer
 from ....ledger.base import BaseLedger
@@ -19,6 +22,7 @@ from ...error import RevocationError
 
 from ..issuer_rev_reg_record import IssuerRevRegRecord
 from ..revocation_registry import RevocationRegistry
+from .. import issuer_rev_reg_record as test_module
 
 
 class TestRecord(AsyncTestCase):
@@ -45,7 +49,9 @@ class TestRecord(AsyncTestCase):
         REV_REG_ID = f"{TestRecord.test_did}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
         rec = IssuerRevRegRecord(
-            issuer_did=TestRecord.test_did, cred_def_id=CRED_DEF_ID
+            issuer_did=TestRecord.test_did,
+            cred_def_id=CRED_DEF_ID,
+            revoc_reg_id=REV_REG_ID,
         )
         issuer = async_mock.MagicMock(BaseIssuer)
         self.context.injector.bind_instance(BaseIssuer, issuer)
@@ -56,7 +62,7 @@ class TestRecord(AsyncTestCase):
             mock_create_store_rr.side_effect = IssuerError("Not this time")
 
             with self.assertRaises(RevocationError):
-                await rec.generate_registry(self.context, None)
+                await rec.generate_registry(self.context)
 
         issuer.create_and_store_revocation_registry.return_value = (
             REV_REG_ID,
@@ -71,13 +77,17 @@ class TestRecord(AsyncTestCase):
             json.dumps({"revoc_reg_entry": "dummy-entry"}),
         )
 
-        await rec.generate_registry(self.context, None)
+        with async_mock.patch.object(
+            test_module, "move", async_mock.MagicMock()
+        ) as mock_move:
+            await rec.generate_registry(self.context)
 
         assert rec.revoc_reg_id == REV_REG_ID
         assert rec.state == IssuerRevRegRecord.STATE_GENERATED
         assert rec.tails_hash == "59NY25UEV8a5CzNkXFQMppwofUxtYtf4FDp1h9xgeLcK"
-        assert rec.tails_local_path == "point at infinity"
-
+        assert rec.tails_local_path == join(
+            indy_client_dir(join("tails", REV_REG_ID)), rec.tails_hash
+        )
         with self.assertRaises(RevocationError):
             await rec.set_tails_file_public_uri(self.context, "dummy")
 
@@ -133,7 +143,7 @@ class TestRecord(AsyncTestCase):
         )
 
         with self.assertRaises(RevocationError) as x_state:
-            await rec_full.generate_registry(self.context, None)
+            await rec_full.generate_registry(self.context)
 
         with self.assertRaises(RevocationError) as x_state:
             await rec_full.publish_registry_definition(self.context)
@@ -146,11 +156,27 @@ class TestRecord(AsyncTestCase):
         rec = IssuerRevRegRecord()
         await rec.mark_pending(self.context, "1")
         await rec.mark_pending(self.context, "2")
+        await rec.mark_pending(self.context, "3")
+        await rec.mark_pending(self.context, "4")
 
         found = await IssuerRevRegRecord.query_by_pending(self.context)
         assert len(found) == 1 and found[0] == rec
 
-        await rec.clear_pending(self.context)
+        await rec.clear_pending(self.context, ["1", "2"])
+        assert rec.pending_pub == ["3", "4"]
+        found = await IssuerRevRegRecord.query_by_pending(self.context)
+        assert found
+
+        await rec.clear_pending(self.context, [])
+        assert rec.pending_pub == []
+        found = await IssuerRevRegRecord.query_by_pending(self.context)
+        assert not found
+
+        await rec.mark_pending(self.context, "5")
+        await rec.mark_pending(self.context, "6")
+
+        await rec.clear_pending(self.context, [])
+        assert rec.pending_pub == []
         found = await IssuerRevRegRecord.query_by_pending(self.context)
         assert not found
 

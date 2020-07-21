@@ -77,7 +77,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             {
                 "default_endpoint": "http://aries.ca/endpoint",
                 "default_label": "This guy",
-                "additional_endpoints": [],
+                "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
             }
@@ -210,7 +210,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         )
 
         invitee_record = await self.manager.receive_invitation(
-            connect_invite, accept=ConnectionRecord.ACCEPT_MANUAL
+            connect_invite, auto_accept=False
         )
         assert invitee_record.state == ConnectionRecord.STATE_INVITATION
 

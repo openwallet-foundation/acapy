@@ -16,18 +16,10 @@ Subpackages
 Submodules
 ----------
 
-aries\_cloudagent\.protocols\.issue\_credential\.message\_types module
-----------------------------------------------------------------------
+aries\_cloudagent\.protocols\.issue\_credential\.definition module
+------------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.issue_credential.message_types
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.issue\_credential\.routes module
---------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.issue_credential.routes
+.. automodule:: aries_cloudagent.protocols.issue_credential.definition
     :members:
     :undoc-members:
     :show-inheritance:

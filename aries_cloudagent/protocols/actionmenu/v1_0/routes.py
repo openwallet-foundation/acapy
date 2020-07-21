@@ -3,19 +3,20 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, request_schema
+from aiohttp_apispec import docs, match_info_schema, request_schema
 
 from marshmallow import fields, Schema
 
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.messaging.valid import UUIDFour
-from aries_cloudagent.storage.error import StorageNotFoundError
+from ....connections.models.connection_record import ConnectionRecord
+from ....messaging.models.base import BaseModelError
+from ....messaging.valid import UUIDFour
+from ....storage.error import StorageError, StorageNotFoundError
 
 from .messages.menu import Menu
 from .messages.menu_request import MenuRequest
 from .messages.perform import Perform
 from .models.menu_option import MenuOptionSchema
-from .util import retrieve_connection_menu, save_connection_menu
+from .util import MENU_RECORD_TYPE, retrieve_connection_menu, save_connection_menu
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,9 +62,18 @@ class SendMenuSchema(Schema):
     )
 
 
+class ConnIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
 @docs(
     tags=["action-menu"], summary="Close the active menu associated with a connection"
 )
+@match_info_schema(ConnIdMatchInfoSchema())
 async def actionmenu_close(request: web.BaseRequest):
     """
     Request handler for closing the menu associated with a connection.
@@ -73,17 +83,24 @@ async def actionmenu_close(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
 
     menu = await retrieve_connection_menu(connection_id, context)
     if not menu:
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(
+            reason=f"No {MENU_RECORD_TYPE} record found for connection {connection_id}"
+        )
 
-    await save_connection_menu(None, connection_id, context)
+    try:
+        await save_connection_menu(None, connection_id, context)
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({})
 
 
 @docs(tags=["action-menu"], summary="Fetch the active menu")
+@match_info_schema(ConnIdMatchInfoSchema())
 async def actionmenu_fetch(request: web.BaseRequest):
     """
     Request handler for fetching the previously-received menu for a connection.
@@ -93,7 +110,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
 
     menu = await retrieve_connection_menu(connection_id, context)
     result = {"result": menu.serialize() if menu else None}
@@ -101,6 +118,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 
 
 @docs(tags=["action-menu"], summary="Perform an action associated with the active menu")
+@match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(PerformRequestSchema())
 async def actionmenu_perform(request: web.BaseRequest):
     """
@@ -111,24 +129,25 @@ async def actionmenu_perform(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     params = await request.json()
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
-        raise web.HTTPNotFound()
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if connection.is_ready:
         msg = Perform(name=params["name"], params=params.get("params"))
         await outbound_handler(msg, connection_id=connection_id)
         return web.json_response({})
 
-    raise web.HTTPForbidden()
+    raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
 
 @docs(tags=["action-menu"], summary="Request the active menu")
+@match_info_schema(ConnIdMatchInfoSchema())
 async def actionmenu_request(request: web.BaseRequest):
     """
     Request handler for requesting a menu from the connection target.
@@ -138,24 +157,25 @@ async def actionmenu_request(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
+    except StorageNotFoundError as err:
         LOGGER.debug("Connection not found for action menu request: %s", connection_id)
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if connection.is_ready:
         msg = MenuRequest()
         await outbound_handler(msg, connection_id=connection_id)
         return web.json_response({})
 
-    raise web.HTTPForbidden()
+    raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
 
 @docs(tags=["action-menu"], summary="Send an action menu to a connection")
+@match_info_schema(ConnIdMatchInfoSchema())
 @request_schema(SendMenuSchema())
 async def actionmenu_send(request: web.BaseRequest):
     """
@@ -166,29 +186,29 @@ async def actionmenu_send(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
-    connection_id = request.match_info["id"]
+    connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     menu_json = await request.json()
     LOGGER.debug("Received send-menu request: %s %s", connection_id, menu_json)
     try:
         msg = Menu.deserialize(menu_json["menu"])
-    except Exception:
-        LOGGER.exception("Exception deserializing menu")
-        raise
+    except BaseModelError as err:
+        LOGGER.exception("Exception deserializing menu: %s", err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-    except StorageNotFoundError:
+    except StorageNotFoundError as err:
         LOGGER.debug(
             "Connection not found for action menu send request: %s", connection_id
         )
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     if connection.is_ready:
         await outbound_handler(msg, connection_id=connection_id)
         return web.json_response({})
 
-    raise web.HTTPForbidden()
+    raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
 
 async def register(app: web.Application):
@@ -196,10 +216,21 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.post("/action-menu/{id}/close", actionmenu_close),
-            web.post("/action-menu/{id}/fetch", actionmenu_fetch),
-            web.post("/action-menu/{id}/perform", actionmenu_perform),
-            web.post("/action-menu/{id}/request", actionmenu_request),
-            web.post("/connections/{id}/send-menu", actionmenu_send),
+            web.post("/action-menu/{conn_id}/close", actionmenu_close),
+            web.post("/action-menu/{conn_id}/fetch", actionmenu_fetch),
+            web.post("/action-menu/{conn_id}/perform", actionmenu_perform),
+            web.post("/action-menu/{conn_id}/request", actionmenu_request),
+            web.post("/connections/{conn_id}/send-menu", actionmenu_send),
         ]
+    )
+
+
+def post_process_routes(app: web.Application):
+    """Amend swagger API."""
+
+    # Add top-level tags description
+    if "tags" not in app._state["swagger_dict"]:
+        app._state["swagger_dict"]["tags"] = []
+    app._state["swagger_dict"]["tags"].append(
+        {"name": "action-menu", "description": "Menu interaction over connection"}
     )

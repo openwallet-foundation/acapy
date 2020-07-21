@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Sequence
 
+from ..ledger.base import BaseLedger
+
 
 KeyInfo = namedtuple("KeyInfo", "verkey metadata")
 
@@ -98,6 +100,37 @@ class BaseWallet(ABC):
         Args:
             verkey: The verification key of the keypair
             metadata: The new metadata to store
+
+        """
+
+    @abstractmethod
+    async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
+        """
+        Begin key rotation for DID that wallet owns: generate new keypair.
+
+        Args:
+            did: signing DID
+            next_seed: seed for incoming ed25519 key pair (default random)
+
+        Returns:
+            The new verification key
+
+        Raises:
+            WalletNotFoundError: if wallet does not own DID
+
+        """
+
+    @abstractmethod
+    async def rotate_did_keypair_apply(self, did: str) -> None:
+        """
+        Apply temporary keypair as main for DID that wallet owns.
+
+        Args:
+            did: signing DID
+
+        Raises:
+            WalletNotFoundError: if wallet does not own DID
+            WalletError: if wallet has not started key rotation
 
         """
 
@@ -230,11 +263,31 @@ class BaseWallet(ABC):
         """
         Replace the metadata associated with a local DID.
 
+        Prefer `set_did_endpoint()` to set endpoint in metadata.
+
         Args:
-            did: DID to replace metadata for
+            did: DID for which to replace metadata
             metadata: The new metadata
 
         """
+
+    async def set_did_endpoint(self, did: str, endpoint: str, ledger: BaseLedger):
+        """
+        Update the endpoint for a DID in the wallet, send to ledger if public.
+
+        Args:
+            did: DID for which to set endpoint
+            endpoint: the endpoint to set, None to clear
+            ledger: the ledger to which to send endpoint update
+                if DID is public - specify None for basic wallet
+
+        """
+        did_info = await self.get_local_did(did)
+        metadata = {**did_info.metadata}
+        metadata.pop("endpoint", None)
+        metadata["endpoint"] = endpoint
+
+        await self.replace_local_did_metadata(did, metadata)
 
     @abstractmethod
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:

@@ -24,6 +24,7 @@ class IndyHolder(BaseHolder):
     """Indy holder class."""
 
     RECORD_TYPE_MIME_TYPES = "attribute-mime-types"
+    CHUNK = 256
 
     def __init__(self, wallet):
         """
@@ -137,6 +138,27 @@ class IndyHolder(BaseHolder):
             wql: wql query dict
 
         """
+
+        async def fetch(limit):
+            """Fetch up to limit (default smaller of all remaining or 256) creds."""
+            creds = []
+            CHUNK = min(record_count, limit or record_count, IndyHolder.CHUNK)
+            cardinality = min(limit or record_count, record_count)
+
+            with IndyErrorHandler(
+                "Error fetching credentials from wallet", HolderError
+            ):
+                while len(creds) < cardinality:
+                    batch = json.loads(
+                        await indy.anoncreds.prover_fetch_credentials(
+                            search_handle, CHUNK
+                        )
+                    )
+                    creds.extend(batch)
+                    if len(batch) < CHUNK:
+                        break
+            return creds
+
         with IndyErrorHandler(
             "Error when constructing wallet credential query", HolderError
         ):
@@ -147,17 +169,13 @@ class IndyHolder(BaseHolder):
                 self.wallet.handle, json.dumps(wql)
             )
 
-        # We need to move the database cursor position manually...
-        if start > 0:
-            # TODO: move cursor in chunks to avoid exploding memory
-            await indy.anoncreds.prover_fetch_credentials(search_handle, start)
+            if start > 0:
+                # must move database cursor manually
+                await fetch(start)
+            credentials = await fetch(count)
 
-        credentials_json = await indy.anoncreds.prover_fetch_credentials(
-            search_handle, count
-        )
-        await indy.anoncreds.prover_close_credentials_search(search_handle)
+            await indy.anoncreds.prover_close_credentials_search(search_handle)
 
-        credentials = json.loads(credentials_json)
         return credentials
 
     async def get_credentials_for_presentation_request_by_referent(
@@ -180,6 +198,26 @@ class IndyHolder(BaseHolder):
 
         """
 
+        async def fetch(reft, limit):
+            """Fetch up to limit (default smaller of all remaining or 256) creds."""
+            creds = []
+            CHUNK = min(IndyHolder.CHUNK, limit or IndyHolder.CHUNK)
+
+            with IndyErrorHandler(
+                f"Error fetching credentials from wallet for presentation request",
+                HolderError,
+            ):
+                while not limit or len(creds) < limit:
+                    batch = json.loads(
+                        await indy.anoncreds.prover_fetch_credentials_for_proof_req(
+                            search_handle, reft, CHUNK
+                        )
+                    )
+                    creds.extend(batch)
+                    if len(batch) < CHUNK:
+                        break
+            return creds
+
         with IndyErrorHandler(
             "Error when constructing wallet credential query", HolderError
         ):
@@ -191,40 +229,33 @@ class IndyHolder(BaseHolder):
                 )
             )
 
-        if not referents:
-            referents = (
-                *presentation_request["requested_attributes"],
-                *presentation_request["requested_predicates"],
-            )
-        creds_dict = OrderedDict()
-
-        try:
-            for reft in referents:
-                # We need to move the database cursor position manually...
-                if start > 0:
-                    # TODO: move cursors in chunks to avoid exploding memory
-                    await indy.anoncreds.prover_fetch_credentials_for_proof_req(
-                        search_handle, reft, start
-                    )
-                (
-                    credentials_json
-                ) = await indy.anoncreds.prover_fetch_credentials_for_proof_req(
-                    search_handle, reft, count
+            if not referents:
+                referents = (
+                    *presentation_request["requested_attributes"],
+                    *presentation_request["requested_predicates"],
                 )
-                credentials = json.loads(credentials_json)
-                for cred in credentials:
-                    cred_id = cred["cred_info"]["referent"]
-                    if cred_id not in creds_dict:
-                        cred["presentation_referents"] = {reft}
-                        creds_dict[cred_id] = cred
-                    else:
-                        creds_dict[cred_id]["presentation_referents"].add(reft)
+            creds_dict = OrderedDict()
 
-        finally:
-            # Always close
-            await indy.anoncreds.prover_close_credentials_search_for_proof_req(
-                search_handle
-            )
+            try:
+                for reft in referents:
+                    # must move database cursor manually
+                    if start > 0:
+                        await fetch(reft, start)
+                    credentials = await fetch(reft, count - len(creds_dict))
+                    for cred in credentials:
+                        cred_id = cred["cred_info"]["referent"]
+                        if cred_id not in creds_dict:
+                            cred["presentation_referents"] = {reft}
+                            creds_dict[cred_id] = cred
+                        else:
+                            creds_dict[cred_id]["presentation_referents"].add(reft)
+                    if len(creds_dict) >= count:
+                        break
+            finally:
+                # Always close
+                await indy.anoncreds.prover_close_credentials_search_for_proof_req(
+                    search_handle
+                )
 
         for cred in creds_dict.values():
             cred["presentation_referents"] = list(cred["presentation_referents"])
@@ -243,15 +274,17 @@ class IndyHolder(BaseHolder):
             credential_json = await indy.anoncreds.prover_get_credential(
                 self.wallet.handle, credential_id
             )
-        except IndyError as e:
-            if e.error_code == ErrorCode.WalletItemNotFound:
+        except IndyError as err:
+            if err.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError(
-                    "Credential not found in the wallet: {}".format(credential_id)
+                    "Credential {} not found in wallet {}".format(
+                        credential_id, self.wallet.name
+                    )
                 )
             else:
                 raise IndyErrorHandler.wrap_error(
-                    e, "Error when fetching credential", HolderError
-                ) from e
+                    err, f"Error when fetching credential {credential_id}", HolderError
+                ) from err
 
         return credential_json
 
@@ -277,15 +310,17 @@ class IndyHolder(BaseHolder):
             await indy.anoncreds.prover_delete_credential(
                 self.wallet.handle, credential_id
             )
-        except IndyError as e:
-            if e.error_code == ErrorCode.WalletItemNotFound:
+        except IndyError as err:
+            if err.error_code == ErrorCode.WalletItemNotFound:
                 raise WalletNotFoundError(
-                    "Credential not found in the wallet: {}".format(credential_id)
+                    "Credential {} not found in wallet {}".format(
+                        credential_id, self.wallet.name
+                    )
                 )
             else:
                 raise IndyErrorHandler.wrap_error(
-                    e, "Error when deleting credential", HolderError
-                ) from e
+                    err, "Error when deleting credential", HolderError
+                ) from err
 
     async def get_mime_type(
         self, credential_id: str, attr: str = None

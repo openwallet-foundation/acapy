@@ -14,6 +14,7 @@ Subpackages
     aries_cloudagent.messaging.ack
     aries_cloudagent.messaging.credential_definitions
     aries_cloudagent.messaging.decorators
+    aries_cloudagent.messaging.jsonld
     aries_cloudagent.messaging.models
     aries_cloudagent.messaging.schemas
 

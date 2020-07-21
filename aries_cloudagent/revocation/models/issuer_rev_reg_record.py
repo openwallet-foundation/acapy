@@ -4,12 +4,15 @@ import json
 import logging
 import uuid
 
+from os.path import join
+from shutil import move
 from typing import Any, Sequence
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext
+from ...indy.util import indy_client_dir
 from ...issuer.base import BaseIssuer, IssuerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
@@ -44,15 +47,11 @@ class IssuerRevRegRecord(BaseRecord):
     CACHE_ENABLED = False
     TAG_NAMES = {
         "cred_def_id",
-        "issuance_type",
         "issuer_did",
         "revoc_def_type",
         "revoc_reg_id",
         "state",
     }
-
-    ISSUANCE_BY_DEFAULT = "ISSUANCE_BY_DEFAULT"
-    ISSUANCE_ON_DEMAND = "ISSUANCE_ON_DEMAND"
 
     REVOC_DEF_TYPE_CL = "CL_ACCUM"
 
@@ -69,7 +68,6 @@ class IssuerRevRegRecord(BaseRecord):
         state: str = None,
         cred_def_id: str = None,
         error_msg: str = None,
-        issuance_type: str = None,
         issuer_did: str = None,
         max_cred_num: int = None,
         revoc_def_type: str = None,
@@ -89,7 +87,6 @@ class IssuerRevRegRecord(BaseRecord):
         )
         self.cred_def_id = cred_def_id
         self.error_msg = error_msg
-        self.issuance_type = issuance_type or self.ISSUANCE_BY_DEFAULT
         self.issuer_did = issuer_did
         self.max_cred_num = max_cred_num or DEFAULT_REGISTRY_SIZE
         self.revoc_def_type = revoc_def_type or self.REVOC_DEF_TYPE_CL
@@ -100,7 +97,9 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_hash = tails_hash
         self.tails_local_path = tails_local_path
         self.tails_public_uri = tails_public_uri
-        self.pending_pub = sorted(list(set(pending_pub))) if pending_pub else []
+        self.pending_pub = (
+            sorted(list(set(pending_pub))) if pending_pub else []
+        )  # order for eq comparison between instances
 
     @property
     def record_id(self) -> str:
@@ -130,7 +129,7 @@ class IssuerRevRegRecord(BaseRecord):
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise RevocationError("URI {} is not a valid URL".format(url))
 
-    async def generate_registry(self, context: InjectionContext, base_dir: str):
+    async def generate_registry(self, context: InjectionContext):
         """Create the credential registry definition and tails file."""
         if not self.tag:
             self.tag = self._id or str(uuid.uuid4())
@@ -143,6 +142,7 @@ class IssuerRevRegRecord(BaseRecord):
             )
 
         issuer: BaseIssuer = await context.inject(BaseIssuer)
+        tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
         LOGGER.debug("create revocation registry with size:", self.max_cred_num)
 
@@ -157,8 +157,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.revoc_def_type,
                 self.tag,
                 self.max_cred_num,
-                base_dir,
-                self.issuance_type,
+                tails_hopper_dir,
             )
         except IssuerError as err:
             raise RevocationError() from err
@@ -168,7 +167,12 @@ class IssuerRevRegRecord(BaseRecord):
         self.revoc_reg_entry = json.loads(revoc_reg_entry_json)
         self.state = IssuerRevRegRecord.STATE_GENERATED
         self.tails_hash = self.revoc_reg_def["value"]["tailsHash"]
-        self.tails_local_path = self.revoc_reg_def["value"]["tailsLocation"]
+
+        tails_dir = indy_client_dir(join("tails", self.revoc_reg_id), create=True)
+        tails_path = join(tails_dir, self.tails_hash)
+        move(join(tails_hopper_dir, self.tails_hash), tails_path)
+        self.tails_local_path = tails_path
+
         await self.save(context, reason="Generated registry")
 
     async def set_tails_file_public_uri(
@@ -257,10 +261,22 @@ class IssuerRevRegRecord(BaseRecord):
 
         await self.save(context, reason="Marked pending revocation")
 
-    async def clear_pending(self, context: InjectionContext) -> None:
-        """Clear any pending revocations and save any resulting record change."""
+    async def clear_pending(
+        self, context: InjectionContext, cred_rev_ids: Sequence[str] = None
+    ) -> None:
+        """Clear pending revocations and save any resulting record change.
+
+        Args:
+            context: The injection context to use
+            cred_rev_ids: Credential revocation identifiers to clear; default all
+        """
         if self.pending_pub:
-            self.pending_pub.clear()
+            if cred_rev_ids:
+                self.pending_pub = [
+                    r for r in self.pending_pub if r not in cred_rev_ids
+                ]
+            else:
+                self.pending_pub.clear()
             await self.save(context, reason="Cleared pending revocations")
 
     async def get_registry(self) -> RevocationRegistry:
@@ -302,7 +318,12 @@ class IssuerRevRegRecord(BaseRecord):
         Args:
             context: The injection context to use
         """
-        return await cls.query(context, None, None, {"pending_pub": []})
+        return await cls.query(
+            context=context,
+            tag_filter=None,
+            post_filter_positive=None,
+            post_filter_negative={"pending_pub": []},
+        )
 
     @classmethod
     async def retrieve_by_revoc_reg_id(
@@ -354,17 +375,6 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         required=False,
         description="Error message",
         example="Revocation registry undefined",
-    )
-    issuance_type = fields.Str(
-        required=False,
-        description="Issuance type (ISSUANCE_BY_DEFAULT or ISSUANCE_ON_DEMAND)",
-        example=IssuerRevRegRecord.ISSUANCE_BY_DEFAULT,
-        validate=validate.OneOf(
-            [
-                IssuerRevRegRecord.ISSUANCE_BY_DEFAULT,
-                IssuerRevRegRecord.ISSUANCE_ON_DEMAND,
-            ]
-        ),
     )
     issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
     max_cred_num = fields.Int(

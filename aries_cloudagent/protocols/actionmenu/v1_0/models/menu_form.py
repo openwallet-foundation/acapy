@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.models.base import BaseModel, BaseModelSchema
 
 from .menu_form_param import MenuFormParam, MenuFormParamSchema
 
@@ -60,7 +60,6 @@ class MenuFormSchema(BaseModelSchema):
         fields.Nested(MenuFormParamSchema()),
         required=False,
         description="List of form parameters",
-        example="[alpha, x_offset, y_offset, height, width, bgcolor, fgcolor]",
     )
     submit_label = fields.Str(
         required=False,

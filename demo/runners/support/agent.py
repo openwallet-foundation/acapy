@@ -36,6 +36,8 @@ TRACE_TARGET = os.getenv("TRACE_TARGET")
 TRACE_TAG = os.getenv("TRACE_TAG")
 TRACE_ENABLED = os.getenv("TRACE_ENABLED")
 
+AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT")
+
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
@@ -133,7 +135,9 @@ class DemoAgent:
         self.trace_tag = TRACE_TAG
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
-        if RUN_MODE == "pwd":
+        if AGENT_ENDPOINT:
+            self.endpoint = AGENT_ENDPOINT
+        elif RUN_MODE == "pwd":
             self.endpoint = f"http://{self.external_host}".replace(
                 "{PORT}", str(http_port)
             )
@@ -220,14 +224,16 @@ class DemoAgent:
         log_msg(f"Revocation Registry ID: {revocation_registry_id}")
         assert tails_hash == my_tails_hash
 
-        # Real app should publish tails file somewhere and update the revocation registry with the URI.
-        # But for the demo, assume the agent's admin end-points are accessible to the other agents
-        # Update the revocation registry with the public URL to the tails file
-        tails_file_admin_url = (
-            f"{self.admin_url}/revocation/registry/{revocation_registry_id}/tails-file"
+        tails_file_url = (
+            f"{self.public_tails_url}/revocation/registry/"
+            f"{revocation_registry_id}/tails-file"
         )
-        tails_file_url = f"{self.public_tails_url}/revocation/registry/{revocation_registry_id}/tails-file"
-        if RUN_MODE == "pwd":
+        if os.getenv("PUBLIC_TAILS_URL"):
+            tails_file_url = f"{self.public_tails_url}/{revocation_registry_id}"
+            tails_file_external_url = (
+                f"{self.public_tails_url}/{revocation_registry_id}"
+            )
+        elif RUN_MODE == "pwd":
             tails_file_external_url = f"http://{self.external_host}".replace(
                 "{PORT}", str(self.admin_port)
             )
@@ -236,6 +242,7 @@ class DemoAgent:
         tails_file_external_url += (
             f"/revocation/registry/{revocation_registry_id}/tails-file"
         )
+
         revoc_updated_response = await self.admin_PATCH(
             f"/revocation/registry/{revocation_registry_id}",
             {"tails_public_uri": tails_file_url},
@@ -243,25 +250,19 @@ class DemoAgent:
         tails_public_uri = revoc_updated_response["result"]["tails_public_uri"]
         assert tails_public_uri == tails_file_url
 
-        # if PUBLIC_TAILS_URL is specified, tell user how to get tails file from agent
-        if os.getenv("PUBLIC_TAILS_URL"):
-            log_msg(f"================")
-            log_msg(f"Revocation Registry Tails File Admin URL: {tails_file_admin_url}")
-            log_msg(f"Revocation Registry Tails File URL: {tails_public_uri}")
-            log_msg(f"External host Tails File URL: {tails_file_external_url}")
-            log_msg(f"================")
-            log_msg(f"mkdir -p ./revocation/registry/{revocation_registry_id}/")
-            log_msg(
-                f'curl -X GET "{tails_file_external_url}" --output ./revocation/registry/{revocation_registry_id}/tails-file.bin'
-            )
-            log_msg(
-                f"base64 revocation/registry/{revocation_registry_id}/tails-file.bin >revocation/registry/{revocation_registry_id}/tails-file"
-            )
-            log_msg(f"================")
-
         revoc_publish_response = await self.admin_POST(
             f"/revocation/registry/{revocation_registry_id}/publish"
         )
+
+        # if PUBLIC_TAILS_URL is specified, upload tails file to tails server
+        if os.getenv("PUBLIC_TAILS_URL"):
+            tails_server_hash = await self.admin_PUT_FILE(
+                {"genesis": await default_genesis_txns(), "tails": tails_file},
+                tails_file_url,
+                params=None,
+            )
+            assert my_tails_hash == tails_server_hash.decode("utf-8")
+            log_msg(f"Public tails file URL: {tails_file_url}")
 
         return revoc_publish_response["result"]["revoc_reg_id"]
 
@@ -476,6 +477,11 @@ class DemoAgent:
                     f"to handle webhook on topic {topic}"
                 )
 
+    async def handle_problem_report(self, message):
+        self.log(
+            f"Received problem report: {message['explain-ltxt']}\n", source="stderr"
+        )
+
     async def admin_request(
         self, method, path, data=None, text=False, params=None
     ) -> ClientResponse:
@@ -483,8 +489,12 @@ class DemoAgent:
         async with self.client_session.request(
             method, self.admin_url + path, json=data, params=params
         ) as resp:
-            resp.raise_for_status()
             resp_text = await resp.text()
+            try:
+                resp.raise_for_status()
+            except Exception as e:
+                # try to retrieve and print text on error
+                raise Exception(f"Error: {resp_text}") from e
             if not resp_text and not text:
                 return None
             if not text:
@@ -543,6 +553,18 @@ class DemoAgent:
             return await resp.read()
         except ClientError as e:
             self.log(f"Error during GET FILE {path}: {str(e)}")
+            raise
+
+    async def admin_PUT_FILE(self, files, url, params=None, headers=None) -> bytes:
+        try:
+            params = {k: v for (k, v) in (params or {}).items() if v is not None}
+            resp = await self.client_session.request(
+                "PUT", url, params=params, data=files, headers=headers
+            )
+            resp.raise_for_status()
+            return await resp.read()
+        except ClientError as e:
+            self.log(f"Error during PUT FILE {url}: {str(e)}")
             raise
 
     async def detect_process(self):

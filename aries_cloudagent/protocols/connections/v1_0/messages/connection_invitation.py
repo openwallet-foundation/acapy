@@ -5,11 +5,12 @@ from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import ValidationError, fields, validates_schema
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
-from aries_cloudagent.messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
-from aries_cloudagent.wallet.util import b64_to_bytes, bytes_to_b64
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from .....wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
+
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"

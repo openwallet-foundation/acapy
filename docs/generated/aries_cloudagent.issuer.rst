@@ -25,12 +25,4 @@ aries\_cloudagent\.issuer\.indy module
     :undoc-members:
     :show-inheritance:
 
-aries\_cloudagent\.issuer\.util module
---------------------------------------
-
-.. automodule:: aries_cloudagent.issuer.util
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 

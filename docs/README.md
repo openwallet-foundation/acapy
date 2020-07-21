@@ -49,6 +49,17 @@ sphinx-build -b html -a -E -c ./ ./ ./_build
 Once generated, go into the `_build` folder and open `index.html` in a browser. Note that the `_build` is
 `.gitignore'd` and so will not be part of a git push.
 
+### Look for Errors
+
+This is the hard part; looking for errors in docstrings added by devs. Some tips:
+
+- Ignore any errors in .md files
+- Ignore the set of errors that indicate that "GettingStarted..." markdown files are included
+- Ignore an dist-package errors
+
+Other than that, please investigate and fix things that you find. If there are fixes, it's usually
+to adhere to the rules around processing docstrings, and especially around JSON samples.
+
 ### Checking for missing modules
 
 The file [`index.rst`](index.rst) in this folder drive the RTD generation. It should pick up all the modules
@@ -56,10 +67,11 @@ in the source code, starting from the root `../aries_cloudagent` folder. However
 are not picked up automatically from the root and have to be manually added to `index.rst`. To do that:
 
 * Get a list of all generated modules by running: `ls generated | grep "aries_cloudagent.[a-z]*.rst"`
-* Compare that list with the modules documented in your local review of the RTD documentation.
+* Compare that list with the modules listed in the "Subpackages" section of the left side menu in your browser,
+including any listed below the "Submodules".
 
 If any are missing, you likely need to add them to the `index.rst` file in the `toctree` section of the file.
-You will see there are already several instances of that.
+You will see there are already several instances of that, notably "connections" and "protocols".
 
 ### Updating the [readthedocs.org](https://readthedocs.org) site
 

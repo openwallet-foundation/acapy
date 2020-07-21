@@ -21,8 +21,6 @@ from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder
 from ..messaging.util import datetime_now
 from .error import ProtocolMinorVersionNotSupported
-
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
 
@@ -81,7 +79,7 @@ class Dispatcher:
             timing = task.timing
             if "queued" in timing:
                 self.collector.log(
-                    f"Dispatcher:queued", timing["unqueued"] - timing["queued"]
+                    "Dispatcher:queued", timing["unqueued"] - timing["queued"]
                 )
             if task.ident:
                 self.collector.log(task.ident, timing["ended"] - timing["started"])

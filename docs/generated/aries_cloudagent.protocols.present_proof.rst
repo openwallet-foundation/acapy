@@ -16,18 +16,10 @@ Subpackages
 Submodules
 ----------
 
-aries\_cloudagent\.protocols\.present\_proof\.message\_types module
--------------------------------------------------------------------
+aries\_cloudagent\.protocols\.present\_proof\.definition module
+---------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.present_proof.message_types
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.present\_proof\.routes module
------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.present_proof.routes
+.. automodule:: aries_cloudagent.protocols.present_proof.definition
     :members:
     :undoc-members:
     :show-inheritance:
