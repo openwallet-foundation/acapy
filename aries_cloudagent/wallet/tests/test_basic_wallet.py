@@ -169,6 +169,10 @@ class TestBasicWallet:
                 self.missing_did, self.test_update_metadata
             )
 
+        await wallet.set_did_endpoint(self.test_did, "http://1.2.3.4:8021", None)
+        info4 = await wallet.get_local_did(self.test_did)
+        assert info4.metadata["endpoint"] == "http://1.2.3.4:8021"
+
     @pytest.mark.asyncio
     async def test_create_public_did(self, wallet):
         info = await wallet.create_local_did(
