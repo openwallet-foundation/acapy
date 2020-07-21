@@ -432,6 +432,7 @@ class TestWalletRoutes(AsyncTestCase):
         self.wallet.get_public_did.return_value = DIDInfo(
             self.test_did, self.test_verkey, {}
         )
+        self.wallet.set_did_endpoint.side_effect = test_module.LedgerConfigError()
 
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.wallet_set_did_endpoint(request)
@@ -452,7 +453,7 @@ class TestWalletRoutes(AsyncTestCase):
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.wallet.get_local_did.side_effect = test_module.WalletError()
+        self.wallet.set_did_endpoint.side_effect = test_module.WalletError()
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.wallet_set_did_endpoint(request)
@@ -473,7 +474,7 @@ class TestWalletRoutes(AsyncTestCase):
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.wallet.get_local_did.side_effect = test_module.WalletNotFoundError()
+        self.wallet.set_did_endpoint.side_effect = test_module.WalletNotFoundError()
 
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.wallet_set_did_endpoint(request)
