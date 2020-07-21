@@ -60,29 +60,6 @@ class TestIndyWallet(test_basic_wallet.TestBasicWallet):
         assert wallet.master_secret_id == wallet.name
         assert wallet._wallet_config
 
-    """
-    @pytest.mark.asyncio
-    async def test_catpol(self, wallet):
-        with pytest.raises(test_module.WalletError):
-            await wallet.get_credential_definition_tag_policy("cred-def-id")  # invalid
-
-        CD_ID = f"{self.test_did}:3:CL:1234:tag"
-        catpol = await wallet.get_credential_definition_tag_policy(CD_ID)
-        assert catpol is None
-
-        with async_mock.patch.object(
-            indy.anoncreds,
-            "prover_set_credential_attr_tag_policy",
-            async_mock.CoroutineMock(),
-        ) as mock_catpol:
-            mock_catpol.side_effect = test_module.IndyError(
-                test_module.ErrorCode.CommonIOError, {"message": "outlier"}
-            )
-            with pytest.raises(test_module.WalletError) as excinfo:
-                await wallet.set_credential_definition_tag_policy(CD_ID)
-            assert "outlier" in str(excinfo.value)
-    """
-
     @pytest.mark.asyncio
     async def test_rotate_did_keypair_x(self, wallet):
         info = await wallet.create_local_did(self.test_seed, self.test_did)
@@ -130,6 +107,20 @@ class TestIndyWallet(test_basic_wallet.TestBasicWallet):
             with pytest.raises(test_module.WalletError) as excinfo:
                 await wallet.create_local_did()
             assert "outlier" in str(excinfo.value)
+
+    @pytest.mark.asyncio
+    async def test_set_did_endpoint_ledger(self, wallet):
+        mock_ledger = async_mock.MagicMock(
+            update_endpoint_for_did=async_mock.CoroutineMock()
+        )
+        info_pub = await wallet.create_public_did()
+        await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", mock_ledger)
+        info_pub2 = await wallet.get_public_did()
+        assert info_pub2.metadata["endpoint"] == "http://1.2.3.4:8021"
+
+        with pytest.raises(test_module.LedgerConfigError) as excinfo:
+            await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", None)
+        assert "No ledger available" in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_get_signing_key_x(self, wallet):
