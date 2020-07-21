@@ -207,7 +207,7 @@ class IssuerRevRegRecord(BaseRecord):
         await self.publish_registry_definition(context)
 
         tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
-        upload_success, reason = await tails_server.upload_tails_file(
+        await tails_server.upload_tails_file(
             context, self.revoc_reg_id, self.tails_local_path,
         )
 

@@ -1,7 +1,6 @@
 """Credential definition admin routes."""
 
-import asyncio
-from asyncio import shield
+from asyncio import ensure_future, shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -192,7 +191,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 registry_record.issuer_did,
                 max_cred_num=registry_record.max_cred_num,
             )
-            asyncio.ensure_future(
+            ensure_future(
                 pending_registry_record.stage_pending_registry_definition(context)
             )
 
