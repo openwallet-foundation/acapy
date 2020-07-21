@@ -14,7 +14,7 @@ from aiohttp_apispec import (
 from marshmallow import fields, Schema
 
 from ..ledger.base import BaseLedger
-from ..ledger.error import LedgerError
+from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.valid import ENDPOINT, INDY_CRED_DEF_ID, INDY_DID, INDY_RAW_PUBLIC_KEY
 
 from .base import DIDInfo, BaseWallet
@@ -269,27 +269,12 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     endpoint = body.get("endpoint")
 
     try:
-        did_info = await wallet.get_local_did(did)
-        metadata = {**did_info.metadata}
-        if "endpoint" in metadata:
-            metadata.pop("endpoint")
-        metadata["endpoint"] = endpoint  # set null to clear so making public sends null
-
-        wallet_public_didinfo = await wallet.get_public_did()
-        if wallet_public_didinfo and wallet_public_didinfo.did == did:
-            # if public DID, set endpoint on ledger first
-            ledger = await context.inject(BaseLedger, required=False)
-            if not ledger:
-                reason = f"No ledger available but DID {did} is public"
-                if not context.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise web.HTTPForbidden(reason=reason)
-            async with ledger:
-                await ledger.update_endpoint_for_did(did, endpoint)
-
-        await wallet.replace_local_did_metadata(did, metadata)
+        ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+        await wallet.set_did_endpoint(did, endpoint, ledger)
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
+    except LedgerConfigError as err:
+        raise web.HTTPForbidden(reason=err.roll_up) from err
     except (LedgerError, WalletError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
