@@ -1,6 +1,7 @@
 """Admin server classes."""
 
 import asyncio
+import json
 import logging
 from typing import Callable, Coroutine, Sequence, Set
 import uuid
@@ -134,6 +135,19 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
         return await handler(request)
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
+
+
+@web.middleware
+async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
+    """Show request detail in debug log."""
+
+    if LOGGER.isEnabledFor(logging.DEBUG):
+        LOGGER.debug(f"Incoming request: {request.method} {request.path_qs}")
+        LOGGER.debug(f"Match info: {request.match_info}")
+        body = await request.text()
+        LOGGER.debug(f"Body: {body}")
+
+    return await handler(request)
 
 
 class AdminServer(BaseAdminServer):
