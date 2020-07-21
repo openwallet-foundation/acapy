@@ -443,15 +443,21 @@ class OutboundTransportManager:
 
             if queued.retries:
                 LOGGER.error(
-                    ">>> Posting error: %s; Re-queue failed message ...",
+                    (
+                        ">>> Error when posting to: %s; "
+                        "Error: %s; "
+                        "Payload: %s Re-queue failed message ..."
+                    ),
                     queued.endpoint,
+                    str(queued.error),
+                    str(queued.payload),
                 )
                 queued.retries -= 1
                 queued.state = QueuedOutboundMessage.STATE_RETRY
                 queued.retry_at = time.perf_counter() + 10
             else:
                 LOGGER.exception(
-                    "Outbound message could not be delivered", exc_info=queued.error,
+                    "Outbound message could not be delivered", exc_info=queued.error
                 )
                 LOGGER.error(">>> NOT Re-queued, state is DONE, failed to deliver msg.")
                 queued.state = QueuedOutboundMessage.STATE_DONE
