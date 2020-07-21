@@ -45,9 +45,15 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
                     "New seed provided which doesn't match the registered"
                     + f" public did {public_did}"
                 )
+        # wait until ledger config to set public DID endpoint - wallet goes first
     elif wallet_seed:
         if wallet_local_did:
-            local_did_info = await wallet.create_local_did(seed=wallet_seed)
+            endpoint = context.settings.get("default_endpoint")
+            metadata = {"endpoint": endpoint} if endpoint else None
+
+            local_did_info = await wallet.create_local_did(
+                seed=wallet_seed, metadata=metadata
+            )
             local_did = local_did_info.did
             if provision:
                 print(f"Created new local DID: {local_did}")
@@ -58,6 +64,7 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
             if provision:
                 print(f"Created new public DID: {public_did}")
                 print(f"Verkey: {public_did_info.verkey}")
+            # wait until ledger config to set public DID endpoint - wallet goes first
 
     if provision and not wallet_local_did and not public_did:
         print("No public DID")
@@ -68,7 +75,9 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
         if not test_seed:
             test_seed = "testseed000000000000000000000001"
     if test_seed:
-        await wallet.create_local_did(test_seed)
+        await wallet.create_local_did(
+            seed=test_seed, metadata={"endpoint": "1.2.3.4:8021"}
+        )
 
     if public_did:
         context.settings["wallet.public_did"] = public_did
