@@ -1,7 +1,6 @@
 """Admin server classes."""
 
 import asyncio
-import json
 import logging
 from typing import Callable, Coroutine, Sequence, Set
 import uuid
