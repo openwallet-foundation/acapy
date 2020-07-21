@@ -2,28 +2,24 @@
 
 import logging
 
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.core.error import BaseError
-from aries_cloudagent.ledger.base import BaseLedger
+from ....connections.models.connection_record import ConnectionRecord
+from ....config.injection_context import InjectionContext
+from ....core.error import BaseError
+from ....ledger.base import BaseLedger
+from ....protocols.connections.v1_0.manager import ConnectionManager
+from ....protocols.connections.v1_0.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+from ....protocols.issue_credential.v1_0.models.credential_exchange import (
+    V10CredentialExchange,
+)
+from ....protocols.present_proof.v1_0.models.presentation_exchange import (
+    V10PresentationExchange,
+)
 
 from .models.invitation import Invitation as InvitationModel
 from .messages.invitation import Invitation as InvitationMessage
 from .messages.service import Service as ServiceMessage
-
-from aries_cloudagent.protocols.connections.v1_0.manager import ConnectionManager
-from aries_cloudagent.protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
-
-
-from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange,
-)
-
-from aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange import (
-    V10PresentationExchange,
-)
 
 
 class OutOfBandManagerError(BaseError):
@@ -71,8 +67,8 @@ class OutOfBandManager:
         Generate new out of band invitation.
 
         This interaction represents an out-of-band communication channel. The resulting
-        message is expected to be used to bootstrap the secure peer-to-peer communication
-        channel.
+        message is expected to be used to bootstrap the secure peer-to-peer
+        communication channel.
 
         Args:
             my_label: label for this connection
@@ -89,10 +85,13 @@ class OutOfBandManager:
         """
 
         connection_mgr = ConnectionManager(self.context)
-        connection, connection_invitation = await connection_mgr.create_invitation(
-            auto_accept=True, public=use_public_did, multi_use=multi_use
+        (connection, connection_invitation) = await connection_mgr.create_invitation(
+            my_label=my_label,
+            my_endpoint=my_endpoint,
+            auto_accept=True,
+            public=use_public_did,
+            multi_use=multi_use,
         )
-
         # wallet: BaseWallet = await self.context.inject(BaseWallet)
 
         if not my_label:
@@ -103,7 +102,8 @@ class OutOfBandManager:
         message_attachments = []
         if attachments:
             for attachment in attachments:
-                if attachment["type"] == "credential-offer":
+                attachment_type = attachment.get("type")
+                if attachment_type == "credential-offer":
                     instance_id = attachment["id"]
                     model = await V10CredentialExchange.retrieve_by_id(
                         self.context, instance_id
@@ -112,7 +112,7 @@ class OutOfBandManager:
                     message_attachments.append(
                         InvitationMessage.wrap_message(model.credential_offer_dict)
                     )
-                elif attachment["type"] == "present-proof":
+                elif attachment_type == "present-proof":
                     instance_id = attachment["id"]
                     model = await V10PresentationExchange.retrieve_by_id(
                         self.context, instance_id
@@ -123,7 +123,7 @@ class OutOfBandManager:
                     )
                 else:
                     raise OutOfBandManagerError(
-                        f"Unknown attachment type: {attachment['type']}"
+                        f"Unknown attachment type: {attachment_type}"
                     )
 
         # We plug into existing connection structure during migration phase
@@ -241,16 +241,16 @@ class OutOfBandManager:
                 connection_invitation, auto_accept=True
             )
 
-        elif (
-            len(invitation_message.request_attach) == 1
-            and invitation_message.request_attach[0].data.json["@type"]
-            == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
-            + "/present-proof/1.0/request-presentation"
+        elif len(
+            invitation_message.request_attach
+        ) == 1 and invitation_message.request_attach[0].data.json["@type"] == (
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
+            "/present-proof/1.0/request-presentation"
         ):
             raise OutOfBandManagerNotImplementedError(
                 "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
-                + "/present-proof/1.0/request-presentation "
-                + "request type not implemented."
+                "/present-proof/1.0/request-presentation "
+                "request type not implemented."
             )
         else:
             raise OutOfBandManagerError("Invalid request type")

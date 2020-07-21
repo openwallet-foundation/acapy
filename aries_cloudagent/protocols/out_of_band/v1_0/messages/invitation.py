@@ -13,7 +13,6 @@ from .....messaging.decorators.attach_decorator import (
 from .service import Service, ServiceSchema
 
 from ..message_types import PROTOCOL_PACKAGE, INVITATION
-import json
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.invitation_handler.InvitationHandler"
 
