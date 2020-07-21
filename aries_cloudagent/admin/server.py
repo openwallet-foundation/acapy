@@ -136,6 +136,19 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
 
 
+@web.middleware
+async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
+    """Show request detail in debug log."""
+
+    if LOGGER.isEnabledFor(logging.DEBUG):
+        LOGGER.debug(f"Incoming request: {request.method} {request.path_qs}")
+        LOGGER.debug(f"Match info: {request.match_info}")
+        body = await request.text()
+        LOGGER.debug(f"Body: {body}")
+
+    return await handler(request)
+
+
 class AdminServer(BaseAdminServer):
     """Admin HTTP server class."""
 
@@ -187,7 +200,7 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = [ready_middleware, validation_middleware]
+        middlewares = [ready_middleware, debug_middleware, validation_middleware]
 
         # admin-token and admin-token are mutually exclusive and required.
         # This should be enforced during parameter parsing but to be sure,
