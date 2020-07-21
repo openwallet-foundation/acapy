@@ -5,14 +5,12 @@ import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema
-
-from aries_cloudagent.storage.error import StorageNotFoundError
-
 from marshmallow import fields, Schema
 from marshmallow.exceptions import ValidationError
 
-from .manager import OutOfBandManager, OutOfBandManagerError
+from ....storage.error import StorageNotFoundError
 
+from .manager import OutOfBandManager, OutOfBandManagerError
 from .messages.invitation import InvitationSchema
 
 
