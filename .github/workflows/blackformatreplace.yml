@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout
-      - uses: Ahuge/black-action@v1.0.2
+      - uses: nrempel/black-action@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BLACK_ARGS: "."
