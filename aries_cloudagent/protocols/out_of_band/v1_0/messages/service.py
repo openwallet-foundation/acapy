@@ -4,8 +4,8 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
-from aries_cloudagent.messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from .....messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 
 
 class Service(BaseModel):
