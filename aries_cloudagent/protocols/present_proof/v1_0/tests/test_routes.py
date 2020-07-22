@@ -1089,7 +1089,15 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": async_mock.CoroutineMock(
+                inject=async_mock.CoroutineMock(
+                    return_value=async_mock.CoroutineMock(
+                        __aenter__=async_mock.CoroutineMock(),
+                        __aexit__=async_mock.CoroutineMock(),
+                        verify_presentation=async_mock.CoroutineMock(),
+                    )
+                )
+            ),
         }
 
         with async_mock.patch(
@@ -1102,6 +1110,9 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
