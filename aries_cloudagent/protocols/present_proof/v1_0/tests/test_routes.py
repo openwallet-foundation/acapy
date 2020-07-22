@@ -1134,16 +1134,31 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": async_mock.CoroutineMock(
+                inject=async_mock.CoroutineMock(
+                    return_value=async_mock.CoroutineMock(
+                        __aenter__=async_mock.CoroutineMock(),
+                        __aexit__=async_mock.CoroutineMock(),
+                        verify_presentation=async_mock.CoroutineMock(),
+                    )
+                )
+            ),
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
@@ -1154,6 +1169,7 @@ class TestProofRoutes(AsyncTestCase):
                     ),
                 )
             )
+
             mock_connection_record.is_ready = True
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
@@ -1161,7 +1177,7 @@ class TestProofRoutes(AsyncTestCase):
             mock_mgr = async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(
                     side_effect=test_module.LedgerError()
-                )
+                ),
             )
             mock_presentation_manager.return_value = mock_mgr
 
