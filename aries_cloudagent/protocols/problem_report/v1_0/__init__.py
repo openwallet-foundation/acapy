@@ -1,0 +1,23 @@
+from typing import Coroutine, Union
+
+from ....connections.models.connection_record import ConnectionRecord
+from ....core.error import BaseError
+from ....messaging.models.base_record import BaseRecord
+from .message import ProblemReport
+
+
+async def internal_error(
+    err: BaseError,
+    http_error_class,
+    record: Union[ConnectionRecord, BaseRecord],
+    outbound_handler: Coroutine,
+):
+    """Send problem report and raise corresponding HTTP error."""
+    if record:
+        error_result = ProblemReport(explain_ltxt=err.roll_up)
+        thid = getattr(record, "thread_id", None)
+        if thid:
+            error_result.assign_thread_id(thid)
+        await outbound_handler(error_result, connection_id=record.connection_id)
+
+    raise http_error_class(reason=err.roll_up) from err

@@ -861,6 +861,13 @@ class TestCredentialManager(AsyncTestCase):
             credential_definition_id=CRED_DEF_ID,
             credential_offer=indy_offer,
             credential_request=indy_cred_req,
+            credential_proposal_dict=CredentialProposal(
+                credential_proposal=CredentialPreview.deserialize(
+                    {"attributes": [{"name": "attr", "value": "value"}]}
+                ),
+                cred_def_id=CRED_DEF_ID,
+                schema_id=SCHEMA_ID,
+            ).serialize(),
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
@@ -894,7 +901,7 @@ class TestCredentialManager(AsyncTestCase):
                 ]
             )
             (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
-                stored_exchange, comment=comment, credential_values=cred_values
+                stored_exchange, comment=comment
             )
 
             save_ex.assert_called_once()
@@ -914,9 +921,7 @@ class TestCredentialManager(AsyncTestCase):
             (
                 ret_existing_exchange,
                 ret_existing_cred,
-            ) = await self.manager.issue_credential(
-                stored_exchange, comment=comment, credential_values=cred_values
-            )
+            ) = await self.manager.issue_credential(stored_exchange, comment=comment)
             assert ret_existing_exchange == ret_exchange
             assert ret_existing_cred._thread_id == thread_id
 
@@ -936,6 +941,13 @@ class TestCredentialManager(AsyncTestCase):
             credential_definition_id=CRED_DEF_ID,
             credential_offer=indy_offer,
             credential_request=indy_cred_req,
+            credential_proposal_dict=CredentialProposal(
+                credential_proposal=CredentialPreview.deserialize(
+                    {"attributes": [{"name": "attr", "value": "value"}]}
+                ),
+                cred_def_id=CRED_DEF_ID,
+                schema_id=SCHEMA_ID,
+            ).serialize(),
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
@@ -963,7 +975,7 @@ class TestCredentialManager(AsyncTestCase):
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
             (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
-                stored_exchange, comment=comment, credential_values=cred_values
+                stored_exchange, comment=comment
             )
 
             save_ex.assert_called_once()
@@ -981,7 +993,6 @@ class TestCredentialManager(AsyncTestCase):
         connection_id = "test_conn_id"
         indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
         thread_id = "thread-id"
-        cred_values = {"attr": "value"}
 
         stored_exchange = V10CredentialExchange(
             credential_exchange_id="dummy-cxid",
@@ -996,9 +1007,7 @@ class TestCredentialManager(AsyncTestCase):
         )
 
         with self.assertRaises(CredentialManagerError):
-            await self.manager.issue_credential(
-                stored_exchange, credential_values=cred_values
-            )
+            await self.manager.issue_credential(stored_exchange)
 
     async def test_issue_credential_no_active_rr(self):
         connection_id = "test_conn_id"
@@ -1014,6 +1023,13 @@ class TestCredentialManager(AsyncTestCase):
             credential_definition_id=CRED_DEF_ID,
             credential_offer=indy_offer,
             credential_request=indy_cred_req,
+            credential_proposal_dict=CredentialProposal(
+                credential_proposal=CredentialPreview.deserialize(
+                    {"attributes": [{"name": "attr", "value": "value"}]}
+                ),
+                cred_def_id=CRED_DEF_ID,
+                schema_id=SCHEMA_ID,
+            ).serialize(),
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
@@ -1037,9 +1053,7 @@ class TestCredentialManager(AsyncTestCase):
                 return_value=[]
             )
             with self.assertRaises(CredentialManagerError) as x_cred_mgr:
-                await self.manager.issue_credential(
-                    stored_exchange, comment=comment, credential_values=cred_values
-                )
+                await self.manager.issue_credential(stored_exchange, comment=comment)
                 assert "has no active revocation registry" in x_cred_mgr.message
 
     async def test_issue_credential_rr_full(self):
@@ -1056,6 +1070,13 @@ class TestCredentialManager(AsyncTestCase):
             credential_definition_id=CRED_DEF_ID,
             credential_offer=indy_offer,
             credential_request=indy_cred_req,
+            credential_proposal_dict=CredentialProposal(
+                credential_proposal=CredentialPreview.deserialize(
+                    {"attributes": [{"name": "attr", "value": "value"}]}
+                ),
+                cred_def_id=CRED_DEF_ID,
+                schema_id=SCHEMA_ID,
+            ).serialize(),
             initiator=V10CredentialExchange.INITIATOR_SELF,
             role=V10CredentialExchange.ROLE_ISSUER,
             state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
@@ -1087,9 +1108,7 @@ class TestCredentialManager(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.IssuerRevocationRegistryFullError):
-                await self.manager.issue_credential(
-                    stored_exchange, comment=comment, credential_values=cred_values
-                )
+                await self.manager.issue_credential(stored_exchange, comment=comment)
 
     async def test_receive_credential(self):
         connection_id = "test_conn_id"
@@ -1167,8 +1186,7 @@ class TestCredentialManager(AsyncTestCase):
 
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    has_local_tails_file=async_mock.MagicMock(return_value=False),
-                    retrieve_tails=async_mock.CoroutineMock(return_value=None),
+                    get_or_fetch_local_tails_path=async_mock.CoroutineMock()
                 )
             )
             ret_exchange, ret_cred_ack = await self.manager.store_credential(
@@ -1360,8 +1378,14 @@ class TestCredentialManager(AsyncTestCase):
                 publish_registry_entry=async_mock.CoroutineMock(),
                 clear_pending=async_mock.CoroutineMock(),
             )
+            mock_rev_reg = async_mock.MagicMock(
+                get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+            )
             revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
                 return_value=mock_issuer_rev_reg_record
+            )
+            revoc.return_value.get_ledger_registry = async_mock.CoroutineMock(
+                return_value=mock_rev_reg
             )
 
             issuer = async_mock.MagicMock(BaseIssuer, autospec=True)

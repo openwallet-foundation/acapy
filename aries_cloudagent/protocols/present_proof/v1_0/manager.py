@@ -335,13 +335,14 @@ class PresentationManager:
 
         revoc_reg_deltas = {}
         async with ledger:
-            for referented in requested_referents.values():
-                credential_id = referented["cred_id"]
+            for precis in requested_referents.values():  # cred_id, non-revoc interval
+                credential_id = precis["cred_id"]
                 if not credentials[credential_id].get("rev_reg_id"):
                     continue
-
+                if "timestamp" in precis:
+                    continue
                 rev_reg_id = credentials[credential_id]["rev_reg_id"]
-                referent_non_revoc_interval = referented.get(
+                referent_non_revoc_interval = precis.get(
                     "non_revoked", non_revoc_interval
                 )
 
@@ -362,7 +363,10 @@ class PresentationManager:
                             delta,
                             delta_timestamp,
                         )
-                    referented["timestamp"] = revoc_reg_deltas[key][3]
+                    for stamp_me in requested_referents.values():
+                        # often one cred satisfies many requested attrs/preds
+                        if stamp_me["cred_id"] == credential_id:
+                            stamp_me["timestamp"] = revoc_reg_deltas[key][3]
 
         # Get revocation states to prove non-revoked
         revocation_states = {}
@@ -376,12 +380,12 @@ class PresentationManager:
                 revocation_states[rev_reg_id] = {}
 
             rev_reg = revocation_registries[rev_reg_id]
-            tails_local_path = await rev_reg.get_or_fetch_local_tails_path(self.context)
+            tails_local_path = await rev_reg.get_or_fetch_local_tails_path()
 
             try:
                 revocation_states[rev_reg_id][delta_timestamp] = json.loads(
                     await holder.create_revocation_state(
-                        credential["cred_rev_id"],
+                        credentials[credential_id]["cred_rev_id"],
                         rev_reg.reg_def,
                         delta,
                         delta_timestamp,
@@ -394,17 +398,17 @@ class PresentationManager:
                 )
                 raise e
 
-        for (referent, referented) in requested_referents.items():
-            if "timestamp" not in referented:
+        for (referent, precis) in requested_referents.items():
+            if "timestamp" not in precis:
                 continue
             if referent in requested_credentials["requested_attributes"]:
                 requested_credentials["requested_attributes"][referent][
                     "timestamp"
-                ] = referented["timestamp"]
+                ] = precis["timestamp"]
             if referent in requested_credentials["requested_predicates"]:
                 requested_credentials["requested_predicates"][referent][
                     "timestamp"
-                ] = referented["timestamp"]
+                ] = precis["timestamp"]
 
         indy_proof_json = await holder.create_presentation(
             presentation_exchange_record.presentation_request,

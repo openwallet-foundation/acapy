@@ -22,7 +22,6 @@ from ..storage.base import BaseStorage, StorageNotFoundError
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
-from .models.revocation_registry import RevocationRegistry
 
 
 LOGGER = logging.getLogger(__name__)
@@ -33,11 +32,6 @@ class RevRegCreateRequestSchema(Schema):
 
     credential_definition_id = fields.Str(
         description="Credential definition identifier", **INDY_CRED_DEF_ID
-    )
-    issuance_by_default = fields.Boolean(
-        description="Create registry with all indexes issued",
-        required=False,
-        default=True,
     )
     max_cred_num = fields.Int(
         description="Maximum credential numbers", example=100, required=False
@@ -121,7 +115,7 @@ async def revocation_create_registry(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        The revocation registry identifier
+        The issuer revocation registry record
 
     """
     context = request.app["request_context"]
@@ -130,7 +124,6 @@ async def revocation_create_registry(request: web.BaseRequest):
 
     credential_definition_id = body.get("credential_definition_id")
     max_cred_num = body.get("max_cred_num")
-    issuance_by_default = body.get("issuance_by_default", True)
 
     # check we published this cred def
     storage = await context.inject(BaseStorage)
@@ -148,16 +141,11 @@ async def revocation_create_registry(request: web.BaseRequest):
         issuer_did = credential_definition_id.split(":")[0]
         revoc = IndyRevocation(context)
         registry_record = await revoc.init_issuer_registry(
-            credential_definition_id,
-            issuer_did,
-            issuance_by_default=issuance_by_default,
-            max_cred_num=max_cred_num,
+            credential_definition_id, issuer_did, max_cred_num=max_cred_num,
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
-    await shield(
-        registry_record.generate_registry(context, RevocationRegistry.get_temp_dir())
-    )
+    await shield(registry_record.generate_registry(context))
 
     return web.json_response({"result": registry_record.serialize()})
 
