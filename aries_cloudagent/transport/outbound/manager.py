@@ -17,6 +17,7 @@ from ...utils.task_queue import CompletedTask, TaskQueue, task_exc_info
 from ...utils.tracing import trace_event, get_timer
 
 from ..wire_format import BaseWireFormat
+from ...wallet_handler import WalletHandler
 
 from .base import (
     BaseOutboundTransport,
@@ -405,10 +406,22 @@ class OutboundTransportManager:
 
     async def perform_encode(self, queued: QueuedOutboundMessage):
         """Perform message encoding."""
-        transport = self.get_transport_instance(queued.transport_id)
-        wire_format = transport.wire_format or await queued.context.inject(
-            BaseWireFormat
-        )
+        queued.context = queued.context.copy()
+        ext_plugins = queued.context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            connection_id = queued.message.connection_id
+            wallet_handler = await queued.context.inject(WalletHandler)
+            wallet_id = await wallet_handler.get_wallet_for_connection(connection_id)
+            await wallet_handler.set_instance(wallet_id)
+            wire_format = await queued.context.inject(
+                BaseWireFormat
+            )
+        else:
+            transport = self.get_transport_instance(queued.transport_id)
+            wire_format = transport.wire_format or await queued.context.inject(
+                BaseWireFormat
+            )
+
         queued.payload = await wire_format.encode_message(
             queued.context,
             queued.message.payload,
@@ -431,7 +444,7 @@ class OutboundTransportManager:
         """Kick off delivery of a queued message."""
         transport = self.get_transport_instance(queued.transport_id)
         queued.task = self.task_queue.run(
-            transport.handle_message(queued.context, queued.payload, queued.endpoint),
+            transport.handle_message(queued.payload, queued.endpoint),
             lambda completed: self.finished_deliver(queued, completed),
         )
         return queued.task

@@ -2,7 +2,7 @@
 
 from .base_context import ContextBuilder
 from .injection_context import InjectionContext
-from .provider import CachedProvider, ClassProvider, StatsProvider
+from .provider import CachedProvider, ClassProvider, StatsProvider, DynamicProvider
 
 from ..cache.base import BaseCache
 from ..cache.basic import BasicCache
@@ -56,15 +56,15 @@ class DefaultContextBuilder(ContextBuilder):
 
         context.injector.bind_provider(
             BaseStorage,
-            CachedProvider(
-                StatsProvider(
-                    StorageProvider(), ("add_record", "get_record", "search_records")
-                )
-            ),
+            #CachedProvider(
+            StatsProvider(
+                StorageProvider(), ("add_record", "get_record", "search_records")
+            )
+            #),
         )
         context.injector.bind_provider(
             BaseWallet,
-            CachedProvider(
+            DynamicProvider(
                 StatsProvider(
                     WalletProvider(),
                     (
@@ -74,23 +74,24 @@ class DefaultContextBuilder(ContextBuilder):
                         # "unpack_message",
                         "get_local_did",
                     ),
-                )
+                ),
+                'wallet.name'
             ),
         )
 
         context.injector.bind_provider(
             BaseLedger,
-            CachedProvider(
-                StatsProvider(
-                    LedgerProvider(),
-                    (
-                        "create_and_send_credential_definition",
-                        "create_and_send_schema",
-                        "get_credential_definition",
-                        "get_schema",
-                    ),
-                )
-            ),
+            #CachedProvider(
+            StatsProvider(
+                LedgerProvider(),
+                (
+                    "create_and_send_credential_definition",
+                    "create_and_send_schema",
+                    "get_credential_definition",
+                    "get_schema",
+                ),
+            )
+            #),
         )
         context.injector.bind_provider(
             BaseIssuer,

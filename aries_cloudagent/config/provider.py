@@ -84,6 +84,49 @@ class CachedProvider(BaseProvider):
         return self._instance
 
 
+class DynamicProvider(BaseProvider):
+    """Cache the result of another provider."""
+
+    def __init__(self, provider: BaseProvider, key: str):
+        """
+        Initialize the cached provider instance.
+
+        Args:
+            key: Key used to identifier which stored instance should be
+            provided.
+        """
+        if not provider:
+            raise ValueError("Dynamic provider input must not be empty.")
+
+        # Maps: `instance_id -> instance`
+        self._instances = {}
+        self._provider = provider
+        self._configs = {}
+        self._requested_instance = None
+        self._config_key = key
+
+    async def provide(self,
+                      config: BaseSettings,
+                      injector: BaseInjector,
+                      id: str = None):
+        """Provide the object instance given a config and injector."""
+        if id:
+            instance_id = id
+            if instance_id not in self._instances.keys():
+                raise ValueError(f"Requested instance not in cache.")
+        elif self._requested_instance:
+            instance_id = self._requested_instance
+            if instance_id not in self._instances.keys():
+                raise ValueError(f"Requested instance not in cache.")
+        else:
+            # TODO: Log that new instance will be provided based on config.
+            instance_id = config.get(self._config_key)
+            if instance_id not in self._instances.keys():
+                self._instances[instance_id] = await self._provider.provide(
+                    config, injector)
+        return self._instances[instance_id]
+
+
 class StatsProvider(BaseProvider):
     """Add statistics to the results of another provider."""
 

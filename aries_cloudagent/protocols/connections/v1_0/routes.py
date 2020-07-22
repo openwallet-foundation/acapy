@@ -226,7 +226,7 @@ async def connections_list(request: web.BaseRequest):
         The connection list response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     tag_filter = {}
     for param_name in (
         "invitation_id",
@@ -268,7 +268,7 @@ async def connections_retrieve(request: web.BaseRequest):
         The connection record response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     connection_id = request.match_info["conn_id"]
 
     try:
@@ -298,7 +298,7 @@ async def connections_create_invitation(request: web.BaseRequest):
         The connection invitation details
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
     public = json.loads(request.query.get("public", "false"))
@@ -347,7 +347,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     if context.settings.get("admin.no_receive_invites"):
         raise web.HTTPForbidden(
             reason="Configuration does not allow receipt of invitations"
@@ -386,7 +386,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
 
@@ -423,7 +423,7 @@ async def connections_accept_request(request: web.BaseRequest):
         The resulting connection record details
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
 
@@ -453,7 +453,7 @@ async def connections_establish_inbound(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context = request["context"]
     connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     inbound_connection_id = request.match_info["ref_id"]
@@ -481,7 +481,7 @@ async def connections_remove(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context = request["context"]
     connection_id = request.match_info["conn_id"]
 
     try:
@@ -509,7 +509,7 @@ async def connections_create_static(request: web.BaseRequest):
         The new connection record
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     body = await request.json()
 
     connection_mgr = ConnectionManager(context)
