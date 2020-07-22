@@ -394,14 +394,16 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
         ) as mock_presentation_manager, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
         ) as mock_attach_decorator, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_presentation_exchange, async_mock.patch(
@@ -463,9 +465,6 @@ class TestProofRoutes(AsyncTestCase):
 
             # Since we are mocking import
             importlib.reload(test_module)
-
-            # mock_attach_decorator.from_indy_dict = async_mock.CoroutineMock()
-            # mock_attach_decorator.from_indy_dict.return_value = {"a": "b"}
 
             mock_presentation_exchange.serialize = async_mock.MagicMock()
             mock_presentation_exchange.serialize.return_value = {
