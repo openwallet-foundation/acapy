@@ -122,7 +122,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
 
-    ledger: BaseLedger = await context.inject(BaseLedger)
+    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):

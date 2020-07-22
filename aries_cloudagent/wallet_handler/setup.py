@@ -15,11 +15,10 @@ HANDLED_CLASS = BaseWallet
 
 
 async def setup(context: InjectionContext):
+    """Set up wallet handler."""
 
     # TODO: get necessary config from context
     settings = context.settings
-    wallet_type = settings.get_value("wallet.type", default="basic").lower()
-    wallet_class = HANDLED_CLASSES.get(wallet_type, wallet_type)
 
     wallet_cfg = {}
     if "wallet.key" in settings:

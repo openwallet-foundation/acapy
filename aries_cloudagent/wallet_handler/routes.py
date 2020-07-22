@@ -40,11 +40,11 @@ WALLET_TYPES = {
 
 async def create_connection_handle(wallet: BaseWallet, n: int) -> str:
     """
-    Creates a new path for the currently active wallet and stores a
-    mapping between that path and the wallet.
+    Create a new path for the currently active wallet.
 
     Returns:
         path: path to use as postfix to add to default endpoint
+
     """
     id_raw = wallet.name + '_' + str(n)
     digest = hashlib.sha256(str.encode(id_raw)).digest()
@@ -92,6 +92,7 @@ async def wallet_handler_add_wallet(request: web.BaseRequest):
     Raises:
         HTTPBadRequest: if no name is provided to identify new wallet.
         HTTPBadRequest: if a not supported wallet type is specified.
+
     """
     context = request.app["request_context"]
 
@@ -124,8 +125,7 @@ async def wallet_handler_add_wallet(request: web.BaseRequest):
 )
 async def wallet_handler_get_wallets(request: web.BaseRequest):
     """
-    Request handler to obtain a list of all identifiers of the wallets handled
-    by the agent.
+    Request handler to obtain all identifiers of the handled wallets.
 
     Args:
         request: aiohttp request object.
@@ -146,8 +146,7 @@ async def wallet_handler_get_wallets(request: web.BaseRequest):
 )
 async def wallet_handler_remove_wallet(request: web.BaseRequest):
     """
-    Request handler to remove a wallet from the managed wallets and delete it
-    from the storage.
+    Request handler to remove a wallet from agent and storage.
 
     Args:
         request: aiohttp request object.

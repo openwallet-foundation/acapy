@@ -216,16 +216,18 @@ class AdminServer(BaseAdminServer):
             # TODO: Enable authentication in swagger docs page
             if request.path == '/api/doc' or 'swagger' in request.path:
                 return await handler(request)
+            if request.method == 'OPTIONS':
+                return await handler(request)
             context = request.app["request_context"].copy()
 
-            # For a custodial agent we need to inject the correct wallet into 
+            # For a custodial agent we need to inject the correct wallet into
             # the request
             ext_plugins = self.context.settings.get_value("external_plugins")
             if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
 
                 wallet_handler: WalletHandler = await context.inject(WalletHandler)
                 # TODO: Authorization concept.
-                header_auth = request.headers.get("Authorization")
+                header_auth = request.headers.get("Wallet")
                 if not header_auth:
 
                     raise web.HTTPUnauthorized()
@@ -236,8 +238,7 @@ class AdminServer(BaseAdminServer):
                     await wallet_handler.set_instance(header_auth)
                 except WalletNotFoundError:
                     raise web.HTTPUnauthorized(
-                        reason=
-                        'Specified authorization does not match any.')
+                        reason='Specified authorization does not match any.')
 
             request['context'] = context
             # Perform request.

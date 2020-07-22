@@ -45,9 +45,7 @@ class WalletHandler():
     KEY_DERIVATION_ARGON2I_MOD = "ARGON2I_MOD"
 
     def __init__(self, provider: DynamicProvider, config: dict = None):
-        """
-        Initilaize the handler.
-        """
+        """Initilaize the handler."""
         self._auto_create = config.get("auto_create", True)
         self._auto_remove = config.get("auto_remove", False)
         self._freshness_time = config.get("freshness_time", False)
@@ -79,9 +77,18 @@ class WalletHandler():
         self._provider = provider
 
     async def get_instances(self):
+        """Return list of handled instances."""
         return list(self._provider._instances.keys())
 
     async def add_instance(self, config: dict, context: InjectionContext):
+        """
+        Add a new instance to the handler to be used during runtime.
+
+        Args:
+            config: Settings for the new instance.
+            context: Injection context.
+        """
+
         wallet_type = config['type'] or self.DEFAULT_WALLET_CLASS
         wallet_class = self.WALLET_CLASSES[wallet_type]
 
@@ -124,9 +131,7 @@ class WalletHandler():
             await self.add_connection(connection["connection_id"], config["name"])
 
     async def set_instance(self, wallet: str):
-        """
-        Sets a specific wallet to open by the provider
-        """
+        """Set a specific wallet to open by the provider."""
         instances = await self.get_instances()
         if wallet not in instances:
             raise WalletNotFoundError('Requested not exisiting wallet instance.')
@@ -134,8 +139,7 @@ class WalletHandler():
 
     async def delete_instance(self, id: str):
         """
-        Deletes a handled instance from the handler and from
-        storage if necessary.
+        Delete handled instance from handler and storage.
 
         Args:
             id: Identifier of the instance to be deleted.
@@ -166,8 +170,7 @@ class WalletHandler():
 
     async def generate_path_mapping(self, wallet_id: str, did: str = None) -> str:
         """
-        Creates a new path for the currently active wallet and stores a
-        mapping between that path and the wallet.
+        Create and store new path mapped to the currently active wallet.
 
         Args:
             wallet_id: Identifier of the wallet for which a new path mapping
@@ -177,6 +180,7 @@ class WalletHandler():
 
         Returns:
             path: path to use as postfix to add to default endpoint
+
         """
         if did:
             digest = hashlib.sha256(str.encode(did)).digest()
@@ -200,11 +204,12 @@ class WalletHandler():
         return path
 
     def add_path_mapping(self, wallet_id, path):
-        """ Stores a new path mapping.
+        """Store a new path mapping.
 
         Args:
             wallet_id: Identifier of wallet for which to add the new mapping.
             path: Path which shall be mapped to the wallet.
+
         """
         if path in self._path_mappings.keys():
             raise DuplicateMappingError()
@@ -212,10 +217,11 @@ class WalletHandler():
 
     def get_paths(self, wallet: str) -> []:
         """
-        Returns all connection handles exposed for the currently active wallet.
+        Return all connection handles exposed for the currently active wallet.
 
         Returns:
             handles: List of connection handles.
+
         """
 
         handles = [k for k, v in self._path_mappings.items() if v == wallet]
@@ -224,7 +230,7 @@ class WalletHandler():
 
     async def get_wallet_for_path(self, path: str) -> str:
         """
-        Returns the identifier of the wallet to which the given path belongs.
+        Return the identifier of the wallet to which the given path belongs.
 
         Args:
             path: Inbound path for which the wallet shall be returned.
@@ -241,8 +247,7 @@ class WalletHandler():
 
     async def add_connection(self, connection_id: str, wallet_id: str):
         """
-        Adds a mapping between the given connection and wallet to the
-        stored mappings.
+        Add a mapping between the given connection and wallet.
 
         Args:
             connection_id: Indentifier of the new connection.
@@ -252,7 +257,7 @@ class WalletHandler():
 
     async def get_wallet_for_connection(self, connection_id: str) -> str:
         """
-        Returns the identifier of the wallet to which the given key belongs.
+        Return the identifier of the wallet to which the given key belongs.
 
         Args:
             connection_id: Verkey for which the wallet shall be returned.
@@ -268,7 +273,7 @@ class WalletHandler():
 
     async def get_wallet_for_key(self, key: str) -> str:
         """
-        Returns the identifier of the wallet to which the given key belongs.
+        Return the identifier of the wallet to which the given key belongs.
 
         Args:
             key: Verkey for which the wallet shall be returned.
