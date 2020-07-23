@@ -337,21 +337,31 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal:
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview:
+
+            # with async_mock.patch.object(
+            #     test_module, "ConnectionRecord", autospec=True
+            # ) as mock_connection_record, async_mock.patch.object(
+            #     test_module, "PresentationManager", autospec=True
+            # ) as mock_presentation_manager, async_mock.patch.object(
+            #     test_module, "PresentationPreview", autospec=True
+            # ) as mock_presentation_proposal:
+
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
                 return_value=mock_presentation_exchange_record
             )
 
-            mock_presentation_proposal.return_value.deserialize.return_value = (
-                async_mock.MagicMock()
-            )
+            mock_preview.return_value.deserialize.return_value = async_mock.MagicMock()
 
             with async_mock.patch.object(
                 test_module.web, "json_response"
@@ -1221,6 +1231,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
