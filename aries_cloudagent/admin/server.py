@@ -24,6 +24,8 @@ from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..wallet_handler import WalletHandler
+from ..wallet_handler.error import WalletNotFoundError
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -250,6 +252,43 @@ class AdminServer(BaseAdminServer):
                 return await handler(request)
 
             middlewares.append(collect_stats)
+
+        @web.middleware
+        async def activate_wallet(request, handler):
+            # TODO: Enable authentication in swagger docs page
+            if request.path == '/api/doc' or 'swagger' in request.path:
+                return await handler(request)
+            if request.method == 'OPTIONS':
+                return await handler(request)
+            context = request.app["request_context"].copy()
+
+            # For a custodial agent we need to inject the correct wallet into
+            # the request
+            ext_plugins = self.context.settings.get_value("external_plugins")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+
+                wallet_handler: WalletHandler = await context.inject(WalletHandler)
+                # TODO: Authorization concept.
+                header_auth = request.headers.get("Wallet")
+                if not header_auth:
+
+                    raise web.HTTPUnauthorized()
+
+                # Request instance and lock request of wallet provider so that
+                # no other task can interfere
+                try:
+                    await wallet_handler.set_instance(header_auth)
+                except WalletNotFoundError:
+                    raise web.HTTPUnauthorized(
+                        reason='Specified authorization does not match any.')
+
+            request['context'] = context
+            # Perform request.
+            response = await handler(request)
+
+            return response
+
+        middlewares.append(activate_wallet)
 
         app = web.Application(middlewares=middlewares)
         app["request_context"] = self.context
