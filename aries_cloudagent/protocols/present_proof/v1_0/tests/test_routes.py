@@ -348,13 +348,8 @@ class TestProofRoutes(AsyncTestCase):
             autospec=True,
         ) as mock_preview:
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "PresentationManager", autospec=True
-            # ) as mock_presentation_manager, async_mock.patch.object(
-            #     test_module, "PresentationPreview", autospec=True
-            # ) as mock_presentation_proposal:
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
@@ -379,9 +374,13 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
         ) as mock_connection_record:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             # Emulate storage not found (bad connection id)
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -462,9 +461,10 @@ class TestProofRoutes(AsyncTestCase):
         with async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal, async_mock.patch.object(
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, async_mock.patch(
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
@@ -516,9 +516,10 @@ class TestProofRoutes(AsyncTestCase):
         with async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal, async_mock.patch.object(
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, async_mock.patch(
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
@@ -569,9 +570,10 @@ class TestProofRoutes(AsyncTestCase):
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
             "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
-        ) as mock_generate_nonce, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal, async_mock.patch.object(
+        ) as mock_generate_nonce, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, async_mock.patch(
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
@@ -584,19 +586,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "PresentationManager", autospec=True
-            # ) as mock_presentation_manager, async_mock.patch.object(
-            #     test_module, "PresentationPreview", autospec=True
-            # ) as mock_presentation_proposal, async_mock.patch.object(
-            #     test_module, "PresentationRequest", autospec=True
-            # ) as mock_presentation_request, async_mock.patch.object(
-            #     test_module, "AttachDecorator", autospec=True
-            # ) as mock_attach_decorator, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
             )
@@ -777,19 +766,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "PresentationManager", autospec=True
-            # ) as mock_presentation_manager, async_mock.patch.object(
-            #     test_module, "PresentationPreview", autospec=True
-            # ) as mock_presentation_proposal, async_mock.patch.object(
-            #     test_module, "PresentationRequest", autospec=True
-            # ) as mock_presentation_request, async_mock.patch.object(
-            #     test_module, "AttachDecorator", autospec=True
-            # ) as mock_attach_decorator, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
@@ -858,12 +834,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
-
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
@@ -914,12 +884,6 @@ class TestProofRoutes(AsyncTestCase):
 
             # Since we are mocking import
             importlib.reload(test_module)
-
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
 
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
@@ -1005,19 +969,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "PresentationManager", autospec=True
-            # ) as mock_presentation_manager, async_mock.patch.object(
-            #     test_module, "PresentationPreview", autospec=True
-            # ) as mock_presentation_proposal, async_mock.patch.object(
-            #     test_module, "PresentationRequest", autospec=True
-            # ) as mock_presentation_request, async_mock.patch.object(
-            #     test_module, "AttachDecorator", autospec=True
-            # ) as mock_attach_decorator, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
@@ -1147,11 +1098,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
@@ -1198,11 +1144,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
@@ -1282,15 +1223,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "PresentationManager", autospec=True
-            # ) as mock_presentation_manager, async_mock.patch.object(
-            #     test_module, "PresentationPreview", autospec=True
-            # ) as mock_presentation_proposal, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_REQUEST_RECEIVED
             )
@@ -1348,13 +1280,6 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            # with async_mock.patch.object(
-            #     test_module, "ConnectionRecord", autospec=True
-            # ) as mock_connection_record, async_mock.patch.object(
-            #     test_module, "PresentationManager", autospec=True
-            # ) as mock_presentation_manager, async_mock.patch.object(
-            #     test_module, "V10PresentationExchange", autospec=True
-            # ) as mock_presentation_exchange:
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
