@@ -1265,9 +1265,10 @@ class TestProofRoutes(AsyncTestCase):
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
             "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
-        ) as mock_generate_nonce, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal, async_mock.patch.object(
+        ) as mock_generate_nonce, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
         ) as mock_presentation_request, async_mock.patch(
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
