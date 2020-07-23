@@ -186,9 +186,9 @@ class TaskQueue:
         """
         Support for the bool() builtin.
 
-        Otherwise, evaluates as false when there are no tasks.
+        Otherwise, evaluates as False when there are no tasks.
         """
-        return True
+        return bool(self.current_size)
 
     def __len__(self) -> int:
         """Support for the len() builtin."""
