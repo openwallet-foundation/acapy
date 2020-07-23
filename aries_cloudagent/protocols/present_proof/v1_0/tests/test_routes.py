@@ -374,13 +374,20 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal:
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
                 side_effect=test_module.StorageError()
