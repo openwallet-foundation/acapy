@@ -27,7 +27,7 @@ do
   fi
   case $i in
   --events)
-    if [[ "${AGENT}" == "performance" ]] ; then
+    if [ "${AGENT}" = "performance" ]; then
       echo -e "\nIgnoring the \"--events\" option when running the ${AGENT} agent.\n"
     else
       EVENTS=1
@@ -80,7 +80,7 @@ do
     continue
   ;;
   --bg)
-    if [[ "${AGENT}" == "alice" ]] || [[ "${AGENT}" == "faber" ]] || [[ "${AGENT}" == "acme" ]]; then
+    if [ "${AGENT}" = "alice" ] || [ "${AGENT}" = "faber" ] || [ "${AGENT}" = "acme" ]; then
       DOCKER_OPTS="-d"
       echo -e "\nRunning in ${AGENT} in the background. Note that you cannot use the command line console in this mode."
       echo To see the logs use: \"docker logs ${AGENT}\".
@@ -163,15 +163,19 @@ fi
 
 # check if ngrok is running on our $AGENT_PORT (don't override if AGENT_ENDPOINT is already set)
 if [ -z "$AGENT_ENDPOINT" ] && [ "$RUNMODE" == "docker" ]; then
-    echo "Checking for Agent end point from ngrok service"
-    NGROK_ENDPOINT=$(curl --silent localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
-
+  echo "Trying to detect ngrok service endpoint"
+  JQ=${JQ:-`which jq`}
+  if [ -x "$JQ" ]; then
+    NGROK_ENDPOINT=$(curl --silent localhost:4040/api/tunnels | $JQ -r '.tunnels[0].public_url')
     if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
-        echo "ngrok not running for Agent endpoint ...."
+      echo "ngrok not detected for agent endpoint"
     else
-        export AGENT_ENDPOINT=$NGROK_ENDPOINT
-        echo "fetched Agent end point [$AGENT_ENDPOINT]"
+      export AGENT_ENDPOINT=$NGROK_ENDPOINT
+      echo "Detected ngrok agent endpoint [$AGENT_ENDPOINT]"
     fi
+  else
+    echo "jq not found"
+  fi
 fi
 
 echo $DOCKERHOST
@@ -217,7 +221,7 @@ if ! [ -z "$TAILS_FILE_COUNT" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e TAILS_FILE_COUNT=${TAILS_FILE_COUNT}"
 fi
 
-if ! [[ -z "${ENABLE_PYDEVD_PYCHARM}" ]]; then
+if ! [ -z "${ENABLE_PYDEVD_PYCHARM}" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e ENABLE_PYDEVD_PYCHARM=${ENABLE_PYDEVD_PYCHARM} -e PYDEVD_PYCHARM_CONTROLLER_PORT=${PYDEVD_PYCHARM_CONTROLLER_PORT} -e PYDEVD_PYCHARM_AGENT_PORT=${PYDEVD_PYCHARM_AGENT_PORT}"
 fi
 
@@ -227,7 +231,6 @@ if [ "$OSTYPE" = "msys" ]; then
 fi
 DOCKER=${DOCKER:-docker}
 
-echo "Starting $AGENT..."
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
   --network=${DOCKER_NET} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
