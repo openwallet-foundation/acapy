@@ -1,5 +1,9 @@
 """Message type identifiers for Trust Pings."""
 
+SPEC_URI = (
+    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "527849ec3aa2a8fd47a7bb6c57f918ff8bcb5e8c/features/0048-trust-ping"
+)
 PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/trust_ping/1.0"
 
 PING = f"{PROTOCOL_URI}/ping"

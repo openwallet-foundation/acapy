@@ -9,7 +9,6 @@ from .....messaging.base_handler import (
 
 from ..manager import CredentialManager
 from ..messages.credential_request import CredentialRequest
-from ..messages.credential_proposal import CredentialProposal
 
 from .....utils.tracing import trace_event, get_timer
 
@@ -39,7 +38,7 @@ class CredentialRequestHandler(BaseHandler):
             raise HandlerException("No connection established for credential request")
 
         credential_manager = CredentialManager(context)
-        cred_exchange_rec = await credential_manager.receive_request()
+        cred_ex_record = await credential_manager.receive_request()
 
         r_time = trace_event(
             context.settings,
@@ -49,20 +48,16 @@ class CredentialRequestHandler(BaseHandler):
         )
 
         # If auto_issue is enabled, respond immediately
-        if cred_exchange_rec.auto_issue:
+        if cred_ex_record.auto_issue:
             if (
-                cred_exchange_rec.credential_proposal_dict
-                and "credential_proposal" in cred_exchange_rec.credential_proposal_dict
+                cred_ex_record.credential_proposal_dict
+                and "credential_proposal" in cred_ex_record.credential_proposal_dict
             ):
                 (
-                    cred_exchange_rec,
+                    cred_ex_record,
                     credential_issue_message,
                 ) = await credential_manager.issue_credential(
-                    credential_exchange_record=cred_exchange_rec,
-                    comment=context.message.comment,
-                    credential_values=CredentialProposal.deserialize(
-                        cred_exchange_rec.credential_proposal_dict
-                    ).credential_proposal.attr_dict(),
+                    cred_ex_record=cred_ex_record, comment=context.message.comment
                 )
 
                 await responder.send_reply(credential_issue_message)
@@ -76,6 +71,6 @@ class CredentialRequestHandler(BaseHandler):
             else:
                 self._logger.warning(
                     "Operation set for auto-issue but credential exchange record "
-                    f"{cred_exchange_rec.credential_exchange_id} "
+                    f"{cred_ex_record.credential_exchange_id} "
                     "has no attribute values"
                 )

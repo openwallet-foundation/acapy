@@ -1,4 +1,5 @@
 import asyncio
+import pytest
 
 from asynctest import TestCase, mock as async_mock
 
@@ -133,11 +134,30 @@ class TestInboundSession(TestCase):
             thread_id=test_thread_id,
             sender_verkey=test_verkey,
         )
+
+        receipt.recipient_did = "dummy"
+        assert receipt.recipient_did == "dummy"
+        receipt.recipient_did_public = True
+        assert receipt.recipient_did_public
+        receipt.recipient_did = None
+        receipt.recipient_did_public = None
+        assert receipt.recipient_did is None
+        assert receipt.recipient_did_public is None
+        receipt.sender_did = "dummy"
+        assert receipt.sender_did == "dummy"
+        receipt.sender_did = None
+        assert receipt.sender_did is None
+        assert "direct_response_mode" in str(receipt)
+
         message = InboundMessage(payload=None, receipt=receipt)
         sess.process_inbound(message)
         assert sess.reply_mode == receipt.direct_response_mode
         assert test_verkey in sess.reply_verkeys
         assert test_thread_id in sess.reply_thread_ids
+
+        assert receipt.in_time is None
+        receipt.connection_id = "dummy"
+        assert receipt.connection_id == "dummy"
 
     def test_select_outbound(self):
         test_ctx = InjectionContext()
@@ -195,6 +215,28 @@ class TestInboundSession(TestCase):
             assert result is encode.return_value
 
         sess.clear_response()
+        assert not sess.response_buffer
+
+        sess.close()
+        assert await asyncio.wait_for(sess.wait_response(), 0.1) is None
+
+    async def test_wait_response_x(self):
+        test_ctx = InjectionContext()
+        sess = InboundSession(
+            context=test_ctx, inbound_handler=None, session_id=None, wire_format=None,
+        )
+        test_msg = OutboundMessage(payload=None)
+        sess.set_response(test_msg)
+        assert sess.response_event.is_set()
+        assert sess.response_buffered
+
+        with async_mock.patch.object(
+            sess, "encode_outbound", async_mock.CoroutineMock()
+        ) as encode:
+            encode.side_effect = WireFormatError()
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(sess.wait_response(), 0.1)
+
         assert not sess.response_buffer
 
         sess.close()

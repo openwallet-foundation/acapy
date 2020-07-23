@@ -2,7 +2,7 @@
 
 import json
 
-from aries_cloudagent.messaging.base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,

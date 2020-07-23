@@ -15,7 +15,6 @@ from .base import (
     IssuerError,
     IssuerRevocationRegistryFullError,
     DEFAULT_CRED_DEF_TAG,
-    DEFAULT_ISSUANCE_TYPE,
     DEFAULT_SIGNATURE_TYPE,
 )
 from ..indy import create_tails_reader, create_tails_writer
@@ -211,7 +210,7 @@ class IndyIssuer(BaseIssuer):
             (
                 credential_json,
                 credential_revocation_id,
-                revoc_reg_delta_json,
+                _,  # rev_reg_delta_json only for ISSUANCE_ON_DEMAND, excluded by design
             ) = await indy.anoncreds.issuer_create_credential(
                 self.wallet.handle,
                 json.dumps(credential_offer),
@@ -225,7 +224,7 @@ class IndyIssuer(BaseIssuer):
                 f"Revocation registry {revoc_reg_id} is full: cannot create credential"
             )
             raise IssuerRevocationRegistryFullError(
-                f"Revocation registry {revoc_reg_id} full"
+                f"Revocation registry {revoc_reg_id} is full"
             )
         except IndyError as error:
             raise IndyErrorHandler.wrap_error(
@@ -236,7 +235,7 @@ class IndyIssuer(BaseIssuer):
 
     async def revoke_credentials(
         self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
-    ) -> str:
+    ) -> (str, Sequence[str]):
         """
         Revoke a set of credentials in a revocation registry.
 
@@ -246,18 +245,38 @@ class IndyIssuer(BaseIssuer):
             cred_revoc_ids: sequences of credential indexes in the revocation registry
 
         Returns:
-            the combined revocation delta
+            Tuple with the combined revocation delta, list of cred rev ids not revoked
 
         """
+        failed_crids = []
         tails_reader_handle = await create_tails_reader(tails_file_path)
 
         result_json = None
         for cred_revoc_id in cred_revoc_ids:
             with IndyErrorHandler("Exception when revoking credential", IssuerError):
-                # may throw AnoncredsInvalidUserRevocId if using ISSUANCE_ON_DEMAND
-                delta_json = await indy.anoncreds.issuer_revoke_credential(
-                    self.wallet.handle, tails_reader_handle, revoc_reg_id, cred_revoc_id
-                )
+                try:
+                    delta_json = await indy.anoncreds.issuer_revoke_credential(
+                        self.wallet.handle,
+                        tails_reader_handle,
+                        revoc_reg_id,
+                        cred_revoc_id,
+                    )
+                except IndyError as error:
+                    if error.error_code == ErrorCode.AnoncredsInvalidUserRevocId:
+                        self.logger.error(
+                            "Abstaining from revoking credential on "
+                            f"rev reg id {revoc_reg_id}, cred rev id={cred_revoc_id}: "
+                            "already revoked or not yet issued"
+                        )
+                    else:
+                        self.logger.error(
+                            IndyErrorHandler.wrap_error(
+                                error, "Revocation error", IssuerError
+                            ).roll_up
+                        )
+                    failed_crids.append(cred_revoc_id)
+                    continue
+
                 if result_json:
                     result_json = await self.merge_revocation_registry_deltas(
                         result_json, delta_json
@@ -265,7 +284,7 @@ class IndyIssuer(BaseIssuer):
                 else:
                     result_json = delta_json
 
-        return result_json
+        return (result_json, failed_crids)
 
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
@@ -294,7 +313,6 @@ class IndyIssuer(BaseIssuer):
         tag: str,
         max_cred_num: int,
         tails_base_path: str,
-        issuance_type: str = None,
     ) -> Tuple[str, str, str]:
         """
         Create a new revocation registry and store it in the wallet.
@@ -306,7 +324,6 @@ class IndyIssuer(BaseIssuer):
             tag: the unique revocation registry tag
             max_cred_num: the number of credentials supported in the registry
             tails_base_path: where to store the tails file
-            issuance_type: optionally override the issuance type
 
         Returns:
             A tuple of the revocation registry ID, JSON, and entry JSON
@@ -330,8 +347,8 @@ class IndyIssuer(BaseIssuer):
                 cred_def_id,
                 json.dumps(
                     {
+                        "issuance_type": "ISSUANCE_BY_DEFAULT",
                         "max_cred_num": max_cred_num,
-                        "issuance_type": issuance_type or DEFAULT_ISSUANCE_TYPE,
                     }
                 ),
                 tails_writer,

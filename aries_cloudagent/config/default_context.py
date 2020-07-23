@@ -14,7 +14,6 @@ from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
@@ -117,7 +116,7 @@ class DefaultContextBuilder(ContextBuilder):
             BaseVerifier,
             ClassProvider(
                 "aries_cloudagent.verifier.indy.IndyVerifier",
-                ClassProvider.Inject(BaseWallet),
+                ClassProvider.Inject(BaseLedger),
             ),
         )
 

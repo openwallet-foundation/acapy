@@ -49,13 +49,13 @@ class PluginRegistry:
                 "Versions list must define at least one version module"
             )
 
+        if not all(type(v) is dict for v in version_list):
+            raise ProtocolDefinitionValidationError(
+                "Element of versions definition list is not of type dict"
+            )
+
         for version_dict in version_list:
             # Dicts must have correct format
-            is_dict = type(version_dict) is dict
-            if not is_dict:
-                raise ProtocolDefinitionValidationError(
-                    "Element of versions definition list is not of type dict"
-                )
 
             try:
                 type(version_dict["major_version"]) is int and type(
@@ -133,7 +133,7 @@ class PluginRegistry:
 
             # Make an exception for non-protocol modules
             # that contain admin routes and for old-style protocol
-            # modules with out version support
+            # modules without version support
             routes = ClassLoader.load_module("routes", module_name)
             message_types = ClassLoader.load_module("message_types", module_name)
             if routes or message_types:
@@ -271,6 +271,32 @@ class PluginRegistry:
                     continue
                 if mod and hasattr(mod, "register"):
                     await mod.register(app)
+
+    def post_process_routes(self, app):
+        """Call route binary file response OpenAPI fixups if applicable."""
+        for plugin in self._plugins.values():
+            definition = ClassLoader.load_module("definition", plugin.__name__)
+            if definition:
+                # Set binary file responses for routes that are in a versioned package.
+                for plugin_version in definition.versions:
+                    try:
+                        mod = ClassLoader.load_module(
+                            f"{plugin.__name__}.{plugin_version['path']}.routes"
+                        )
+                    except ModuleLoadError as e:
+                        LOGGER.error("Error loading admin routes: %s", e)
+                        continue
+                    if mod and hasattr(mod, "post_process_routes"):
+                        mod.post_process_routes(app)
+            else:
+                # Set binary file responses for routes not in a versioned package.
+                try:
+                    mod = ClassLoader.load_module(f"{plugin.__name__}.routes")
+                except ModuleLoadError as e:
+                    LOGGER.error("Error loading admin routes: %s", e)
+                    continue
+                if mod and hasattr(mod, "post_process_routes"):
+                    mod.post_process_routes(app)
 
     def __repr__(self) -> str:
         """Return a string representation for this class."""

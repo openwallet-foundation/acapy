@@ -65,6 +65,18 @@ Files are available in the [examples](examples) folder.
 
 Please note that RESTed is not strictly necessary as any other REST client application will work fine.
 
+## Running the aca-py Alice/Faber Demo Tracing using EFK
+
+In two separate bash shells, startup the demo as follows:
+
+```bash
+DOCKER_NET=efk-stack_efk_net TRACE_TARGET_URL=fluentd:8088 ./run_demo faber --trace-http
+```
+
+```bash
+DOCKER_NET=efk-stack_efk_net TRACE_TARGET_URL=fluentd:8088 ./run_demo alice --trace-http
+```
+
 ## Reference
 
 - [Quora - What is the ELK stack](https://www.quora.com/What-is-the-ELK-stack)

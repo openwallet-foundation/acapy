@@ -11,25 +11,15 @@ Subpackages
 
 .. toctree::
 
-    aries_cloudagent.protocols.routing.handlers
-    aries_cloudagent.protocols.routing.messages
-    aries_cloudagent.protocols.routing.models
+    aries_cloudagent.protocols.routing.v1_0
 
 Submodules
 ----------
 
-aries\_cloudagent\.protocols\.routing\.manager module
------------------------------------------------------
+aries\_cloudagent\.protocols\.routing\.definition module
+--------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.routing.manager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.routing\.message\_types module
-------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.routing.message_types
+.. automodule:: aries_cloudagent.protocols.routing.definition
     :members:
     :undoc-members:
     :show-inheritance:

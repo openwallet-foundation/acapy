@@ -21,10 +21,22 @@ class TestPingHandler:
     async def test_ping(self, request_context):
         request_context.message_receipt = MessageReceipt()
         request_context.message = Ping(response_requested=False)
+        request_context.settings = {"debug.monitor_ping": True}
         request_context.connection_ready = True
         handler = PingHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)
+        messages = responder.messages
+        assert len(messages) == 0
+
+    @pytest.mark.asyncio
+    async def test_ping_not_ready(self, request_context):
+        request_context.message_receipt = MessageReceipt()
+        request_context.message = Ping(response_requested=False)
+        request_context.connection_ready = False
+        handler = PingHandler()
+        responder = MockResponder()
+        assert not await handler.handle(request_context, responder)
         messages = responder.messages
         assert len(messages) == 0
 

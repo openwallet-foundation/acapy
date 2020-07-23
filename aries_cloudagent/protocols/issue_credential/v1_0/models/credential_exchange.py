@@ -2,8 +2,7 @@
 
 from typing import Any
 
-from marshmallow import fields
-from marshmallow.validate import OneOf
+from marshmallow import fields, validate
 
 from .....config.injection_context import InjectionContext
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
@@ -51,6 +50,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         credential_definition_id: str = None,
         schema_id: str = None,
         credential_proposal_dict: dict = None,  # serialized credential proposal message
+        credential_offer_dict: dict = None,  # serialized credential offer message
         credential_offer: dict = None,  # indy credential offer
         credential_request: dict = None,  # indy credential request
         credential_request_metadata: dict = None,
@@ -78,6 +78,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         self.credential_definition_id = credential_definition_id
         self.schema_id = schema_id
         self.credential_proposal_dict = credential_proposal_dict
+        self.credential_offer_dict = credential_offer_dict
         self.credential_offer = credential_offer
         self.credential_request = credential_request
         self.credential_request_metadata = credential_request_metadata
@@ -105,6 +106,7 @@ class V10CredentialExchange(BaseExchangeRecord):
             for prop in (
                 "connection_id",
                 "credential_proposal_dict",
+                "credential_offer_dict",
                 "credential_offer",
                 "credential_request",
                 "credential_request_metadata",
@@ -138,7 +140,9 @@ class V10CredentialExchange(BaseExchangeRecord):
             record = await cls.retrieve_by_id(context, record_id)
         else:
             record = await cls.retrieve_by_tag_filter(
-                context, {"thread_id": thread_id}, {"connection_id": connection_id}
+                context,
+                {"thread_id": thread_id},
+                {"connection_id": connection_id} if connection_id else None,
             )
             await cls.set_cached_key(context, cache_key, record.credential_exchange_id)
         return record
@@ -174,13 +178,13 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
         required=False,
         description="Issue-credential exchange initiator: self or external",
         example=V10CredentialExchange.INITIATOR_SELF,
-        validate=OneOf(["self", "external"]),
+        validate=validate.OneOf(["self", "external"]),
     )
     role = fields.Str(
         required=False,
         description="Issue-credential exchange role: holder or issuer",
         example=V10CredentialExchange.ROLE_ISSUER,
-        validate=OneOf(["holder", "issuer"]),
+        validate=validate.OneOf(["holder", "issuer"]),
     )
     state = fields.Str(
         required=False,
@@ -197,6 +201,9 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
     )
     credential_proposal_dict = fields.Dict(
         required=False, description="Serialized credential proposal message"
+    )
+    credential_offer_dict = fields.Dict(
+        required=False, description="Serialized credential offer message"
     )
     credential_offer = fields.Dict(
         required=False, description="(Indy) credential offer"

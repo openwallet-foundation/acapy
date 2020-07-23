@@ -19,8 +19,6 @@ from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..messaging.responder import BaseResponder
-
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,
@@ -28,7 +26,7 @@ from ..protocols.connections.v1_0.manager import (
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
-from ..transport.outbound.manager import OutboundTransportManager
+from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import BaseWireFormat
 from ..utils.task_queue import CompletedTask, TaskQueue
@@ -99,6 +97,7 @@ class Conductor:
                     context,
                     self.outbound_message_router,
                     self.webhook_router,
+                    self.stop,
                     self.dispatcher.task_queue,
                     self.get_stats,
                 )
@@ -146,7 +145,8 @@ class Conductor:
         public_did = await wallet_config(context)
 
         # Configure the ledger
-        await ledger_config(context, public_did)
+        if not await ledger_config(context, public_did):
+            LOGGER.warning("No ledger configured")
 
         # Start up transports
         try:
@@ -278,9 +278,9 @@ class Conductor:
             "task_pending": self.dispatcher.task_queue.current_pending,
         }
         for m in self.outbound_transport_manager.outbound_buffer:
-            if m.state == m.STATE_ENCODE:
+            if m.state == QueuedOutboundMessage.STATE_ENCODE:
                 stats["out_encode"] += 1
-            if m.state == m.STATE_DELIVER:
+            if m.state == QueuedOutboundMessage.STATE_DELIVER:
                 stats["out_deliver"] += 1
         return stats
 

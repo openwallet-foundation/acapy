@@ -25,4 +25,12 @@ aries\_cloudagent\.holder\.indy module
     :undoc-members:
     :show-inheritance:
 
+aries\_cloudagent\.holder\.routes module
+----------------------------------------
+
+.. automodule:: aries_cloudagent.holder.routes
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 

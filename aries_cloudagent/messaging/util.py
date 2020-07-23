@@ -38,7 +38,7 @@ def str_to_datetime(dt: Union[str, datetime]) -> datetime:
     if isinstance(dt, str):
         match = re.match(
             r"^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)"
-            r"(?:\:(\d\d(?:\.\d{1,6})?))?([+-]\d\d:?\d\d|Z|)$",
+            r"(?:\:(\d\d(?:\.\d+)?))?([+-]\d\d:?\d\d|Z|)$",
             dt,
         )
         if not match:
@@ -46,13 +46,13 @@ def str_to_datetime(dt: Union[str, datetime]) -> datetime:
         year, month, day = match[1], match[2], match[3]
         hour, minute, second = match[4], match[5], match[6]
         tz = match[7]
-        if not second:
-            second = 0
-            microsecond = 0
-        else:
+        if second:
             flt_second = float(second)
             second = floor(flt_second)
             microsecond = round((flt_second - second) * 1_000_000)
+        else:
+            second = 0
+            microsecond = 0
         result = datetime(
             int(year),
             int(month),

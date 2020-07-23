@@ -7,7 +7,6 @@ from ..core.error import BaseError
 
 
 DEFAULT_CRED_DEF_TAG = "default"
-DEFAULT_ISSUANCE_TYPE = "ISSUANCE_BY_DEFAULT"
 DEFAULT_SIGNATURE_TYPE = "CL"
 
 
@@ -143,7 +142,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def revoke_credentials(
         self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
-    ) -> str:
+    ) -> (str, Sequence[str]):
         """
         Revoke a set of credentials in a revocation registry.
 
@@ -153,7 +152,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
             cred_revoc_ids: sequences of credential indexes in the revocation registry
 
         Returns:
-            the combined revocation delta
+            Tuple with the combined revocation delta, list of cred rev ids not revoked
 
         """
 
@@ -166,7 +165,6 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         tag: str,
         max_cred_num: int,
         tails_base_path: str,
-        issuance_type: str = None,
     ) -> Tuple[str, str, str]:
         """
         Create a new revocation registry and store it in the wallet.
@@ -178,7 +176,6 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
             tag: the unique revocation registry tag
             max_cred_num: the number of credentials supported in the registry
             tails_base_path: where to store the tails file
-            issuance_type: optionally override the issuance type
 
         Returns:
             A tuple of the revocation registry ID, JSON, and entry JSON

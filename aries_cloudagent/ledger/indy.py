@@ -6,10 +6,11 @@ import logging
 import tempfile
 
 from datetime import datetime, date
+from enum import Enum
 from hashlib import sha256
 from os import path
 from time import time
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Union
 
 import indy.ledger
 import indy.pool
@@ -40,6 +41,53 @@ GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
 GENESIS_TRANSACTION_PATH = path.join(
     GENESIS_TRANSACTION_PATH, "indy_genesis_transactions.txt"
 )
+
+
+class Role(Enum):
+    """Enum for indy roles."""
+
+    STEWARD = (2,)
+    TRUSTEE = (0,)
+    ENDORSER = (101,)
+    NETWORK_MONITOR = (201,)
+    USER = (None, "")  # in case reading from file, default empty "" or None for USER
+    ROLE_REMOVE = ("",)  # but indy-sdk uses "" to identify a role in reset
+
+    @staticmethod
+    def get(token: Union[str, int] = None) -> "Role":
+        """
+        Return enum instance corresponding to input token.
+
+        Args:
+            token: token identifying role to indy-sdk:
+                "STEWARD", "TRUSTEE", "ENDORSER", "" or None
+        """
+        if token is None:
+            return Role.USER
+
+        for role in Role:
+            if role == Role.ROLE_REMOVE:
+                continue  # not a sensible role to parse from any configuration
+            if isinstance(token, int) and token in role.value:
+                return role
+            if str(token).upper() == role.name or token in (str(v) for v in role.value):
+                return role
+
+        return None
+
+    def to_indy_num_str(self) -> str:
+        """
+        Return (typically, numeric) string value that indy-sdk associates with role.
+
+        Recall that None signifies USER and "" signifies role in reset.
+        """
+
+        return str(self.value[0]) if isinstance(self.value[0], int) else self.value[0]
+
+    def token(self) -> str:
+        """Return token identifying role to indy-sdk."""
+
+        return self.value[0] if self in (Role.USER, Role.ROLE_REMOVE) else self.name
 
 
 class IndyLedger(BaseLedger):
@@ -133,13 +181,30 @@ class IndyLedger(BaseLedger):
     async def close(self):
         """Close the pool ledger."""
         if self.opened:
-            with IndyErrorHandler("Exception when closing pool ledger", LedgerError):
-                await indy.pool.close_pool_ledger(self.pool_handle)
-            self.pool_handle = None
-            self.opened = False
+            exc = None
+            for attempt in range(3):
+                try:
+                    await indy.pool.close_pool_ledger(self.pool_handle)
+                except IndyError as err:
+                    await asyncio.sleep(0.01)
+                    exc = err
+                    continue
+
+                self.pool_handle = None
+                self.opened = False
+                exc = None
+                break
+
+            if exc:
+                self.logger.error("Exception when closing pool ledger")
+                self.ref_count += 1  # if we are here, we should have self.ref_lock
+                self.close_task = None
+                raise IndyErrorHandler.wrap_error(
+                    exc, "Exception when closing pool ledger", LedgerError
+                )
 
     async def _context_open(self):
-        """Open the wallet if necessary and increase the number of active references."""
+        """Open the ledger if necessary and increase the number of active references."""
         async with self.ref_lock:
             if self.close_task:
                 self.close_task.cancel()
@@ -149,7 +214,7 @@ class IndyLedger(BaseLedger):
             self.ref_count += 1
 
     async def _context_close(self):
-        """Release the wallet reference and schedule closing of the pool ledger."""
+        """Release the reference and schedule closing of the pool ledger."""
 
         async def closer(timeout: int):
             """Close the pool ledger after a timeout."""
@@ -204,9 +269,7 @@ class IndyLedger(BaseLedger):
 
         if not self.pool_handle:
             raise ClosedPoolError(
-                "Cannot sign and submit request to closed pool {}".format(
-                    self.pool_name
-                )
+                f"Cannot sign and submit request to closed pool '{self.pool_name}'"
             )
 
         if sign is None or sign:
@@ -681,7 +744,7 @@ class IndyLedger(BaseLedger):
             request_json = await indy.ledger.build_get_nym_request(public_did, nym)
         response_json = await self._submit(request_json, sign_did=public_info)
         data_json = (json.loads(response_json))["result"]["data"]
-        return json.loads(data_json)["verkey"]
+        return json.loads(data_json)["verkey"] if data_json else None
 
     async def get_endpoint_for_did(self, did: str) -> str:
         """Fetch the endpoint for a ledger DID.
@@ -760,6 +823,45 @@ class IndyLedger(BaseLedger):
             # remove any existing prefix
             nym = self.did_to_nym(nym)
             return f"did:sov:{nym}"
+
+    async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
+        """
+        Rotate keypair for public DID: create new key, submit to ledger, update wallet.
+
+        Args:
+            next_seed: seed for incoming ed25519 keypair (default random)
+        """
+        # generate new key
+        public_info = await self.wallet.get_public_did()
+        public_did = public_info.did
+        verkey = await self.wallet.rotate_did_keypair_start(public_did, next_seed)
+
+        # submit to ledger (retain role and alias)
+        nym = self.did_to_nym(public_did)
+        with IndyErrorHandler("Exception when building nym request", LedgerError):
+            request_json = await indy.ledger.build_get_nym_request(public_did, nym)
+            response_json = await self._submit(request_json)
+            data = json.loads((json.loads(response_json))["result"]["data"])
+            if not data:
+                raise BadLedgerRequestError(
+                    f"Ledger has no public DID for wallet {self.wallet.name}"
+                )
+            seq_no = data["seqNo"]
+            txn_req_json = await indy.ledger.build_get_txn_request(None, None, seq_no)
+            txn_resp_json = await self._submit(txn_req_json)
+            txn_resp = json.loads(txn_resp_json)
+            txn_resp_data = txn_resp["result"]["data"]
+            if not txn_resp_data:
+                raise BadLedgerRequestError(
+                    f"Bad or missing ledger NYM transaction for DID {public_did}"
+                )
+            txn_data_data = txn_resp_data["txn"]["data"]
+            role_token = Role.get(txn_data_data.get("role")).token()
+            alias = txn_data_data.get("alias")
+            await self.register_nym(public_did, verkey, role_token, alias)
+
+        # update wallet
+        await self.wallet.rotate_did_keypair_apply(public_did)
 
     async def get_txn_author_agreement(self, reload: bool = False) -> dict:
         """Get the current transaction author agreement, fetching it if necessary."""

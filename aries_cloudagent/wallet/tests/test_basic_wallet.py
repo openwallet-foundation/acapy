@@ -103,6 +103,27 @@ class TestBasicWallet:
             _ = await wallet.create_local_did("invalid-seed", None)
 
     @pytest.mark.asyncio
+    async def test_rotate_did_keypair(self, wallet):
+        with pytest.raises(WalletNotFoundError):
+            await wallet.rotate_did_keypair_start(self.test_did)
+
+        with pytest.raises(WalletNotFoundError):
+            await wallet.rotate_did_keypair_apply(self.test_did)
+
+        info = await wallet.create_local_did(self.test_seed, self.test_did)
+
+        with pytest.raises(WalletError):
+            await wallet.rotate_did_keypair_apply(self.test_did)
+
+        new_verkey = await wallet.rotate_did_keypair_start(self.test_did)
+        assert info.verkey != new_verkey
+        await wallet.rotate_did_keypair_apply(self.test_did)
+
+        new_info = await wallet.get_local_did(self.test_did)
+        assert new_info.did == self.test_did
+        assert new_info.verkey != info.verkey
+
+    @pytest.mark.asyncio
     async def test_create_local_with_did(self, wallet):
         info = await wallet.create_local_did(None, self.test_did)
         assert info.did == self.test_did
@@ -147,6 +168,10 @@ class TestBasicWallet:
             await wallet.replace_local_did_metadata(
                 self.missing_did, self.test_update_metadata
             )
+
+        await wallet.set_did_endpoint(self.test_did, "http://1.2.3.4:8021", None)
+        info4 = await wallet.get_local_did(self.test_did)
+        assert info4.metadata["endpoint"] == "http://1.2.3.4:8021"
 
     @pytest.mark.asyncio
     async def test_create_public_did(self, wallet):

@@ -191,12 +191,98 @@ class TestIndyIssuer(AsyncTestCase):
 
         mock_indy_revoke_credential.return_value = json.dumps(TEST_RR_DELTA)
         mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
-        result = await self.issuer.revoke_credentials(
+        (result, failed) = await self.issuer.revoke_credentials(
             REV_REG_ID, tails_file_path="dummy", cred_revoc_ids=test_cred_rev_ids
         )
         assert json.loads(result) == TEST_RR_DELTA
+        assert not failed
         assert mock_indy_revoke_credential.call_count == 2
         mock_indy_merge_rr_deltas.assert_called_once()
+
+    @async_mock.patch("indy.anoncreds.issuer_create_credential")
+    @async_mock.patch("aries_cloudagent.issuer.indy.create_tails_reader")
+    @async_mock.patch("indy.anoncreds.issuer_revoke_credential")
+    @async_mock.patch("indy.anoncreds.issuer_merge_revocation_registry_deltas")
+    async def test_create_revoke_credentials_x(
+        self,
+        mock_indy_merge_rr_deltas,
+        mock_indy_revoke_credential,
+        mock_tails_reader,
+        mock_indy_create_credential,
+    ):
+        test_schema = {"attrNames": ["attr1"]}
+        test_offer = {
+            "schema_id": SCHEMA_ID,
+            "cred_def_id": CRED_DEF_ID,
+            "key_correctness_proof": {"c": "...", "xz_cap": "...", "xr_cap": ["..."]},
+            "nonce": "...",
+        }
+        test_request = {"test": "request"}
+        test_values = {"attr1": "value1"}
+        test_cred = {
+            "schema_id": SCHEMA_ID,
+            "cred_def_id": CRED_DEF_ID,
+            "rev_reg_id": REV_REG_ID,
+            "values": {"attr1": {"raw": "value1", "encoded": "123456123899216581404"}},
+            "signature": {"...": "..."},
+            "signature_correctness_proof": {"...": "..."},
+            "rev_reg": {"accum": "21 12E8..."},
+            "witness": {"omega": "21 1369..."},
+        }
+        test_cred_rev_ids = ["42", "54", "103"]
+        test_rr_delta = TEST_RR_DELTA
+        mock_indy_create_credential.side_effect = [
+            (json.dumps(test_cred), cr_id, test_rr_delta,)
+            for cr_id in test_cred_rev_ids
+        ]
+
+        with self.assertRaises(IssuerError):  # missing attribute
+            cred_json, revoc_id = await self.issuer.create_credential(
+                test_schema, test_offer, test_request, {}
+            )
+
+        (cred_json, cred_rev_id) = await self.issuer.create_credential(  # main line
+            test_schema,
+            test_offer,
+            test_request,
+            test_values,
+            REV_REG_ID,
+            "/tmp/tails/path/dummy",
+        )
+        mock_indy_create_credential.assert_called_once()
+        (
+            call_wallet,
+            call_offer,
+            call_request,
+            call_values,
+            call_etc1,
+            call_etc2,
+        ) = mock_indy_create_credential.call_args[0]
+        assert call_wallet is self.wallet.handle
+        assert json.loads(call_offer) == test_offer
+        assert json.loads(call_request) == test_request
+        values = json.loads(call_values)
+        assert "attr1" in values
+
+        mock_indy_revoke_credential.side_effect = [
+            json.dumps(TEST_RR_DELTA),
+            IndyError(
+                error_code=ErrorCode.AnoncredsInvalidUserRevocId,
+                error_details={"message": "already revoked"},
+            ),
+            IndyError(
+                error_code=ErrorCode.UnknownCryptoTypeError,
+                error_details={"message": "truly an outlier"},
+            ),
+        ]
+        mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
+        (result, failed) = await self.issuer.revoke_credentials(
+            REV_REG_ID, tails_file_path="dummy", cred_revoc_ids=test_cred_rev_ids
+        )
+        assert json.loads(result) == TEST_RR_DELTA
+        assert failed == ["54", "103"]
+        assert mock_indy_revoke_credential.call_count == 3
+        mock_indy_merge_rr_deltas.assert_not_called()
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
     @async_mock.patch("aries_cloudagent.issuer.indy.create_tails_reader")

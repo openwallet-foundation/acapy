@@ -6,13 +6,14 @@ import random
 import sys
 import time
 
+from qrcode import QRCode
+
 from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from runners.support.agent import DemoAgent, default_genesis_txns
 from runners.support.utils import (
-    log_json,
     log_msg,
     log_status,
     log_timer,
@@ -125,8 +126,7 @@ class FaberAgent(DemoAgent):
             log_status("#27 Process the proof provided by X")
             log_status("#28 Check if proof is valid")
             proof = await self.admin_POST(
-                f"/present-proof/records/{presentation_exchange_id}/"
-                "verify-presentation"
+                f"/present-proof/records/{presentation_exchange_id}/verify-presentation"
             )
             self.log("Proof =", proof["verified"])
 
@@ -205,10 +205,17 @@ async def main(
             connection = await agent.admin_POST("/connections/create-invitation")
 
         agent.connection_id = connection["connection_id"]
-        log_json(connection, label="Invitation response:")
-        log_msg("*****************")
-        log_msg(json.dumps(connection["invitation"]), label="Invitation:", color=None)
-        log_msg("*****************")
+
+        qr = QRCode()
+        qr.add_data(connection["invitation_url"])
+        log_msg(
+            "Use the following JSON to accept the invite from another demo agent."
+            " Or use the QR code to connect from a mobile agent."
+        )
+        log_msg(
+            json.dumps(connection["invitation"]), label="Invitation Data:", color=None
+        )
+        qr.print_ascii(invert=True)
 
         log_msg("Waiting for connection...")
         await agent.detect_connection()
@@ -230,6 +237,9 @@ async def main(
             "4/5/6/" if revocation else ""
         )
         async for option in prompt_loop(options):
+            if option is not None:
+                option = option.strip()
+
             if option is None or option in "xX":
                 break
 
@@ -268,7 +278,6 @@ async def main(
                     "trace": exchange_tracing,
                 }
                 await agent.admin_POST("/issue-credential/send-offer", offer_request)
-
                 # TODO issue an additional credential for Student ID
 
             elif option == "2":
@@ -312,6 +321,18 @@ async def main(
                         for req_pred in req_preds
                     },
                 }
+                # test with an attribute group with attribute value restrictions
+                # indy_proof_request["requested_attributes"] = {
+                #     "n_group_attrs": {
+                #         "names": ["name", "degree", "timestamp", "date"],
+                #         "restrictions": [
+                #             {
+                #                 "issuer_did": agent.did,
+                #                 "attr::name::value": "Alice Smith"
+                #             }
+                #         ]
+                #     }
+                # }
                 if revocation:
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
@@ -329,10 +350,11 @@ async def main(
                     f"/connections/{agent.connection_id}/send-message", {"content": msg}
                 )
             elif option == "4" and revocation:
-                rev_reg_id = await prompt("Enter revocation registry ID: ")
-                cred_rev_id = await prompt("Enter credential revocation ID: ")
+                rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
+                cred_rev_id = (await prompt("Enter credential revocation ID: ")).strip()
                 publish = json.dumps(
-                    await prompt("Publish now? [Y/N]: ", default="N") in ("yY")
+                    (await prompt("Publish now? [Y/N]: ", default="N")).strip()
+                    in ("yY")
                 )
                 try:
                     await agent.admin_POST(
@@ -346,13 +368,13 @@ async def main(
             elif option == "5" and revocation:
                 try:
                     resp = await agent.admin_POST(
-                        "/issue-credential/publish-revocations"
+                        "/issue-credential/publish-revocations", {}
                     )
                     agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
-                            len(resp["results"]),
+                            len(resp["rrid2crid"]),
                             "y" if len(resp) == 1 else "ies",
-                            json.dumps([k for k in resp["results"]], indent=4),
+                            json.dumps([k for k in resp["rrid2crid"]], indent=4),
                         )
                     )
                 except ClientError:

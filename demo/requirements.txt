@@ -1,3 +1,4 @@
 asyncpg~=0.18.0
 prompt_toolkit~=2.0.9
 git+https://github.com/webpy/webpy.git#egg=web.py
+qrcode[pil]~=6.1

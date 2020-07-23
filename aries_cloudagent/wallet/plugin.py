@@ -2,6 +2,7 @@
 
 import logging
 import platform
+import json
 from ctypes import cdll, c_char_p
 
 EXTENSION = {"darwin": ".dylib", "linux": ".so", "win32": ".dll", "windows": ".dll"}
@@ -20,6 +21,24 @@ def load_postgres_plugin(storage_config, storage_creds, raise_exc=False):
     global LOADED, LOGGER
 
     if not LOADED:
+        LOGGER.info(
+            "Checking input postgres storage_config and storage_creds arguments"
+        )
+        try:
+            json.loads(storage_config)
+            json.loads(storage_creds)
+        except json.decoder.JSONDecodeError:
+            LOGGER.error(
+                "Invalid stringified JSON input, check storage_config and storage_creds"
+            )
+            if raise_exc:
+                raise OSError(
+                    f"Invalid stringified JSON input,"
+                    "check storage_config and storage_creds"
+                )
+            else:
+                raise SystemExit(1)
+
         LOGGER.info("Initializing postgres wallet")
         stg_lib = cdll.LoadLibrary("libindystrgpostgres" + file_ext())
         result = stg_lib.postgresstorage_init()

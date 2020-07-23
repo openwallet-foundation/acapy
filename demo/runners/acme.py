@@ -152,6 +152,7 @@ async def main(start_port: int, show_timing: bool = False):
             "(1) Issue Credential, (2) Send Proof Request, "
             + "(3) Send Message (X) Exit? [1/2/3/X] "
         ):
+            option = option.strip()
             if option in "xX":
                 break
 

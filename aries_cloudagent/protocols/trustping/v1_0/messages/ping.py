@@ -2,7 +2,7 @@
 
 from marshmallow import fields
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PING, PROTOCOL_PACKAGE
 
@@ -31,7 +31,7 @@ class Ping(AgentMessage):
             comment: An optional comment string
 
         """
-        super(Ping, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.comment = comment
         self.response_requested = response_requested
 

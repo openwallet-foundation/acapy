@@ -44,16 +44,19 @@ class BaseAgent(DemoAgent):
         self._connection_id = conn_id
         self._connection_ready = asyncio.Future()
 
-    async def get_invite(self, accept: str = "auto"):
+    async def get_invite(self, auto_accept: bool = True):
         result = await self.admin_POST(
-            "/connections/create-invitation", params={"accept": accept}
+            "/connections/create-invitation",
+            params={"auto_accept": json.dumps(auto_accept)},
         )
         self.connection_id = result["connection_id"]
         return result["invitation"]
 
-    async def receive_invite(self, invite, accept: str = "auto"):
+    async def receive_invite(self, invite, auto_accept: bool = True):
         result = await self.admin_POST(
-            "/connections/receive-invitation", invite, params={"accept": accept}
+            "/connections/receive-invitation",
+            invite,
+            params={"auto_accept": json.dumps(auto_accept)},
         )
         self.connection_id = result["connection_id"]
         return self.connection_id
@@ -292,7 +295,7 @@ async def main(
             invite = await faber.get_invite()
 
             if routing:
-                conn_id = await alice.receive_invite(invite, accept="manual")
+                conn_id = await alice.receive_invite(invite, auto_accept=False)
                 await alice.establish_inbound(conn_id, alice_router_conn_id)
                 await alice.accept_invite(conn_id)
                 await asyncio.wait_for(alice.detect_connection(), 30)

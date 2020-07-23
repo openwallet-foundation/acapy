@@ -2,7 +2,7 @@
 
 from marshmallow import fields
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PING_RESPONSE, PROTOCOL_PACKAGE
 
@@ -27,7 +27,7 @@ class PingResponse(AgentMessage):
             comment: An optional comment string to include in the message
 
         """
-        super(PingResponse, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.comment = comment
 
 

@@ -11,24 +11,15 @@ Subpackages
 
 .. toctree::
 
-    aries_cloudagent.protocols.basicmessage.handlers
-    aries_cloudagent.protocols.basicmessage.messages
+    aries_cloudagent.protocols.basicmessage.v1_0
 
 Submodules
 ----------
 
-aries\_cloudagent\.protocols\.basicmessage\.message\_types module
------------------------------------------------------------------
+aries\_cloudagent\.protocols\.basicmessage\.definition module
+-------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.basicmessage.message_types
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.basicmessage\.routes module
----------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.basicmessage.routes
+.. automodule:: aries_cloudagent.protocols.basicmessage.definition
     :members:
     :undoc-members:
     :show-inheritance:
