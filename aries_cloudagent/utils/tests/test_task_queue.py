@@ -216,6 +216,7 @@ class TestTaskQueue(AsyncTestCase):
             completed.append((complete.task.result(), complete.timing))
 
         queue = TaskQueue(max_active=1, timed=True, trace_fn=done)
+        assert bool(queue)
         task1 = queue.run(retval(1))
         task2 = await queue.put(retval(2))
         assert bool(queue)
@@ -224,4 +225,3 @@ class TestTaskQueue(AsyncTestCase):
         assert len(completed) == 2
         assert "queued" not in completed[0][1]
         assert "queued" in completed[1][1]
-        assert not bool(queue)
