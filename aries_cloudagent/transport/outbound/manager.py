@@ -444,7 +444,7 @@ class OutboundTransportManager:
         """Kick off delivery of a queued message."""
         transport = self.get_transport_instance(queued.transport_id)
         queued.task = self.task_queue.run(
-            transport.handle_message(queued.payload, queued.endpoint),
+            transport.handle_message(queued.context, queued.payload, queued.endpoint),
             lambda completed: self.finished_deliver(queued, completed),
         )
         return queued.task
