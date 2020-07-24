@@ -1,6 +1,6 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries.webhook;
@@ -11,9 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Optional;
 
-import org.hyperledger.aries.api.connection.Connection;
+import org.hyperledger.aries.api.connection.ConnectionRecord;
 import org.hyperledger.aries.api.credential.IssueCredentialEvent;
-import org.hyperledger.aries.api.proof.PresentProofPresentation;
+import org.hyperledger.aries.api.proof.PresentationExchangeRecord;
 import org.hyperledger.aries.pojo.AttributeName;
 import org.hyperledger.aries.util.FileLoader;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ public class EventParserTest {
     @Test
     void testParseConnectionEvent() {
         String json = loader.load("events/connection-active.json");
-        Optional<Connection> conn = parser.parseValueSave(json, Connection.class);
+        Optional<ConnectionRecord> conn = parser.parseValueSave(json, ConnectionRecord.class);
         assertTrue(conn.isPresent());
         assertEquals("active", conn.get().getState());
     }
@@ -48,7 +48,7 @@ public class EventParserTest {
     @Test
     void testParseProofPresentation() throws Exception {
         String json = loader.load("events/proof-valid.json");
-        Optional<PresentProofPresentation> p = parser.parsePresentProof(json);
+        Optional<PresentationExchangeRecord> p = parser.parsePresentProof(json);
         assertTrue(p.isPresent());
         assertEquals("verifier", p.get().getRole());
         Masterdata md = p.get().from(Masterdata.class);

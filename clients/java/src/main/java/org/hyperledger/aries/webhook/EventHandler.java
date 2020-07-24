@@ -1,15 +1,15 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries.webhook;
 
-import org.hyperledger.aries.api.connection.Connection;
+import org.hyperledger.aries.api.connection.ConnectionRecord;
 import org.hyperledger.aries.api.credential.IssueCredentialEvent;
 import org.hyperledger.aries.api.message.BasicMessage;
 import org.hyperledger.aries.api.message.PingEvent;
-import org.hyperledger.aries.api.proof.PresentProofPresentation;
+import org.hyperledger.aries.api.proof.PresentationExchangeRecord;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +24,7 @@ public abstract class EventHandler {
 
         try {
             if ("connections".equals(eventType)) {
-                parser.parseValueSave(json, Connection.class).ifPresent(connection -> {
+                parser.parseValueSave(json, ConnectionRecord.class).ifPresent(connection -> {
                     handleConnection(connection);
                 });
             } else if ("present_proof".equals(eventType)) {
@@ -49,11 +49,11 @@ public abstract class EventHandler {
         }
     }
 
-    public void handleConnection(Connection connection) {
+    public void handleConnection(ConnectionRecord connection) {
         log.debug("Connection Event: {}", connection);
     }
 
-    public void handleProof(PresentProofPresentation proof) {
+    public void handleProof(PresentationExchangeRecord proof) {
         log.debug("Present Proof Event: {}", proof);
     }
 

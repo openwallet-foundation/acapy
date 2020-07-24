@@ -1,6 +1,6 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries.api.connection;
@@ -26,7 +26,7 @@ class MockedConnectionTest extends MockedTestBase {
         String json = loader.load("files/connections.json");
         server.enqueue(new MockResponse().setBody(json));
 
-        final Optional<List<Connection>> c = ac.connections();
+        final Optional<List<ConnectionRecord>> c = ac.connections();
         assertTrue(c.isPresent());
         assertEquals(13, c.get().size());
     }
@@ -36,7 +36,7 @@ class MockedConnectionTest extends MockedTestBase {
         String json = loader.load("files/connections.json");
         server.enqueue(new MockResponse().setBody(json));
 
-        final Optional<List<Connection>> c = ac.connections(
+        final Optional<List<ConnectionRecord>> c = ac.connections(
                 ConnectionFilter.alias(alias).negate().and(ConnectionFilter.theirLabel(label).negate()));
         assertTrue(c.isPresent());
         assertEquals(6, c.get().size());
@@ -104,7 +104,7 @@ class MockedConnectionTest extends MockedTestBase {
         String json = loader.load("files/connection.json");
         server.enqueue(new MockResponse().setBody(json));
 
-        final Optional<Connection> con = ac.connectionsReceiveInvitation(new Invitation(), null);
+        final Optional<ConnectionRecord> con = ac.connectionsReceiveInvitation(new Invitation(), null);
         assertTrue(con.isPresent());
         assertTrue(con.get().getConnectionId().startsWith("ce43c882"));
     }

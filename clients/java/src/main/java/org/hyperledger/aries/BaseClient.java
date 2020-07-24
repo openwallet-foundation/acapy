@@ -1,6 +1,6 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries;
@@ -9,11 +9,13 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
-import org.hyperledger.aries.api.connection.Connection;
+import org.hyperledger.aries.api.connection.ConnectionRecord;
 import org.hyperledger.aries.api.credential.Credential;
 import org.hyperledger.aries.api.exception.AriesException;
-import org.hyperledger.aries.api.proof.PresentProofPresentation;
+import org.hyperledger.aries.api.jsonld.ErrorResponse;
+import org.hyperledger.aries.api.proof.PresentationExchangeRecord;
 import org.hyperledger.aries.api.wallet.WalletDidResponse;
 import org.hyperledger.aries.config.GsonConfig;
 
@@ -34,9 +36,9 @@ abstract class BaseClient {
 
     static final MediaType JSON_TYPE = MediaType.get("application/json; charset=utf-8");
 
-    static final Type PROOF_TYPE = new TypeToken<Collection<PresentProofPresentation>>(){}.getType();
+    static final Type PROOF_TYPE = new TypeToken<Collection<PresentationExchangeRecord>>(){}.getType();
     static final Type CREDENTIAL_TYPE = new TypeToken<Collection<Credential>>(){}.getType();
-    static final Type CONNECTION_TYPE = new TypeToken<Collection<Connection>>(){}.getType();
+    static final Type CONNECTION_TYPE = new TypeToken<Collection<ConnectionRecord>>(){}.getType();
     static final Type WALLET_DID_TYPE = new TypeToken<Collection<WalletDidResponse>>(){}.getType();
 
     static final String X_API_KEY = "X-API-Key";
@@ -45,7 +47,12 @@ abstract class BaseClient {
 
     final Gson gson = GsonConfig.defaultConfig();
 
-    final OkHttpClient client = new OkHttpClient();
+    final OkHttpClient client = new OkHttpClient.Builder()
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .callTimeout(60, TimeUnit.SECONDS)
+            .build();
 
     static RequestBody jsonBody(String json) {
         return RequestBody.create(json, JSON_TYPE);
@@ -99,5 +106,14 @@ abstract class BaseClient {
             return Optional.ofNullable(gson.fromJson(je, t));
         }
         return Optional.empty();
+    }
+
+    public void checkForError(Optional<String> json) {
+        if (json.isPresent()) {
+            ErrorResponse error = gson.fromJson(json.get(), ErrorResponse.class);
+            if (error != null && error.getError() != null) {
+                throw new AriesException(0, error.getError());
+            }
+        }
     }
 }

@@ -1,0 +1,78 @@
+{
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1"
+    ],
+    "type": [
+        "VerifiablePresentation"
+    ],
+    "verifiableCredential": [
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://raw.githubusercontent.com/iil-network/contexts/master/masterdata.jsonld"
+            ],
+            "id": "urn:dsfasdfsaf",
+            "type": [
+                "VerifiableCredential",
+                "MasterDataCredential"
+            ],
+            "issuer": "did:sov:iil:sadfafs",
+            "issuanceDate": "2010-01-01T19:73:24Z",
+            "credentialSubject": {
+                "id": "did:sov:iil:sadfafs",
+                "type": "LegalEntity",
+                "legalName": "Fancy Healthcare Solutions GmbH",
+                "altName": "hoi",
+                "identifier": [
+                    {
+                        "id": "urn:vatId:213414213",
+                        "vatNumber": "sdfasdf"
+                    }
+                ],
+                "registeredSite": {
+                    "id": "did:sov:iil:asfdsf",
+                    "address": {
+                        "streetAddress": "Stuttgarter Strasse 130",
+                        "zipCode:": "71332",
+                        "city": "Waiblingen",
+                        "region": "Baden-Wuerttemberg",
+                        "country": "Germany"
+                    }
+                },
+                "ultimateParent": "did:sov:ill:fdgrqwgqr",
+                "contactPerson": [
+                    {
+                        "id": "urn:3t436436415",
+                        "firstName": "Max",
+                        "lastName": "Muster",
+                        "role": "ceo"
+                    }
+                ]
+            }
+        },
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://raw.githubusercontent.com/iil-network/contexts/master/indycredential.jsonld",
+                "https://raw.githubusercontent.com/iil-network/contexts/master/bankaccount.json"
+            ],
+            "id": "urn:dsfasdfsafsafd",
+            "type": [
+                "VerifiableCredential",
+                "IndyCredential",
+                "BankAccountCredential"
+            ],
+            "indyIssuer": "did:sov:iil:ffwfr2424",
+            "issuanceDate": "2010-01-01T19:73:24Z",
+            "schemaId": "",
+            "credDefId": "",
+            "credentialSubject": {
+                "id": "did:sov:iil:sadfafs",
+                "bankAccount": {
+                    "iban": "2344524",
+                    "bic": "2423424"
+                }
+            }
+        }
+    ]
+}

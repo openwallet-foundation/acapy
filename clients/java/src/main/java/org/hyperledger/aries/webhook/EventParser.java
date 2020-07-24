@@ -1,6 +1,6 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries.webhook;
@@ -15,8 +15,8 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
-import org.hyperledger.aries.api.proof.PresentProofPresentation;
-import org.hyperledger.aries.api.proof.PresentProofPresentation.Identifier;
+import org.hyperledger.aries.api.proof.PresentationExchangeRecord;
+import org.hyperledger.aries.api.proof.PresentationExchangeRecord.Identifier;
 import org.hyperledger.aries.config.GsonConfig;
 import org.hyperledger.aries.pojo.AttributeName;
 import org.hyperledger.aries.pojo.PojoProcessor;
@@ -53,8 +53,8 @@ public class EventParser {
         return t;
     }
 
-    public Optional<PresentProofPresentation> parsePresentProof(String json) {
-        Optional<PresentProofPresentation> presentation = parseValueSave(json, PresentProofPresentation.class);
+    public Optional<PresentationExchangeRecord> parsePresentProof(String json) {
+        Optional<PresentationExchangeRecord> presentation = parseValueSave(json, PresentationExchangeRecord.class);
         if (presentation.isPresent()) {
             JsonElement je = presentation.get()
                     .getPresentation()

@@ -1,11 +1,12 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -15,8 +16,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hyperledger.aries.api.connection.Connection;
 import org.hyperledger.aries.api.connection.ConnectionFilter;
+import org.hyperledger.aries.api.connection.ConnectionRecord;
 import org.hyperledger.aries.api.connection.CreateInvitationResponse;
 import org.hyperledger.aries.api.connection.Invitation;
 import org.hyperledger.aries.api.credential.Credential;
@@ -25,20 +26,26 @@ import org.hyperledger.aries.api.credential.CredentialDefinition.CredentialDefin
 import org.hyperledger.aries.api.credential.CredentialDefinition.CredentialDefinitionResponse;
 import org.hyperledger.aries.api.credential.CredentialFilter;
 import org.hyperledger.aries.api.credential.IssueCredentialSend;
+import org.hyperledger.aries.api.jsonld.Proof;
 import org.hyperledger.aries.api.jsonld.SignRequest;
-import org.hyperledger.aries.api.jsonld.SignResponse;
+import org.hyperledger.aries.api.jsonld.VerifiableCredential;
+import org.hyperledger.aries.api.jsonld.VerifiablePresentation;
 import org.hyperledger.aries.api.jsonld.VerifyRequest;
 import org.hyperledger.aries.api.jsonld.VerifyResponse;
 import org.hyperledger.aries.api.message.BasicMessage;
 import org.hyperledger.aries.api.message.TrustPing;
-import org.hyperledger.aries.api.proof.PresentProofPresentation;
 import org.hyperledger.aries.api.proof.PresentProofProposal;
 import org.hyperledger.aries.api.proof.PresentProofRequest;
 import org.hyperledger.aries.api.proof.PresentProofRequestResponse;
 import org.hyperledger.aries.api.proof.PresentProofResponse;
+import org.hyperledger.aries.api.proof.PresentationExchangeRecord;
+import org.hyperledger.aries.api.schema.SchemaSendRequest;
+import org.hyperledger.aries.api.schema.SchemaSendResponse;
 import org.hyperledger.aries.api.wallet.GetDidEndpointResponse;
 import org.hyperledger.aries.api.wallet.SetDidEndpointRequest;
 import org.hyperledger.aries.api.wallet.WalletDidResponse;
+
+import com.google.gson.JsonElement;
 
 import lombok.NonNull;
 import okhttp3.HttpUrl;
@@ -75,7 +82,7 @@ public class AriesClient extends BaseClient {
      * @return List of agent-to-agent connections
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public Optional<List<Connection>> connections() throws IOException {
+    public Optional<List<ConnectionRecord>> connections() throws IOException {
         return connections(null);
     }
 
@@ -85,8 +92,8 @@ public class AriesClient extends BaseClient {
      * @return List of agent-to-agent connections
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public Optional<List<Connection>> connections(@Nullable Predicate<Connection> filter) throws IOException {
-        Optional<List<Connection>> result = Optional.empty();
+    public Optional<List<ConnectionRecord>> connections(@Nullable Predicate<ConnectionRecord> filter) throws IOException {
+        Optional<List<ConnectionRecord>> result = Optional.empty();
         Request req = buildGet(url + "/connections");
         final Optional<String> resp = raw(req);
         if (resp.isPresent()) {
@@ -113,11 +120,11 @@ public class AriesClient extends BaseClient {
      * @return only the connection IDs based on the filter criteria
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public List<String> connectionIds(@Nullable Predicate<Connection> filter) throws IOException {
+    public List<String> connectionIds(@Nullable Predicate<ConnectionRecord> filter) throws IOException {
         List<String> result = new ArrayList<>();
-        final Optional<List<Connection>> c = connections(filter);
+        final Optional<List<ConnectionRecord>> c = connections(filter);
         if (c.isPresent()) {
-            result = c.get().stream().map(Connection::getConnectionId).collect(Collectors.toList());
+            result = c.get().stream().map(ConnectionRecord::getConnectionId).collect(Collectors.toList());
         }
         return result;
     }
@@ -146,17 +153,17 @@ public class AriesClient extends BaseClient {
      * Receive a new connection invitation
      * @param invite {@link Invitation}
      * @param alias optional: alias for the connection
-     * @return {@link Connection}
+     * @return {@link ConnectionRecord}
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public Optional<Connection> connectionsReceiveInvitation(@NonNull Invitation invite, @Nullable String alias)
+    public Optional<ConnectionRecord> connectionsReceiveInvitation(@NonNull Invitation invite, @Nullable String alias)
             throws IOException{
         HttpUrl.Builder b = HttpUrl.parse(url + "/connections/receive-invitation").newBuilder();
         if (StringUtils.isNotEmpty(alias)) {
             b.addQueryParameter("alias", alias);
         }
         Request req = buildPost(b.build().toString(), invite);
-        return call(req, Connection.class);
+        return call(req, ConnectionRecord.class);
     }
 
     // ----------------------------------------------------
@@ -314,10 +321,10 @@ public class AriesClient extends BaseClient {
 
     /**
      * Fetch all present-proof exchange records
-     * @return list of {@link PresentProofPresentation}
+     * @return list of {@link PresentationExchangeRecord}
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public Optional<List<PresentProofPresentation>> presentProofRecords() throws IOException {
+    public Optional<List<PresentationExchangeRecord>> presentProofRecords() throws IOException {
         Request req = buildGet(url + "/present-proof/records");
         final Optional<String> resp = raw(req);
         return getWrapped(resp, "results", PROOF_TYPE);
@@ -326,13 +333,13 @@ public class AriesClient extends BaseClient {
     /**
      * Fetch a single presentation exchange record by ID
      * @param presentationExchangeId the presentation exchange id
-     * @return {@link PresentProofPresentation}
+     * @return {@link PresentationExchangeRecord}
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public Optional<PresentProofPresentation> presentProofRecord(@NonNull String presentationExchangeId)
+    public Optional<PresentationExchangeRecord> presentProofRecord(@NonNull String presentationExchangeId)
             throws IOException {
         Request req = buildGet(url + "/present-proof/records/" + presentationExchangeId);
-        return call(req, PresentProofPresentation.class);
+        return call(req, PresentationExchangeRecord.class);
     }
 
     /**
@@ -380,6 +387,21 @@ public class AriesClient extends BaseClient {
         Request req = buildPost(url + "/present-proof/records/" + presentationExchangeId + "/remove",
                 EMPTY_JSON);
         call(req);
+    }
+
+    // ----------------------------------------------------
+    // Schemas
+    // ----------------------------------------------------
+
+    /**
+     * Sends a schema to the ledger
+     * @param schema {@link SchemaSendRequest}
+     * @return {@link SchemaSendResponse}
+     * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
+     */
+    public Optional<SchemaSendResponse> schemas(@NonNull SchemaSendRequest schema) throws IOException {
+        Request req = buildPost(url + "/schemas", schema);
+        return call(req, SchemaSendResponse.class);
     }
 
     // ----------------------------------------------------
@@ -444,25 +466,34 @@ public class AriesClient extends BaseClient {
     /**
      * Sign a JSON-LD structure and return it
      * @since aca-py 0.5.2
+     * @param <T> class type either {@link VerifiableCredential} or {@link VerifiablePresentation}
      * @param signRequest {@link SignRequest}
-     * @return {@link SignResponse}
+     * @param t class type either {@link VerifiableCredential} or {@link VerifiablePresentation}
+     * @return either {@link VerifiableCredential} or {@link VerifiablePresentation} with {@link Proof}
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public Optional<SignResponse> jsonldSign(@NonNull SignRequest signRequest) throws IOException {
+    public <T> Optional<T> jsonldSign(@NonNull SignRequest signRequest, @NonNull Type t) throws IOException {
         Request req = buildPost(url + "/jsonld/sign", signRequest);
-        return getWrapped(raw(req), "signed_doc", SignResponse.class);
+        final Optional<String> raw = raw(req);
+        checkForError(raw);
+        return getWrapped(raw, "signed_doc", t);
     }
 
     /**
      * Verify a JSON-LD structure
      * @since aca-py 0.5.2
-     * @param verifyRequest {@link VerifyRequest}
+     * @param verkey the verkey
+     * @param t instance to verify either {@link VerifiableCredential} or {@link VerifiablePresentation}
      * @return {@link VerifyResponse}
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public Optional<VerifyResponse> jsonldVerify(@NonNull VerifyRequest verifyRequest) throws IOException {
-        Request req = buildPost(url + "/jsonld/verify", verifyRequest);
-        return call(req, VerifyResponse.class);
+    public Optional<VerifyResponse> jsonldVerify(@NonNull String verkey, @NonNull Object t) throws IOException {
+        if (t instanceof VerifiableCredential || t instanceof VerifiablePresentation) {
+            final JsonElement jsonTree = gson.toJsonTree(t, t.getClass());
+            Request req = buildPost(url + "/jsonld/verify", new VerifyRequest(verkey, jsonTree.getAsJsonObject()));
+            return call(req, VerifyResponse.class);
+        }
+        throw new IllegalStateException("Expecting either VerifiableCredential or VerifiablePresentation");
     }
 
     // ----------------------------------------------------

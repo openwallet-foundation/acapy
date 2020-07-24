@@ -1,0 +1,13 @@
+{
+    "schema_id": "M6Mbe3qx7vB4wpZF4sBRjt:2:prefs:1.0",
+    "schema": {
+        "ver": "1.0",
+        "id": "M6Mbe3qx7vB4wpZF4sBRjt:2:prefs:1.0",
+        "name": "prefs",
+        "version": "1.0",
+        "attrNames": [
+            "score"
+        ],
+        "seqNo": 550
+    }
+}

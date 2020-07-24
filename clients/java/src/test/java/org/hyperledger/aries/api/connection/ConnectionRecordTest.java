@@ -1,6 +1,6 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries.api.connection;
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ConnectionTest extends IntegrationTestBase {
+public class ConnectionRecordTest extends IntegrationTestBase {
 
     @Test
     void testDeleteConnection() throws Exception {

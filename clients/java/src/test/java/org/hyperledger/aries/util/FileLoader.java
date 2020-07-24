@@ -1,6 +1,6 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries.util;
@@ -31,7 +31,7 @@ public class FileLoader {
         try (BufferedReader buffer = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")))) {
             result =  buffer.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            log.error("Could not read from imput stream.", e);
+            log.error("Could not read from input stream.", e);
         }
 
         return result;

@@ -1,6 +1,6 @@
-/** 
+/**
  * Copyright (c) 2020 Robert Bosch GmbH. All Rights Reserved.
- * 
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 package org.hyperledger.aries.api.proof;
@@ -12,16 +12,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.hyperledger.aries.MockedTestBase;
-import org.hyperledger.aries.config.GsonConfig;
 import org.junit.jupiter.api.Test;
 
-import com.google.gson.Gson;
-
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.mockwebserver.MockResponse;
 
+@Slf4j
 public class MockedPresentProofTest extends MockedTestBase {
-
-    private Gson gson = GsonConfig.defaultConfig();
 
     @Test
     void testParsePresentationResponse() throws Exception {
@@ -35,7 +32,7 @@ public class MockedPresentProofTest extends MockedTestBase {
         String json = loader.load("files/present-proof-records.json");
         server.enqueue(new MockResponse().setBody(json));
 
-        final Optional<List<PresentProofPresentation>> res = ac.presentProofRecords();
+        final Optional<List<PresentationExchangeRecord>> res = ac.presentProofRecords();
 
         assertTrue(res.isPresent());
         assertEquals(2, res.get().size());
@@ -47,10 +44,10 @@ public class MockedPresentProofTest extends MockedTestBase {
         String json = loader.load("files/present-proof-record.json");
         server.enqueue(new MockResponse().setBody(json));
 
-        final Optional<PresentProofPresentation> res = ac.presentProofRecord("mock");
+        final Optional<PresentationExchangeRecord> res = ac.presentProofRecord("mock");
 
         assertTrue(res.isPresent());
         assertTrue(res.get().getConnectionId().startsWith("00598f57"));
-        System.err.println(res.get());
+        log.debug(pretty.toJson(res.get()));
     }
 }

@@ -6,9 +6,8 @@
 package org.hyperledger.aries.api.jsonld;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data @NoArgsConstructor
-public final class VerifyResponse {
-    private boolean valid;
+@Data
+public class ErrorResponse {
+    private String error;
 }
