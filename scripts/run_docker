@@ -2,7 +2,12 @@
 
 cd $(dirname $0)
 
-docker build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
+# Checking if proxy is configured in environment.
+if [ -z ${http_proxy+x} ]; then
+  docker build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
+else
+  docker build --build-arg HTTP_PROXY=$http_proxy --build-arg HTTPS_PROXY=$https_proxy -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
+fi
 
 ARGS=""
 for PORT in $PORTS; do
