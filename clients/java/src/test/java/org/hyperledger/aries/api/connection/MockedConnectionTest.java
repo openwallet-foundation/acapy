@@ -104,7 +104,7 @@ class MockedConnectionTest extends MockedTestBase {
         String json = loader.load("files/connection.json");
         server.enqueue(new MockResponse().setBody(json));
 
-        final Optional<ConnectionRecord> con = ac.connectionsReceiveInvitation(new Invitation(), null);
+        final Optional<ConnectionRecord> con = ac.connectionsReceiveInvitation(new ReceiveInvitationRequest(), null);
         assertTrue(con.isPresent());
         assertTrue(con.get().getConnectionId().startsWith("ce43c882"));
     }

@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.aries.api.connection.ConnectionFilter;
 import org.hyperledger.aries.api.connection.ConnectionRecord;
 import org.hyperledger.aries.api.connection.CreateInvitationResponse;
-import org.hyperledger.aries.api.connection.Invitation;
+import org.hyperledger.aries.api.connection.ReceiveInvitationRequest;
 import org.hyperledger.aries.api.credential.Credential;
 import org.hyperledger.aries.api.credential.CredentialDefinition;
 import org.hyperledger.aries.api.credential.CredentialDefinition.CredentialDefinitionRequest;
@@ -151,12 +151,13 @@ public class AriesClient extends BaseClient {
 
     /**
      * Receive a new connection invitation
-     * @param invite {@link Invitation}
+     * @param invite {@link ReceiveInvitationRequest}
      * @param alias optional: alias for the connection
      * @return {@link ConnectionRecord}
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public Optional<ConnectionRecord> connectionsReceiveInvitation(@NonNull Invitation invite, @Nullable String alias)
+    public Optional<ConnectionRecord> connectionsReceiveInvitation(
+            @NonNull ReceiveInvitationRequest invite, @Nullable String alias)
             throws IOException{
         HttpUrl.Builder b = HttpUrl.parse(url + "/connections/receive-invitation").newBuilder();
         if (StringUtils.isNotEmpty(alias)) {
