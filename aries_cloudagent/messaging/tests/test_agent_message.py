@@ -190,6 +190,7 @@ class TestAgentMessage(AsyncTestCase):
         msg.add_trace_decorator()
         assert msg._trace
 
+
 class TestAgentMessageSchema(AsyncTestCase):
     """Tests agent message schema."""
 
@@ -206,9 +207,9 @@ class TestAgentMessageSchema(AsyncTestCase):
     def test_extract_decorators_x(self):
         for serial in [
             {
-                "@type": 'signed-agent-message',
+                "@type": "signed-agent-message",
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
-                "value": "Test value"
+                "value": "Test value",
             },
             {
                 "@type": "signed-agent-message",
@@ -224,8 +225,8 @@ class TestAgentMessageSchema(AsyncTestCase):
                         "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
                     ),
                     "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
-                    "signer": '7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy'
-                }
+                    "signer": "7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy",
+                },
             },
             {
                 "@type": "signed-agent-message",
@@ -240,9 +241,9 @@ class TestAgentMessageSchema(AsyncTestCase):
                         "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
                     ),
                     "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
-                    "signer": '7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy'
-                }
-            }
+                    "signer": "7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy",
+                },
+            },
         ]:
             with self.assertRaises(BaseModelError) as context:
                 SignedAgentMessage.deserialize(serial)
@@ -261,8 +262,8 @@ class TestAgentMessageSchema(AsyncTestCase):
                     "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
                 ),
                 "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
-                "signer": '7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy'
-            }
+                "signer": "7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy",
+            },
         }
         result = SignedAgentMessage.deserialize(serial)
         result.serialize()

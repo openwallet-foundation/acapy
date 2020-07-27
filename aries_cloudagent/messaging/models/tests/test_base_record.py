@@ -36,7 +36,7 @@ class ARecordImpl(BaseRecord):
     RECORD_ID_NAME = "ident"
     TAG_NAMES = {"code"}
 
-    def __init__(self, *, ident = None, a, b, code, **kwargs):
+    def __init__(self, *, ident=None, a, b, code, **kwargs):
         super().__init__(ident, **kwargs)
         self.a = a
         self.b = b
@@ -44,10 +44,8 @@ class ARecordImpl(BaseRecord):
 
     @property
     def record_value(self) -> dict:
-        return {
-            "a": self.a,
-            "b": self.b
-        }
+        return {"a": self.a, "b": self.b}
+
 
 class ARecordImplSchema(BaseRecordSchema):
     class Meta:
@@ -160,9 +158,7 @@ class TestBaseRecord(AsyncTestCase):
             await records[i].save(context)
         with self.assertRaises(StorageDuplicateError):
             await ARecordImpl.retrieve_by_tag_filter(
-                context,
-                {"code": "one"},
-                {"a": "1"} 
+                context, {"code": "one"}, {"a": "1"}
             )
         await records[0].delete_record(context)
 
@@ -175,9 +171,7 @@ class TestBaseRecord(AsyncTestCase):
             context, "inject", async_mock.CoroutineMock()
         ) as mock_inject:
             mock_inject.return_value = async_mock.MagicMock(
-                add_record=async_mock.CoroutineMock(
-                    side_effect=ZeroDivisionError()
-                )
+                add_record=async_mock.CoroutineMock(side_effect=ZeroDivisionError())
             )
             with self.assertRaises(ZeroDivisionError):
                 await rec.save(context)
@@ -250,7 +244,7 @@ class TestBaseRecord(AsyncTestCase):
         record = BaseRecordImpl()
         record.log_state(context, "state")
         mock_print.assert_not_called()
-        
+
     async def test_webhook(self):
         context = InjectionContext()
         mock_responder = MockResponder()

@@ -321,4 +321,3 @@ class TestDispatcher(AsyncTestCase):
         ) as mock_send_outbound:
             await responder.send(message)
             assert mock_send_outbound.called_once()
-

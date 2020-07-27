@@ -52,9 +52,7 @@ class TestBase(AsyncTestCase):
         ) as mock_get_schema_class:
             mock_get_schema_class.return_value = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    dump=async_mock.MagicMock(
-                        side_effect=ValidationError("error")
-                    )
+                    dump=async_mock.MagicMock(side_effect=ValidationError("error"))
                 )
             )
             with self.assertRaises(BaseModelError):
