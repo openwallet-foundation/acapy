@@ -436,7 +436,6 @@ class AgentMessageSchema(BaseModelSchema):
 
         """
         processed = self._decorators.extract_decorators(data, self.__class__)
-        print(f'.. processed {processed}')
 
         expect_fields = resolve_meta_property(self, "signed_fields") or ()
         found_signatures = {}

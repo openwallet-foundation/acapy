@@ -78,6 +78,10 @@ class TestAgentMessage(AsyncTestCase):
         assert "field has no value for signature" in str(context.exception)
 
         msg.value = "Test value"
+        with self.assertRaises(BaseModelError) as context:
+            msg.serialize()
+        assert "Missing signature for field" in str(context.exception)
+
         await msg.sign_field("value", key_info.verkey, wallet)
         sig = msg.get_signature("value")
         assert isinstance(sig, SignatureDecorator)
@@ -107,7 +111,6 @@ class TestAgentMessage(AsyncTestCase):
             await msg.verify_signed_field("value", wallet)
         assert "Missing field signature" in str(context.exception)
 
-        print(f'\n\n..........{serial}')
         loaded = SignedAgentMessage.deserialize(serial)
         assert isinstance(loaded, SignedAgentMessage)
         assert await loaded.verify_signed_field("value", wallet) == key_info.verkey
@@ -187,7 +190,6 @@ class TestAgentMessage(AsyncTestCase):
         msg.add_trace_decorator()
         assert msg._trace
 
-
 class TestAgentMessageSchema(AsyncTestCase):
     """Tests agent message schema."""
 
@@ -202,13 +204,65 @@ class TestAgentMessageSchema(AsyncTestCase):
         assert "Can't instantiate abstract" in str(context.exception)
 
     def test_extract_decorators_x(self):
-        serial =  {
-            "@type": 'signed-agent-message',
+        for serial in [
+            {
+                "@type": 'signed-agent-message',
+                "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
+                "value": "Test value"
+            },
+            {
+                "@type": "signed-agent-message",
+                "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
+                "value": "Test value",
+                "value~sig": {
+                    "@type": (
+                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+                        "spec/signature/1.0/ed25519Sha512_single"
+                    ),
+                    "signature": (
+                        "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
+                        "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
+                    ),
+                    "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
+                    "signer": '7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy'
+                }
+            },
+            {
+                "@type": "signed-agent-message",
+                "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
+                "superfluous~sig": {
+                    "@type": (
+                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+                        "spec/signature/1.0/ed25519Sha512_single"
+                    ),
+                    "signature": (
+                        "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
+                        "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
+                    ),
+                    "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
+                    "signer": '7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy'
+                }
+            }
+        ]:
+            with self.assertRaises(BaseModelError) as context:
+                SignedAgentMessage.deserialize(serial)
+
+    def test_serde(self):
+        serial = {
+            "@type": "signed-agent-message",
             "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
-            "value": "Test value"
+            "value~sig": {
+                "@type": (
+                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+                    "spec/signature/1.0/ed25519Sha512_single"
+                ),
+                "signature": (
+                    "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
+                    "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
+                ),
+                "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
+                "signer": '7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy'
+            }
         }
-        '''
-        {'@type': 'signed-agent-message', '@id': '030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a', 'value~sig': {'@type': 'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single', 'signature': '-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBlO8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg==', 'sig_data': 'AAAAAF8bIV4iVGVzdCB2YWx1ZSI=', 'signer': '7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy'}}
-        '''
-        with self.assertRaises(BaseModelError) as context:
-            SignedAgentMessage.deserialize(serial)
+        result = SignedAgentMessage.deserialize(serial)
+        result.serialize()
