@@ -15,6 +15,8 @@ from .. import routes as test_module
 class TestConnectionRoutes(AsyncTestCase):
     async def test_connections_list(self):
         context = RequestContext(base_context=InjectionContext(enforce_typing=False))
+        context.default_endpoint = "http://1.2.3.4:8081"  # for coverage
+        assert context.default_endpoint == "http://1.2.3.4:8081"  # for coverage
         mock_req = async_mock.MagicMock()
         mock_req.app = {
             "request_context": context,

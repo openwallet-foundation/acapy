@@ -2,10 +2,13 @@ from asynctest import TestCase as AsyncTestCase
 from marshmallow import fields
 import json
 
+from ...wallet.basic import BasicWallet
+from ...wallet.util import bytes_to_b64
+
 from ..agent_message import AgentMessage, AgentMessageSchema
 from ..decorators.signature_decorator import SignatureDecorator
 from ..decorators.trace_decorator import TraceReport, TRACE_LOG_TARGET
-from ...wallet.basic import BasicWallet
+from ..models.base import BaseModelError
 
 
 class SignedAgentMessage(AgentMessage):
@@ -19,7 +22,7 @@ class SignedAgentMessage(AgentMessage):
         message_type = "signed-agent-message"
 
     def __init__(self, value: str = None, **kwargs):
-        super(SignedAgentMessage, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.value = value
 
 
@@ -46,18 +49,22 @@ class BasicAgentMessage(AgentMessage):
 class TestAgentMessage(AsyncTestCase):
     """Tests agent message."""
 
-    class BadImplementationClass(AgentMessage):
-        """Test utility class."""
-
-        pass
-
     def test_init(self):
         """Tests init class"""
-        SignedAgentMessage()
+
+        class BadImplementationClass(AgentMessage):
+            """Test utility class."""
+
+        message = SignedAgentMessage()
+        message._id = "12345"
 
         with self.assertRaises(TypeError) as context:
-            self.BadImplementationClass()  # pylint: disable=E0110
+            BadImplementationClass()  # pylint: disable=E0110
+        assert "Can't instantiate abstract" in str(context.exception)
 
+        BadImplementationClass.Meta.schema_class = "AgentMessageSchema"
+        with self.assertRaises(TypeError) as context:
+            BadImplementationClass()  # pylint: disable=E0110
         assert "Can't instantiate abstract" in str(context.exception)
 
     async def test_field_signature(self):
@@ -65,7 +72,16 @@ class TestAgentMessage(AsyncTestCase):
         key_info = await wallet.create_signing_key()
 
         msg = SignedAgentMessage()
+        msg.value = None
+        with self.assertRaises(BaseModelError) as context:
+            await msg.sign_field("value", key_info.verkey, wallet)
+        assert "field has no value for signature" in str(context.exception)
+
         msg.value = "Test value"
+        with self.assertRaises(BaseModelError) as context:
+            msg.serialize()
+        assert "Missing signature for field" in str(context.exception)
+
         await msg.sign_field("value", key_info.verkey, wallet)
         sig = msg.get_signature("value")
         assert isinstance(sig, SignatureDecorator)
@@ -74,8 +90,26 @@ class TestAgentMessage(AsyncTestCase):
         assert await msg.verify_signed_field("value", wallet) == key_info.verkey
         assert await msg.verify_signatures(wallet)
 
+        with self.assertRaises(BaseModelError) as context:
+            await msg.verify_signed_field("value", wallet, "bogus-verkey")
+        assert "Signer verkey of signature does not match" in str(context.exception)
+
         serial = msg.serialize()
         assert "value~sig" in serial and "value" not in serial
+
+        (_, timestamp) = msg._decorators.field("value")["sig"].decode()
+        tamper_deco = await SignatureDecorator.create("tamper", key_info.verkey, wallet)
+        msg._decorators.field("value")["sig"].sig_data = tamper_deco.sig_data
+        with self.assertRaises(BaseModelError) as context:
+            await msg.verify_signed_field("value", wallet)
+        assert "Field signature verification failed" in str(context.exception)
+        assert not await msg.verify_signatures(wallet)
+
+        msg.value = "Test value"
+        msg._decorators.field("value").pop("sig")
+        with self.assertRaises(BaseModelError) as context:
+            await msg.verify_signed_field("value", wallet)
+        assert "Missing field signature" in str(context.exception)
 
         loaded = SignedAgentMessage.deserialize(serial)
         assert isinstance(loaded, SignedAgentMessage)
@@ -88,6 +122,9 @@ class TestAgentMessage(AsyncTestCase):
         reply.assign_thread_from(msg)
         assert reply._thread_id == msg._thread_id
         assert reply._thread_id != reply._id
+
+        msg.assign_thread_id(None, None)
+        assert not msg._thread
 
     async def test_add_tracing(self):
         msg = BasicAgentMessage()
@@ -148,3 +185,85 @@ class TestAgentMessage(AsyncTestCase):
         assert msg_trace_report.outcome == trace_report2.outcome
 
         print("tracer:", tracer.serialize())
+
+        msg3 = BasicAgentMessage()
+        msg.add_trace_decorator()
+        assert msg._trace
+
+
+class TestAgentMessageSchema(AsyncTestCase):
+    """Tests agent message schema."""
+
+    def test_init_x(self):
+        """Tests init class"""
+
+        class BadImplementationClass(AgentMessageSchema):
+            """Test utility class."""
+
+        with self.assertRaises(TypeError) as context:
+            BadImplementationClass()
+        assert "Can't instantiate abstract" in str(context.exception)
+
+    def test_extract_decorators_x(self):
+        for serial in [
+            {
+                "@type": "signed-agent-message",
+                "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
+                "value": "Test value",
+            },
+            {
+                "@type": "signed-agent-message",
+                "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
+                "value": "Test value",
+                "value~sig": {
+                    "@type": (
+                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+                        "spec/signature/1.0/ed25519Sha512_single"
+                    ),
+                    "signature": (
+                        "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
+                        "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
+                    ),
+                    "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
+                    "signer": "7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy",
+                },
+            },
+            {
+                "@type": "signed-agent-message",
+                "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
+                "superfluous~sig": {
+                    "@type": (
+                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+                        "spec/signature/1.0/ed25519Sha512_single"
+                    ),
+                    "signature": (
+                        "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
+                        "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
+                    ),
+                    "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
+                    "signer": "7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy",
+                },
+            },
+        ]:
+            with self.assertRaises(BaseModelError) as context:
+                SignedAgentMessage.deserialize(serial)
+
+    def test_serde(self):
+        serial = {
+            "@type": "signed-agent-message",
+            "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
+            "value~sig": {
+                "@type": (
+                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
+                    "spec/signature/1.0/ed25519Sha512_single"
+                ),
+                "signature": (
+                    "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
+                    "O8ULY7Nl1lQPqahc-XQPHiBSVraLM8XN_sCzdCg=="
+                ),
+                "sig_data": "AAAAAF8bIV4iVGVzdCB2YWx1ZSI=",
+                "signer": "7VA3CaF9jaTuRN2SGmekANoja6Js4U51kfRSbpZAfdhy",
+            },
+        }
+        result = SignedAgentMessage.deserialize(serial)
+        result.serialize()

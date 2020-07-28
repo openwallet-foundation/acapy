@@ -186,7 +186,8 @@ class TaskQueue:
         """
         Support for the bool() builtin.
 
-        Otherwise, evaluates as false when there are no tasks.
+        Return:
+            True - the task queue exists even if there are no tasks
         """
         return True
 

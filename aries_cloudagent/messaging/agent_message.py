@@ -61,7 +61,7 @@ class AgentMessage(BaseModel):
             TypeError: If message type is missing on subclass Meta class
 
         """
-        super(AgentMessage, self).__init__()
+        super().__init__()
         if _id:
             self._message_id = _id
             self._message_new_id = False
@@ -265,7 +265,10 @@ class AgentMessage(BaseModel):
         Args:
             val: ThreadDecorator or dict to set as the thread
         """
-        self._decorators["thread"] = val
+        if val is None:
+            self._decorators.pop("thread", None)
+        else:
+            self._decorators["thread"] = val
 
     @property
     def _thread_id(self) -> str:
@@ -319,7 +322,10 @@ class AgentMessage(BaseModel):
         Args:
             val: TraceDecorator or dict to set as the trace
         """
-        self._decorators["trace"] = val
+        if val is None:
+            self._decorators.pop("trace", None)
+        else:
+            self._decorators["trace"] = val
 
     def assign_trace_from(self, msg: "AgentMessage"):
         """
@@ -408,13 +414,7 @@ class AgentMessageSchema(BaseModelSchema):
             TypeError: If Meta.model_class has not been set
 
         """
-        super(AgentMessageSchema, self).__init__(*args, **kwargs)
-        if not self.Meta.model_class:
-            raise TypeError(
-                "Can't instantiate abstract class {} with no model_class".format(
-                    self.__class__.__name__
-                )
-            )
+        super().__init__(*args, **kwargs)
         self._decorators = DecoratorSet()
         self._decorators_dict = None
         self._signatures = {}
