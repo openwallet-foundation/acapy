@@ -195,15 +195,6 @@ async def main(
                 revocation_registry_size=TAILS_FILE_COUNT,
             )
 
-        # if revocation:
-        #     with log_timer("Publish revocation registry duration:"):
-        #         log_status(
-        #             "#5/6 Create and publish the revocation registry on the ledger"
-        #         )
-        #         await agent.create_and_publish_revocation_registry(
-        #             credential_definition_id, TAILS_FILE_COUNT
-        #         )
-
         # TODO add an additional credential for Student ID
 
         with log_timer("Generate invitation duration:"):
