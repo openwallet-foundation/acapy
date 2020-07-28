@@ -79,7 +79,4 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
             seed=test_seed, metadata={"endpoint": "1.2.3.4:8021"}
         )
 
-    if public_did:
-        context.settings["wallet.public_did"] = public_did
-
     return public_did
