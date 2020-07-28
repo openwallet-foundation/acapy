@@ -25,6 +25,7 @@ class TestProvider(AsyncTestCase):
         assert wallet.name == "name"
         await wallet.close()
 
+    @pytest.mark.indy
     async def test_provide_indy(self):
         provider = test_module.WalletProvider()
         settings = Settings(

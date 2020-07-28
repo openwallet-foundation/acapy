@@ -1,3 +1,5 @@
+import importlib
+
 from aiohttp import web as aio_web
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -58,9 +60,13 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             mock_presentation_exchange.query = async_mock.CoroutineMock()
             mock_presentation_exchange.query.return_value = [mock_presentation_exchange]
@@ -90,9 +96,13 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             mock_presentation_exchange.query = async_mock.CoroutineMock(
                 side_effect=test_module.StorageError()
@@ -109,13 +119,18 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_pres_ex:
-            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock()
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
+        ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
+            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock()
 
             # Emulate storage not found (bad presentation exchange id)
-            mock_pres_ex.retrieve_by_id.side_effect = StorageNotFoundError
+            mock_presentation_exchange.retrieve_by_id.side_effect = StorageNotFoundError
 
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.presentation_exchange_credentials_list(mock)
@@ -140,9 +155,14 @@ class TestProofRoutes(AsyncTestCase):
             ),
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
                 mock_presentation_exchange
             )
@@ -169,9 +189,14 @@ class TestProofRoutes(AsyncTestCase):
             ),
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
                 mock_presentation_exchange
             )
@@ -204,9 +229,14 @@ class TestProofRoutes(AsyncTestCase):
             ),
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
                 mock_presentation_exchange
             )
@@ -225,9 +255,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_pres_ex:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock()
             mock_pres_ex.retrieve_by_id.return_value = mock_pres_ex
             mock_pres_ex.serialize = async_mock.MagicMock()
@@ -249,9 +284,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_pres_ex:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock()
 
             # Emulate storage not found (bad presentation exchange id)
@@ -271,9 +311,14 @@ class TestProofRoutes(AsyncTestCase):
         mock_pres_ex_rec = async_mock.MagicMock(
             connection_id="abc123", thread_id="thid123"
         )
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_pres_ex:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_pres_ex_rec
             )
@@ -292,21 +337,26 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal:
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
                 return_value=mock_presentation_exchange_record
             )
 
-            mock_presentation_proposal.return_value.deserialize.return_value = (
-                async_mock.MagicMock()
-            )
+            mock_preview.return_value.deserialize.return_value = async_mock.MagicMock()
 
             with async_mock.patch.object(
                 test_module.web, "json_response"
@@ -324,9 +374,13 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
         ) as mock_connection_record:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             # Emulate storage not found (bad connection id)
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
@@ -344,14 +398,19 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_preview, async_mock.patch.object(
-            test_module, "PresentationProposal", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.presentation_proposal.PresentationProposal",
+            autospec=True,
         ) as mock_proposal:
-            mock_preview.deserialize = async_mock.CoroutineMock()
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_connection_record.retrieve_by_id.return_value.is_ready = False
@@ -367,13 +426,20 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal:
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
                 side_effect=test_module.StorageError()
@@ -392,17 +458,29 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal, async_mock.patch.object(
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_presentation_exchange:
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
+        ) as mock_presentation_exchange, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
+            mock_generate_nonce = async_mock.CoroutineMock()
+
             mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
@@ -435,20 +513,27 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal, async_mock.patch.object(
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
-        ) as mock_presentation_exchange:
-            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
-                return_value=mock_attach_decorator
-            )
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
+        ) as mock_presentation_exchange, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.serialize = async_mock.MagicMock()
             mock_presentation_exchange.serialize.return_value = {
                 "thread_id": "sample-thread-id"
@@ -477,19 +562,30 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal, async_mock.patch.object(
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
             )
@@ -524,9 +620,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
         ) as mock_connection_record:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_connection_record.retrieve_by_id.side_effect = StorageNotFoundError
 
@@ -543,9 +644,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
         ) as mock_connection_record:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_connection_record.is_ready = False
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
@@ -568,19 +674,31 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
+            mock_generate_nonce = async_mock.CoroutineMock()
+
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
             )
@@ -614,22 +732,40 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": self.mock_context,
+            "request_context": async_mock.CoroutineMock(
+                inject=async_mock.CoroutineMock(
+                    return_value=async_mock.CoroutineMock(
+                        __aenter__=async_mock.CoroutineMock(),
+                        __aexit__=async_mock.CoroutineMock(),
+                        verify_presentation=async_mock.CoroutineMock(),
+                    )
+                )
+            ),
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
@@ -675,11 +811,28 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
+            test_module, "PresentationPreview", autospec=True
+        ) as mock_presentation_proposal, async_mock.patch.object(
+            test_module, "PresentationRequest", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
@@ -709,11 +862,28 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
+            test_module, "PresentationPreview", autospec=True
+        ) as mock_presentation_proposal, async_mock.patch.object(
+            test_module, "PresentationRequest", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
@@ -745,9 +915,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
@@ -771,19 +946,29 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
             test_module, "PresentationRequest", autospec=True
-        ) as mock_presentation_request, async_mock.patch.object(
-            test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
@@ -823,18 +1008,33 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": self.mock_context,
+            "request_context": async_mock.CoroutineMock(
+                inject=async_mock.CoroutineMock(
+                    return_value=async_mock.CoroutineMock(
+                        __aenter__=async_mock.CoroutineMock(),
+                        __aexit__=async_mock.CoroutineMock(),
+                        verify_presentation=async_mock.CoroutineMock(),
+                    )
+                )
+            ),
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
         ) as mock_presentation_manager, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
-        ) as mock_presentation_proposal, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        ) as mock_presentation_proposal, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_REQUEST_RECEIVED
             )
@@ -875,11 +1075,29 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
+            test_module, "PresentationPreview", autospec=True
+        ) as mock_presentation_proposal, async_mock.patch.object(
+            test_module, "PresentationRequest", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
@@ -903,11 +1121,29 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
+            test_module, "PresentationPreview", autospec=True
+        ) as mock_presentation_proposal, async_mock.patch.object(
+            test_module, "PresentationRequest", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
@@ -932,9 +1168,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
@@ -959,15 +1200,29 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+            test_module, "PresentationRequest", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_REQUEST_RECEIVED
             )
@@ -1002,13 +1257,30 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": async_mock.MagicMock(settings={}),
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+        ) as mock_generate_nonce, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
+            autospec=True,
+        ) as mock_preview, async_mock.patch.object(
+            test_module, "PresentationRequest", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
@@ -1041,14 +1313,30 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": async_mock.CoroutineMock(
+                inject=async_mock.CoroutineMock(
+                    return_value=async_mock.CoroutineMock(
+                        __aenter__=async_mock.CoroutineMock(),
+                        __aexit__=async_mock.CoroutineMock(),
+                        verify_presentation=async_mock.CoroutineMock(),
+                    )
+                )
+            ),
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
 
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
@@ -1072,11 +1360,20 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
@@ -1101,9 +1398,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": self.mock_context,
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
@@ -1117,16 +1419,31 @@ class TestProofRoutes(AsyncTestCase):
         mock.match_info = {"pres_ex_id": "dummy"}
         mock.app = {
             "outbound_message_router": async_mock.CoroutineMock(),
-            "request_context": "context",
+            "request_context": async_mock.CoroutineMock(
+                inject=async_mock.CoroutineMock(
+                    return_value=async_mock.CoroutineMock(
+                        __aenter__=async_mock.CoroutineMock(),
+                        __aexit__=async_mock.CoroutineMock(),
+                        verify_presentation=async_mock.CoroutineMock(),
+                    )
+                )
+            ),
         }
 
-        with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
-        ) as mock_connection_record, async_mock.patch.object(
-            test_module, "PresentationManager", autospec=True
-        ) as mock_presentation_manager, async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.connection_record.ConnectionRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
@@ -1137,6 +1454,7 @@ class TestProofRoutes(AsyncTestCase):
                     ),
                 )
             )
+
             mock_connection_record.is_ready = True
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_connection_record
@@ -1144,7 +1462,7 @@ class TestProofRoutes(AsyncTestCase):
             mock_mgr = async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(
                     side_effect=test_module.LedgerError()
-                )
+                ),
             )
             mock_presentation_manager.return_value = mock_mgr
 
@@ -1159,9 +1477,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_VERIFIED,
@@ -1185,9 +1508,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             # Emulate storage not found (bad pres ex id)
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -1204,9 +1532,14 @@ class TestProofRoutes(AsyncTestCase):
             "request_context": "context",
         }
 
-        with async_mock.patch.object(
-            test_module, "V10PresentationExchange", autospec=True
+        with async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
         ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_VERIFIED,

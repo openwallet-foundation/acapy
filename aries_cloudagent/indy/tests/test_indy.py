@@ -1,3 +1,4 @@
+import pytest
 from os import makedirs
 from pathlib import Path
 from shutil import rmtree
@@ -10,6 +11,7 @@ from .. import create_tails_reader, create_tails_writer
 from .. import util as test_module_util
 
 
+@pytest.mark.indy
 class TestIndyUtils(AsyncTestCase):
     TAILS_HASH = "8UW1Sz5cqoUnK9hqQk7nvtKK65t7Chu3ui866J23sFyJ"
 

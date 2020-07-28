@@ -747,9 +747,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
             perf_counter=r_time,
         )
 
-        oob_url = serialize_outofband(
-            context, credential_offer_message, conn_did, endpoint
-        )
+        oob_url = serialize_outofband(credential_offer_message, conn_did, endpoint)
         result = cred_ex_record.serialize()
     except (BaseModelError, CredentialManagerError, LedgerError) as err:
         await internal_error(
