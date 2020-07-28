@@ -4,11 +4,11 @@
 
 # if a tails network is specified, there should be an associated ngrok as well ...
 if ! [ -z "$TAILS_NGROK_NAME" ]; then
-    echo "ngrok end point [$TAILS_NGROK_NAME]"
+    echo "ngrok tails service name [$TAILS_NGROK_NAME]"
     NGROK_ENDPOINT=null
     while [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]
     do
-        echo "Fetching end point from ngrok service"
+        echo "Fetching endpoint from ngrok service"
         NGROK_ENDPOINT=$(curl --silent $TAILS_NGROK_NAME:4040/api/tunnels | ./jq -r '.tunnels[0].public_url')
 
         if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
@@ -18,10 +18,10 @@ if ! [ -z "$TAILS_NGROK_NAME" ]; then
     done
 
     export PUBLIC_TAILS_URL=$NGROK_ENDPOINT
-    echo "fetched tails server end point [$PUBLIC_TAILS_URL]"
+    echo "Fetched ngrok tails server endpoint [$PUBLIC_TAILS_URL]"
 fi
 
 export AGENT_NAME=$1
 shift
-echo "Starting [$AGENT_NAME] agent ... with args [$@]"
+echo "Starting [$AGENT_NAME] agent with args [$@]"
 python -m demo.runners.$AGENT_NAME $@
