@@ -322,7 +322,10 @@ class AgentMessage(BaseModel):
         Args:
             val: TraceDecorator or dict to set as the trace
         """
-        self._decorators["trace"] = val
+        if val is None:
+            self._decorators.pop("trace", None)
+        else:
+            self._decorators["trace"] = val
 
     def assign_trace_from(self, msg: "AgentMessage"):
         """

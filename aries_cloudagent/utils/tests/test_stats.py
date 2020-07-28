@@ -1,3 +1,5 @@
+from tempfile import NamedTemporaryFile
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -39,9 +41,12 @@ class TestStats(AsyncTestCase):
             def test_wrap(self):
                 pass
 
+            def test_wrap_again(self):
+                pass
+
         instance = TestClass()
 
-        stats.wrap(instance, "test_wrap")
+        stats.wrap(instance, ["test_wrap", "test_wrap_again"])
         instance.test()
         await instance.test_async()
         instance.test_mark()
@@ -75,7 +80,8 @@ class TestStats(AsyncTestCase):
         assert stats.results["avg"] == {"test": 1.0}
 
     async def test_extract(self):
-        stats = Collector()
+        tmp_file = NamedTemporaryFile()
+        stats = Collector(log_path=tmp_file.name)
 
         stats.log("test", 1.0)
         stats.log("test", 2.0)

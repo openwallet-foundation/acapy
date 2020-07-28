@@ -4,6 +4,7 @@ import json
 import logging
 import uuid
 
+from asyncio import shield
 from os.path import join
 from shutil import move
 from typing import Any, Sequence
@@ -11,6 +12,7 @@ from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
+from ...tails.base import BaseTailsServer
 from ...config.injection_context import InjectionContext
 from ...indy.util import indy_client_dir
 from ...issuer.base import BaseIssuer, IssuerError
@@ -43,6 +45,7 @@ class IssuerRevRegRecord(BaseRecord):
 
     RECORD_ID_NAME = "record_id"
     RECORD_TYPE = "issuer_rev_reg"
+    WEBHOOK_TOPIC = "revocation_registry"
     LOG_STATE_FLAG = "debug.revocation"
     CACHE_ENABLED = False
     TAG_NAMES = {
@@ -58,6 +61,7 @@ class IssuerRevRegRecord(BaseRecord):
     STATE_INIT = "init"
     STATE_GENERATED = "generated"
     STATE_PUBLISHED = "published"  # definition published
+    STATE_STAGED = "staged"
     STATE_ACTIVE = "active"  # first entry published
     STATE_FULL = "full"
 
@@ -191,6 +195,22 @@ class IssuerRevRegRecord(BaseRecord):
         self.revoc_reg_def["value"]["tailsLocation"] = tails_file_uri
         await self.save(context, reason="Set tails file public URI")
 
+    async def stage_pending_registry_definition(
+        self, context: InjectionContext,
+    ):
+        """Prepare registry definition for future use."""
+        await shield(self.generate_registry(context))
+        tails_base_url = context.settings.get("tails_server_base_url")
+        await self.set_tails_file_public_uri(
+            context, f"{tails_base_url}/{self.revoc_reg_id}",
+        )
+        await self.publish_registry_definition(context)
+
+        tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+        await tails_server.upload_tails_file(
+            context, self.revoc_reg_id, self.tails_local_path,
+        )
+
     async def publish_registry_definition(self, context: InjectionContext):
         """Send the revocation registry definition to the ledger."""
         if not (self.revoc_reg_def and self.issuer_did):
@@ -198,7 +218,10 @@ class IssuerRevRegRecord(BaseRecord):
 
         self._check_url(self.tails_public_uri)
 
-        if self.state != IssuerRevRegRecord.STATE_GENERATED:
+        if self.state not in (
+            IssuerRevRegRecord.STATE_GENERATED,
+            IssuerRevRegRecord.STATE_STAGED,
+        ):
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot publish definition".format(
                     self.revoc_reg_id, self.state
@@ -226,6 +249,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state not in (
             IssuerRevRegRecord.STATE_PUBLISHED,
             IssuerRevRegRecord.STATE_ACTIVE,
+            IssuerRevRegRecord.STATE_STAGED,
             IssuerRevRegRecord.STATE_FULL,  # can still publish revocation deltas
         ):
             raise RevocationError(
@@ -242,7 +266,10 @@ class IssuerRevRegRecord(BaseRecord):
                 self.revoc_reg_entry,
                 self.issuer_did,
             )
-        if self.state == IssuerRevRegRecord.STATE_PUBLISHED:  # initial entry activates
+        if self.state in (
+            IssuerRevRegRecord.STATE_PUBLISHED,
+            IssuerRevRegRecord.STATE_STAGED,
+        ):  # initial entry activates
             self.state = IssuerRevRegRecord.STATE_ACTIVE
             await self.save(
                 context, reason="Published initial revocation registry entry"
