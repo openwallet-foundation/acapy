@@ -148,7 +148,7 @@ class IssuerRevRegRecord(BaseRecord):
         issuer: BaseIssuer = await context.inject(BaseIssuer)
         tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
-        LOGGER.debug(f"create revocation registry with size: {self.max_cred_num}")
+        LOGGER.debug("create revocation registry with size:", self.max_cred_num)
 
         try:
             (
