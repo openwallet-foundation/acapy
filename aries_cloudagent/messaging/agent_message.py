@@ -265,7 +265,10 @@ class AgentMessage(BaseModel):
         Args:
             val: ThreadDecorator or dict to set as the thread
         """
-        self._decorators["thread"] = val
+        if val is None:
+            self._decorators.pop("thread", None)
+        else:
+            self._decorators["thread"] = val
 
     @property
     def _thread_id(self) -> str:
@@ -319,7 +322,10 @@ class AgentMessage(BaseModel):
         Args:
             val: TraceDecorator or dict to set as the trace
         """
-        self._decorators["trace"] = val
+        if val is None:
+            self._decorators.pop("trace", None)
+        else:
+            self._decorators["trace"] = val
 
     def assign_trace_from(self, msg: "AgentMessage"):
         """
