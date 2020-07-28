@@ -1,6 +1,8 @@
+import pytest
+
 from unittest import TestCase
 
-from ..base import BaseSettings, SettingsError
+from ..base import SettingsError
 from ..settings import Settings
 
 
@@ -24,6 +26,9 @@ class TestSettings(TestCase):
 
     def test_get_formats(self):
         """Test retrieval with formatting."""
+        assert "Settings" in str(self.test_instance)
+        with pytest.raises(TypeError):
+            self.test_instance[0]  # cover wrong type
         self.test_instance["BOOL"] = "true"
         assert self.test_instance.get_bool("BOOL") is True
         self.test_instance["BOOL"] = "false"
