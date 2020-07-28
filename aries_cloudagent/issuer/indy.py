@@ -220,7 +220,7 @@ class IndyIssuer(BaseIssuer):
                 tails_reader_handle,
             )
         except AnoncredsRevocationRegistryFullError:
-            self.logger.error(
+            self.logger.warning(
                 f"Revocation registry {revoc_reg_id} is full: cannot create credential"
             )
             raise IssuerRevocationRegistryFullError(
