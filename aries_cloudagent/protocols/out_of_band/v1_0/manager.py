@@ -6,6 +6,7 @@ from ....connections.models.connection_record import ConnectionRecord
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....ledger.base import BaseLedger
+from ....wallet.util import did_key_to_naked, naked_to_did_key
 from ....protocols.connections.v1_0.manager import ConnectionManager
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
@@ -129,7 +130,7 @@ class OutOfBandManager:
         # We plug into existing connection structure during migration phase
         if use_public_did:
             # service = (await wallet.get_public_did()).did
-            service = connection_invitation.did
+            service = f"did:sov:{connection_invitation.did}"
         else:
             # connection_key = await wallet.create_signing_key()
             # service = ServiceMessage(
@@ -142,8 +143,17 @@ class OutOfBandManager:
             service = ServiceMessage(
                 _id="#inline",
                 _type="did-communication",
-                recipient_keys=connection_invitation.recipient_keys,
-                routing_keys=connection_invitation.routing_keys,
+                recipient_keys=[
+                    naked_to_did_key(key)
+                    for key in connection_invitation.recipient_keys
+                ]
+                if connection_invitation.recipient_keys
+                else None,
+                routing_keys=[
+                    naked_to_did_key(key) for key in connection_invitation.routing_keys
+                ]
+                if connection_invitation.routing_keys
+                else None,
                 service_endpoint=connection_invitation.endpoint,
             ).validate()
 
@@ -196,9 +206,20 @@ class OutOfBandManager:
         # Get the single service item
         if invitation_message.service_blocks:
             service = invitation_message.service_blocks[0]
+            service.recipient_keys = (
+                [did_key_to_naked(key) for key in service.recipient_keys]
+                if service.recipient_keys
+                else None
+            )
+            service.routing_keys = (
+                [did_key_to_naked(key) for key in service.routing_keys]
+                if service.routing_keys
+                else None
+            )
+
         else:
             # If it's in the did format, we need to convert to a full service block
-            service_did = invitation_message.service_dids[0]
+            service_did = invitation_message.service_dids[0].split("did:sov:").pop()
             async with ledger:
                 verkey = await ledger.get_key_for_did(service_did)
                 endpoint = await ledger.get_endpoint_for_did(service_did)
