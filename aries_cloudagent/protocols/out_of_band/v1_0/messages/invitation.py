@@ -21,7 +21,7 @@ class Invitation(AgentMessage):
     """Class representing an out of band invitation message."""
 
     class Meta:
-        """Credential metadata."""
+        """Invitation metadata."""
 
         handler_class = HANDLER_CLASS
         schema_class = "InvitationSchema"
@@ -36,9 +36,9 @@ class Invitation(AgentMessage):
         handshake_protocols: Sequence[Text] = None,
         request_attach: Sequence[AttachDecorator] = None,
         # When loading, we sort service in the two lists
-        service: Sequence[Union[Service, Text]] = [],
-        service_blocks: Sequence[Service] = [],
-        service_dids: Sequence[Text] = [],
+        service: Sequence[Union[Service, Text]] = None,
+        service_blocks: Sequence[Service] = None,
+        service_dids: Sequence[Text] = None,
         **kwargs,
     ):
         """
@@ -64,10 +64,10 @@ class Invitation(AgentMessage):
 
         # In the case of loading, we need to sort
         # the entries into relevant lists for schema validation
-        for s in service:
+        for s in service or []:
             if type(s) is Service:
                 self.service_blocks.append(s)
-            if type(s) is str:
+            elif type(s) is str:
                 self.service_dids.append(s)
 
     @classmethod

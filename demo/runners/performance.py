@@ -14,6 +14,9 @@ from runners.support.utils import log_timer, progress, require_indy
 LOGGER = logging.getLogger(__name__)
 
 
+TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
+
+
 class BaseAgent(DemoAgent):
     def __init__(
         self,
@@ -190,6 +193,7 @@ class FaberAgent(BaseAgent):
         credential_definition_body = {
             "schema_id": self.schema_id,
             "support_revocation": support_revocation,
+            "revocation_registry_size": TAILS_FILE_COUNT,
         }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
@@ -200,15 +204,15 @@ class FaberAgent(BaseAgent):
         self.log(f"Credential Definition ID: {self.credential_definition_id}")
 
         # create revocation registry
-        if support_revocation:
-            revoc_body = {
-                "credential_definition_id": self.credential_definition_id,
-            }
-            revoc_response = await self.admin_POST(
-                "/revocation/create-registry", revoc_body
-            )
-            self.revocation_registry_id = revoc_response["result"]["revoc_reg_id"]
-            self.log(f"Revocation Registry ID: {self.revocation_registry_id}")
+        # if support_revocation:
+        #     revoc_body = {
+        #         "credential_definition_id": self.credential_definition_id,
+        #     }
+        #     revoc_response = await self.admin_POST(
+        #         "/revocation/create-registry", revoc_body
+        #     )
+        #     self.revocation_registry_id = revoc_response["result"]["revoc_reg_id"]
+        #     self.log(f"Revocation Registry ID: {self.revocation_registry_id}")
 
     async def send_credential(
         self, cred_attrs: dict, comment: str = None, auto_remove: bool = True
@@ -245,8 +249,9 @@ async def main(
     ping_only: bool = False,
     show_timing: bool = False,
     routing: bool = False,
+    revocation: bool = False,
+    tails_server_base_url: str = None,
     issue_count: int = 300,
-    revoc: bool = False,
 ):
 
     genesis = await default_genesis_txns()
@@ -264,7 +269,13 @@ async def main(
         alice = AliceAgent(start_port, genesis_data=genesis, timing=show_timing)
         await alice.listen_webhooks(start_port + 2)
 
-        faber = FaberAgent(start_port + 3, genesis_data=genesis, timing=show_timing)
+        faber = FaberAgent(
+            start_port + 3,
+            genesis_data=genesis,
+            timing=show_timing,
+            tails_server_base_url=tails_server_base_url,
+        )
+
         await faber.listen_webhooks(start_port + 5)
         await faber.register_did()
 
@@ -283,7 +294,7 @@ async def main(
 
         if not ping_only:
             with log_timer("Publish duration:"):
-                await faber.publish_defs(revoc)
+                await faber.publish_defs(revocation)
                 # await alice.set_tag_policy(faber.credential_definition_id, ["name"])
 
         with log_timer("Connect duration:"):
@@ -328,7 +339,7 @@ async def main(
                 "age": "24",
             }
             asyncio.ensure_future(
-                faber.send_credential(attributes, comment, not revoc)
+                faber.send_credential(attributes, comment, not revocation)
             ).add_done_callback(done_send)
 
         async def check_received_creds(agent, issue_count, pb):
@@ -440,7 +451,7 @@ async def main(
             for line in faber.format_postgres_stats():
                 faber.log(line)
 
-        if revoc and faber.revocations:
+        if revocation and faber.revocations:
             (rev_reg_id, cred_rev_id) = next(iter(faber.revocations))
             print(
                 "Revoking and publishing cred rev id {cred_rev_id} "
@@ -519,6 +530,17 @@ if __name__ == "__main__":
         help="Only send ping messages between the agents",
     )
     parser.add_argument(
+        "--revocation", action="store_true", help="Enable credential revocation"
+    )
+
+    parser.add_argument(
+        "--tails-server-base-url",
+        type=str,
+        metavar=("<tails-server-base-url>"),
+        help="Tals server base url",
+    )
+
+    parser.add_argument(
         "--routing", action="store_true", help="Enable inbound routing demonstration"
     )
     parser.add_argument(
@@ -543,6 +565,8 @@ if __name__ == "__main__":
                 args.ping,
                 args.timing,
                 args.routing,
+                args.revocation,
+                args.tails_server_base_url,
                 args.count,
             )
         )

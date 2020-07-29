@@ -1,5 +1,5 @@
 import asyncio
-from asynctest import TestCase
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ..task_queue import CompletedTask, PendingTask, TaskQueue, task_exc_info
 
@@ -10,7 +10,7 @@ async def retval(val, *, delay=0):
     return val
 
 
-class TestTaskQueue(TestCase):
+class TestTaskQueue(AsyncTestCase):
     async def test_run(self):
         queue = TaskQueue()
         task = None
@@ -70,6 +70,7 @@ class TestTaskQueue(TestCase):
     async def test_pending(self):
         coro = retval(1, delay=1)
         pend = PendingTask(coro, None)
+        assert str(pend).startswith("<PendingTask")
         task = asyncio.get_event_loop().create_task(coro)
         assert task_exc_info(task) is None
         pend.task = task
@@ -80,6 +81,11 @@ class TestTaskQueue(TestCase):
         pend.cancel()
         assert pend.cancelled
         task.cancel()
+
+        with async_mock.patch.object(pend, "task_future", autospec=True) as mock_future:
+            mock_future.cancelled.return_value = True
+            pend.task = "a suffusion of yellow"
+            mock_future.set_result.assert_not_called()
 
     async def test_complete(self):
         queue = TaskQueue()
@@ -95,6 +101,17 @@ class TestTaskQueue(TestCase):
         await queue.complete()
         assert completed == {1, 2, 3}
 
+        async def noop():
+            return
+
+        with async_mock.patch.object(
+            queue, "drain", async_mock.MagicMock()
+        ) as mock_drain, async_mock.patch.object(
+            queue, "wait_for", async_mock.CoroutineMock()
+        ) as mock_wait_for:
+            mock_drain.side_effect = [queue.loop.create_task(noop()), None]
+            await queue.complete(cleanup=True)
+
     async def test_cancel_pending(self):
         queue = TaskQueue(1)
         completed = set()
@@ -109,8 +126,23 @@ class TestTaskQueue(TestCase):
         queue.put(retval(3), done)
         queue.cancel_pending()
         sleep.cancel()
+
         await queue.flush()
         assert completed == {1}
+
+    async def test_drain_done(self):
+        coro = retval(1, delay=1)
+        pend = PendingTask(coro, None)
+        queue = TaskQueue(1)
+        queue.add_pending(pend)
+
+        with async_mock.patch.object(
+            queue.pending_tasks[0], "task_future", autospec=True
+        ) as mock_future:
+            mock_future.cancelled.return_value = False
+            mock_future.done.return_value = True
+            mock_future.set_result.assert_not_called()
+            await queue._drain_loop()
 
     async def test_cancel_all(self):
         queue = TaskQueue(1)
@@ -184,8 +216,10 @@ class TestTaskQueue(TestCase):
             completed.append((complete.task.result(), complete.timing))
 
         queue = TaskQueue(max_active=1, timed=True, trace_fn=done)
+        assert bool(queue)
         task1 = queue.run(retval(1))
         task2 = await queue.put(retval(2))
+        assert bool(queue)
         await queue.complete(0.1)
 
         assert len(completed) == 2

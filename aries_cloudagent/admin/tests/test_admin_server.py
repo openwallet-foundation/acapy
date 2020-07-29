@@ -36,6 +36,25 @@ class TestAdminServer(AsyncTestCase):
             await self.client_session.close()
             self.client_session = None
 
+    async def test_debug_middleware(self):
+        with async_mock.patch.object(
+            test_module, "LOGGER", async_mock.MagicMock()
+        ) as mock_logger:
+            mock_logger.isEnabledFor = async_mock.MagicMock(return_value=True)
+            mock_logger.debug = async_mock.MagicMock()
+
+            request = async_mock.MagicMock(
+                method="GET",
+                path_qs="/hello/world?a=1&b=2",
+                match_info={"match": "info"},
+                text=async_mock.CoroutineMock(return_value="abc123"),
+            )
+            handler = async_mock.CoroutineMock()
+
+            await test_module.debug_middleware(request, handler)
+            mock_logger.isEnabledFor.assert_called_once()
+            assert mock_logger.debug.call_count == 3
+
     def get_admin_server(
         self, settings: dict = None, context: InjectionContext = None
     ) -> AdminServer:

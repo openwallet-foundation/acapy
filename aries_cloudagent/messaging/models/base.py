@@ -221,7 +221,7 @@ class BaseModelSchema(Schema):
             TypeError: If model_class is not set on Meta
 
         """
-        super(BaseModelSchema, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.Meta.model_class:
             raise TypeError(
                 "Can't instantiate abstract class {} with no model_class".format(

@@ -4,15 +4,12 @@ import json
 
 from urllib.parse import quote, urljoin
 
-from ..config.injection_context import InjectionContext
 from ..messaging.agent_message import AgentMessage
 from ..wallet.base import DIDInfo
-from ..wallet.util import bytes_to_b64
+from ..wallet.util import str_to_b64
 
 
-def serialize_outofband(
-    context: InjectionContext, message: AgentMessage, did: DIDInfo, endpoint: str
-) -> str:
+def serialize_outofband(message: AgentMessage, did: DIDInfo, endpoint: str) -> str:
     """
     Serialize the agent message as an out-of-band message.
 
@@ -27,6 +24,5 @@ def serialize_outofband(
         "routingKeys": [],
         "serviceEndpoint": endpoint,
     }
-    d_m = quote(bytes_to_b64(json.dumps(body).encode("ascii")))
-    result = urljoin(endpoint, "?d_m={}".format(d_m))
-    return result
+    d_m = quote(str_to_b64(json.dumps(body)))
+    return urljoin(endpoint, "?d_m={}".format(d_m))
