@@ -20,6 +20,8 @@ from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .plugin import load_postgres_plugin
 from .util import bytes_to_b64
 
+from ..ledger.util import EndpointType
+
 
 class IndyWallet(BaseWallet):
     """Indy wallet implementation."""
@@ -549,7 +551,10 @@ class IndyWallet(BaseWallet):
         await self.get_local_did(did)  # throw exception if undefined
         await indy.did.set_did_metadata(self.handle, did, meta_json)
 
-    async def set_did_endpoint(self, did: str, endpoint: str, ledger: BaseLedger):
+    async def set_did_endpoint(
+        self, did: str, endpoint: str, ledger: BaseLedger,
+            endpoint_type: EndpointType = None
+    ):
         """
         Update the endpoint for a DID in the wallet, send to ledger if public.
 
@@ -557,12 +562,16 @@ class IndyWallet(BaseWallet):
             did: DID for which to set endpoint
             endpoint: the endpoint to set, None to clear
             ledger: the ledger to which to send endpoint update if DID is public
-
+            endpoint_type: the type of the endpoint/service. Only endpoint_type
+            'endpoint' affects local wallet
         """
         did_info = await self.get_local_did(did)
         metadata = {**did_info.metadata}
-        metadata.pop("endpoint", None)
-        metadata["endpoint"] = endpoint
+        if not endpoint_type:
+            endpoint_type = EndpointType.ENDPOINT
+        if endpoint_type == EndpointType.ENDPOINT:
+            metadata.pop("endpoint", None)
+            metadata["endpoint"] = endpoint
 
         wallet_public_didinfo = await self.get_public_did()
         if wallet_public_didinfo and wallet_public_didinfo.did == did:
@@ -572,7 +581,7 @@ class IndyWallet(BaseWallet):
                     f"No ledger available but DID {did} is public: missing wallet-type?"
                 )
             async with ledger:
-                await ledger.update_endpoint_for_did(did, endpoint)
+                await ledger.update_endpoint_for_did(did, endpoint, endpoint_type)
 
         await self.replace_local_did_metadata(did, metadata)
 

@@ -5,6 +5,7 @@ from collections import namedtuple
 from typing import Sequence
 
 from ..ledger.base import BaseLedger
+from ..ledger.util import EndpointType
 
 
 KeyInfo = namedtuple("KeyInfo", "verkey metadata")
@@ -271,21 +272,27 @@ class BaseWallet(ABC):
 
         """
 
-    async def set_did_endpoint(self, did: str, endpoint: str, ledger: BaseLedger):
+    async def set_did_endpoint(
+        self, did: str, endpoint: str, ledger: BaseLedger,
+        endpoint_type: EndpointType = None
+    ):
         """
         Update the endpoint for a DID in the wallet, send to ledger if public.
 
         Args:
             did: DID for which to set endpoint
             endpoint: the endpoint to set, None to clear
-            ledger: the ledger to which to send endpoint update
-                if DID is public - specify None for basic wallet
-
+            ledger: the ledger to which to send endpoint update if DID is public
+            endpoint_type: the type of the endpoint/service. Only endpoint_type
+            'endpoint' affects local wallet
         """
         did_info = await self.get_local_did(did)
         metadata = {**did_info.metadata}
-        metadata.pop("endpoint", None)
-        metadata["endpoint"] = endpoint
+        if not endpoint_type:
+            endpoint_type = EndpointType.ENDPOINT
+        if endpoint_type == EndpointType.ENDPOINT:
+            metadata.pop("endpoint", None)
+            metadata["endpoint"] = endpoint
 
         await self.replace_local_did_metadata(did, metadata)
 

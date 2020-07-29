@@ -6,6 +6,8 @@ from typing import Tuple, Sequence
 
 from ..issuer.base import BaseIssuer
 
+from .util import EndpointType
+
 
 class BaseLedger(ABC, metaclass=ABCMeta):
     """Base class for ledger."""
@@ -34,20 +36,26 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def get_endpoint_for_did(self, did: str) -> str:
+    async def get_endpoint_for_did(
+        self, did: str, endpoint_type: EndpointType = EndpointType.ENDPOINT
+    ) -> str:
         """Fetch the endpoint for a ledger DID.
 
         Args:
             did: The DID to look up on the ledger or in the cache
+            endpoint_type: The type of the endpoint (default 'endpoint')
         """
 
     @abstractmethod
-    async def update_endpoint_for_did(self, did: str, endpoint: str) -> bool:
+    async def update_endpoint_for_did(
+        self, did: str, endpoint: str, endpoint_type: EndpointType = EndpointType.ENDPOINT
+    ) -> bool:
         """Check and update the endpoint on the ledger.
 
         Args:
             did: The ledger DID
             endpoint: The endpoint address
+            endpoint_type: The type of the endpoint (default 'endpoint')
         """
 
     @abstractmethod
