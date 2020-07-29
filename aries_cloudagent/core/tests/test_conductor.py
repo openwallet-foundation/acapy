@@ -124,6 +124,39 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
             mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
 
+    async def test_startup_no_public_did(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, async_mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, async_mock.patch.object(
+            test_module, "LoggingConfigurator", autospec=True
+        ) as mock_logger:
+
+            await conductor.setup()
+
+            mock_inbound_mgr.return_value.setup.assert_awaited_once()
+            mock_outbound_mgr.return_value.setup.assert_awaited_once()
+
+            mock_inbound_mgr.return_value.registered_transports = {}
+            mock_outbound_mgr.return_value.registered_transports = {}
+
+            # Doesn't raise
+            await conductor.start()
+
+            mock_inbound_mgr.return_value.start.assert_awaited_once_with()
+            mock_outbound_mgr.return_value.start.assert_awaited_once_with()
+
+            mock_logger.print_banner.assert_called_once()
+
+            await conductor.stop()
+
+            mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
+            mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
+
     async def test_stats(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)

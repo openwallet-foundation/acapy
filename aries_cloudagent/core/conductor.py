@@ -176,14 +176,14 @@ class Conductor:
 
         # Get public did
         wallet: BaseWallet = await context.inject(BaseWallet)
-        public_did = (await wallet.get_public_did()).did
+        public_did = await wallet.get_public_did()
 
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
             default_label,
             self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
-            public_did,
+            public_did.did if public_did else None,
             self.admin_server,
         )
 
