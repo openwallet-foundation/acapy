@@ -130,7 +130,7 @@ class OutOfBandManager:
         # We plug into existing connection structure during migration phase
         if use_public_did:
             # service = (await wallet.get_public_did()).did
-            service = f"did:sov:{connection_invitation.did}"
+            service = connection_invitation.did
         else:
             # connection_key = await wallet.create_signing_key()
             # service = ServiceMessage(
@@ -148,12 +148,12 @@ class OutOfBandManager:
                     for key in connection_invitation.recipient_keys
                 ]
                 if connection_invitation.recipient_keys
-                else None,
+                else [],
                 routing_keys=[
                     naked_to_did_key(key) for key in connection_invitation.routing_keys
                 ]
                 if connection_invitation.routing_keys
-                else None,
+                else [],
                 service_endpoint=connection_invitation.endpoint,
             ).validate()
 
@@ -206,28 +206,19 @@ class OutOfBandManager:
         # Get the single service item
         if invitation_message.service_blocks:
             service = invitation_message.service_blocks[0]
-            service.recipient_keys = (
-                [did_key_to_naked(key) for key in service.recipient_keys]
-                if service.recipient_keys
-                else None
-            )
-            service.routing_keys = (
-                [did_key_to_naked(key) for key in service.routing_keys]
-                if service.routing_keys
-                else None
-            )
 
         else:
             # If it's in the did format, we need to convert to a full service block
-            service_did = invitation_message.service_dids[0].split("did:sov:").pop()
+            service_did = invitation_message.service_dids[0]
             async with ledger:
                 verkey = await ledger.get_key_for_did(service_did)
+                did_key = naked_to_did_key(verkey)
                 endpoint = await ledger.get_endpoint_for_did(service_did)
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
                     "type": "did-communication",
-                    "recipientKeys": [verkey],
+                    "recipientKeys": [did_key],
                     "routingKeys": [],
                     "serviceEndpoint": endpoint,
                 }
@@ -244,6 +235,18 @@ class OutOfBandManager:
                 raise OutOfBandManagerError(
                     "request block must be empty for invitation message type."
                 )
+
+            # Transform back to 'naked' verkey
+            service.recipient_keys = (
+                [did_key_to_naked(key) for key in service.recipient_keys]
+                if service.recipient_keys
+                else []
+            )
+            service.routing_keys = (
+                [did_key_to_naked(key) for key in service.routing_keys]
+                if service.routing_keys
+                else []
+            )
 
             # Convert to the old message format
             connection_invitation = ConnectionInvitation.deserialize(

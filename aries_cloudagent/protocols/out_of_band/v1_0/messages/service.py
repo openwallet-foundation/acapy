@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from .....messaging.valid import INDY_DID, DID_KEY
 
 
 class Service(BaseModel):
@@ -58,14 +58,14 @@ class ServiceSchema(BaseModelSchema):
     did = fields.Str(required=False, description="", **INDY_DID)
 
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(description="Recipient public key", **DID_KEY),
         data_key="recipientKeys",
         required=False,
         description="List of recipient keys",
     )
 
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(description="Routing key", **DID_KEY),
         data_key="routingKeys",
         required=False,
         description="List of routing keys",
