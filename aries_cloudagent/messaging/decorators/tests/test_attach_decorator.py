@@ -330,8 +330,9 @@ class TestAttachDecorator(TestCase):
 
         assert lynx_str == lynx_list
         assert lynx_str != links
+        assert links != DATA_LINKS  # has sha256
 
-    def test_indy_dict(self):
+    def test_from_aries_msg(self):
         deco_aries = AttachDecorator.from_aries_msg(
             message=INDY_CRED, ident=IDENT, description=DESCRIPTION,
         )

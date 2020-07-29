@@ -1,6 +1,21 @@
 from unittest import TestCase as UnitTestCase
 
+from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
+
 from ..presentation_exchange import V10PresentationExchange
+
+
+class BasexRecordImpl(BaseExchangeRecord):
+    class Meta:
+        schema_class = "BasexRecordImplSchema"
+
+    RECORD_TYPE = "record"
+    CACHE_ENABLED = True
+
+
+class BasexRecordImplSchema(BaseExchangeSchema):
+    class Meta:
+        model_class = BasexRecordImpl
 
 
 class TestRecord(UnitTestCase):
@@ -37,3 +52,6 @@ class TestRecord(UnitTestCase):
             "verified": False,
             "trace": False,
         }
+
+        bx_record = BasexRecordImpl()
+        assert record != bx_record
