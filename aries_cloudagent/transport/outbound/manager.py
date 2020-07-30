@@ -392,6 +392,9 @@ class OutboundTransportManager:
             if self.outbound_buffer:
                 if (not new_pending) and (not retry_count):
                     await self.outbound_event.wait()
+                elif retry_count:
+                    # only retries - yield here so we don't hog resources
+                    await asyncio.sleep(0.05)
             else:
                 break
 
