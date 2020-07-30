@@ -1,5 +1,6 @@
-from asynctest import TestCase as AsyncTestCase
 from tempfile import NamedTemporaryFile
+
+from asynctest import TestCase as AsyncTestCase
 
 from ...core.protocol_registry import ProtocolRegistry
 from ...storage.base import BaseStorage
@@ -26,11 +27,10 @@ class TestDefaultContext(AsyncTestCase):
         ):
             assert isinstance(await result.inject(cls), cls)
 
-        log_file = NamedTemporaryFile()
         builder = DefaultContextBuilder(
             settings={
                 "timing.enabled": True,
-                "timing.log.file": log_file.name
+                "timing.log.file": NamedTemporaryFile().name
             }
         )
         result = await builder.build()

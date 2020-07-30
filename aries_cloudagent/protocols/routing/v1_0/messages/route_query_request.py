@@ -30,7 +30,7 @@ class RouteQueryRequest(AgentMessage):
             filter: Filter results according to specific field values
         """
 
-        super(RouteQueryRequest, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.filter = filter
         self.paginate = paginate
 

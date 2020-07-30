@@ -1,0 +1,268 @@
+from os import remove
+from tempfile import NamedTemporaryFile
+
+from asynctest import TestCase as AsyncTestCase, mock as async_mock
+
+from ...ledger.base import BaseLedger
+from ...wallet.base import BaseWallet
+
+from .. import ledger as test_module
+from ..injection_context import InjectionContext
+
+TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
+
+
+class TestLedger(AsyncTestCase):
+    async def test_fetch_genesis_transactions(self):
+        with async_mock.patch.object(
+            test_module, "fetch", async_mock.CoroutineMock()
+        ) as mock_fetch:
+            await test_module.fetch_genesis_transactions("http://1.2.3.4:9000/genesis")
+
+    async def test_fetch_genesis_transactions_x(self):
+        with async_mock.patch.object(
+            test_module, "fetch", async_mock.CoroutineMock()
+        ) as mock_fetch:
+            mock_fetch.side_effect = test_module.FetchError("404 Not Found")
+            with self.assertRaises(test_module.ConfigError):
+                await test_module.fetch_genesis_transactions(
+                    "http://1.2.3.4:9000/genesis"
+                )
+
+    async def test_ledger_config_genesis_url(self):
+        settings = {
+            "ledger.genesis_url": "00000000000000000000000000000000",
+            "default_endpoint": "http://1.2.3.4:8051"
+        }
+        mock_ledger = async_mock.MagicMock(
+            type="indy",
+            get_txn_author_agreement=async_mock.CoroutineMock(
+                return_value={
+                    "taa_required": True,
+                    "taa_record": {
+                        "digest": b"ffffffffffffffffffffffffffffffffffffffff"
+                    },
+                }
+            ),
+            get_latest_txn_author_acceptance=async_mock.CoroutineMock(
+                return_value={
+                    "digest": b"1234567890123456789012345678901234567890"
+                }
+            ),
+        )
+        mock_wallet = async_mock.MagicMock(
+            type="indy",
+            set_did_endpoint=async_mock.CoroutineMock()
+        )
+
+        context = InjectionContext(settings=settings, enforce_typing=False)
+        context.injector.bind_instance(BaseLedger, mock_ledger)
+        context.injector.bind_instance(BaseWallet, mock_wallet)
+
+        with async_mock.patch.object(
+            test_module, "fetch_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_fetch, async_mock.patch.object(
+            test_module, "accept_taa", async_mock.CoroutineMock()
+        ) as mock_accept_taa:
+            mock_accept_taa.return_value = True
+            await test_module.ledger_config(context, TEST_DID, provision=True)
+
+    async def test_ledger_config_genesis_file(self):
+        settings = {
+            "ledger.genesis_file": "/tmp/genesis/path",
+            "default_endpoint": "http://1.2.3.4:8051"
+        }
+        mock_ledger = async_mock.MagicMock(
+            type="indy",
+            get_txn_author_agreement=async_mock.CoroutineMock(
+                return_value={
+                    "taa_required": True,
+                    "taa_record": {
+                        "digest": b"ffffffffffffffffffffffffffffffffffffffff"
+                    },
+                }
+            ),
+            get_latest_txn_author_acceptance=async_mock.CoroutineMock(
+                return_value={
+                    "digest": b"1234567890123456789012345678901234567890"
+                }
+            ),
+        )
+        mock_wallet = async_mock.MagicMock(
+            type="indy",
+            set_did_endpoint=async_mock.CoroutineMock()
+        )
+
+        context = InjectionContext(settings=settings, enforce_typing=False)
+        context.injector.bind_instance(BaseLedger, mock_ledger)
+        context.injector.bind_instance(BaseWallet, mock_wallet)
+
+        with async_mock.patch.object(
+            test_module, "accept_taa", async_mock.CoroutineMock()
+        ) as mock_accept_taa, async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            mock_open.return_value = async_mock.MagicMock(
+                __enter__=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        read=async_mock.MagicMock(
+                            return_value="... genesis transactions ..."
+                        )
+                    )
+                )
+            )
+            mock_accept_taa.return_value = True
+            await test_module.ledger_config(context, TEST_DID, provision=True)
+
+    async def test_ledger_config_genesis_file_io_x(self):
+        settings = {
+            "ledger.genesis_file": "/tmp/genesis/path",
+            "default_endpoint": "http://1.2.3.4:8051"
+        }
+        context = InjectionContext(settings=settings, enforce_typing=False)
+
+        with async_mock.patch.object(
+            test_module, "fetch_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_fetch, async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            mock_open.side_effect = IOError("no read permission")
+            with self.assertRaises(test_module.ConfigError):
+                await test_module.ledger_config(context, TEST_DID, provision=True)
+
+    async def test_ledger_config_genesis_url_no_ledger(self):
+        settings = {
+            "ledger.genesis_url": "00000000000000000000000000000000",
+            "default_endpoint": "http://1.2.3.4:8051"
+        }
+
+        context = InjectionContext(settings=settings, enforce_typing=False)
+
+        with async_mock.patch.object(
+            test_module, "fetch_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_fetch, async_mock.patch.object(
+            test_module, "accept_taa", async_mock.CoroutineMock()
+        ) as mock_accept_taa:
+            mock_accept_taa.return_value = True
+            assert not await test_module.ledger_config(
+                context, TEST_DID, provision=True
+            )
+
+    async def test_ledger_config_genesis_url_non_indy_ledger(self):
+        settings = {
+            "ledger.genesis_url": "00000000000000000000000000000000",
+            "default_endpoint": "http://1.2.3.4:8051"
+        }
+        mock_ledger = async_mock.MagicMock(
+            type="fabric",
+            get_txn_author_agreement=async_mock.CoroutineMock(
+                return_value={
+                    "taa_required": True,
+                    "taa_record": {
+                        "digest": b"ffffffffffffffffffffffffffffffffffffffff"
+                    },
+                }
+            ),
+            get_latest_txn_author_acceptance=async_mock.CoroutineMock(
+                return_value={
+                    "digest": b"1234567890123456789012345678901234567890"
+                }
+            ),
+        )
+
+        context = InjectionContext(settings=settings, enforce_typing=False)
+        context.injector.bind_instance(BaseLedger, mock_ledger)
+
+        with async_mock.patch.object(
+            test_module, "fetch_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_fetch, async_mock.patch.object(
+            test_module, "accept_taa", async_mock.CoroutineMock()
+        ) as mock_accept_taa:
+            mock_accept_taa.return_value = True
+            assert not await test_module.ledger_config(
+                context, TEST_DID, provision=True
+            )
+
+    async def test_ledger_config_genesis_url_no_taa_accept(self):
+        settings = {
+            "ledger.genesis_url": "00000000000000000000000000000000",
+            "default_endpoint": "http://1.2.3.4:8051"
+        }
+        mock_ledger = async_mock.MagicMock(
+            type="indy",
+            get_txn_author_agreement=async_mock.CoroutineMock(
+                return_value={
+                    "taa_required": True,
+                    "taa_record": {
+                        "digest": b"ffffffffffffffffffffffffffffffffffffffff"
+                    },
+                }
+            ),
+            get_latest_txn_author_acceptance=async_mock.CoroutineMock(
+                return_value={
+                    "digest": b"1234567890123456789012345678901234567890"
+                }
+            ),
+        )
+
+        context = InjectionContext(settings=settings, enforce_typing=False)
+        context.injector.bind_instance(BaseLedger, mock_ledger)
+
+        with async_mock.patch.object(
+            test_module, "fetch_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_fetch, async_mock.patch.object(
+            test_module, "accept_taa", async_mock.CoroutineMock()
+        ) as mock_accept_taa:
+            mock_accept_taa.return_value = False
+            assert not await test_module.ledger_config(
+                context, TEST_DID, provision=True
+            )
+
+    async def test_ledger_config_genesis_file_non_indy_wallet(self):
+        settings = {
+            "ledger.genesis_file": "/tmp/genesis/path",
+            "default_endpoint": "http://1.2.3.4:8051"
+        }
+        mock_ledger = async_mock.MagicMock(
+            type="indy",
+            get_txn_author_agreement=async_mock.CoroutineMock(
+                return_value={
+                    "taa_required": True,
+                    "taa_record": {
+                        "digest": b"ffffffffffffffffffffffffffffffffffffffff"
+                    },
+                }
+            ),
+            get_latest_txn_author_acceptance=async_mock.CoroutineMock(
+                return_value={
+                    "digest": b"1234567890123456789012345678901234567890"
+                }
+            ),
+        )
+        mock_wallet = async_mock.MagicMock(
+            type="trifold",
+            set_did_endpoint=async_mock.CoroutineMock()
+        )
+
+        context = InjectionContext(settings=settings, enforce_typing=False)
+        context.injector.bind_instance(BaseLedger, mock_ledger)
+        context.injector.bind_instance(BaseWallet, mock_wallet)
+
+        with async_mock.patch.object(
+            test_module, "accept_taa", async_mock.CoroutineMock()
+        ) as mock_accept_taa, async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            mock_open.return_value = async_mock.MagicMock(
+                __enter__=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        read=async_mock.MagicMock(
+                            return_value="... genesis transactions ..."
+                        )
+                    )
+                )
+            )
+            mock_accept_taa.return_value = True
+            with self.assertRaises(test_module.ConfigError):
+                await test_module.ledger_config(context, TEST_DID, provision=True)
+

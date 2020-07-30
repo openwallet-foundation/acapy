@@ -47,7 +47,7 @@ class ThreadDecorator(BaseModel):
                 as it provides an implicit ACK.)
 
         """
-        super(ThreadDecorator, self).__init__()
+        super().__init__()
         self._thid = thid
         self._pthid = pthid
         self._sender_order = sender_order or None

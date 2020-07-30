@@ -23,6 +23,8 @@ class TestSettings(TestCase):
             )
         with self.assertRaises(KeyError):
             self.test_instance["MISSING"]
+        assert len(self.test_instance) == 1
+        assert len(self.test_instance.copy()) == 1
 
     def test_get_formats(self):
         """Test retrieval with formatting."""

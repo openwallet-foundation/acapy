@@ -131,8 +131,13 @@ class IndyLedger(BaseLedger):
         self.taa_cache = None
         self.read_only = read_only
 
-        if wallet.WALLET_TYPE != "indy":
+        if wallet.type != "indy":
             raise LedgerConfigError("Wallet type is not 'indy'")
+
+    @property
+    def type(self) -> str:
+        """Accessor for the ledger type."""
+        return IndyLedger.LEDGER_TYPE
 
     async def create_pool_config(
         self, genesis_transactions: str, recreate: bool = False

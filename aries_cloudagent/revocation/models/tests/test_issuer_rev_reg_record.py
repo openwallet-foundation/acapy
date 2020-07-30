@@ -32,7 +32,7 @@ class TestRecord(AsyncTestCase):
         self.context = InjectionContext(enforce_typing=False)
 
         self.wallet = async_mock.MagicMock()
-        self.wallet.WALLET_TYPE = "indy"
+        self.wallet.type = "indy"
         self.context.injector.bind_instance(BaseWallet, self.wallet)
 
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)

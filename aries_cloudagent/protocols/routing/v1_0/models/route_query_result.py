@@ -21,7 +21,7 @@ class RouteQueryResult(BaseModel):
             recipient_key: The recipient verkey of the route
 
         """
-        super(RouteQueryResult, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.recipient_key = recipient_key
 
 
