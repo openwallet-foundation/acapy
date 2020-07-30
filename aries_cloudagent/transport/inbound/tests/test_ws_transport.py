@@ -23,7 +23,7 @@ class TestWsTransport(AioHTTPTestCase):
         self.transport = WsTransport("0.0.0.0", self.port, self.create_session)
         self.transport.wire_format = JsonWireFormat()
         self.result_event = None
-        super(TestWsTransport, self).setUp()
+        super().setUp()
 
     def create_session(
         self,

@@ -17,7 +17,7 @@ class WsTransport(BaseOutboundTransport):
 
     def __init__(self) -> None:
         """Initialize an `WsTransport` instance."""
-        super(WsTransport, self).__init__()
+        super().__init__()
         self.logger = logging.getLogger(__name__)
 
     async def start(self):

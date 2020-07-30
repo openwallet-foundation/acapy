@@ -44,7 +44,7 @@ class TimingDecorator(BaseModel):
             delay_milli: The number of milliseconds to delay processing
             wait_until_time: The earliest time at which to perform processing
         """
-        super(TimingDecorator, self).__init__()
+        super().__init__()
         self.in_time = datetime_to_str(in_time)
         self.out_time = datetime_to_str(out_time)
         self.stale_time = datetime_to_str(stale_time)

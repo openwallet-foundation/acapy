@@ -32,7 +32,7 @@ class Paginated(BaseModel):
             total: Total number of records available
 
         """
-        super(Paginated, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.start = start
         self.end = end
         self.limit = limit

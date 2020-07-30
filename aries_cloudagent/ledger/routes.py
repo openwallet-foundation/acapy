@@ -228,7 +228,7 @@ async def ledger_get_taa(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-    if not ledger or ledger.LEDGER_TYPE != "indy":
+    if not ledger or ledger.type != "indy":
         reason = "No indy ledger available"
         if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
@@ -267,7 +267,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
     """
     context = request.app["request_context"]
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-    if not ledger or ledger.LEDGER_TYPE != "indy":
+    if not ledger or ledger.type != "indy":
         reason = "No indy ledger available"
         if not context.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"

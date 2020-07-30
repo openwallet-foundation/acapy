@@ -26,7 +26,7 @@ class LedgerProvider(BaseProvider):
         wallet = await injector.inject(BaseWallet)
         ledger = None
 
-        if wallet.WALLET_TYPE == "indy":
+        if wallet.type == "indy":
             IndyLedger = ClassLoader.load_class(self.LEDGER_CLASSES["indy"])
             cache = await injector.inject(BaseCache, required=False)
             ledger = IndyLedger(

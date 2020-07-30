@@ -177,6 +177,15 @@ class TestAdminServer(AsyncTestCase):
         server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
         app = await server.make_application()
 
+    async def test_register_external_plugin_x(self):
+        context = InjectionContext()
+        context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+        with self.assertRaises(ValueError):
+            builder = DefaultContextBuilder(
+                settings={"external_plugins": "aries_cloudagent.nosuchmodule"}
+            )
+            await builder.load_plugins(context)
+
     async def test_visit_insecure_mode(self):
         settings = {"admin.admin_insecure_mode": True, "task_queue": True}
         server = self.get_admin_server(settings)
