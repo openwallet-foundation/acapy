@@ -1160,10 +1160,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer.create_credential = async_mock.CoroutineMock(
             side_effect=[
                 test_module.IssuerRevocationRegistryFullError("it's full"),
-                (
-                    json.dumps({"good": "credential"}),
-                    str(revocation_id)
-                )
+                (json.dumps({"good": "credential"}), str(revocation_id)),
             ]
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
@@ -1219,7 +1216,7 @@ class TestCredentialManager(AsyncTestCase):
                 [],  # Get staged
                 pending_reg,  # Get published
                 [],  # Get staged, on retry pass
-                active_non_full_reg  # Get active
+                active_non_full_reg,  # Get active
             ]
 
             await self.manager.issue_credential(

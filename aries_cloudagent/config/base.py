@@ -111,7 +111,7 @@ class BaseInjector(ABC):
         base_cls: type,
         settings: Mapping[str, object] = None,
         *,
-        required: bool = True
+        required: bool = True,
     ) -> object:
         """
         Get the provided instance of a given class identifier.

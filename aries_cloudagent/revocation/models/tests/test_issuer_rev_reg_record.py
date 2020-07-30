@@ -16,20 +16,26 @@ from ....issuer.indy import IndyIssuer
 from ....ledger.base import BaseLedger
 from ....storage.base import BaseStorage
 from ....storage.basic import BasicStorage
+from ....tails.base import BaseTailsServer
 from ....wallet.base import BaseWallet, DIDInfo
 
 from ...error import RevocationError
 
+from .. import issuer_rev_reg_record as test_module
 from ..issuer_rev_reg_record import IssuerRevRegRecord
 from ..revocation_registry import RevocationRegistry
-from .. import issuer_rev_reg_record as test_module
+
+TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
+CRED_DEF_ID = f"{TEST_DID}:3:CL:1234:default"
+REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
 
 class TestRecord(AsyncTestCase):
-    test_did = "55GkHamhTU1ZbTbV2ab9DE"
-
     def setUp(self):
-        self.context = InjectionContext(enforce_typing=False)
+        self.context = InjectionContext(
+            settings={"tails_server_base_url": "http://1.2.3.4:8088"},
+            enforce_typing=False,
+        )
 
         self.wallet = async_mock.MagicMock()
         self.wallet.type = "indy"
@@ -41,17 +47,17 @@ class TestRecord(AsyncTestCase):
         self.ledger.send_revoc_reg_entry = async_mock.CoroutineMock()
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
+        TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
+        self.tails_server = TailsServer()
+        self.tails_server.upload_tails_file = async_mock.CoroutineMock()
+        self.context.injector.bind_instance(BaseTailsServer, self.tails_server)
+
         self.storage = BasicStorage()
         self.context.injector.bind_instance(BaseStorage, self.storage)
 
     async def test_generate_registry_etc(self):
-        CRED_DEF_ID = f"{TestRecord.test_did}:3:CL:1234:default"
-        REV_REG_ID = f"{TestRecord.test_did}:4:{CRED_DEF_ID}:CL_ACCUM:0"
-
         rec = IssuerRevRegRecord(
-            issuer_did=TestRecord.test_did,
-            cred_def_id=CRED_DEF_ID,
-            revoc_reg_id=REV_REG_ID,
+            issuer_did=TEST_DID, cred_def_id=CRED_DEF_ID, revoc_reg_id=REV_REG_ID,
         )
         issuer = async_mock.MagicMock(BaseIssuer)
         self.context.injector.bind_instance(BaseIssuer, issuer)
@@ -128,11 +134,8 @@ class TestRecord(AsyncTestCase):
         assert model_instance == rec
 
     async def test_operate_on_full_record(self):
-        CRED_DEF_ID = f"{TestRecord.test_did}:3:CL:1234:default"
-        REV_REG_ID = f"{TestRecord.test_did}:4:{CRED_DEF_ID}:CL_ACCUM:0"
-
         rec_full = IssuerRevRegRecord(
-            issuer_did=TestRecord.test_did,
+            issuer_did=TEST_DID,
             revoc_reg_id=REV_REG_ID,
             revoc_reg_def={"sample": "rr-def"},
             revoc_def_type="CL_ACCUM",
@@ -184,6 +187,29 @@ class TestRecord(AsyncTestCase):
         rec = IssuerRevRegRecord()
         with self.assertRaises(RevocationError):
             await rec.set_tails_file_public_uri(self.context, "dummy")
+
+    async def test_stage_pending_registry_definition(self):
+        issuer = async_mock.MagicMock(BaseIssuer)
+        issuer.create_and_store_revocation_registry = async_mock.CoroutineMock(
+            return_value=(
+                REV_REG_ID,
+                json.dumps(
+                    {
+                        "value": {
+                            "tailsHash": "abcd1234",
+                            "tailsLocation": "/tmp/location",
+                        }
+                    }
+                ),
+                json.dumps({}),
+            )
+        )
+        self.context.injector.bind_instance(BaseIssuer, issuer)
+        rec = IssuerRevRegRecord(issuer_did=TEST_DID, revoc_reg_id=REV_REG_ID)
+        with async_mock.patch.object(
+            test_module, "move", async_mock.MagicMock()
+        ) as mock_move:
+            await rec.stage_pending_registry_definition(self.context)
 
     async def test_publish_rev_reg_undef(self):
         rec = IssuerRevRegRecord()

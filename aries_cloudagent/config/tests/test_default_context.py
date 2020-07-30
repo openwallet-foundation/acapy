@@ -30,7 +30,7 @@ class TestDefaultContext(AsyncTestCase):
         builder = DefaultContextBuilder(
             settings={
                 "timing.enabled": True,
-                "timing.log.file": NamedTemporaryFile().name
+                "timing.log.file": NamedTemporaryFile().name,
             }
         )
         result = await builder.build()

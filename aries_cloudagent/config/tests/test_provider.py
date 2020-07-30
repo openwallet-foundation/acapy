@@ -22,15 +22,12 @@ class TestProvider(AsyncTestCase):
         """Cover call to provide with collector."""
 
         timing_log = NamedTemporaryFile().name
-        settings={
-            "timing.enabled": True,
-            "timing.log.file": timing_log
-        }
+        settings = {"timing.enabled": True, "timing.log.file": timing_log}
         stats_provider = StatsProvider(
             StorageProvider(), ("add_record", "get_record", "search_records")
         )
         collector = Collector(log_path=timing_log)
-        
+
         wallet = BasicWallet()
         context = InjectionContext(settings=settings, enforce_typing=False)
         context.injector.bind_instance(Collector, collector)

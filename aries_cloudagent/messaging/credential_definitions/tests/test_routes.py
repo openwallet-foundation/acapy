@@ -78,17 +78,14 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                     "support_revocation": True,
                     "tag": "tag",
                 }
-            )
+            ),
         )
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
         mock_tails_server = async_mock.MagicMock(
-            upload_tails_file=async_mock.CoroutineMock(
-                return_value=(True, None)
-            )
+            upload_tails_file=async_mock.CoroutineMock(return_value=(True, None))
         )
         self.context.injector.bind_instance(BaseTailsServer, mock_tails_server)
-
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", async_mock.MagicMock()
@@ -102,7 +99,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                         generate_registry=async_mock.CoroutineMock(),
                         publish_registry_definition=async_mock.CoroutineMock(),
                         publish_registry_entry=async_mock.CoroutineMock(),
-                        stage_pending_registry_definition=async_mock.CoroutineMock()
+                        stage_pending_registry_definition=async_mock.CoroutineMock(),
                     )
                 )
             )
@@ -186,7 +183,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                         set_tails_file_public_uri=async_mock.CoroutineMock(),
                         generate_registry=async_mock.CoroutineMock(),
                         publish_registry_definition=async_mock.CoroutineMock(),
-                        publish_registry_entry=async_mock.CoroutineMock()
+                        publish_registry_entry=async_mock.CoroutineMock(),
                     )
                 )
             )
@@ -204,14 +201,12 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                     "support_revocation": True,
                     "tag": "tag",
                 }
-            )
+            ),
         )
         self.context.settings.set_value("tails_server_base_url", "http://1.2.3.4:8222")
 
         mock_tails_server = async_mock.MagicMock(
-            upload_tails_file=async_mock.CoroutineMock(
-                return_value=(True, None)
-            )
+            upload_tails_file=async_mock.CoroutineMock(return_value=(True, None))
         )
         self.context.injector.bind_instance(BaseTailsServer, mock_tails_server)
 
@@ -225,10 +220,10 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                             set_tails_file_public_uri=async_mock.CoroutineMock(),
                             generate_registry=async_mock.CoroutineMock(),
                             publish_registry_definition=async_mock.CoroutineMock(),
-                            publish_registry_entry=async_mock.CoroutineMock()
+                            publish_registry_entry=async_mock.CoroutineMock(),
                         ),
-                        test_module.RevocationError("Error on pending rev reg init")
-                    ] 
+                        test_module.RevocationError("Error on pending rev reg init"),
+                    ]
                 )
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):

@@ -32,7 +32,7 @@ class TestLedger(AsyncTestCase):
     async def test_ledger_config_genesis_url(self):
         settings = {
             "ledger.genesis_url": "00000000000000000000000000000000",
-            "default_endpoint": "http://1.2.3.4:8051"
+            "default_endpoint": "http://1.2.3.4:8051",
         }
         mock_ledger = async_mock.MagicMock(
             type="indy",
@@ -45,14 +45,11 @@ class TestLedger(AsyncTestCase):
                 }
             ),
             get_latest_txn_author_acceptance=async_mock.CoroutineMock(
-                return_value={
-                    "digest": b"1234567890123456789012345678901234567890"
-                }
+                return_value={"digest": b"1234567890123456789012345678901234567890"}
             ),
         )
         mock_wallet = async_mock.MagicMock(
-            type="indy",
-            set_did_endpoint=async_mock.CoroutineMock()
+            type="indy", set_did_endpoint=async_mock.CoroutineMock()
         )
 
         context = InjectionContext(settings=settings, enforce_typing=False)
@@ -70,7 +67,7 @@ class TestLedger(AsyncTestCase):
     async def test_ledger_config_genesis_file(self):
         settings = {
             "ledger.genesis_file": "/tmp/genesis/path",
-            "default_endpoint": "http://1.2.3.4:8051"
+            "default_endpoint": "http://1.2.3.4:8051",
         }
         mock_ledger = async_mock.MagicMock(
             type="indy",
@@ -83,14 +80,11 @@ class TestLedger(AsyncTestCase):
                 }
             ),
             get_latest_txn_author_acceptance=async_mock.CoroutineMock(
-                return_value={
-                    "digest": b"1234567890123456789012345678901234567890"
-                }
+                return_value={"digest": b"1234567890123456789012345678901234567890"}
             ),
         )
         mock_wallet = async_mock.MagicMock(
-            type="indy",
-            set_did_endpoint=async_mock.CoroutineMock()
+            type="indy", set_did_endpoint=async_mock.CoroutineMock()
         )
 
         context = InjectionContext(settings=settings, enforce_typing=False)
@@ -117,7 +111,7 @@ class TestLedger(AsyncTestCase):
     async def test_ledger_config_genesis_file_io_x(self):
         settings = {
             "ledger.genesis_file": "/tmp/genesis/path",
-            "default_endpoint": "http://1.2.3.4:8051"
+            "default_endpoint": "http://1.2.3.4:8051",
         }
         context = InjectionContext(settings=settings, enforce_typing=False)
 
@@ -133,7 +127,7 @@ class TestLedger(AsyncTestCase):
     async def test_ledger_config_genesis_url_no_ledger(self):
         settings = {
             "ledger.genesis_url": "00000000000000000000000000000000",
-            "default_endpoint": "http://1.2.3.4:8051"
+            "default_endpoint": "http://1.2.3.4:8051",
         }
 
         context = InjectionContext(settings=settings, enforce_typing=False)
@@ -151,7 +145,7 @@ class TestLedger(AsyncTestCase):
     async def test_ledger_config_genesis_url_non_indy_ledger(self):
         settings = {
             "ledger.genesis_url": "00000000000000000000000000000000",
-            "default_endpoint": "http://1.2.3.4:8051"
+            "default_endpoint": "http://1.2.3.4:8051",
         }
         mock_ledger = async_mock.MagicMock(
             type="fabric",
@@ -164,9 +158,7 @@ class TestLedger(AsyncTestCase):
                 }
             ),
             get_latest_txn_author_acceptance=async_mock.CoroutineMock(
-                return_value={
-                    "digest": b"1234567890123456789012345678901234567890"
-                }
+                return_value={"digest": b"1234567890123456789012345678901234567890"}
             ),
         )
 
@@ -186,7 +178,7 @@ class TestLedger(AsyncTestCase):
     async def test_ledger_config_genesis_url_no_taa_accept(self):
         settings = {
             "ledger.genesis_url": "00000000000000000000000000000000",
-            "default_endpoint": "http://1.2.3.4:8051"
+            "default_endpoint": "http://1.2.3.4:8051",
         }
         mock_ledger = async_mock.MagicMock(
             type="indy",
@@ -199,9 +191,7 @@ class TestLedger(AsyncTestCase):
                 }
             ),
             get_latest_txn_author_acceptance=async_mock.CoroutineMock(
-                return_value={
-                    "digest": b"1234567890123456789012345678901234567890"
-                }
+                return_value={"digest": b"1234567890123456789012345678901234567890"}
             ),
         )
 
@@ -221,7 +211,7 @@ class TestLedger(AsyncTestCase):
     async def test_ledger_config_genesis_file_non_indy_wallet(self):
         settings = {
             "ledger.genesis_file": "/tmp/genesis/path",
-            "default_endpoint": "http://1.2.3.4:8051"
+            "default_endpoint": "http://1.2.3.4:8051",
         }
         mock_ledger = async_mock.MagicMock(
             type="indy",
@@ -234,14 +224,11 @@ class TestLedger(AsyncTestCase):
                 }
             ),
             get_latest_txn_author_acceptance=async_mock.CoroutineMock(
-                return_value={
-                    "digest": b"1234567890123456789012345678901234567890"
-                }
+                return_value={"digest": b"1234567890123456789012345678901234567890"}
             ),
         )
         mock_wallet = async_mock.MagicMock(
-            type="trifold",
-            set_did_endpoint=async_mock.CoroutineMock()
+            type="trifold", set_did_endpoint=async_mock.CoroutineMock()
         )
 
         context = InjectionContext(settings=settings, enforce_typing=False)
@@ -266,3 +253,44 @@ class TestLedger(AsyncTestCase):
             with self.assertRaises(test_module.ConfigError):
                 await test_module.ledger_config(context, TEST_DID, provision=True)
 
+    @async_mock.patch("sys.stdout")
+    async def test_ledger_accept_taa_not_tty(self, mock_stdout):
+        mock_stdout.isatty = async_mock.MagicMock(return_value=False)
+
+        assert not await test_module.accept_taa(None, None, provision=False)
+
+    @async_mock.patch("sys.stdout")
+    async def test_ledger_accept_taa(self, mock_stdout):
+        mock_stdout.isatty = async_mock.MagicMock(return_value=True)
+
+        taa_info = {
+            "taa_record": {"version": "1.0", "text": "Agreement"},
+            "aml_record": {"aml": ["wallet_agreement", "on_file"]},
+        }
+
+        with async_mock.patch.object(
+            test_module, "use_asyncio_event_loop", async_mock.MagicMock()
+        ) as mock_use_aio_loop, async_mock.patch.object(
+            test_module.prompt_toolkit, "prompt", async_mock.CoroutineMock()
+        ) as mock_prompt:
+            mock_prompt.side_effect = EOFError()
+            assert not await test_module.accept_taa(None, taa_info, provision=False)
+
+        with async_mock.patch.object(
+            test_module, "use_asyncio_event_loop", async_mock.MagicMock()
+        ) as mock_use_aio_loop, async_mock.patch.object(
+            test_module.prompt_toolkit, "prompt", async_mock.CoroutineMock()
+        ) as mock_prompt:
+            mock_prompt.return_value = "x"
+            assert not await test_module.accept_taa(None, taa_info, provision=False)
+
+        with async_mock.patch.object(
+            test_module, "use_asyncio_event_loop", async_mock.MagicMock()
+        ) as mock_use_aio_loop, async_mock.patch.object(
+            test_module.prompt_toolkit, "prompt", async_mock.CoroutineMock()
+        ) as mock_prompt:
+            mock_ledger = async_mock.MagicMock(
+                accept_txn_author_agreement=async_mock.CoroutineMock()
+            )
+            mock_prompt.return_value = ""
+            assert await test_module.accept_taa(mock_ledger, taa_info, provision=False)

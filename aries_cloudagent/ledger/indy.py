@@ -179,7 +179,9 @@ class IndyLedger(BaseLedger):
         ):
             await indy.pool.set_protocol_version(2)
 
-        with IndyErrorHandler("Exception when opening pool ledger", LedgerConfigError):
+        with IndyErrorHandler(
+            f"Exception when opening pool ledger {self.pool_name}", LedgerConfigError
+        ):
             self.pool_handle = await indy.pool.open_pool_ledger(self.pool_name, "{}")
         self.opened = True
 

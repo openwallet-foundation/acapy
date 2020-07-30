@@ -96,6 +96,7 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
         ledger = IndyLedger("name", mock_wallet)
+        assert ledger.type == "indy"
 
         assert ledger.pool_name == "name"
         assert ledger.wallet is mock_wallet
