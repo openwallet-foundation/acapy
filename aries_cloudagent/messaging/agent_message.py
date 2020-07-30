@@ -1,7 +1,7 @@
 """Agent message base class and schema."""
 
 from collections import OrderedDict
-from typing import Mapping, Union
+from typing import Mapping, Union, Sequence
 import uuid
 
 from marshmallow import (
@@ -18,6 +18,7 @@ from ..wallet.base import BaseWallet
 from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
 from .decorators.signature_decorator import SignatureDecorator
+from .decorators.please_ack_decorator import PleaseAckDecorator
 from .decorators.thread_decorator import ThreadDecorator
 from .decorators.trace_decorator import (
     TraceDecorator,
@@ -245,6 +246,37 @@ class AgentMessage(BaseModel):
             if "sig" in field and not await field["sig"].verify(wallet):
                 return False
         return True
+
+    @property
+    def _please_ack(self) -> PleaseAckDecorator:
+        """
+        Accessor for the message's please_ack decorator.
+
+        Returns:
+            The PleaseAckDecorator for this message
+
+        """
+        return self._decorators.get("please_ack")
+
+    @_please_ack.setter
+    def _please_ack(self, val: Union[PleaseAckDecorator, dict]):
+        """
+        Setter for the message's please_ack decorator.
+
+        Args:
+            val: PleaseAckDecorator or dict to set as the please_ack
+        """
+        self._decorators["please_ack"] = val
+
+    def assign_please_ack(self, message_id: str = None, on: Sequence[str] = None):
+        """
+        Assign a please_ack.
+
+        Args:
+            message_id: identifier of message to acknowledge, if not current message
+            on: list of tokens describing circumstances for acknowledgement.
+        """
+        self._please_ack = PleaseAckDecorator(message_id=message_id, on=on)
 
     @property
     def _thread(self) -> ThreadDecorator:

@@ -633,6 +633,7 @@ class CredentialManager:
                 CredentialIssue.wrap_indy_credential(cred_ex_record.credential)
             ],
         )
+        credential_message.assign_please_ack()
         credential_message._thread = {"thid": cred_ex_record.thread_id}
         credential_message.assign_trace_decorator(
             self.context.settings, cred_ex_record.trace

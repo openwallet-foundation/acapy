@@ -490,6 +490,7 @@ class ConnectionManager:
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
         )
+        response.assign_please_ack()
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)

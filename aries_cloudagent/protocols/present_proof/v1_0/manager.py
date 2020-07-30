@@ -428,6 +428,7 @@ class PresentationManager:
             ],
         )
 
+        presentation_message.assign_please_ack()
         presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
         presentation_message.assign_trace_decorator(
             self.context.settings, presentation_exchange_record.trace
