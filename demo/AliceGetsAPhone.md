@@ -104,7 +104,7 @@ Open a new bash shell, and in a project directory, run:
 git clone https://github.com/bcgov/indy-tails-server.git
 cd indy-tails-server/docker
 ./manage build
-GENESIS_URL=http://test.bcovrin.vonx.io/genesis ./manage start
+./manage start
 ```
 
 This will run the required components for the tails server to function and make a tails server available on port 6543.
