@@ -18,6 +18,7 @@ from marshmallow import fields, Schema
 
 from ..config.injection_context import InjectionContext
 from ..core.plugin_registry import PluginRegistry
+from ..ledger.error import LedgerConfigError
 from ..messaging.responder import BaseResponder
 from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
@@ -131,7 +132,12 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
         "/status/live",
         "/status/ready",
     ) or request.app._state.get("ready"):
-        return await handler(request)
+        try:
+            return await handler(request)
+        except LedgerConfigError:
+            # fatal, signal server shutdown
+            request.app.notify_fatal_error()
+            raise
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
 
