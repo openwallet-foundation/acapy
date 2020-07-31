@@ -478,12 +478,14 @@ class ConnectionManager:
             connection.my_did = my_info.did
 
         # Create connection response message
+        my_endpoints = []
         if not my_endpoint:
-            my_endpoints = []
             default_endpoint = self.context.settings.get("default_endpoint")
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.context.settings.get("additional_endpoints", []))
+        else:
+            my_endpoints.append(my_endpoint)
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints
         )
