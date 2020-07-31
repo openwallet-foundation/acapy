@@ -10,6 +10,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+/**
+ * Web hook event
+ *
+ */
 @Data @NoArgsConstructor @AllArgsConstructor @Accessors(chain = true)
 public final class PingEvent {
 

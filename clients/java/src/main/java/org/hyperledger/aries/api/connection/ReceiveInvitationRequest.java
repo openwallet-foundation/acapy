@@ -12,11 +12,12 @@ import javax.annotation.Nullable;
 import com.google.gson.annotations.SerializedName;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
-@Data @NoArgsConstructor @AllArgsConstructor
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class ReceiveInvitationRequest {
     @Nullable
     @SerializedName("@id")

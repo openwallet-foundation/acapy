@@ -32,8 +32,11 @@ import org.hyperledger.aries.api.jsonld.VerifiableCredential;
 import org.hyperledger.aries.api.jsonld.VerifiablePresentation;
 import org.hyperledger.aries.api.jsonld.VerifyRequest;
 import org.hyperledger.aries.api.jsonld.VerifyResponse;
+import org.hyperledger.aries.api.ledger.EndpointResponse;
+import org.hyperledger.aries.api.ledger.EndpointType;
 import org.hyperledger.aries.api.message.BasicMessage;
-import org.hyperledger.aries.api.message.TrustPing;
+import org.hyperledger.aries.api.message.PingRequest;
+import org.hyperledger.aries.api.message.PingResponse;
 import org.hyperledger.aries.api.proof.PresentProofProposal;
 import org.hyperledger.aries.api.proof.PresentProofRequest;
 import org.hyperledger.aries.api.proof.PresentProofRequestResponse;
@@ -190,11 +193,12 @@ public class AriesClient extends BaseClient {
      * Send a trust ping to a connection
      * @param connectionId the connection id
      * @param comment comment for the ping message
+     * @return {@link PingResponse}
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
      */
-    public void connectionsSendPing(@NonNull String connectionId, @NonNull TrustPing comment) throws IOException {
+    public Optional<PingResponse> connectionsSendPing(@NonNull String connectionId, @NonNull PingRequest comment) throws IOException {
         Request req = buildPost(url + "/connections/" + connectionId + "/send-ping", comment);
-        call(req);
+        return call(req, PingResponse.class);
     }
 
     // ----------------------------------------------------
@@ -495,6 +499,28 @@ public class AriesClient extends BaseClient {
             return call(req, VerifyResponse.class);
         }
         throw new IllegalStateException("Expecting either VerifiableCredential or VerifiablePresentation");
+    }
+
+    // ----------------------------------------------------
+    // Ledger
+    // ----------------------------------------------------
+
+    /**
+     * Get the endpoint for a DID from the ledger.
+     * @param did the DID of interest
+     * @param type optional, endpoint type of interest (defaults to 'endpoint')
+     * @return {@link EndpointResponse}
+     * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or timeout.
+     */
+    public Optional<EndpointResponse> ledgerDidEndpoint(@NonNull String did, @Nullable EndpointType type)
+            throws IOException{
+        HttpUrl.Builder b = HttpUrl.parse(url + "/ledger/did-endpoint").newBuilder();
+        b.addQueryParameter("did", did);
+        if (type != null) {
+            b.addQueryParameter("endpoint_type", type.toString());
+        }
+        Request req = buildGet(b.build().toString());
+        return call(req, EndpointResponse.class);
     }
 
     // ----------------------------------------------------

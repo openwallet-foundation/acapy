@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Testcontainers
 public abstract class IntegrationTestBase {
 
-    private static final String ARIES_VERSION = "bcgovimages/aries-cloudagent:py36-1.15-0_0.5.2";
+    private static final String ARIES_VERSION = "bcgovimages/aries-cloudagent:py36-1.15-0_0.5.3";
     private static final Integer ARIES_ADMIN_PORT = Integer.valueOf(8031);
 
     protected AriesClient ac;

@@ -10,6 +10,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data @NoArgsConstructor @AllArgsConstructor
-public class TrustPing {
-    private String comment;
+public class PingResponse {
+    private String threadId;
 }

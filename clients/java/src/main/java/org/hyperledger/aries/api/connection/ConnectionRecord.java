@@ -40,6 +40,14 @@ public class ConnectionRecord {
 
     private String accept;
 
+    private String errorMsg;
+
+    private String inboundConnectionId;
+
+    private String requestId;
+
+    private String theirRole;
+
     public boolean isIncomingConnection() {
         return StringUtils.isNotEmpty(invitationKey);
     }
