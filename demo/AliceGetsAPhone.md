@@ -21,18 +21,15 @@ This demo also introduces revocation of credentials.
 - [Revoke the Credential and Send Another Proof Request](#revoke-the-credential-and-send-another-proof-request)
 - [Conclusion](#conclusion)
 
-
 ## Getting Started
 
-This demo can be run on your local machine or on Play with Docker (PWD), and will demonstrate credential exchange and proof exchange as well as revocation with a mobile agent.  Both approaches (running locally and on PWD) will be described, for the most part the commands are the same, but there are a couple of different parameters you need to provide when starting up.
+This demo can be run on your local machine or on Play with Docker (PWD), and will demonstrate credential exchange and proof exchange as well as revocation with a mobile agent. Both approaches (running locally and on PWD) will be described, for the most part the commands are the same, but there are a couple of different parameters you need to provide when starting up.
 
 If you are not familiar with how revocation is currently implemented in Hyperledger Indy, [this article](https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation) provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds.
-
 
 ### Get a mobile agent
 
 Of course for this, you need to have a mobile agent. To find, install and setup a compatible mobile agent, follow the instructions [here](https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md).
-
 
 ### Running Locally in Docker
 
@@ -47,7 +44,6 @@ We'll come back to this in a minute, when we start the `faber` agent!
 
 There are a couple of extra steps you need to take to prepare to run the Faber agent locally:
 
-
 #### Install ngrok and jq
 
 [ngrok](https://ngrok.com/) is used to expose public endpoints for services running locally on your computer.
@@ -58,10 +54,9 @@ You can install ngrok from [here](https://ngrok.com/)
 
 You can download jq releases [here](https://github.com/stedolan/jq/releases)
 
-
 #### Expose services publicly using ngrok
 
-Note that this is *only required when running docker on your local machine*.  When you run on PWD a public endpoint for your agent is exposed automatically.
+Note that this is _only required when running docker on your local machine_. When you run on PWD a public endpoint for your agent is exposed automatically.
 
 Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accesible url for some services on your machine. The easiest way to do this is with [ngrok](https://ngrok.com/). Once ngrok is installed, create a tunnel to your local machine:
 
@@ -78,12 +73,11 @@ Forwarding                    http://abc123.ngrok.io -> http://localhost:8020
 Forwarding                    https://abc123.ngrok.io -> http://localhost:8020
 ```
 
-This creates a public url for ports 8020 on your local machine. 
+This creates a public url for ports 8020 on your local machine.
 
 Note that an ngrok process is created automatically for your tails server.
 
 Keep this process running as we'll come back to it in a moment.
-
 
 ### Running in Play With Docker
 
@@ -97,7 +91,6 @@ cd aries-cloudagent-python/demo
 ```
 
 We'll come back to this in a minute, when we start the `faber` agent!
-
 
 ### Run an instance of indy-tails-server
 
@@ -116,19 +109,18 @@ GENESIS_URL=http://test.bcovrin.vonx.io/genesis ./manage start
 
 This will run the required components for the tails server to function and make a tails server available on port 6543.
 
-This will also automatically start an ngrok server that will expose a public url for your tails server - this is required to support mobile agents.  The docker output will look something like this:
+This will also automatically start an ngrok server that will expose a public url for your tails server - this is required to support mobile agents. The docker output will look something like this:
 
 ```bash
 ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel" obj=tunnels name="command_line (http)" addr=http://tails-server:6543 url=http://c5789aa0.ngrok.io
 ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://tails-server:6543 url=https://c5789aa0.ngrok.io
 ```
 
-Note the server name in the `url=https://c5789aa0.ngrok.io` parameter (`https://c5789aa0.ngrok.io`) - this is the external url for your tails server.  Make sure you use the `https` url!
-
+Note the server name in the `url=https://c5789aa0.ngrok.io` parameter (`https://c5789aa0.ngrok.io`) - this is the external url for your tails server. Make sure you use the `https` url!
 
 ### Run `faber` With Extra Parameters
 
-If you are running in a *local bash shell*, navigate to [The demo direcory](/demo) and run:
+If you are running in a _local bash shell_, navigate to [The demo direcory](/demo) and run:
 
 ```bash
 TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
@@ -136,13 +128,13 @@ TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_d
 
 The `TAILS_NETWORK` parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).
 
-If you are running in *Play with Docker*, navigate to [The demo direcory](/demo) and run:
+If you are running in _Play with Docker_, navigate to [The demo direcory](/demo) and run:
 
 ```bash
 PUBLIC_TAILS_URL=https://def456.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
 
-The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server.  This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
+The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
 
 Note that you _must_ use the `https` url for the tails server endpoint.
 
@@ -162,10 +154,9 @@ As part of its startup process, the agent will publish a revocation registry to 
     <img src="./collateral/revocation-2-ledger.png" alt="Ledger">
 </details>
 
-
 ## Accept the Invitation
 
-When the Faber agent starts up it automatically creates an invitation and generates a QR code on the screen. On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code.  The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.
+When the Faber agent starts up it automatically creates an invitation and generates a QR code on the screen. On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code. The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.
 
 <details>
     <summary>Click here to view screenshot</summary>
@@ -185,7 +176,7 @@ The mobile agent will give you feedback on the connection process, something lik
 
 Switch your browser back to Play with Docker. You should see that the connection has been established, and there is a prompt for what actions you want to take, e.g. "Issue Credential", "Send Proof Request" and so on.
 
-Tip:  If your screen is too small to display the QR code (this can happen in Play With Docker because the shell is only given a small portion of the browser) you can copy the invitation url to a site like https://www.the-qrcode-generator.com/ to convert the invitation url into a QR code that you can scan.  Make sure you select the `URL` option, and copy the `invitation_url`, which will look something like:
+Tip: If your screen is too small to display the QR code (this can happen in Play With Docker because the shell is only given a small portion of the browser) you can copy the invitation url to a site like https://www.the-qrcode-generator.com/ to convert the invitation url into a QR code that you can scan. Make sure you select the `URL` option, and copy the `invitation_url`, which will look something like:
 
 ```bash
 https://abfde260.ngrok.io?c_i=eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZjI2ZjA2YTItNWU1Mi00YTA5LWEwMDctOTNkODBiZTYyNGJlIiwgInJlY2lwaWVudEtleXMiOiBbIjlQRFE2alNXMWZwZkM5UllRWGhCc3ZBaVJrQmVKRlVhVmI0QnRQSFdWbTFXIl0sICJsYWJlbCI6ICJGYWJlci5BZ2VudCIsICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cHM6Ly9hYmZkZTI2MC5uZ3Jvay5pbyJ9
@@ -198,7 +189,6 @@ http://ip10-0-121-4-bquqo816b480a4bfn3kg-8020.direct.play-with-von.vonx.io?c_i=e
 ```
 
 Note that this will use the ngrok endpoint if you are running locally, or your PWD endpoint if you are running on PWD.
-
 
 ## Issue a Credential
 
