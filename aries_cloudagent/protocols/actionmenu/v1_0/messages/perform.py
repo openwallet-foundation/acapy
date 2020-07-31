@@ -29,7 +29,7 @@ class Perform(AgentMessage):
             name: The name of the menu option
             params: Input parameter values
         """
-        super(Perform, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.name = name
         self.params = params
 

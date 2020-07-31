@@ -150,7 +150,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 )
             )
     except LedgerError as e:
-        raise web.HTTPBadRequest(reason=e.message)
+        raise web.HTTPBadRequest(reason=e.message) from e
 
     # If revocation is requested, create revocation registry
     if support_revocation:
@@ -196,7 +196,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             )
 
         except RevocationError as e:
-            raise web.HTTPBadRequest(reason=e.message)
+            raise web.HTTPBadRequest(reason=e.message) from e
 
     return web.json_response({"credential_definition_id": credential_definition_id})
 

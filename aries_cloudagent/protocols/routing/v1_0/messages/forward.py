@@ -31,7 +31,7 @@ class Forward(AgentMessage):
             to (str): Recipient DID
             msg (str): Message content
         """
-        super(Forward, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.to = to
         if isinstance(msg, str):
             msg = json.loads(msg)

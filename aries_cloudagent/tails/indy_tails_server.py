@@ -10,12 +10,12 @@ class IndyTailsServer(BaseTailsServer):
     """Indy tails server interface."""
 
     async def upload_tails_file(
-        self, context, revo_reg_def_id: str, tails_file_path: str
+        self, context, rev_reg_id: str, tails_file_path: str
     ) -> (bool, str):
         """Upload tails file to tails server.
 
         Args:
-            revo_reg_def_id: The Revocation registry definition ID
+            rev_reg_id: The revocation registry identifier
             tails_file: The path to the tails file to upload
         """
 
@@ -30,7 +30,7 @@ class IndyTailsServer(BaseTailsServer):
         with open(tails_file_path, "rb") as tails_file:
             async with aiohttp.ClientSession() as session:
                 async with session.put(
-                    f"{tails_server_base_url}/{revo_reg_def_id}",
+                    f"{tails_server_base_url}/{rev_reg_id}",
                     data={"genesis": genesis_transactions, "tails": tails_file},
                 ) as resp:
                     if resp.status == 200:

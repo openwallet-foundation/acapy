@@ -50,7 +50,7 @@ class TraceReport(BaseModel):
             ellapsed_milli: ...
             outcome: ...
         """
-        super(TraceReport, self).__init__()
+        super().__init__()
         self._msg_id = msg_id
         self._thread_id = thread_id
         self._traced_type = traced_type
