@@ -18,7 +18,10 @@ from marshmallow import fields, Schema
 
 from ..config.injection_context import InjectionContext
 from ..core.plugin_registry import PluginRegistry
-from ..ledger.error import LedgerConfigError
+from ..ledger.error import (
+    LedgerConfigError,
+    LedgerTransactionError
+)
 from ..messaging.responder import BaseResponder
 from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
@@ -136,8 +139,20 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             return await handler(request)
         except LedgerConfigError:
             # fatal, signal server shutdown
-            request.app.notify_fatal_error()
+            LOGGER.error(f"Shutdown with LedgerConfigError")
+            request.app._state["ready"] = False
+            request.app._state["alive"] = False
             raise
+        except LedgerTransactionError:
+            # fatal, signal server shutdown
+            LOGGER.error(f"Shutdown with LedgerTransactionError")
+            request.app._state["ready"] = False
+            request.app._state["alive"] = False
+            raise
+        except Exception as e:
+            # some other error?
+            LOGGER.error("Handler error with exception: " + str(e))
+            raise e
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
 
@@ -481,6 +496,7 @@ class AdminServer(BaseAdminServer):
 
     def notify_fatal_error(self):
         """Set our readiness flags to force a restart (openshift)."""
+        LOGGER.error("Received shutdown request notify_fatal_error()")
         self.app._state["ready"] = False
         self.app._state["alive"] = False
 
