@@ -18,7 +18,10 @@ from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config, BaseWallet
-from ..ledger.error import LedgerConfigError
+from ..ledger.error import (
+    LedgerConfigError,
+    LedgerTransactionError
+)
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
@@ -266,6 +269,9 @@ class Conductor:
         except LedgerConfigError:
             self.admin_server.notify_fatal_error()
             raise
+        except LedgerTransactionError:
+            self.admin_server.notify_fatal_error()
+            raise
 
     def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
         """Handle completion of message dispatch."""
@@ -324,6 +330,9 @@ class Conductor:
         except LedgerConfigError:
             self.admin_server.notify_fatal_error()
             raise
+        except LedgerTransactionError:
+            self.admin_server.notify_fatal_error()
+            raise
 
     async def queue_outbound(
         self,
@@ -351,6 +360,9 @@ class Conductor:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return
             except LedgerConfigError:
+                self.admin_server.notify_fatal_error()
+                raise
+            except LedgerTransactionError:
                 self.admin_server.notify_fatal_error()
                 raise
 
