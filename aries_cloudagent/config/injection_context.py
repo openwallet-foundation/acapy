@@ -25,7 +25,7 @@ class InjectionContext(BaseInjector):
     ):
         """Initialize a `ServiceConfig`."""
         self._injector = Injector(settings, enforce_typing=enforce_typing)
-        self._scope_name = self.ROOT_SCOPE
+        self._scope_name = InjectionContext.ROOT_SCOPE
         self._scopes = []
 
     @property

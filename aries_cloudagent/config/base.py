@@ -73,12 +73,12 @@ class BaseSettings(Mapping[str, object]):
     def __getitem__(self, index):
         """Fetch as an array index."""
         if not isinstance(index, str):
-            raise TypeError("Index must be a string")
+            raise TypeError(f"Index {index} must be a string")
         missing = object()
         result = self.get_value(index, default=missing)
         if result is missing:
             raise KeyError("Undefined index: {}".format(index))
-        return self.get_value(index)
+        return result
 
     @abstractmethod
     def __len__(self):
@@ -111,7 +111,7 @@ class BaseInjector(ABC):
         base_cls: type,
         settings: Mapping[str, object] = None,
         *,
-        required: bool = True
+        required: bool = True,
     ) -> object:
         """
         Get the provided instance of a given class identifier.

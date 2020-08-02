@@ -175,7 +175,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            self.ledger.LEDGER_TYPE = "indy"
+            self.ledger.type = "indy"
             self.ledger.get_txn_author_agreement.return_value = {"taa_required": False}
             self.ledger.get_latest_txn_author_acceptance.return_value = None
             result = await test_module.ledger_get_taa(request)
@@ -196,7 +196,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            self.ledger.LEDGER_TYPE = "indy"
+            self.ledger.type = "indy"
             self.ledger.get_txn_author_agreement.return_value = taa_info
             self.ledger.get_latest_txn_author_acceptance.return_value = accepted
             result = await test_module.ledger_get_taa(request)
@@ -208,7 +208,7 @@ class TestLedgerRoutes(AsyncTestCase):
         request = async_mock.MagicMock()
         request.app = self.app
 
-        self.ledger.LEDGER_TYPE = "indy"
+        self.ledger.type = "indy"
         self.ledger.get_txn_author_agreement.side_effect = test_module.LedgerError()
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -226,7 +226,7 @@ class TestLedgerRoutes(AsyncTestCase):
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            self.ledger.LEDGER_TYPE = "indy"
+            self.ledger.type = "indy"
             self.ledger.get_txn_author_agreement.return_value = {"taa_required": False}
             await test_module.ledger_accept_taa(request)
 
@@ -244,7 +244,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            self.ledger.LEDGER_TYPE = "indy"
+            self.ledger.type = "indy"
             self.ledger.get_txn_author_agreement.return_value = {"taa_required": True}
             result = await test_module.ledger_accept_taa(request)
             json_response.assert_called_once_with({})
@@ -262,7 +262,7 @@ class TestLedgerRoutes(AsyncTestCase):
         request = async_mock.MagicMock()
         request.app = self.app
 
-        self.ledger.LEDGER_TYPE = "not-indy"
+        self.ledger.type = "not-indy"
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.ledger_accept_taa(request)
 
@@ -276,7 +276,7 @@ class TestLedgerRoutes(AsyncTestCase):
                 "mechanism": "mechanism",
             }
         )
-        self.ledger.LEDGER_TYPE = "indy"
+        self.ledger.type = "indy"
         self.ledger.get_txn_author_agreement.return_value = {"taa_required": True}
         self.ledger.accept_txn_author_agreement.side_effect = test_module.StorageError()
         with self.assertRaises(test_module.web.HTTPBadRequest):

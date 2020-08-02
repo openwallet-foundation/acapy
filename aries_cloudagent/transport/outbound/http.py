@@ -19,7 +19,7 @@ class HttpTransport(BaseOutboundTransport):
 
     def __init__(self) -> None:
         """Initialize an `HttpTransport` instance."""
-        super(HttpTransport, self).__init__()
+        super().__init__()
         self.client_session: ClientSession = None
         self.connector: TCPConnector = None
         self.logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 """Credential definition admin routes."""
 
-from asyncio import shield
+from asyncio import ensure_future, shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -16,8 +16,14 @@ from marshmallow import fields, Schema
 from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
+from ...tails.base import BaseTailsServer
 
 from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
+
+from ...revocation.error import RevocationError, RevocationNotSupportedError
+from ...revocation.indy import IndyRevocation
+
+from ...ledger.error import LedgerError
 
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
@@ -29,6 +35,7 @@ class CredentialDefinitionSendRequestSchema(Schema):
     support_revocation = fields.Boolean(
         required=False, description="Revocation supported flag"
     )
+    revocation_registry_size = fields.Int(required=False)
     tag = fields.Str(
         required=False,
         description="Credential definition identifier tag",
@@ -52,7 +59,7 @@ class CredentialDefinitionSchema(Schema):
     ident = fields.Str(
         description="Credential definition identifier",
         data_key="id",
-        **INDY_CRED_DEF_ID
+        **INDY_CRED_DEF_ID,
     )
     schemaId = fields.Str(
         description="Schema identifier within credential definition identifier",
@@ -93,7 +100,7 @@ class CredDefIdMatchInfoSchema(Schema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID
+        **INDY_CRED_DEF_ID,
     )
 
 
@@ -121,6 +128,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     schema_id = body.get("schema_id")
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
+    revocation_registry_size = body.get("revocation_registry_size")
 
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger:
@@ -130,16 +138,65 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         raise web.HTTPForbidden(reason=reason)
 
     issuer: BaseIssuer = await context.inject(BaseIssuer)
-    async with ledger:
-        credential_definition_id, credential_definition = await shield(
-            ledger.create_and_send_credential_definition(
-                issuer,
-                schema_id,
-                signature_type=None,
-                tag=tag,
-                support_revocation=support_revocation,
+    try:
+        async with ledger:
+            credential_definition_id, credential_definition = await shield(
+                ledger.create_and_send_credential_definition(
+                    issuer,
+                    schema_id,
+                    signature_type=None,
+                    tag=tag,
+                    support_revocation=support_revocation,
+                )
             )
-        )
+    except LedgerError as e:
+        raise web.HTTPBadRequest(reason=e.message) from e
+
+    # If revocation is requested, create revocation registry
+    if support_revocation:
+        tails_base_url = context.settings.get("tails_server_base_url")
+        if not tails_base_url:
+            raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
+        try:
+            # Create registry
+            issuer_did = credential_definition_id.split(":")[0]
+            revoc = IndyRevocation(context)
+            registry_record = await revoc.init_issuer_registry(
+                credential_definition_id,
+                issuer_did,
+                max_cred_num=revocation_registry_size,
+            )
+
+        except RevocationNotSupportedError as e:
+            raise web.HTTPBadRequest(reason=e.message) from e
+        await shield(registry_record.generate_registry(context))
+        try:
+            await registry_record.set_tails_file_public_uri(
+                context, f"{tails_base_url}/{registry_record.revoc_reg_id}"
+            )
+            await registry_record.publish_registry_definition(context)
+            await registry_record.publish_registry_entry(context)
+
+            tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+            upload_success, reason = await tails_server.upload_tails_file(
+                context, registry_record.revoc_reg_id, registry_record.tails_local_path
+            )
+            if not upload_success:
+                raise web.HTTPInternalServerError(
+                    reason=f"Tails file failed to upload: {reason}"
+                )
+
+            pending_registry_record = await revoc.init_issuer_registry(
+                registry_record.cred_def_id,
+                registry_record.issuer_did,
+                max_cred_num=registry_record.max_cred_num,
+            )
+            ensure_future(
+                pending_registry_record.stage_pending_registry_definition(context)
+            )
+
+        except RevocationError as e:
+            raise web.HTTPBadRequest(reason=e.message) from e
 
     return web.json_response({"credential_definition_id": credential_definition_id})
 

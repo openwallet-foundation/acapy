@@ -35,7 +35,7 @@ class RouteUpdated(BaseModel):
             result: The result of the requested action
 
         """
-        super(RouteUpdated, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.recipient_key = recipient_key
         self.action = action
         self.result = result

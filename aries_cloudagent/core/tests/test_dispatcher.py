@@ -7,6 +7,7 @@ from ...config.injection_context import InjectionContext
 from ...connections.models.connection_record import ConnectionRecord
 from ...core.protocol_registry import ProtocolRegistry
 from ...messaging.agent_message import AgentMessage, AgentMessageSchema
+from ...messaging.responder import MockResponder
 from ...messaging.util import datetime_now
 
 from ...protocols.problem_report.v1_0.message import ProblemReport
@@ -301,3 +302,22 @@ class TestDispatcher(AsyncTestCase):
         result = await responder.create_outbound(message)
         assert json.loads(result.payload)["@type"] == StubAgentMessage.Meta.message_type
         await responder.send_webhook("topic", "payload")
+
+    async def test_create_send_outbound(self):
+        message = StubAgentMessage()
+        responder = MockResponder()
+        outbound_message = await responder.create_outbound(message)
+        await responder.send_outbound(outbound_message)
+        assert len(responder.messages) == 1
+
+    async def test_create_enc_outbound(self):
+        context = make_context()
+        message = b"abc123xyz7890000"
+        responder = test_module.DispatcherResponder(
+            context, message, None, async_mock.CoroutineMock()
+        )
+        with async_mock.patch.object(
+            responder, "send_outbound", async_mock.CoroutineMock()
+        ) as mock_send_outbound:
+            await responder.send(message)
+            assert mock_send_outbound.called_once()
