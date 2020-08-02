@@ -18,10 +18,7 @@ from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config, BaseWallet
-from ..ledger.error import (
-    LedgerConfigError,
-    LedgerTransactionError
-)
+from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,

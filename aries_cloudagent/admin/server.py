@@ -18,10 +18,7 @@ from marshmallow import fields, Schema
 
 from ..config.injection_context import InjectionContext
 from ..core.plugin_registry import PluginRegistry
-from ..ledger.error import (
-    LedgerConfigError,
-    LedgerTransactionError
-)
+from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
