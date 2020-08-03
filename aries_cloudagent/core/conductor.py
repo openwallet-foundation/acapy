@@ -263,10 +263,8 @@ class Conductor:
                 self.admin_server and self.admin_server.send_webhook,
                 lambda completed: self.dispatch_complete(message, completed),
             )
-        except LedgerConfigError:
-            self.admin_server.notify_fatal_error()
-            raise
-        except LedgerTransactionError:
+        except (LedgerConfigError, LedgerTransactionError) as e:
+            LOGGER.error("Shutdown with %s", str(e))
             self.admin_server.notify_fatal_error()
             raise
 
@@ -324,10 +322,8 @@ class Conductor:
         """Handle a message that failed delivery via an inbound session."""
         try:
             self.dispatcher.run_task(self.queue_outbound(context, outbound))
-        except LedgerConfigError:
-            self.admin_server.notify_fatal_error()
-            raise
-        except LedgerTransactionError:
+        except (LedgerConfigError, LedgerTransactionError) as e:
+            LOGGER.error("Shutdown with %s", str(e))
             self.admin_server.notify_fatal_error()
             raise
 
@@ -356,10 +352,8 @@ class Conductor:
             except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return
-            except LedgerConfigError:
-                self.admin_server.notify_fatal_error()
-                raise
-            except LedgerTransactionError:
+            except (LedgerConfigError, LedgerTransactionError) as e:
+                LOGGER.error("Shutdown with %s", str(e))
                 self.admin_server.notify_fatal_error()
                 raise
 

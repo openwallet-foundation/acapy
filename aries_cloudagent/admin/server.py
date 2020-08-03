@@ -134,21 +134,15 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     ) or request.app._state.get("ready"):
         try:
             return await handler(request)
-        except LedgerConfigError:
+        except (LedgerConfigError, LedgerTransactionError) as e:
             # fatal, signal server shutdown
-            LOGGER.error(f"Shutdown with LedgerConfigError")
-            request.app._state["ready"] = False
-            request.app._state["alive"] = False
-            raise
-        except LedgerTransactionError:
-            # fatal, signal server shutdown
-            LOGGER.error(f"Shutdown with LedgerTransactionError")
+            LOGGER.error("Shutdown with %s", str(e))
             request.app._state["ready"] = False
             request.app._state["alive"] = False
             raise
         except Exception as e:
             # some other error?
-            LOGGER.error("Handler error with exception: " + str(e))
+            LOGGER.error("Handler error with exception: %s", str(e))
             raise e
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
@@ -362,7 +356,6 @@ class AdminServer(BaseAdminServer):
     async def stop(self) -> None:
         """Stop the webserver."""
         self.app._state["ready"] = False  # in case call does not come through OpenAPI
-        self.app._state["alive"] = False
         for queue in self.websocket_queues.values():
             queue.stop()
         if self.site:
