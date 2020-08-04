@@ -445,6 +445,11 @@ if __name__ == "__main__":
 
     require_indy()
 
+    if args.revocation and not args.tails_server_base_url:
+        raise Exception(
+            "If revocation is enabled, --tails-server-base-url must be provided"
+        )
+
     try:
         asyncio.get_event_loop().run_until_complete(
             main(
