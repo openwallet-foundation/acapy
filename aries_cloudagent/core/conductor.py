@@ -17,7 +17,7 @@ from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
-from ..config.wallet import wallet_config
+from ..config.wallet import wallet_config, BaseWallet
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
@@ -86,6 +86,13 @@ class Conductor:
         )
         await self.outbound_transport_manager.setup()
 
+        # Configure the wallet
+        public_did = await wallet_config(context)
+
+        # Configure the ledger
+        if not await ledger_config(context, public_did):
+            LOGGER.warning("No ledger configured")
+
         # Admin API
         if context.settings.get("admin.enabled"):
             try:
@@ -141,13 +148,6 @@ class Conductor:
 
         context = self.context
 
-        # Configure the wallet
-        public_did = await wallet_config(context)
-
-        # Configure the ledger
-        if not await ledger_config(context, public_did):
-            LOGGER.warning("No ledger configured")
-
         # Start up transports
         try:
             await self.inbound_transport_manager.start()
@@ -174,12 +174,16 @@ class Conductor:
         # Get agent label
         default_label = context.settings.get("default_label")
 
+        # Get public did
+        wallet: BaseWallet = await context.inject(BaseWallet)
+        public_did = await wallet.get_public_did()
+
         # Show some details about the configuration to the user
         LoggingConfigurator.print_banner(
             default_label,
             self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
-            public_did,
+            public_did.did if public_did else None,
             self.admin_server,
         )
 

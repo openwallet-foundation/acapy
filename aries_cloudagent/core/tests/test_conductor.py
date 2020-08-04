@@ -103,12 +103,48 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.setup()
 
+            wallet = await conductor.context.inject(BaseWallet)
+            await wallet.create_public_did()
+
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
             mock_outbound_mgr.return_value.setup.assert_awaited_once()
 
             mock_inbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.registered_transports = {}
 
+            await conductor.start()
+
+            mock_inbound_mgr.return_value.start.assert_awaited_once_with()
+            mock_outbound_mgr.return_value.start.assert_awaited_once_with()
+
+            mock_logger.print_banner.assert_called_once()
+
+            await conductor.stop()
+
+            mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
+            mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
+
+    async def test_startup_no_public_did(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, async_mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, async_mock.patch.object(
+            test_module, "LoggingConfigurator", autospec=True
+        ) as mock_logger:
+
+            await conductor.setup()
+
+            mock_inbound_mgr.return_value.setup.assert_awaited_once()
+            mock_outbound_mgr.return_value.setup.assert_awaited_once()
+
+            mock_inbound_mgr.return_value.registered_transports = {}
+            mock_outbound_mgr.return_value.registered_transports = {}
+
+            # Doesn't raise
             await conductor.start()
 
             mock_inbound_mgr.return_value.start.assert_awaited_once_with()
@@ -357,6 +393,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         admin = await conductor.context.inject(BaseAdminServer)
         assert admin is conductor.admin_server
 
+        wallet = await conductor.context.inject(BaseWallet)
+        await wallet.create_public_did()
+
         with async_mock.patch.object(
             admin, "start", autospec=True
         ) as admin_start, async_mock.patch.object(
@@ -376,6 +415,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         await conductor.setup()
         admin = await conductor.context.inject(BaseAdminServer)
         assert admin is conductor.admin_server
+
+        wallet = await conductor.context.inject(BaseWallet)
+        await wallet.create_public_did()
 
         with async_mock.patch.object(
             admin, "start", async_mock.CoroutineMock()
@@ -415,6 +457,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         with async_mock.patch.object(test_module, "ConnectionManager") as mock_mgr:
             await conductor.setup()
+
+            wallet = await conductor.context.inject(BaseWallet)
+            await wallet.create_public_did()
+
             mock_mgr.return_value.create_static_connection = async_mock.CoroutineMock()
             await conductor.start()
             mock_mgr.return_value.create_static_connection.assert_awaited_once()
@@ -487,6 +533,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         with async_mock.patch("sys.stdout", new=StringIO()) as captured:
             await conductor.setup()
+
+            wallet = await conductor.context.inject(BaseWallet)
+            await wallet.create_public_did()
+
             await conductor.start()
             await conductor.stop()
             assert "http://localhost?c_i=" in captured.getvalue()

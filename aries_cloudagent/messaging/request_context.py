@@ -80,7 +80,7 @@ class RequestContext(InjectionContext):
             The default agent endpoint
 
         """
-        return self.settings["default_endpoint"]
+        return self.settings.get("default_endpoint")
 
     @default_endpoint.setter
     def default_endpoint(self, endpoint: str):

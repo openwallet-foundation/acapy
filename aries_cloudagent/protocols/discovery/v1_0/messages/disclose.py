@@ -28,7 +28,7 @@ class Disclose(AgentMessage):
         Args:
             protocols: A mapping of protocol names to a dictionary of properties
         """
-        super(Disclose, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.protocols = list(protocols) if protocols else []
 
 

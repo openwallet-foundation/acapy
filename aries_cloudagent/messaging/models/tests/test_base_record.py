@@ -1,10 +1,12 @@
 import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from marshmallow import fields
 
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
-from ....storage.base import BaseStorage, StorageRecord
+from ....storage.base import BaseStorage, StorageDuplicateError, StorageRecord
+from ....storage.basic import BasicStorage
 
 from ...responder import BaseResponder, MockResponder
 from ...util import time_now
@@ -25,6 +27,36 @@ class BaseRecordImplSchema(BaseRecordSchema):
         model_class = BaseRecordImpl
 
 
+class ARecordImpl(BaseRecord):
+    class Meta:
+        schema_class = "ARecordImplSchema"
+
+    RECORD_TYPE = "a-record"
+    CACHE_ENABLED = False
+    RECORD_ID_NAME = "ident"
+    TAG_NAMES = {"code"}
+
+    def __init__(self, *, ident=None, a, b, code, **kwargs):
+        super().__init__(ident, **kwargs)
+        self.a = a
+        self.b = b
+        self.code = code
+
+    @property
+    def record_value(self) -> dict:
+        return {"a": self.a, "b": self.b}
+
+
+class ARecordImplSchema(BaseRecordSchema):
+    class Meta:
+        model_class = BaseRecordImpl
+
+    ident = fields.Str(attribute="_id")
+    a = fields.Str()
+    b = fields.Str()
+    code = fields.Str()
+
+
 class UnencTestImpl(BaseRecord):
     TAG_NAMES = {"~a", "~b", "c"}
 
@@ -41,6 +73,10 @@ class TestBaseRecord(AsyncTestCase):
         assert isinstance(inst, BaseRecordImpl)
         assert inst._id == record_id
         assert inst.value == stored
+
+        stored[BaseRecordImpl.RECORD_ID_NAME] = inst._id
+        with self.assertRaises(ValueError):
+            BaseRecordImpl.from_storage(record_id, stored)
 
     async def test_post_save_new(self):
         context = InjectionContext(enforce_typing=False)
@@ -74,12 +110,15 @@ class TestBaseRecord(AsyncTestCase):
         mock_storage.update_record_tags.assert_called_once()
 
     async def test_cache(self):
+        assert not await BaseRecordImpl.get_cached_key(None, None)
+        await BaseRecordImpl.set_cached_key(None, None, None)
+        await BaseRecordImpl.clear_cached_key(None, None)
         context = InjectionContext(enforce_typing=False)
         mock_cache = async_mock.MagicMock(BaseCache, autospec=True)
         context.injector.bind_instance(BaseCache, mock_cache)
         record = BaseRecordImpl()
         cache_key = "cache_key"
-        cache_result = await record.get_cached_key(context, cache_key)
+        cache_result = await BaseRecordImpl.get_cached_key(context, cache_key)
         mock_cache.get.assert_awaited_once_with(cache_key)
         assert cache_result is mock_cache.get.return_value
 
@@ -108,6 +147,39 @@ class TestBaseRecord(AsyncTestCase):
             assert isinstance(result, BaseRecordImpl)
             assert result._id == record_id
             assert result.value == stored
+
+    async def test_retrieve_by_tag_filter_multi_x_delete(self):
+        context = InjectionContext(enforce_typing=False)
+        basic_storage = BasicStorage()
+        context.injector.bind_instance(BaseStorage, basic_storage)
+        records = []
+        for i in range(3):
+            records.append(ARecordImpl(a="1", b=str(i), code="one"))
+            await records[i].save(context)
+        with self.assertRaises(StorageDuplicateError):
+            await ARecordImpl.retrieve_by_tag_filter(
+                context, {"code": "one"}, {"a": "1"}
+            )
+        await records[0].delete_record(context)
+
+    async def test_save_x(self):
+        context = InjectionContext(enforce_typing=False)
+        basic_storage = BasicStorage()
+        context.injector.bind_instance(BaseStorage, basic_storage)
+        rec = ARecordImpl(a="1", b="0", code="one")
+        with async_mock.patch.object(
+            context, "inject", async_mock.CoroutineMock()
+        ) as mock_inject:
+            mock_inject.return_value = async_mock.MagicMock(
+                add_record=async_mock.CoroutineMock(side_effect=ZeroDivisionError())
+            )
+            with self.assertRaises(ZeroDivisionError):
+                await rec.save(context)
+
+    async def test_neq(self):
+        a_rec = ARecordImpl(a="1", b="0", code="one")
+        b_rec = BaseRecordImpl()
+        assert a_rec != b_rec
 
     async def test_retrieve_uncached_id(self):
         context = InjectionContext(enforce_typing=False)
@@ -163,7 +235,7 @@ class TestBaseRecord(AsyncTestCase):
             BaseRecordImpl, "LOG_STATE_FLAG", test_param
         ) as cls:
             record = BaseRecordImpl()
-            record.log_state(context, "state")
+            record.log_state(context, msg="state", params={"a": "1", "b": "2"})
         mock_print.assert_called_once()
 
     @async_mock.patch("builtins.print")
@@ -180,6 +252,8 @@ class TestBaseRecord(AsyncTestCase):
         record = BaseRecordImpl()
         payload = {"test": "payload"}
         topic = "topic"
+        await record.send_webhook(context, None, None)  # cover short circuit
+        await record.send_webhook(context, "hello", None)  # cover short circuit
         await record.send_webhook(context, payload, topic=topic)
         assert mock_responder.webhooks == [(topic, payload)]
 
@@ -189,6 +263,11 @@ class TestBaseRecord(AsyncTestCase):
 
         tags = {"a": "x", "b": "y", "c": "z"}
         assert UnencTestImpl.prefix_tag_filter(tags) == {"~a": "x", "~b": "y", "c": "z"}
+
+        tags = {"$not": {"a": "x", "b": "y", "c": "z"}}
+        expect = {"$not": {"~a": "x", "~b": "y", "c": "z"}}
+        actual = UnencTestImpl.prefix_tag_filter(tags)
+        assert {**expect} == {**actual}
 
         tags = {"$or": [{"a": "x"}, {"c": "z"}]}
         assert UnencTestImpl.prefix_tag_filter(tags) == {

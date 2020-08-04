@@ -57,7 +57,7 @@ async def ledger_config(
     if not ledger:
         LOGGER.info("Ledger instance not provided")
         return False
-    elif ledger.LEDGER_TYPE != "indy":
+    elif ledger.type != "indy":
         LOGGER.info("Non-indy ledger provided")
         return False
 
@@ -77,7 +77,7 @@ async def ledger_config(
         endpoint = context.settings.get("default_endpoint")
         if public_did:
             wallet: BaseWallet = await context.inject(BaseWallet)
-            if wallet.WALLET_TYPE != "indy":
+            if wallet.type != "indy":
                 raise ConfigError("Cannot provision a non-Indy wallet type")
             await wallet.set_did_endpoint(public_did, endpoint, ledger)
 

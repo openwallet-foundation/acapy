@@ -30,7 +30,7 @@ class Query(AgentMessage):
             query: The query string to match against supported message types
             comment: An optional comment
         """
-        super(Query, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.query = query
         self.comment = comment
 

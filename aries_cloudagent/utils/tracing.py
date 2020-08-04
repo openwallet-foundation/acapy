@@ -77,7 +77,7 @@ def tracing_enabled(context, message) -> bool:
                 if message.payload.get("~trace") or message.payload.get("trace"):
                     return True
             elif message.payload and isinstance(message.payload, str):
-                if "~trace" in message.payload or "trace" in message.payload:
+                if "trace" in message.payload:  # includes "~trace" in message.payload
                     return True
 
     # default off
@@ -126,7 +126,7 @@ def trace_event(
                 ("log", "message" or an http endpoint)
             context["trace.tag"]: Tag to be included in trace output
         message: the current message, can be an AgentMessage,
-                InboundMessage, OutboundMessage or Exchange record
+            InboundMessage, OutboundMessage or Exchange record
         event: Dict that will be converted to json and posted to the target
     """
 

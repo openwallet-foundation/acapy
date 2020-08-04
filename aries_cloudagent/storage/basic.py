@@ -260,9 +260,7 @@ class BasicStorageRecordSearch(BaseStorageRecordSearch):
             options: Dictionary of backend-specific options
 
         """
-        super(BasicStorageRecordSearch, self).__init__(
-            store, type_filter, tag_query, page_size, options
-        )
+        super().__init__(store, type_filter, tag_query, page_size, options)
         self._cache = None
         self._iter = None
 

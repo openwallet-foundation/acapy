@@ -19,7 +19,7 @@ class MenuRequest(AgentMessage):
 
     def __init__(self, **kwargs):
         """Initialize a menu request object."""
-        super(MenuRequest, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class MenuRequestSchema(AgentMessageSchema):

@@ -26,7 +26,7 @@ class TestHttpTransport(AioHTTPTestCase):
         self.transport.wire_format = JsonWireFormat()
         self.result_event = None
         self.response_message = None
-        super(TestHttpTransport, self).setUp()
+        super().setUp()
 
     def create_session(
         self,
