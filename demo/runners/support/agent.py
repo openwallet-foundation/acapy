@@ -6,8 +6,6 @@ import logging
 import os
 import random
 import subprocess
-import hashlib
-import base58
 from timeit import default_timer
 
 from aiohttp import (
@@ -214,7 +212,6 @@ class DemoAgent:
         ]
         log_msg("Cred def ID:", credential_definition_id)
         return schema_id, credential_definition_id
-
 
     def get_agent_args(self):
         result = [
