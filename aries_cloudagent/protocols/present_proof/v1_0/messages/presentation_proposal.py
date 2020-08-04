@@ -53,5 +53,7 @@ class PresentationProposalSchema(AgentMessageSchema):
 
         model_class = PresentationProposal
 
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
     presentation_proposal = fields.Nested(PresentationPreviewSchema, required=True)

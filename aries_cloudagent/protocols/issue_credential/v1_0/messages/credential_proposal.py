@@ -77,7 +77,9 @@ class CredentialProposalSchema(AgentMessageSchema):
 
         model_class = CredentialProposal
 
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
     credential_proposal = fields.Nested(
         CredentialPreviewSchema, required=False, allow_none=False
     )
