@@ -355,7 +355,7 @@ class PresentationManager:
                         (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
                             rev_reg_id,
                             referent_non_revoc_interval.get("from", 0),
-                            referent_non_revoc_interval.get("to", epoch_now)
+                            referent_non_revoc_interval.get("to", epoch_now),
                         )
                         revoc_reg_deltas[key] = (
                             rev_reg_id,
