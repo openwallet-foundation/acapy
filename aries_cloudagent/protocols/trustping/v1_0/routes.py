@@ -16,7 +16,9 @@ from .messages.ping import Ping
 class PingRequestSchema(Schema):
     """Request schema for performing a ping."""
 
-    comment = fields.Str(required=False, description="Comment for the ping message")
+    comment = fields.Str(
+        description="Comment for the ping message", required=False, allow_none=True
+    )
 
 
 class PingRequestResponseSchema(Schema):
