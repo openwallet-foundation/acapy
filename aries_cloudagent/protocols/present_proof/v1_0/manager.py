@@ -326,9 +326,9 @@ class PresentationManager:
 
         # Get delta with non-revocation interval defined in "non_revoked"
         # of the presentation request or attributes
-        current_timestamp = int(time.time())
+        epoch_now = int(time.time())
 
-        non_revoc_interval = {"from": 0, "to": current_timestamp}
+        non_revoc_interval = {"from": 0, "to": epoch_now}
         non_revoc_interval.update(
             presentation_exchange_record.presentation_request.get("non_revoked", {})
         )
@@ -348,14 +348,14 @@ class PresentationManager:
 
                 if referent_non_revoc_interval:
                     key = (
-                        f"{rev_reg_id}_{non_revoc_interval['from']}_"
-                        f"{non_revoc_interval['to']}"
+                        f"{rev_reg_id}_{referent_non_revoc_interval.get('from', 0)}_"
+                        f"{referent_non_revoc_interval.get('to', epoch_now)}"
                     )
                     if key not in revoc_reg_deltas:
                         (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
                             rev_reg_id,
-                            non_revoc_interval["from"],
-                            non_revoc_interval["to"],
+                            referent_non_revoc_interval.get("from", 0),
+                            referent_non_revoc_interval.get("to", epoch_now)
                         )
                         revoc_reg_deltas[key] = (
                             rev_reg_id,
