@@ -445,7 +445,9 @@ if __name__ == "__main__":
 
     require_indy()
 
-    if args.revocation and not args.tails_server_base_url:
+    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+
+    if args.revocation and not tails_server_base_url:
         raise Exception(
             "If revocation is enabled, --tails-server-base-url must be provided"
         )
@@ -456,7 +458,7 @@ if __name__ == "__main__":
                 args.port,
                 args.no_auto,
                 args.revocation,
-                args.tails_server_base_url,
+                tails_server_base_url,
                 args.timing,
             )
         )

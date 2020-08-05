@@ -36,8 +36,6 @@ TRACE_ENABLED = os.getenv("TRACE_ENABLED")
 
 AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT")
 
-PUBLIC_TAILS_URL = os.getenv("PUBLIC_TAILS_URL")
-
 DEFAULT_POSTGRES = bool(os.getenv("POSTGRES"))
 DEFAULT_INTERNAL_HOST = "127.0.0.1"
 DEFAULT_EXTERNAL_HOST = "localhost"
@@ -137,9 +135,6 @@ class DemoAgent:
         self.trace_target = TRACE_TARGET
         self.trace_tag = TRACE_TAG
 
-        if PUBLIC_TAILS_URL:
-            self.tails_server_base_url = PUBLIC_TAILS_URL
-
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
             self.endpoint = AGENT_ENDPOINT
@@ -149,14 +144,7 @@ class DemoAgent:
             )
         else:
             self.endpoint = f"http://{self.external_host}:{http_port}"
-        if os.getenv("PUBLIC_TAILS_URL"):
-            self.public_tails_url = os.getenv("PUBLIC_TAILS_URL")
-        elif RUN_MODE == "pwd":
-            self.public_tails_url = f"http://{self.external_host}".replace(
-                "{PORT}", str(admin_port)
-            )
-        else:
-            self.public_tails_url = self.admin_url
+
         self.webhook_port = None
         self.webhook_url = None
         self.webhook_site = None
