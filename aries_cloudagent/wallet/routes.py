@@ -16,9 +16,16 @@ from marshmallow import fields, Schema
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.valid import ENDPOINT, INDY_CRED_DEF_ID, INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..wallet.models.wallet_record import WalletRecord
 
 from .base import DIDInfo, BaseWallet
 from .error import WalletError, WalletNotFoundError
+
+
+WALLET_TYPES = {
+    "basic": "aries_cloudagent.wallet.basic.BasicWallet",
+    "indy": "aries_cloudagent.wallet.indy.IndyWallet",
+}
 
 
 class DIDSchema(Schema):
@@ -76,6 +83,24 @@ class CredDefIdMatchInfoSchema(Schema):
     )
 
 
+class CreateWalletRequestSchema(Schema):
+    """Request schema for adding a new wallet which will be registered by the agent."""
+
+    wallet_name = fields.Str(description="Wallet identifier.", example="MyNewWallet")
+    wallet_key = fields.Str(
+        description="Master key used for key derivation.", example="MySecretKey123"
+    )
+    seed = fields.Str(
+        description="Seed used for did derivation - 32 bytes.",
+        example="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    )
+    wallet_type = fields.Str(
+        description="Type the newly generated wallet should be [basic | indy].",
+        example="indy",
+        default="indy",
+    )
+
+
 def format_did_info(info: DIDInfo):
     """Serialize a DIDInfo object."""
     if info:
@@ -84,6 +109,40 @@ def format_did_info(info: DIDInfo):
             "verkey": info.verkey,
             "public": json.dumps(bool(info.metadata.get("public"))),
         }
+
+
+@docs(tags=["wallet"], summary="Create a wallet")
+@request_schema(CreateWalletRequestSchema)
+@response_schema(DIDResultSchema, 200)
+async def wallet_create(request: web.BaseRequest):
+    """
+    Request handler for adding a new wallet for handling by the agent.
+    Args:
+        request: aiohttp request object
+    Raises:
+        HTTPBadRequest: if no name is provided to identify new wallet.
+        HTTPBadRequest: if a not supported wallet type is specified.
+    """
+
+    context = request.app["request_context"]
+
+    body = await request.json()
+
+    config = {}
+    if body.get("wallet_name"):
+        config["name"] = body.get("wallet_name")
+    else:
+        raise web.HTTPBadRequest(reason="Name needs to be provided to create a wallet.")
+    config["key"] = body.get("wallet_key")
+    wallet_type = body.get("wallet_type")
+    if wallet_type not in WALLET_TYPES:
+        raise web.HTTPBadRequest(reason="Specified wallet type is not supported.")
+    config["type"] = wallet_type
+
+    wallet_record = WalletRecord(wallet_config=config)
+    await wallet_record.save(context)
+
+    return web.json_response(wallet_record.serialize())
 
 
 @docs(
@@ -353,6 +412,7 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
+            web.post("/wallet/create", wallet_create),
             web.get("/wallet/did", wallet_did_list, allow_head=False),
             web.post("/wallet/did/create", wallet_create_did),
             web.get("/wallet/did/public", wallet_get_public_did, allow_head=False),
