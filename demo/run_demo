@@ -132,7 +132,7 @@ elif [ "$AGENT" = "acme" ]; then
 elif [ "$AGENT" = "performance" ]; then
   AGENT_MODULE="performance"
   AGENT_PORT=8030
-  AGENT_PORT_RANGE=8030-8038
+  AGENT_PORT_RANGE=8030-8048
 else
   echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'."
   exit 1
@@ -174,7 +174,7 @@ if [ -z "$AGENT_ENDPOINT" ] && [ "$RUNMODE" == "docker" ]; then
       echo "Detected ngrok agent endpoint [$AGENT_ENDPOINT]"
     fi
   else
-    echo "jq not found"
+    echo "    not found"
   fi
 fi
 

@@ -239,8 +239,8 @@ class FaberAgent(BaseAgent):
 
 
 class RoutingAgent(BaseAgent):
-    def __init__(self, port: int, **kwargs):
-        super().__init__("Router", port, **kwargs)
+    def __init__(self, port: int, name: str, **kwargs):
+        super().__init__(name + " Router", port, **kwargs)
 
 
 async def main(
@@ -262,6 +262,7 @@ async def main(
     alice = None
     faber = None
     alice_router = None
+    faber_router = None
     run_timer = log_timer("Total runtime:")
     run_timer.start()
 
@@ -281,14 +282,22 @@ async def main(
 
         if routing:
             alice_router = RoutingAgent(
-                start_port + 6, genesis_data=genesis, timing=show_timing
+                start_port + 6, "Alice", genesis_data=genesis, timing=show_timing
             )
             await alice_router.listen_webhooks(start_port + 8)
             await alice_router.register_did()
 
+            faber_router = RoutingAgent(
+                start_port + 10, "Faber", genesis_data=genesis, timing=show_timing
+            )
+            await faber_router.listen_webhooks(start_port + 12)
+            await faber_router.register_did()
+
         with log_timer("Startup duration:"):
             if alice_router:
                 await alice_router.start_process()
+            if faber_router:
+                await faber_router.start_process()
             await alice.start_process()
             await faber.start_process()
 
@@ -299,13 +308,25 @@ async def main(
 
         with log_timer("Connect duration:"):
             if routing:
+                alice.log("starting alice_router")
                 router_invite = await alice_router.get_invite()
                 alice_router_conn_id = await alice.receive_invite(router_invite)
                 await asyncio.wait_for(alice.detect_connection(), 30)
 
+                faber.log("starting faber_router")
+                faber_router_invite = await faber_router.get_invite()
+                faber_router_conn_id = await faber.receive_invite(faber_router_invite)
+                await asyncio.wait_for(faber.detect_connection(), 30)
+
+            faber.log("Get invite for alice")
             invite = await faber.get_invite()
+            if routing:
+                faber.log("Establish inbound routing on faber invitation")
+                conn_id = faber.connection_id
+                await faber.establish_inbound(conn_id, faber_router_conn_id)
 
             if routing:
+                alice.log("Accept faber invite with inbound routing")
                 conn_id = await alice.receive_invite(invite, auto_accept=False)
                 await alice.establish_inbound(conn_id, alice_router_conn_id)
                 await alice.accept_invite(conn_id)
@@ -320,6 +341,7 @@ async def main(
             await faber.reset_timing()
             if routing:
                 await alice_router.reset_timing()
+                await faber_router.reset_timing()
 
         batch_size = 100
 
@@ -473,6 +495,10 @@ async def main(
                 if timing:
                     for line in alice_router.format_timing(timing):
                         alice_router.log(line)
+                timing = await faber_router.fetch_timing()
+                if timing:
+                    for line in faber_router.format_timing(timing):
+                        faber_router.log(line)
 
     finally:
         terminated = True
@@ -491,6 +517,8 @@ async def main(
         try:
             if alice_router:
                 await alice_router.terminate()
+            if faber_router:
+                await faber_router.terminate()
         except Exception:
             LOGGER.exception("Error terminating agent:")
             terminated = False

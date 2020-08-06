@@ -521,7 +521,7 @@ class DemoAgent:
                             if resp.status == 200:
                                 text = await resp.text()
                                 break
-                    except (ClientError, asyncio.TimeoutError):
+                    except (ClientError, asyncio.TimeoutError) as e:
                         pass
                     await asyncio.sleep(0.5)
             return text
