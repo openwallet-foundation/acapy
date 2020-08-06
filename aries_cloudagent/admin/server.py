@@ -18,6 +18,7 @@ from marshmallow import fields, Schema
 
 from ..config.injection_context import InjectionContext
 from ..core.plugin_registry import PluginRegistry
+from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
@@ -53,7 +54,7 @@ class AdminStatusLivelinessSchema(Schema):
 
 
 class AdminStatusReadinessSchema(Schema):
-    """Schema for the liveliness endpoint."""
+    """Schema for the readiness endpoint."""
 
     ready = fields.Boolean(description="Readiness status", example=True)
 
@@ -133,7 +134,18 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
         "/status/live",
         "/status/ready",
     ) or request.app._state.get("ready"):
-        return await handler(request)
+        try:
+            return await handler(request)
+        except (LedgerConfigError, LedgerTransactionError) as e:
+            # fatal, signal server shutdown
+            LOGGER.error("Shutdown with %s", str(e))
+            request.app._state["ready"] = False
+            request.app._state["alive"] = False
+            raise
+        except Exception as e:
+            # some other error?
+            LOGGER.error("Handler error with exception: %s", str(e))
+            raise e
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
 
@@ -334,6 +346,11 @@ class AdminServer(BaseAdminServer):
             app=app, title=agent_label, version=version_string, swagger_path="/api/doc"
         )
         app.on_startup.append(self.on_startup)
+
+        # ensure we always have status values
+        app._state["ready"] = False
+        app._state["alive"] = False
+
         return app
 
     async def start(self) -> None:
@@ -368,6 +385,7 @@ class AdminServer(BaseAdminServer):
         try:
             await self.site.start()
             self.app._state["ready"] = True
+            self.app._state["alive"] = True
         except OSError:
             raise AdminSetupError(
                 "Unable to start webserver with host "
@@ -468,7 +486,8 @@ class AdminServer(BaseAdminServer):
             The web response, always indicating True
 
         """
-        return web.json_response({"alive": True})
+        app_live = self.app._state["alive"]
+        return web.json_response({"alive": app_live})
 
     @docs(tags=["server"], summary="Readiness check")
     @response_schema(AdminStatusReadinessSchema(), 200)
@@ -483,7 +502,8 @@ class AdminServer(BaseAdminServer):
             The web response, indicating readiness for further calls
 
         """
-        return web.json_response({"ready": self.app._state["ready"]})
+        app_ready = self.app._state["ready"] and self.app._state["alive"]
+        return web.json_response({"ready": app_ready})
 
     @docs(tags=["server"], summary="Shut down server")
     async def shutdown_handler(self, request: web.BaseRequest):
@@ -502,6 +522,12 @@ class AdminServer(BaseAdminServer):
         asyncio.ensure_future(self.conductor_stop(), loop=loop)
 
         return web.json_response({})
+
+    def notify_fatal_error(self):
+        """Set our readiness flags to force a restart (openshift)."""
+        LOGGER.error("Received shutdown request notify_fatal_error()")
+        self.app._state["ready"] = False
+        self.app._state["alive"] = False
 
     async def websocket_handler(self, request):
         """Send notifications to admin client over websocket."""

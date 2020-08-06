@@ -44,4 +44,4 @@ class QuerySchema(AgentMessageSchema):
         model_class = Query
 
     query = fields.Str(required=True)
-    comment = fields.Str(required=False)
+    comment = fields.Str(required=False, allow_none=True)

@@ -106,7 +106,7 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, default=""
+        description="Human-readable comment", required=False, allow_none=True
     )
     presentation_proposal = fields.Nested(PresentationPreviewSchema(), required=True)
     auto_present = fields.Boolean(
@@ -298,7 +298,7 @@ class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for creating a proof request free of any connection."""
 
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
-    comment = fields.Str(required=False)
+    comment = fields.Str(required=False, allow_none=True)
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
