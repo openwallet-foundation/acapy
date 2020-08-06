@@ -146,6 +146,7 @@ async def main(
     revocation: bool = False,
     tails_server_base_url: str = None,
     show_timing: bool = False,
+    multitenant: bool = False,
 ):
 
     genesis = await default_genesis_txns()
@@ -164,6 +165,7 @@ async def main(
             no_auto=no_auto,
             tails_server_base_url=tails_server_base_url,
             timing=show_timing,
+            multitenant=multitenant,
         )
         await agent.listen_webhooks(start_port + 2)
         await agent.register_did()
@@ -413,6 +415,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
+
+    parser.add_argument(
+        "--multitenant", action="store_true", help="Enable multitenancy options"
+    )
+
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
@@ -460,6 +467,7 @@ if __name__ == "__main__":
                 args.revocation,
                 tails_server_base_url,
                 args.timing,
+                args.multitenant,
             )
         )
     except KeyboardInterrupt:
