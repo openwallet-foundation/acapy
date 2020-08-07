@@ -32,7 +32,7 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     use_public_did = fields.Boolean(default=False)
 
 
-class InvitationSchema(InvitationSchema):
+class InvitationReceiveRequestSchema(InvitationSchema):
     """Invitation Schema."""
 
     service = fields.Field()
@@ -79,7 +79,7 @@ async def invitation_create(request: web.BaseRequest):
 @docs(
     tags=["out-of-band"], summary="Create a new connection invitation",
 )
-@request_schema(InvitationSchema())
+@request_schema(InvitationReceiveRequestSchema())
 async def invitation_receive(request: web.BaseRequest):
     """
     Request handler for creating a new connection invitation.
