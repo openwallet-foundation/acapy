@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -53,6 +53,7 @@ class MenuSchema(AgentMessageSchema):
         """Menu schema metadata."""
 
         model_class = Menu
+        unknown = EXCLUDE
 
     title = fields.Str(required=False, description="Menu title", example="My Menu")
     description = fields.Str(

@@ -1,8 +1,10 @@
 """A credential ack message."""
 
-from .....messaging.ack.message import Ack, AckSchema
-from ..message_types import CREDENTIAL_ACK, PROTOCOL_PACKAGE
+from marshmallow import EXCLUDE
 
+from .....messaging.ack.message import Ack, AckSchema
+
+from ..message_types import CREDENTIAL_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.credential_ack_handler.CredentialAckHandler"
@@ -31,3 +33,4 @@ class CredentialAckSchema(AckSchema):
         """Schema metadata."""
 
         model_class = CredentialAck
+        unknown = EXCLUDE

@@ -1,6 +1,6 @@
 """Query existing forwarding routes."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -42,6 +42,7 @@ class RouteQueryRequestSchema(AgentMessageSchema):
         """RouteQueryRequestSchema metadata."""
 
         model_class = RouteQueryRequest
+        unknown = EXCLUDE
 
     filter = fields.Dict(
         keys=fields.Str(description="field"),

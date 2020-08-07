@@ -3,8 +3,9 @@
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 
-from marshmallow import fields, Schema, validate
+from marshmallow import fields, validate
 
+from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 from ..storage.error import StorageError
 from ..wallet.error import WalletError
@@ -13,7 +14,7 @@ from .indy import Role
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 
 
-class AMLRecordSchema(Schema):
+class AMLRecordSchema(OpenAPISchema):
     """Ledger AML record."""
 
     version = fields.Str()
@@ -21,7 +22,7 @@ class AMLRecordSchema(Schema):
     amlContext = fields.Str()
 
 
-class TAARecordSchema(Schema):
+class TAARecordSchema(OpenAPISchema):
     """Ledger TAA record."""
 
     version = fields.Str()
@@ -29,14 +30,14 @@ class TAARecordSchema(Schema):
     digest = fields.Str()
 
 
-class TAAAcceptanceSchema(Schema):
+class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
     time = fields.Int()
 
 
-class TAAInfoSchema(Schema):
+class TAAInfoSchema(OpenAPISchema):
     """Transaction author agreement info."""
 
     aml_record = fields.Nested(AMLRecordSchema())
@@ -45,13 +46,13 @@ class TAAInfoSchema(Schema):
     taa_accepted = fields.Nested(TAAAcceptanceSchema())
 
 
-class TAAResultSchema(Schema):
+class TAAResultSchema(OpenAPISchema):
     """Result schema for a transaction author agreement."""
 
     result = fields.Nested(TAAInfoSchema())
 
 
-class TAAAcceptSchema(Schema):
+class TAAAcceptSchema(OpenAPISchema):
     """Input schema for accepting the TAA."""
 
     version = fields.Str()
@@ -59,7 +60,7 @@ class TAAAcceptSchema(Schema):
     mechanism = fields.Str()
 
 
-class RegisterLedgerNymQueryStringSchema(Schema):
+class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for register ledger nym request."""
 
     did = fields.Str(description="DID to register", required=True, **INDY_DID,)
@@ -76,7 +77,7 @@ class RegisterLedgerNymQueryStringSchema(Schema):
     )
 
 
-class QueryStringDIDSchema(Schema):
+class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)

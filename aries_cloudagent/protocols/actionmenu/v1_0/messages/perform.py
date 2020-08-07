@@ -2,7 +2,7 @@
 
 from typing import Mapping
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -41,6 +41,7 @@ class PerformSchema(AgentMessageSchema):
         """Perform schema metadata."""
 
         model_class = Perform
+        unknown = EXCLUDE
 
     name = fields.Str(required=True, description="Menu option name", example="Query",)
     params = fields.Dict(

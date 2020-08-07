@@ -3,9 +3,10 @@
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, request_schema, response_schema
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ....connections.models.connection_record import ConnectionRecord
+from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageNotFoundError
 
@@ -13,7 +14,7 @@ from .message_types import SPEC_URI
 from .messages.ping import Ping
 
 
-class PingRequestSchema(Schema):
+class PingRequestSchema(OpenAPISchema):
     """Request schema for performing a ping."""
 
     comment = fields.Str(
@@ -21,13 +22,13 @@ class PingRequestSchema(Schema):
     )
 
 
-class PingRequestResponseSchema(Schema):
+class PingRequestResponseSchema(OpenAPISchema):
     """Request schema for performing a ping."""
 
     thread_id = fields.Str(required=False, description="Thread ID of the ping message")
 
 
-class ConnIdMatchInfoSchema(Schema):
+class ConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(

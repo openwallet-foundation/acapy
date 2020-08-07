@@ -1,6 +1,7 @@
 """Sign and verify functions for json-ld based credentials."""
 
 import json
+
 from ...wallet.util import (
     b58_to_bytes,
     b64_to_bytes,

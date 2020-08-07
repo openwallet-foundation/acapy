@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -12,7 +12,6 @@ from .....messaging.decorators.attach_decorator import (
 
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER, PROTOCOL_PACKAGE
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
-
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.credential_offer_handler.CredentialOfferHandler"
@@ -78,6 +77,7 @@ class CredentialOfferSchema(AgentMessageSchema):
         """Credential offer schema metadata."""
 
         model_class = CredentialOffer
+        unknown = EXCLUDE
 
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True

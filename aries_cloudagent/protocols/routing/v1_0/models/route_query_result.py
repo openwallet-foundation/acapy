@@ -1,6 +1,6 @@
 """An object for containing returned route information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -31,6 +31,7 @@ class RouteQueryResultSchema(BaseModelSchema):
     class Meta:
         """RouteQueryResultSchema metadata."""
 
-        model_class = "RouteQueryResult"
+        model_class = RouteQueryResult
+        unknown = EXCLUDE
 
     recipient_key = fields.Str(required=True)

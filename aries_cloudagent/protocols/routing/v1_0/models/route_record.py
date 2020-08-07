@@ -1,6 +1,6 @@
 """An object for containing information on an individual route."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -44,7 +44,8 @@ class RouteRecordSchema(BaseModelSchema):
     class Meta:
         """RouteRecordSchema metadata."""
 
-        model_class = "RouteRecord"
+        model_class = RouteRecord
+        unknown = EXCLUDE
 
     record_id = fields.Str(required=False)
     connection_id = fields.Str(required=True)

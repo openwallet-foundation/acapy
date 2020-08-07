@@ -7,7 +7,7 @@ to record information on message processing events.
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUIDFour
@@ -234,6 +234,7 @@ class TraceReportSchema(BaseModelSchema):
         """TraceReportSchema metadata."""
 
         model_class = TraceReport
+        unknown = EXCLUDE
 
     msg_id = fields.Str(
         required=True,
@@ -292,6 +293,7 @@ class TraceDecoratorSchema(BaseModelSchema):
         """TraceDecoratorSchema metadata."""
 
         model_class = TraceDecorator
+        unknown = EXCLUDE
 
     target = fields.Str(
         required=True,
