@@ -292,14 +292,10 @@ class TestAdminServer(AsyncTestCase):
         async with self.client_session.get(
             f"http://127.0.0.1:{self.port}/status/live", headers={}
         ) as response:
-            assert response.status == 200
-            response_json = await response.json()
-            assert not response_json["alive"]
+            assert response.status == 503
 
         async with self.client_session.get(
             f"http://127.0.0.1:{self.port}/status/ready", headers={}
         ) as response:
-            assert response.status == 200
-            response_json = await response.json()
-            assert not response_json["ready"]
+            assert response.status == 503
         await server.stop()
