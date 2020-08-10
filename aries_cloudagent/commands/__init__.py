@@ -20,8 +20,7 @@ def load_command(command: str):
     for cmd in available_commands():
         if cmd["name"] == command:
             module = cmd["name"]
-            if "module" in cmd:
-                module_path = cmd["module"]
+            module_path = cmd.get("module")
             break
     if module and not module_path:
         module_path = f"{__package__}.{module}"
