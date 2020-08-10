@@ -908,7 +908,7 @@ class TestCredentialManager(AsyncTestCase):
                 ]
             )
             (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
-                stored_exchange, comment=comment, retries=0
+                stored_exchange, comment=comment, retries=1
             )
 
             save_ex.assert_called_once()
@@ -1123,7 +1123,7 @@ class TestCredentialManager(AsyncTestCase):
                     stored_exchange, comment=comment, retries=0
                 )
 
-    async def test_issue_credential_rr_full_rr_staged(self):
+    async def test_issue_credential_rr_full_rr_staged_retry(self):
         connection_id = "test_conn_id"
         comment = "comment"
         cred_values = {"attr": "value"}
@@ -1158,7 +1158,10 @@ class TestCredentialManager(AsyncTestCase):
         cred = {"indy": "credential"}
         cred_rev_id = "1"
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(cred), cred_rev_id)
+            side_effect=[
+                test_module.IssuerRevocationRegistryFullError("it's full"),
+                (json.dumps({"good": "credential"}), str(revocation_id)),
+            ]
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
@@ -1167,6 +1170,18 @@ class TestCredentialManager(AsyncTestCase):
                 get_registry=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
                         tails_local_path="dummy-path", max_creds=revocation_id
+                    )
+                ),
+                revoc_reg_id=REV_REG_ID,
+                mark_full=async_mock.CoroutineMock(),
+            )
+        ]
+
+        active_non_full_reg = [
+            async_mock.MagicMock(
+                get_registry=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        tails_local_path="dummy-path", max_creds=1000
                     )
                 ),
                 revoc_reg_id=REV_REG_ID,
@@ -1195,21 +1210,18 @@ class TestCredentialManager(AsyncTestCase):
             asyncio, "ensure_future", autospec=True
         ) as asyncio_mock:
             issuer_rr_rec.query_by_cred_def_id.side_effect = [
-                # First call line checking for staged registries
-                [],
-                # Get active full registry
-                active_full_reg,
-                # Final call returns pending registry
-                pending_reg,
-                [],
-                [],
+                [],  # First call checking for staged registries
+                active_full_reg,  # Get active full registry
+                [],  # Get active full registry after rev-reg-full
+                [],  # Get staged
+                pending_reg,  # Get published
+                [],  # Get staged, on retry pass
+                active_non_full_reg,  # Get active
             ]
 
             await self.manager.issue_credential(
                 stored_exchange, comment=comment, retries=1
             )
-
-            pending_reg[0].publish_registry_entry.assert_called_once()
 
     async def test_receive_credential(self):
         connection_id = "test_conn_id"

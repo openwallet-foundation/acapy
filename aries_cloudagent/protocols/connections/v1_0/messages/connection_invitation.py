@@ -50,7 +50,7 @@ class ConnectionInvitation(AgentMessage):
             routing_keys: List of routing keys
             image_url: Optional image URL for connection invitation
         """
-        super(ConnectionInvitation, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.label = label
         self.did = did
         self.recipient_keys = list(recipient_keys) if recipient_keys else None

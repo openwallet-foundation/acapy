@@ -25,7 +25,7 @@ class RouteUpdate(BaseModel):
             action: The action to perform
 
         """
-        super(RouteUpdate, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.recipient_key = recipient_key
         self.action = action
 

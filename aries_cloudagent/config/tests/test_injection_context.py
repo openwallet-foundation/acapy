@@ -25,6 +25,11 @@ class TestInjectionContext(AsyncTestCase):
             self.test_instance.start_scope(None)
         with self.assertRaises(InjectionContextError):
             self.test_instance.start_scope(self.test_instance.ROOT_SCOPE)
+
+        injector = self.test_instance.injector_for_scope(self.test_instance.ROOT_SCOPE)
+        assert injector == self.test_instance.injector
+        assert self.test_instance.injector_for_scope("no such scope") is None
+
         context = self.test_instance.start_scope(self.test_scope)
         assert context.scope_name == self.test_scope
         with self.assertRaises(InjectionContextError):
@@ -47,6 +52,9 @@ class TestInjectionContext(AsyncTestCase):
             await self.test_instance.inject(str)
         self.test_instance.injector.bind_instance(str, self.test_value)
         assert (await self.test_instance.inject(str)) is self.test_value
+
+        self.test_instance.injector = None
+        assert self.test_instance.injector is None
 
     async def test_inject_scope(self):
         """Test a scoped injection."""

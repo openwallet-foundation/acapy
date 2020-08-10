@@ -55,7 +55,7 @@ class ProblemReport(AgentMessage):
             tracking_uri: URI for tracking the problem
             escalation_uri: URI for escalating the problem
         """
-        super(ProblemReport, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.msg_catalog = msg_catalog
         self.locale = locale
         self.explain_ltxt = explain_ltxt

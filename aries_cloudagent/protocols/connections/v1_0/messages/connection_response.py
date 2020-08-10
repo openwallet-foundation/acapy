@@ -31,7 +31,7 @@ class ConnectionResponse(AgentMessage):
             connection: Connection details object
 
         """
-        super(ConnectionResponse, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.connection = connection
 
 

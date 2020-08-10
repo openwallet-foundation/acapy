@@ -40,7 +40,7 @@ class Menu(AgentMessage):
             errormsg: An optional error message to display
             options: A sequence of menu options
         """
-        super(Menu, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.title = title
         self.description = description
         self.options = list(options) if options else []

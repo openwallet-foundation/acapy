@@ -15,7 +15,7 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
     """Initialize the wallet."""
     wallet: BaseWallet = await context.inject(BaseWallet)
     if provision:
-        if wallet.WALLET_TYPE != "indy":
+        if wallet.type != "indy":
             raise ConfigError("Cannot provision a non-Indy wallet type")
         if wallet.created:
             print("Created new wallet")

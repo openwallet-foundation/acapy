@@ -33,7 +33,7 @@ class RouteUpdateResponse(AgentMessage):
             updated: A list of route updates
         """
 
-        super(RouteUpdateResponse, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.updated = updated or []
 
 
