@@ -448,7 +448,10 @@ class AdminServer(BaseAdminServer):
 
         """
         app_live = self.app._state["alive"]
-        return web.json_response({"alive": app_live})
+        if app_live:
+            return web.json_response({"alive": app_live})
+        else:
+            raise web.HTTPServiceUnavailable(reason="Service not available")
 
     @docs(tags=["server"], summary="Readiness check")
     @response_schema(AdminStatusReadinessSchema(), 200)
@@ -464,7 +467,10 @@ class AdminServer(BaseAdminServer):
 
         """
         app_ready = self.app._state["ready"] and self.app._state["alive"]
-        return web.json_response({"ready": app_ready})
+        if app_ready:
+            return web.json_response({"ready": app_ready})
+        else:
+            raise web.HTTPServiceUnavailable(reason="Service not ready")
 
     @docs(tags=["server"], summary="Shut down server")
     async def shutdown_handler(self, request: web.BaseRequest):
