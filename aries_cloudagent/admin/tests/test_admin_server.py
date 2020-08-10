@@ -266,3 +266,36 @@ class TestAdminServer(AsyncTestCase):
         ) as response:
             assert response.status == 200
         await server.stop()
+
+    async def test_server_health_state(self):
+        settings = {
+            "admin.admin_insecure_mode": True,
+        }
+        server = self.get_admin_server(settings)
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/live", headers={}
+        ) as response:
+            assert response.status == 200
+            response_json = await response.json()
+            assert response_json["alive"]
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/ready", headers={}
+        ) as response:
+            assert response.status == 200
+            response_json = await response.json()
+            assert response_json["ready"]
+
+        server.notify_fatal_error()
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/live", headers={}
+        ) as response:
+            assert response.status == 503
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/ready", headers={}
+        ) as response:
+            assert response.status == 503
+        await server.stop()
