@@ -145,15 +145,12 @@ class OutOfBandManager:
                 _type="did-communication",
                 recipient_keys=[
                     naked_to_did_key(key)
-                    for key in connection_invitation.recipient_keys
-                ]
-                if connection_invitation.recipient_keys
-                else [],
+                    for key in connection_invitation.recipient_keys or []
+                ],
                 routing_keys=[
-                    naked_to_did_key(key) for key in connection_invitation.routing_keys
-                ]
-                if connection_invitation.routing_keys
-                else [],
+                    naked_to_did_key(key)
+                    for key in connection_invitation.routing_keys or []
+                ],
                 service_endpoint=connection_invitation.endpoint,
             ).validate()
 
@@ -237,16 +234,12 @@ class OutOfBandManager:
                 )
 
             # Transform back to 'naked' verkey
-            service.recipient_keys = (
-                [did_key_to_naked(key) for key in service.recipient_keys]
-                if service.recipient_keys
-                else []
-            )
-            service.routing_keys = (
-                [did_key_to_naked(key) for key in service.routing_keys]
-                if service.routing_keys
-                else []
-            )
+            service.recipient_keys = [
+                did_key_to_naked(key) for key in service.recipient_keys or []
+            ]
+            service.routing_keys = [
+                did_key_to_naked(key) for key in service.routing_keys
+            ] or []
 
             # Convert to the old message format
             connection_invitation = ConnectionInvitation.deserialize(
