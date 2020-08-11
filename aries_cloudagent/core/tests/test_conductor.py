@@ -576,3 +576,24 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_enqueue.assert_called_once_with(
                 test_topic, test_payload, test_endpoint, test_attempts
             )
+
+    async def test_dispatch_complete_fatal_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+
+        message_body = "{}"
+        receipt = MessageReceipt(direct_response_mode="snail mail")
+        message = InboundMessage(message_body, receipt)
+        mock_task = async_mock.MagicMock(
+            exc_info=(test_module.LedgerTransactionError, ("Ledger is wobbly"), "..."),
+            ident="abc",
+            timing={
+                "queued": 1234567890,
+                "unqueued": 1234567899,
+                "started": 1234567901,
+                "ended": 1234567999,
+            },
+        )
+
+        await conductor.setup()
+        conductor.dispatch_complete(message, mock_task)
