@@ -8,7 +8,7 @@ and constrained.
 from datetime import datetime
 from typing import Union
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..util import datetime_to_str
@@ -60,6 +60,7 @@ class TimingDecoratorSchema(BaseModelSchema):
         """TimingDecoratorSchema metadata."""
 
         model_class = TimingDecorator
+        unknown = EXCLUDE
 
     in_time = fields.Str(
         required=False, description="Time of message receipt", **INDY_ISO8601_DATETIME

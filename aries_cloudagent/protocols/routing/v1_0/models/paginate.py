@@ -1,6 +1,6 @@
 """An object for containing the request pagination information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -33,7 +33,8 @@ class PaginateSchema(BaseModelSchema):
     class Meta:
         """PaginateSchema metadata."""
 
-        model_class = "Paginate"
+        model_class = Paginate
+        unknown = EXCLUDE
 
     limit = fields.Int(required=False)
     offset = fields.Int(required=False)

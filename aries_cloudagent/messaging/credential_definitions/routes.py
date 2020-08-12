@@ -11,13 +11,14 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ...issuer.base import BaseIssuer
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ...tails.base import BaseTailsServer
 
+from ..models.openapi import OpenAPISchema
 from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
 
 from ...revocation.error import RevocationError, RevocationNotSupportedError
@@ -28,7 +29,7 @@ from ...ledger.error import LedgerError
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
 
-class CredentialDefinitionSendRequestSchema(Schema):
+class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
     schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
@@ -44,7 +45,7 @@ class CredentialDefinitionSendRequestSchema(Schema):
     )
 
 
-class CredentialDefinitionSendResultsSchema(Schema):
+class CredentialDefinitionSendResultsSchema(OpenAPISchema):
     """Results schema for schema send request."""
 
     credential_definition_id = fields.Str(
@@ -52,7 +53,7 @@ class CredentialDefinitionSendResultsSchema(Schema):
     )
 
 
-class CredentialDefinitionSchema(Schema):
+class CredentialDefinitionSchema(OpenAPISchema):
     """Credential definition schema."""
 
     ver = fields.Str(description="Node protocol version", **INDY_VERSION)
@@ -80,13 +81,13 @@ class CredentialDefinitionSchema(Schema):
     )
 
 
-class CredentialDefinitionGetResultsSchema(Schema):
+class CredentialDefinitionGetResultsSchema(OpenAPISchema):
     """Results schema for schema get request."""
 
     credential_definition = fields.Nested(CredentialDefinitionSchema)
 
 
-class CredentialDefinitionsCreatedResultsSchema(Schema):
+class CredentialDefinitionsCreatedResultsSchema(OpenAPISchema):
     """Results schema for cred-defs-created request."""
 
     credential_definition_ids = fields.List(
@@ -94,7 +95,7 @@ class CredentialDefinitionsCreatedResultsSchema(Schema):
     )
 
 
-class CredDefIdMatchInfoSchema(Schema):
+class CredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
     cred_def_id = fields.Str(

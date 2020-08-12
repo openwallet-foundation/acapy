@@ -4,7 +4,7 @@ import json
 
 from typing import Union
 
-from marshmallow import fields, pre_load
+from marshmallow import EXCLUDE, fields, pre_load
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -45,6 +45,7 @@ class ForwardSchema(AgentMessageSchema):
         """ForwardSchema metadata."""
 
         model_class = Forward
+        unknown = EXCLUDE
 
     @pre_load
     def handle_str_message(self, data, **kwargs):

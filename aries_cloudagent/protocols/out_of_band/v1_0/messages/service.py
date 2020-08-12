@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
@@ -52,6 +52,7 @@ class ServiceSchema(BaseModelSchema):
         """ServiceSchema metadata."""
 
         model_class = Service
+        unknown = EXCLUDE
 
     _id = fields.Str(required=True, description="", data_key="id")
     _type = fields.Str(required=True, description="", data_key="type")

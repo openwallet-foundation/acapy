@@ -13,9 +13,10 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, Schema, validate
+from marshmallow import fields, validate
 
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
+from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID
 from ..storage.base import BaseStorage, StorageNotFoundError
 
@@ -23,11 +24,10 @@ from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 
-
 LOGGER = logging.getLogger(__name__)
 
 
-class RevRegCreateRequestSchema(Schema):
+class RevRegCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     credential_definition_id = fields.Str(
@@ -38,13 +38,13 @@ class RevRegCreateRequestSchema(Schema):
     )
 
 
-class RevRegCreateResultSchema(Schema):
+class RevRegCreateResultSchema(OpenAPISchema):
     """Result schema for revocation registry creation request."""
 
     result = IssuerRevRegRecordSchema()
 
 
-class RevRegsCreatedSchema(Schema):
+class RevRegsCreatedSchema(OpenAPISchema):
     """Result schema for request for revocation registries created."""
 
     rev_reg_ids = fields.List(
@@ -52,7 +52,7 @@ class RevRegsCreatedSchema(Schema):
     )
 
 
-class RevRegUpdateTailsFileUriSchema(Schema):
+class RevRegUpdateTailsFileUriSchema(OpenAPISchema):
     """Request schema for updating tails file URI."""
 
     tails_public_uri = fields.Url(
@@ -65,7 +65,7 @@ class RevRegUpdateTailsFileUriSchema(Schema):
     )
 
 
-class RevRegsCreatedQueryStringSchema(Schema):
+class RevRegsCreatedQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for rev regs created request."""
 
     cred_def_id = fields.Str(
@@ -86,7 +86,7 @@ class RevRegsCreatedQueryStringSchema(Schema):
     )
 
 
-class RevRegIdMatchInfoSchema(Schema):
+class RevRegIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking rev reg id."""
 
     rev_reg_id = fields.Str(
@@ -94,7 +94,7 @@ class RevRegIdMatchInfoSchema(Schema):
     )
 
 
-class CredDefIdMatchInfoSchema(Schema):
+class CredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
     cred_def_id = fields.Str(

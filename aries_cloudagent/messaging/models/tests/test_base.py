@@ -2,7 +2,7 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from marshmallow import fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
@@ -25,6 +25,7 @@ class ModelImpl(BaseModel):
 class SchemaImpl(BaseModelSchema):
     class Meta:
         model_class = ModelImpl
+        unknown = EXCLUDE
 
     attr = fields.String(required=True)
 
