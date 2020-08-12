@@ -17,6 +17,8 @@ from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.valid import ENDPOINT, INDY_CRED_DEF_ID, INDY_DID, INDY_RAW_PUBLIC_KEY
 from ..wallet.models.wallet_record import WalletRecord
+from ..storage.error import StorageNotFoundError
+from .models.wallet_record import WalletRecordSchema
 
 from .base import DIDInfo, BaseWallet
 from .error import WalletError, WalletNotFoundError
@@ -26,6 +28,14 @@ WALLET_TYPES = {
     "basic": "aries_cloudagent.wallet.basic.BasicWallet",
     "indy": "aries_cloudagent.wallet.indy.IndyWallet",
 }
+
+
+class WalletListSchema(Schema):
+    """Result schema for wallet list."""
+
+    results = fields.List(
+        fields.Nested(WalletRecordSchema()), description="List of wallet records",
+    )
 
 
 class DIDSchema(Schema):
@@ -113,7 +123,7 @@ def format_did_info(info: DIDInfo):
 
 @docs(tags=["wallet"], summary="Create a wallet")
 @request_schema(CreateWalletRequestSchema)
-@response_schema(DIDResultSchema, 200)
+@response_schema(WalletRecordSchema, 200)
 async def wallet_create(request: web.BaseRequest):
     """
     Request handler for adding a new wallet for handling by the agent.
@@ -142,7 +152,58 @@ async def wallet_create(request: web.BaseRequest):
     wallet_record = WalletRecord(wallet_config=config)
     await wallet_record.save(context)
 
+    sub_wallet: BaseWallet = await context.inject(
+        BaseWallet,
+        required=False,
+        # Wallet settings need to be prefixed with `wallet.`
+        settings={f"wallet.{k}": v for k, v in config.items()},
+    )
+
+    await sub_wallet.create()
+
     return web.json_response(wallet_record.serialize())
+
+
+@docs(tags=["wallet"], summary="Get a wallet")
+@response_schema(WalletRecordSchema, 200)
+async def wallet_get(request: web.BaseRequest):
+    """
+    Request handler for getting an internal wallet.
+    Args:
+        request: aiohttp request object
+    Raises:
+        HTTPNotFound: if wallet_id does not match any known
+            wallets
+    """
+
+    context = request.app["request_context"]
+
+    wallet_id = request.match_info["wallet_id"]
+
+    try:
+        wallet_record = await WalletRecord.retrieve_by_id(context, wallet_id)
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+    return web.json_response(wallet_record.serialize())
+
+
+@docs(tags=["wallet"], summary="List all wallets")
+@response_schema(WalletListSchema, 200)
+async def wallet_list(request: web.BaseRequest):
+    """
+    Request handler for listing all internal wallets.
+    Args:
+        request: aiohttp request object
+    """
+
+    context = request.app["request_context"]
+
+    try:
+        records = await WalletRecord.query(context)
+        results = [record.serialize() for record in records]
+    except StorageNotFoundError:
+        raise web.HTTPNotFound()
+    return web.json_response(results)
 
 
 @docs(
@@ -412,6 +473,8 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
+            web.get("/wallet", wallet_list, allow_head=False),
+            web.get("/wallet/{wallet_id}", wallet_get, allow_head=False),
             web.post("/wallet/create", wallet_create),
             web.get("/wallet/did", wallet_did_list, allow_head=False),
             web.post("/wallet/did/create", wallet_create_did),
