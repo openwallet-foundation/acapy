@@ -11,13 +11,14 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, Schema, validate, validates_schema
+from marshmallow import fields, validate, validates_schema
 
 from ....connections.models.connection_record import (
     ConnectionRecord,
     ConnectionRecordSchema,
 )
 from ....messaging.models.base import BaseModelError
+from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     ENDPOINT,
     INDY_DID,
@@ -35,7 +36,7 @@ from .messages.connection_invitation import (
 )
 
 
-class ConnectionListSchema(Schema):
+class ConnectionListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
     results = fields.List(
@@ -52,7 +53,7 @@ class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
         """Bypass middleware field validation."""
 
 
-class InvitationResultSchema(Schema):
+class InvitationResultSchema(OpenAPISchema):
     """Result schema for a new connection invitation."""
 
     connection_id = fields.Str(
@@ -65,7 +66,7 @@ class InvitationResultSchema(Schema):
     )
 
 
-class ConnectionStaticRequestSchema(Schema):
+class ConnectionStaticRequestSchema(OpenAPISchema):
     """Request schema for a new static connection."""
 
     my_seed = fields.Str(description="Seed to use for the local DID", required=False)
@@ -89,7 +90,7 @@ class ConnectionStaticRequestSchema(Schema):
     alias = fields.Str(description="Alias to assign to this connection", required=False)
 
 
-class ConnectionStaticResultSchema(Schema):
+class ConnectionStaticResultSchema(OpenAPISchema):
     """Result schema for new static connection."""
 
     my_did = fields.Str(description="Local DID", required=True, **INDY_DID)
@@ -104,7 +105,7 @@ class ConnectionStaticResultSchema(Schema):
     record = fields.Nested(ConnectionRecordSchema, required=True)
 
 
-class ConnectionsListQueryStringSchema(Schema):
+class ConnectionsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for connections list request query string."""
 
     alias = fields.Str(description="Alias", required=False, example="Barry",)
@@ -136,7 +137,7 @@ class ConnectionsListQueryStringSchema(Schema):
     )
 
 
-class CreateInvitationQueryStringSchema(Schema):
+class CreateInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
     alias = fields.Str(description="Alias", required=False, example="Barry",)
@@ -152,7 +153,7 @@ class CreateInvitationQueryStringSchema(Schema):
     )
 
 
-class ReceiveInvitationQueryStringSchema(Schema):
+class ReceiveInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
     alias = fields.Str(description="Alias", required=False, example="Barry",)
@@ -162,7 +163,7 @@ class ReceiveInvitationQueryStringSchema(Schema):
     )
 
 
-class AcceptInvitationQueryStringSchema(Schema):
+class AcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
@@ -171,13 +172,13 @@ class AcceptInvitationQueryStringSchema(Schema):
     )
 
 
-class AcceptRequestQueryStringSchema(Schema):
+class AcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept conn-request web-request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
 
 
-class ConnIdMatchInfoSchema(Schema):
+class ConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -185,7 +186,7 @@ class ConnIdMatchInfoSchema(Schema):
     )
 
 
-class ConnIdRefIdMatchInfoSchema(Schema):
+class ConnIdRefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection and ref ids."""
 
     conn_id = fields.Str(

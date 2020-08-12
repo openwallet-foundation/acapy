@@ -1,6 +1,6 @@
 """Represents a trust ping message."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -43,6 +43,7 @@ class PingSchema(AgentMessageSchema):
         """PingSchema metadata."""
 
         model_class = Ping
+        unknown = EXCLUDE
 
     response_requested = fields.Bool(
         description="Whether response is requested (default True)",

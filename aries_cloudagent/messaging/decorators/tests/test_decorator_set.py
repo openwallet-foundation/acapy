@@ -1,5 +1,6 @@
-from marshmallow import fields
 from unittest import TestCase
+
+from marshmallow import EXCLUDE, fields
 
 from ...models.base import BaseModel, BaseModelSchema
 
@@ -20,6 +21,7 @@ class SimpleModel(BaseModel):
 class SimpleModelSchema(BaseModelSchema):
     class Meta:
         model_class = SimpleModel
+        unknown = EXCLUDE
 
     value = fields.Str(required=True)
     handled_decorator = fields.Str(required=False, data_key="handled~decorator")

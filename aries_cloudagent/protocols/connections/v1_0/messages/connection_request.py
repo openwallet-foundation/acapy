@@ -1,6 +1,6 @@
 """Represents a connection request message."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -51,6 +51,7 @@ class ConnectionRequestSchema(AgentMessageSchema):
         """Connection request schema metadata."""
 
         model_class = ConnectionRequest
+        unknown = EXCLUDE
 
     connection = fields.Nested(ConnectionDetailSchema, required=True)
     label = fields.Str(

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Union
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.util import datetime_now, datetime_to_str
@@ -57,6 +57,7 @@ class BasicMessageSchema(AgentMessageSchema):
         """Basic message schema metadata."""
 
         model_class = BasicMessage
+        unknown = EXCLUDE
 
     sent_time = fields.Str(
         required=False,
