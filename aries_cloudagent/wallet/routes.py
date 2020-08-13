@@ -152,15 +152,6 @@ async def wallet_create(request: web.BaseRequest):
     wallet_record = WalletRecord(wallet_config=config)
     await wallet_record.save(context)
 
-    sub_wallet: BaseWallet = await context.inject(
-        BaseWallet,
-        required=False,
-        # Wallet settings need to be prefixed with `wallet.`
-        settings={f"wallet.{k}": v for k, v in config.items()},
-    )
-
-    # await sub_wallet.create()
-
     return web.json_response(wallet_record.serialize())
 
 
