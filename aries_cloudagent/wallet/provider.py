@@ -39,6 +39,7 @@ class WalletProvider(BaseProvider):
         if "wallet.storage_creds" in settings:
             wallet_cfg["storage_creds"] = settings["wallet.storage_creds"]
         wallet = ClassLoader.load_class(wallet_class)(wallet_cfg)
+
         await wallet.open()
 
         if "wallet.rekey" in settings:

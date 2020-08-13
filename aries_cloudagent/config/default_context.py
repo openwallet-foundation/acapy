@@ -65,18 +65,19 @@ class DefaultContextBuilder(ContextBuilder):
         )
         context.injector.bind_provider(
             BaseWallet,
-            # CachedProvider(
-            StatsProvider(
-                WalletProvider(),
-                (
-                    "sign_message",
-                    "verify_message",
-                    # "pack_message",
-                    # "unpack_message",
-                    "get_local_did",
+            CachedProvider(
+                StatsProvider(
+                    WalletProvider(),
+                    (
+                        "sign_message",
+                        "verify_message",
+                        # "pack_message",
+                        # "unpack_message",
+                        "get_local_did",
+                    ),
                 ),
-            )
-            # ),
+                ("wallet.name",),
+            ),
         )
 
         context.injector.bind_provider(

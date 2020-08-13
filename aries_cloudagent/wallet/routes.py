@@ -159,7 +159,7 @@ async def wallet_create(request: web.BaseRequest):
         settings={f"wallet.{k}": v for k, v in config.items()},
     )
 
-    await sub_wallet.create()
+    # await sub_wallet.create()
 
     return web.json_response(wallet_record.serialize())
 

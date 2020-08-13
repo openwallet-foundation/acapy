@@ -6,6 +6,7 @@ from marshmallow import fields
 
 from ...messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from ...messaging.valid import UUIDFour
+from ..base import BaseWallet
 
 
 class WalletRecord(BaseExchangeRecord):
@@ -32,6 +33,14 @@ class WalletRecord(BaseExchangeRecord):
         self._id = wallet_record_id
         self.wallet_config = wallet_config
         self.trace = trace
+
+    async def get_wallet_instance(self, context):
+        wallet_instance: BaseWallet = await context.inject(
+            BaseWallet,
+            # Wallet settings need to be prefixed with `wallet.`
+            settings={f"wallet.{k}": v for k, v in self.wallet_config.items()},
+        )
+        return wallet_instance
 
     @property
     def wallet_record_id(self) -> str:
