@@ -272,7 +272,7 @@ class AdminServer(BaseAdminServer):
                 wallet_record = await WalletRecord.retrieve_by_id(
                     self.context, wallet_id
                 )
-                # Or do we amend the context settings so that the wallet that will be
+                # We amend the context settings so that the wallet that will be
                 # opened later has different context
                 self.context.settings = self.context.settings.extend(
                     wallet_record.get_config_as_settings()
@@ -281,9 +281,6 @@ class AdminServer(BaseAdminServer):
                 LOGGER.info(
                     f"sub-wallet activated with config {wallet_record.get_config_as_settings()}"
                 )
-            else:
-                # Don't pass settings, so this is the base wallet
-                self.context.wallet = await self.context.inject(BaseWallet)
 
             return await handler(request)
 
