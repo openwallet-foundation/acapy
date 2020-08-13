@@ -34,11 +34,13 @@ class WalletRecord(BaseExchangeRecord):
         self.wallet_config = wallet_config
         self.trace = trace
 
-    async def get_wallet_instance(self, context):
+    def get_config_as_settings(self):
+        # Wallet settings need to be prefixed with `wallet.`
+        return {f"wallet.{k}": v for k, v in self.wallet_config.items()}
+
+    async def get_instance(self, context):
         wallet_instance: BaseWallet = await context.inject(
-            BaseWallet,
-            # Wallet settings need to be prefixed with `wallet.`
-            settings={f"wallet.{k}": v for k, v in self.wallet_config.items()},
+            BaseWallet, settings=self.get_config_as_settings(),
         )
         return wallet_instance
 

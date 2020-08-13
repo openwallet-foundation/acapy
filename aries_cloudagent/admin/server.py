@@ -24,6 +24,8 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
+from ..wallet.base import BaseWallet
+from ..wallet.models.wallet_record import WalletRecord
 from ..version import __version__
 
 from .base_server import BaseAdminServer
@@ -262,6 +264,30 @@ class AdminServer(BaseAdminServer):
                 return await handler(request)
 
             middlewares.append(collect_stats)
+
+        @web.middleware
+        async def set_wallet(request, handler):
+            wallet_id = request.headers.get("x-wallet-id")
+            if wallet_id:
+                wallet_record = await WalletRecord.retrieve_by_id(
+                    self.context, wallet_id
+                )
+                # Or do we amend the context settings so that the wallet that will be
+                # opened later has different context
+                self.context.settings = self.context.settings.extend(
+                    wallet_record.get_config_as_settings()
+                )
+
+                LOGGER.info(
+                    f"sub-wallet activated with config {wallet_record.get_config_as_settings()}"
+                )
+            else:
+                # Don't pass settings, so this is the base wallet
+                self.context.wallet = await self.context.inject(BaseWallet)
+
+            return await handler(request)
+
+        middlewares.append(set_wallet)
 
         app = web.Application(middlewares=middlewares)
         app["request_context"] = self.context
