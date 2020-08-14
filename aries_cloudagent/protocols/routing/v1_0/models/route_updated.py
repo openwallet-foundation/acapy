@@ -1,6 +1,6 @@
 """An object for containing updated route information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -47,7 +47,8 @@ class RouteUpdatedSchema(BaseModelSchema):
     class Meta:
         """RouteUpdatedSchema metadata."""
 
-        model_class = "RouteUpdated"
+        model_class = RouteUpdated
+        unknown = EXCLUDE
 
     recipient_key = fields.Str(required=True)
     action = fields.Str(required=True)

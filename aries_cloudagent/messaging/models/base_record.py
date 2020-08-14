@@ -475,6 +475,8 @@ class BaseRecordSchema(BaseModelSchema):
     class Meta:
         """BaseRecordSchema metadata."""
 
+        model_class = None
+
     state = fields.Str(
         required=False, description="Current record state", example="active"
     )

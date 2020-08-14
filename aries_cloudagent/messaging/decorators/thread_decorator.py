@@ -7,7 +7,7 @@ context from previous messages.
 
 from typing import Mapping
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUIDFour
@@ -117,6 +117,7 @@ class ThreadDecoratorSchema(BaseModelSchema):
         """ThreadDecoratorSchema metadata."""
 
         model_class = ThreadDecorator
+        unknown = EXCLUDE
 
     thid = fields.Str(
         required=False,
