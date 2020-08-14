@@ -169,6 +169,16 @@ class DemoAgent:
         self.did = None
         self.wallet_stats = []
 
+    async def get_wallets(self):
+        """Get registered wallets of agent."""
+        wallets = await self.admin_GET("/wallet")
+        return wallets
+
+    async def get_public_did(self):
+        """Get public did of wallet."""
+        did = await self.admin_GET("/wallet/did/public")
+        return did
+
     async def register_schema_and_creddef(
         self,
         schema_name,

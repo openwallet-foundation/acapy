@@ -93,7 +93,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context = request["context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
@@ -131,7 +131,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context = request["context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
@@ -158,7 +158,7 @@ async def get_did_verkey(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context = request["context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
@@ -192,7 +192,7 @@ async def get_did_endpoint(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context = request["context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
@@ -226,7 +226,7 @@ async def ledger_get_taa(request: web.BaseRequest):
         The TAA information including the AML
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger or ledger.type != "indy":
         reason = "No indy ledger available"
@@ -265,7 +265,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
         The DID list response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger or ledger.type != "indy":
         reason = "No indy ledger available"

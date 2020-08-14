@@ -57,11 +57,12 @@ class DefaultContextBuilder(ContextBuilder):
 
         context.injector.bind_provider(
             BaseStorage,
-            #CachedProvider(
-            StatsProvider(
-                StorageProvider(), ("add_record", "get_record", "search_records")
-            )
-            #),
+            DynamicProvider(
+                StatsProvider(
+                    StorageProvider(), ("add_record", "get_record", "search_records")
+                ),
+                'wallet.name'
+            ),
         )
         context.injector.bind_provider(
             BaseWallet,
@@ -82,7 +83,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         context.injector.bind_provider(
             BaseLedger,
-            #CachedProvider(
+            DynamicProvider(
             StatsProvider(
                 LedgerProvider(),
                 (
@@ -91,8 +92,9 @@ class DefaultContextBuilder(ContextBuilder):
                     "get_credential_definition",
                     "get_schema",
                 ),
-            )
-            #),
+            ),
+                'wallet.name'
+            ),
         )
         context.injector.bind_provider(
             BaseIssuer,

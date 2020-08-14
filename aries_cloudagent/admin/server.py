@@ -288,11 +288,7 @@ class AdminServer(BaseAdminServer):
 
                 # Request instance and lock request of wallet provider so that
                 # no other task can interfere
-                try:
-                    await wallet_handler.set_instance(header_auth)
-                except WalletNotFoundError:
-                    raise web.HTTPUnauthorized(
-                        reason='Specified authorization does not match any.')
+                context.settings.set_value("wallet.id", header_auth)
 
             request['context'] = context
             # Perform request.

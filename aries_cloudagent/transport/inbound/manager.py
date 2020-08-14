@@ -162,20 +162,25 @@ class InboundTransportManager:
             can_respond: Flag indicating that the transport can send responses
             client_info: An optional dict describing the client
             wire_format: Override the wire format for this session
+            context: Context for the new session [needed in multitenancy]
         """
         if self.session_limit:
             await self.session_limit
 
         context = self.context.copy()
 
-        if client_info.get("inbound_path"):
+        ext_plugins = context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            if not client_info.get("inbound_path"):
+                raise ValueError(
+                    "Received communication via unhandled path" +
+                    " cannot associate wallet to connection!"
+                )
             # Set wallet based on inbound information.
             path = client_info.get("inbound_path")
             wallet_handler: WalletHandler = await context.inject(WalletHandler)
             wallet_id = await wallet_handler.get_wallet_for_path(path)
-
-            # TODO: Exceptions: What to do for unmatched inbound communication?
-            await wallet_handler.set_instance(wallet_id)
+            context.settings.set_value("wallet.id", wallet_id)
 
         if not wire_format:
             wire_format = await context.inject(BaseWireFormat)

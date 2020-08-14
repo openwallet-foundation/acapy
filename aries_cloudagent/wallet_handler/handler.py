@@ -12,6 +12,8 @@ from indy.error import IndyError, ErrorCode
 from base64 import b64encode
 
 from ..wallet.base import BaseWallet
+from ..storage.base import BaseStorage
+from ..ledger.base import BaseLedger
 from ..wallet.error import WalletError, WalletDuplicateError
 from ..wallet.plugin import load_postgres_plugin
 from ..utils.classloader import ClassLoader
@@ -38,6 +40,8 @@ class WalletHandler():
     DEFAULT_NAME = "default"
     DEFAULT_STORAGE_TYPE = None
     DEFAULT_WALLET_CLASS = "aries_cloudagent.wallet.indy.IndyWallet"
+    DEFAULT_STORAGE_CLASS = "aries_cloudagent.storage.indy.IndyStorage"
+    DEFAULT_LEDGER_CLASS = "aries_cloudagent.ledger.indy.IndyLedger"
     DEFAULT_AUTO_ADD = True
 
     KEY_DERIVATION_RAW = "RAW"
@@ -101,10 +105,19 @@ class WalletHandler():
         config["storage_creds"] = self._storage_creds
         wallet = ClassLoader.load_class(wallet_class)(config)
         await wallet.open()
+        storage = ClassLoader.load_class(self.DEFAULT_STORAGE_CLASS)(wallet)
+        ledger = ClassLoader.load_class(self.DEFAULT_LEDGER_CLASS)("default", wallet)
 
         # Store wallet in wallet provider.
-        # TODO: Handle errors and state resetting.
+        # FIXME: might be possible  to handle cleaner?
+        # FIXME: Delete storage and ledger if wallet is closed, is it possible to reopen?
+        # FIXME: What  about `holder`, `issuer`, etc?
         self._provider._instances[wallet.name] = wallet
+        storage_provider = context.injector._providers[BaseStorage]
+        storage_provider._instances[wallet.name] = storage
+        ledger_provider = context.injector._providers[BaseLedger]
+        ledger_provider._instances[wallet.name] = ledger
+
 
         # Get dids and check for paths in metadata.
         dids = await wallet.get_local_dids()
@@ -120,6 +133,7 @@ class WalletHandler():
         # provider picks up the correct wallet for fetching the connections.
         # Maybe there is a nicer way to handle this?
         context.injector._providers[BaseWallet]._requested_instance = wallet.name
+        context.settings.set_value("wallet.id", wallet.name)
 
         # Add connections of opened wallet to handler.
         tag_filter = {}
@@ -165,6 +179,12 @@ class WalletHandler():
 
         # Remove all path mappings of wallet.
         self._path_mappings = {
+            key: val for key, val in self._path_mappings.items() if val != id
+            }
+        self._handled_keys = {
+            key: val for key, val in self._path_mappings.items() if val != id
+            }
+        self._connections = {
             key: val for key, val in self._path_mappings.items() if val != id
             }
 
@@ -255,6 +275,16 @@ class WalletHandler():
         """
         self._connections[connection_id] = wallet_id
 
+    async def add_key(self, key: str, wallet_id: str):
+        """
+        Add a mapping between the given connection and wallet.
+
+        Args:
+            connection_id: Indentifier of the new connection.
+            wallet_id: Identifier of the wallet the connection belongs to.
+        """
+        self._handled_keys[key] = wallet_id
+
     async def get_wallet_for_connection(self, connection_id: str) -> str:
         """
         Return the identifier of the wallet to which the given key belongs.
@@ -264,6 +294,9 @@ class WalletHandler():
 
         Raises:
             KeyNotFoundError: if given key does not belong to handled_keys
+
+        Returns:
+            Identifier of wallet associated to connection id.
 
         """
         if connection_id not in self._connections.keys():

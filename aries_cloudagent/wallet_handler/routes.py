@@ -245,6 +245,7 @@ async def connections_create_invitation(request: web.BaseRequest):
         "invitation_url": invitation.to_url(base_url),
     }
     await wallet_handler.add_connection(connection.connection_id, wallet.name)
+    await wallet_handler.add_key(connection.invitation_key, wallet.name)
 
     if connection and connection.alias:
         result["alias"] = connection.alias
@@ -350,6 +351,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
     if not my_endpoint:
         path = await wallet_handler.generate_path_mapping(
             wallet.name, did=did_info.did)
+        await wallet_handler.add_key(did_info.verkey, wallet.name)
         my_endpoint = context.settings.get("default_endpoint") + "/" + path
     else:
         raise web.HTTPNotImplemented(
@@ -402,6 +404,7 @@ async def connections_accept_request(request: web.BaseRequest):
     if not my_endpoint:
         handle = await wallet_handler.generate_path_mapping(
             wallet.name, did=did_info.did)
+        await wallet_handler.add_key(did_info.verkey, wallet.name)
         my_endpoint = context.settings.get("default_endpoint") + "/" + handle
     else:
         raise web.HTTPNotImplemented(

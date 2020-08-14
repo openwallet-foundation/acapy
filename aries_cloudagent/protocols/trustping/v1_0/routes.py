@@ -47,7 +47,7 @@ async def connections_send_ping(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     body = await request.json()

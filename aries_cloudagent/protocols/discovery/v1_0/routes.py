@@ -41,7 +41,7 @@ async def query_features(request: web.BaseRequest):
         The diclosed protocols response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     registry: ProtocolRegistry = await context.inject(ProtocolRegistry)
     results = registry.protocols_matching_query(request.query.get("query", "*"))
 
