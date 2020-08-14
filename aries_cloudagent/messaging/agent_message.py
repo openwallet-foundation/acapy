@@ -5,6 +5,7 @@ from typing import Mapping, Union
 import uuid
 
 from marshmallow import (
+    EXCLUDE,
     fields,
     pre_load,
     post_load,
@@ -390,6 +391,7 @@ class AgentMessageSchema(BaseModelSchema):
 
         model_class = None
         signed_fields = None
+        unknown = EXCLUDE
 
     # Avoid clobbering keywords
     _type = fields.Str(

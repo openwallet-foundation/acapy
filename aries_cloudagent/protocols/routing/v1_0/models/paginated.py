@@ -1,6 +1,6 @@
 """An object for containing the response pagination information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -45,7 +45,8 @@ class PaginatedSchema(BaseModelSchema):
     class Meta:
         """PaginatedSchema metadata."""
 
-        model_class = "Paginated"
+        model_class = Paginated
+        unknown = EXCLUDE
 
     start = fields.Int(required=False)
     end = fields.Int(required=False)

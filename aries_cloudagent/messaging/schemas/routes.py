@@ -11,18 +11,19 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 from marshmallow.validate import Regexp
 
 from ...issuer.base import BaseIssuer, IssuerError
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...storage.base import BaseStorage
+from ..models.openapi import OpenAPISchema
 from ..valid import B58, NATURAL_NUM, INDY_SCHEMA_ID, INDY_VERSION
 from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 
 
-class SchemaSendRequestSchema(Schema):
+class SchemaSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
     schema_name = fields.Str(required=True, description="Schema name", example="prefs",)
@@ -36,7 +37,7 @@ class SchemaSendRequestSchema(Schema):
     )
 
 
-class SchemaSendResultsSchema(Schema):
+class SchemaSendResultsSchema(OpenAPISchema):
     """Results schema for schema send request."""
 
     schema_id = fields.Str(
@@ -45,7 +46,7 @@ class SchemaSendResultsSchema(Schema):
     schema = fields.Dict(description="Schema result", required=True)
 
 
-class SchemaSchema(Schema):
+class SchemaSchema(OpenAPISchema):
     """Content for returned schema."""
 
     ver = fields.Str(description="Node protocol version", **INDY_VERSION)
@@ -62,13 +63,13 @@ class SchemaSchema(Schema):
     seqNo = fields.Int(description="Schema sequence number", **NATURAL_NUM)
 
 
-class SchemaGetResultsSchema(Schema):
+class SchemaGetResultsSchema(OpenAPISchema):
     """Results schema for schema get request."""
 
     schema_json = fields.Nested(SchemaSchema())
 
 
-class SchemasCreatedResultsSchema(Schema):
+class SchemasCreatedResultsSchema(OpenAPISchema):
     """Results schema for a schemas-created request."""
 
     schema_ids = fields.List(
@@ -76,7 +77,7 @@ class SchemasCreatedResultsSchema(Schema):
     )
 
 
-class SchemaIdMatchInfoSchema(Schema):
+class SchemaIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
     schema_id = fields.Str(

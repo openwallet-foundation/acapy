@@ -1,6 +1,6 @@
 """An object for containing the connection request/response DID information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....connections.models.diddoc import DIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
@@ -87,7 +87,8 @@ class ConnectionDetailSchema(BaseModelSchema):
     class Meta:
         """ConnectionDetailSchema metadata."""
 
-        model_class = "ConnectionDetail"
+        model_class = ConnectionDetail
+        unknown = EXCLUDE
 
     did = fields.Str(
         data_key="DID",

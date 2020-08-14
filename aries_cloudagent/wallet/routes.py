@@ -11,17 +11,18 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerError
+from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import ENDPOINT, INDY_CRED_DEF_ID, INDY_DID, INDY_RAW_PUBLIC_KEY
 
 from .base import DIDInfo, BaseWallet
 from .error import WalletError, WalletNotFoundError
 
 
-class DIDSchema(Schema):
+class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     did = fields.Str(description="DID of interest", **INDY_DID)
@@ -29,19 +30,19 @@ class DIDSchema(Schema):
     public = fields.Boolean(description="Whether DID is public", example=False)
 
 
-class DIDResultSchema(Schema):
+class DIDResultSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     result = fields.Nested(DIDSchema())
 
 
-class DIDListSchema(Schema):
+class DIDListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
     results = fields.List(fields.Nested(DIDSchema()), description="DID list")
 
 
-class DIDEndpointSchema(Schema):
+class DIDEndpointSchema(OpenAPISchema):
     """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
@@ -50,7 +51,7 @@ class DIDEndpointSchema(Schema):
     )
 
 
-class DIDListQueryStringSchema(Schema):
+class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
     did = fields.Str(description="DID of interest", required=False, **INDY_DID)
@@ -62,13 +63,13 @@ class DIDListQueryStringSchema(Schema):
     public = fields.Boolean(description="Whether DID is on the ledger", required=False)
 
 
-class DIDQueryStringSchema(Schema):
+class DIDQueryStringSchema(OpenAPISchema):
     """Parameters and validators for set public DID request query string."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
 
-class CredDefIdMatchInfoSchema(Schema):
+class CredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential definition id."""
 
     cred_def_id = fields.Str(

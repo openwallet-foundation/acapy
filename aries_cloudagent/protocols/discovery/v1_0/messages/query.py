@@ -1,10 +1,10 @@
 """Represents a feature discovery query message."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import QUERY, PROTOCOL_PACKAGE
+from ..message_types import PROTOCOL_PACKAGE, QUERY
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.query_handler.QueryHandler"
 
@@ -42,6 +42,7 @@ class QuerySchema(AgentMessageSchema):
         """QuerySchema metadata."""
 
         model_class = Query
+        unknown = EXCLUDE
 
     query = fields.Str(required=True)
     comment = fields.Str(required=False, allow_none=True)
