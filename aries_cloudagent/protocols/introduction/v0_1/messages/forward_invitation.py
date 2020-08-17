@@ -36,7 +36,7 @@ class ForwardInvitation(AgentMessage):
             invitation: The connection invitation
             message: Comments on the introduction
         """
-        super(ForwardInvitation, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.invitation = invitation
         self.message = message
 

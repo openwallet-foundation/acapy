@@ -11,12 +11,18 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerError
-from ..messaging.valid import ENDPOINT, ENDPOINT_TYPE, \
-    INDY_CRED_DEF_ID, INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..messaging.models.openapi import OpenAPISchema
+from ..messaging.valid import (
+    ENDPOINT,
+    ENDPOINT_TYPE,
+    INDY_CRED_DEF_ID,
+    INDY_DID,
+    INDY_RAW_PUBLIC_KEY,
+)
 
 from .base import DIDInfo, BaseWallet
 from .error import WalletError, WalletNotFoundError
@@ -24,7 +30,7 @@ from .error import WalletError, WalletNotFoundError
 from ..ledger.util import EndpointType
 
 
-class DIDSchema(Schema):
+class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     did = fields.Str(description="DID of interest", **INDY_DID)
@@ -32,39 +38,43 @@ class DIDSchema(Schema):
     public = fields.Boolean(description="Whether DID is public", example=False)
 
 
-class DIDResultSchema(Schema):
+class DIDResultSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     result = fields.Nested(DIDSchema())
 
 
-class DIDListSchema(Schema):
+class DIDListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
     results = fields.List(fields.Nested(DIDSchema()), description="DID list")
 
 
-class DIDEndpointWithTypeSchema(Schema):
+class DIDEndpointWithTypeSchema(OpenAPISchema):
     """Request schema to set DID endpoint of particular type."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT)
+        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
+    )
     endpoint_type = fields.Str(
         description="""
         Endpoint type to set (default 'endpoint'). Affects only public DIDs.""",
-        required=False, **ENDPOINT_TYPE)
+        required=False,
+        **ENDPOINT_TYPE,
+    )
 
 
-class DIDEndpointSchema(Schema):
+class DIDEndpointSchema(OpenAPISchema):
     """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT)
+        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
+    )
 
 
-class DIDListQueryStringSchema(Schema):
+class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
     did = fields.Str(description="DID of interest", required=False, **INDY_DID)
@@ -76,13 +86,13 @@ class DIDListQueryStringSchema(Schema):
     public = fields.Boolean(description="Whether DID is on the ledger", required=False)
 
 
-class DIDQueryStringSchema(Schema):
+class DIDQueryStringSchema(OpenAPISchema):
     """Parameters and validators for set public DID request query string."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
 
-class CredDefIdMatchInfoSchema(Schema):
+class CredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential definition id."""
 
     cred_def_id = fields.Str(

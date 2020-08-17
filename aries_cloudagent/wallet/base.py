@@ -273,8 +273,11 @@ class BaseWallet(ABC):
         """
 
     async def set_did_endpoint(
-        self, did: str, endpoint: str, ledger: BaseLedger,
-        endpoint_type: EndpointType = None
+        self,
+        did: str,
+        endpoint: str,
+        ledger: BaseLedger,
+        endpoint_type: EndpointType = None,
     ):
         """
         Update the endpoint for a DID in the wallet, send to ledger if public.

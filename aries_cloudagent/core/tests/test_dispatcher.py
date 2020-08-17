@@ -3,6 +3,8 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
+from marshmallow import EXCLUDE
+
 from ...config.injection_context import InjectionContext
 from ...connections.models.connection_record import ConnectionRecord
 from ...core.protocol_registry import ProtocolRegistry
@@ -56,6 +58,7 @@ class StubAgentMessage(AgentMessage):
 class StubAgentMessageSchema(AgentMessageSchema):
     class Meta:
         model_class = StubAgentMessage
+        unknown = EXCLUDE
 
 
 class StubAgentMessageHandler:
@@ -73,6 +76,7 @@ class StubV1_2AgentMessage(AgentMessage):
 class StubV1_2AgentMessageSchema(AgentMessageSchema):
     class Meta:
         model_class = StubV1_2AgentMessage
+        unknonw = EXCLUDE
 
 
 class StubV1_2AgentMessageHandler:

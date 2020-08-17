@@ -1,6 +1,6 @@
 """An object for containing the request pagination information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -22,7 +22,7 @@ class Paginate(BaseModel):
             offset: Set the offset of the first requested result
 
         """
-        super(Paginate, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.limit = limit
         self.offset = offset
 
@@ -33,7 +33,8 @@ class PaginateSchema(BaseModelSchema):
     class Meta:
         """PaginateSchema metadata."""
 
-        model_class = "Paginate"
+        model_class = Paginate
+        unknown = EXCLUDE
 
     limit = fields.Int(required=False)
     offset = fields.Int(required=False)

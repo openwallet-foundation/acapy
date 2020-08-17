@@ -1,6 +1,6 @@
 """Represents an request for an invitation from the introduction service."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -29,7 +29,7 @@ class InvitationRequest(AgentMessage):
             responder: The name of the agent initiating the introduction
             message: Comments on the introduction
         """
-        super(InvitationRequest, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.responder = responder
         self.message = message
 
@@ -41,6 +41,7 @@ class InvitationRequestSchema(AgentMessageSchema):
         """Invitation request schema metadata."""
 
         model_class = InvitationRequest
+        unknown = EXCLUDE
 
     responder = fields.Str(
         required=True,

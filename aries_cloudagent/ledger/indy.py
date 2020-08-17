@@ -131,8 +131,13 @@ class IndyLedger(BaseLedger):
         self.taa_cache = None
         self.read_only = read_only
 
-        if wallet.WALLET_TYPE != "indy":
+        if wallet.type != "indy":
             raise LedgerConfigError("Wallet type is not 'indy'")
+
+    @property
+    def type(self) -> str:
+        """Accessor for the ledger type."""
+        return IndyLedger.LEDGER_TYPE
 
     async def create_pool_config(
         self, genesis_transactions: str, recreate: bool = False
@@ -174,7 +179,9 @@ class IndyLedger(BaseLedger):
         ):
             await indy.pool.set_protocol_version(2)
 
-        with IndyErrorHandler("Exception when opening pool ledger", LedgerConfigError):
+        with IndyErrorHandler(
+            f"Exception when opening pool ledger {self.pool_name}", LedgerConfigError
+        ):
             self.pool_handle = await indy.pool.open_pool_ledger(self.pool_name, "{}")
         self.opened = True
 
@@ -761,9 +768,9 @@ class IndyLedger(BaseLedger):
             )
         response_json = await self._submit(request_json, sign_did=public_info)
         data_json = json.loads(response_json)["result"]["data"]
+
         if data_json:
             endpoints = json.loads(data_json).get("endpoint", None)
-
         else:
             endpoints = None
 
@@ -812,7 +819,11 @@ class IndyLedger(BaseLedger):
             endpoint_type = EndpointType.ENDPOINT
 
         all_exist_endpoints = await self.get_all_endpoints_for_did(did)
-        exist_endpoint_of_type = all_exist_endpoints.get(endpoint_type.value, None)
+        exist_endpoint_of_type = (
+            all_exist_endpoints.get(endpoint_type.value, None)
+            if all_exist_endpoints
+            else None
+        )
 
         if exist_endpoint_of_type != endpoint:
             if self.read_only:
@@ -826,7 +837,7 @@ class IndyLedger(BaseLedger):
                 all_exist_endpoints[endpoint_type.value] = endpoint
                 attr_json = json.dumps({"endpoint": all_exist_endpoints})
             else:
-                attr_json = json.dumps({"endpoint": {endpoint_type: endpoint}})
+                attr_json = json.dumps({"endpoint": {endpoint_type.value: endpoint}})
 
             with IndyErrorHandler(
                 "Exception when building attribute request", LedgerError

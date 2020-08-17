@@ -1,6 +1,6 @@
 """An object for containing route information to be updated."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -25,7 +25,7 @@ class RouteUpdate(BaseModel):
             action: The action to perform
 
         """
-        super(RouteUpdate, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.recipient_key = recipient_key
         self.action = action
 
@@ -36,7 +36,8 @@ class RouteUpdateSchema(BaseModelSchema):
     class Meta:
         """RouteUpdateSchema metadata."""
 
-        model_class = "RouteUpdate"
+        model_class = RouteUpdate
+        unknown = EXCLUDE
 
     recipient_key = fields.Str(required=True)
     action = fields.Str(required=True)

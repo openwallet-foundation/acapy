@@ -1,6 +1,6 @@
 """Represents an invitation returned to the introduction service."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....protocols.connections.v1_0.messages.connection_invitation import (
@@ -34,7 +34,7 @@ class Invitation(AgentMessage):
             invitation: The connection invitation
             message: Comments on the introduction
         """
-        super(Invitation, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.invitation = invitation
         self.message = message
 
@@ -46,6 +46,7 @@ class InvitationSchema(AgentMessageSchema):
         """Invitation request schema metadata."""
 
         model_class = Invitation
+        unknown = EXCLUDE
 
     invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
     message = fields.Str(

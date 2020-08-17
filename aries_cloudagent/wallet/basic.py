@@ -32,7 +32,7 @@ class BasicWallet(BaseWallet):
         """
         if not config:
             config = {}
-        super(BasicWallet, self).__init__(config)
+        super().__init__(config)
         self._name = config.get("name")
         self._keys = {}
         self._local_dids = {}

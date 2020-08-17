@@ -35,11 +35,14 @@ from ...wallet.basic import BasicWallet
 
 class Config:
     test_settings = {"admin.webhook_urls": ["http://sample.webhook.ca"]}
+    test_settings_admin = {
+        "admin.webhook_urls": ["http://sample.webhook.ca"],
+        "admin.enabled": True,
+    }
     test_settings_with_queue = {"queue.enable_undelivered_queue": True}
 
 
 class TestDIDs:
-
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -124,6 +127,39 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
             mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
 
+    async def test_startup_no_public_did(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, async_mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, async_mock.patch.object(
+            test_module, "LoggingConfigurator", autospec=True
+        ) as mock_logger:
+
+            await conductor.setup()
+
+            mock_inbound_mgr.return_value.setup.assert_awaited_once()
+            mock_outbound_mgr.return_value.setup.assert_awaited_once()
+
+            mock_inbound_mgr.return_value.registered_transports = {}
+            mock_outbound_mgr.return_value.registered_transports = {}
+
+            # Doesn't raise
+            await conductor.start()
+
+            mock_inbound_mgr.return_value.start.assert_awaited_once_with()
+            mock_outbound_mgr.return_value.start.assert_awaited_once_with()
+
+            mock_logger.print_banner.assert_called_once()
+
+            await conductor.stop()
+
+            mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
+            mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
+
     async def test_stats(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
@@ -190,7 +226,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         with async_mock.patch.object(
             conductor.dispatcher, "queue_message", autospec=True
-        ) as mock_dispatch:
+        ) as mock_dispatch_q:
 
             message_body = "{}"
             receipt = MessageReceipt(direct_response_mode="snail mail")
@@ -198,11 +234,34 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             conductor.inbound_message_router(message, can_respond=False)
 
-            mock_dispatch.assert_called_once()
-            assert mock_dispatch.call_args[0][0] is message
-            assert mock_dispatch.call_args[0][1] == conductor.outbound_message_router
-            assert mock_dispatch.call_args[0][2] is None  # admin webhook router
-            assert callable(mock_dispatch.call_args[0][3])
+            mock_dispatch_q.assert_called_once()
+            assert mock_dispatch_q.call_args[0][0] is message
+            assert mock_dispatch_q.call_args[0][1] == conductor.outbound_message_router
+            assert mock_dispatch_q.call_args[0][2] is None  # admin webhook router
+            assert callable(mock_dispatch_q.call_args[0][3])
+
+    async def test_inbound_message_handler_ledger_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        with async_mock.patch.object(
+            conductor.dispatcher, "queue_message", autospec=True
+        ) as mock_dispatch_q, async_mock.patch.object(
+            conductor.admin_server, "notify_fatal_error", async_mock.MagicMock()
+        ) as mock_notify:
+            mock_dispatch_q.side_effect = test_module.LedgerConfigError("ledger down")
+
+            message_body = "{}"
+            receipt = MessageReceipt(direct_response_mode="snail mail")
+            message = InboundMessage(message_body, receipt)
+
+            with self.assertRaises(test_module.LedgerConfigError):
+                conductor.inbound_message_router(message, can_respond=False)
+
+            mock_dispatch_q.assert_called_once()
+            mock_notify.assert_called_once()
 
     async def test_outbound_message_handler_return_route(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -335,7 +394,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             with async_mock.patch.object(
                 test_module, "ConnectionManager"
             ) as mock_conn_mgr, async_mock.patch.object(
-                conductor.dispatcher, "run_task", async_mock.CoroutineMock()
+                conductor.dispatcher, "run_task", async_mock.MagicMock()
             ) as mock_run_task:
                 mock_conn_mgr.return_value.get_connection_targets = (
                     async_mock.CoroutineMock()
@@ -350,6 +409,67 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                 )
                 await conductor.queue_outbound(conductor.context, message)
                 mock_run_task.assert_called_once()
+
+    async def test_handle_not_returned_ledger_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        with async_mock.patch.object(
+            conductor.dispatcher, "run_task", async_mock.MagicMock()
+        ) as mock_dispatch_run, async_mock.patch.object(
+            conductor, "queue_outbound", async_mock.CoroutineMock()
+        ) as mock_queue, async_mock.patch.object(
+            conductor.admin_server, "notify_fatal_error", async_mock.MagicMock()
+        ) as mock_notify:
+            mock_dispatch_run.side_effect = test_module.LedgerConfigError(
+                "No such ledger"
+            )
+
+            payload = "{}"
+            message = OutboundMessage(
+                payload=payload,
+                connection_id="dummy-conn-id",
+                reply_to_verkey=TestDIDs.test_verkey,
+            )
+
+            with self.assertRaises(test_module.LedgerConfigError):
+                conductor.handle_not_returned(conductor.context, message)
+
+            mock_dispatch_run.assert_called_once()
+            mock_notify.assert_called_once()
+
+    async def test_queue_outbound_ledger_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        with async_mock.patch.object(
+            test_module, "ConnectionManager", autospec=True
+        ) as conn_mgr, async_mock.patch.object(
+            conductor.dispatcher, "run_task", async_mock.MagicMock()
+        ) as mock_dispatch_run, async_mock.patch.object(
+            conductor.admin_server, "notify_fatal_error", async_mock.MagicMock()
+        ) as mock_notify:
+            conn_mgr.return_value.get_connection_targets = async_mock.CoroutineMock()
+            mock_dispatch_run.side_effect = test_module.LedgerConfigError(
+                "No such ledger"
+            )
+
+            payload = "{}"
+            message = OutboundMessage(
+                payload=payload,
+                connection_id="dummy-conn-id",
+                reply_to_verkey=TestDIDs.test_verkey,
+            )
+
+            with self.assertRaises(test_module.LedgerConfigError):
+                await conductor.queue_outbound(conductor.context, message)
+
+            mock_dispatch_run.assert_called_once()
+            mock_notify.assert_called_once()
 
     async def test_admin(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -543,3 +663,24 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_enqueue.assert_called_once_with(
                 test_topic, test_payload, test_endpoint, test_attempts
             )
+
+    async def test_dispatch_complete_fatal_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+
+        message_body = "{}"
+        receipt = MessageReceipt(direct_response_mode="snail mail")
+        message = InboundMessage(message_body, receipt)
+        mock_task = async_mock.MagicMock(
+            exc_info=(test_module.LedgerTransactionError, ("Ledger is wobbly"), "..."),
+            ident="abc",
+            timing={
+                "queued": 1234567890,
+                "unqueued": 1234567899,
+                "started": 1234567901,
+                "ended": 1234567999,
+            },
+        )
+
+        await conductor.setup()
+        conductor.dispatch_complete(message, mock_task)

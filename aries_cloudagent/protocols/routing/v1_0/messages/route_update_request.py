@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -33,7 +33,7 @@ class RouteUpdateRequest(AgentMessage):
             updates: A list of route updates
         """
 
-        super(RouteUpdateRequest, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.updates = updates or []
 
 
@@ -44,5 +44,6 @@ class RouteUpdateRequestSchema(AgentMessageSchema):
         """RouteUpdateRequestSchema metadata."""
 
         model_class = RouteUpdateRequest
+        unknown = EXCLUDE
 
     updates = fields.List(fields.Nested(RouteUpdateSchema()), required=True)

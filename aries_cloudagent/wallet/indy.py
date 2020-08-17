@@ -552,8 +552,11 @@ class IndyWallet(BaseWallet):
         await indy.did.set_did_metadata(self.handle, did, meta_json)
 
     async def set_did_endpoint(
-        self, did: str, endpoint: str, ledger: BaseLedger,
-            endpoint_type: EndpointType = None
+        self,
+        did: str,
+        endpoint: str,
+        ledger: BaseLedger,
+        endpoint_type: EndpointType = None,
     ):
         """
         Update the endpoint for a DID in the wallet, send to ledger if public.

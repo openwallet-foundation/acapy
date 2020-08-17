@@ -27,6 +27,11 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     async def __aexit__(self, exc_type, exc, tb):
         """Context manager exit."""
 
+    @property
+    @abstractmethod
+    def type(self) -> str:
+        """Accessor for the ledger type."""
+
     @abstractmethod
     async def get_key_for_did(self, did: str) -> str:
         """Fetch the verkey for a ledger DID.
@@ -48,7 +53,10 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def update_endpoint_for_did(
-        self, did: str, endpoint: str, endpoint_type: EndpointType = EndpointType.ENDPOINT
+        self,
+        did: str,
+        endpoint: str,
+        endpoint_type: EndpointType = EndpointType.ENDPOINT,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 

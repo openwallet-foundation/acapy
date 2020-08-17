@@ -6,8 +6,6 @@ import logging
 import os
 import random
 import subprocess
-import hashlib
-import base58
 from timeit import default_timer
 
 from aiohttp import (
@@ -146,14 +144,7 @@ class DemoAgent:
             )
         else:
             self.endpoint = f"http://{self.external_host}:{http_port}"
-        if os.getenv("PUBLIC_TAILS_URL"):
-            self.public_tails_url = os.getenv("PUBLIC_TAILS_URL")
-        elif RUN_MODE == "pwd":
-            self.public_tails_url = f"http://{self.external_host}".replace(
-                "{PORT}", str(admin_port)
-            )
-        else:
-            self.public_tails_url = self.admin_url
+
         self.webhook_port = None
         self.webhook_url = None
         self.webhook_site = None
@@ -209,71 +200,6 @@ class DemoAgent:
         ]
         log_msg("Cred def ID:", credential_definition_id)
         return schema_id, credential_definition_id
-
-    async def create_and_publish_revocation_registry(
-        self, credential_def_id, max_cred_num
-    ):
-        revoc_response = await self.admin_POST(
-            "/revocation/create-registry",
-            {
-                "credential_definition_id": credential_def_id,
-                "max_cred_num": max_cred_num,
-            },
-        )
-        revocation_registry_id = revoc_response["result"]["revoc_reg_id"]
-        tails_hash = revoc_response["result"]["tails_hash"]
-
-        # get the tails file from "GET /revocation/registry/{id}/tails-file"
-        tails_file = await self.admin_GET_FILE(
-            f"/revocation/registry/{revocation_registry_id}/tails-file"
-        )
-        hasher = hashlib.sha256()
-        hasher.update(tails_file)
-        my_tails_hash = base58.b58encode(hasher.digest()).decode("utf-8")
-        log_msg(f"Revocation Registry ID: {revocation_registry_id}")
-        assert tails_hash == my_tails_hash
-
-        tails_file_url = (
-            f"{self.public_tails_url}/revocation/registry/"
-            f"{revocation_registry_id}/tails-file"
-        )
-        if os.getenv("PUBLIC_TAILS_URL"):
-            tails_file_url = f"{self.public_tails_url}/{revocation_registry_id}"
-            tails_file_external_url = (
-                f"{self.public_tails_url}/{revocation_registry_id}"
-            )
-        elif RUN_MODE == "pwd":
-            tails_file_external_url = f"http://{self.external_host}".replace(
-                "{PORT}", str(self.admin_port)
-            )
-        else:
-            tails_file_external_url = f"http://127.0.0.1:{self.admin_port}"
-        tails_file_external_url += (
-            f"/revocation/registry/{revocation_registry_id}/tails-file"
-        )
-
-        revoc_updated_response = await self.admin_PATCH(
-            f"/revocation/registry/{revocation_registry_id}",
-            {"tails_public_uri": tails_file_url},
-        )
-        tails_public_uri = revoc_updated_response["result"]["tails_public_uri"]
-        assert tails_public_uri == tails_file_url
-
-        revoc_publish_response = await self.admin_POST(
-            f"/revocation/registry/{revocation_registry_id}/publish"
-        )
-
-        # if PUBLIC_TAILS_URL is specified, upload tails file to tails server
-        if os.getenv("PUBLIC_TAILS_URL"):
-            tails_server_hash = await self.admin_PUT_FILE(
-                {"genesis": await default_genesis_txns(), "tails": tails_file},
-                tails_file_url,
-                params=None,
-            )
-            assert my_tails_hash == tails_server_hash.decode("utf-8")
-            log_msg(f"Public tails file URL: {tails_file_url}")
-
-        return revoc_publish_response["result"]["revoc_reg_id"]
 
     def get_agent_args(self):
         result = [

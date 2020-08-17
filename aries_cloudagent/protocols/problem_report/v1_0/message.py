@@ -2,7 +2,7 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import fields, validate
+from marshmallow import EXCLUDE, fields, validate
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -55,7 +55,7 @@ class ProblemReport(AgentMessage):
             tracking_uri: URI for tracking the problem
             escalation_uri: URI for escalating the problem
         """
-        super(ProblemReport, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.msg_catalog = msg_catalog
         self.locale = locale
         self.explain_ltxt = explain_ltxt
@@ -77,6 +77,7 @@ class ProblemReportSchema(AgentMessageSchema):
         """Problem report schema metadata."""
 
         model_class = ProblemReport
+        unknown = EXCLUDE
 
     msg_catalog = fields.Str(
         data_key="@msg_catalog",

@@ -11,13 +11,13 @@ from aiohttp_apispec import (
     response_schema,
 )
 from json.decoder import JSONDecodeError
-from marshmallow import fields, Schema, validate
+from marshmallow import fields, validate
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....issuer.base import IssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
-from ....messaging.models.base import BaseModelError
+from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
@@ -34,6 +34,7 @@ from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
 from ....utils.outofband import serialize_outofband
+from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
 from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
@@ -51,10 +52,8 @@ from .models.credential_exchange import (
     V10CredentialExchangeSchema,
 )
 
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
-
-class V10CredentialExchangeListQueryStringSchema(Schema):
+class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange list query."""
 
     connection_id = fields.UUID(
@@ -91,7 +90,7 @@ class V10CredentialExchangeListQueryStringSchema(Schema):
     )
 
 
-class V10CredentialExchangeListResultSchema(Schema):
+class V10CredentialExchangeListResultSchema(OpenAPISchema):
     """Result schema for Aries#0036 v1.0 credential exchange query."""
 
     results = fields.List(
@@ -100,7 +99,7 @@ class V10CredentialExchangeListResultSchema(Schema):
     )
 
 
-class V10CredentialStoreRequestSchema(Schema):
+class V10CredentialStoreRequestSchema(OpenAPISchema):
     """Request schema for sending a credential store admin message."""
 
     credential_id = fields.Str(required=False)
@@ -136,7 +135,9 @@ class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
         ),
         required=False,
     )
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -180,7 +181,9 @@ class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
         ),
         required=False,
     )
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -228,7 +231,9 @@ class V10CredentialOfferRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         default=True,
     )
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
     trace = fields.Bool(
         description="Whether to trace event (default false)",
@@ -237,19 +242,21 @@ class V10CredentialOfferRequestSchema(AdminAPIMessageTracingSchema):
     )
 
 
-class V10CredentialIssueRequestSchema(Schema):
+class V10CredentialIssueRequestSchema(OpenAPISchema):
     """Request schema for sending credential issue admin message."""
 
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
 
 
-class V10CredentialProblemReportRequestSchema(Schema):
+class V10CredentialProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
     explain_ltxt = fields.Str(required=True)
 
 
-class V10PublishRevocationsSchema(Schema):
+class V10PublishRevocationsSchema(OpenAPISchema):
     """Request and result schema for revocation publication API call."""
 
     rrid2crid = fields.Dict(
@@ -264,7 +271,7 @@ class V10PublishRevocationsSchema(Schema):
     )
 
 
-class V10ClearPendingRevocationsRequestSchema(Schema):
+class V10ClearPendingRevocationsRequestSchema(OpenAPISchema):
     """Request schema for clear pending revocations API call."""
 
     purge = fields.Dict(
@@ -282,7 +289,7 @@ class V10ClearPendingRevocationsRequestSchema(Schema):
     )
 
 
-class RevokeQueryStringSchema(Schema):
+class RevokeQueryStringSchema(OpenAPISchema):
     """Parameters and validators for revocation request."""
 
     rev_reg_id = fields.Str(
@@ -300,7 +307,7 @@ class RevokeQueryStringSchema(Schema):
     )
 
 
-class CredIdMatchInfoSchema(Schema):
+class CredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     credential_id = fields.Str(
@@ -308,7 +315,7 @@ class CredIdMatchInfoSchema(Schema):
     )
 
 
-class CredExIdMatchInfoSchema(Schema):
+class CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
     cred_ex_id = fields.Str(
