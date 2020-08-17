@@ -3,7 +3,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......wallet.util import b64_to_str
@@ -74,6 +74,7 @@ class CredAttrSpecSchema(BaseModelSchema):
         """Attribute preview schema metadata."""
 
         model_class = CredAttrSpec
+        unknown = EXCLUDE
 
     name = fields.Str(
         description="Attribute name", required=True, example="favourite_drink"
@@ -163,6 +164,7 @@ class CredentialPreviewSchema(BaseModelSchema):
         """Credential preview schema metadata."""
 
         model_class = CredentialPreview
+        unknown = EXCLUDE
 
     _type = fields.Str(
         description="Message type identifier",

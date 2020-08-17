@@ -1,6 +1,6 @@
 """A credential proposal content message."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import (
@@ -13,7 +13,6 @@ from .....messaging.valid import (
 from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
 
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
-
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers."
@@ -76,6 +75,7 @@ class CredentialProposalSchema(AgentMessageSchema):
         """Credential proposal schema metadata."""
 
         model_class = CredentialProposal
+        unknown = EXCLUDE
 
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True

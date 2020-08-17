@@ -1,6 +1,6 @@
 """Represents a connection response message."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -43,5 +43,6 @@ class ConnectionResponseSchema(AgentMessageSchema):
 
         model_class = ConnectionResponse
         signed_fields = ("connection",)
+        unknown = EXCLUDE
 
     connection = fields.Nested(ConnectionDetailSchema, required=True)
