@@ -275,6 +275,13 @@ class Conductor:
             LOGGER.exception(
                 "Exception in message handler:", exc_info=completed.exc_info
             )
+            if isinstance(completed.exc_info[1], LedgerConfigError) or isinstance(
+                completed.exc_info[1], LedgerTransactionError
+            ):
+                LOGGER.error("Shutdown with %s", str(completed.exc_info[1]))
+                self.admin_server.notify_fatal_error()
+            else:
+                LOGGER.error("DON'T Shutdown with %s", str(completed.exc_info[1]))
         self.inbound_transport_manager.dispatch_complete(message, completed)
 
     async def get_stats(self) -> dict:
