@@ -264,8 +264,9 @@ class Conductor:
                 lambda completed: self.dispatch_complete(message, completed),
             )
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Shutdown with %s", str(e))
-            self.admin_server.notify_fatal_error()
+            LOGGER.error("Shutdown with ledger error %s", str(e))
+            if self.admin_server:
+                self.admin_server.notify_fatal_error()
             raise
 
     def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
@@ -330,8 +331,9 @@ class Conductor:
         try:
             self.dispatcher.run_task(self.queue_outbound(context, outbound))
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Shutdown with %s", str(e))
-            self.admin_server.notify_fatal_error()
+            LOGGER.error("Shutdown with ledger error %s", str(e))
+            if self.admin_server:
+                self.admin_server.notify_fatal_error()
             raise
 
     async def queue_outbound(
@@ -360,8 +362,9 @@ class Conductor:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return
             except (LedgerConfigError, LedgerTransactionError) as e:
-                LOGGER.error("Shutdown with %s", str(e))
-                self.admin_server.notify_fatal_error()
+                LOGGER.error("Shutdown with ledger error %s", str(e))
+                if self.admin_server:
+                    self.admin_server.notify_fatal_error()
                 raise
 
         try:
