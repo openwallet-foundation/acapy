@@ -6,17 +6,21 @@
 if ! [ -z "$TAILS_NGROK_NAME" ]; then
     echo "ngrok tails service name [$TAILS_NGROK_NAME]"
     NGROK_ENDPOINT=null
-    while [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]
-    do
-        echo "Fetching endpoint from ngrok service"
-        NGROK_ENDPOINT=$(curl --silent $TAILS_NGROK_NAME:4040/api/tunnels | ./jq -r '.tunnels[0].public_url')
+    JQ=${JQ:-`which jq`}
+    if [ -x "$JQ" ]; then
+        while [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]
+        do
+            echo "Fetching endpoint from ngrok service"
+            NGROK_ENDPOINT=$(curl --silent $TAILS_NGROK_NAME:4040/api/tunnels | $JQ -r '.tunnels[0].public_url')
 
-        if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
-            echo "ngrok not ready, sleeping 5 seconds...."
-            sleep 5
-        fi
-    done
-
+            if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
+                echo "ngrok not ready, sleeping 5 seconds...."
+                sleep 5
+            fi
+        done
+    else
+        echo "    not found"
+    fi
     export PUBLIC_TAILS_URL=$NGROK_ENDPOINT
     echo "Fetched ngrok tails server endpoint [$PUBLIC_TAILS_URL]"
 fi

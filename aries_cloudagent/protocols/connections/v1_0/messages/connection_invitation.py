@@ -3,7 +3,7 @@
 from typing import Sequence
 from urllib.parse import parse_qs, urljoin, urlparse
 
-from marshmallow import ValidationError, fields, validates_schema
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
@@ -97,6 +97,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         """Connection invitation schema metadata."""
 
         model_class = ConnectionInvitation
+        unknown = EXCLUDE
 
     label = fields.Str(
         required=False, description="Optional label for connection", example="Bob"

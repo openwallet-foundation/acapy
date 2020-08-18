@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -11,7 +11,6 @@ from .....messaging.decorators.attach_decorator import (
 )
 
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
-
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.credential_issue_handler.CredentialIssueHandler"
@@ -74,8 +73,11 @@ class CredentialIssueSchema(AgentMessageSchema):
         """Credential schema metadata."""
 
         model_class = CredentialIssue
+        unknown = EXCLUDE
 
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
     credentials_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="credentials~attach"
     )

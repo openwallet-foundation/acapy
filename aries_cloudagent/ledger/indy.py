@@ -34,7 +34,7 @@ from .error import (
     LedgerError,
     LedgerTransactionError,
 )
-from .util import TAA_ACCEPTED_RECORD_TYPE
+from .util import TAA_ACCEPTED_RECORD_TYPE, EndpointType
 
 
 GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
@@ -753,8 +753,8 @@ class IndyLedger(BaseLedger):
         data_json = (json.loads(response_json))["result"]["data"]
         return json.loads(data_json)["verkey"] if data_json else None
 
-    async def get_endpoint_for_did(self, did: str) -> str:
-        """Fetch the endpoint for a ledger DID.
+    async def get_all_endpoints_for_did(self, did: str) -> dict:
+        """Fetch all endpoints for a ledger DID.
 
         Args:
             did: The DID to look up on the ledger or in the cache
@@ -768,30 +768,77 @@ class IndyLedger(BaseLedger):
             )
         response_json = await self._submit(request_json, sign_did=public_info)
         data_json = json.loads(response_json)["result"]["data"]
+
+        if data_json:
+            endpoints = json.loads(data_json).get("endpoint", None)
+        else:
+            endpoints = None
+
+        return endpoints
+
+    async def get_endpoint_for_did(
+        self, did: str, endpoint_type: EndpointType = None
+    ) -> str:
+        """Fetch the endpoint for a ledger DID.
+
+        Args:
+            did: The DID to look up on the ledger or in the cache
+            endpoint_type: The type of the endpoint. If none given, returns all
+        """
+
+        if not endpoint_type:
+            endpoint_type = EndpointType.ENDPOINT
+        nym = self.did_to_nym(did)
+        public_info = await self.wallet.get_public_did()
+        public_did = public_info.did if public_info else None
+        with IndyErrorHandler("Exception when building attribute request", LedgerError):
+            request_json = await indy.ledger.build_get_attrib_request(
+                public_did, nym, "endpoint", None, None
+            )
+        response_json = await self._submit(request_json, sign_did=public_info)
+        data_json = json.loads(response_json)["result"]["data"]
         if data_json:
             endpoint = json.loads(data_json).get("endpoint", None)
-            address = endpoint.get("endpoint", None) if endpoint else None
+            address = endpoint.get(endpoint_type.value, None) if endpoint else None
         else:
             address = None
 
         return address
 
-    async def update_endpoint_for_did(self, did: str, endpoint: str) -> bool:
+    async def update_endpoint_for_did(
+        self, did: str, endpoint: str, endpoint_type: EndpointType = None
+    ) -> bool:
         """Check and update the endpoint on the ledger.
 
         Args:
             did: The ledger DID
             endpoint: The endpoint address
+            endpoint_type: The type of the endpoint
         """
-        exist_endpoint = await self.get_endpoint_for_did(did)
-        if exist_endpoint != endpoint:
+        if not endpoint_type:
+            endpoint_type = EndpointType.ENDPOINT
+
+        all_exist_endpoints = await self.get_all_endpoints_for_did(did)
+        exist_endpoint_of_type = (
+            all_exist_endpoints.get(endpoint_type.value, None)
+            if all_exist_endpoints
+            else None
+        )
+
+        if exist_endpoint_of_type != endpoint:
             if self.read_only:
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
                 )
 
             nym = self.did_to_nym(did)
-            attr_json = json.dumps({"endpoint": {"endpoint": endpoint}})
+
+            if all_exist_endpoints:
+                all_exist_endpoints[endpoint_type.value] = endpoint
+                attr_json = json.dumps({"endpoint": all_exist_endpoints})
+            else:
+                attr_json = json.dumps({"endpoint": {endpoint_type.value: endpoint}})
+
             with IndyErrorHandler(
                 "Exception when building attribute request", LedgerError
             ):

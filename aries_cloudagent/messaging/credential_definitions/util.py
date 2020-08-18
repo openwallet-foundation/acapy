@@ -1,7 +1,8 @@
 """Credential definition utilities."""
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
+from ..models.openapi import OpenAPISchema
 from ..valid import (
     INDY_CRED_DEF_ID,
     INDY_DID,
@@ -13,7 +14,7 @@ from ..valid import (
 CRED_DEF_SENT_RECORD_TYPE = "cred_def_sent"
 
 
-class CredDefQueryStringSchema(Schema):
+class CredDefQueryStringSchema(OpenAPISchema):
     """Query string parameters for credential definition searches."""
 
     schema_id = fields.Str(

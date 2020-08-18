@@ -5,10 +5,11 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, request_schema
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....messaging.models.base import BaseModelError
+from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 
@@ -21,7 +22,7 @@ from .util import MENU_RECORD_TYPE, retrieve_connection_menu, save_connection_me
 LOGGER = logging.getLogger(__name__)
 
 
-class PerformRequestSchema(Schema):
+class PerformRequestSchema(OpenAPISchema):
     """Request schema for performing a menu action."""
 
     name = fields.Str(description="Menu option name", example="Query")
@@ -33,7 +34,7 @@ class PerformRequestSchema(Schema):
     )
 
 
-class MenuJsonSchema(Schema):
+class MenuJsonSchema(OpenAPISchema):
     """Matches MenuSchema but without the inherited AgentMessage properties."""
 
     title = fields.Str(required=False, description="Menu title", example="My Menu",)
@@ -54,7 +55,7 @@ class MenuJsonSchema(Schema):
     )
 
 
-class SendMenuSchema(Schema):
+class SendMenuSchema(OpenAPISchema):
     """Request schema for sending a menu to a connection."""
 
     menu = fields.Nested(
@@ -62,7 +63,7 @@ class SendMenuSchema(Schema):
     )
 
 
-class ConnIdMatchInfoSchema(Schema):
+class ConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(

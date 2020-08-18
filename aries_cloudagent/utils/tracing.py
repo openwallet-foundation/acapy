@@ -6,7 +6,7 @@ import time
 import datetime
 import requests
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
@@ -17,13 +17,14 @@ from ..messaging.decorators.trace_decorator import (
     TRACE_LOG_TARGET,
 )
 from ..messaging.models.base_record import BaseExchangeRecord
+from ..messaging.models.openapi import OpenAPISchema
 
 
 LOGGER = logging.getLogger(__name__)
 DT_FMT = "%Y-%m-%d %H:%M:%S.%f%z"
 
 
-class AdminAPIMessageTracingSchema(Schema):
+class AdminAPIMessageTracingSchema(OpenAPISchema):
     """
     Request/result schema including agent message tracing.
 
