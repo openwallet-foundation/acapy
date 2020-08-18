@@ -6,12 +6,14 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, validate
 
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY
 from ..storage.error import StorageError
 from ..wallet.error import WalletError
 from .base import BaseLedger
 from .indy import Role
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
+
+from .util import EndpointType
 
 
 class AMLRecordSchema(OpenAPISchema):
@@ -81,6 +83,17 @@ class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+
+
+class QueryStringEndpointSchema(OpenAPISchema):
+    """Parameters and validators for query string with DID and endpoint type."""
+
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    endpoint_type = fields.Str(
+        description="Endpoint type of interest (default 'endpoint')",
+        required=False,
+        **ENDPOINT_TYPE,
+    )
 
 
 @docs(
@@ -185,7 +198,7 @@ async def get_did_verkey(request: web.BaseRequest):
 @docs(
     tags=["ledger"], summary="Get the endpoint for a DID from the ledger.",
 )
-@querystring_schema(QueryStringDIDSchema())
+@querystring_schema(QueryStringEndpointSchema())
 async def get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -202,12 +215,14 @@ async def get_did_endpoint(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
+    endpoint_type = EndpointType(request.query.get("endpoint_type", "endpoint"))
+
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
         try:
-            r = await ledger.get_endpoint_for_did(did)
+            r = await ledger.get_endpoint_for_did(did, endpoint_type)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
