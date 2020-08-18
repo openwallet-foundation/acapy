@@ -264,7 +264,7 @@ class Conductor:
                 lambda completed: self.dispatch_complete(message, completed),
             )
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Shutdown with ledger error %s", str(e))
+            LOGGER.error("Shutdown on ledger error %s", str(e))
             if self.admin_server:
                 self.admin_server.notify_fatal_error()
             raise
@@ -278,10 +278,19 @@ class Conductor:
             if isinstance(completed.exc_info[1], LedgerConfigError) or isinstance(
                 completed.exc_info[1], LedgerTransactionError
             ):
-                LOGGER.error("Shutdown with %s", str(completed.exc_info[1]))
-                self.admin_server.notify_fatal_error()
+                LOGGER.error(
+                    "%shutdown on ledger error %s",
+                    "S" if self.admin_server else "No admin server to s",
+                    str(completed.exc_info[1]),
+                )
+                if self.admin_server:
+                    self.admin_server.notify_fatal_error()
             else:
-                LOGGER.error("DON'T Shutdown with %s", str(completed.exc_info[1]))
+                LOGGER.error(
+                    "DON'T shutdown on %s %s",
+                    completed.exc_info[0].__name__,
+                    str(completed.exc_info[1]),
+                )
         self.inbound_transport_manager.dispatch_complete(message, completed)
 
     async def get_stats(self) -> dict:
@@ -331,7 +340,7 @@ class Conductor:
         try:
             self.dispatcher.run_task(self.queue_outbound(context, outbound))
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Shutdown with ledger error %s", str(e))
+            LOGGER.error("Shutdown on ledger error %s", str(e))
             if self.admin_server:
                 self.admin_server.notify_fatal_error()
             raise
@@ -362,7 +371,7 @@ class Conductor:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return
             except (LedgerConfigError, LedgerTransactionError) as e:
-                LOGGER.error("Shutdown with ledger error %s", str(e))
+                LOGGER.error("Shutdown on ledger error %s", str(e))
                 if self.admin_server:
                     self.admin_server.notify_fatal_error()
                 raise
