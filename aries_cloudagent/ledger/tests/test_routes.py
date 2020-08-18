@@ -4,6 +4,7 @@ import pytest
 
 from ...config.injection_context import InjectionContext
 from ...ledger.base import BaseLedger
+from ...ledger.util import EndpointType
 
 from .. import routes as test_module
 
@@ -21,6 +22,8 @@ class TestLedgerRoutes(AsyncTestCase):
         self.test_did = "did"
         self.test_verkey = "verkey"
         self.test_endpoint = "http://localhost:8021"
+        self.test_endpoint_type = EndpointType.PROFILE
+        self.test_endpoint_type_profile = "http://company.com/profile"
 
     async def test_missing_ledger(self):
         request = async_mock.MagicMock(app=self.app,)
@@ -83,6 +86,22 @@ class TestLedgerRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.ledger.get_endpoint_for_did.return_value = self.test_endpoint
+            result = await test_module.get_did_endpoint(request)
+            json_response.assert_called_once_with(
+                {"endpoint": self.ledger.get_endpoint_for_did.return_value}
+            )
+            assert result is json_response.return_value
+
+    async def test_get_endpoint_of_type_profile(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did, "endpoint_type": self.test_endpoint_type}
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.get_endpoint_for_did.return_value = (
+                self.test_endpoint_type_profile
+            )
             result = await test_module.get_did_endpoint(request)
             json_response.assert_called_once_with(
                 {"endpoint": self.ledger.get_endpoint_for_did.return_value}
