@@ -12,6 +12,7 @@ from ..valid import (
     BASE64URL_NO_PAD,
     DID_KEY,
     ENDPOINT,
+    ENDPOINT_TYPE,
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
     INDY_DID,
@@ -426,3 +427,22 @@ class TestValid(TestCase):
         ENDPOINT["validate"]("newproto://myhost.ca:8080/path")
         ENDPOINT["validate"]("ftp://10.10.100.90:8021")
         ENDPOINT["validate"]("zzzp://someplace.ca:9999/path")
+
+    def test_endpoint_type(self):
+        non_endpoint_types = [
+            "123",
+            "endpoint",
+            "end point",
+            "end-point",
+            "profile",
+            "linked_domains",
+            None,
+        ]
+
+        for non_endpoint_type in non_endpoint_types:
+            with self.assertRaises(ValidationError):
+                ENDPOINT_TYPE["validate"](non_endpoint_type)
+
+        ENDPOINT_TYPE["validate"]("Endpoint")
+        ENDPOINT_TYPE["validate"]("Profile")
+        ENDPOINT_TYPE["validate"]("LinkedDomains")

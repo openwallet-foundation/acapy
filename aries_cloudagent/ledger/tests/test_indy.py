@@ -5,9 +5,10 @@ import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.cache.basic import BasicCache
-from aries_cloudagent.issuer.base import BaseIssuer, IssuerError
-from aries_cloudagent.ledger.indy import (
+from ...cache.basic import BasicCache
+from ...issuer.base import BaseIssuer, IssuerError
+from ...ledger.endpoint_type import EndpointType
+from ...ledger.indy import (
     BadLedgerRequestError,
     ClosedPoolError,
     ErrorCode,
@@ -21,11 +22,9 @@ from aries_cloudagent.ledger.indy import (
     Role,
     TAA_ACCEPTED_RECORD_TYPE,
 )
-from aries_cloudagent.storage.indy import IndyStorage
-from aries_cloudagent.storage.record import StorageRecord
-from aries_cloudagent.wallet.base import DIDInfo
-
-from ...ledger.util import EndpointType
+from ...storage.indy import IndyStorage
+from ...storage.record import StorageRecord
+from ...wallet.base import DIDInfo
 
 
 class TestRole(AsyncTestCase):
@@ -1666,7 +1665,13 @@ class TestIndyLedger(AsyncTestCase):
         endpoint = "http://company.com/masterdata"
         endpoint_type = EndpointType.PROFILE
         mock_submit.return_value = json.dumps(
-            {"result": {"data": json.dumps({"endpoint": {"Profile": endpoint}})}}
+            {
+                "result": {
+                    "data": json.dumps(
+                        {"endpoint": {EndpointType.PROFILE.indy: endpoint}}
+                    )
+                }
+            }
         )
         ledger = IndyLedger("name", mock_wallet)
 
@@ -1698,7 +1703,7 @@ class TestIndyLedger(AsyncTestCase):
         profile_endpoint = "http://company.com/masterdata"
         default_endpoint = "http://agent.company.com"
         data_json = json.dumps(
-            {"endpoint": {"endpoint": default_endpoint, "Profile": profile_endpoint}}
+            {"endpoint": {"endpoint": default_endpoint, "profile": profile_endpoint}}
         )
         mock_submit.return_value = json.dumps({"result": {"data": data_json}})
         ledger = IndyLedger("name", mock_wallet)
@@ -1919,7 +1924,7 @@ class TestIndyLedger(AsyncTestCase):
                 {
                     "result": {
                         "data": json.dumps(
-                            {"endpoint": {endpoint_type.value: endpoint[i]}}
+                            {"endpoint": {endpoint_type.indy: endpoint[i]}}
                         )
                     }
                 }

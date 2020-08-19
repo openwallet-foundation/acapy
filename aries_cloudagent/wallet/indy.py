@@ -2,16 +2,19 @@
 
 import json
 import logging
+
 from typing import Sequence
 
 import indy.anoncreds
 import indy.did
 import indy.crypto
 import indy.wallet
+
 from indy.error import IndyError, ErrorCode
 
 from ..indy.error import IndyErrorHandler
 from ..ledger.base import BaseLedger
+from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 
 from .base import BaseWallet, KeyInfo, DIDInfo
@@ -19,8 +22,6 @@ from .crypto import validate_seed
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .plugin import load_postgres_plugin
 from .util import bytes_to_b64
-
-from ..ledger.util import EndpointType
 
 
 class IndyWallet(BaseWallet):
@@ -566,15 +567,14 @@ class IndyWallet(BaseWallet):
             endpoint: the endpoint to set, None to clear
             ledger: the ledger to which to send endpoint update if DID is public
             endpoint_type: the type of the endpoint/service. Only endpoint_type
-            'endpoint' affects local wallet
+                'endpoint' affects local wallet
         """
         did_info = await self.get_local_did(did)
         metadata = {**did_info.metadata}
         if not endpoint_type:
             endpoint_type = EndpointType.ENDPOINT
         if endpoint_type == EndpointType.ENDPOINT:
-            metadata.pop("endpoint", None)
-            metadata["endpoint"] = endpoint
+            metadata[endpoint_type.indy] = endpoint
 
         wallet_public_didinfo = await self.get_public_did()
         if wallet_public_didinfo and wallet_public_didinfo.did == did:
@@ -711,54 +711,6 @@ class IndyWallet(BaseWallet):
         to_verkey = unpacked.get("recipient_verkey", None)
         from_verkey = unpacked.get("sender_verkey", None)
         return message, from_verkey, to_verkey
-
-    '''
-    async def get_credential_definition_tag_policy(self, credential_definition_id: str):
-        """Return the tag policy for a given credential definition ID."""
-        try:
-            policy_json = await indy.anoncreds.prover_get_credential_attr_tag_policy(
-                self.handle, credential_definition_id
-            )
-        except IndyError as x_indy:
-            raise IndyErrorHandler.wrap_error(
-                x_indy, "Wallet {} error".format(self.name), WalletError
-            ) from x_indy
-
-        return json.loads(policy_json) if policy_json else None
-
-    async def set_credential_definition_tag_policy(
-        self,
-        credential_definition_id: str,
-        taggables: Sequence[str] = None,
-        retroactive: bool = True,
-    ):
-        """
-        Set the tag policy for a given credential definition ID.
-
-        Args:
-            credential_definition_id: The ID of the credential definition
-            taggables: A sequence of string values representing attribute names;
-                empty array for none, None for all
-            retroactive: Whether to apply the policy to previously-stored credentials
-        """
-
-        self.logger.info(
-            "%s tagging policy: %s",
-            "Clear" if taggables is None else "Set",
-            credential_definition_id,
-        )
-        try:
-            await indy.anoncreds.prover_set_credential_attr_tag_policy(
-                self.handle,
-                credential_definition_id,
-                json.dumps(taggables),
-                retroactive,
-            )
-        except IndyError as x_indy:
-            raise IndyErrorHandler.wrap_error(
-                x_indy, "Wallet {} error".format(self.name), WalletError
-            ) from x_indy
-    '''
 
     @classmethod
     async def generate_wallet_key(self, seed: str = None) -> str:

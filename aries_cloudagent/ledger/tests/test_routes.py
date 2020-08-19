@@ -4,7 +4,7 @@ import pytest
 
 from ...config.injection_context import InjectionContext
 from ...ledger.base import BaseLedger
-from ...ledger.util import EndpointType
+from ...ledger.endpoint_type import EndpointType
 
 from .. import routes as test_module
 
@@ -95,7 +95,10 @@ class TestLedgerRoutes(AsyncTestCase):
     async def test_get_endpoint_of_type_profile(self):
         request = async_mock.MagicMock()
         request.app = self.app
-        request.query = {"did": self.test_did, "endpoint_type": self.test_endpoint_type}
+        request.query = {
+            "did": self.test_did,
+            "endpoint_type": self.test_endpoint_type.w3c,
+        }
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
