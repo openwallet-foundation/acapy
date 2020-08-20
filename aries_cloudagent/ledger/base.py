@@ -81,15 +81,6 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def get_nym_role(self, did: str):
-        """
-        Return the role registered to input public DID on the ledger.
-
-        Args:
-            did: DID to register on the ledger.
-        """
-
-    @abstractmethod
     def nym_to_did(self, nym: str) -> str:
         """Format a nym with the ledger's DID prefix."""
 

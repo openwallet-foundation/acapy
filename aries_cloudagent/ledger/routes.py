@@ -134,45 +134,7 @@ async def register_ledger_nym(request: web.BaseRequest):
             success = True
         except LedgerTransactionError as err:
             raise web.HTTPForbidden(reason=err.roll_up)
-        except LedgerError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up)
-
     return web.json_response({"success": success})
-
-
-@docs(
-    tags=["ledger"], summary="Get the role from the NYM registration of a public DID.",
-)
-@querystring_schema(QueryStringDIDSchema)
-async def get_nym_role(request: web.BaseRequest):
-    """
-    Request handler for getting the role from the NYM registration of a public DID.
-
-    Args:
-        request: aiohttp request object
-    """
-    context = request.app["request_context"]
-    ledger = await context.inject(BaseLedger, required=False)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
-
-    did = request.query.get("did")
-    if not did:
-        raise web.HTTPBadRequest(reason="Request query must include DID")
-
-    async with ledger:
-        try:
-            role = await ledger.get_nym_role(did)
-        except LedgerTransactionError as err:
-            raise web.HTTPForbidden(reason=err.roll_up)
-        except BadLedgerRequestError as err:
-            raise web.HTTPNotFound(reason=err.roll_up)
-        except LedgerError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up)
-    return web.json_response({"role": role.name})
 
 
 @docs(tags=["ledger"], summary="Rotate key pair for public DID.")
@@ -357,7 +319,6 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/ledger/register-nym", register_ledger_nym),
-            web.get("/ledger/get-nym-role", get_nym_role, allow_head=False),
             web.patch("/ledger/rotate-public-did-keypair", rotate_public_did_keypair),
             web.get("/ledger/did-verkey", get_did_verkey, allow_head=False),
             web.get("/ledger/did-endpoint", get_did_endpoint, allow_head=False),
