@@ -2,9 +2,9 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_RESPONSE
 from ..models.paginated import Paginated, PaginatedSchema
@@ -40,7 +40,7 @@ class RouteQueryResponse(AgentMessage):
             filter: Filter results according to specific field values
         """
 
-        super(RouteQueryResponse, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.routes = routes or []
         self.paginated = paginated
 
@@ -52,6 +52,7 @@ class RouteQueryResponseSchema(AgentMessageSchema):
         """RouteQueryResponseSchema metadata."""
 
         model_class = RouteQueryResponse
+        unknown = EXCLUDE
 
     routes = fields.List(fields.Nested(RouteQueryResultSchema()), required=True)
     paginated = fields.Nested(PaginatedSchema(), required=False)

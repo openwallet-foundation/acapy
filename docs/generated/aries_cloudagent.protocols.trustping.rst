@@ -11,24 +11,15 @@ Subpackages
 
 .. toctree::
 
-    aries_cloudagent.protocols.trustping.handlers
-    aries_cloudagent.protocols.trustping.messages
+    aries_cloudagent.protocols.trustping.v1_0
 
 Submodules
 ----------
 
-aries\_cloudagent\.protocols\.trustping\.message\_types module
---------------------------------------------------------------
+aries\_cloudagent\.protocols\.trustping\.definition module
+----------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.trustping.message_types
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-aries\_cloudagent\.protocols\.trustping\.routes module
-------------------------------------------------------
-
-.. automodule:: aries_cloudagent.protocols.trustping.routes
+.. automodule:: aries_cloudagent.protocols.trustping.definition
     :members:
     :undoc-members:
     :show-inheritance:

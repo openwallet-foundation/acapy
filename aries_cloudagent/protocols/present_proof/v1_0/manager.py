@@ -190,6 +190,7 @@ class PresentationManager:
             role=V10PresentationExchange.ROLE_VERIFIER,
             state=V10PresentationExchange.STATE_REQUEST_SENT,
             presentation_request=presentation_request_message.indy_proof_request(),
+            presentation_request_dict=presentation_request_message.serialize(),
             trace=(presentation_request_message._trace is not None),
         )
         await presentation_exchange_record.save(
@@ -325,35 +326,36 @@ class PresentationManager:
 
         # Get delta with non-revocation interval defined in "non_revoked"
         # of the presentation request or attributes
-        current_timestamp = int(time.time())
+        epoch_now = int(time.time())
 
-        non_revoc_interval = {"from": 0, "to": current_timestamp}
+        non_revoc_interval = {"from": 0, "to": epoch_now}
         non_revoc_interval.update(
             presentation_exchange_record.presentation_request.get("non_revoked", {})
         )
 
         revoc_reg_deltas = {}
         async with ledger:
-            for referented in requested_referents.values():
-                credential_id = referented["cred_id"]
+            for precis in requested_referents.values():  # cred_id, non-revoc interval
+                credential_id = precis["cred_id"]
                 if not credentials[credential_id].get("rev_reg_id"):
                     continue
-
+                if "timestamp" in precis:
+                    continue
                 rev_reg_id = credentials[credential_id]["rev_reg_id"]
-                referent_non_revoc_interval = referented.get(
+                referent_non_revoc_interval = precis.get(
                     "non_revoked", non_revoc_interval
                 )
 
                 if referent_non_revoc_interval:
                     key = (
-                        f"{rev_reg_id}_{non_revoc_interval['from']}_"
-                        f"{non_revoc_interval['to']}"
+                        f"{rev_reg_id}_{referent_non_revoc_interval.get('from', 0)}_"
+                        f"{referent_non_revoc_interval.get('to', epoch_now)}"
                     )
                     if key not in revoc_reg_deltas:
                         (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
                             rev_reg_id,
-                            non_revoc_interval["from"],
-                            non_revoc_interval["to"],
+                            referent_non_revoc_interval.get("from", 0),
+                            referent_non_revoc_interval.get("to", epoch_now),
                         )
                         revoc_reg_deltas[key] = (
                             rev_reg_id,
@@ -361,7 +363,10 @@ class PresentationManager:
                             delta,
                             delta_timestamp,
                         )
-                    referented["timestamp"] = revoc_reg_deltas[key][3]
+                    for stamp_me in requested_referents.values():
+                        # often one cred satisfies many requested attrs/preds
+                        if stamp_me["cred_id"] == credential_id:
+                            stamp_me["timestamp"] = revoc_reg_deltas[key][3]
 
         # Get revocation states to prove non-revoked
         revocation_states = {}
@@ -375,12 +380,12 @@ class PresentationManager:
                 revocation_states[rev_reg_id] = {}
 
             rev_reg = revocation_registries[rev_reg_id]
-            tails_local_path = await rev_reg.get_or_fetch_local_tails_path(self.context)
+            tails_local_path = await rev_reg.get_or_fetch_local_tails_path()
 
             try:
                 revocation_states[rev_reg_id][delta_timestamp] = json.loads(
                     await holder.create_revocation_state(
-                        credential["cred_rev_id"],
+                        credentials[credential_id]["cred_rev_id"],
                         rev_reg.reg_def,
                         delta,
                         delta_timestamp,
@@ -393,17 +398,17 @@ class PresentationManager:
                 )
                 raise e
 
-        for (referent, referented) in requested_referents.items():
-            if "timestamp" not in referented:
+        for (referent, precis) in requested_referents.items():
+            if "timestamp" not in precis:
                 continue
             if referent in requested_credentials["requested_attributes"]:
                 requested_credentials["requested_attributes"][referent][
                     "timestamp"
-                ] = referented["timestamp"]
+                ] = precis["timestamp"]
             if referent in requested_credentials["requested_predicates"]:
                 requested_credentials["requested_predicates"][referent][
                     "timestamp"
-                ] = referented["timestamp"]
+                ] = precis["timestamp"]
 
         indy_proof_json = await holder.create_presentation(
             presentation_exchange_record.presentation_request,
@@ -605,7 +610,10 @@ class PresentationManager:
                 self.context.settings, presentation_exchange_record.trace
             )
 
-            await responder.send_reply(presentation_ack_message)
+            await responder.send_reply(
+                presentation_ack_message,
+                connection_id=presentation_exchange_record.connection_id,
+            )
         else:
             self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",

@@ -1,8 +1,8 @@
 """Record used to represent a parameter in a menu form."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.models.base import BaseModel, BaseModelSchema
 
 
 class MenuFormParam(BaseModel):
@@ -50,6 +50,7 @@ class MenuFormParamSchema(BaseModelSchema):
         """MenuFormParamSchema metadata."""
 
         model_class = MenuFormParam
+        unknown = EXCLUDE
 
     name = fields.Str(
         required=True, description="Menu parameter name", example="delay",

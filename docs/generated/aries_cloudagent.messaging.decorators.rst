@@ -73,6 +73,14 @@ aries\_cloudagent\.messaging\.decorators\.timing\_decorator module
     :undoc-members:
     :show-inheritance:
 
+aries\_cloudagent\.messaging\.decorators\.trace\_decorator module
+-----------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.decorators.trace_decorator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 aries\_cloudagent\.messaging\.decorators\.transport\_decorator module
 ---------------------------------------------------------------------
 

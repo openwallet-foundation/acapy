@@ -13,8 +13,8 @@ from ..ledger.provider import LedgerProvider
 from ..issuer.base import BaseIssuer
 from ..holder.base import BaseHolder
 from ..verifier.base import BaseVerifier
+from ..tails.base import BaseTailsServer
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
@@ -117,8 +117,12 @@ class DefaultContextBuilder(ContextBuilder):
             BaseVerifier,
             ClassProvider(
                 "aries_cloudagent.verifier.indy.IndyVerifier",
-                ClassProvider.Inject(BaseWallet),
+                ClassProvider.Inject(BaseLedger),
             ),
+        )
+        context.injector.bind_provider(
+            BaseTailsServer,
+            ClassProvider("aries_cloudagent.tails.indy_tails_server.IndyTailsServer",),
         )
 
         # Register default pack format

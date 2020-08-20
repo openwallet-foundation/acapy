@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 
@@ -31,7 +31,7 @@ class LocalizationDecorator(BaseModel):
             catalogs: A list of URLs for localization resources
 
         """
-        super(LocalizationDecorator, self).__init__()
+        super().__init__()
         self.locale = locale
         self.localizable = list(localizable) if localizable else []
         self.catalogs = list(catalogs) if catalogs else []
@@ -44,6 +44,7 @@ class LocalizationDecoratorSchema(BaseModelSchema):
         """LocalizationDecoratorSchema metadata."""
 
         model_class = LocalizationDecorator
+        unknown = EXCLUDE
 
     locale = fields.Str(required=True, description="Locale specifier", example="en-CA",)
     localizable = fields.List(

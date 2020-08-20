@@ -274,10 +274,5 @@ class MessageReceipt:
             A human readable representation of this object
 
         """
-        skip = ()
-        items = (
-            "{}={}".format(k, repr(v))
-            for k, v in self.__dict__.items()
-            if k not in skip
-        )
+        items = ("{}={}".format(k, repr(v)) for k, v in self.__dict__.items())
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))

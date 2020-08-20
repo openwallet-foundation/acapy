@@ -1,8 +1,8 @@
 """Action menu utility methods."""
 
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.messaging.responder import BaseResponder
-from aries_cloudagent.storage.base import (
+from ....config.injection_context import InjectionContext
+from ....messaging.responder import BaseResponder
+from ....storage.base import (
     BaseStorage,
     StorageRecord,
     StorageNotFoundError,

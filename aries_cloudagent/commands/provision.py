@@ -56,5 +56,10 @@ def execute(argv: Sequence[str] = None):
     loop.run_until_complete(provision(settings))
 
 
-if __name__ == "__main__":
-    execute()
+def main():
+    """Execute the main line."""
+    if __name__ == "__main__":
+        execute()
+
+
+main()

@@ -1,5 +1,9 @@
 """Message type identifiers for Connections."""
 
+SPEC_URI = (
+    "https://github.com/hyperledger/aries-rfcs/tree/"
+    "9b0aaa39df7e8bd434126c4b33c097aae78d65bf/features/0160-connection-protocol"
+)
 PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0"
 
 CONNECTION_INVITATION = f"{PROTOCOL_URI}/invitation"

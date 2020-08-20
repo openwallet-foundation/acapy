@@ -19,7 +19,7 @@ class HttpTransport(BaseOutboundTransport):
 
     def __init__(self) -> None:
         """Initialize an `HttpTransport` instance."""
-        super(HttpTransport, self).__init__()
+        super().__init__()
         self.client_session: ClientSession = None
         self.connector: TCPConnector = None
         self.logger = logging.getLogger(__name__)
@@ -60,8 +60,16 @@ class HttpTransport(BaseOutboundTransport):
             headers["Content-Type"] = "application/ssi-agent-wire"
         else:
             headers["Content-Type"] = "application/json"
+        self.logger.debug(
+            "Posting to %s; Data: %s; Headers: %s", endpoint, payload, headers
+        )
         async with self.client_session.post(
             endpoint, data=payload, headers=headers
         ) as response:
             if response.status < 200 or response.status > 299:
-                raise OutboundTransportError("Unexpected response status")
+                raise OutboundTransportError(
+                    (
+                        f"Unexpected response status {response.status}, "
+                        f"caused by: {response.reason}"
+                    )
+                )

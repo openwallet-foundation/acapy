@@ -39,3 +39,6 @@ class TestThreadDecorator(TestCase):
         assert loaded.pthid == self.parent_id
         assert loaded.sender_order == self.sender_order
         assert loaded.received_orders == self.received_orders
+
+        loaded.pthid = "dummy"
+        assert loaded.pthid == "dummy"

@@ -2,10 +2,9 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import fields, Schema
-from marshmallow.validate import OneOf
+from marshmallow import EXCLUDE, fields, Schema, validate
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import DISCLOSE, PROTOCOL_PACKAGE
 
@@ -29,7 +28,7 @@ class Disclose(AgentMessage):
         Args:
             protocols: A mapping of protocol names to a dictionary of properties
         """
-        super(Disclose, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.protocols = list(protocols) if protocols else []
 
 
@@ -41,7 +40,7 @@ class ProtocolDescriptorSchema(Schema):
         fields.Str(
             description="Role: requester or responder",
             example="requester",
-            validate=OneOf(["requester", "responder"]),
+            validate=validate.OneOf(["requester", "responder"]),
         ),
         required=False,
         allow_none=True,
@@ -56,6 +55,7 @@ class DiscloseSchema(AgentMessageSchema):
         """DiscloseSchema metadata."""
 
         model_class = Disclose
+        unknown = EXCLUDE
 
     protocols = fields.List(
         fields.Nested(ProtocolDescriptorSchema()),

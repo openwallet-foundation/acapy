@@ -1,5 +1,6 @@
 import asyncio
 import json
+import pytest
 
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, unused_port
 from aiohttp import web
@@ -11,6 +12,7 @@ from ...wire_format import JsonWireFormat
 from ..message import InboundMessage
 from ..session import InboundSession
 from ..ws import WsTransport
+from .. import ws as test_module
 
 
 class TestWsTransport(AioHTTPTestCase):
@@ -21,7 +23,7 @@ class TestWsTransport(AioHTTPTestCase):
         self.transport = WsTransport("0.0.0.0", self.port, self.create_session)
         self.transport.wire_format = JsonWireFormat()
         self.result_event = None
-        super(TestWsTransport, self).setUp()
+        super().setUp()
 
     def create_session(
         self,
@@ -54,6 +56,17 @@ class TestWsTransport(AioHTTPTestCase):
         self.message_results.append((message.payload, message.receipt, can_respond))
         if self.result_event:
             self.result_event.set()
+
+    @unittest_run_loop
+    async def test_start_x(self):
+        with async_mock.patch.object(
+            test_module.web, "TCPSite", async_mock.MagicMock()
+        ) as mock_site:
+            mock_site.return_value = async_mock.MagicMock(
+                start=async_mock.CoroutineMock(side_effect=OSError())
+            )
+            with pytest.raises(test_module.InboundTransportSetupError):
+                await self.transport.start()
 
     @unittest_run_loop
     async def test_message_and_response(self):

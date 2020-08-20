@@ -1,8 +1,8 @@
 """An object for containing updated route information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.models.base import BaseModel, BaseModelSchema
 
 
 class RouteUpdated(BaseModel):
@@ -35,7 +35,7 @@ class RouteUpdated(BaseModel):
             result: The result of the requested action
 
         """
-        super(RouteUpdated, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.recipient_key = recipient_key
         self.action = action
         self.result = result
@@ -47,7 +47,8 @@ class RouteUpdatedSchema(BaseModelSchema):
     class Meta:
         """RouteUpdatedSchema metadata."""
 
-        model_class = "RouteUpdated"
+        model_class = RouteUpdated
+        unknown = EXCLUDE
 
     recipient_key = fields.Str(required=True)
     action = fields.Str(required=True)

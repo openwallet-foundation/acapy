@@ -62,8 +62,10 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
-                raise StorageDuplicateError("Duplicate record ID: {}".format(record.id))
-            raise StorageError(str(x_indy))
+                raise StorageDuplicateError(
+                    "Duplicate record ID: {}".format(record.id)
+                ) from x_indy
+            raise StorageError(str(x_indy)) from x_indy
 
     async def get_record(
         self, record_type: str, record_id: str, options: Mapping = None
@@ -105,8 +107,10 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError("Record not found: {}".format(record_id))
-            raise StorageError(str(x_indy))
+                raise StorageNotFoundError(
+                    f"{record_type} record not found: {record_id}"
+                ) from x_indy
+            raise StorageError(str(x_indy)) from x_indy
         result = json.loads(result_json)
         return StorageRecord(
             type=record_type,
@@ -135,7 +139,7 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError("Record not found: {}".format(record.id))
+                raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
 
     async def update_record_tags(self, record: StorageRecord, tags: Mapping):
@@ -159,7 +163,7 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError("Record not found: {}".format(record.id))
+                raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
 
     async def delete_record_tags(
@@ -202,7 +206,7 @@ class IndyStorage(BaseStorage):
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError("Record not found: {}".format(record.id))
+                raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
 
     def search_records(
@@ -249,9 +253,7 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
             page_size: Size of page to return
 
         """
-        super(IndyStorageRecordSearch, self).__init__(
-            store, type_filter, tag_query, page_size, options
-        )
+        super().__init__(store, type_filter, tag_query, page_size, options)
         self._handle = None
 
     @property
@@ -292,9 +294,14 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
         """
         if not self.opened:
             raise StorageSearchError("Search query has not been opened")
-        result_json = await non_secrets.fetch_wallet_search_next_records(
-            self.store.wallet.handle, self._handle, max_count
-        )
+
+        try:
+            result_json = await non_secrets.fetch_wallet_search_next_records(
+                self.store.wallet.handle, self._handle, max_count
+            )
+        except IndyError as x_indy:
+            raise StorageSearchError(str(x_indy)) from x_indy
+
         results = json.loads(result_json)
         ret = []
         if results["records"]:
@@ -321,12 +328,18 @@ class IndyStorageRecordSearch(BaseStorageRecordSearch):
                 "retrieveTags": self.option("retrieveTags", True),
             }
         )
-        self._handle = await non_secrets.open_wallet_search(
-            self.store.wallet.handle, self.type_filter, query_json, options_json
-        )
+        try:
+            self._handle = await non_secrets.open_wallet_search(
+                self.store.wallet.handle, self.type_filter, query_json, options_json
+            )
+        except IndyError as x_indy:
+            raise StorageSearchError(str(x_indy)) from x_indy
 
     async def close(self):
         """Dispose of the search query."""
-        if self._handle:
-            await non_secrets.close_wallet_search(self._handle)
-            self._handle = None
+        try:
+            if self._handle:
+                await non_secrets.close_wallet_search(self._handle)
+                self._handle = None
+        except IndyError as x_indy:
+            raise StorageSearchError(str(x_indy)) from x_indy

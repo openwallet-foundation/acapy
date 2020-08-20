@@ -1,8 +1,8 @@
 """An object for containing the response pagination information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.models.base import BaseModel, BaseModelSchema
 
 
 class Paginated(BaseModel):
@@ -32,7 +32,7 @@ class Paginated(BaseModel):
             total: Total number of records available
 
         """
-        super(Paginated, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.start = start
         self.end = end
         self.limit = limit
@@ -45,7 +45,8 @@ class PaginatedSchema(BaseModelSchema):
     class Meta:
         """PaginatedSchema metadata."""
 
-        model_class = "Paginated"
+        model_class = Paginated
+        unknown = EXCLUDE
 
     start = fields.Int(required=False)
     end = fields.Int(required=False)

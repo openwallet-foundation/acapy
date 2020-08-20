@@ -29,7 +29,7 @@ class TestProvider(AsyncTestCase):
 
         context = InjectionContext(enforce_typing=False)
         mock_wallet = async_mock.MagicMock()
-        mock_wallet.WALLET_TYPE = "indy"
+        mock_wallet.type = "indy"
         context.injector.bind_instance(BaseWallet, mock_wallet)
 
         result = await provider.provide(
@@ -53,7 +53,7 @@ class TestProvider(AsyncTestCase):
 
         context = InjectionContext(enforce_typing=False)
         mock_wallet = async_mock.MagicMock()
-        mock_wallet.WALLET_TYPE = "indy"
+        mock_wallet.type = "indy"
         context.injector.bind_instance(BaseWallet, mock_wallet)
 
         result = await provider.provide(

@@ -1,6 +1,21 @@
 from unittest import TestCase as UnitTestCase
 
+from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
+
 from ..presentation_exchange import V10PresentationExchange
+
+
+class BasexRecordImpl(BaseExchangeRecord):
+    class Meta:
+        schema_class = "BasexRecordImplSchema"
+
+    RECORD_TYPE = "record"
+    CACHE_ENABLED = True
+
+
+class BasexRecordImplSchema(BaseExchangeSchema):
+    class Meta:
+        model_class = BasexRecordImpl
 
 
 class TestRecord(UnitTestCase):
@@ -14,6 +29,7 @@ class TestRecord(UnitTestCase):
             state="state",
             presentation_proposal_dict={"prop": "dict"},
             presentation_request={"pres": "req"},
+            presentation_request_dict={"pres", "dict"},
             presentation={"pres": "indy"},
             verified=False,
             auto_present=True,
@@ -27,6 +43,7 @@ class TestRecord(UnitTestCase):
             "initiator": "init",
             "presentation_proposal_dict": {"prop": "dict"},
             "presentation_request": {"pres": "req"},
+            "presentation_request_dict": {"pres", "dict"},
             "presentation": {"pres": "indy"},
             "role": "role",
             "state": "state",
@@ -35,3 +52,6 @@ class TestRecord(UnitTestCase):
             "verified": False,
             "trace": False,
         }
+
+        bx_record = BasexRecordImpl()
+        assert record != bx_record

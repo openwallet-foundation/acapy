@@ -8,7 +8,7 @@ and constrained.
 from datetime import datetime
 from typing import Union
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..util import datetime_to_str
@@ -44,7 +44,7 @@ class TimingDecorator(BaseModel):
             delay_milli: The number of milliseconds to delay processing
             wait_until_time: The earliest time at which to perform processing
         """
-        super(TimingDecorator, self).__init__()
+        super().__init__()
         self.in_time = datetime_to_str(in_time)
         self.out_time = datetime_to_str(out_time)
         self.stale_time = datetime_to_str(stale_time)
@@ -60,6 +60,7 @@ class TimingDecoratorSchema(BaseModelSchema):
         """TimingDecoratorSchema metadata."""
 
         model_class = TimingDecorator
+        unknown = EXCLUDE
 
     in_time = fields.Str(
         required=False, description="Time of message receipt", **INDY_ISO8601_DATETIME
