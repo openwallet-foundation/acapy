@@ -50,7 +50,7 @@ class NonRevocationIntervalSchema(BaseModelSchema):
     """Schema to allow serialization/deserialization of non-revocation intervals."""
 
     class Meta:
-        """NonRevocationIntervalchema metadata."""
+        """NonRevocationIntervalSchema metadata."""
 
         model_class = NonRevocationInterval
 

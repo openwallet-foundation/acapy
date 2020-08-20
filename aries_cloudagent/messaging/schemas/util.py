@@ -1,11 +1,27 @@
 """Schema utilities."""
 
-from ..valid import IndySchemaId, IndyDID, IndyVersion
+from marshmallow import fields
 
-SCHEMA_TAGS = {
-    "schema_id": IndySchemaId.PATTERN,
-    "schema_issuer_did": IndyDID.PATTERN,
-    "schema_name": "^.+$",
-    "schema_version": IndyVersion.PATTERN,
-}
+from ..models.openapi import OpenAPISchema
+from ..valid import INDY_DID, INDY_SCHEMA_ID, INDY_VERSION
+
+
+class SchemaQueryStringSchema(OpenAPISchema):
+    """Query string parameters for schema searches."""
+
+    schema_id = fields.Str(
+        description="Schema identifier", required=False, **INDY_SCHEMA_ID,
+    )
+    schema_issuer_did = fields.Str(
+        description="Schema issuer DID", required=False, **INDY_DID,
+    )
+    schema_name = fields.Str(
+        description="Schema name", required=False, example="membership",
+    )
+    schema_version = fields.Str(
+        description="Schema version", required=False, **INDY_VERSION
+    )
+
+
+SCHEMA_TAGS = [tag for tag in vars(SchemaQueryStringSchema)["_declared_fields"]]
 SCHEMA_SENT_RECORD_TYPE = "schema_sent"

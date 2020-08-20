@@ -9,6 +9,13 @@ class TestRepeat(TestCase):
         seq = test_module.RepeatSequence(5, interval=5.0, backoff=0.25)
         assert [round(attempt.next_interval) for attempt in seq] == expect
 
+        seq = test_module.RepeatSequence(2, interval=5.0, backoff=0.25)
+        attempt = seq.start()
+        attempt = attempt.next()
+        attempt.timeout(interval=0.01)
+        with self.assertRaises(StopIteration):
+            attempt.next()
+
     async def test_aiter(self):
         seq = test_module.RepeatSequence(5, interval=5.0, backoff=0.25)
         sleeps = [0]

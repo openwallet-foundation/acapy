@@ -6,7 +6,7 @@ import time
 import datetime
 import requests
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
@@ -17,13 +17,14 @@ from ..messaging.decorators.trace_decorator import (
     TRACE_LOG_TARGET,
 )
 from ..messaging.models.base_record import BaseExchangeRecord
+from ..messaging.models.openapi import OpenAPISchema
 
 
 LOGGER = logging.getLogger(__name__)
 DT_FMT = "%Y-%m-%d %H:%M:%S.%f%z"
 
 
-class AdminAPIMessageTracingSchema(Schema):
+class AdminAPIMessageTracingSchema(OpenAPISchema):
     """
     Request/result schema including agent message tracing.
 
@@ -77,7 +78,7 @@ def tracing_enabled(context, message) -> bool:
                 if message.payload.get("~trace") or message.payload.get("trace"):
                     return True
             elif message.payload and isinstance(message.payload, str):
-                if "~trace" in message.payload or "trace" in message.payload:
+                if "trace" in message.payload:  # includes "~trace" in message.payload
                     return True
 
     # default off
@@ -126,7 +127,7 @@ def trace_event(
                 ("log", "message" or an http endpoint)
             context["trace.tag"]: Tag to be included in trace output
         message: the current message, can be an AgentMessage,
-                InboundMessage, OutboundMessage or Exchange record
+            InboundMessage, OutboundMessage or Exchange record
         event: Dict that will be converted to json and posted to the target
     """
 

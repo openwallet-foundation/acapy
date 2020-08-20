@@ -3,13 +3,14 @@
 from typing import Sequence
 from urllib.parse import parse_qs, urljoin, urlparse
 
-from marshmallow import ValidationError, fields, validates_schema
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
-from aries_cloudagent.messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
-from aries_cloudagent.wallet.util import b64_to_bytes, bytes_to_b64
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from .....wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
+
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
@@ -49,7 +50,7 @@ class ConnectionInvitation(AgentMessage):
             routing_keys: List of routing keys
             image_url: Optional image URL for connection invitation
         """
-        super(ConnectionInvitation, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.label = label
         self.did = did
         self.recipient_keys = list(recipient_keys) if recipient_keys else None
@@ -96,6 +97,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         """Connection invitation schema metadata."""
 
         model_class = ConnectionInvitation
+        unknown = EXCLUDE
 
     label = fields.Str(
         required=False, description="Optional label for connection", example="Bob"

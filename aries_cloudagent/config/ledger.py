@@ -12,6 +12,7 @@ from prompt_toolkit.formatted_text import HTML
 
 from ..ledger.base import BaseLedger
 from ..utils.http import fetch, FetchError
+from ..wallet.base import BaseWallet
 
 from .base import ConfigError
 from .injection_context import InjectionContext
@@ -56,7 +57,7 @@ async def ledger_config(
     if not ledger:
         LOGGER.info("Ledger instance not provided")
         return False
-    elif ledger.LEDGER_TYPE != "indy":
+    elif ledger.type != "indy":
         LOGGER.info("Non-indy ledger provided")
         return False
 
@@ -75,7 +76,10 @@ async def ledger_config(
         # Publish endpoint if necessary - skipped if TAA is required but not accepted
         endpoint = context.settings.get("default_endpoint")
         if public_did:
-            await ledger.update_endpoint_for_did(public_did, endpoint)
+            wallet: BaseWallet = await context.inject(BaseWallet)
+            if wallet.type != "indy":
+                raise ConfigError("Cannot provision a non-Indy wallet type")
+            await wallet.set_did_endpoint(public_did, endpoint, ledger)
 
     return True
 

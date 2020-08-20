@@ -1,8 +1,7 @@
 from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from aries_cloudagent.protocols.connections.v1_0.messages.connection_invitation import (
+from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 

@@ -3,11 +3,11 @@
 from datetime import datetime
 from typing import Union
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
-from aries_cloudagent.messaging.util import datetime_now, datetime_to_str
-from aries_cloudagent.messaging.valid import INDY_ISO8601_DATETIME
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.util import datetime_now, datetime_to_str
+from .....messaging.valid import INDY_ISO8601_DATETIME
 
 from ..message_types import BASIC_MESSAGE, PROTOCOL_PACKAGE
 
@@ -57,6 +57,7 @@ class BasicMessageSchema(AgentMessageSchema):
         """Basic message schema metadata."""
 
         model_class = BasicMessage
+        unknown = EXCLUDE
 
     sent_time = fields.Str(
         required=False,

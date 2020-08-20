@@ -10,7 +10,7 @@ import uuid
 
 from typing import Any, Mapping, Sequence, Union
 
-from marshmallow import fields, pre_load
+from marshmallow import EXCLUDE, fields, pre_load
 
 from ...wallet.base import BaseWallet
 from ...wallet.util import (
@@ -62,6 +62,7 @@ class AttachDecoratorDataJWSHeaderSchema(BaseModelSchema):
         """Attach decorator data schema metadata."""
 
         model_class = AttachDecoratorDataJWSHeader
+        unknown = EXCLUDE
 
     kid = fields.Str(
         description="Key identifier, in W3C did:key or DID URL format",
@@ -108,6 +109,7 @@ class AttachDecoratorData1JWSSchema(BaseModelSchema):
         """Single attach decorator data JWS schema metadata."""
 
         model_class = AttachDecoratorData1JWS
+        unknown = EXCLUDE
 
     header = fields.Nested(AttachDecoratorDataJWSHeaderSchema, required=True)
     protected = fields.Str(
@@ -152,6 +154,7 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
         """Metadata for schema for detached JWS for inclusion in attach deco data."""
 
         model_class = AttachDecoratorDataJWS
+        unknown = EXCLUDE
 
     @pre_load
     def validate_single_xor_multi_sig(self, data: Mapping, **kwargs):
@@ -227,7 +230,7 @@ class AttachDecoratorData(BaseModel):
         sha256_: str = None,
         links_: Union[list, str] = None,
         base64_: str = None,
-        json_: str = None,
+        json_: dict = None,
     ):
         """
         Initialize decorator data.
@@ -243,7 +246,7 @@ class AttachDecoratorData(BaseModel):
             sha256_: optional sha-256 hash for content
             links_: list or single URL of hyperlinks
             base64_: base64 encoded content for inclusion
-            json_: json-dumped content for inclusion
+            json_: dict content for inclusion as json
 
         """
         if jws_:
@@ -454,6 +457,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         """Attach decorator data schema metadata."""
 
         model_class = AttachDecoratorData
+        unknown = EXCLUDE
 
     @pre_load
     def validate_data_spec(self, data: Mapping, **kwargs):
@@ -475,7 +479,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         required=False,
         data_key="jws",
     )
-    json_ = fields.Str(
+    json_ = fields.Dict(
         description="JSON-serialized data",
         required=False,
         example='{"sample": "content"}',
@@ -588,6 +592,42 @@ class AttachDecorator(BaseModel):
             ),
         )
 
+    @classmethod
+    def from_aries_msg(
+        cls,
+        message: dict,
+        *,
+        ident: str = None,
+        description: str = None,
+        filename: str = None,
+        lastmod_time: str = None,
+        byte_count: int = None,
+    ):
+        """
+        Create `AttachDecorator` instance from an aries message.
+
+        Given message object (dict), JSON dump, and embed
+        it as data; mark `application/json` MIME type.
+
+        Args:
+            message: aries message (dict) data structure
+            ident: optional attachment identifier (default random UUID4)
+            description: optional attachment description
+            filename: optional attachment filename
+            lastmod_time: optional attachment last modification time
+            byte_count: optional attachment byte count
+
+        """
+        return AttachDecorator(
+            ident=ident or str(uuid.uuid4()),
+            description=description,
+            filename=filename,
+            mime_type="application/json",
+            lastmod_time=lastmod_time,
+            byte_count=byte_count,
+            data=AttachDecoratorData(json_=message),
+        )
+
 
 class AttachDecoratorSchema(BaseModelSchema):
     """Attach decorator schema used in serialization/deserialization."""
@@ -596,6 +636,7 @@ class AttachDecoratorSchema(BaseModelSchema):
         """AttachDecoratorSchema metadata."""
 
         model_class = AttachDecorator
+        unknown = EXCLUDE
 
     ident = fields.Str(
         description="Attachment identifier",

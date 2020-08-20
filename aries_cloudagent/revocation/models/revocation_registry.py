@@ -3,14 +3,13 @@
 import logging
 import re
 
+from os.path import join
 from pathlib import Path
-from tempfile import gettempdir
 
 from requests import Session
 from requests.exceptions import RequestException
 
-from ...config.injection_context import InjectionContext
-from ...utils.temp import get_temp_dir
+from ...indy.util import indy_client_dir
 
 from ..error import RevocationError
 import hashlib
@@ -53,6 +52,8 @@ class RevocationRegistry:
         cls, revoc_reg_def: dict, public_def: bool
     ) -> "RevocationRegistry":
         """Initialize a revocation registry instance from a definition."""
+        rev_reg = None
+
         reg_id = revoc_reg_def["id"]
         tails_location = revoc_reg_def["value"]["tailsLocation"]
         issuer_did_match = re.match(r"^.*?([^:]*):3:CL:.*", revoc_reg_def["credDefId"])
@@ -68,16 +69,13 @@ class RevocationRegistry:
         }
         if public_def:
             init["tails_public_uri"] = tails_location
+            rev_reg = cls(reg_id, **init)  # ignores def ver, issuance type, public keys
+            rev_reg.tails_local_path = rev_reg.get_receiving_tails_local_path()
         else:
             init["tails_local_path"] = tails_location
+            rev_reg = cls(reg_id, **init)  # ignores def ver, issuance type, public keys
 
-        # currently ignored - definition version, public keys
-        return cls(reg_id, **init)
-
-    @classmethod
-    def get_temp_dir(cls) -> str:
-        """Accessor for the temp directory."""
-        return get_temp_dir("revoc")
+        return rev_reg
 
     @property
     def cred_def_id(self) -> str:
@@ -139,23 +137,20 @@ class RevocationRegistry:
         """Setter for the tails file public URI."""
         self._tails_public_uri = new_uri
 
-    def get_receiving_tails_local_path(self, context: InjectionContext):
+    def get_receiving_tails_local_path(self):
         """Make the local path to the tails file we download from remote URI."""
         if self._tails_local_path:
             return self._tails_local_path
 
-        tails_file_dir = context.settings.get(
-            "holder.revocation.tails_files.path",
-            Path(gettempdir(), "indy", "revocation", "tails_files"),
-        )
-        return str(Path(tails_file_dir).joinpath(self._tails_hash))
+        tails_dir = indy_client_dir(join("tails", self.registry_id), create=False)
+        return join(tails_dir, self._tails_hash)
 
-    def has_local_tails_file(self, context: InjectionContext) -> bool:
+    def has_local_tails_file(self) -> bool:
         """Test if the tails file exists locally."""
-        tails_file_path = Path(self.get_receiving_tails_local_path(context))
+        tails_file_path = Path(self.get_receiving_tails_local_path())
         return tails_file_path.is_file()
 
-    async def retrieve_tails(self, context: InjectionContext):
+    async def retrieve_tails(self):
         """Fetch the tails file from the public URI."""
         if not self._tails_public_uri:
             raise RevocationError("Tails file public URI is empty")
@@ -165,7 +160,7 @@ class RevocationRegistry:
             self.registry_id,
         )
 
-        tails_file_path = Path(self.get_receiving_tails_local_path(context))
+        tails_file_path = Path(self.get_receiving_tails_local_path())
         tails_file_dir = tails_file_path.parent
         if not tails_file_dir.exists():
             tails_file_dir.mkdir(parents=True)
@@ -192,12 +187,12 @@ class RevocationRegistry:
         self.tails_local_path = tails_file_path
         return self.tails_local_path
 
-    async def get_or_fetch_local_tails_path(self, context: InjectionContext):
+    async def get_or_fetch_local_tails_path(self):
         """Get the local tails path, retrieving from the remote if necessary."""
-        tails_file_path = self.get_receiving_tails_local_path(context)
+        tails_file_path = self.get_receiving_tails_local_path()
         if Path(tails_file_path).is_file():
             return tails_file_path
-        return await self.retrieve_tails(context)
+        return await self.retrieve_tails()
 
     def __repr__(self) -> str:
         """Return a human readable representation of this class."""

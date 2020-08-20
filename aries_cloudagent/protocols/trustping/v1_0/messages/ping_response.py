@@ -1,8 +1,8 @@
 """Represents an response to a trust ping message."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PING_RESPONSE, PROTOCOL_PACKAGE
 
@@ -27,7 +27,7 @@ class PingResponse(AgentMessage):
             comment: An optional comment string to include in the message
 
         """
-        super(PingResponse, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.comment = comment
 
 
@@ -38,6 +38,7 @@ class PingResponseSchema(AgentMessageSchema):
         """PingResponseSchema metadata."""
 
         model_class = PingResponse
+        unknown = EXCLUDE
 
     comment = fields.Str(
         required=False,

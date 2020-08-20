@@ -1,4 +1,6 @@
-from ..forward import Forward
+import json
+
+from ..forward import Forward, ForwardSchema
 from ...message_types import FORWARD, PROTOCOL_PACKAGE
 
 from unittest import mock, TestCase
@@ -41,3 +43,14 @@ class TestForwardSchema(TestCase):
         data = message.serialize()
         model_instance = Forward.deserialize(data)
         assert isinstance(model_instance, Forward)
+
+    def test_make_model_str(self):
+        MSG = {"some": "msg"}
+        message = Forward(to="to", msg=json.dumps(MSG))
+        data = message.serialize()
+        model_instance = Forward.deserialize(data)
+        assert isinstance(model_instance, Forward)
+
+        assert {"msg": MSG} == ForwardSchema().handle_str_message(
+            data={"msg": json.dumps(MSG)}
+        )

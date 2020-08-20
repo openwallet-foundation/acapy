@@ -1,8 +1,8 @@
 """Record used to represent individual menu options in an action menu."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.models.base import BaseModel, BaseModelSchema
 
 from .menu_form import MenuForm, MenuFormSchema
 
@@ -48,6 +48,7 @@ class MenuOptionSchema(BaseModelSchema):
         """MenuOptionSchema metadata."""
 
         model_class = MenuOption
+        unknown = EXCLUDE
 
     name = fields.Str(
         required=True,

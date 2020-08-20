@@ -1,10 +1,10 @@
 """An object for containing the connection request/response DID information."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
-from aries_cloudagent.connections.models.diddoc import DIDDoc
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
-from aries_cloudagent.messaging.valid import INDY_DID
+from .....connections.models.diddoc import DIDDoc
+from .....messaging.models.base import BaseModel, BaseModelSchema
+from .....messaging.valid import INDY_DID
 
 
 class DIDDocWrapper(fields.Field):
@@ -87,7 +87,8 @@ class ConnectionDetailSchema(BaseModelSchema):
     class Meta:
         """ConnectionDetailSchema metadata."""
 
-        model_class = "ConnectionDetail"
+        model_class = ConnectionDetail
+        unknown = EXCLUDE
 
     did = fields.Str(
         data_key="DID",

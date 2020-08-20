@@ -1,9 +1,9 @@
 """Represents a connection problem report message."""
 
 from enum import Enum
-from marshmallow import fields, validate
+from marshmallow import EXCLUDE, fields, validate
 
-from aries_cloudagent.messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PROBLEM_REPORT
 
@@ -50,6 +50,7 @@ class ProblemReportSchema(AgentMessageSchema):
         """Metadata for problem report schema."""
 
         model_class = ProblemReport
+        unknown = EXCLUDE
 
     explain = fields.Str(
         required=False,

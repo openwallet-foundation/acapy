@@ -1,11 +1,16 @@
 """Validators for schema fields."""
 
+import json
+
 from datetime import datetime
 
 from base58 import alphabet
 from marshmallow.validate import OneOf, Range, Regexp
+from marshmallow.exceptions import ValidationError
 
 from .util import epoch_to_str
+
+from ..ledger.util import EndpointType as EndpointTypeEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
@@ -23,6 +28,42 @@ class IntEpoch(Range):
             max=9223372036854775807,
             error="Value {input} is not a valid integer epoch time",
         )
+
+
+class WholeNumber(Range):
+    """Validate value as non-negative integer."""
+
+    EXAMPLE = 0
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(min=0, error="Value {input} is not a non-negative integer")
+
+    def __call__(self, value):
+        """Validate input value."""
+
+        if type(value) != int:
+            raise ValidationError("Value {input} is not a valid whole number")
+        super().__call__(value)
+
+
+class NaturalNumber(Range):
+    """Validate value as positive integer."""
+
+    EXAMPLE = 10
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(min=1, error="Value {input} is not a positive integer")
+
+    def __call__(self, value):
+        """Validate input value."""
+
+        if type(value) != int:
+            raise ValidationError("Value {input} is not a valid natural number")
+        super().__call__(value)
 
 
 class JWSHeaderKid(Regexp):
@@ -156,7 +197,7 @@ class IndySchemaId(Regexp):
 class IndyRevRegId(Regexp):
     """Validate value against indy revocation registry identifier specification."""
 
-    EXAMPLE = f"WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0"
+    EXAMPLE = "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0"
     PATTERN = (
         rf"^([{B58}]{{21,22}}):4:"
         rf"([{B58}]{{21,22}}):3:"
@@ -170,6 +211,21 @@ class IndyRevRegId(Regexp):
         super().__init__(
             IndyRevRegId.PATTERN,
             error="Value {input} is not an indy revocation registry identifier",
+        )
+
+
+class IndyCredRevId(Regexp):
+    """Validate value against indy credential revocation identifier specification."""
+
+    EXAMPLE = "12345"
+    PATTERN = rf"^[1-9][0-9]*$"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            IndyCredRevId.PATTERN,
+            error="Value {input} is not an indy credential revocation identifier",
         )
 
 
@@ -203,6 +259,60 @@ class IndyISO8601DateTime(Regexp):
             IndyISO8601DateTime.PATTERN,
             error="Value {input} is not a date in valid format",
         )
+
+
+class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
+    """Validate value as potential WQL query."""
+
+    EXAMPLE = json.dumps({"attr::name::value": "Alex"})
+    PATTERN = r"^{.*}$"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            IndyWQL.PATTERN, error="Value {input} is not a valid WQL query",
+        )
+
+    def __call__(self, value):
+        """Validate input value."""
+
+        super().__call__(value or "")
+        message = "Value {input} is not a valid WQL query".format(input=value)
+
+        try:
+            json.loads(value)
+        except Exception:
+            raise ValidationError(message)
+
+        return value
+
+
+class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
+    """Validate value as potential extra WQL query in cred search for proof req."""
+
+    EXAMPLE = json.dumps({"0_drink_uuid": {"attr::drink::value": "martini"}})
+    PATTERN = r'^{\s*".*?"\s*:\s*{.*?}\s*(,\s*".*?"\s*:\s*{.*?}\s*)*\s*}$'
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            IndyExtraWQL.PATTERN, error="Value {input} is not a valid extra WQL query",
+        )
+
+    def __call__(self, value):
+        """Validate input value."""
+
+        super().__call__(value or "")
+        message = "Value {input} is not a valid extra WQL query".format(input=value)
+
+        try:
+            json.loads(value)
+        except Exception:
+            raise ValidationError(message)
+
+        return value
 
 
 class Base64(Regexp):
@@ -299,8 +409,43 @@ class UUIDFour(Regexp):
         )
 
 
+class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
+    """Validate value against endpoint URL on any scheme."""
+
+    EXAMPLE = "https://myhost:8021"
+    PATTERN = (
+        r"^[A-Za-z0-9\.\-\+]+:"  # scheme
+        r"//([A-Za-z0-9][.A-Za-z0-9-]+[A-Za-z0-9])+"  # host
+        r"(:[1-9][0-9]*)?"  # port
+        r"(/[^?&#]+)?$"  # path
+    )
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            Endpoint.PATTERN, error="Value {input} is not a valid endpoint",
+        )
+
+
+class EndpointType(OneOf):
+    """Validate value against allowed endpoint/service types."""
+
+    EXAMPLE = "endpoint"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            choices=[e.value for e in EndpointTypeEnum],
+            error="Value {input} must be one of {choices}",
+        )
+
+
 # Instances for marshmallow schema specification
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
+WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
+NATURAL_NUM = {"validate": NaturalNumber(), "example": NaturalNumber.EXAMPLE}
 JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
@@ -312,19 +457,23 @@ INDY_RAW_PUBLIC_KEY = {
 INDY_SCHEMA_ID = {"validate": IndySchemaId(), "example": IndySchemaId.EXAMPLE}
 INDY_CRED_DEF_ID = {"validate": IndyCredDefId(), "example": IndyCredDefId.EXAMPLE}
 INDY_REV_REG_ID = {"validate": IndyRevRegId(), "example": IndyRevRegId.EXAMPLE}
+INDY_CRED_REV_ID = {"validate": IndyCredRevId(), "example": IndyCredRevId.EXAMPLE}
 INDY_VERSION = {"validate": IndyVersion(), "example": IndyVersion.EXAMPLE}
 INDY_PREDICATE = {"validate": IndyPredicate(), "example": IndyPredicate.EXAMPLE}
 INDY_ISO8601_DATETIME = {
     "validate": IndyISO8601DateTime(),
     "example": IndyISO8601DateTime.EXAMPLE,
 }
+INDY_WQL = {"validate": IndyWQL(), "example": IndyWQL.EXAMPLE}
+INDY_EXTRA_WQL = {"validate": IndyExtraWQL(), "example": IndyExtraWQL.EXAMPLE}
 BASE64 = {"validate": Base64(), "example": Base64.EXAMPLE}
 BASE64URL = {"validate": Base64URL(), "example": Base64URL.EXAMPLE}
 BASE64URL_NO_PAD = {"validate": Base64URLNoPad(), "example": Base64URLNoPad.EXAMPLE}
-
 SHA256 = {"validate": SHA256Hash(), "example": SHA256Hash.EXAMPLE}
 BASE58_SHA256_HASH = {
     "validate": Base58SHA256Hash(),
     "example": Base58SHA256Hash.EXAMPLE,
 }
 UUID4 = {"validate": UUIDFour(), "example": UUIDFour.EXAMPLE}
+ENDPOINT = {"validate": Endpoint(), "example": Endpoint.EXAMPLE}
+ENDPOINT_TYPE = {"validate": EndpointType(), "example": EndpointType.EXAMPLE}

@@ -50,11 +50,20 @@ class TestInjector(AsyncTestCase):
         self.test_instance.bind_instance(str, self.test_value)
         assert (await self.test_instance.inject(str)) is self.test_value
 
+    async def test_inject_x(self):
+        """Test injection failure on null base class."""
+        with self.assertRaises(InjectorError):
+            await self.test_instance.inject(None)
+
     async def test_inject_provider(self):
         """Test a provider injection."""
         mock_provider = MockProvider(self.test_value)
+
+        with self.assertRaises(ValueError):
+            self.test_instance.bind_provider(str, None)
         self.test_instance.bind_provider(str, mock_provider)
         assert self.test_instance.get_provider(str) is mock_provider
+
         override_settings = {self.test_key: "NEWVAL"}
         assert (
             await self.test_instance.inject(str, override_settings)
@@ -107,6 +116,12 @@ class TestInjector(AsyncTestCase):
         instance = await self.test_instance.inject(object)
         assert instance.value is test_str
         assert instance.kwargs["param"] is test_int
+
+        self.test_instance.clear_binding(int)
+        self.test_instance.clear_binding(str)
+        self.test_instance.bind_instance(str, test_int)
+        with self.assertRaises(InjectorError):
+            await self.test_instance.inject(str)
 
     async def test_inject_cached(self):
         """Test a provider class injection."""

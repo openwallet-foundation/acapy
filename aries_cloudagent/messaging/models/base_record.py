@@ -62,7 +62,7 @@ class BaseRecord(BaseModel):
         """Initialize a new BaseRecord."""
         if not self.RECORD_TYPE:
             raise TypeError(
-                "Can't instantiate abstract class {} with no RECORD_TYPE".format(
+                "Cannot instantiate abstract class {} with no RECORD_TYPE".format(
                     self.__class__.__name__
                 )
             )
@@ -241,10 +241,20 @@ class BaseRecord(BaseModel):
             vals = json.loads(record.value)
             if match_post_filter(vals, post_filter):
                 if found:
-                    raise StorageDuplicateError("Multiple records located")
+                    raise StorageDuplicateError(
+                        "Multiple {} records located for {}{}".format(
+                            cls.__name__,
+                            tag_filter,
+                            f", {post_filter}" if post_filter else "",
+                        )
+                    )
                 found = cls.from_storage(record.id, vals)
         if not found:
-            raise StorageNotFoundError("Record not found")
+            raise StorageNotFoundError(
+                "{} record not found for {}{}".format(
+                    cls.__name__, tag_filter, f", {post_filter}" if post_filter else ""
+                )
+            )
         return found
 
     @classmethod
@@ -301,16 +311,16 @@ class BaseRecord(BaseModel):
         try:
             self.updated_at = time_now()
             storage: BaseStorage = await context.inject(BaseStorage)
-            if not self._id:
-                self._id = str(uuid.uuid4())
-                self.created_at = self.updated_at
-                await storage.add_record(self.storage_record)
-                new_record = True
-            else:
+            if self._id:
                 record = self.storage_record
                 await storage.update_record_value(record, record.value)
                 await storage.update_record_tags(record, record.tags)
                 new_record = False
+            else:
+                self._id = str(uuid.uuid4())
+                self.created_at = self.updated_at
+                await storage.add_record(self.storage_record)
+                new_record = True
         finally:
             params = {self.RECORD_TYPE: self.serialize()}
             if log_params:
@@ -464,6 +474,8 @@ class BaseRecordSchema(BaseModelSchema):
 
     class Meta:
         """BaseRecordSchema metadata."""
+
+        model_class = None
 
     state = fields.Str(
         required=False, description="Current record state", example="active"

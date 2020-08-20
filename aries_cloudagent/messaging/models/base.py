@@ -140,7 +140,7 @@ class BaseModel(ABC):
             A dict representation of this model, or a JSON string if as_string is True
 
         """
-        schema = self.Schema()
+        schema = self.Schema(unknown=EXCLUDE)
         try:
             return schema.dumps(self) if as_string else schema.dump(self)
         except ValidationError as e:
@@ -148,6 +148,14 @@ class BaseModel(ABC):
             raise BaseModelError(
                 f"{self.__class__.__name__} schema validation failed"
             ) from e
+
+    def validate(self):
+        """Validate a constructed model."""
+        schema = self.Schema(unknown=EXCLUDE)
+        errors = schema.validate(self.serialize())
+        if errors:
+            raise ValidationError(errors)
+        return self
 
     @classmethod
     def from_json(cls, json_repr: Union[str, bytes]):
@@ -213,7 +221,7 @@ class BaseModelSchema(Schema):
             TypeError: If model_class is not set on Meta
 
         """
-        super(BaseModelSchema, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.Meta.model_class:
             raise TypeError(
                 "Can't instantiate abstract class {} with no model_class".format(
@@ -288,3 +296,12 @@ class BaseModelSchema(Schema):
         """
         skip_vals = resolve_meta_property(self, "skip_values", [])
         return {key: value for key, value in data.items() if value not in skip_vals}
+
+
+class OpenAPISchema(Schema):
+    """Schema for OpenAPI artifacts: excluding unknown fields, not raising exception."""
+
+    class Meta:
+        """BaseModelSchema metadata."""
+
+        unknown = EXCLUDE

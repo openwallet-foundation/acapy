@@ -11,6 +11,7 @@ from ...config.injection_context import InjectionContext
 from ...ledger.base import BaseLedger
 from ...storage.base import BaseStorage
 from ...storage.basic import BasicStorage
+from ...storage.error import StorageNotFoundError
 from ...wallet.base import BaseWallet
 from ...wallet.indy import IndyWallet
 
@@ -48,7 +49,6 @@ class TestIndyRevocation(AsyncTestCase):
 
         assert result.cred_def_id == CRED_DEF_ID
         assert result.issuer_did == self.test_did
-        assert result.issuance_type == IssuerRevRegRecord.ISSUANCE_BY_DEFAULT
         assert result.max_cred_num == DEFAULT_REGISTRY_SIZE
         assert result.revoc_def_type == IssuerRevRegRecord.REVOC_DEF_TYPE_CL
         assert result.tag is None
@@ -91,8 +91,36 @@ class TestIndyRevocation(AsyncTestCase):
 
     async def test_get_active_issuer_rev_reg_record_none(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+        with self.assertRaises(StorageNotFoundError) as x_init:
+            await self.revoc.get_active_issuer_rev_reg_record(CRED_DEF_ID)
+
+    async def test_init_issuer_registry_no_revocation(self):
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+
+        self.context.injector.clear_binding(BaseLedger)
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value={"value": {}}
+        )
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        with self.assertRaises(RevocationNotSupportedError) as x_revo:
+            await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+            assert x_revo.message == "Credential definition does not support revocation"
+
+    async def test_get_active_issuer_rev_reg_record(self):
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+        rec.revoc_reg_id = "dummy"
+        rec.state = IssuerRevRegRecord.STATE_ACTIVE
+        await rec.save(self.context)
+
         result = await self.revoc.get_active_issuer_rev_reg_record(CRED_DEF_ID)
-        assert result is None
+        assert rec == result
+
+    async def test_get_active_issuer_rev_reg_record_none(self):
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+        with self.assertRaises(StorageNotFoundError):
+            result = await self.revoc.get_active_issuer_rev_reg_record(CRED_DEF_ID)
 
     async def test_get_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
@@ -126,3 +154,10 @@ class TestIndyRevocation(AsyncTestCase):
         ) as mock_from_def:
             result = await self.revoc.get_ledger_registry("dummy")
             assert result == mock_from_def.return_value
+            assert "dummy" in IndyRevocation.REV_REG_CACHE
+
+            await self.revoc.get_ledger_registry("dummy")
+
+        mock_from_def.assert_called_once_with(
+            self.ledger.get_revoc_reg_def.return_value, True
+        )

@@ -1,13 +1,12 @@
 """A presentation proposal content message."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
 
 from .inner.presentation_preview import PresentationPreview, PresentationPreviewSchema
-
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers."
@@ -52,6 +51,9 @@ class PresentationProposalSchema(AgentMessageSchema):
         """Presentation proposal schema metadata."""
 
         model_class = PresentationProposal
+        unknown = EXCLUDE
 
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
     presentation_proposal = fields.Nested(PresentationPreviewSchema, required=True)

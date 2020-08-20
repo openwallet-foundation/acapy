@@ -27,7 +27,7 @@ do
   fi
   case $i in
   --events)
-    if [[ "${AGENT}" == "performance" ]] ; then
+    if [ "${AGENT}" = "performance" ]; then
       echo -e "\nIgnoring the \"--events\" option when running the ${AGENT} agent.\n"
     else
       EVENTS=1
@@ -80,7 +80,7 @@ do
     continue
   ;;
   --bg)
-    if [[ "${AGENT}" == "alice" ]] || [[ "${AGENT}" == "faber" ]] || [[ "${AGENT}" == "acme" ]]; then
+    if [ "${AGENT}" = "alice" ] || [ "${AGENT}" = "faber" ] || [ "${AGENT}" = "acme" ]; then
       DOCKER_OPTS="-d"
       echo -e "\nRunning in ${AGENT} in the background. Note that you cannot use the command line console in this mode."
       echo To see the logs use: \"docker logs ${AGENT}\".
@@ -161,9 +161,29 @@ else
   export RUNMODE="pwd"
 fi
 
+# check if ngrok is running on our $AGENT_PORT (don't override if AGENT_ENDPOINT is already set)
+if [ -z "$AGENT_ENDPOINT" ] && [ "$RUNMODE" == "docker" ]; then
+  echo "Trying to detect ngrok service endpoint"
+  JQ=${JQ:-`which jq`}
+  if [ -x "$JQ" ]; then
+    NGROK_ENDPOINT=$(curl --silent localhost:4040/api/tunnels | $JQ -r '.tunnels[0].public_url')
+    if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
+      echo "ngrok not detected for agent endpoint"
+    else
+      export AGENT_ENDPOINT=$NGROK_ENDPOINT
+      echo "Detected ngrok agent endpoint [$AGENT_ENDPOINT]"
+    fi
+  else
+    echo "jq not found"
+  fi
+fi
+
 echo $DOCKERHOST
 
 DOCKER_ENV="-e LOG_LEVEL=${LOG_LEVEL} -e RUNMODE=${RUNMODE} -e DOCKERHOST=${DOCKERHOST}"
+if ! [ -z "$AGENT_PORT" ]; then
+  DOCKER_ENV="${DOCKER_ENV} -e AGENT_PORT=${AGENT_PORT}"
+fi
 if ! [ -z "$POSTGRES" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e POSTGRES=1 -e RUST_BACKTRACE=1"
 fi
@@ -173,6 +193,9 @@ if ! [ -z "$LEDGER_URL" ]; then
 fi
 if ! [ -z "$GENESIS_URL" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e GENESIS_URL=${GENESIS_URL}"
+fi
+if ! [ -z "$AGENT_ENDPOINT" ]; then
+  DOCKER_ENV="${DOCKER_ENV} -e AGENT_ENDPOINT=${AGENT_ENDPOINT}"
 fi
 if ! [ -z "$EVENTS" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e EVENTS=1"
@@ -185,6 +208,12 @@ if ! [ -z "$TRACE_TARGET" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e TRACE_TAG=${TRACE_TAG}"
   DOCKER_ENV="${DOCKER_ENV} -e TRACE_ENABLED=${TRACE_ENABLED}"
 fi
+# if $TAILS_NETWORK is specified it will override any previously specified $DOCKER_NET
+if ! [ -z "$TAILS_NETWORK" ]; then
+  DOCKER_NET="${TAILS_NETWORK}"
+  DOCKER_ENV="${DOCKER_ENV} -e TAILS_NETWORK=${TAILS_NETWORK}"
+  DOCKER_ENV="${DOCKER_ENV} -e TAILS_NGROK_NAME=ngrok-tails-server"
+fi
 if ! [ -z "$PUBLIC_TAILS_URL" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"
 fi
@@ -192,7 +221,7 @@ if ! [ -z "$TAILS_FILE_COUNT" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e TAILS_FILE_COUNT=${TAILS_FILE_COUNT}"
 fi
 
-if ! [[ -z "${ENABLE_PYDEVD_PYCHARM}" ]]; then
+if ! [ -z "${ENABLE_PYDEVD_PYCHARM}" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e ENABLE_PYDEVD_PYCHARM=${ENABLE_PYDEVD_PYCHARM} -e PYDEVD_PYCHARM_CONTROLLER_PORT=${PYDEVD_PYCHARM_CONTROLLER_PORT} -e PYDEVD_PYCHARM_AGENT_PORT=${PYDEVD_PYCHARM_AGENT_PORT}"
 fi
 
@@ -202,7 +231,6 @@ if [ "$OSTYPE" = "msys" ]; then
 fi
 DOCKER=${DOCKER:-docker}
 
-echo "Starting $AGENT..."
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
   --network=${DOCKER_NET} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \

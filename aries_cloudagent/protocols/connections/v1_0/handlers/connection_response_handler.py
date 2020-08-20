@@ -1,13 +1,11 @@
 """Connection response handler."""
 
-from aries_cloudagent.messaging.base_handler import (
+from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     RequestContext,
 )
-
-# FIXME: We shouldn't rely on a hardcoded message version here.
-from aries_cloudagent.protocols.trustping.v1_0.messages.ping import Ping
+from .....protocols.trustping.v1_0.messages.ping import Ping
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_response import ConnectionResponse

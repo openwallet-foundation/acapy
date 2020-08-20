@@ -7,7 +7,6 @@ from typing import Sequence, Tuple, Union
 from ..config.base import InjectorError
 from ..config.injection_context import InjectionContext
 
-# FIXME: We shouldn't rely on a hardcoded message version here.
 from ..protocols.routing.v1_0.messages.forward import Forward
 
 from ..messaging.util import time_now
