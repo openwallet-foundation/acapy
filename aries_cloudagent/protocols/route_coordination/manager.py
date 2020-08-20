@@ -244,6 +244,7 @@ class RouteCoordinationManager:
                 )
 
         await route_coordination.save(self.context)
+        return route_coordination
 
     async def create_deny_message(
         self,
@@ -313,6 +314,7 @@ class RouteCoordinationManager:
         route_coordination.recipient_terms = mediation_deny_message.recipient_terms
 
         await route_coordination.save(self.context)
+        return route_coordination
 
     async def create_keylist_update_request(
         self,
