@@ -412,17 +412,17 @@ class IndyLedger(BaseLedger):
                 else:
                     raise
 
-        schema_id_parts = schema_id.split(":")
-        schema_tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": public_info.did,
-            "schema_name": schema_id_parts[-2],
-            "schema_version": schema_id_parts[-1],
-            "epoch": str(int(time())),
-        }
-        record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-        storage = self.get_indy_storage()
-        await storage.add_record(record)
+            schema_id_parts = schema_id.split(":")
+            schema_tags = {
+                "schema_id": schema_id,
+                "schema_issuer_did": public_info.did,
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "epoch": str(int(time())),
+            }
+            record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
+            storage = self.get_indy_storage()
+            await storage.add_record(record)
 
         return schema_id, schema_def
 
