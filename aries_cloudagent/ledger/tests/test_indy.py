@@ -1096,10 +1096,11 @@ class TestIndyLedger(AsyncTestCase):
                 )
                 mock_did = mock_wallet.get_public_did.return_value
 
-                (result_id, result_def) = (
-                    await ledger.create_and_send_credential_definition(
-                        issuer, schema_id, None, tag
-                    )
+                (
+                    result_id,
+                    result_def,
+                ) = await ledger.create_and_send_credential_definition(
+                    issuer, schema_id, None, tag
                 )
                 assert result_id == cred_def_id
 
