@@ -529,12 +529,22 @@ class TestIndyLedger(AsyncTestCase):
         issuer.create_and_store_schema.return_value = ("1", "{}")
         ledger = IndyLedger("name", mock_wallet)
 
-        async with ledger:
-            schema_id, schema_def = await ledger.create_and_send_schema(
-                issuer, "schema_name", "schema_version", [1, 2, 3]
+        with async_mock.patch.object(
+            ledger, "get_indy_storage", async_mock.MagicMock()
+        ) as mock_get_storage:
+            mock_add_record = async_mock.CoroutineMock()
+            mock_get_storage.return_value = async_mock.MagicMock(
+                add_record=mock_add_record
             )
-            assert schema_id == fetch_schema_id
-            assert schema_def == {}
+
+            async with ledger:
+                schema_id, schema_def = await ledger.create_and_send_schema(
+                    issuer, "schema_name", "schema_version", [1, 2, 3]
+                )
+                assert schema_id == fetch_schema_id
+                assert schema_def == {}
+
+            mock_add_record.assert_not_called()
 
     @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.create_pool_ledger_config")
@@ -2136,6 +2146,32 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("indy.ledger.build_nym_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    async def test_register_nym_ledger_x(
+        self, mock_submit, mock_build_nym_req, mock_close, mock_open
+    ):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.type = "indy"
+
+        mock_build_nym_req.side_effect = IndyError(
+            error_code=ErrorCode.CommonInvalidParam1,
+            error_details={"message": "not today"},
+        )
+
+        ledger = IndyLedger("name", mock_wallet)
+
+        async with ledger:
+            mock_wallet.get_public_did = async_mock.CoroutineMock(
+                return_value=self.test_did_info
+            )
+            with self.assertRaises(LedgerError):
+                await ledger.register_nym(
+                    self.test_did, self.test_verkey, "alias", None
+                )
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("indy.ledger.build_nym_request")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     async def test_register_nym_read_only(
         self, mock_submit, mock_build_nym_req, mock_close, mock_open
     ):
@@ -2153,6 +2189,139 @@ class TestIndyLedger(AsyncTestCase):
                     self.test_did, self.test_verkey, "alias", None
                 )
             assert "read only" in str(context.exception)
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("indy.ledger.build_get_nym_request")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    async def test_get_nym_role(
+        self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
+    ):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.type = "indy"
+
+        mock_submit.return_value = json.dumps(
+            {
+                "result": {
+                    "dest": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
+                    "txnTime": 1597858571,
+                    "reqId": 1597858571783588400,
+                    "state_proof": {
+                        "root_hash": "7K26MUQt8E2X1vsRJUmc2298VtY8YC5BSDfT5CRJeUDi",
+                        "proof_nodes": "+QHo...",
+                        "multi_signature": {
+                            "participants": ["Node4", "Node3", "Node2"],
+                            "value": {
+                                "state_root_hash": "7K2...",
+                                "pool_state_root_hash": "GT8...",
+                                "ledger_id": 1,
+                                "txn_root_hash": "Hnr...",
+                                "timestamp": 1597858571,
+                            },
+                            "signature": "QuX...",
+                        },
+                    },
+                    "data": json.dumps(
+                        {
+                            "dest": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
+                            "identifier": "V4SGRU86Z58d6TV7PBUe6f",
+                            "role": 101,
+                            "seqNo": 11,
+                            "txnTime": 1597858571,
+                            "verkey": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
+                        }
+                    ),
+                    "seqNo": 11,
+                    "identifier": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
+                    "type": "105",
+                },
+                "op": "REPLY",
+            }
+        )
+
+        ledger = IndyLedger("name", mock_wallet)
+
+        async with ledger:
+            mock_wallet.get_public_did = async_mock.CoroutineMock(
+                return_value=self.test_did_info
+            )
+            assert await ledger.get_nym_role(self.test_did) == Role.ENDORSER
+
+            assert mock_build_get_nym_req.called_once_with(self.test_did, self.test_did)
+            assert mock_submit.called_once_with(mock_build_get_nym_req.return_value)
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("indy.ledger.build_get_nym_request")
+    async def test_get_nym_role_indy_x(
+        self, mock_build_get_nym_req, mock_close, mock_open
+    ):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.type = "indy"
+
+        mock_build_get_nym_req.side_effect = IndyError(
+            error_code=ErrorCode.CommonInvalidParam1,
+            error_details={"message": "not today"},
+        )
+        ledger = IndyLedger("name", mock_wallet)
+
+        async with ledger:
+            mock_wallet.get_public_did = async_mock.CoroutineMock(
+                return_value=self.test_did_info
+            )
+
+            with self.assertRaises(LedgerError) as context:
+                await ledger.get_nym_role(self.test_did)
+            assert "not today" in context.exception.message
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("indy.ledger.build_get_nym_request")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    async def test_get_nym_role_did_not_public_x(
+        self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
+    ):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.type = "indy"
+
+        mock_submit.return_value = json.dumps(
+            {
+                "result": {
+                    "dest": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
+                    "txnTime": 1597858571,
+                    "reqId": 1597858571783588400,
+                    "state_proof": {
+                        "root_hash": "7K26MUQt8E2X1vsRJUmc2298VtY8YC5BSDfT5CRJeUDi",
+                        "proof_nodes": "+QHo...",
+                        "multi_signature": {
+                            "participants": ["Node4", "Node3", "Node2"],
+                            "value": {
+                                "state_root_hash": "7K2...",
+                                "pool_state_root_hash": "GT8...",
+                                "ledger_id": 1,
+                                "txn_root_hash": "Hnr...",
+                                "timestamp": 1597858571,
+                            },
+                            "signature": "QuX...",
+                        },
+                    },
+                    "data": json.dumps(None),
+                    "seqNo": 11,
+                    "identifier": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
+                    "type": "105",
+                },
+                "op": "REPLY",
+            }
+        )
+
+        ledger = IndyLedger("name", mock_wallet)
+
+        async with ledger:
+            mock_wallet.get_public_did = async_mock.CoroutineMock(
+                return_value=self.test_did_info
+            )
+            with self.assertRaises(BadLedgerRequestError):
+                await ledger.get_nym_role(self.test_did)
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
