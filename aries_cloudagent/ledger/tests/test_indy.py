@@ -519,19 +519,32 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.get_public_did = async_mock.CoroutineMock()
         mock_wallet.get_public_did.return_value.did = "abc"
 
-        fetch_schema_id = f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
+        fetch_schema_id = (
+            f"{mock_wallet.get_public_did.return_value.did}:2:"
+            "schema_name:schema_version"
+        )
         mock_check_existing.return_value = (fetch_schema_id, {})
 
         issuer = async_mock.MagicMock(BaseIssuer)
         issuer.create_and_store_schema.return_value = ("1", "{}")
         ledger = IndyLedger("name", mock_wallet)
 
-        async with ledger:
-            schema_id, schema_def = await ledger.create_and_send_schema(
-                issuer, "schema_name", "schema_version", [1, 2, 3]
+        with async_mock.patch.object(
+            ledger, "get_indy_storage", async_mock.MagicMock()
+        ) as mock_get_storage:
+            mock_add_record = async_mock.CoroutineMock()
+            mock_get_storage.return_value = async_mock.MagicMock(
+                add_record=mock_add_record
             )
-            assert schema_id == fetch_schema_id
-            assert schema_def == {}
+
+            async with ledger:
+                schema_id, schema_def = await ledger.create_and_send_schema(
+                    issuer, "schema_name", "schema_version", [1, 2, 3]
+                )
+                assert schema_id == fetch_schema_id
+                assert schema_def == {}
+
+            mock_add_record.assert_not_called()
 
     @async_mock.patch("indy.pool.set_protocol_version")
     @async_mock.patch("indy.pool.create_pool_ledger_config")
@@ -556,7 +569,10 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.get_public_did = async_mock.CoroutineMock()
         mock_wallet.get_public_did.return_value.did = "abc"
 
-        fetch_schema_id = f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
+        fetch_schema_id = (
+            f"{mock_wallet.get_public_did.return_value.did}:2:"
+            "schema_name:schema_version"
+        )
         mock_check_existing.side_effect = [None, (fetch_schema_id, "{}")]
 
         issuer = async_mock.MagicMock(BaseIssuer)
