@@ -169,7 +169,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         signature_type: str = None,
         tag: str = None,
         support_revocation: bool = False,
-    ) -> Tuple[str, dict]:
+    ) -> Tuple[str, dict, bool]:
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -179,6 +179,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             signature_type: The signature type to use on the credential definition
             tag: Optional tag to distinguish multiple credential definitions
             support_revocation: Optional flag to enable revocation for this cred def
+
+        Returns:
+            Tuple with cred def id, cred def structure, and whether it's novel
 
         """
 
