@@ -66,7 +66,7 @@ class SchemaSchema(OpenAPISchema):
 class SchemaGetResultsSchema(OpenAPISchema):
     """Results schema for schema get request."""
 
-    schema_json = fields.Nested(SchemaSchema())
+    schema = fields.Nested(SchemaSchema())
 
 
 class SchemasCreatedResultsSchema(OpenAPISchema):
