@@ -83,7 +83,7 @@ class DIDListQueryStringSchema(OpenAPISchema):
         required=False,
         **INDY_RAW_PUBLIC_KEY,
     )
-    public = fields.Boolean(description="Whether DID is on the ledger", required=False)
+    public = fields.Boolean(description="Whether DID is public", required=False)
 
 
 class DIDQueryStringSchema(OpenAPISchema):
@@ -106,7 +106,7 @@ def format_did_info(info: DIDInfo):
         return {
             "did": info.did,
             "verkey": info.verkey,
-            "public": json.dumps(bool(info.metadata.get("public"))),
+            "public": bool(info.metadata.get("public")),
         }
 
 
