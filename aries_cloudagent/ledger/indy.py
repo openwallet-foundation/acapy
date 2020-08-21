@@ -545,7 +545,7 @@ class IndyLedger(BaseLedger):
         signature_type: str = None,
         tag: str = None,
         support_revocation: bool = False,
-    ) -> Tuple[str, dict]:
+    ) -> Tuple[str, dict, bool]:
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -555,6 +555,9 @@ class IndyLedger(BaseLedger):
             signature_type: The signature type to use on the credential definition
             tag: Optional tag to distinguish multiple credential definitions
             support_revocation: Optional flag to enable revocation for this cred def
+
+        Returns:
+            Tuple with cred def id, cred def structure, and whether it's novel
 
         """
         public_info = await self.wallet.get_public_did()
@@ -567,7 +570,9 @@ class IndyLedger(BaseLedger):
         if not schema:
             raise LedgerError(f"Ledger {self.pool_name} has no schema {schema_id}")
 
-        # check if cred def is on ledger alread
+        novel = False
+
+        # check if cred def is on ledger already
         for test_tag in [tag] if tag else ["tag", DEFAULT_CRED_DEF_TAG]:
             credential_definition_id = issuer.make_credential_definition_id(
                 public_info.did, schema, signature_type, test_tag
@@ -608,6 +613,7 @@ class IndyLedger(BaseLedger):
                 raise LedgerError(err.message) from err
 
             # Cred def is neither on ledger nor in wallet: create and send it
+            novel = True
             try:
                 (
                     credential_definition_id,
@@ -648,7 +654,7 @@ class IndyLedger(BaseLedger):
             )
             await storage.add_record(record)
 
-        return credential_definition_id, json.loads(credential_definition_json)
+        return (credential_definition_id, json.loads(credential_definition_json), novel)
 
     async def get_credential_definition(self, credential_definition_id: str) -> dict:
         """

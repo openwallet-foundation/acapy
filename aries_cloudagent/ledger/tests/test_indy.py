@@ -1015,10 +1015,15 @@ class TestIndyLedger(AsyncTestCase):
             )
             mock_did = mock_wallet.get_public_did.return_value
 
-            result_id, result_def = await ledger.create_and_send_credential_definition(
+            (
+                result_id,
+                result_def,
+                novel,
+            ) = await ledger.create_and_send_credential_definition(
                 issuer, schema_id, None, tag
             )
             assert result_id == cred_def_id
+            assert novel
 
             mock_wallet.get_public_did.assert_called_once_with()
             mock_get_schema.assert_called_once_with(schema_id)
@@ -1099,10 +1104,12 @@ class TestIndyLedger(AsyncTestCase):
                 (
                     result_id,
                     result_def,
+                    novel,
                 ) = await ledger.create_and_send_credential_definition(
                     issuer, schema_id, None, tag
                 )
                 assert result_id == cred_def_id
+                assert not novel
 
                 mock_wallet.get_public_did.assert_called_once_with()
                 mock_get_schema.assert_called_once_with(schema_id)
@@ -1489,7 +1496,11 @@ class TestIndyLedger(AsyncTestCase):
             )
             mock_did = mock_wallet.get_public_did.return_value
 
-            result_id, result_def = await ledger.create_and_send_credential_definition(
+            (
+                result_id,
+                result_def,
+                novel,
+            ) = await ledger.create_and_send_credential_definition(
                 issuer, schema_id, None, tag
             )
             assert result_id == cred_def_id
