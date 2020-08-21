@@ -519,7 +519,10 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.get_public_did = async_mock.CoroutineMock()
         mock_wallet.get_public_did.return_value.did = "abc"
 
-        fetch_schema_id = f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
+        fetch_schema_id = (
+            f"{mock_wallet.get_public_did.return_value.did}:2:"
+            "schema_name:schema_version"
+        )
         mock_check_existing.return_value = (fetch_schema_id, {})
 
         issuer = async_mock.MagicMock(BaseIssuer)
@@ -556,7 +559,10 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.get_public_did = async_mock.CoroutineMock()
         mock_wallet.get_public_did.return_value.did = "abc"
 
-        fetch_schema_id = f"{mock_wallet.get_public_did.return_value.did}:{2}:schema_name:schema_version"
+        fetch_schema_id = (
+            f"{mock_wallet.get_public_did.return_value.did}:2:"
+            "schema_name:schema_version"
+        )
         mock_check_existing.side_effect = [None, (fetch_schema_id, "{}")]
 
         issuer = async_mock.MagicMock(BaseIssuer)
@@ -592,7 +598,7 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.get_public_did.return_value.did = "abc"
 
         fetch_schema_id = (
-            f"{mock_wallet.get_public_did.return_value.did}:{2}:"
+            f"{mock_wallet.get_public_did.return_value.did}:2:"
             "schema_name:schema_version"
         )
         mock_check_existing.side_effect = [None, fetch_schema_id]
@@ -628,7 +634,7 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.get_public_did.return_value.did = "abc"
 
         fetch_schema_id = (
-            f"{mock_wallet.get_public_did.return_value.did}:{2}:"
+            f"{mock_wallet.get_public_did.return_value.did}:2:"
             "schema_name:schema_version"
         )
         mock_check_existing.side_effect = [None, fetch_schema_id]
@@ -670,7 +676,7 @@ class TestIndyLedger(AsyncTestCase):
         mock_wallet.get_public_did.return_value.did = "abc"
 
         fetch_schema_id = (
-            f"{mock_wallet.get_public_did.return_value.did}:{2}:"
+            f"{mock_wallet.get_public_did.return_value.did}:2:"
             "schema_name:schema_version"
         )
         mock_check_existing.side_effect = [None, fetch_schema_id]
@@ -1018,6 +1024,90 @@ class TestIndyLedger(AsyncTestCase):
             mock_get_schema.assert_called_once_with(schema_id)
 
             mock_build_cred_def.assert_called_once_with(mock_did.did, cred_def_json)
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch(
+        "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
+    )
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.search_records")
+    @async_mock.patch("aries_cloudagent.storage.indy.IndyStorage.add_record")
+    @async_mock.patch("indy.ledger.build_cred_def_request")
+    async def test_send_credential_definition_exists_in_ledger_and_wallet(
+        self,
+        mock_build_cred_def,
+        mock_add_record,
+        mock_search_records,
+        mock_submit,
+        mock_fetch_cred_def,
+        mock_close,
+        mock_open,
+        mock_get_schema,
+    ):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.type = "indy"
+
+        mock_search_records.return_value.fetch_all = async_mock.CoroutineMock(
+            return_value=[]
+        )
+
+        mock_get_schema.return_value = {"seqNo": 999}
+        cred_def_id = f"{self.test_did}:3:CL:999:default"
+        cred_def_value = {
+            "primary": {"n": "...", "s": "...", "r": "...", "revocation": None}
+        }
+        cred_def = {
+            "ver": "1.0",
+            "id": cred_def_id,
+            "schemaId": "999",
+            "type": "CL",
+            "tag": "default",
+            "value": cred_def_value,
+        }
+        cred_def_json = json.dumps(cred_def)
+
+        mock_fetch_cred_def.return_value = {"mock": "cred-def"}
+
+        issuer = async_mock.MagicMock(BaseIssuer)
+        issuer.make_credential_definition_id.return_value = cred_def_id
+        issuer.create_and_store_credential_definition.return_value = (
+            cred_def_id,
+            cred_def_json,
+        )
+        issuer.credential_definition_in_wallet.return_value = True
+        ledger = IndyLedger("name", mock_wallet)
+
+        schema_id = "schema_issuer_did:name:1.0"
+        tag = "default"
+
+        with async_mock.patch.object(
+            ledger, "get_indy_storage", async_mock.MagicMock()
+        ) as mock_get_storage:
+            mock_get_storage.return_value = async_mock.MagicMock(
+                add_record=async_mock.CoroutineMock()
+            )
+
+            async with ledger:
+                mock_wallet.get_public_did = async_mock.CoroutineMock()
+                mock_wallet.get_public_did.return_value = DIDInfo(
+                    self.test_did, self.test_verkey, None
+                )
+                mock_did = mock_wallet.get_public_did.return_value
+
+                (result_id, result_def) = (
+                    await ledger.create_and_send_credential_definition(
+                        issuer, schema_id, None, tag
+                    )
+                )
+                assert result_id == cred_def_id
+
+                mock_wallet.get_public_did.assert_called_once_with()
+                mock_get_schema.assert_called_once_with(schema_id)
+
+                mock_build_cred_def.assert_not_called()
+                mock_get_storage.assert_not_called()
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.get_schema")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
@@ -1457,9 +1547,6 @@ class TestIndyLedger(AsyncTestCase):
         issuer.create_and_store_credential_definition.side_effect = IssuerError(
             "invalid structure"
         )
-        # issuer.credential_definition_in_wallet.side_effect = IndyError(
-        #     error_code=ErrorCode.CommonInvalidStructure
-        # )
         ledger = IndyLedger("name", mock_wallet)
 
         schema_id = "schema_issuer_did:name:1.0"

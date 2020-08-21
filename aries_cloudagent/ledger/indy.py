@@ -36,7 +36,6 @@ from .error import (
 )
 from .util import TAA_ACCEPTED_RECORD_TYPE, EndpointType
 
-
 GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
 GENESIS_TRANSACTION_PATH = path.join(
     GENESIS_TRANSACTION_PATH, "indy_genesis_transactions.txt"
@@ -568,7 +567,7 @@ class IndyLedger(BaseLedger):
         if not schema:
             raise LedgerError(f"Ledger {self.pool_name} has no schema {schema_id}")
 
-        # check if cred def is on ledger already
+        # check if cred def is on ledger alread
         for test_tag in [tag] if tag else ["tag", DEFAULT_CRED_DEF_TAG]:
             credential_definition_id = issuer.make_credential_definition_id(
                 public_info.did, schema, signature_type, test_tag
@@ -624,7 +623,6 @@ class IndyLedger(BaseLedger):
                     "Error cannot write cred def when ledger is in read only mode"
                 )
 
-            wallet_cred_def = json.loads(credential_definition_json)
             with IndyErrorHandler(
                 "Exception when building cred def request", LedgerError
             ):
@@ -632,19 +630,9 @@ class IndyLedger(BaseLedger):
                     public_info.did, credential_definition_json
                 )
             await self._submit(request_json, True, sign_did=public_info)
-            ledger_cred_def = await self.fetch_credential_definition(
-                credential_definition_id
-            )
-            assert wallet_cred_def["value"] == ledger_cred_def["value"]
 
-        # Add non-secrets records if not yet present
-        storage = self.get_indy_storage()
-        found = await storage.search_records(
-            type_filter=CRED_DEF_SENT_RECORD_TYPE,
-            tag_query={"cred_def_id": credential_definition_id},
-        ).fetch_all()
-
-        if not found:
+            # Add non-secrets record
+            storage = self.get_indy_storage()
             schema_id_parts = schema_id.split(":")
             cred_def_tags = {
                 "schema_id": schema_id,
