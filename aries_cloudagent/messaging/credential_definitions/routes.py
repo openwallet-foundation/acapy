@@ -139,9 +139,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         raise web.HTTPForbidden(reason=reason)
 
     issuer: BaseIssuer = await context.inject(BaseIssuer)
-    try:
+    try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
-            credential_definition_id, credential_definition = await shield(
+            (cred_def_id, cred_def, novel) = await shield(
                 ledger.create_and_send_credential_definition(
                     issuer,
                     schema_id,
@@ -153,19 +153,17 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     except LedgerError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
 
-    # If revocation is requested, create revocation registry
-    if support_revocation:
+    # If revocation is requested and cred def is novel, create revocation registry
+    if support_revocation and novel:
         tails_base_url = context.settings.get("tails_server_base_url")
         if not tails_base_url:
             raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
         try:
             # Create registry
-            issuer_did = credential_definition_id.split(":")[0]
+            issuer_did = cred_def_id.split(":")[0]
             revoc = IndyRevocation(context)
             registry_record = await revoc.init_issuer_registry(
-                credential_definition_id,
-                issuer_did,
-                max_cred_num=revocation_registry_size,
+                cred_def_id, issuer_did, max_cred_num=revocation_registry_size,
             )
 
         except RevocationNotSupportedError as e:
@@ -199,7 +197,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         except RevocationError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
 
-    return web.json_response({"credential_definition_id": credential_definition_id})
+    return web.json_response({"credential_definition_id": cred_def_id})
 
 
 @docs(
@@ -253,7 +251,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
     """
     context = request.app["request_context"]
 
-    credential_definition_id = request.match_info["cred_def_id"]
+    cred_def_id = request.match_info["cred_def_id"]
 
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger:
@@ -263,11 +261,9 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
         raise web.HTTPForbidden(reason=reason)
 
     async with ledger:
-        credential_definition = await ledger.get_credential_definition(
-            credential_definition_id
-        )
+        cred_def = await ledger.get_credential_definition(cred_def_id)
 
-    return web.json_response({"credential_definition": credential_definition})
+    return web.json_response({"credential_definition": cred_def})
 
 
 async def register(app: web.Application):

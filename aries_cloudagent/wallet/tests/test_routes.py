@@ -52,11 +52,11 @@ class TestWalletRoutes(AsyncTestCase):
         assert (
             result["did"] == self.test_did
             and result["verkey"] == self.test_verkey
-            and result["public"] == "false"
+            and result["public"] is False
         )
         did_info = DIDInfo(self.test_did, self.test_verkey, {"public": True})
         result = test_module.format_did_info(did_info)
-        assert result["public"] == "true"
+        assert result["public"] is True
 
     async def test_create_did(self):
         request = async_mock.MagicMock()

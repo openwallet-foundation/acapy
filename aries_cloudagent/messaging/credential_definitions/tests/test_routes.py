@@ -24,7 +24,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.ledger.create_and_send_credential_definition = async_mock.CoroutineMock(
-            return_value=(CRED_DEF_ID, {"cred": "def"})
+            return_value=(CRED_DEF_ID, {"cred": "def"}, True)
         )
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value={"cred": "def"}

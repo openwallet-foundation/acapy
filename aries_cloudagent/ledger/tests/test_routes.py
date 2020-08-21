@@ -7,6 +7,7 @@ from ...ledger.base import BaseLedger
 from ...ledger.endpoint_type import EndpointType
 
 from .. import routes as test_module
+from ..indy import Role
 
 
 class TestLedgerRoutes(AsyncTestCase):
@@ -31,6 +32,9 @@ class TestLedgerRoutes(AsyncTestCase):
 
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.register_ledger_nym(request)
+
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_nym_role(request)
 
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.rotate_public_did_keypair(request)
@@ -157,6 +161,62 @@ class TestLedgerRoutes(AsyncTestCase):
         )
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.register_ledger_nym(request)
+
+    async def test_register_nym_ledger_error(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did, "verkey": self.test_verkey}
+        self.ledger.register_nym.side_effect = test_module.LedgerError("Error")
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.register_ledger_nym(request)
+
+    async def test_get_nym_role(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did}
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.get_nym_role.return_value = Role.USER
+            result = await test_module.get_nym_role(request)
+            json_response.assert_called_once_with({"role": "USER"})
+            assert result is json_response.return_value
+
+    async def test_get_nym_role_bad_request(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"no": "did"}
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.get_nym_role(request)
+
+    async def test_get_nym_role_ledger_txn_error(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did}
+        self.ledger.get_nym_role.side_effect = test_module.LedgerTransactionError(
+            "Error in building get-nym request"
+        )
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_nym_role(request)
+
+    async def test_get_nym_role_bad_ledger_req(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did}
+        self.ledger.get_nym_role.side_effect = test_module.BadLedgerRequestError(
+            "No such public DID"
+        )
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.get_nym_role(request)
+
+    async def test_get_nym_role_ledger_error(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did}
+        self.ledger.get_nym_role.side_effect = test_module.LedgerError("Error")
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.get_nym_role(request)
 
     async def test_rotate_public_did_keypair(self):
         request = async_mock.MagicMock()
