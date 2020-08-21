@@ -144,12 +144,12 @@ class WalletHandler():
         for connection in connections:
             await self.add_connection(connection["connection_id"], config["name"])
 
-    async def set_instance(self, wallet: str):
+    async def set_instance(self, wallet: str, context: InjectionContext):
         """Set a specific wallet to open by the provider."""
         instances = await self.get_instances()
         if wallet not in instances:
             raise WalletNotFoundError('Requested not exisiting wallet instance.')
-        self._provider._requested_instance = wallet
+        context.settings.set_value("wallet.id", wallet)
 
     async def delete_instance(self, id: str):
         """
