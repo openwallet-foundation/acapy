@@ -332,6 +332,56 @@ class TestPresentationManager(AsyncTestCase):
             save_ex.assert_called_once()
             assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
+    async def test_create_presentation_proof_req_non_revoc_interval_none(self):
+        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record.connection_id = CONN_ID
+
+        exchange_in = V10PresentationExchange()
+        indy_proof_req = await PRES_PREVIEW.indy_proof_request(
+            name=PROOF_REQ_NAME,
+            version=PROOF_REQ_VERSION,
+            nonce=PROOF_REQ_NONCE,
+            ledger=await self.context.inject(BaseLedger, required=False),
+        )
+        indy_proof_req["non_revoked"] = None  # simulate interop with indy-vcx
+
+        exchange_in.presentation_request = indy_proof_req
+        request = async_mock.MagicMock()
+        request.indy_proof_request = async_mock.MagicMock()
+        request._thread_id = "dummy"
+        self.context.message = request
+
+        more_magic_rr = async_mock.MagicMock(
+            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+                return_value="/tmp/sample/tails/path"
+            )
+        )
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_module, "RevocationRegistry", autospec=True
+        ) as mock_rr:
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+
+            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                indy_proof_req, holder=self.holder
+            )
+            assert not req_creds["self_attested_attributes"]
+            assert len(req_creds["requested_attributes"]) == 2
+            assert len(req_creds["requested_predicates"]) == 1
+
+            (exchange_out, pres_msg) = await self.manager.create_presentation(
+                exchange_in, req_creds
+            )
+            save_ex.assert_called_once()
+            assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
+
     async def test_create_presentation_self_asserted(self):
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = CONN_ID
