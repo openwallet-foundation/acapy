@@ -330,7 +330,7 @@ class PresentationManager:
 
         non_revoc_interval = {"from": 0, "to": epoch_now}
         non_revoc_interval.update(
-            presentation_exchange_record.presentation_request.get("non_revoked", {})
+            presentation_exchange_record.presentation_request.get("non_revoked") or {}
         )
 
         revoc_reg_deltas = {}
