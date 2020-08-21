@@ -9,11 +9,11 @@ from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY
 from ..storage.error import StorageError
 from ..wallet.error import WalletError
-from .base import BaseLedger
-from .indy import Role
-from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 
-from .util import EndpointType
+from .base import BaseLedger
+from .endpoint_type import EndpointType
+from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
+from .indy import Role
 
 
 class AMLRecordSchema(OpenAPISchema):
@@ -90,7 +90,9 @@ class QueryStringEndpointSchema(OpenAPISchema):
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
     endpoint_type = fields.Str(
-        description="Endpoint type of interest (default 'endpoint')",
+        description=(
+            f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
+        ),
         required=False,
         **ENDPOINT_TYPE,
     )
@@ -253,7 +255,9 @@ async def get_did_endpoint(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
-    endpoint_type = EndpointType(request.query.get("endpoint_type", "endpoint"))
+    endpoint_type = EndpointType.get(
+        request.query.get("endpoint_type", EndpointType.ENDPOINT.w3c)
+    )
 
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")

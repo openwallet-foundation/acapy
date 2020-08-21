@@ -1,12 +1,13 @@
 """Ledger base class."""
 
-from abc import ABC, abstractmethod, ABCMeta
 import re
+
+from abc import ABC, abstractmethod, ABCMeta
 from typing import Tuple, Sequence
 
 from ..issuer.base import BaseIssuer
 
-from .util import EndpointType
+from .endpoint_type import EndpointType
 
 
 class BaseLedger(ABC, metaclass=ABCMeta):

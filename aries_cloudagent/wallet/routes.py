@@ -14,6 +14,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ..ledger.base import BaseLedger
+from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
@@ -26,8 +27,6 @@ from ..messaging.valid import (
 
 from .base import DIDInfo, BaseWallet
 from .error import WalletError, WalletNotFoundError
-
-from ..ledger.util import EndpointType
 
 
 class DIDSchema(OpenAPISchema):
@@ -58,8 +57,10 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
         description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
     )
     endpoint_type = fields.Str(
-        description="""
-        Endpoint type to set (default 'endpoint'). Affects only public DIDs.""",
+        description=(
+            f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); "
+            "affects only public DIDs"
+        ),
         required=False,
         **ENDPOINT_TYPE,
     )
@@ -291,7 +292,9 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     body = await request.json()
     did = body["did"]
     endpoint = body.get("endpoint")
-    endpoint_type = EndpointType(body.get("endpoint_type", "endpoint"))
+    endpoint_type = EndpointType.get(
+        body.get("endpoint_type", EndpointType.ENDPOINT.w3c)
+    )
 
     try:
         ledger: BaseLedger = await context.inject(BaseLedger, required=False)

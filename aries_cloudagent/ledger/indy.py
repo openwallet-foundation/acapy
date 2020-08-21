@@ -27,6 +27,7 @@ from ..utils import sentinel
 from ..wallet.base import BaseWallet, DIDInfo
 
 from .base import BaseLedger
+from .endpoint_type import EndpointType
 from .error import (
     BadLedgerRequestError,
     ClosedPoolError,
@@ -34,7 +35,7 @@ from .error import (
     LedgerError,
     LedgerTransactionError,
 )
-from .util import TAA_ACCEPTED_RECORD_TYPE, EndpointType
+from .util import TAA_ACCEPTED_RECORD_TYPE
 
 GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
 GENESIS_TRANSACTION_PATH = path.join(
@@ -793,7 +794,7 @@ class IndyLedger(BaseLedger):
         data_json = json.loads(response_json)["result"]["data"]
         if data_json:
             endpoint = json.loads(data_json).get("endpoint", None)
-            address = endpoint.get(endpoint_type.value, None) if endpoint else None
+            address = endpoint.get(endpoint_type.indy, None) if endpoint else None
         else:
             address = None
 
@@ -814,7 +815,7 @@ class IndyLedger(BaseLedger):
 
         all_exist_endpoints = await self.get_all_endpoints_for_did(did)
         exist_endpoint_of_type = (
-            all_exist_endpoints.get(endpoint_type.value, None)
+            all_exist_endpoints.get(endpoint_type.indy, None)
             if all_exist_endpoints
             else None
         )
@@ -828,10 +829,10 @@ class IndyLedger(BaseLedger):
             nym = self.did_to_nym(did)
 
             if all_exist_endpoints:
-                all_exist_endpoints[endpoint_type.value] = endpoint
+                all_exist_endpoints[endpoint_type.indy] = endpoint
                 attr_json = json.dumps({"endpoint": all_exist_endpoints})
             else:
-                attr_json = json.dumps({"endpoint": {endpoint_type.value: endpoint}})
+                attr_json = json.dumps({"endpoint": {endpoint_type.indy: endpoint}})
 
             with IndyErrorHandler(
                 "Exception when building attribute request", LedgerError

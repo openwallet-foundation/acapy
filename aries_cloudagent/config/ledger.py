@@ -11,6 +11,7 @@ from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
 from ..ledger.base import BaseLedger
+from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerError
 from ..utils.http import fetch, FetchError
 from ..wallet.base import BaseWallet
@@ -75,7 +76,7 @@ async def ledger_config(
                     if not await accept_taa(ledger, taa_info, provision):
                         return False
 
-        # Publish endpoint if necessary - skipped if TAA is required but not accepted
+        # Publish endpoints if necessary - skipped if TAA is required but not accepted
         endpoint = context.settings.get("default_endpoint")
         if public_did:
             wallet: BaseWallet = await context.inject(BaseWallet)
@@ -85,6 +86,13 @@ async def ledger_config(
                 await wallet.set_did_endpoint(public_did, endpoint, ledger)
             except LedgerError as x_ledger:
                 raise ConfigError(x_ledger.message) from x_ledger  # e.g., read-only
+
+            # Publish profile endpoint
+            profile_endpoint = context.settings.get("profile_endpoint")
+            if profile_endpoint:
+                await ledger.update_endpoint_for_did(
+                    public_did, profile_endpoint, EndpointType.PROFILE
+                )
 
     return True
 

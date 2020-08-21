@@ -34,6 +34,7 @@ class TestLedger(AsyncTestCase):
         settings = {
             "ledger.genesis_url": "00000000000000000000000000000000",
             "default_endpoint": "http://1.2.3.4:8051",
+            "profile_endpoint": "http://agent.ca",
         }
         mock_ledger = async_mock.MagicMock(
             type="indy",
@@ -48,6 +49,7 @@ class TestLedger(AsyncTestCase):
             get_latest_txn_author_acceptance=async_mock.CoroutineMock(
                 return_value={"digest": b"1234567890123456789012345678901234567890"}
             ),
+            update_endpoint_for_did=async_mock.CoroutineMock(),
         )
         mock_wallet = async_mock.MagicMock(
             type="indy", set_did_endpoint=async_mock.CoroutineMock()

@@ -10,7 +10,7 @@ from marshmallow.exceptions import ValidationError
 
 from .util import epoch_to_str
 
-from ..ledger.util import EndpointType as EndpointTypeEnum
+from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
@@ -431,13 +431,13 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
 class EndpointType(OneOf):
     """Validate value against allowed endpoint/service types."""
 
-    EXAMPLE = "endpoint"
+    EXAMPLE = EndpointTypeEnum.ENDPOINT.w3c
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            choices=[e.value for e in EndpointTypeEnum],
+            choices=[e.w3c for e in EndpointTypeEnum],
             error="Value {input} must be one of {choices}",
         )
 
