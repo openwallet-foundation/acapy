@@ -329,7 +329,7 @@ class PresentationManager:
         epoch_now = int(time.time())
 
         non_revoc_interval = {"from": 0, "to": epoch_now}
-        non_revoked_value = presentation_exchange_record.presentation_request.get("non_revoked")
+        non_revoked_value = presentation_request.get("non_revoked")
         non_revoc_interval.update(
             non_revoked_value if non_revoked_value else {}
         )
