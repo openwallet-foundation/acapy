@@ -53,5 +53,6 @@ class ForwardHandler(BaseHandler):
         await responder.send(
             packed,
             connection_id=recipient.connection_id,
+            target_list=connection_targets,
             reply_to_verkey=connection_verkey,
         )
