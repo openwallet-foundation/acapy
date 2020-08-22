@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUIDFour
@@ -39,6 +39,7 @@ class PleaseAckDecoratorSchema(BaseModelSchema):
         """PleaseAckDecoratorSchema metadata."""
 
         model_class = PleaseAckDecorator
+        unknown = EXCLUDE
 
     message_id = fields.Str(
         description="Message identifier",

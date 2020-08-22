@@ -5,11 +5,10 @@ This file was ported from
 https://github.com/transmute-industries/Ed25519Signature2018/blob/master/src/createVerifyData/index.js
 """
 
-
 import datetime
+import hashlib
 
 from pyld import jsonld
-import hashlib
 
 
 def _canonize(data):

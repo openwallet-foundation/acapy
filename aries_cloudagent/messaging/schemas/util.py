@@ -1,15 +1,12 @@
 """Schema utilities."""
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
-from ..valid import (
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
-)
+from ..models.openapi import OpenAPISchema
+from ..valid import INDY_DID, INDY_SCHEMA_ID, INDY_VERSION
 
 
-class SchemaQueryStringSchema(Schema):
+class SchemaQueryStringSchema(OpenAPISchema):
     """Query string parameters for schema searches."""
 
     schema_id = fields.Str(

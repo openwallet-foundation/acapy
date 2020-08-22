@@ -3,6 +3,8 @@
 import base58
 import base64
 
+from multicodec import add_prefix, remove_prefix
+
 
 def pad(val: str) -> str:
     """Pad base64 values if need be: JWT calls to omit trailing padding."""
@@ -57,3 +59,19 @@ def b58_to_bytes(val: str) -> bytes:
 def bytes_to_b58(val: bytes) -> str:
     """Convert a byte string to base 58."""
     return base58.b58encode(val).decode("ascii")
+
+
+def naked_to_did_key(key: str) -> str:
+    """Convert a naked ed25519 verkey to did:key format."""
+    key_bytes = b58_to_bytes(key)
+    prefixed_key_bytes = add_prefix("ed25519-pub", key_bytes)
+    did_key = f"did:key:z{bytes_to_b58(prefixed_key_bytes)}"
+    return did_key
+
+
+def did_key_to_naked(did_key: str) -> str:
+    """Convert a did:key to naked ed25519 verkey format."""
+    stripped_key = did_key.split("did:key:z").pop()
+    stripped_key_bytes = b58_to_bytes(stripped_key)
+    naked_key_bytes = remove_prefix(stripped_key_bytes)
+    return bytes_to_b58(naked_key_bytes)

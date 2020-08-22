@@ -11,6 +11,8 @@ from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
 from ..ledger.base import BaseLedger
+from ..ledger.endpoint_type import EndpointType
+from ..ledger.error import LedgerError
 from ..utils.http import fetch, FetchError
 from ..wallet.base import BaseWallet
 
@@ -57,29 +59,40 @@ async def ledger_config(
     if not ledger:
         LOGGER.info("Ledger instance not provided")
         return False
-    elif ledger.LEDGER_TYPE != "indy":
+    elif ledger.type != "indy":
         LOGGER.info("Non-indy ledger provided")
         return False
 
     async with ledger:
         # Check transaction author agreement acceptance
-        taa_info = await ledger.get_txn_author_agreement()
-        if taa_info["taa_required"] and public_did:
-            taa_accepted = await ledger.get_latest_txn_author_acceptance()
-            if (
-                not taa_accepted
-                or taa_info["taa_record"]["digest"] != taa_accepted["digest"]
-            ):
-                if not await accept_taa(ledger, taa_info, provision):
-                    return False
+        if not context.settings.get("read_only_ledger"):
+            taa_info = await ledger.get_txn_author_agreement()
+            if taa_info["taa_required"] and public_did:
+                taa_accepted = await ledger.get_latest_txn_author_acceptance()
+                if (
+                    not taa_accepted
+                    or taa_info["taa_record"]["digest"] != taa_accepted["digest"]
+                ):
+                    if not await accept_taa(ledger, taa_info, provision):
+                        return False
 
-        # Publish endpoint if necessary - skipped if TAA is required but not accepted
+        # Publish endpoints if necessary - skipped if TAA is required but not accepted
         endpoint = context.settings.get("default_endpoint")
         if public_did:
             wallet: BaseWallet = await context.inject(BaseWallet)
-            if wallet.WALLET_TYPE != "indy":
+            if wallet.type != "indy":
                 raise ConfigError("Cannot provision a non-Indy wallet type")
-            await wallet.set_did_endpoint(public_did, endpoint, ledger)
+            try:
+                await wallet.set_did_endpoint(public_did, endpoint, ledger)
+            except LedgerError as x_ledger:
+                raise ConfigError(x_ledger.message) from x_ledger  # e.g., read-only
+
+            # Publish profile endpoint
+            profile_endpoint = context.settings.get("profile_endpoint")
+            if profile_endpoint:
+                await ledger.update_endpoint_for_did(
+                    public_did, profile_endpoint, EndpointType.PROFILE
+                )
 
     return True
 

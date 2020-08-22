@@ -2,7 +2,7 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import fields, Schema, validate
+from marshmallow import EXCLUDE, fields, Schema, validate
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -28,7 +28,7 @@ class Disclose(AgentMessage):
         Args:
             protocols: A mapping of protocol names to a dictionary of properties
         """
-        super(Disclose, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.protocols = list(protocols) if protocols else []
 
 
@@ -55,6 +55,7 @@ class DiscloseSchema(AgentMessageSchema):
         """DiscloseSchema metadata."""
 
         model_class = Disclose
+        unknown = EXCLUDE
 
     protocols = fields.List(
         fields.Nested(ProtocolDescriptorSchema()),

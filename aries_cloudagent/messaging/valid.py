@@ -10,6 +10,8 @@ from marshmallow.exceptions import ValidationError
 
 from .util import epoch_to_str
 
+from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
+
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
 
@@ -426,6 +428,20 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
         )
 
 
+class EndpointType(OneOf):
+    """Validate value against allowed endpoint/service types."""
+
+    EXAMPLE = EndpointTypeEnum.ENDPOINT.w3c
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            choices=[e.w3c for e in EndpointTypeEnum],
+            error="Value {input} must be one of {choices}",
+        )
+
+
 # Instances for marshmallow schema specification
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
 WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
@@ -460,3 +476,4 @@ BASE58_SHA256_HASH = {
 }
 UUID4 = {"validate": UUIDFour(), "example": UUIDFour.EXAMPLE}
 ENDPOINT = {"validate": Endpoint(), "example": Endpoint.EXAMPLE}
+ENDPOINT_TYPE = {"validate": EndpointType(), "example": EndpointType.EXAMPLE}

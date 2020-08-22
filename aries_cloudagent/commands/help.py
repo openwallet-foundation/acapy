@@ -31,5 +31,10 @@ def execute(argv: Sequence[str] = None):
         parser.print_help()
 
 
-if __name__ == "__main__":
-    execute()
+def main():
+    """Execute the main line."""
+    if __name__ == "__main__":
+        execute()
+
+
+main()

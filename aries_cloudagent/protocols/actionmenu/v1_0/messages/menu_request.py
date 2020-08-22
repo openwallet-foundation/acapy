@@ -1,5 +1,7 @@
 """Represents a request for an action menu."""
 
+from marshmallow import EXCLUDE
+
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import MENU_REQUEST, PROTOCOL_PACKAGE
@@ -19,7 +21,7 @@ class MenuRequest(AgentMessage):
 
     def __init__(self, **kwargs):
         """Initialize a menu request object."""
-        super(MenuRequest, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class MenuRequestSchema(AgentMessageSchema):
@@ -29,3 +31,4 @@ class MenuRequestSchema(AgentMessageSchema):
         """MenuRequest schema metadata."""
 
         model_class = MenuRequest
+        unknown = EXCLUDE

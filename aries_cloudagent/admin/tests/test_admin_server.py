@@ -177,6 +177,15 @@ class TestAdminServer(AsyncTestCase):
         server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
         app = await server.make_application()
 
+    async def test_register_external_plugin_x(self):
+        context = InjectionContext()
+        context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+        with self.assertRaises(ValueError):
+            builder = DefaultContextBuilder(
+                settings={"external_plugins": "aries_cloudagent.nosuchmodule"}
+            )
+            await builder.load_plugins(context)
+
     async def test_visit_insecure_mode(self):
         settings = {"admin.admin_insecure_mode": True, "task_queue": True}
         server = self.get_admin_server(settings)
@@ -256,4 +265,37 @@ class TestAdminServer(AsyncTestCase):
             f"http://127.0.0.1:{self.port}/status/live", headers={}
         ) as response:
             assert response.status == 200
+        await server.stop()
+
+    async def test_server_health_state(self):
+        settings = {
+            "admin.admin_insecure_mode": True,
+        }
+        server = self.get_admin_server(settings)
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/live", headers={}
+        ) as response:
+            assert response.status == 200
+            response_json = await response.json()
+            assert response_json["alive"]
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/ready", headers={}
+        ) as response:
+            assert response.status == 200
+            response_json = await response.json()
+            assert response_json["ready"]
+
+        server.notify_fatal_error()
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/live", headers={}
+        ) as response:
+            assert response.status == 503
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/ready", headers={}
+        ) as response:
+            assert response.status == 503
         await server.stop()

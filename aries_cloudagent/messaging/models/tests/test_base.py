@@ -2,7 +2,7 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from marshmallow import fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
@@ -11,7 +11,7 @@ from ....storage.base import BaseStorage, StorageRecord
 from ...responder import BaseResponder, MockResponder
 from ...util import time_now
 
-from ..base import BaseModel, BaseModelSchema
+from ..base import BaseModel, BaseModelError, BaseModelSchema
 
 
 class ModelImpl(BaseModel):
@@ -25,8 +25,9 @@ class ModelImpl(BaseModel):
 class SchemaImpl(BaseModelSchema):
     class Meta:
         model_class = ModelImpl
+        unknown = EXCLUDE
 
-    attr = fields.String()
+    attr = fields.String(required=True)
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
@@ -44,3 +45,21 @@ class TestBase(AsyncTestCase):
         model = ModelImpl(attr="succeeds")
         model = model.validate()
         assert model.attr == "succeeds"
+
+    def test_ser_x(self):
+        model = ModelImpl(attr="hello world")
+        with async_mock.patch.object(
+            model, "_get_schema_class", async_mock.MagicMock()
+        ) as mock_get_schema_class:
+            mock_get_schema_class.return_value = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    dump=async_mock.MagicMock(side_effect=ValidationError("error"))
+                )
+            )
+            with self.assertRaises(BaseModelError):
+                model.serialize()
+
+    def test_from_json_x(self):
+        data = "{}{}"
+        with self.assertRaises(BaseModelError):
+            ModelImpl.from_json(data)

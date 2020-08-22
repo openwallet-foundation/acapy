@@ -221,7 +221,7 @@ class BaseModelSchema(Schema):
             TypeError: If model_class is not set on Meta
 
         """
-        super(BaseModelSchema, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.Meta.model_class:
             raise TypeError(
                 "Can't instantiate abstract class {} with no model_class".format(
@@ -296,3 +296,12 @@ class BaseModelSchema(Schema):
         """
         skip_vals = resolve_meta_property(self, "skip_values", [])
         return {key: value for key, value in data.items() if value not in skip_vals}
+
+
+class OpenAPISchema(Schema):
+    """Schema for OpenAPI artifacts: excluding unknown fields, not raising exception."""
+
+    class Meta:
+        """BaseModelSchema metadata."""
+
+        unknown = EXCLUDE

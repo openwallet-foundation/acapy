@@ -11,17 +11,25 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ..ledger.base import BaseLedger
+from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
-from ..messaging.valid import ENDPOINT, INDY_CRED_DEF_ID, INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..messaging.models.openapi import OpenAPISchema
+from ..messaging.valid import (
+    ENDPOINT,
+    ENDPOINT_TYPE,
+    INDY_CRED_DEF_ID,
+    INDY_DID,
+    INDY_RAW_PUBLIC_KEY,
+)
 
 from .base import DIDInfo, BaseWallet
 from .error import WalletError, WalletNotFoundError
 
 
-class DIDSchema(Schema):
+class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     did = fields.Str(description="DID of interest", **INDY_DID)
@@ -29,19 +37,36 @@ class DIDSchema(Schema):
     public = fields.Boolean(description="Whether DID is public", example=False)
 
 
-class DIDResultSchema(Schema):
+class DIDResultSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     result = fields.Nested(DIDSchema())
 
 
-class DIDListSchema(Schema):
+class DIDListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
     results = fields.List(fields.Nested(DIDSchema()), description="DID list")
 
 
-class DIDEndpointSchema(Schema):
+class DIDEndpointWithTypeSchema(OpenAPISchema):
+    """Request schema to set DID endpoint of particular type."""
+
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    endpoint = fields.Str(
+        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
+    )
+    endpoint_type = fields.Str(
+        description=(
+            f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); "
+            "affects only public DIDs"
+        ),
+        required=False,
+        **ENDPOINT_TYPE,
+    )
+
+
+class DIDEndpointSchema(OpenAPISchema):
     """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
@@ -50,7 +75,7 @@ class DIDEndpointSchema(Schema):
     )
 
 
-class DIDListQueryStringSchema(Schema):
+class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
     did = fields.Str(description="DID of interest", required=False, **INDY_DID)
@@ -59,16 +84,16 @@ class DIDListQueryStringSchema(Schema):
         required=False,
         **INDY_RAW_PUBLIC_KEY,
     )
-    public = fields.Boolean(description="Whether DID is on the ledger", required=False)
+    public = fields.Boolean(description="Whether DID is public", required=False)
 
 
-class DIDQueryStringSchema(Schema):
+class DIDQueryStringSchema(OpenAPISchema):
     """Parameters and validators for set public DID request query string."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
 
-class CredDefIdMatchInfoSchema(Schema):
+class CredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential definition id."""
 
     cred_def_id = fields.Str(
@@ -82,7 +107,7 @@ def format_did_info(info: DIDInfo):
         return {
             "did": info.did,
             "verkey": info.verkey,
-            "public": json.dumps(bool(info.metadata.get("public"))),
+            "public": bool(info.metadata.get("public")),
         }
 
 
@@ -251,7 +276,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Update endpoint in wallet and, if public, on ledger")
-@request_schema(DIDEndpointSchema)
+@request_schema(DIDEndpointWithTypeSchema)
 async def wallet_set_did_endpoint(request: web.BaseRequest):
     """
     Request handler for setting an endpoint for a public or local DID.
@@ -267,10 +292,13 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     body = await request.json()
     did = body["did"]
     endpoint = body.get("endpoint")
+    endpoint_type = EndpointType.get(
+        body.get("endpoint_type", EndpointType.ENDPOINT.w3c)
+    )
 
     try:
         ledger: BaseLedger = await context.inject(BaseLedger, required=False)
-        await wallet.set_did_endpoint(did, endpoint, ledger)
+        await wallet.set_did_endpoint(did, endpoint, ledger, endpoint_type)
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except LedgerConfigError as err:

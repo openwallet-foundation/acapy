@@ -29,18 +29,24 @@ SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 
 LOGGER = logging.getLogger(__name__)
 
-TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 20))
+TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
 
 class FaberAgent(DemoAgent):
     def __init__(
-        self, http_port: int, admin_port: int, no_auto: bool = False, **kwargs
+        self,
+        http_port: int,
+        admin_port: int,
+        no_auto: bool = False,
+        tails_server_base_url: str = None,
+        **kwargs,
     ):
         super().__init__(
             "Faber.Agent",
             http_port,
             admin_port,
             prefix="Faber",
+            tails_server_base_url=tails_server_base_url,
             extra_args=[]
             if no_auto
             else ["--auto-accept-invites", "--auto-accept-requests"],
@@ -138,6 +144,7 @@ async def main(
     start_port: int,
     no_auto: bool = False,
     revocation: bool = False,
+    tails_server_base_url: str = None,
     show_timing: bool = False,
 ):
 
@@ -155,6 +162,7 @@ async def main(
             start_port + 1,
             genesis_data=genesis,
             no_auto=no_auto,
+            tails_server_base_url=tails_server_base_url,
             timing=show_timing,
         )
         await agent.listen_webhooks(start_port + 2)
@@ -184,16 +192,8 @@ async def main(
                 version,
                 ["name", "date", "degree", "age", "timestamp"],
                 support_revocation=revocation,
+                revocation_registry_size=TAILS_FILE_COUNT,
             )
-
-        if revocation:
-            with log_timer("Publish revocation registry duration:"):
-                log_status(
-                    "#5/6 Create and publish the revocation registry on the ledger"
-                )
-                await agent.create_and_publish_revocation_registry(
-                    credential_definition_id, TAILS_FILE_COUNT
-                )
 
         # TODO add an additional credential for Student ID
 
@@ -227,11 +227,7 @@ async def main(
             "    (3) Send Message\n"
         )
         if revocation:
-            options += (
-                "    (4) Revoke Credential\n"
-                "    (5) Publish Revocations\n"
-                "    (6) Add Revocation Registry\n"
-            )
+            options += "    (4) Revoke Credential\n" "    (5) Publish Revocations\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/{}T/X] ".format(
             "4/5/6/" if revocation else ""
@@ -321,18 +317,7 @@ async def main(
                         for req_pred in req_preds
                     },
                 }
-                # test with an attribute group with attribute value restrictions
-                # indy_proof_request["requested_attributes"] = {
-                #     "n_group_attrs": {
-                #         "names": ["name", "degree", "timestamp", "date"],
-                #         "restrictions": [
-                #             {
-                #                 "issuer_did": agent.did,
-                #                 "attr::name::value": "Alice Smith"
-                #             }
-                #         ]
-                #     }
-                # }
+
                 if revocation:
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
@@ -379,11 +364,6 @@ async def main(
                     )
                 except ClientError:
                     pass
-            elif option == "6" and revocation:
-                log_status("#19 Add another revocation registry")
-                await agent.create_and_publish_revocation_registry(
-                    credential_definition_id, TAILS_FILE_COUNT
-                )
 
         if show_timing:
             timing = await agent.fetch_timing()
@@ -422,6 +402,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--revocation", action="store_true", help="Enable credential revocation"
     )
+
+    parser.add_argument(
+        "--tails-server-base-url",
+        type=str,
+        metavar=("<tails-server-base-url>"),
+        help="Tals server base url",
+    )
+
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
@@ -457,9 +445,22 @@ if __name__ == "__main__":
 
     require_indy()
 
+    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+
+    if args.revocation and not tails_server_base_url:
+        raise Exception(
+            "If revocation is enabled, --tails-server-base-url must be provided"
+        )
+
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, args.no_auto, args.revocation, args.timing)
+            main(
+                args.port,
+                args.no_auto,
+                args.revocation,
+                tails_server_base_url,
+                args.timing,
+            )
         )
     except KeyboardInterrupt:
         os._exit(1)

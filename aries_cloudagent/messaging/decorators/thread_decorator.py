@@ -7,7 +7,7 @@ context from previous messages.
 
 from typing import Mapping
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUIDFour
@@ -47,7 +47,7 @@ class ThreadDecorator(BaseModel):
                 as it provides an implicit ACK.)
 
         """
-        super(ThreadDecorator, self).__init__()
+        super().__init__()
         self._thid = thid
         self._pthid = pthid
         self._sender_order = sender_order or None
@@ -117,6 +117,7 @@ class ThreadDecoratorSchema(BaseModelSchema):
         """ThreadDecoratorSchema metadata."""
 
         model_class = ThreadDecorator
+        unknown = EXCLUDE
 
     thid = fields.Str(
         required=False,
