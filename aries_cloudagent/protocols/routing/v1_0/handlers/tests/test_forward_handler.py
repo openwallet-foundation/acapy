@@ -9,6 +9,7 @@ from aries_cloudagent.messaging.responder import MockResponder
 from aries_cloudagent.storage.base import BaseStorage
 from aries_cloudagent.storage.basic import BasicStorage
 from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from aries_cloudagent.connections.models.connection_target import ConnectionTarget
 
 from ...models.route_record import RouteRecord
 from ...messages.forward import Forward
@@ -39,9 +40,14 @@ class TestForwardHandler(AsyncTestCase):
         responder = MockResponder()
         with async_mock.patch.object(
             test_module, "RoutingManager", autospec=True
-        ) as mock_mgr:
+        ) as mock_mgr, async_mock.patch.object(
+            test_module, "ConnectionManager", autospec=True
+        ) as mock_connection_mgr:
             mock_mgr.return_value.get_recipient = async_mock.CoroutineMock(
                 return_value=RouteRecord(connection_id="dummy")
+            )
+            mock_connection_mgr.return_value.get_connection_targets = async_mock.CoroutineMock(
+                return_value=[ConnectionTarget(recipient_keys=["recip_key"],)]
             )
 
             await handler.handle(self.context, responder)
