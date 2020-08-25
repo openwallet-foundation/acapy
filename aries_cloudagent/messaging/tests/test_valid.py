@@ -11,6 +11,7 @@ from ..valid import (
     BASE64URL,
     BASE64URL_NO_PAD,
     DID_KEY,
+    DID_POSTURE,
     ENDPOINT,
     ENDPOINT_TYPE,
     INDY_CRED_DEF_ID,
@@ -144,6 +145,22 @@ class TestValid(TestCase):
                 DID_KEY["validate"](non_did_key)
 
         DID_KEY["validate"]("did:key:zQ4zqM7aXqm7gDQkUVLng9h")
+
+    def test_did_posture(self):
+        non_did_postures = [
+            "not-me",
+            None,
+            "PUBLIC",
+            "Posted",
+            "  local",
+        ]
+        for non_did_posture in non_did_postures:
+            with self.assertRaises(ValidationError):
+                DID_POSTURE["validate"](non_did_posture)
+
+        DID_POSTURE["validate"]("public")
+        DID_POSTURE["validate"]("posted")
+        DID_POSTURE["validate"]("local")
 
     def test_indy_base58_sha256_hash(self):
         non_base58_sha256_hashes = [

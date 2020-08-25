@@ -9,6 +9,7 @@ from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet, DIDInfo
 
 from .. import routes as test_module
+from ..did_posture import DIDPosture
 
 
 class TestWalletRoutes(AsyncTestCase):
@@ -22,6 +23,8 @@ class TestWalletRoutes(AsyncTestCase):
         }
         self.test_did = "did"
         self.test_verkey = "verkey"
+        self.test_posted_did = "posted-did"
+        self.test_posted_verkey = "posted-verkey"
 
     async def test_missing_wallet(self):
         request = async_mock.MagicMock()
@@ -52,11 +55,20 @@ class TestWalletRoutes(AsyncTestCase):
         assert (
             result["did"] == self.test_did
             and result["verkey"] == self.test_verkey
-            and result["public"] is False
+            and result["posture"] == DIDPosture.LOCAL.value
         )
-        did_info = DIDInfo(self.test_did, self.test_verkey, {"public": True})
+
+        did_info = DIDInfo(
+            self.test_did, self.test_verkey, {"posted": True, "public": True}
+        )
         result = test_module.format_did_info(did_info)
-        assert result["public"] is True
+        assert result["posture"] == DIDPosture.PUBLIC.value
+
+        did_info = DIDInfo(
+            self.test_did, self.test_verkey, {"posted": True, "public": False}
+        )
+        result = test_module.format_did_info(did_info)
+        assert result["posture"] == DIDPosture.POSTED.value
 
     async def test_create_did(self):
         request = async_mock.MagicMock()
@@ -66,6 +78,7 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.create_local_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
@@ -94,16 +107,18 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_local_dids.return_value = [
-                DIDInfo(self.test_did, self.test_verkey, {})
+                DIDInfo(self.test_did, self.test_verkey, {}),
+                DIDInfo(
+                    self.test_posted_did,
+                    self.test_posted_verkey,
+                    {"posted": "True", "public": "False"},
+                ),
             ]
-            format_did_info.return_value = {"did": self.test_did}
             result = await test_module.wallet_did_list(request)
-            format_did_info.assert_called_once_with(
-                self.wallet.get_local_dids.return_value[0]
-            )
             json_response.assert_called_once_with(
-                {"results": [format_did_info.return_value]}
+                {"results": [format_did_info.return_value] * 2}
             )
             assert json_response.return_value is json_response()
             assert result is json_response.return_value
@@ -111,16 +126,23 @@ class TestWalletRoutes(AsyncTestCase):
     async def test_did_list_filter_public(self):
         request = async_mock.MagicMock()
         request.app = self.app
-        request.query = {"public": "true"}
+        request.query = {"posture": DIDPosture.PUBLIC.value}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
-            format_did_info.return_value = {"did": self.test_did}
+            self.wallet.get_posted_dids.return_value = [
+                DIDInfo(
+                    self.test_posted_did,
+                    self.test_posted_verkey,
+                    {"posted": True, "public": False,},
+                )
+            ]
             result = await test_module.wallet_did_list(request)
             format_did_info.assert_called_once_with(
                 self.wallet.get_public_did.return_value
@@ -128,6 +150,31 @@ class TestWalletRoutes(AsyncTestCase):
             json_response.assert_called_once_with(
                 {"results": [format_did_info.return_value]}
             )
+            assert json_response.return_value is json_response()
+            assert result is json_response.return_value
+
+    async def test_did_list_filter_posted(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"posture": DIDPosture.POSTED.value}
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response, async_mock.patch.object(
+            test_module, "format_did_info", async_mock.Mock()
+        ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_posted_did}  # for sorting
+            self.wallet.get_public_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, {}
+            )
+            self.wallet.get_posted_dids.return_value = [
+                DIDInfo(
+                    self.test_posted_did,
+                    self.test_posted_verkey,
+                    {"posted": True, "public": False,},
+                )
+            ]
+            result = await test_module.wallet_did_list(request)
+            json_response.assert_called_once()
             assert json_response.return_value is json_response()
             assert result is json_response.return_value
 
@@ -140,10 +187,10 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_local_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
-            format_did_info.return_value = {"did": self.test_did}
             result = await test_module.wallet_did_list(request)
             format_did_info.assert_called_once_with(
                 self.wallet.get_local_did.return_value
@@ -176,10 +223,10 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_local_did_for_verkey.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
-            format_did_info.return_value = {"did": self.test_did}
             result = await test_module.wallet_did_list(request)
             format_did_info.assert_called_once_with(
                 self.wallet.get_local_did_for_verkey.return_value
@@ -211,9 +258,13 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
+            self.wallet.get_posted_dids.return_value = [
+                DIDInfo(self.test_posted_did, self.test_posted_verkey, {})
+            ]
             result = await test_module.wallet_get_public_did(request)
             format_did_info.assert_called_once_with(
                 self.wallet.get_public_did.return_value
@@ -247,6 +298,7 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
@@ -322,6 +374,7 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
@@ -346,6 +399,7 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
@@ -370,6 +424,7 @@ class TestWalletRoutes(AsyncTestCase):
         ) as json_response, async_mock.patch.object(
             test_module, "format_did_info", async_mock.Mock()
         ) as format_did_info:
+            format_did_info.return_value = {"did": self.test_did}  # for sorting
             self.wallet.get_public_did.return_value = DIDInfo(
                 self.test_did, self.test_verkey, {}
             )
@@ -577,7 +632,7 @@ class TestWalletRoutes(AsyncTestCase):
             await test_module.wallet_rotate_did_keypair(request)
 
         self.wallet.get_local_did = async_mock.CoroutineMock(
-            return_value=DIDInfo("did", "verkey", {"public": True})
+            return_value=DIDInfo("did", "verkey", {"posted": True, "public": True})
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.wallet_rotate_did_keypair(request)
