@@ -24,6 +24,8 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
+from ..wallet.base import BaseWallet
+from ..wallet.models.wallet_record import WalletRecord
 from ..version import __version__
 from ..wallet_handler import WalletHandler
 from ..wallet_handler.error import WalletNotFoundError
@@ -266,41 +268,40 @@ class AdminServer(BaseAdminServer):
             middlewares.append(collect_stats)
 
         @web.middleware
-        async def activate_wallet(request, handler):
+        async def set_wallet(request, handler):
+
             # TODO: Enable authentication in swagger docs page
             if request.path == '/api/doc' or 'swagger' in request.path:
                 return await handler(request)
             if request.method == 'OPTIONS':
                 return await handler(request)
-            context = request.app["request_context"].copy()
+            request_context = request.app["request_context"].copy()
 
-            # For a custodial agent we need to inject the correct wallet into
-            # the request
-            ext_plugins = self.context.settings.get_value("external_plugins")
-            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            wallet_id = request.headers.get("x-wallet-id")
+            if wallet_id:
+                wallet_record = await WalletRecord.retrieve_by_id(
+                    self.context, wallet_id
+                )
+                # We amend the context settings so that the wallet that will be
+                # opened later has different context
+                request_context.settings = self.context.settings.extend(
+                    wallet_record.get_config_as_settings()
+                )
 
-                wallet_handler: WalletHandler = await context.inject(WalletHandler)
-                # TODO: Authorization concept.
-                header_auth = request.headers.get("Wallet")
-                if not header_auth:
+                LOGGER.info(
+                    f"sub-wallet activated with config {wallet_record.get_config_as_settings()}"
+                )
+            else:
+                raise web.HTTPUnauthorized(reason="No wallet id provided!")
 
-                    raise web.HTTPUnauthorized()
+            request['context'] = request_context
 
-                # Request instance and lock request of wallet provider so that
-                # no other task can interfere
-                #context.settings.set_value("wallet.id", header_auth)
-                try:
-                    await wallet_handler.set_instance(header_auth, context)
-                except WalletNotFoundError:
-                    raise web.HTTPUnauthorized(reason="Authorization not associated to any wallet instance.")
+            return await handler(request)
 
-            request['context'] = context
-            # Perform request.
-            response = await handler(request)
-
-            return response
-
-        middlewares.append(activate_wallet)
+        # For a custodial agent we need to set the correct wallet for request.
+        ext_plugins = self.context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            middlewares.append(set_wallet)
 
         app = web.Application(middlewares=middlewares)
         app["request_context"] = self.context
@@ -487,7 +488,10 @@ class AdminServer(BaseAdminServer):
 
         """
         app_live = self.app._state["alive"]
-        return web.json_response({"alive": app_live})
+        if app_live:
+            return web.json_response({"alive": app_live})
+        else:
+            raise web.HTTPServiceUnavailable(reason="Service not available")
 
     @docs(tags=["server"], summary="Readiness check")
     @response_schema(AdminStatusReadinessSchema(), 200)
@@ -503,7 +507,10 @@ class AdminServer(BaseAdminServer):
 
         """
         app_ready = self.app._state["ready"] and self.app._state["alive"]
-        return web.json_response({"ready": app_ready})
+        if app_ready:
+            return web.json_response({"ready": app_ready})
+        else:
+            raise web.HTTPServiceUnavailable(reason="Service not ready")
 
     @docs(tags=["server"], summary="Shut down server")
     async def shutdown_handler(self, request: web.BaseRequest):
