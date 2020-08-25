@@ -9,7 +9,7 @@ import indy.did
 import indy.crypto
 import hashlib
 from indy.error import IndyError, ErrorCode
-from base64 import b64encode
+from base64 import b64encode, b64decode
 
 from ..wallet.base import BaseWallet
 from ..storage.base import BaseStorage
@@ -247,6 +247,33 @@ class WalletHandler():
         handles = [k for k, v in self._path_mappings.items() if v == wallet]
 
         return handles
+
+    async def get_wallet_for_msg(self, body: bytes) -> [str]:
+        """
+        Parses an inbound message for recipient keys and returns the wallets
+        associated to keys.
+
+        Args:
+            body: Inbound raw message
+
+        Raises:
+            KeyNotFoundError: if given key does not belong to handled_keys
+        """
+        msg = json.loads(body)
+        protected = json.loads(b64decode(msg['protected']))
+        recipients = protected['recipients']
+        wallet_ids = []
+        # Check each recipient public key (in `kid`) if agent handles a wallet
+        # associated to that key.
+        for recipient in recipients:
+            kid = recipient['header']['kid']
+            try:
+                wallet_id = await self.get_wallet_for_key(kid)
+            except KeyNotFoundError:
+                wallet_id = None
+            wallet_ids.append(wallet_id)
+
+        return wallet_ids
 
     async def get_wallet_for_path(self, path: str) -> str:
         """

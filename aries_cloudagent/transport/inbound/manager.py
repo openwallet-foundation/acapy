@@ -150,8 +150,6 @@ class InboundTransportManager:
         can_respond: bool = False,
         client_info: dict = None,
         wire_format: BaseWireFormat = None,
-        context: InjectionContext = None,
-        wallet_id: str = None,
     ):
         """
         Create a new inbound session.
@@ -168,19 +166,6 @@ class InboundTransportManager:
             await self.session_limit
 
         context = self.context.copy()
-
-        ext_plugins = context.settings.get_value("external_plugins")
-        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
-            if not client_info.get("inbound_path"):
-                raise ValueError(
-                    "Received communication via unhandled path" +
-                    " cannot associate wallet to connection!"
-                )
-            # Set wallet based on inbound information.
-            path = client_info.get("inbound_path")
-            wallet_handler: WalletHandler = await context.inject(WalletHandler)
-            wallet_id = await wallet_handler.get_wallet_for_path(path)
-            context.settings.set_value("wallet.id", wallet_id)
 
         if not wire_format:
             wire_format = await context.inject(BaseWireFormat)
