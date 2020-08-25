@@ -433,7 +433,7 @@ class IndyWallet(BaseWallet):
         Create and store a new local DID.
 
         Args:
-            seed: Optional seed to use for did
+            seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
 
@@ -492,7 +492,7 @@ class IndyWallet(BaseWallet):
         Find info for a local DID.
 
         Args:
-            did: The DID to get info for
+            did: The DID for which to get info
 
         Returns:
             A `DIDInfo` instance representing the found DID
@@ -523,7 +523,7 @@ class IndyWallet(BaseWallet):
         Resolve a local DID from a verkey.
 
         Args:
-            verkey: The verkey to get the local DID for
+            verkey: The verkey for which to get the local DID
 
         Returns:
             A `DIDInfo` instance representing the found DID
@@ -544,7 +544,7 @@ class IndyWallet(BaseWallet):
         Replace metadata for a local DID.
 
         Args:
-            did: The DID to replace metadata for
+            did: The DID for which to replace metadata
             metadata: The new metadata
 
         """
@@ -560,12 +560,13 @@ class IndyWallet(BaseWallet):
         endpoint_type: EndpointType = None,
     ):
         """
-        Update the endpoint for a DID in the wallet, send to ledger if public.
+        Update the endpoint for a DID in the wallet, send to ledger if public or posted.
 
         Args:
             did: DID for which to set endpoint
             endpoint: the endpoint to set, None to clear
-            ledger: the ledger to which to send endpoint update if DID is public
+            ledger: the ledger to which to send endpoint update if
+                DID is public or posted
             endpoint_type: the type of the endpoint/service. Only endpoint_type
                 'endpoint' affects local wallet
         """
@@ -577,8 +578,10 @@ class IndyWallet(BaseWallet):
             metadata[endpoint_type.indy] = endpoint
 
         wallet_public_didinfo = await self.get_public_did()
-        if wallet_public_didinfo and wallet_public_didinfo.did == did:
-            # if public DID, set endpoint on ledger first
+        if (
+            wallet_public_didinfo and wallet_public_didinfo.did == did
+        ) or did_info.metadata.get("posted"):
+            # if DID on ledger, set endpoint there first
             if not ledger:
                 raise LedgerConfigError(
                     f"No ledger available but DID {did} is public: missing wallet-type?"
@@ -661,8 +664,8 @@ class IndyWallet(BaseWallet):
 
         Args:
             message: The message to pack
-            to_verkeys: List of verkeys to pack for
-            from_verkey: Sender verkey to pack from
+            to_verkeys: List of verkeys for which to pack
+            from_verkey: Sender verkey from which to pack
 
         Returns:
             The resulting packed message bytes
