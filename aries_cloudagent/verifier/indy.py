@@ -193,12 +193,20 @@ class IndyVerifier(BaseVerifier):
             rev_reg_entries: revocation registry entries
         """
 
+        print("\n-- VERIFIER: VERIFY PRESENTATION")
+        print(f".. pres req: {json.dumps(presentation_request, indent=4)}")
+        print(f".. pres: {json.dumps(presentation, indent=4)}")
+        print(f".. schemas: {json.dumps(schemas, indent=4)}")
+        print(f".. cred-defs: {json.dumps(credential_definitions, indent=4)}")
+        print(f".. rev_reg_defs: {json.dumps(rev_reg_defs, indent=4)}")
+        print(f".. rev_reg_entries: {json.dumps(rev_reg_entries, indent=4)}")
         (pv_result, pv_msg) = await self.pre_verify(presentation_request, presentation)
         if pv_result != PreVerifyResult.OK:
             LOGGER.error(
                 f"Presentation on nonce={presentation_request['nonce']} "
                 f"cannot be validated: {pv_result.value} [{pv_msg}]"
             )
+            print(f"  !! Pre-verification fails")
             return False
 
         try:
