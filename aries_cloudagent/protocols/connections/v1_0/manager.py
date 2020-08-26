@@ -23,6 +23,7 @@ from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.record import StorageRecord
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.models.wallet_record import WalletRecord
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
@@ -199,6 +200,12 @@ class ConnectionManager:
             wallet_id = self.context.settings.get_value("wallet.id")
             await wallet_handler.add_connection(connection.connection_id, wallet_id)
             await wallet_handler.add_key(connection.invitation_key, wallet_id)
+            post_filter = {"wallet_name": self.context.settings.get("wallet.name")}
+            wallet_records = await WalletRecord.query(
+                self.context)
+            wallet_record = wallet_recordes[0]
+            wallet_record.add_key(connection.invitation_key)
+            wallet_record.save(self.context)
 
         return connection, invitation
 

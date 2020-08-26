@@ -4,6 +4,7 @@ import logging
 
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import seed_to_did
+from ..wallet.models.wallet_record import WalletRecord
 
 from .base import ConfigError
 from .injection_context import InjectionContext
@@ -14,6 +15,7 @@ LOGGER = logging.getLogger(__name__)
 async def wallet_config(context: InjectionContext, provision: bool = False):
     """Initialize the wallet."""
     wallet: BaseWallet = await context.inject(BaseWallet)
+
     if provision:
         if wallet.type != "indy":
             raise ConfigError("Cannot provision a non-Indy wallet type")
@@ -28,6 +30,27 @@ async def wallet_config(context: InjectionContext, provision: bool = False):
     wallet_local_did = context.settings.get("wallet.local_did")
     public_did_info = await wallet.get_public_did()
     public_did = None
+
+    config = {}
+    config['name'] = context.settings.get("wallet.name")
+    config['key'] = context.settings.get("wallet.key")
+    config['type'] = context.settings.get("wallet.type")
+    config['seed'] = wallet_seed
+
+    wallet_record = WalletRecord(wallet_config=config, wallet_name=config['name'])
+    await wallet_record.save(context)
+    tag_filter = {}
+    tag_filter["name"] = config["name"]
+    #if "thread_id" in request.query and request.query["thread_id"] != "":
+    #    tag_filter["thread_id"] = request.query["thread_id"]
+    #post_filter = {
+    #    k: request.query[k]
+    #    for k in ("connection_id", "role", "state")
+    #    if request.query.get(k, "") != ""
+    #}
+    post_filter = {"wallet_name": "base"}
+    wallet_records = await WalletRecord.query(context, post_filter_positive=post_filter)
+    #wallet_records = await WalletRecord.query(context)
 
     if public_did_info:
         public_did = public_did_info.did

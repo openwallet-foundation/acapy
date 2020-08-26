@@ -7,6 +7,7 @@ from marshmallow import fields
 from ...messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from ...messaging.valid import UUIDFour
 from ..base import BaseWallet
+from ..error import WalletDuplicateError, WalletNotFoundError
 
 
 class WalletRecord(BaseExchangeRecord):
@@ -25,6 +26,7 @@ class WalletRecord(BaseExchangeRecord):
         *,
         wallet_record_id: str = None,
         wallet_config: dict = None,
+        wallet_name: str = None,
         trace: bool = False,
         **kwargs,
     ):
@@ -33,6 +35,9 @@ class WalletRecord(BaseExchangeRecord):
         self._id = wallet_record_id
         self.wallet_config = wallet_config
         self.trace = trace
+        self.wallet_name = wallet_name
+        self._associated_keys = []
+        self._associated_connections = []
 
     def get_config_as_settings(self):
         # Wallet settings need to be prefixed with `wallet.`
@@ -44,6 +49,14 @@ class WalletRecord(BaseExchangeRecord):
         )
         return wallet_instance
 
+    def add_key(self, key: str):
+        """Add new associated key to wallet."""
+        self._associated_keys.append(key)
+
+    def add_connection(self, connection_id: str):
+        """Add new associated connection to wallet."""
+        self._associated_connections.append(connection_id)
+
     @property
     def wallet_record_id(self) -> str:
         """Accessor for the ID associated with this record."""
@@ -52,11 +65,20 @@ class WalletRecord(BaseExchangeRecord):
     @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
-        return {prop: getattr(self, prop) for prop in ("wallet_config", "trace",)}
+        return {prop: getattr(self, prop) for prop in ("wallet_config", "trace", "wallet_name")}
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
         return super().__eq__(other)
+
+    async def find_for_associated(self, context, associated_type, associated_value) -> []:
+        records = await self.query(context)
+        matched_records = [
+            record for record in records if associated_value in record[associated_type]]
+        if len(matched_records) <= 0:
+            raise WalletNotFoundError()
+            
+        return matched_records
 
 
 class WalletRecordSchema(BaseExchangeSchema):

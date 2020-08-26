@@ -77,7 +77,7 @@ class DefaultContextBuilder(ContextBuilder):
                         "get_local_did",
                     ),
                 ),
-                ("wallet.name",),
+                "wallet.name",
             ),
         )
 

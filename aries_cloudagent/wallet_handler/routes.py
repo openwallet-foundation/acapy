@@ -420,18 +420,18 @@ async def connections_accept_request(request: web.BaseRequest):
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes(
-        [
-            web.get("/wallet", wallet_handler_get_wallets),
-            web.post("/wallet", wallet_handler_add_wallet),
-            web.post("/wallet/{id}/remove", wallet_handler_remove_wallet),
-            web.post("/connections/invite-with-endpoint",
-                     connections_create_invitation),
-            web.post("/connections/receive-invitation-with-endpoint",
-                     connections_receive_invitation),
-            web.post("/connections/{id}/accept-invitation-with-endpoint",
-                     connections_accept_invitation),
-            web.post("/connections/{id}/accept-request-with-endpoint",
-                     connections_accept_request),
-        ]
-    )
+    #app.add_routes(
+    #    [
+    #        web.get("/wallet", wallet_handler_get_wallets),
+    #        web.post("/wallet", wallet_handler_add_wallet),
+    #        web.post("/wallet/{id}/remove", wallet_handler_remove_wallet),
+    #        web.post("/connections/invite-with-endpoint",
+    #                 connections_create_invitation),
+    #        web.post("/connections/receive-invitation-with-endpoint",
+    #                 connections_receive_invitation),
+    #        web.post("/connections/{id}/accept-invitation-with-endpoint",
+    #                 connections_accept_invitation),
+    #        web.post("/connections/{id}/accept-request-with-endpoint",
+    #                 connections_accept_request),
+    #    ]
+    #)

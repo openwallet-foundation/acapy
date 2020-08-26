@@ -279,9 +279,16 @@ class AdminServer(BaseAdminServer):
 
             wallet_id = request.headers.get("x-wallet-id")
             if wallet_id:
-                wallet_record = await WalletRecord.retrieve_by_id(
-                    self.context, wallet_id
+                post_filter = {"wallet_name": wallet_id}
+                wallet_records = await WalletRecord.query(
+                    self.context,
+                    post_filter_positive=post_filter
                 )
+                if len(wallet_records) <= 0:
+                    raise web.HTTPUnauthorized(
+                            reason="Couldn't find wallet for provided id!")
+
+                wallet_record = wallet_records[0]
                 # We amend the context settings so that the wallet that will be
                 # opened later has different context
                 request_context.settings = self.context.settings.extend(

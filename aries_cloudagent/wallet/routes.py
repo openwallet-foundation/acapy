@@ -149,7 +149,7 @@ async def wallet_create(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Specified wallet type is not supported.")
     config["type"] = wallet_type
 
-    wallet_record = WalletRecord(wallet_config=config)
+    wallet_record = WalletRecord(wallet_config=config, wallet_name=config['name'])
     await wallet_record.save(context)
 
     return web.json_response(wallet_record.serialize())
@@ -465,7 +465,8 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get("/wallet", wallet_list, allow_head=False),
-            web.get("/wallet/{wallet_id}", wallet_get, allow_head=False),
+            # Also maps to /wallet/did, pass wallet_id in body?
+            #web.get("/wallet/{wallet_id}", wallet_get, allow_head=False),
             web.post("/wallet/create", wallet_create),
             web.get("/wallet/did", wallet_did_list, allow_head=False),
             web.post("/wallet/did/create", wallet_create_did),

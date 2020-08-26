@@ -9,7 +9,6 @@ from ..utils.stats import Collector
 
 from .base import BaseProvider, BaseSettings, BaseInjector
 
-
 class InstanceProvider(BaseProvider):
     """Provider for a previously-created instance."""
 

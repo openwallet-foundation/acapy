@@ -21,6 +21,7 @@ class V10PresentationExchange(BaseExchangeRecord):
     WEBHOOK_TOPIC = "present_proof"
     TAG_NAMES = {"thread_id"}
 
+
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
 
