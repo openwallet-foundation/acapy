@@ -147,6 +147,13 @@ async def register_ledger_nym(request: web.BaseRequest):
             raise web.HTTPForbidden(reason=err.roll_up)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up)
+        except WalletError as err:
+            raise web.HTTPBadRequest(
+                reason=(
+                    f"Registered NYM for DID {did} on ledger but could not "
+                    f"replace metadata in wallet: {err.roll_up}"
+                )
+            )
 
     return web.json_response({"success": success})
 

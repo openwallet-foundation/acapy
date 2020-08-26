@@ -118,13 +118,13 @@ class DIDKey(Regexp):
 class DIDPosture(OneOf):
     """Validate value against defined DID postures."""
 
-    EXAMPLE = DIDPostureEnum.PUBLIC.value
+    EXAMPLE = DIDPostureEnum.WALLET_ONLY.moniker
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            choices=[did_posture.value for did_posture in DIDPostureEnum],
+            choices=[did_posture.moniker for did_posture in DIDPostureEnum],
             error="Value {input} must be one of {choices}",
         )
 

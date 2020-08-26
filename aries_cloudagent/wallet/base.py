@@ -7,6 +7,8 @@ from typing import Sequence
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 
+from .did_posture import DIDPosture
+
 KeyInfo = namedtuple("KeyInfo", "verkey metadata")
 DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
 
@@ -168,8 +170,7 @@ class BaseWallet(ABC):
 
         """
 
-        metadata["public"] = True
-        metadata["posted"] = True
+        metadata = DIDPosture.PUBLIC.metadata
         dids = await self.get_local_dids()
         for info in dids:
             info_meta = info.metadata
@@ -215,9 +216,7 @@ class BaseWallet(ABC):
                 await self.replace_local_did_metadata(public.did, metadata)
 
             if info:
-                metadata = info.metadata.copy()
-                metadata["public"] = True
-                metadata["posted"] = True
+                metadata = {**info.metadata, **DIDPosture.PUBLIC.metadata}
                 await self.replace_local_did_metadata(info.did, metadata)
                 info = await self.get_local_did(info.did)
 

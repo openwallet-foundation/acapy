@@ -25,6 +25,7 @@ from ..storage.base import StorageRecord
 from ..storage.indy import IndyStorage
 from ..utils import sentinel
 from ..wallet.base import BaseWallet, DIDInfo
+from ..wallet.did_posture import DIDPosture
 
 from .base import BaseLedger
 from .endpoint_type import EndpointType
@@ -876,6 +877,10 @@ class IndyLedger(BaseLedger):
             )
 
         await self._submit(request_json)
+
+        did_info = await self.wallet.get_local_did(did)
+        metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
+        await self.wallet.replace_local_did_metadata(did, metadata)
 
     async def get_nym_role(self, did: str) -> Role:
         """
