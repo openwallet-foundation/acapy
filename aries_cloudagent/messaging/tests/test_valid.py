@@ -152,7 +152,7 @@ class TestValid(TestCase):
             None,
             "PUBLIC",
             "Posted",
-            "  local",
+            "wallet only",
         ]
         for non_did_posture in non_did_postures:
             with self.assertRaises(ValidationError):
@@ -160,7 +160,7 @@ class TestValid(TestCase):
 
         DID_POSTURE["validate"]("public")
         DID_POSTURE["validate"]("posted")
-        DID_POSTURE["validate"]("local")
+        DID_POSTURE["validate"]("wallet_only")
 
     def test_indy_base58_sha256_hash(self):
         non_base58_sha256_hashes = [

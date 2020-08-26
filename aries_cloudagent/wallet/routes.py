@@ -122,7 +122,7 @@ def format_did_info(info: DIDInfo):
         return {
             "did": info.did,
             "verkey": info.verkey,
-            "posture": DIDPosture.get(info.metadata).value,
+            "posture": DIDPosture.get(info.metadata).moniker,
         }
 
 
@@ -177,7 +177,7 @@ async def wallet_did_list(request: web.BaseRequest):
             and (
                 filter_posture is None
                 or (
-                    filter_posture is DIDPosture.LOCAL
+                    filter_posture is DIDPosture.WALLET_ONLY
                     and not info.metadata.get("posted")
                 )
             )
@@ -190,14 +190,24 @@ async def wallet_did_list(request: web.BaseRequest):
             info = None
         if info and (
             filter_posture is None
-            or (filter_posture is DID_POSTURE.LOCAL and not info.metadata.get("posted"))
+            or (
+                filter_posture is DID_POSTURE.WALLET_ONLY
+                and not info.metadata.get("posted")
+            )
         ):
             results.append(format_did_info(info))
     else:
         dids = await wallet.get_local_dids()
-        results = [format_did_info(info) for info in dids]
+        results = [
+            format_did_info(info)
+            for info in dids
+            if filter_posture is None
+            or DIDPosture.get(info.metadata) is DIDPosture.WALLET_ONLY
+        ]
 
-    results.sort(key=lambda info: info["did"])
+    results.sort(
+        key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"])
+    )
     return web.json_response({"results": results})
 
 

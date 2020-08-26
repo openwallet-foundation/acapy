@@ -170,6 +170,14 @@ class TestLedgerRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.register_ledger_nym(request)
 
+    async def test_register_nym_wallet_error(self):
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.query = {"did": self.test_did, "verkey": self.test_verkey}
+        self.ledger.register_nym.side_effect = test_module.WalletError("Error")
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.register_ledger_nym(request)
+
     async def test_get_nym_role(self):
         request = async_mock.MagicMock()
         request.app = self.app
