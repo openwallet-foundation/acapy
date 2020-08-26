@@ -128,6 +128,7 @@ class WebhookTarget:
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     """Only continue if application is ready to take work."""
 
+    print(f'\n\n== ready 1 {request.rel_url}, ready={request.app._state.get("ready")}')
     if str(request.rel_url).rstrip("/") in (
         "/status/live",
         "/status/ready",
@@ -140,11 +141,20 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             request.app._state["ready"] = False
             request.app._state["alive"] = False
             raise
+        except web.HTTPFound as e:
+            # redirect, typically / -> /api/doc
+            LOGGER.info("Handler redirect to: %s", e.location)
+            raise
+        except asyncio.CancelledError:
+            # redirection spawns new task and cancels old
+            LOGGER.debug("Task cancelled")
+            raise
         except Exception as e:
             # some other error?
             LOGGER.error("Handler error with exception: %s", str(e))
-            raise e
+            raise
 
+    print(".. ready N")
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
 
 
