@@ -102,7 +102,10 @@ class TestOutboundTransportManager(AsyncTestCase):
             mgr.get_running_transport_for_endpoint("localhost")
 
         message.target = ConnectionTarget(
-            endpoint="localhost", recipient_keys=[1, 2], routing_keys=[3], sender_key=4,
+            endpoint="localhost",
+            recipient_keys=[1, 2],
+            routing_keys=[3],
+            sender_key=4,
         )
         with self.assertRaises(OutboundDeliveryError) as context:
             mgr.enqueue_message(send_context, message)
@@ -173,7 +176,9 @@ class TestOutboundTransportManager(AsyncTestCase):
 
     async def test_process_finished_x(self):
         mock_queued = async_mock.MagicMock(retries=1)
-        mock_task = async_mock.MagicMock(exc_info=(KeyError, KeyError("nope"), None),)
+        mock_task = async_mock.MagicMock(
+            exc_info=(KeyError, KeyError("nope"), None),
+        )
         context = InjectionContext()
         mgr = OutboundTransportManager(context)
 

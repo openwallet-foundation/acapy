@@ -600,7 +600,8 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 
     trace_msg = body.get("trace")
     presentation_proposal_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     auto_present = body.get(
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
@@ -680,7 +681,8 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     )
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
 
     presentation_manager = PresentationManager(context)
@@ -757,7 +759,8 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     )
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
 
     presentation_manager = PresentationManager(context)
@@ -853,7 +856,8 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     await outbound_handler(presentation_request_message, connection_id=connection_id)
 
@@ -937,7 +941,8 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 
     trace_msg = body.get("trace")
     presentation_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     await outbound_handler(presentation_message, connection_id=connection_id)
 
@@ -1060,13 +1065,16 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post(
-                "/present-proof/send-proposal", presentation_exchange_send_proposal,
+                "/present-proof/send-proposal",
+                presentation_exchange_send_proposal,
             ),
             web.post(
-                "/present-proof/create-request", presentation_exchange_create_request,
+                "/present-proof/create-request",
+                presentation_exchange_create_request,
             ),
             web.post(
-                "/present-proof/send-request", presentation_exchange_send_free_request,
+                "/present-proof/send-request",
+                presentation_exchange_send_free_request,
             ),
             web.post(
                 "/present-proof/records/{pres_ex_id}/send-request",

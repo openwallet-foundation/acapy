@@ -579,7 +579,9 @@ class ProtocolGroup(ArgumentGroup):
             help="Write timing information to a given log file.",
         )
         parser.add_argument(
-            "--trace", action="store_true", help="Generate tracing events.",
+            "--trace",
+            action="store_true",
+            help="Generate tracing events.",
         )
         parser.add_argument(
             "--trace-target",

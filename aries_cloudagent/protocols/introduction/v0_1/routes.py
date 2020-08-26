@@ -38,7 +38,8 @@ class ConnIdMatchInfoSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["introduction"], summary="Start an introduction between two connections",
+    tags=["introduction"],
+    summary="Start an introduction between two connections",
 )
 @match_info_schema(ConnIdMatchInfoSchema())
 @querystring_schema(IntroStartQueryStringSchema())

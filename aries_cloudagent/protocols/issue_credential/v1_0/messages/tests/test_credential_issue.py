@@ -69,7 +69,8 @@ class TestCredentialIssue(TestCase):
         comment="Test",
         credentials_attach=[
             AttachDecorator.from_indy_dict(
-                indy_dict=indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                indy_dict=indy_cred,
+                ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
             )
         ],
     )
@@ -80,7 +81,8 @@ class TestCredentialIssue(TestCase):
             comment="Test",
             credentials_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                    indy_dict=self.indy_cred,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
                 )
             ],
         )
@@ -94,7 +96,8 @@ class TestCredentialIssue(TestCase):
             comment="Test",
             credentials_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                    indy_dict=self.indy_cred,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
                 )
             ],
         )

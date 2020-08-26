@@ -61,8 +61,10 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.credential_definitions_send_credential_definition(
-                mock_request
+            result = (
+                await test_module.credential_definitions_send_credential_definition(
+                    mock_request
+                )
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
@@ -274,7 +276,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_created(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"cred_def_id": CRED_DEF_ID},
+            app=self.app,
+            match_info={"cred_def_id": CRED_DEF_ID},
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
@@ -286,7 +289,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_credential_definition(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"cred_def_id": CRED_DEF_ID},
+            app=self.app,
+            match_info={"cred_def_id": CRED_DEF_ID},
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
@@ -300,7 +304,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_credential_definition_no_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"cred_def_id": CRED_DEF_ID},
+            app=self.app,
+            match_info={"cred_def_id": CRED_DEF_ID},
         )
 
         self.context.injector.clear_binding(BaseLedger)

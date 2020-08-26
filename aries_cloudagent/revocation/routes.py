@@ -90,7 +90,9 @@ class RevRegIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking rev reg id."""
 
     rev_reg_id = fields.Str(
-        description="Revocation Registry identifier", required=True, **INDY_REV_REG_ID,
+        description="Revocation Registry identifier",
+        required=True,
+        **INDY_REV_REG_ID,
     )
 
 
@@ -141,7 +143,9 @@ async def revocation_create_registry(request: web.BaseRequest):
         issuer_did = credential_definition_id.split(":")[0]
         revoc = IndyRevocation(context)
         registry_record = await revoc.init_issuer_registry(
-            credential_definition_id, issuer_did, max_cred_num=max_cred_num,
+            credential_definition_id,
+            issuer_did,
+            max_cred_num=max_cred_num,
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
@@ -181,7 +185,8 @@ async def revocation_registries_created(request: web.BaseRequest):
 
 
 @docs(
-    tags=["revocation"], summary="Get revocation registry by revocation registry id",
+    tags=["revocation"],
+    summary="Get revocation registry by revocation registry id",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegCreateResultSchema(), 200)
@@ -271,7 +276,8 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
 
 @docs(
-    tags=["revocation"], summary="Publish a given revocation registry",
+    tags=["revocation"],
+    summary="Publish a given revocation registry",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegCreateResultSchema(), 200)

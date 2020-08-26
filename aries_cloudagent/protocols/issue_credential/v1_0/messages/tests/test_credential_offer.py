@@ -43,7 +43,8 @@ class TestCredentialOffer(TestCase):
         credential_preview=preview,
         offers_attach=[
             AttachDecorator.from_indy_dict(
-                indy_dict=indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                indy_dict=indy_offer,
+                ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
             )
         ],
     )
@@ -55,7 +56,8 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
         )
@@ -70,7 +72,8 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
         )
@@ -103,7 +106,8 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
         )

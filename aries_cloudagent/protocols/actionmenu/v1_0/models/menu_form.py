@@ -50,7 +50,9 @@ class MenuFormSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     title = fields.Str(
-        required=False, description="Menu form title", example="Preferences",
+        required=False,
+        description="Menu form title",
+        example="Preferences",
     )
     description = fields.Str(
         required=False,

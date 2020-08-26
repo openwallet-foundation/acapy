@@ -352,8 +352,8 @@ class TestProofRoutes(AsyncTestCase):
             importlib.reload(test_module)
 
             mock_presentation_exchange_record = async_mock.MagicMock()
-            mock_presentation_manager.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
-                return_value=mock_presentation_exchange_record
+            mock_presentation_manager.return_value.create_exchange_for_proposal = (
+                async_mock.CoroutineMock(return_value=mock_presentation_exchange_record)
             )
 
             mock_preview.return_value.deserialize.return_value = async_mock.MagicMock()
@@ -441,8 +441,8 @@ class TestProofRoutes(AsyncTestCase):
             importlib.reload(test_module)
 
             mock_presentation_exchange_record = async_mock.MagicMock()
-            mock_presentation_manager.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
-                side_effect=test_module.StorageError()
+            mock_presentation_manager.return_value.create_exchange_for_proposal = (
+                async_mock.CoroutineMock(side_effect=test_module.StorageError())
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -473,7 +473,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce:
 
             # Since we are mocking import
@@ -528,7 +529,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce:
 
             # Since we are mocking import
@@ -569,7 +571,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
             autospec=True,
@@ -681,7 +684,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
@@ -750,7 +754,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
@@ -818,7 +823,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
@@ -869,7 +875,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
@@ -953,7 +960,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
@@ -1082,7 +1090,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
@@ -1128,7 +1137,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
@@ -1207,7 +1217,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch.object(
             test_module, "PresentationPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch.object(
@@ -1264,7 +1275,8 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            "aries_cloudagent.indy.util.generate_pr_nonce", autospec=True,
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
         ) as mock_generate_nonce, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.messages.inner.presentation_preview.PresentationPreview",
             autospec=True,
