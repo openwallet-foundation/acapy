@@ -65,11 +65,19 @@ class TAAAcceptSchema(OpenAPISchema):
 class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for register ledger nym request."""
 
-    did = fields.Str(description="DID to register", required=True, **INDY_DID,)
+    did = fields.Str(
+        description="DID to register",
+        required=True,
+        **INDY_DID,
+    )
     verkey = fields.Str(
         description="Verification key", required=True, **INDY_RAW_PUBLIC_KEY
     )
-    alias = fields.Str(description="Alias", required=False, example="Barry",)
+    alias = fields.Str(
+        description="Alias",
+        required=False,
+        example="Barry",
+    )
     role = fields.Str(
         description="Role",
         required=False,
@@ -99,7 +107,8 @@ class QueryStringEndpointSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["ledger"], summary="Send a NYM registration to the ledger.",
+    tags=["ledger"],
+    summary="Send a NYM registration to the ledger.",
 )
 @querystring_schema(RegisterLedgerNymQueryStringSchema())
 async def register_ledger_nym(request: web.BaseRequest):
@@ -143,7 +152,8 @@ async def register_ledger_nym(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"], summary="Get the role from the NYM registration of a public DID.",
+    tags=["ledger"],
+    summary="Get the role from the NYM registration of a public DID.",
 )
 @querystring_schema(QueryStringDIDSchema)
 async def get_nym_role(request: web.BaseRequest):
@@ -202,7 +212,8 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"], summary="Get the verkey for a DID from the ledger.",
+    tags=["ledger"],
+    summary="Get the verkey for a DID from the ledger.",
 )
 @querystring_schema(QueryStringDIDSchema())
 async def get_did_verkey(request: web.BaseRequest):
@@ -236,7 +247,8 @@ async def get_did_verkey(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"], summary="Get the endpoint for a DID from the ledger.",
+    tags=["ledger"],
+    summary="Get the endpoint for a DID from the ledger.",
 )
 @querystring_schema(QueryStringEndpointSchema())
 async def get_did_endpoint(request: web.BaseRequest):

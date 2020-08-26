@@ -304,7 +304,10 @@ class TestIndyHolder(AsyncTestCase):
         }
 
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            PRES_REQ, None, 2, 3,
+            PRES_REQ,
+            None,
+            2,
+            3,
         )
 
         mock_prover_search_credentials_for_proof_req.assert_called_once_with(

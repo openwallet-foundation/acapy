@@ -29,7 +29,11 @@ class TestProvider(AsyncTestCase):
     async def test_provide_indy(self):
         provider = test_module.WalletProvider()
         settings = Settings(
-            values={"wallet.type": "indy", "wallet.key": "key", "wallet.name": "name",}
+            values={
+                "wallet.type": "indy",
+                "wallet.key": "key",
+                "wallet.name": "name",
+            }
         )
         wallet = await provider.provide(settings, None)
 

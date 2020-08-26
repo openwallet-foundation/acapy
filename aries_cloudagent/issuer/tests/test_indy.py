@@ -157,7 +157,11 @@ class TestIndyIssuer(AsyncTestCase):
         test_cred_rev_ids = ["42", "54"]
         test_rr_delta = TEST_RR_DELTA
         mock_indy_create_credential.side_effect = [
-            (json.dumps(test_cred), cr_id, test_rr_delta,)
+            (
+                json.dumps(test_cred),
+                cr_id,
+                test_rr_delta,
+            )
             for cr_id in test_cred_rev_ids
         ]
 
@@ -232,7 +236,11 @@ class TestIndyIssuer(AsyncTestCase):
         test_cred_rev_ids = ["42", "54", "103"]
         test_rr_delta = TEST_RR_DELTA
         mock_indy_create_credential.side_effect = [
-            (json.dumps(test_cred), cr_id, test_rr_delta,)
+            (
+                json.dumps(test_cred),
+                cr_id,
+                test_rr_delta,
+            )
             for cr_id in test_cred_rev_ids
         ]
 
