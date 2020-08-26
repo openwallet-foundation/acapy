@@ -797,7 +797,7 @@ class WalletGroup(ArgumentGroup):
             metavar="<storage-type>",
             help="Specifies the type of Indy wallet backend to use.\
             Supported internal storage types are 'basic' (memory),\
-            'indy', and 'postgres_storage'.",
+            'default' (sqlite), and 'postgres_storage'.",
         )
         parser.add_argument(
             "--wallet-storage-config",
