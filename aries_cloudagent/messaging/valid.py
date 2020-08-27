@@ -95,7 +95,8 @@ class JSONWebToken(Regexp):
         """Initializer."""
 
         super().__init__(
-            JSONWebToken.PATTERN, error="Value {input} is not a valid JSON Web token",
+            JSONWebToken.PATTERN,
+            error="Value {input} is not a valid JSON Web token",
         )
 
 
@@ -271,7 +272,8 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            IndyWQL.PATTERN, error="Value {input} is not a valid WQL query",
+            IndyWQL.PATTERN,
+            error="Value {input} is not a valid WQL query",
         )
 
     def __call__(self, value):
@@ -298,7 +300,8 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            IndyExtraWQL.PATTERN, error="Value {input} is not a valid extra WQL query",
+            IndyExtraWQL.PATTERN,
+            error="Value {input} is not a valid extra WQL query",
         )
 
     def __call__(self, value):
@@ -325,7 +328,8 @@ class Base64(Regexp):
         """Initializer."""
 
         super().__init__(
-            Base64.PATTERN, error="Value {input} is not a valid base64 encoding",
+            Base64.PATTERN,
+            error="Value {input} is not a valid base64 encoding",
         )
 
 
@@ -339,7 +343,8 @@ class Base64URL(Regexp):
         """Initializer."""
 
         super().__init__(
-            Base64URL.PATTERN, error="Value {input} is not a valid base64url encoding",
+            Base64URL.PATTERN,
+            error="Value {input} is not a valid base64url encoding",
         )
 
 
@@ -424,7 +429,8 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            Endpoint.PATTERN, error="Value {input} is not a valid endpoint",
+            Endpoint.PATTERN,
+            error="Value {input} is not a valid endpoint",
         )
 
 

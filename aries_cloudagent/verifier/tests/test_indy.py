@@ -315,7 +315,9 @@ class TestIndyVerifier(AsyncTestCase):
 
         with async_mock.patch.object(
             self.verifier, "pre_verify", async_mock.CoroutineMock()
-        ) as mock_pre_verify:
+        ) as mock_pre_verify, async_mock.patch.object(
+            self.verifier, "non_revoc_intervals", async_mock.MagicMock()
+        ) as mock_non_revox:
             mock_pre_verify.return_value = (PreVerifyResult.OK, None)
             verified = await self.verifier.verify_presentation(
                 "presentation_request",
@@ -343,7 +345,9 @@ class TestIndyVerifier(AsyncTestCase):
 
         with async_mock.patch.object(
             self.verifier, "pre_verify", async_mock.CoroutineMock()
-        ) as mock_pre_verify:
+        ) as mock_pre_verify, async_mock.patch.object(
+            self.verifier, "non_revoc_intervals", async_mock.MagicMock()
+        ) as mock_non_revox:
             mock_pre_verify.return_value = (PreVerifyResult.OK, None)
             verified = await self.verifier.verify_presentation(
                 {"nonce": "1234567890"},
@@ -365,6 +369,126 @@ class TestIndyVerifier(AsyncTestCase):
 
         assert not verified
 
+    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    async def test_non_revoc_intervals(self, mock_verify):
+        big_pres_req = {
+            "nonce": "12301197819298309547817",
+            "name": "proof_req",
+            "version": "0.0",
+            "requested_attributes": {
+                "17_uuid": {
+                    "name": ["favouriteDrink"],
+                    "restrictions": [
+                        {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:17:tag"}
+                    ],
+                    "non_revoked": {"from": 1579892963, "to": 1579892963},
+                },
+                "18_uuid": {
+                    "names": [
+                        "effectiveDate",
+                        "jurisdictionId",
+                        "endDate",
+                        "legalName",
+                        "orgTypeId",
+                    ],
+                    "restrictions": [
+                        {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"}
+                    ],
+                    "non_revoked": {"from": 1579892963, "to": 1579892963},
+                },
+            },
+            "requested_predicates": {
+                "18_id_GE_uuid": {
+                    "name": "id",
+                    "p_type": ">=",
+                    "p_value": 4,
+                    "restrictions": [
+                        {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"}
+                    ],
+                    "non_revoked": {"from": 1579892963, "to": 1579892963},
+                },
+                "18_busid_GE_uuid": {
+                    "name": "busId",
+                    "p_type": ">=",
+                    "p_value": 11198760,
+                    "restrictions": [
+                        {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"}
+                    ],
+                    "non_revoked": {"from": 1579892963, "to": 1579892963},
+                },
+            },
+            "non_revoked": {"from": 1579892963, "to": 1579892963},
+        }
+        big_pres = {
+            "proof": {
+                "proofs": [
+                    {
+                        "primary_proof": "...",
+                        "non_revoc_proof": "...",
+                    }
+                ],
+                "aggregated_proof": "...",
+            },
+            "requested_proof": {
+                "revealed_attrs": {
+                    "17_uuid": {
+                        "sub_proof_index": 0,
+                        "raw": "martini",
+                        "encoded": "943924110058781320304650334433495169960",
+                    }
+                },
+                "revealed_attr_groups": {
+                    "18_uuid": {
+                        "sub_proof_index": 1,
+                        "values": {
+                            "effectiveDate": {
+                                "raw": "2018-01-01",
+                                "encoded": "200737126045061047957925549204159",
+                            },
+                            "endDate": {
+                                "raw": "",
+                                "encoded": "10993379397001115665086549",
+                            },
+                            "jurisdictionId": {"raw": "1", "encoded": "1"},
+                            "legalName": {
+                                "raw": "Flan Nebula",
+                                "encoded": "119967766011746391966411797095112",
+                            },
+                            "orgTypeId": {"raw": "2", "encoded": "2"},
+                        },
+                    }
+                },
+                "self_attested_attrs": {},
+                "unrevealed_attrs": {},
+                "predicates": {
+                    "18_busid_GE_uuid": {"sub_proof_index": 1},
+                    "18_id_GE_uuid": {"sub_proof_index": 1},
+                },
+            },
+            "identifiers": [
+                {
+                    "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0",
+                    "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:17:tag",
+                    "rev_reg_id": None,
+                    "timestamp": None,
+                },
+                {
+                    "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:bc-reg:1.0",
+                    "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag",
+                    "rev_reg_id": None,
+                    "timestamp": None,
+                },
+            ],
+        }
+
+        self.verifier.non_revoc_intervals(big_pres_req, big_pres, True)
+
+        assert "non_revoked" not in big_pres_req
+        for spec in big_pres_req["requested_attributes"].values():
+            assert "non_revoked" not in spec
+        for spec in big_pres_req["requested_predicates"].values():
+            assert "non_revoked" not in spec
+
     async def test_pre_verify(self):
         assert (
             PreVerifyResult.INCOMPLETE
@@ -374,216 +498,189 @@ class TestIndyVerifier(AsyncTestCase):
                 )
             )[0]
         )
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    {"requested_predicates": "...", "requested_attributes": "..."},
-                    None,
-                )
-            )[0]
-        )
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    {"requested_predicates": "...", "requested_attributes": "..."},
-                    {"requested_proof": "..."},
-                )
-            )[0]
-        )
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    {"requested_predicates": "...", "requested_attributes": "..."},
-                    {"proof": "..."},
-                )
-            )[0]
-        )
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    {
-                        "requested_predicates": {"0_name_uuid": "..."},
-                        "requested_attributes": "...",
+        assert PreVerifyResult.INCOMPLETE == (
+            await self.verifier.pre_verify(
+                {"requested_predicates": "...", "requested_attributes": "..."},
+                None,
+            )
+        )[0]
+        assert PreVerifyResult.INCOMPLETE == (
+            await self.verifier.pre_verify(
+                {"requested_predicates": "...", "requested_attributes": "..."},
+                {"requested_proof": "..."},
+            )
+        )[0]
+        assert PreVerifyResult.INCOMPLETE == (
+            await self.verifier.pre_verify(
+                {"requested_predicates": "...", "requested_attributes": "..."},
+                {"proof": "..."},
+            )
+        )[0]
+        assert PreVerifyResult.INCOMPLETE == (
+            await self.verifier.pre_verify(
+                {
+                    "requested_predicates": {"0_name_uuid": "..."},
+                    "requested_attributes": "...",
+                },
+                INDY_PROOF_PRED_NAMES,
+            )
+        )[0]
+        assert PreVerifyResult.INCOMPLETE == (
+            await self.verifier.pre_verify(
+                INDY_PROOF_REQ_NAME,
+                {
+                    "proof": "...",
+                    "requested_proof": {
+                        "revealed_attrs": {},
+                        "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
                     },
-                    INDY_PROOF_PRED_NAMES,
-                )
-            )[0]
-        )
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    INDY_PROOF_REQ_NAME,
-                    {
-                        "proof": "...",
-                        "requested_proof": {
-                            "revealed_attrs": {},
-                            "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
-                            "unrevealed_attrs": {},
-                            "predicates": {},
-                        },
-                        "identifiers": [
-                            {
-                                "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
-                                "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
-                                "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
-                                "timestamp": 1579892963,
+                    "identifiers": [
+                        {
+                            "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                            "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                            "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
+                            "timestamp": 1579892963,
+                        }
+                    ],
+                },
+            )
+        )[0]
+        assert PreVerifyResult.INCOMPLETE == (
+            await self.verifier.pre_verify(
+                {
+                    "nonce": "15606741555044336341559",
+                    "name": "proof_req",
+                    "version": "0.0",
+                    "requested_attributes": {"19_uuid": {"name": "Preferred Name"}},
+                    "requested_predicates": {},
+                },
+                {
+                    "proof": "...",
+                    "requested_proof": {
+                        "revealed_attrs": {},
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": [
+                        {
+                            "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                            "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                            "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
+                            "timestamp": 1579892963,
+                        }
+                    ],
+                },
+            )
+        )[0]
+        assert PreVerifyResult.INCOMPLETE == (
+            await self.verifier.pre_verify(
+                {
+                    "nonce": "15606741555044336341559",
+                    "name": "proof_req",
+                    "version": "0.0",
+                    "requested_attributes": {
+                        "19_uuid": {"neither-name-nor-names": "Preferred Name"}
+                    },
+                    "requested_predicates": {},
+                },
+                {
+                    "proof": "...",
+                    "requested_proof": {
+                        "revealed_attrs": {
+                            "19_uuid": {
+                                "sub_proof_index": 0,
+                                "raw": "Chicken Hawk",
+                                "encoded": "94607763023542937648705576709896212619553924110058781320304650334433495169960",
                             }
-                        ],
-                    },
-                )
-            )[0]
-        )
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    {
-                        "nonce": "15606741555044336341559",
-                        "name": "proof_req",
-                        "version": "0.0",
-                        "requested_attributes": {"19_uuid": {"name": "Preferred Name"}},
-                        "requested_predicates": {},
-                    },
-                    {
-                        "proof": "...",
-                        "requested_proof": {
-                            "revealed_attrs": {},
-                            "self_attested_attrs": {},
-                            "unrevealed_attrs": {},
-                            "predicates": {},
                         },
-                        "identifiers": [
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": [
+                        {
+                            "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                            "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                            "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
+                            "timestamp": 1579892963,
+                        }
+                    ],
+                },
+            )
+        )[0]
+        assert PreVerifyResult.INCOMPLETE == (
+            await self.verifier.pre_verify(
+                INDY_PROOF_REQ_NAME,
+                {
+                    "proof": {
+                        "proofs": [
                             {
-                                "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
-                                "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
-                                "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
-                                "timestamp": 1579892963,
-                            }
-                        ],
-                    },
-                )
-            )[0]
-        )
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    {
-                        "nonce": "15606741555044336341559",
-                        "name": "proof_req",
-                        "version": "0.0",
-                        "requested_attributes": {
-                            "19_uuid": {"neither-name-nor-names": "Preferred Name"}
-                        },
-                        "requested_predicates": {},
-                    },
-                    {
-                        "proof": "...",
-                        "requested_proof": {
-                            "revealed_attrs": {
-                                "19_uuid": {
-                                    "sub_proof_index": 0,
-                                    "raw": "Chicken Hawk",
-                                    "encoded": "94607763023542937648705576709896212619553924110058781320304650334433495169960",
-                                }
-                            },
-                            "self_attested_attrs": {},
-                            "unrevealed_attrs": {},
-                            "predicates": {},
-                        },
-                        "identifiers": [
-                            {
-                                "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
-                                "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
-                                "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
-                                "timestamp": 1579892963,
-                            }
-                        ],
-                    },
-                )
-            )[0]
-        )
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    INDY_PROOF_REQ_NAME,
-                    {
-                        "proof": {
-                            "proofs": [
-                                {
-                                    "primary_proof": {
-                                        "eq_proof": {
-                                            "revealed_attrs": {"otherthing": "..."},
-                                            "...": "...",
-                                        },
-                                        "ge_proofs": [],
+                                "primary_proof": {
+                                    "eq_proof": {
+                                        "revealed_attrs": {"otherthing": "..."},
+                                        "...": "...",
                                     },
-                                    "...": "...",
-                                }
-                            ],
-                            "...": "...",
-                        },
-                        "requested_proof": {
-                            "revealed_attrs": {
-                                "19_uuid": {
-                                    "sub_proof_index": 0,
-                                    "raw": "Chicken Hawk",
-                                    "encoded": "94607763023542937648705576709896212619553924110058781320304650334433495169960",
-                                }
-                            },
-                            "self_attested_attrs": {},
-                            "unrevealed_attrs": {},
-                            "predicates": {},
-                        },
-                        "identifiers": [
-                            {
-                                "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
-                                "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
-                                "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
-                                "timestamp": 1579892963,
+                                    "ge_proofs": [],
+                                },
+                                "...": "...",
                             }
                         ],
+                        "...": "...",
                     },
-                )
-            )[0]
-        )
-        assert (
-            PreVerifyResult.OK
-            == (
-                await self.verifier.pre_verify(
-                    {
-                        "nonce": "15606741555044336341559",
-                        "name": "proof_req",
-                        "version": "0.0",
-                        "requested_attributes": {"19_uuid": {"name": "Preferred Name"}},
-                        "requested_predicates": {},
-                    },
-                    {
-                        "proof": "...",
-                        "requested_proof": {
-                            "revealed_attrs": {},
-                            "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
-                            "unrevealed_attrs": {},
-                            "predicates": {},
-                        },
-                        "identifiers": [
-                            {
-                                "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
-                                "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
-                                "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
-                                "timestamp": 1579892963,
+                    "requested_proof": {
+                        "revealed_attrs": {
+                            "19_uuid": {
+                                "sub_proof_index": 0,
+                                "raw": "Chicken Hawk",
+                                "encoded": "94607763023542937648705576709896212619553924110058781320304650334433495169960",
                             }
-                        ],
+                        },
+                        "self_attested_attrs": {},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
                     },
-                )
-            )[0]
-        )
+                    "identifiers": [
+                        {
+                            "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                            "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                            "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
+                            "timestamp": 1579892963,
+                        }
+                    ],
+                },
+            )
+        )[0]
+        assert PreVerifyResult.OK == (
+            await self.verifier.pre_verify(
+                {
+                    "nonce": "15606741555044336341559",
+                    "name": "proof_req",
+                    "version": "0.0",
+                    "requested_attributes": {"19_uuid": {"name": "Preferred Name"}},
+                    "requested_predicates": {},
+                },
+                {
+                    "proof": "...",
+                    "requested_proof": {
+                        "revealed_attrs": {},
+                        "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
+                        "unrevealed_attrs": {},
+                        "predicates": {},
+                    },
+                    "identifiers": [
+                        {
+                            "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                            "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                            "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
+                            "timestamp": 1579892963,
+                        }
+                    ],
+                },
+            )
+        )[0]
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr(self, mock_verify):

@@ -103,7 +103,10 @@ class TestInboundSession(TestCase):
     async def test_receive(self):
         test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx, inbound_handler=None, session_id=None, wire_format=None,
+            context=test_ctx,
+            inbound_handler=None,
+            session_id=None,
+            wire_format=None,
         )
         test_msg = async_mock.MagicMock()
 
@@ -200,7 +203,10 @@ class TestInboundSession(TestCase):
     async def test_wait_response(self):
         test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx, inbound_handler=None, session_id=None, wire_format=None,
+            context=test_ctx,
+            inbound_handler=None,
+            session_id=None,
+            wire_format=None,
         )
         test_msg = OutboundMessage(payload=None)
         sess.set_response(test_msg)
@@ -223,7 +229,10 @@ class TestInboundSession(TestCase):
     async def test_wait_response_x(self):
         test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx, inbound_handler=None, session_id=None, wire_format=None,
+            context=test_ctx,
+            inbound_handler=None,
+            session_id=None,
+            wire_format=None,
         )
         test_msg = OutboundMessage(payload=None)
         sess.set_response(test_msg)
@@ -267,13 +276,20 @@ class TestInboundSession(TestCase):
         assert result is test_wire_format.encode_message.return_value
 
         test_wire_format.encode_message.assert_awaited_once_with(
-            test_ctx, test_msg.payload, [test_to_verkey], None, test_from_verkey,
+            test_ctx,
+            test_msg.payload,
+            [test_to_verkey],
+            None,
+            test_from_verkey,
         )
 
     async def test_accept_response(self):
         test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx, inbound_handler=None, session_id=None, wire_format=None,
+            context=test_ctx,
+            inbound_handler=None,
+            session_id=None,
+            wire_format=None,
         )
         test_msg = OutboundMessage(payload=None)
 
@@ -295,7 +311,10 @@ class TestInboundSession(TestCase):
     async def test_context_mgr(self):
         test_ctx = InjectionContext()
         sess = InboundSession(
-            context=test_ctx, inbound_handler=None, session_id=None, wire_format=None,
+            context=test_ctx,
+            inbound_handler=None,
+            session_id=None,
+            wire_format=None,
         )
         assert not sess.closed
         async with sess:
