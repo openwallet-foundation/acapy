@@ -37,7 +37,11 @@ class PerformRequestSchema(OpenAPISchema):
 class MenuJsonSchema(OpenAPISchema):
     """Matches MenuSchema but without the inherited AgentMessage properties."""
 
-    title = fields.Str(required=False, description="Menu title", example="My Menu",)
+    title = fields.Str(
+        required=False,
+        description="Menu title",
+        example="My Menu",
+    )
     description = fields.Str(
         required=False,
         description="Introductory text for the menu",
@@ -59,7 +63,9 @@ class SendMenuSchema(OpenAPISchema):
     """Request schema for sending a menu to a connection."""
 
     menu = fields.Nested(
-        MenuJsonSchema(), required=True, description="Menu to send to connection",
+        MenuJsonSchema(),
+        required=True,
+        description="Menu to send to connection",
     )
 
 

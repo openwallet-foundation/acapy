@@ -112,7 +112,8 @@ def format_did_info(info: DIDInfo):
 
 
 @docs(
-    tags=["wallet"], summary="List wallet DIDs",
+    tags=["wallet"],
+    summary="List wallet DIDs",
 )
 @querystring_schema(DIDListQueryStringSchema())
 @response_schema(DIDListSchema, 200)

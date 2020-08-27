@@ -82,11 +82,21 @@ class CredentialsListSchema(OpenAPISchema):
 class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
-    start = fields.Int(description="Start index", required=False, **WHOLE_NUM,)
-    count = fields.Int(
-        description="Maximum number to retrieve", required=False, **NATURAL_NUM,
+    start = fields.Int(
+        description="Start index",
+        required=False,
+        **WHOLE_NUM,
     )
-    wql = fields.Str(description="(JSON) WQL query", required=False, **INDY_WQL,)
+    count = fields.Int(
+        description="Maximum number to retrieve",
+        required=False,
+        **NATURAL_NUM,
+    )
+    wql = fields.Str(
+        description="(JSON) WQL query",
+        required=False,
+        **INDY_WQL,
+    )
 
 
 class CredIdMatchInfoSchema(OpenAPISchema):
@@ -173,7 +183,8 @@ async def credentials_remove(request: web.BaseRequest):
 
 
 @docs(
-    tags=["credentials"], summary="Fetch credentials from wallet",
+    tags=["credentials"],
+    summary="Fetch credentials from wallet",
 )
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(CredentialsListSchema(), 200)

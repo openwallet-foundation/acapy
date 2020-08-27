@@ -22,7 +22,8 @@ class TestTraceDecorator(TestCase):
     def test_init_api(self):
 
         decorator = TraceDecorator(
-            target=self.target_api, full_thread=self.full_thread_api,
+            target=self.target_api,
+            full_thread=self.full_thread_api,
         )
         assert decorator.target == self.target_api
         assert decorator.full_thread == self.full_thread_api
@@ -45,7 +46,9 @@ class TestTraceDecorator(TestCase):
         decorator = TraceDecorator(
             target=self.target_msg,
             full_thread=self.full_thread_msg,
-            trace_reports=[x_trace_report,],
+            trace_reports=[
+                x_trace_report,
+            ],
         )
         assert decorator.target == self.target_msg
         assert decorator.full_thread == self.full_thread_msg
@@ -78,7 +81,10 @@ class TestTraceDecorator(TestCase):
         decorator = TraceDecorator(
             target=self.target_msg,
             full_thread=self.full_thread_msg,
-            trace_reports=[x_trace_report, x_trace_report,],
+            trace_reports=[
+                x_trace_report,
+                x_trace_report,
+            ],
         )
 
         dumped = decorator.serialize()
@@ -99,7 +105,8 @@ class TestTraceDecorator(TestCase):
 
     def test_trace_reports(self):
         decorator = TraceDecorator(
-            target=self.target_msg, full_thread=self.full_thread_msg,
+            target=self.target_msg,
+            full_thread=self.full_thread_msg,
         )
         assert len(decorator.trace_reports) == 0
 

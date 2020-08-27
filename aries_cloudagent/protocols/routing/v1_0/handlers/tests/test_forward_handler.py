@@ -46,8 +46,14 @@ class TestForwardHandler(AsyncTestCase):
             mock_mgr.return_value.get_recipient = async_mock.CoroutineMock(
                 return_value=RouteRecord(connection_id="dummy")
             )
-            mock_connection_mgr.return_value.get_connection_targets = async_mock.CoroutineMock(
-                return_value=[ConnectionTarget(recipient_keys=["recip_key"],)]
+            mock_connection_mgr.return_value.get_connection_targets = (
+                async_mock.CoroutineMock(
+                    return_value=[
+                        ConnectionTarget(
+                            recipient_keys=["recip_key"],
+                        )
+                    ]
+                )
             )
 
             await handler.handle(self.context, responder)
