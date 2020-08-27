@@ -15,6 +15,7 @@ from marshmallow.exceptions import ValidationError
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder, HolderError
+from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
@@ -33,7 +34,8 @@ from ....messaging.valid import (
     WHOLE_NUM,
 )
 from ....storage.error import StorageError, StorageNotFoundError
-from ....indy.util import generate_pr_nonce
+from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+from ....wallet.error import WalletNotFoundError
 
 from ...problem_report.v1_0 import internal_error
 
@@ -49,9 +51,6 @@ from .models.presentation_exchange import (
     V10PresentationExchange,
     V10PresentationExchangeSchema,
 )
-
-
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
 
 class V10PresentationExchangeListQueryStringSchema(OpenAPISchema):
@@ -931,7 +930,13 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
             comment=body.get("comment"),
         )
         result = pres_ex_record.serialize()
-    except (BaseModelError, HolderError, LedgerError, StorageError) as err:
+    except (
+        BaseModelError,
+        HolderError,
+        LedgerError,
+        StorageError,
+        WalletNotFoundError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
