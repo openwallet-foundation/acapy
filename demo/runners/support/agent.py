@@ -452,7 +452,9 @@ class DemoAgent:
             EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
             response = await self.admin_request("GET", path, None, text, params)
             EVENT_LOGGER.debug(
-                "Response from GET %s received: \n%s", path, repr_json(response),
+                "Response from GET %s received: \n%s",
+                path,
+                repr_json(response),
             )
             return response
         except ClientError as e:
@@ -470,7 +472,9 @@ class DemoAgent:
             )
             response = await self.admin_request("POST", path, data, text, params)
             EVENT_LOGGER.debug(
-                "Response from POST %s received: \n%s", path, repr_json(response),
+                "Response from POST %s received: \n%s",
+                path,
+                repr_json(response),
             )
             return response
         except ClientError as e:

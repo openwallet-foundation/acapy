@@ -196,19 +196,23 @@ class IssuerRevRegRecord(BaseRecord):
         await self.save(context, reason="Set tails file public URI")
 
     async def stage_pending_registry_definition(
-        self, context: InjectionContext,
+        self,
+        context: InjectionContext,
     ):
         """Prepare registry definition for future use."""
         await shield(self.generate_registry(context))
         tails_base_url = context.settings.get("tails_server_base_url")
         await self.set_tails_file_public_uri(
-            context, f"{tails_base_url}/{self.revoc_reg_id}",
+            context,
+            f"{tails_base_url}/{self.revoc_reg_id}",
         )
         await self.publish_registry_definition(context)
 
         tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
         await tails_server.upload_tails_file(
-            context, self.revoc_reg_id, self.tails_local_path,
+            context,
+            self.revoc_reg_id,
+            self.tails_local_path,
         )
 
     async def publish_registry_definition(self, context: InjectionContext):

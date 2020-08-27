@@ -370,7 +370,8 @@ class PresentationPreview(BaseModel):
             else:
                 proof_req["requested_attributes"][
                     "{}_{}_uuid".format(
-                        len(proof_req["requested_attributes"]), canon(attr_spec.name),
+                        len(proof_req["requested_attributes"]),
+                        canon(attr_spec.name),
                     )
                 ] = {
                     "name": attr_spec.name,

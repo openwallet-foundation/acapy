@@ -1661,7 +1661,8 @@ PRES = Presentation(
     comment="Test",
     presentations_attach=[
         AttachDecorator.from_indy_dict(
-            indy_dict=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION],
+            indy_dict=INDY_PROOF,
+            ident=ATTACH_DECO_IDS[PRESENTATION],
         )
     ],
 )
@@ -1687,7 +1688,8 @@ class TestPresentation(TestCase):
                 "comment": "Hello World",
                 "presentations~attach": [
                     AttachDecorator.from_indy_dict(
-                        indy_dict=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION],
+                        indy_dict=INDY_PROOF,
+                        ident=ATTACH_DECO_IDS[PRESENTATION],
                     ).serialize()
                 ],
             }
@@ -1705,7 +1707,8 @@ class TestPresentation(TestCase):
             "@type": PRESENTATION,
             "presentations~attach": [
                 AttachDecorator.from_indy_dict(
-                    indy_dict=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION],
+                    indy_dict=INDY_PROOF,
+                    ident=ATTACH_DECO_IDS[PRESENTATION],
                 ).serialize()
             ],
             "comment": "Test",

@@ -788,7 +788,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             assert await self.manager.resolve_inbound_connection(receipt)
 
     async def test_create_did_document(self):
-        did_info = DIDInfo(self.test_did, self.test_verkey, None,)
+        did_info = DIDInfo(
+            self.test_did,
+            self.test_verkey,
+            None,
+        )
 
         mock_conn = async_mock.MagicMock()
         mock_conn.connection_id = "dummy"
@@ -814,7 +818,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             )
 
     async def test_create_did_document_not_active(self):
-        did_info = DIDInfo(self.test_did, self.test_verkey, None,)
+        did_info = DIDInfo(
+            self.test_did,
+            self.test_verkey,
+            None,
+        )
 
         mock_conn = async_mock.MagicMock()
         mock_conn.connection_id = "dummy"
@@ -835,7 +843,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_create_did_document_no_services(self):
-        did_info = DIDInfo(self.test_did, self.test_verkey, None,)
+        did_info = DIDInfo(
+            self.test_did,
+            self.test_verkey,
+            None,
+        )
 
         mock_conn = async_mock.MagicMock()
         mock_conn.connection_id = "dummy"
@@ -863,7 +875,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_create_did_document_no_service_endpoint(self):
-        did_info = DIDInfo(self.test_did, self.test_verkey, None,)
+        did_info = DIDInfo(
+            self.test_did,
+            self.test_verkey,
+            None,
+        )
 
         mock_conn = async_mock.MagicMock()
         mock_conn.connection_id = "dummy"
@@ -894,7 +910,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_create_did_document_no_service_recip_keys(self):
-        did_info = DIDInfo(self.test_did, self.test_verkey, None,)
+        did_info = DIDInfo(
+            self.test_did,
+            self.test_verkey,
+            None,
+        )
 
         mock_conn = async_mock.MagicMock()
         mock_conn.connection_id = "dummy"
@@ -933,7 +953,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_did_key_storage(self):
-        did_info = DIDInfo(self.test_did, self.test_verkey, None,)
+        did_info = DIDInfo(
+            self.test_did,
+            self.test_verkey,
+            None,
+        )
 
         did_doc = self.make_did_doc(
             did=self.test_target_did, verkey=self.test_target_verkey
@@ -977,7 +1001,8 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         )
 
         targets = await self.manager.get_connection_targets(
-            connection_id=None, connection=mock_conn,
+            connection_id=None,
+            connection=mock_conn,
         )
         assert len(targets) == 1
         target = targets[0]
@@ -990,7 +1015,8 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
 
         # Next pass: exercise cache
         targets = await self.manager.get_connection_targets(
-            connection_id=None, connection=mock_conn,
+            connection_id=None,
+            connection=mock_conn,
         )
         assert len(targets) == 1
         target = targets[0]
@@ -1038,7 +1064,8 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
             mock_conn_target_ser.return_value = {"serialized": "value"}
             targets = await self.manager.get_connection_targets(
-                connection_id="dummy", connection=None,
+                connection_id="dummy",
+                connection=None,
             )
             assert len(targets) == 1
             target = targets[0]
@@ -1081,7 +1108,8 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         )
 
         targets = await self.manager.get_connection_targets(
-            connection_id=None, connection=mock_conn,
+            connection_id=None,
+            connection=mock_conn,
         )
         assert len(targets) == 1
         target = targets[0]
