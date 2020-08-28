@@ -39,7 +39,8 @@ class InvitationReceiveRequestSchema(InvitationSchema):
 
 
 @docs(
-    tags=["out-of-band"], summary="Create a new connection invitation",
+    tags=["out-of-band"],
+    summary="Create a new connection invitation",
 )
 @request_schema(InvitationCreateRequestSchema())
 async def invitation_create(request: web.BaseRequest):
@@ -77,7 +78,8 @@ async def invitation_create(request: web.BaseRequest):
 
 
 @docs(
-    tags=["out-of-band"], summary="Create a new connection invitation",
+    tags=["out-of-band"],
+    summary="Create a new connection invitation",
 )
 @request_schema(InvitationReceiveRequestSchema())
 async def invitation_receive(request: web.BaseRequest):

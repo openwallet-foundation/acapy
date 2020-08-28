@@ -101,7 +101,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_created(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"schema_id": SCHEMA_ID},
+            app=self.app,
+            match_info={"schema_id": SCHEMA_ID},
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
@@ -111,7 +112,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_schema(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"schema_id": SCHEMA_ID},
+            app=self.app,
+            match_info={"schema_id": SCHEMA_ID},
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
@@ -121,7 +123,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_schema_on_seq_no(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"schema_id": "12345"},
+            app=self.app,
+            match_info={"schema_id": "12345"},
         )
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
@@ -131,7 +134,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_schema_no_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"schema_id": SCHEMA_ID},
+            app=self.app,
+            match_info={"schema_id": SCHEMA_ID},
         )
         self.ledger.get_schema = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")
@@ -143,7 +147,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
     async def test_get_schema_x_ledger(self):
         mock_request = async_mock.MagicMock(
-            app=self.app, match_info={"schema_id": SCHEMA_ID},
+            app=self.app,
+            match_info={"schema_id": SCHEMA_ID},
         )
         self.ledger.get_schema = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")

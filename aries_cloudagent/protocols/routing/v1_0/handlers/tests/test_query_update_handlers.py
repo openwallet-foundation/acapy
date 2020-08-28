@@ -79,7 +79,8 @@ class TestQueryUpdateHandlers(AsyncTestCase):
         self.context.message = RouteUpdateRequest(
             updates=[
                 RouteUpdate(
-                    recipient_key=TEST_VERKEY, action=RouteUpdate.ACTION_CREATE,
+                    recipient_key=TEST_VERKEY,
+                    action=RouteUpdate.ACTION_CREATE,
                 )
             ]
         )

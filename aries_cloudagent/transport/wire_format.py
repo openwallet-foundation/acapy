@@ -23,7 +23,9 @@ class BaseWireFormat:
 
     @abstractmethod
     async def parse_message(
-        self, context: InjectionContext, message_body: Union[str, bytes],
+        self,
+        context: InjectionContext,
+        message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
         """
         Deserialize an incoming message and further populate the request context.
@@ -73,7 +75,9 @@ class JsonWireFormat(BaseWireFormat):
 
     @abstractmethod
     async def parse_message(
-        self, context: InjectionContext, message_body: Union[str, bytes],
+        self,
+        context: InjectionContext,
+        message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
         """
         Deserialize an incoming message and further populate the request context.
