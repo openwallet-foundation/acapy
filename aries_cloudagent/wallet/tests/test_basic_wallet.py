@@ -179,15 +179,25 @@ class TestBasicWallet:
             self.test_seed, self.test_did, self.test_metadata
         )
         assert not info.metadata.get("public")
+        assert not info.metadata.get("posted")
+
+        posted = await wallet.get_posted_dids()
+        assert not posted
 
         info_public = await wallet.create_public_did()
         assert info_public.metadata.get("public")
+        assert info_public.metadata.get("posted")
 
         # test replace
         info_replace = await wallet.create_public_did()
         assert info_replace.metadata.get("public")
+        assert info_replace.metadata.get("posted")
         info_check = await wallet.get_local_did(info_public.did)
         assert not info_check.metadata.get("public")
+        assert info_check.metadata.get("posted")
+
+        posted = await wallet.get_posted_dids()
+        assert posted and posted[0].did == info_public.did
 
     @pytest.mark.asyncio
     async def test_set_public_did(self, wallet):
