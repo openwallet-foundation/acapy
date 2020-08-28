@@ -196,7 +196,7 @@ class BasicWallet(BaseWallet):
         Create and store a new local DID.
 
         Args:
-            seed: Optional seed to use for did
+            seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
 
@@ -252,7 +252,7 @@ class BasicWallet(BaseWallet):
         Find info for a local DID.
 
         Args:
-            did: The DID to get info for
+            did: The DID for which to get info
 
         Returns:
             A `DIDInfo` instance representing the found DID
@@ -270,7 +270,7 @@ class BasicWallet(BaseWallet):
         Resolve a local DID from a verkey.
 
         Args:
-            verkey: The verkey to get the local DID for
+            verkey: The verkey for which to get the local DID
 
         Returns:
             A `DIDInfo` instance representing the found DID
@@ -289,7 +289,7 @@ class BasicWallet(BaseWallet):
         Replace metadata for a local DID.
 
         Args:
-            did: The DID to replace metadata for
+            did: The DID for which to replace metadata
             metadata: The new metadata
 
         Raises:
@@ -384,8 +384,8 @@ class BasicWallet(BaseWallet):
 
         Args:
             message: The message to pack
-            to_verkeys: List of verkeys to pack for
-            from_verkey: Sender verkey to pack from
+            to_verkeys: List of verkeys for which to pack
+            from_verkey: Sender verkey from which to pack
 
         Returns:
             The resulting packed message bytes

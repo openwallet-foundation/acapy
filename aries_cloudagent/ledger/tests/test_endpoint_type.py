@@ -5,9 +5,9 @@ from ..endpoint_type import EndpointType
 
 class TestEndpointType(AsyncTestCase):
     async def test_endpoint_type(self):
-        assert EndpointType.ENDPOINT == EndpointType.get("endpoint")
-        assert EndpointType.PROFILE == EndpointType.get("PROFILE")
-        assert EndpointType.LINKED_DOMAINS == EndpointType.get("linked_domains")
+        assert EndpointType.ENDPOINT is EndpointType.get("endpoint")
+        assert EndpointType.PROFILE is EndpointType.get("PROFILE")
+        assert EndpointType.LINKED_DOMAINS is EndpointType.get("linked_domains")
         assert EndpointType.get("no-such-type") is None
         assert EndpointType.get(None) is None
 

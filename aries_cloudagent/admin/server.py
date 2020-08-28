@@ -132,7 +132,6 @@ class WebhookTarget:
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     """Only continue if application is ready to take work."""
 
-    print(f'\n\n== ready 1 {request.rel_url}, ready={request.app._state.get("ready")}')
     if (
         str(request.rel_url).rstrip("/")
         in (
@@ -162,7 +161,6 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             LOGGER.error("Handler error with exception: %s", str(e))
             raise
 
-    print(".. ready N")
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
 
 
