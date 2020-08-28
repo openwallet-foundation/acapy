@@ -533,6 +533,7 @@ class CredentialManager:
                     registry = await active_reg.get_registry()
                     cred_ex_record.revoc_reg_id = active_reg.revoc_reg_id
                     tails_path = registry.tails_local_path
+                    await registry.get_or_fetch_local_tails_path()
 
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
