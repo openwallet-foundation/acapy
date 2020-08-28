@@ -183,7 +183,10 @@ class TestWalletRoutes(AsyncTestCase):
                 DIDInfo(
                     self.test_posted_did,
                     self.test_posted_verkey,
-                    {"posted": True, "public": False,},
+                    {
+                        "posted": True,
+                        "public": False,
+                    },
                 )
             ]
             result = await test_module.wallet_did_list(request)
