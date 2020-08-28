@@ -146,7 +146,9 @@ class Dispatcher:
             message = None
 
         trace_event(
-            self.context.settings, message, outcome="Dispatcher.handle_message.START",
+            self.context.settings,
+            message,
+            outcome="Dispatcher.handle_message.START",
         )
 
         context = RequestContext(base_context=self.context)

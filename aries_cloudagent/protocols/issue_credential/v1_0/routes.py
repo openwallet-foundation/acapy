@@ -293,10 +293,14 @@ class RevokeQueryStringSchema(OpenAPISchema):
     """Parameters and validators for revocation request."""
 
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier", required=True, **INDY_REV_REG_ID,
+        description="Revocation registry identifier",
+        required=True,
+        **INDY_REV_REG_ID,
     )
     cred_rev_id = fields.Int(
-        description="Credential revocation identifier", required=True, **NATURAL_NUM,
+        description="Credential revocation identifier",
+        required=True,
+        **NATURAL_NUM,
     )
     publish = fields.Boolean(
         description=(
@@ -431,7 +435,8 @@ async def credential_exchange_create(request: web.BaseRequest):
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
         credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
+            context.settings,
+            trace_msg,
         )
 
         trace_event(
@@ -446,7 +451,9 @@ async def credential_exchange_create(request: web.BaseRequest):
             credential_exchange_record,
             credential_offer_message,
         ) = await credential_manager.prepare_send(
-            None, credential_proposal=credential_proposal, auto_remove=auto_remove,
+            None,
+            credential_proposal=credential_proposal,
+            auto_remove=auto_remove,
         )
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -513,7 +520,8 @@ async def credential_exchange_send(request: web.BaseRequest):
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
         credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
+            context.settings,
+            trace_msg,
         )
 
         trace_event(
@@ -614,7 +622,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         )
 
     await outbound_handler(
-        credential_proposal, connection_id=connection_id,
+        credential_proposal,
+        connection_id=connection_id,
     )
 
     trace_event(
@@ -646,7 +655,8 @@ async def _create_free_offer(
         cred_def_id=cred_def_id,
     )
     credential_proposal.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     credential_proposal_dict = credential_proposal.serialize()
 
@@ -662,9 +672,10 @@ async def _create_free_offer(
 
     credential_manager = CredentialManager(context)
 
-    (cred_ex_record, credential_offer_message,) = await credential_manager.create_offer(
-        cred_ex_record, comment=comment
-    )
+    (
+        cred_ex_record,
+        credential_offer_message,
+    ) = await credential_manager.create_offer(cred_ex_record, comment=comment)
 
     return (cred_ex_record, credential_offer_message)
 
@@ -1137,7 +1148,8 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"], summary="Revoke an issued credential",
+    tags=["issue-credential"],
+    summary="Revoke an issued credential",
 )
 @querystring_schema(RevokeQueryStringSchema())
 async def credential_exchange_revoke(request: web.BaseRequest):

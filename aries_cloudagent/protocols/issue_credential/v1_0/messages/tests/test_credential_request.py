@@ -34,7 +34,8 @@ class TestCredentialRequest(TestCase):
         comment="Test",
         requests_attach=[
             AttachDecorator.from_indy_dict(
-                indy_dict=indy_cred_req, ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
+                indy_dict=indy_cred_req,
+                ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
             )
         ],
     )

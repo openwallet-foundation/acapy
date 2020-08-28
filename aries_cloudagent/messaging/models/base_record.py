@@ -452,7 +452,12 @@ class BaseExchangeRecord(BaseRecord):
     """Represents a base record with event tracing capability."""
 
     def __init__(
-        self, id: str = None, state: str = None, *, trace: bool = False, **kwargs,
+        self,
+        id: str = None,
+        state: str = None,
+        *,
+        trace: bool = False,
+        **kwargs,
     ):
         """Initialize a new V10CredentialExchange."""
         super().__init__(id, state, **kwargs)

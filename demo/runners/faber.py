@@ -84,7 +84,8 @@ class FaberAgent(DemoAgent):
 
         self.log(
             "Credential: state = {}, credential_exchange_id = {}".format(
-                state, credential_exchange_id,
+                state,
+                credential_exchange_id,
             )
         )
 
@@ -296,7 +297,9 @@ async def main(
                     )
                 if SELF_ATTESTED:
                     # test self-attested claims
-                    req_attrs.append({"name": "self_attested_thing"},)
+                    req_attrs.append(
+                        {"name": "self_attested_thing"},
+                    )
                 req_preds = [
                     # test zero-knowledge proofs
                     {

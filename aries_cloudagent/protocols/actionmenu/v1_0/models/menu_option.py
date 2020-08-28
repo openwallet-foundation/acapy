@@ -56,7 +56,9 @@ class MenuOptionSchema(BaseModelSchema):
         example="window_prefs",
     )
     title = fields.Str(
-        required=True, description="Menu option title", example="Window Preferences",
+        required=True,
+        description="Menu option title",
+        example="Window Preferences",
     )
     description = fields.Str(
         required=False,
@@ -68,4 +70,7 @@ class MenuOptionSchema(BaseModelSchema):
         description="Whether to show option as disabled",
         example="False",
     )
-    form = fields.Nested(MenuFormSchema(), required=False,)
+    form = fields.Nested(
+        MenuFormSchema(),
+        required=False,
+    )
