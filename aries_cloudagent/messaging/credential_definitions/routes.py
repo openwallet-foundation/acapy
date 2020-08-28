@@ -163,7 +163,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             issuer_did = cred_def_id.split(":")[0]
             revoc = IndyRevocation(context)
             registry_record = await revoc.init_issuer_registry(
-                cred_def_id, issuer_did, max_cred_num=revocation_registry_size,
+                cred_def_id,
+                issuer_did,
+                max_cred_num=revocation_registry_size,
             )
 
         except RevocationNotSupportedError as e:

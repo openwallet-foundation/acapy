@@ -369,7 +369,10 @@ class IndyLedger(BaseLedger):
 
             try:
                 schema_id, schema_json = await issuer.create_and_store_schema(
-                    public_info.did, schema_name, schema_version, attribute_names,
+                    public_info.did,
+                    schema_name,
+                    schema_version,
+                    attribute_names,
                 )
             except IssuerError as err:
                 raise LedgerError(err.message) from err
@@ -621,7 +624,11 @@ class IndyLedger(BaseLedger):
                     credential_definition_id,
                     credential_definition_json,
                 ) = await issuer.create_and_store_credential_definition(
-                    public_info.did, schema, signature_type, tag, support_revocation,
+                    public_info.did,
+                    schema,
+                    signature_type,
+                    tag,
+                    support_revocation,
                 )
             except IssuerError as err:
                 raise LedgerError(err.message) from err

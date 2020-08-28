@@ -752,7 +752,10 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger.fetch_schema_by_id")
     async def test_check_existing_schema(
-        self, mock_fetch_schema_by_id, mock_close, mock_open,
+        self,
+        mock_fetch_schema_by_id,
+        mock_close,
+        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -825,7 +828,11 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
     @async_mock.patch("indy.ledger.build_get_schema_request")
     async def test_get_schema_not_found(
-        self, mock_build_get_schema_req, mock_submit, mock_close, mock_open,
+        self,
+        mock_build_get_schema_req,
+        mock_submit,
+        mock_close,
+        mock_open,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -939,7 +946,17 @@ class TestIndyLedger(AsyncTestCase):
         mock_parse_get_schema_resp.return_value = (None, '{"attrNames": ["a", "b"]}')
 
         submissions = [
-            json.dumps({"result": {"data": {"txn": {"type": "102",}}}}),  # not a schema
+            json.dumps(
+                {
+                    "result": {
+                        "data": {
+                            "txn": {
+                                "type": "102",
+                            }
+                        }
+                    }
+                }
+            ),  # not a schema
             json.dumps({"result": {"seqNo": 999}}),
         ]  # need to subscript these in assertions later
         mock_submit.side_effect = [
@@ -1130,7 +1147,10 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
     async def test_send_credential_definition_no_such_schema(
-        self, mock_close, mock_open, mock_get_schema,
+        self,
+        mock_close,
+        mock_open,
+        mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1205,7 +1225,11 @@ class TestIndyLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_cred_def_in_wallet_not_ledger(
-        self, mock_fetch_cred_def, mock_close, mock_open, mock_get_schema,
+        self,
+        mock_fetch_cred_def,
+        mock_close,
+        mock_open,
+        mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1248,7 +1272,11 @@ class TestIndyLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_cred_def_not_on_ledger_wallet_check_x(
-        self, mock_fetch_cred_def, mock_close, mock_open, mock_get_schema,
+        self,
+        mock_fetch_cred_def,
+        mock_close,
+        mock_open,
+        mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1295,7 +1323,11 @@ class TestIndyLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_cred_def_not_on_ledger_nor_wallet_send_x(
-        self, mock_fetch_cred_def, mock_close, mock_open, mock_get_schema,
+        self,
+        mock_fetch_cred_def,
+        mock_close,
+        mock_open,
+        mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1345,7 +1377,11 @@ class TestIndyLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_read_only(
-        self, mock_fetch_cred_def, mock_close, mock_open, mock_get_schema,
+        self,
+        mock_fetch_cred_def,
+        mock_close,
+        mock_open,
+        mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -1395,7 +1431,11 @@ class TestIndyLedger(AsyncTestCase):
         "aries_cloudagent.ledger.indy.IndyLedger.fetch_credential_definition"
     )
     async def test_send_credential_definition_cred_def_on_ledger_not_in_wallet(
-        self, mock_fetch_cred_def, mock_close, mock_open, mock_get_schema,
+        self,
+        mock_fetch_cred_def,
+        mock_close,
+        mock_open,
+        mock_get_schema,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
@@ -2006,7 +2046,9 @@ class TestIndyLedger(AsyncTestCase):
                     None,
                 )
                 mock_submit.assert_has_calls(
-                    [async_mock.call(mock_build_attrib_req.return_value, True, True),]
+                    [
+                        async_mock.call(mock_build_attrib_req.return_value, True, True),
+                    ]
                 )
                 assert response
 
@@ -2685,7 +2727,9 @@ class TestIndyLedger(AsyncTestCase):
     @async_mock.patch("indy.pool.open_pool_ledger")
     @async_mock.patch("indy.pool.close_pool_ledger")
     async def test_taa_digest_bad_value(
-        self, mock_close_pool, mock_open_ledger,
+        self,
+        mock_close_pool,
+        mock_open_ledger,
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
