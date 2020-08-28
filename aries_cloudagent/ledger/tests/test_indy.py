@@ -2168,8 +2168,11 @@ class TestIndyLedger(AsyncTestCase):
     async def test_register_nym(
         self, mock_submit, mock_build_nym_req, mock_close, mock_open
     ):
-        mock_wallet = async_mock.MagicMock()
-        mock_wallet.type = "indy"
+        mock_wallet = async_mock.MagicMock(
+            type="indy",
+            get_local_did=async_mock.CoroutineMock(),
+            replace_local_did_metadata=async_mock.CoroutineMock(),
+        )
 
         ledger = IndyLedger("name", mock_wallet)
 
