@@ -11,6 +11,7 @@ from marshmallow.exceptions import ValidationError
 from .util import epoch_to_str
 
 from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
+from ..wallet.did_posture import DIDPosture as DIDPostureEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
@@ -111,6 +112,20 @@ class DIDKey(Regexp):
 
         super().__init__(
             DIDKey.PATTERN, error="Value {input} is not in W3C did:key format"
+        )
+
+
+class DIDPosture(OneOf):
+    """Validate value against defined DID postures."""
+
+    EXAMPLE = DIDPostureEnum.WALLET_ONLY.moniker
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            choices=[did_posture.moniker for did_posture in DIDPostureEnum],
+            error="Value {input} must be one of {choices}",
         )
 
 
@@ -455,6 +470,7 @@ NATURAL_NUM = {"validate": NaturalNumber(), "example": NaturalNumber.EXAMPLE}
 JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
+DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),

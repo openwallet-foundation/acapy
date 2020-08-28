@@ -20,6 +20,8 @@ from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
 from .message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
 
+LOGGER = logging.getLogger(__name__)
+
 
 class PresentationManagerError(BaseError):
     """Presentation error."""
@@ -37,7 +39,6 @@ class PresentationManager:
         """
 
         self._context = context
-        self._logger = logging.getLogger(__name__)
 
     @property
     def context(self) -> InjectionContext:
@@ -393,7 +394,7 @@ class PresentationManager:
                     )
                 )
             except HolderError as e:
-                self._logger.error(
+                LOGGER.error(
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )
                 raise e
@@ -615,7 +616,7 @@ class PresentationManager:
                 connection_id=presentation_exchange_record.connection_id,
             )
         else:
-            self._logger.warning(
+            LOGGER.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
                 presentation_exchange_record.thread_id,
             )
