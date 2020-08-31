@@ -239,7 +239,6 @@ class IndyVerifier(BaseVerifier):
             rev_reg_entries: revocation registry entries
         """
 
-        print(f"\n\n## Verifying, input: {json.dumps(presentation)}")
         self.non_revoc_intervals(presentation_request, presentation, not rev_reg_defs)
 
         (pv_result, pv_msg) = await self.pre_verify(presentation_request, presentation)
