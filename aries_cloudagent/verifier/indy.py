@@ -36,7 +36,7 @@ class IndyVerifier(BaseVerifier):
         """
         self.ledger = ledger
 
-    def non_revoc_intervals(self, pres_req: dict, pres: dict, pop_global: bool):
+    def non_revoc_intervals(self, pres_req: dict, pres: dict):
         """
         Remove superfluous non-revocation intervals in presentation request.
 
@@ -46,7 +46,6 @@ class IndyVerifier(BaseVerifier):
         Args:
             pres_req: presentation request
             pres: corresponding presentation
-            pop_global: whether to excise global non-revocation interval if present
 
         """
 
@@ -72,15 +71,15 @@ class IndyVerifier(BaseVerifier):
                             uuid,
                         )
 
-        if pop_global:
-            if pres_req.pop("non_revoked", None):
-                LOGGER.warning(
-                    (
-                        "Amended presentation request (nonce=%s); removed global "
-                        "non-revocation interval; no revocable credentials in proof"
-                    ),
-                    pres_req["nonce"],
-                )
+        if all(spec.get("timestamp") is None for spec in pres["identifiers"]):
+            pres_req.pop("non_revoked", None)
+            LOGGER.warning(
+                (
+                    "Amended presentation request (nonce=%s); removed global "
+                    "non-revocation interval; no revocable credentials in proof"
+                ),
+                pres_req["nonce"],
+            )
 
     async def pre_verify(self, pres_req: dict, pres: dict) -> (PreVerifyResult, str):
         """
@@ -239,8 +238,7 @@ class IndyVerifier(BaseVerifier):
             rev_reg_entries: revocation registry entries
         """
 
-        print(f"\n\n## Verifying, input: {json.dumps(presentation)}")
-        self.non_revoc_intervals(presentation_request, presentation, not rev_reg_defs)
+        self.non_revoc_intervals(presentation_request, presentation)
 
         (pv_result, pv_msg) = await self.pre_verify(presentation_request, presentation)
         if pv_result != PreVerifyResult.OK:
