@@ -481,7 +481,7 @@ class TestIndyVerifier(AsyncTestCase):
             ],
         }
 
-        self.verifier.non_revoc_intervals(big_pres_req, big_pres, True)
+        self.verifier.non_revoc_intervals(big_pres_req, big_pres)
 
         assert "non_revoked" not in big_pres_req
         for spec in big_pres_req["requested_attributes"].values():
