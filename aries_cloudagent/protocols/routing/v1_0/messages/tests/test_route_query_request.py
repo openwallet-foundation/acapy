@@ -1,8 +1,11 @@
-from ..route_query_request import RouteQueryRequest
+from unittest import mock, TestCase
+
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_REQUEST
 from ...models.paginate import Paginate, PaginateSchema
 
-from unittest import mock, TestCase
+from ..route_query_request import RouteQueryRequest
 
 
 class TestRouteQueryRequest(TestCase):
@@ -23,7 +26,7 @@ class TestRouteQueryRequest(TestCase):
         assert self.message.paginate.offset == self.test_offset
 
     def test_type(self):
-        assert self.message._type == ROUTE_QUERY_REQUEST
+        assert self.message._type == DIDCommPrefix.qualify_current(ROUTE_QUERY_REQUEST)
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages.route_query_request.RouteQueryRequestSchema.load"

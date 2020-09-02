@@ -9,6 +9,8 @@ from ......messaging.responder import MockResponder
 from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...messages.presentation_request import PresentationRequest
 from .. import presentation_request_handler as handler
 
@@ -126,9 +128,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
         px_rec_instance = handler.V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/present-proof/1.0/presentation-preview"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
                         {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
@@ -503,9 +504,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
         px_rec_instance = handler.V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/present-proof/1.0/presentation-preview"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
                         {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
@@ -620,9 +620,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
         px_rec_instance = handler.V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/present-proof/1.0/presentation-preview"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
                         {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"}

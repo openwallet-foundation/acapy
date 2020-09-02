@@ -1,6 +1,5 @@
 """A presentation preview inner object."""
 
-
 from enum import Enum
 from time import time
 from typing import Mapping, Sequence
@@ -15,6 +14,7 @@ from ......revocation.models.indy import NonRevocationInterval
 from ......wallet.util import b64_to_str
 from ......indy.util import generate_pr_nonce
 
+from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import PRESENTATION_PREVIEW
 from ...util.predicate import Predicate
@@ -263,7 +263,7 @@ class PresentationPreview(BaseModel):
     def _type(self):
         """Accessor for message type."""
 
-        return PresentationPreview.Meta.message_type
+        return DIDCommPrefix.qualify_current(PresentationPreview.Meta.message_type)
 
     def has_attr_spec(self, cred_def_id: str, name: str, value: str) -> bool:
         """
@@ -437,7 +437,7 @@ class PresentationPreviewSchema(BaseModelSchema):
     _type = fields.Str(
         description="Message type identifier",
         required=False,
-        example=PRESENTATION_PREVIEW,
+        example=DIDCommPrefix.qualify_current(PRESENTATION_PREVIEW),
         data_key="@type",
     )
     attributes = fields.Nested(PresAttrSpecSchema, required=True, many=True)

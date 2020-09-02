@@ -88,8 +88,7 @@ class ConnectionManager:
         ::
 
             {
-                "@type":
-                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "@type": "https://didcomm.org/connections/1.0/invitation",
                 "label": "Alice",
                 "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
             }
@@ -99,8 +98,7 @@ class ConnectionManager:
         ::
 
             {
-                "@type":
-                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "@type": "https://didcomm.org/connections/1.0/invitation",
                 "label": "Alice",
                 "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
                 "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],

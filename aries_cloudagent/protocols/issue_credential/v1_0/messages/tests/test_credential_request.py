@@ -2,6 +2,8 @@ from unittest import mock, TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_REQUEST, PROTOCOL_PACKAGE
 
 from ..credential_request import CredentialRequest
@@ -66,7 +68,9 @@ class TestCredentialRequest(TestCase):
             ],
         )
 
-        assert credential_request._type == CREDENTIAL_REQUEST
+        assert credential_request._type == DIDCommPrefix.qualify_current(
+            CREDENTIAL_REQUEST
+        )
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages."

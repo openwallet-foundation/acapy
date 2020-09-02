@@ -16,6 +16,8 @@ from .....storage.error import StorageNotFoundError
 from .....verifier.base import BaseVerifier
 from .....verifier.indy import IndyVerifier
 
+from ....didcomm_prefix import DIDCommPrefix
+
 from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
 from ..messages.presentation import Presentation
@@ -760,9 +762,8 @@ class TestPresentationManager(AsyncTestCase):
         exchange_dummy = V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/present-proof/1.0/presentation-preview"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
                         {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
@@ -850,9 +851,8 @@ class TestPresentationManager(AsyncTestCase):
         exchange_dummy = V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/present-proof/1.0/presentation-preview"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
                         {

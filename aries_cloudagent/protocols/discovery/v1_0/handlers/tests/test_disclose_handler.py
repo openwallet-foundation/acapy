@@ -1,13 +1,14 @@
 import pytest
 
-from aries_cloudagent.core.protocol_registry import ProtocolRegistry
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
+from ......core.protocol_registry import ProtocolRegistry
+from ......messaging.base_handler import HandlerException
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
+
+from .....didcomm_prefix import DIDCommPrefix
 
 from ...handlers.disclose_handler import DiscloseHandler
 from ...messages.disclose import Disclose
-
 
 TEST_MESSAGE_FAMILY = "TEST_FAMILY"
 TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
@@ -23,7 +24,9 @@ class TestQueryHandler:
         ctx.message = Disclose(
             protocols=[
                 {
-                    "pid": "did:sov:BzCbsNYhMrjHiqZDTUASHg;test_proto/test_message",
+                    "pid": DIDCommPrefix.qualify_current(
+                        "test_proto/v1.0/test_message"
+                    ),
                     "roles": [],
                 }
             ]

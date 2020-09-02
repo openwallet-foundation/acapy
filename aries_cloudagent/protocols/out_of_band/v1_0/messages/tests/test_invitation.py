@@ -6,6 +6,8 @@ from asynctest import TestCase as AsyncTestCase
 
 from ......messaging.models.base import BaseModelError
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import INVITATION, PROTOCOL_PACKAGE
 
 from .. import invitation as test_module
@@ -22,12 +24,12 @@ class TestInvitation(TestCase):
         invi = Invitation(comment="Hello", label="A label", service=["service"])
         assert invi.service_dids == ["service"]
         assert not invi.service_blocks
-        assert invi._type == INVITATION
+        assert invi._type == DIDCommPrefix.qualify_current(INVITATION)
 
         service = Service(_id="abc123", _type="a-type", did="My service")
         invi = Invitation(comment="Hello", label="A label", service=[service])
         assert invi.service_blocks == [service]
-        assert invi._type == INVITATION
+        assert invi._type == DIDCommPrefix.qualify_current(INVITATION)
 
     def test_wrap_serde(self):
         """Test conversion of aries message to attachment decorator."""
