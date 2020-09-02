@@ -1,8 +1,11 @@
-from ..route_update_request import RouteUpdateRequest
+from unittest import mock, TestCase
+
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import PROTOCOL_PACKAGE, ROUTE_UPDATE_REQUEST
 from ...models.route_update import RouteUpdate, RouteUpdateSchema
 
-from unittest import mock, TestCase
+from ..route_update_request import RouteUpdateRequest
 
 
 class TestRouteUpdateRequest(TestCase):
@@ -21,10 +24,11 @@ class TestRouteUpdateRequest(TestCase):
         assert self.message.updates[0].action == self.test_action
 
     def test_type(self):
-        assert self.message._type == ROUTE_UPDATE_REQUEST
+        assert self.message._type == DIDCommPrefix.qualify_current(ROUTE_UPDATE_REQUEST)
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages.route_update_request.RouteUpdateRequestSchema.load"
+        f"{PROTOCOL_PACKAGE}."
+        "messages.route_update_request.RouteUpdateRequestSchema.load"
     )
     def test_deserialize(self, message_schema_load):
         obj = {"obj": "obj"}
@@ -35,7 +39,8 @@ class TestRouteUpdateRequest(TestCase):
         assert message is message_schema_load.return_value
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages.route_update_request.RouteUpdateRequestSchema.dump"
+        f"{PROTOCOL_PACKAGE}"
+        ".messages.route_update_request.RouteUpdateRequestSchema.dump"
     )
     def test_serialize(self, message_schema_dump):
         message_dict = self.message.serialize()

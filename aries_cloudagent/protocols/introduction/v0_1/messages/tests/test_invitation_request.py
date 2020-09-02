@@ -1,5 +1,8 @@
-from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
+
+from unittest import mock, TestCase
+
+from .....didcomm_prefix import DIDCommPrefix
 
 from ..invitation_request import InvitationRequest
 from ...message_types import INVITATION_REQUEST, PROTOCOL_PACKAGE
@@ -23,7 +26,7 @@ class TestInvitationRequest(TestCase, TestConfig):
 
     def test_type(self):
         """Test type."""
-        assert self.request._type == INVITATION_REQUEST
+        assert self.request._type == DIDCommPrefix.qualify_current(INVITATION_REQUEST)
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages."

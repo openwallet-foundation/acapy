@@ -1,7 +1,9 @@
-from ..query import Query
-from ...message_types import QUERY, PROTOCOL_PACKAGE
-
 from unittest import mock, TestCase
+
+from .....didcomm_prefix import DIDCommPrefix
+
+from ...message_types import QUERY, PROTOCOL_PACKAGE
+from ..query import Query
 
 
 class TestQuery(TestCase):
@@ -15,7 +17,7 @@ class TestQuery(TestCase):
 
     def test_type(self):
         query = Query(query=self.test_query, comment=self.test_comment)
-        assert query._type == QUERY
+        assert query._type == DIDCommPrefix.qualify_current(QUERY)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.query.QuerySchema.load")
     def test_deserialize(self, mock_query_schema_load):
