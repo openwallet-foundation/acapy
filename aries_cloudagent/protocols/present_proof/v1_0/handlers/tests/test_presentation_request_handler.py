@@ -641,7 +641,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+            by_reft = async_mock.CoroutineMock(
                 return_value=[
                     {
                         "cred_info": {
@@ -669,6 +669,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     },
                 ]
             )
+            mock_holder.get_credentials_for_presentation_request_by_referent = by_reft
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance
