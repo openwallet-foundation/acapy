@@ -54,6 +54,25 @@ PRES_PREVIEW = PresentationPreview(
         )
     ],
 )
+PRES_PREVIEW_NAMES = PresentationPreview(
+    attributes=[
+        PresAttrSpec(
+            name="player", cred_def_id=CD_ID, value="Richie Knucklez", referent="0"
+        ),
+        PresAttrSpec(
+            name="screenCapture",
+            cred_def_id=CD_ID,
+            mime_type="image/png",
+            value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+            referent="0",
+        ),
+    ],
+    predicates=[
+        PresPredSpec(
+            name="highScore", cred_def_id=CD_ID, predicate=">=", threshold=1000000
+        )
+    ],
+)
 PROOF_REQ_NAME = "name"
 PROOF_REQ_VERSION = "1.0"
 PROOF_REQ_NONCE = "12345"
@@ -455,6 +474,17 @@ class TestPresentationManager(AsyncTestCase):
         self.context.connection_record = async_mock.MagicMock()
         self.context.connection_record.connection_id = CONN_ID
 
+        Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
+        self.ledger = Ledger()
+        self.ledger.get_schema = async_mock.CoroutineMock(
+            return_value=async_mock.MagicMock()
+        )
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value={"value": {"revocation": None}}
+        )
+        self.context.injector.clear_binding(BaseLedger)
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
+
         exchange_in = V10PresentationExchange()
         indy_proof_req = await PRES_PREVIEW.indy_proof_request(
             name=PROOF_REQ_NAME,
@@ -495,31 +525,14 @@ class TestPresentationManager(AsyncTestCase):
             )
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
-        self.holder.create_revocation_state = async_mock.CoroutineMock(
-            return_value=json.dumps(
-                {
-                    "witness": {"omega": "1 ..."},
-                    "rev_reg": {"accum": "21 ..."},
-                    "timestamp": NOW,
-                }
-            )
-        )
         self.context.injector.clear_binding(BaseHolder)
         self.context.injector.bind_instance(BaseHolder, self.holder)
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
-                return_value="/tmp/sample/tails/path"
-            )
-        )
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_module, "RevocationRegistry", autospec=True
-        ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+        ) as mock_attach_decorator:
 
             mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -610,6 +623,107 @@ class TestPresentationManager(AsyncTestCase):
 
             with self.assertRaises(test_module.HolderError):
                 await self.manager.create_presentation(exchange_in, req_creds)
+
+    async def test_create_presentation_multi_matching_proposal_creds_names(self):
+        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record.connection_id = CONN_ID
+
+        exchange_in = V10PresentationExchange()
+        indy_proof_req = await PRES_PREVIEW_NAMES.indy_proof_request(
+            name=PROOF_REQ_NAME,
+            version=PROOF_REQ_VERSION,
+            nonce=PROOF_REQ_NONCE,
+            ledger=await self.context.inject(BaseLedger, required=False),
+        )
+
+        exchange_in.presentation_request = indy_proof_req
+        request = async_mock.MagicMock()
+        request.indy_proof_request = async_mock.MagicMock()
+        request._thread_id = "dummy"
+        self.context.message = request
+
+        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        self.holder = Holder()
+        get_creds = async_mock.CoroutineMock(
+            return_value=(
+                {
+                    "cred_info": {
+                        "referent": "dummy_reft_0",
+                        "cred_def_id": CD_ID,
+                        "attrs": {
+                            "player": "Richie Knucklez",
+                            "screenCapture": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
+                            "highScore": "1234560",
+                        },
+                    }
+                },
+                {
+                    "cred_info": {
+                        "referent": "dummy_reft_1",
+                        "cred_def_id": CD_ID,
+                        "attrs": {
+                            "player": "Richie Knucklez",
+                            "screenCapture": "aW1hZ2luZSBhbm90aGVyIHNjcmVlbiBjYXB0dXJl",
+                            "highScore": "1515880",
+                        },
+                    }
+                },
+            )
+        )
+        self.holder.get_credentials_for_presentation_request_by_referent = get_creds
+        self.holder.get_credential = async_mock.CoroutineMock(
+            return_value=json.dumps(
+                {
+                    "schema_id": S_ID,
+                    "cred_def_id": CD_ID,
+                    "rev_reg_id": RR_ID,
+                    "cred_rev_id": 1,
+                }
+            )
+        )
+        self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
+        self.holder.create_revocation_state = async_mock.CoroutineMock(
+            return_value=json.dumps(
+                {
+                    "witness": {"omega": "1 ..."},
+                    "rev_reg": {"accum": "21 ..."},
+                    "timestamp": NOW,
+                }
+            )
+        )
+        self.context.injector.clear_binding(BaseHolder)
+        self.context.injector.bind_instance(BaseHolder, self.holder)
+
+        more_magic_rr = async_mock.MagicMock(
+            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+                return_value="/tmp/sample/tails/path"
+            )
+        )
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_module, "RevocationRegistry", autospec=True
+        ) as mock_rr:
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+
+            mock_attach_decorator.from_indy_dict = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                indy_proof_req, preview=PRES_PREVIEW_NAMES, holder=self.holder
+            )
+            assert not req_creds["self_attested_attributes"]
+            assert len(req_creds["requested_attributes"]) == 1
+            assert len(req_creds["requested_predicates"]) == 1
+
+            (exchange_out, pres_msg) = await self.manager.create_presentation(
+                exchange_in, req_creds
+            )
+            save_ex.assert_called_once()
+            assert exchange_out.state == V10PresentationExchange.STATE_PRESENTATION_SENT
 
     async def test_no_matching_creds_for_proof_req(self):
         exchange_in = V10PresentationExchange()
