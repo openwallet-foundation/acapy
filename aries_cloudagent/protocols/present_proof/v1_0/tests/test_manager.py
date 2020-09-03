@@ -55,17 +55,14 @@ PRES_PREVIEW = PresentationPreview(
 PRES_PREVIEW_NAMES = PresentationPreview(
     attributes=[
         PresAttrSpec(
-            name="player",
-            cred_def_id=CD_ID,
-            value="Richie Knucklez",
-            referent="0"
+            name="player", cred_def_id=CD_ID, value="Richie Knucklez", referent="0"
         ),
         PresAttrSpec(
             name="screenCapture",
             cred_def_id=CD_ID,
             mime_type="image/png",
             value="aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
-            referent="0"
+            referent="0",
         ),
     ],
     predicates=[
@@ -668,7 +665,7 @@ class TestPresentationManager(AsyncTestCase):
                             "highScore": "1515880",
                         },
                     }
-                }
+                },
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
@@ -714,9 +711,7 @@ class TestPresentationManager(AsyncTestCase):
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
-                indy_proof_req,
-                preview=PRES_PREVIEW_NAMES,
-                holder=self.holder
+                indy_proof_req, preview=PRES_PREVIEW_NAMES, holder=self.holder
             )
             assert not req_creds["self_attested_attributes"]
             assert len(req_creds["requested_attributes"]) == 1
