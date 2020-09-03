@@ -328,7 +328,7 @@ class IssuerRevRegRecord(BaseRecord):
     async def query_by_cred_def_id(
         cls, context: InjectionContext, cred_def_id: str, state: str = None
     ) -> Sequence["IssuerRevRegRecord"]:
-        """Retrieve revocation registry records by credential definition ID.
+        """Retrieve issuer revocation registry records by credential definition ID.
 
         Args:
             context: The injection context to use
@@ -344,7 +344,7 @@ class IssuerRevRegRecord(BaseRecord):
     async def query_by_pending(
         cls, context: InjectionContext
     ) -> Sequence["IssuerRevRegRecord"]:
-        """Retrieve revocation records with revocations pending.
+        """Retrieve issuer revocation records with revocations pending.
 
         Args:
             context: The injection context to use
@@ -380,7 +380,7 @@ class IssuerRevRegRecord(BaseRecord):
 
 
 class IssuerRevRegRecordSchema(BaseRecordSchema):
-    """Schema to allow serialization/deserialization of revocation registry records."""
+    """Schema to allow serialization/deserialization of issuer rev reg records."""
 
     class Meta:
         """IssuerRevRegRecordSchema metadata."""
