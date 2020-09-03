@@ -2,6 +2,8 @@ from unittest import mock, TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
 
 from ..credential_issue import CredentialIssue
@@ -102,7 +104,7 @@ class TestCredentialIssue(TestCase):
             ],
         )
 
-        assert credential_issue._type == CREDENTIAL_ISSUE
+        assert credential_issue._type == DIDCommPrefix.qualify_current(CREDENTIAL_ISSUE)
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages.credential_issue.CredentialIssueSchema.load"

@@ -1,9 +1,12 @@
-from ..route_query_response import RouteQueryResponse
+from unittest import mock, TestCase
+
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_RESPONSE
 from ...models.paginated import Paginated, PaginatedSchema
 from ...models.route_record import RouteRecord
 
-from unittest import mock, TestCase
+from ..route_query_response import RouteQueryResponse
 
 
 class TestRouteQueryResponse(TestCase):
@@ -42,10 +45,11 @@ class TestRouteQueryResponse(TestCase):
         assert self.message.paginated.total == self.test_total
 
     def test_type(self):
-        assert self.message._type == ROUTE_QUERY_RESPONSE
+        assert self.message._type == DIDCommPrefix.qualify_current(ROUTE_QUERY_RESPONSE)
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages.route_query_response.RouteQueryResponseSchema.load"
+        f"{PROTOCOL_PACKAGE}."
+        "messages.route_query_response.RouteQueryResponseSchema.load"
     )
     def test_deserialize(self, message_schema_load):
         obj = {"obj": "obj"}
@@ -56,7 +60,8 @@ class TestRouteQueryResponse(TestCase):
         assert message is message_schema_load.return_value
 
     @mock.patch(
-        f"{PROTOCOL_PACKAGE}.messages.route_query_response.RouteQueryResponseSchema.dump"
+        f"{PROTOCOL_PACKAGE}."
+        "messages.route_query_response.RouteQueryResponseSchema.dump"
     )
     def test_serialize(self, message_schema_dump):
         message_dict = self.message.serialize()

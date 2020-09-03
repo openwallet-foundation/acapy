@@ -1,7 +1,10 @@
 from unittest import mock, TestCase
 
-from ..perform import Perform, PerformSchema
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import PERFORM, PROTOCOL_PACKAGE
+
+from ..perform import Perform, PerformSchema
 
 
 class TestPerform(TestCase):
@@ -18,7 +21,7 @@ class TestPerform(TestCase):
 
     def test_type(self):
         """Test type."""
-        assert self.perform._type == PERFORM
+        assert self.perform._type == DIDCommPrefix.qualify_current(PERFORM)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.perform.PerformSchema.load")
     def test_deserialize(self, mock_perform_schema_load):

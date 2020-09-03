@@ -17,6 +17,7 @@ from ..tails.base import BaseTailsServer
 
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
+from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
 from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
 
@@ -32,7 +33,7 @@ class DefaultContextBuilder(ContextBuilder):
     """Default context builder."""
 
     async def build(self) -> InjectionContext:
-        """Build the new injection context."""
+        """Build the new injection context; set DIDComm prefix to emit."""
         context = InjectionContext(settings=self.settings)
         context.settings.set_default("default_label", "Aries Cloud Agent")
 
@@ -49,6 +50,9 @@ class DefaultContextBuilder(ContextBuilder):
 
         await self.bind_providers(context)
         await self.load_plugins(context)
+
+        # Set DIDComm prefix
+        DIDCommPrefix.set(context.settings)
 
         return context
 

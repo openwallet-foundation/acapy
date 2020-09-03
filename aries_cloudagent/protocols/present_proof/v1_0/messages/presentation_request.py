@@ -1,6 +1,5 @@
 """A presentation request content message."""
 
-
 from typing import Sequence
 
 from marshmallow import EXCLUDE, fields
