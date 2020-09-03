@@ -6,10 +6,7 @@ from ..messages.inner.presentation_preview import PresentationPreview
 
 
 async def indy_proof_req_preview2indy_requested_creds(
-    indy_proof_request: dict,
-    preview: PresentationPreview = None,
-    *,
-    holder: BaseHolder
+    indy_proof_request: dict, preview: PresentationPreview = None, *, holder: BaseHolder
 ):
     """
     Build indy requested-credentials structure.
@@ -51,15 +48,14 @@ async def indy_proof_req_preview2indy_requested_creds(
         elif preview:
             reft = indy_proof_request["requested_attributes"][referent]
             names = [reft["name"]] if "name" in reft else reft.get("names")
-            for cred in sorted(
-                credentials, key=lambda c: c["cred_info"]["referent"]
-            ):
+            for cred in sorted(credentials, key=lambda c: c["cred_info"]["referent"]):
                 if all(
                     preview.has_attr_spec(
                         cred_def_id=cred["cred_info"]["cred_def_id"],
                         name=name,
                         value=cred["cred_info"]["attrs"][name],
-                    ) for name in names
+                    )
+                    for name in names
                 ):
                     cred_match = cred
                     break
