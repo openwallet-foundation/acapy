@@ -2,6 +2,8 @@ from unittest import mock, TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER, PROTOCOL_PACKAGE
 from ..credential_offer import CredentialOffer
 from ..inner.credential_preview import CredAttrSpec, CredentialPreview
@@ -78,7 +80,7 @@ class TestCredentialOffer(TestCase):
             ],
         )
 
-        assert credential_offer._type == CREDENTIAL_OFFER
+        assert credential_offer._type == DIDCommPrefix.qualify_current(CREDENTIAL_OFFER)
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages.credential_offer.CredentialOfferSchema.load"

@@ -5,6 +5,8 @@ from unittest import TestCase
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import str_to_datetime, str_to_epoch
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import ATTACH_DECO_IDS, PRESENTATION_PREVIEW, PRESENTATION
 
 from ..presentation import Presentation, PresentationSchema
@@ -1678,13 +1680,13 @@ class TestPresentation(TestCase):
 
     def test_type(self):
         """Test type."""
-        assert PRES._type == PRESENTATION
+        assert PRES._type == DIDCommPrefix.qualify_current(PRESENTATION)
 
     def test_deserialize(self):
         """Test deserialization."""
         dump = json.dumps(
             {
-                "@type": PRESENTATION,
+                "@type": DIDCommPrefix.qualify_current(PRESENTATION),
                 "comment": "Hello World",
                 "presentations~attach": [
                     AttachDecorator.from_indy_dict(
@@ -1704,7 +1706,7 @@ class TestPresentation(TestCase):
         pres_dict.pop("@id")
 
         assert pres_dict == {
-            "@type": PRESENTATION,
+            "@type": DIDCommPrefix.qualify_current(PRESENTATION),
             "presentations~attach": [
                 AttachDecorator.from_indy_dict(
                     indy_dict=INDY_PROOF,
@@ -1723,7 +1725,7 @@ class TestPresentationSchema(TestCase):
         pres_dict = PRES.serialize()
         """
         Looks like: {
-            "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/presentation",
+            "@type": ".../present-proof/1.0/presentation",
             "@id": "f49773e3-bd56-4868-a5f1-456d1e6d1a16",
             "comment": "Test",
             "presentations~attach": [

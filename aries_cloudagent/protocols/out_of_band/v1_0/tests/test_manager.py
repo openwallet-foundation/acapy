@@ -1,42 +1,40 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from aries_cloudagent.cache.base import BaseCache
-from aries_cloudagent.cache.basic import BasicCache
-from aries_cloudagent.config.base import InjectorError
-from aries_cloudagent.ledger.base import BaseLedger
-from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
-from aries_cloudagent.connections.models.connection_target import ConnectionTarget
-from aries_cloudagent.connections.models.diddoc import (
+from .....cache.base import BaseCache
+from .....cache.basic import BasicCache
+from .....config.base import InjectorError
+from .....config.injection_context import InjectionContext
+from .....connections.models.connection_record import ConnectionRecord
+from .....connections.models.connection_target import ConnectionTarget
+from .....connections.models.diddoc import (
     DIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
 )
-from aries_cloudagent.ledger.base import BaseLedger
-from aries_cloudagent.messaging.responder import BaseResponder, MockResponder
-from aries_cloudagent.storage.base import BaseStorage
-from aries_cloudagent.storage.basic import BasicStorage
-from aries_cloudagent.storage.error import StorageNotFoundError
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
-from aries_cloudagent.wallet.base import BaseWallet, DIDInfo
-from aries_cloudagent.wallet.basic import BasicWallet
-from aries_cloudagent.wallet.error import WalletNotFoundError
+from .....ledger.base import BaseLedger
+from .....messaging.responder import BaseResponder, MockResponder
+from .....protocols.connections.v1_0.manager import ConnectionManager
+from .....protocols.routing.v1_0.manager import RoutingManager
+from .....storage.base import BaseStorage
+from .....storage.basic import BasicStorage
+from .....storage.error import StorageNotFoundError
+from .....transport.inbound.receipt import MessageReceipt
+from .....wallet.base import BaseWallet, DIDInfo
+from .....wallet.basic import BasicWallet
+from .....wallet.error import WalletNotFoundError
 
-from aries_cloudagent.protocols.routing.v1_0.manager import RoutingManager
+from ....didcomm_prefix import DIDCommPrefix
 
+from .. import manager as test_module
 from ..manager import (
     OutOfBandManager,
     OutOfBandManagerError,
     OutOfBandManagerNotImplementedError,
 )
-
-from .. import manager as test_module
 from ..messages.service import Service as ServiceMessage
 from ..message_types import INVITATION
-
-from aries_cloudagent.protocols.connections.v1_0.manager import ConnectionManager
 
 
 class TestConfig:
@@ -114,12 +112,15 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 multi_use=False,
             )
 
-            assert inv_model.invitation["@type"] == INVITATION
+            assert inv_model.invitation["@type"] == DIDCommPrefix.qualify_current(
+                INVITATION
+            )
             assert not inv_model.invitation["request~attach"]
             assert inv_model.invitation["label"] == "This guy"
-            assert inv_model.invitation["handshake_protocols"] == [
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
-            ]
+            assert (
+                DIDCommPrefix.qualify_current("connections/1.0/invitation")
+                in inv_model.invitation["handshake_protocols"]
+            )
             assert inv_model.invitation["service"] == [f"did:sov:{TestConfig.test_did}"]
 
     async def test_create_invitation_attachment_cred_offer(self):
@@ -200,12 +201,15 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             multi_use=False,
         )
 
-        assert inv_model.invitation["@type"] == INVITATION
+        assert inv_model.invitation["@type"] == DIDCommPrefix.qualify_current(
+            INVITATION
+        )
         assert not inv_model.invitation["request~attach"]
         assert inv_model.invitation["label"] == "That guy"
-        assert inv_model.invitation["handshake_protocols"] == [
-            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
-        ]
+        assert (
+            DIDCommPrefix.qualify_current("connections/1.0/invitation")
+            in inv_model.invitation["handshake_protocols"]
+        )
         service = inv_model.invitation["service"][0]
         assert service["id"] == "#inline"
         assert service["type"] == "did-communication"
@@ -236,7 +240,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             inv_message_cls.deserialize.return_value = conn_inv_mock
             conn_inv_mock.service_blocks = [async_mock.MagicMock()]
             conn_inv_mock.handshake_protocols = [
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+                pfx.qualify("connections/1.0/invitation") for pfx in DIDCommPrefix
             ]
 
             inv_model = await self.manager.receive_invitation(conn_inv_mock)
@@ -265,7 +269,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_inv_mock.service_blocks = []
             conn_inv_mock.service_dids = []
             conn_inv_mock.handshake_protocols = [
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+                pfx.qualify("connections/1.0/invitation") for pfx in DIDCommPrefix
             ]
             with self.assertRaises(OutOfBandManagerError):
                 await self.manager.receive_invitation(conn_inv_mock)
@@ -295,7 +299,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_inv_mock.service_blocks = []
             conn_inv_mock.service_dids = [TestConfig.test_did]
             conn_inv_mock.handshake_protocols = [
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+                pfx.qualify("connections/1.0/invitation") for pfx in DIDCommPrefix
             ]
 
             inv_model = await self.manager.receive_invitation(conn_inv_mock)
@@ -326,7 +330,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_inv_mock.service_blocks = []
             conn_inv_mock.service_dids = [TestConfig.test_did]
             conn_inv_mock.handshake_protocols = [
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+                pfx.qualify("connections/1.0/invitation") for pfx in DIDCommPrefix
             ]
             conn_inv_mock.request_attach = [
                 {"having": "attachment", "is": "no", "good": "here"}
@@ -364,9 +368,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 async_mock.MagicMock(
                     data=async_mock.MagicMock(
                         json={
-                            "@type": (
-                                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
-                                "/present-proof/1.0/request-presentation"
+                            "@type": DIDCommPrefix.qualify_current(
+                                "present-proof/1.0/request-presentation"
                             )
                         }
                     )

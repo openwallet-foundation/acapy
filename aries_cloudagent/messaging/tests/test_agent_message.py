@@ -3,6 +3,7 @@ import json
 from asynctest import TestCase as AsyncTestCase
 from marshmallow import EXCLUDE, fields
 
+from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.basic import BasicWallet
 from ...wallet.util import bytes_to_b64
 
@@ -218,9 +219,8 @@ class TestAgentMessageSchema(AsyncTestCase):
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
                 "value": "Test value",
                 "value~sig": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/signature/1.0/ed25519Sha512_single"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "signature/1.0/ed25519Sha512_single"
                     ),
                     "signature": (
                         "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
@@ -234,9 +234,8 @@ class TestAgentMessageSchema(AsyncTestCase):
                 "@type": "signed-agent-message",
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
                 "superfluous~sig": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/signature/1.0/ed25519Sha512_single"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "signature/1.0/ed25519Sha512_single"
                     ),
                     "signature": (
                         "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
@@ -255,9 +254,8 @@ class TestAgentMessageSchema(AsyncTestCase):
             "@type": "signed-agent-message",
             "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
             "value~sig": {
-                "@type": (
-                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                    "spec/signature/1.0/ed25519Sha512_single"
+                "@type": DIDCommPrefix.qualify_current(
+                    "signature/1.0/ed25519Sha512_single"
                 ),
                 "signature": (
                     "-OKdiRRQu-xbVGICg1J6KV_6nXLLzYRXr8BZSXzoXimytBl"
