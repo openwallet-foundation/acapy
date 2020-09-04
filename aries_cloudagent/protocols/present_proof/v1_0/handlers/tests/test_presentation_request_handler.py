@@ -9,6 +9,8 @@ from ......messaging.responder import MockResponder
 from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...messages.presentation_request import PresentationRequest
 from .. import presentation_request_handler as handler
 
@@ -126,9 +128,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
         px_rec_instance = handler.V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/present-proof/1.0/presentation-preview"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
                         {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
@@ -503,9 +504,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
         px_rec_instance = handler.V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/present-proof/1.0/presentation-preview"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
                         {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"},
@@ -620,9 +620,8 @@ class TestPresentationRequestHandler(AsyncTestCase):
         px_rec_instance = handler.V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
-                    "@type": (
-                        "did:sov:BzCbsNYhMrjHiqZDTUASHg;"
-                        "spec/present-proof/1.0/presentation-preview"
+                    "@type": DIDCommPrefix.qualify_current(
+                        "present-proof/1.0/presentation-preview"
                     ),
                     "attributes": [
                         {"name": "favourite", "cred_def_id": CD_ID, "value": "potato"}
@@ -641,7 +640,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
             handler, "BaseHolder", autospec=True
         ) as mock_holder:
 
-            mock_holder.get_credentials_for_presentation_request_by_referent = async_mock.CoroutineMock(
+            by_reft = async_mock.CoroutineMock(
                 return_value=[
                     {
                         "cred_info": {
@@ -669,6 +668,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     },
                 ]
             )
+            mock_holder.get_credentials_for_presentation_request_by_referent = by_reft
             request_context.inject = async_mock.CoroutineMock(return_value=mock_holder)
 
             mock_pres_ex_rec.return_value = px_rec_instance

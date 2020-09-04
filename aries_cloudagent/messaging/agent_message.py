@@ -14,6 +14,7 @@ from marshmallow import (
     ValidationError,
 )
 
+from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..wallet.base import BaseWallet
 
 from .decorators.base import BaseDecoratorSet
@@ -112,10 +113,10 @@ class AgentMessage(BaseModel):
         Accessor for the message type identifier.
 
         Returns:
-            Message type defined on `Meta.message_type`
+            Current DIDComm prefix, slash, message type defined on `Meta.message_type`
 
         """
-        return self.Meta.message_type
+        return DIDCommPrefix.qualify_current(self.Meta.message_type)
 
     @property
     def _id(self) -> str:
@@ -399,7 +400,7 @@ class AgentMessageSchema(BaseModelSchema):
         dump_only=True,
         required=False,
         description="Message type",
-        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/my-family/1.0/my-message-type",
+        example="https://didcomm.org/my-family/1.0/my-message-type",
     )
     _id = fields.Str(
         data_key="@id",

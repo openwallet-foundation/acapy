@@ -1,6 +1,5 @@
 """Utilities for dealing with indy conventions."""
 
-
 from .....holder.base import BaseHolder
 
 from ..messages.inner.presentation_preview import PresentationPreview
@@ -46,30 +45,31 @@ async def indy_proof_req_preview2indy_requested_creds(
         # match returned creds against any preview values
         if len(credentials) == 1:
             cred_match = credentials[0]
-        else:
-            if preview:
-                for cred in sorted(
-                    credentials, key=lambda c: c["cred_info"]["referent"]
-                ):
-                    name = indy_proof_request["requested_attributes"][referent]["name"]
-                    value = cred["cred_info"]["attrs"][name]
-                    if preview.has_attr_spec(
+        elif preview:
+            reft = indy_proof_request["requested_attributes"][referent]
+            names = [reft["name"]] if "name" in reft else reft.get("names")
+            for cred in sorted(credentials, key=lambda c: c["cred_info"]["referent"]):
+                if all(
+                    preview.has_attr_spec(
                         cred_def_id=cred["cred_info"]["cred_def_id"],
                         name=name,
-                        value=value,
-                    ):
-                        cred_match = cred
-                        break
-                else:
-                    raise ValueError(
-                        f"Could not automatically construct presentation for "
-                        + f"presentation request {indy_proof_request['name']}"
-                        + f":{indy_proof_request['version']} because referent "
-                        + f"{referent} did not produce any credentials matching "
-                        + f"proposed preview."
+                        value=cred["cred_info"]["attrs"][name],
                     )
+                    for name in names
+                ):
+                    cred_match = cred
+                    break
             else:
-                cred_match = min(credentials, key=lambda c: c["cred_info"]["referent"])
+                raise ValueError(
+                    f"Could not automatically construct presentation for "
+                    + f"presentation request {indy_proof_request['name']}"
+                    + f":{indy_proof_request['version']} because referent "
+                    + f"{referent} did not produce any credentials matching "
+                    + f"proposed preview."
+                )
+        else:
+            cred_match = min(credentials, key=lambda c: c["cred_info"]["referent"])
+
         if "restrictions" in indy_proof_request["requested_attributes"][referent]:
             req_creds["requested_attributes"][referent] = {
                 "cred_id": cred_match["cred_info"]["referent"],

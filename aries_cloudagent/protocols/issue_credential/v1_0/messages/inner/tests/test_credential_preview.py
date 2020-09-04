@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from ......didcomm_prefix import DIDCommPrefix
+
 from ....message_types import CREDENTIAL_PREVIEW
 
 from ..credential_preview import (
@@ -7,7 +9,6 @@ from ..credential_preview import (
     CredentialPreview,
     CredentialPreviewSchema,
 )
-
 
 CRED_PREVIEW = CredentialPreview(
     attributes=(
@@ -53,7 +54,7 @@ class TestCredentialPreview(TestCase):
 
     def test_type(self):
         """Test type."""
-        assert CRED_PREVIEW._type == CREDENTIAL_PREVIEW
+        assert CRED_PREVIEW._type == DIDCommPrefix.qualify_current(CREDENTIAL_PREVIEW)
 
     def test_preview(self):
         """Test preview for attr-dict and metadata utilities."""
@@ -89,7 +90,7 @@ class TestCredentialPreview(TestCase):
 
         cred_preview_dict = CRED_PREVIEW.serialize()
         assert cred_preview_dict == {
-            "@type": CREDENTIAL_PREVIEW,
+            "@type": DIDCommPrefix.qualify_current(CREDENTIAL_PREVIEW),
             "attributes": [
                 {"name": "test", "value": "123"},
                 {"name": "hello", "value": "world"},

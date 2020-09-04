@@ -5,11 +5,10 @@ from collections import OrderedDict
 from types import ModuleType
 from typing import Sequence
 
-from .error import ProtocolDefinitionValidationError
-
 from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader, ModuleLoadError
 
+from .error import ProtocolDefinitionValidationError
 from .protocol_registry import ProtocolRegistry
 
 LOGGER = logging.getLogger(__name__)
@@ -181,7 +180,11 @@ class PluginRegistry:
         return list(
             filter(
                 None,
-                (self.register_plugin(module_name) for module_name in module_names),
+                (
+                    self.register_plugin(module_name)
+                    for module_name in module_names
+                    if module_name.split(".")[-1] != "tests"
+                ),
             )
         )
 
