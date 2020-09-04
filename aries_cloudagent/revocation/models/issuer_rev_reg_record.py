@@ -30,7 +30,7 @@ from ..error import RevocationError
 
 from .revocation_registry import RevocationRegistry
 
-DEFAULT_REGISTRY_SIZE = 100
+DEFAULT_REGISTRY_SIZE = 1000
 
 LOGGER = logging.getLogger(__name__)
 
@@ -196,8 +196,7 @@ class IssuerRevRegRecord(BaseRecord):
         await self.save(context, reason="Set tails file public URI")
 
     async def stage_pending_registry_definition(
-        self,
-        context: InjectionContext,
+        self, context: InjectionContext, max_attempts: int = 5
     ):
         """Prepare registry definition for future use."""
         await shield(self.generate_registry(context))
@@ -213,6 +212,9 @@ class IssuerRevRegRecord(BaseRecord):
             context,
             self.revoc_reg_id,
             self.tails_local_path,
+            interval=0.8,
+            backoff=-0.5,
+            max_attempts=max_attempts,
         )
 
     async def publish_registry_definition(self, context: InjectionContext):

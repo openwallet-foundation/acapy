@@ -583,7 +583,7 @@ class CredentialManager:
                         )
                         asyncio.ensure_future(
                             pending_registry_record.stage_pending_registry_definition(
-                                self.context
+                                self.context, max_attempts=16
                             )
                         )
 

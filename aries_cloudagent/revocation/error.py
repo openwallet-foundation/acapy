@@ -9,3 +9,7 @@ class RevocationError(BaseError):
 
 class RevocationNotSupportedError(RevocationError):
     """Attempted to create registry for non-revocable cred def."""
+
+
+class RevocationRegistryBadSizeError(RevocationError):
+    """Attempted to create registry with maximum credentials too large or too small."""

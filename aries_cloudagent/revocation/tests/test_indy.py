@@ -15,7 +15,11 @@ from ...storage.error import StorageNotFoundError
 from ...wallet.base import BaseWallet
 from ...wallet.indy import IndyWallet
 
-from ..error import RevocationError, RevocationNotSupportedError
+from ..error import (
+    RevocationError,
+    RevocationNotSupportedError,
+    RevocationRegistryBadSizeError,
+)
 from ..indy import IndyRevocation
 from ..models.issuer_rev_reg_record import DEFAULT_REGISTRY_SIZE, IssuerRevRegRecord
 from ..models.revocation_registry import RevocationRegistry
@@ -78,6 +82,23 @@ class TestIndyRevocation(AsyncTestCase):
         with self.assertRaises(RevocationNotSupportedError) as x_revo:
             await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
             assert x_revo.message == "Credential definition does not support revocation"
+
+    async def test_init_issuer_registry_bad_size(self):
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+
+        self.context.injector.clear_binding(BaseLedger)
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value={"value": {"revocation": "..."}}
+        )
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        with self.assertRaises(RevocationRegistryBadSizeError) as x_revo:
+            await self.revoc.init_issuer_registry(
+                CRED_DEF_ID,
+                self.test_did,
+                max_cred_num=1,
+            )
+            assert "Bad revocation registry size" in x_revo.message
 
     async def test_get_active_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
