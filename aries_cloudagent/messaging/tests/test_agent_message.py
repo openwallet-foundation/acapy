@@ -1,6 +1,7 @@
-from asynctest import TestCase as AsyncTestCase
-from marshmallow import fields
 import json
+
+from asynctest import TestCase as AsyncTestCase
+from marshmallow import EXCLUDE, fields
 
 from ...wallet.basic import BasicWallet
 from ...wallet.util import bytes_to_b64
@@ -32,6 +33,7 @@ class SignedAgentMessageSchema(AgentMessageSchema):
     class Meta:
         model_class = SignedAgentMessage
         signed_fields = ("value",)
+        unknown = EXCLUDE
 
     value = fields.Str(required=True)
 
@@ -42,7 +44,7 @@ class BasicAgentMessage(AgentMessage):
     class Meta:
         """Meta data"""
 
-        schema_class = "AgentMessageSchema"
+        schema_class = AgentMessageSchema
         message_type = "basic-message"
 
 

@@ -10,7 +10,7 @@ import uuid
 
 from typing import Any, Mapping, Sequence, Union
 
-from marshmallow import fields, pre_load
+from marshmallow import EXCLUDE, fields, pre_load
 
 from ...wallet.base import BaseWallet
 from ...wallet.util import (
@@ -62,6 +62,7 @@ class AttachDecoratorDataJWSHeaderSchema(BaseModelSchema):
         """Attach decorator data schema metadata."""
 
         model_class = AttachDecoratorDataJWSHeader
+        unknown = EXCLUDE
 
     kid = fields.Str(
         description="Key identifier, in W3C did:key or DID URL format",
@@ -108,6 +109,7 @@ class AttachDecoratorData1JWSSchema(BaseModelSchema):
         """Single attach decorator data JWS schema metadata."""
 
         model_class = AttachDecoratorData1JWS
+        unknown = EXCLUDE
 
     header = fields.Nested(AttachDecoratorDataJWSHeaderSchema, required=True)
     protected = fields.Str(
@@ -152,6 +154,7 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
         """Metadata for schema for detached JWS for inclusion in attach deco data."""
 
         model_class = AttachDecoratorDataJWS
+        unknown = EXCLUDE
 
     @pre_load
     def validate_single_xor_multi_sig(self, data: Mapping, **kwargs):
@@ -454,6 +457,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         """Attach decorator data schema metadata."""
 
         model_class = AttachDecoratorData
+        unknown = EXCLUDE
 
     @pre_load
     def validate_data_spec(self, data: Mapping, **kwargs):
@@ -632,6 +636,7 @@ class AttachDecoratorSchema(BaseModelSchema):
         """AttachDecoratorSchema metadata."""
 
         model_class = AttachDecorator
+        unknown = EXCLUDE
 
     ident = fields.Str(
         description="Attachment identifier",
