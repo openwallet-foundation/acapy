@@ -63,7 +63,7 @@ class IssuerRevRegRecord(BaseRecord):
     STATE_PUBLISHED = "published"  # definition published
     STATE_STAGED = "staged"
     STATE_ACTIVE = "active"  # first entry published
-    STATE_FULL = "full"
+    STATE_FULL = "full"  # includes corrupt, out of sync, unusable
 
     def __init__(
         self,
@@ -371,10 +371,10 @@ class IssuerRevRegRecord(BaseRecord):
         tag_filter = {"revoc_reg_id": revoc_reg_id}
         return await cls.retrieve_by_tag_filter(context, tag_filter)
 
-    async def mark_full(self, context: InjectionContext):
-        """Change the registry state to full."""
-        self.state = IssuerRevRegRecord.STATE_FULL
-        await self.save(context, reason="Marked full")
+    async def set_state(self, context: InjectionContext, state: str = None):
+        """Change the registry state (default full)."""
+        self.state = state or IssuerRevRegRecord.STATE_FULL
+        await self.save(context, reason=f"Marked {self.state}")
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
