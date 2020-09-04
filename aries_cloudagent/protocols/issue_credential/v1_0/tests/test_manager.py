@@ -904,7 +904,7 @@ class TestCredentialManager(AsyncTestCase):
                                 max_creds=1000,
                             )
                         ),
-                        mark_full=async_mock.CoroutineMock(),
+                        set_state=async_mock.CoroutineMock(),
                         revoc_reg_id=REV_REG_ID,
                         save=async_mock.CoroutineMock(),
                         publish_registry_entry=async_mock.CoroutineMock(),
@@ -1120,7 +1120,7 @@ class TestCredentialManager(AsyncTestCase):
                             )
                         ),
                         revoc_reg_id=REV_REG_ID,
-                        mark_full=async_mock.CoroutineMock(),
+                        set_state=async_mock.CoroutineMock(),
                     )
                 ]
             )
@@ -1182,7 +1182,7 @@ class TestCredentialManager(AsyncTestCase):
                     )
                 ),
                 revoc_reg_id=REV_REG_ID,
-                mark_full=async_mock.CoroutineMock(),
+                set_state=async_mock.CoroutineMock(),
             )
         ]
 
@@ -1196,7 +1196,7 @@ class TestCredentialManager(AsyncTestCase):
                     )
                 ),
                 revoc_reg_id=REV_REG_ID,
-                mark_full=async_mock.CoroutineMock(),
+                set_state=async_mock.CoroutineMock(),
             )
         ]
 
@@ -1209,7 +1209,7 @@ class TestCredentialManager(AsyncTestCase):
                     )
                 ),
                 revoc_reg_id=REV_REG_ID,
-                mark_full=async_mock.CoroutineMock(),
+                set_state=async_mock.CoroutineMock(),
                 state="published",
                 save=async_mock.CoroutineMock(),
                 publish_registry_entry=async_mock.CoroutineMock(),

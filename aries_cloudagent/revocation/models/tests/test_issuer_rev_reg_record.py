@@ -127,7 +127,7 @@ class TestRecord(AsyncTestCase):
         )
         assert retrieved.revoc_reg_id == rec.revoc_reg_id
 
-        await rec.mark_full(self.context)
+        await rec.set_state(self.context)
         assert rec.state == IssuerRevRegRecord.STATE_FULL
 
         data = rec.serialize()
