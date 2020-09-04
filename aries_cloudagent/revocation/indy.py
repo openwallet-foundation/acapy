@@ -6,7 +6,7 @@ from ..config.injection_context import InjectionContext
 from ..ledger.base import BaseLedger
 from ..storage.base import StorageNotFoundError
 
-from .error import RevocationNotSupportedError
+from .error import RevocationNotSupportedError, RevocationRegistryBadSizeError
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.revocation_registry import RevocationRegistry
 
@@ -38,6 +38,11 @@ class IndyRevocation:
             raise RevocationNotSupportedError(
                 "Credential definition does not support revocation"
             )
+        if max_cred_num and not (4 <= max_cred_num <= 32768):
+            raise RevocationRegistryBadSizeError(
+                f"Bad revocation registry size: {max_cred_num}"
+            )
+
         record = IssuerRevRegRecord(
             cred_def_id=cred_def_id,
             issuer_did=issuer_did,

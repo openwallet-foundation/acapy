@@ -180,7 +180,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
             tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
             upload_success, reason = await tails_server.upload_tails_file(
-                context, registry_record.revoc_reg_id, registry_record.tails_local_path
+                context,
+                registry_record.revoc_reg_id,
+                registry_record.tails_local_path,
+                interval=0.8,
+                backoff=-0.5,
+                max_attempts=5,  # heuristic: respect HTTP timeout
             )
             if not upload_success:
                 raise web.HTTPInternalServerError(
@@ -193,7 +198,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 max_cred_num=registry_record.max_cred_num,
             )
             ensure_future(
-                pending_registry_record.stage_pending_registry_definition(context)
+                pending_registry_record.stage_pending_registry_definition(
+                    context, max_attempts=16
+                )
             )
 
         except RevocationError as e:
