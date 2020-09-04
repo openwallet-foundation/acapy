@@ -588,7 +588,10 @@ class CredentialManager:
                         )
 
                     # Make the current registry full
-                    await active_reg.mark_full(self.context)
+                    await active_reg.set_state(
+                        self.context,
+                        IssuerRevRegRecord.STATE_FULL,
+                    )
 
             except IssuerRevocationRegistryFullError:
                 active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
@@ -620,7 +623,10 @@ class CredentialManager:
                         retries=retries - 1,
                     )
                 else:
-                    await active_reg.mark_full(self.context)
+                    await active_reg.set_state(
+                        self.context,
+                        IssuerRevRegRecord.STATE_FULL,
+                    )
                     raise
 
             cred_ex_record.credential = json.loads(credential_json)
