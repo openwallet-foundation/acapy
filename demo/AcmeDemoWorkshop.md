@@ -59,6 +59,7 @@ First the following import statements and a constant we will need near the top o
 ```
 
 ```
+        TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
         CRED_PREVIEW_TYPE = (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
         )
@@ -189,6 +190,8 @@ First though we need to register a schema and credential definition.  Find this 
             #     "employee id schema",
             #     version,
             #     ["employee_id", "name", "date", "position"],
+            #     support_revocation=revocation,
+            #     revocation_registry_size=TAILS_FILE_COUNT,
             # )
 ```
 
@@ -212,6 +215,8 @@ First though we need to register a schema and credential definition.  Find this 
                 "employee id schema",
                 version,
                 ["employee_id", "name", "date", "position"],
+                support_revocation=revocation,
+                revocation_registry_size=TAILS_FILE_COUNT,
             )
 ```
 
@@ -277,6 +282,11 @@ with the following code:
                     "credential_preview": cred_preview
                 }
             )
+```
+
+Locate main function and replace with this:
+```
+        async def main(start_port: int, show_timing: bool = False, no_auto: bool = False, revocation: bool = False, tails_server_base_url: str = None,):
 ```
 
 Now you can run the Faber/Alice/Acme script again.  You should be able to receive a proof and then issue a credential to Alice.
