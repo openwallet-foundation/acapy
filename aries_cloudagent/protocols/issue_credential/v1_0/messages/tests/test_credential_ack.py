@@ -1,5 +1,7 @@
 from unittest import mock, TestCase
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import CREDENTIAL_ACK, PROTOCOL_PACKAGE
 from ..credential_ack import CredentialAck
 
@@ -15,7 +17,7 @@ class TestCredentialAck(TestCase):
         """Test type"""
         credential_ack = CredentialAck()
 
-        assert credential_ack._type == CREDENTIAL_ACK
+        assert credential_ack._type == DIDCommPrefix.qualify_current(CREDENTIAL_ACK)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.credential_ack.CredentialAckSchema.load")
     def test_deserialize(self, mock_credential_ack_schema_load):

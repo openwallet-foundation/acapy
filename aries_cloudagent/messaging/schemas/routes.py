@@ -27,12 +27,19 @@ from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
 class SchemaSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
-    schema_name = fields.Str(required=True, description="Schema name", example="prefs",)
+    schema_name = fields.Str(
+        required=True,
+        description="Schema name",
+        example="prefs",
+    )
     schema_version = fields.Str(
         required=True, description="Schema version", **INDY_VERSION
     )
     attributes = fields.List(
-        fields.Str(description="attribute name", example="score",),
+        fields.Str(
+            description="attribute name",
+            example="score",
+        ),
         required=True,
         description="List of schema attributes",
     )
@@ -53,11 +60,15 @@ class SchemaSchema(OpenAPISchema):
     ver = fields.Str(description="Node protocol version", **INDY_VERSION)
     ident = fields.Str(data_key="id", description="Schema identifier", **INDY_SCHEMA_ID)
     name = fields.Str(
-        description="Schema name", example=INDY_SCHEMA_ID["example"].split(":")[2],
+        description="Schema name",
+        example=INDY_SCHEMA_ID["example"].split(":")[2],
     )
     version = fields.Str(description="Schema version", **INDY_VERSION)
     attr_names = fields.List(
-        fields.Str(description="Attribute name", example="score",),
+        fields.Str(
+            description="Attribute name",
+            example="score",
+        ),
         description="Schema attribute names",
         data_key="attrNames",
     )
@@ -67,7 +78,7 @@ class SchemaSchema(OpenAPISchema):
 class SchemaGetResultsSchema(OpenAPISchema):
     """Results schema for schema get request."""
 
-    schema_json = fields.Nested(SchemaSchema())
+    schema = fields.Nested(SchemaSchema())
 
 
 class SchemasCreatedResultsSchema(OpenAPISchema):
@@ -133,7 +144,8 @@ async def schemas_send_schema(request: web.BaseRequest):
 
 
 @docs(
-    tags=["schema"], summary="Search for matching schema that agent originated",
+    tags=["schema"],
+    summary="Search for matching schema that agent originated",
 )
 @querystring_schema(SchemaQueryStringSchema())
 @response_schema(SchemasCreatedResultsSchema(), 200)

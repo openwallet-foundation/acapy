@@ -395,6 +395,12 @@ class GeneralGroup(ArgumentGroup):
             with another agent.",
         )
         parser.add_argument(
+            "--profile-endpoint",
+            type=str,
+            metavar="<profile_endpoint>",
+            help="Specifies the profile endpoint for the (public) DID.",
+        )
+        parser.add_argument(
             "--read-only-ledger",
             action="store_true",
             help="Sets ledger to read-only to prevent updates.\
@@ -413,10 +419,12 @@ class GeneralGroup(ArgumentGroup):
         if args.external_plugins:
             settings["external_plugins"] = args.external_plugins
         if args.storage_type:
-            settings["storage.type"] = args.storage_type
+            settings["storage_type"] = args.storage_type
         if args.endpoint:
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
+        if args.profile_endpoint:
+            settings["profile_endpoint"] = args.profile_endpoint
         if args.read_only_ledger:
             settings["read_only_ledger"] = True
         if args.tails_server_base_url:
@@ -571,7 +579,9 @@ class ProtocolGroup(ArgumentGroup):
             help="Write timing information to a given log file.",
         )
         parser.add_argument(
-            "--trace", action="store_true", help="Generate tracing events.",
+            "--trace",
+            action="store_true",
+            help="Generate tracing events.",
         )
         parser.add_argument(
             "--trace-target",
@@ -595,6 +605,13 @@ class ProtocolGroup(ArgumentGroup):
             "--preserve-exchange-records",
             action="store_true",
             help="Keep credential exchange records after exchange has completed.",
+        )
+        parser.add_argument(
+            "--emit-old-didcomm-prefix",
+            action="store_true",
+            help="Emit protocol messages with old DIDComm prefix; i.e.,\
+            'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/' instead of (default) prefix\
+            'https://didcomm.org/'.",
         )
 
     def get_settings(self, args: Namespace) -> dict:
@@ -644,6 +661,8 @@ class ProtocolGroup(ArgumentGroup):
                 raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
+        if args.emit_old_didcomm_prefix:
+            settings["emit_old_didcomm_prefix"] = True
         return settings
 
 
@@ -789,7 +808,7 @@ class WalletGroup(ArgumentGroup):
             metavar="<storage-type>",
             help="Specifies the type of Indy wallet backend to use.\
             Supported internal storage types are 'basic' (memory),\
-            'indy', and 'postgres_storage'.",
+            'default' (sqlite), and 'postgres_storage'.",
         )
         parser.add_argument(
             "--wallet-storage-config",

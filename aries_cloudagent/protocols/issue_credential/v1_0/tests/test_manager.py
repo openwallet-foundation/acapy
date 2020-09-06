@@ -897,10 +897,14 @@ class TestCredentialManager(AsyncTestCase):
                     async_mock.MagicMock(
                         get_registry=async_mock.CoroutineMock(
                             return_value=async_mock.MagicMock(
-                                tails_local_path="dummy-path", max_creds=1000
+                                get_or_fetch_local_tails_path=(
+                                    async_mock.CoroutineMock()
+                                ),
+                                tails_local_path="dummy-path",
+                                max_creds=1000,
                             )
                         ),
-                        mark_full=async_mock.CoroutineMock(),
+                        set_state=async_mock.CoroutineMock(),
                         revoc_reg_id=REV_REG_ID,
                         save=async_mock.CoroutineMock(),
                         publish_registry_entry=async_mock.CoroutineMock(),
@@ -1109,11 +1113,14 @@ class TestCredentialManager(AsyncTestCase):
                     async_mock.MagicMock(
                         get_registry=async_mock.CoroutineMock(
                             return_value=async_mock.MagicMock(
-                                tails_local_path="dummy-path"
+                                get_or_fetch_local_tails_path=(
+                                    async_mock.CoroutineMock()
+                                ),
+                                tails_local_path="dummy-path",
                             )
                         ),
                         revoc_reg_id=REV_REG_ID,
-                        mark_full=async_mock.CoroutineMock(),
+                        set_state=async_mock.CoroutineMock(),
                     )
                 ]
             )
@@ -1169,11 +1176,13 @@ class TestCredentialManager(AsyncTestCase):
             async_mock.MagicMock(
                 get_registry=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
-                        tails_local_path="dummy-path", max_creds=revocation_id
+                        get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
+                        tails_local_path="dummy-path",
+                        max_creds=revocation_id,
                     )
                 ),
                 revoc_reg_id=REV_REG_ID,
-                mark_full=async_mock.CoroutineMock(),
+                set_state=async_mock.CoroutineMock(),
             )
         ]
 
@@ -1181,21 +1190,26 @@ class TestCredentialManager(AsyncTestCase):
             async_mock.MagicMock(
                 get_registry=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
-                        tails_local_path="dummy-path", max_creds=1000
+                        get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
+                        tails_local_path="dummy-path",
+                        max_creds=1000,
                     )
                 ),
                 revoc_reg_id=REV_REG_ID,
-                mark_full=async_mock.CoroutineMock(),
+                set_state=async_mock.CoroutineMock(),
             )
         ]
 
         pending_reg = [
             async_mock.MagicMock(
                 get_registry=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(tails_local_path="dummy-path")
+                    return_value=async_mock.MagicMock(
+                        get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
+                        tails_local_path="dummy-path",
+                    )
                 ),
                 revoc_reg_id=REV_REG_ID,
-                mark_full=async_mock.CoroutineMock(),
+                set_state=async_mock.CoroutineMock(),
                 state="published",
                 save=async_mock.CoroutineMock(),
                 publish_registry_entry=async_mock.CoroutineMock(),

@@ -177,7 +177,10 @@ class TestIndyWallet(test_basic_wallet.TestBasicWallet):
             )
             with pytest.raises(test_module.WalletError) as excinfo:
                 await wallet.pack_message(
-                    b"hello world", [self.test_verkey,],
+                    b"hello world",
+                    [
+                        self.test_verkey,
+                    ],
                 )
             assert "outlier" in str(excinfo.value)
 

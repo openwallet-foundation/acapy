@@ -1,6 +1,8 @@
 from unittest import mock, TestCase
 
-from aries_cloudagent.messaging.models.base import BaseModelError
+from ......messaging.models.base import BaseModelError
+
+from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CONNECTION_INVITATION
 from ..connection_invitation import ConnectionInvitation
@@ -30,7 +32,9 @@ class TestConnectionInvitation(TestCase):
             label=self.label, recipient_keys=[self.key], endpoint=self.endpoint_url
         )
 
-        assert connection_invitation._type == CONNECTION_INVITATION
+        assert connection_invitation._type == DIDCommPrefix.qualify_current(
+            CONNECTION_INVITATION
+        )
 
     @mock.patch(
         "aries_cloudagent.protocols.connections.v1_0.messages."
@@ -103,7 +107,8 @@ class TestConnectionInvitationSchema(TestCase):
                 endpoint="https://example.com/endpoint",
             ),
             ConnectionInvitation(
-                label="no-did-no-recip-keys", endpoint="https://example.com/endpoint",
+                label="no-did-no-recip-keys",
+                endpoint="https://example.com/endpoint",
             ),
             ConnectionInvitation(
                 label="no-did-no-endpoint",

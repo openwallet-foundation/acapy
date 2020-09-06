@@ -1,26 +1,32 @@
 """Message type identifiers for Action Menus."""
 
-PROTOCOL_URI = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0"
+from ...didcomm_prefix import DIDCommPrefix
 
-MENU = f"{PROTOCOL_URI}/menu"
-MENU_REQUEST = f"{PROTOCOL_URI}/menu-request"
-PERFORM = f"{PROTOCOL_URI}/perform"
-
-NEW_PROTOCOL_URI = "https://didcomm.org/action-menu/1.0"
-
-NEW_MENU = f"{NEW_PROTOCOL_URI}/menu"
-NEW_MENU_REQUEST = f"{NEW_PROTOCOL_URI}/menu-request"
-NEW_PERFORM = f"{NEW_PROTOCOL_URI}/perform"
+# Message types
+MENU = f"action-menu/1.0/menu"
+MENU_REQUEST = f"action-menu/1.0/menu-request"
+PERFORM = f"action-menu/1.0/perform"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.actionmenu.v1_0"
 
 MESSAGE_TYPES = {
-    MENU: f"{PROTOCOL_PACKAGE}.messages.menu.Menu",
-    MENU_REQUEST: (f"{PROTOCOL_PACKAGE}.messages.menu_request.MenuRequest"),
-    PERFORM: f"{PROTOCOL_PACKAGE}.messages.perform.Perform",
-    NEW_MENU: f"{PROTOCOL_PACKAGE}.messages.menu.Menu",
-    NEW_MENU_REQUEST: (f"{PROTOCOL_PACKAGE}.messages.menu_request.MenuRequest"),
-    NEW_PERFORM: f"{PROTOCOL_PACKAGE}.messages.perform.Perform",
+    **{
+        pfx.qualify(MENU): f"{PROTOCOL_PACKAGE}.messages.menu.Menu"
+        for pfx in DIDCommPrefix
+    },
+    **{
+        pfx.qualify(MENU_REQUEST): (
+            f"{PROTOCOL_PACKAGE}.messages.menu_request.MenuRequest"
+        )
+        for pfx in DIDCommPrefix
+    },
+    **{
+        pfx.qualify(PERFORM): f"{PROTOCOL_PACKAGE}.messages.perform.Perform"
+        for pfx in DIDCommPrefix
+    },
 }
 
-CONTROLLERS = {PROTOCOL_URI: f"{PROTOCOL_PACKAGE}.controller.Controller"}
+CONTROLLERS = {
+    pfx.qualify("action-menu/1.0"): f"{PROTOCOL_PACKAGE}.controller.Controller"
+    for pfx in DIDCommPrefix
+}

@@ -1760,7 +1760,11 @@ class TestCredentialRoutes(AsyncTestCase):
 
     async def test_credential_exchange_revoke(self):
         mock = async_mock.MagicMock(
-            query={"rev_reg_id": "rr_id", "cred_rev_id": "23", "publish": "false",}
+            query={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+            }
         )
         mock.app = {
             "request_context": async_mock.patch.object(
@@ -1783,7 +1787,11 @@ class TestCredentialRoutes(AsyncTestCase):
 
     async def test_credential_exchange_revoke_not_found(self):
         mock = async_mock.MagicMock(
-            query={"rev_reg_id": "rr_id", "cred_rev_id": "23", "publish": "false",}
+            query={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+            }
         )
         mock.app = {
             "request_context": async_mock.patch.object(

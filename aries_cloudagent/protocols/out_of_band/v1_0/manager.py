@@ -7,20 +7,18 @@ from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....ledger.base import BaseLedger
 from ....wallet.util import did_key_to_naked, naked_to_did_key
-from ....protocols.connections.v1_0.manager import ConnectionManager
-from ....protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
-from ....protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange,
-)
-from ....protocols.present_proof.v1_0.models.presentation_exchange import (
-    V10PresentationExchange,
-)
+
+from ...connections.v1_0.manager import ConnectionManager
+from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from ...didcomm_prefix import DIDCommPrefix
+from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
 from .models.invitation import Invitation as InvitationModel
 from .messages.invitation import Invitation as InvitationMessage
 from .messages.service import Service as ServiceMessage
+
+HS_PROTO_CONN_INVI = "connections/1.0/invitation"
 
 
 class OutOfBandManagerError(BaseError):
@@ -158,8 +156,8 @@ class OutOfBandManager:
         if include_handshake:
             # handshake_protocols.append("https://didcomm.org/connections/1.0")
             # handshake_protocols.append("https://didcomm.org/didexchange/1.0")
-            handshake_protocols.append(
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+            handshake_protocols.extend(
+                pfx.qualify(HS_PROTO_CONN_INVI) for pfx in DIDCommPrefix
             )
 
         invitation_message = InvitationMessage(
@@ -221,13 +219,12 @@ class OutOfBandManager:
                 }
             )
 
+        unq_handshake_protos = {
+            DIDCommPrefix.unqualify(proto)
+            for proto in invitation_message.handshake_protocols
+        }
         # If we are dealing with an invitation
-        if (
-            len(invitation_message.handshake_protocols) == 1
-            and invitation_message.handshake_protocols[0]
-            == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
-        ):
-
+        if unq_handshake_protos == {HS_PROTO_CONN_INVI}:
             if len(invitation_message.request_attach) != 0:
                 raise OutOfBandManagerError(
                     "request block must be empty for invitation message type."
@@ -245,7 +242,7 @@ class OutOfBandManager:
             connection_invitation = ConnectionInvitation.deserialize(
                 {
                     "@id": invitation_message._id,
-                    "@type": invitation_message.handshake_protocols[0],
+                    "@type": DIDCommPrefix.qualify_current(HS_PROTO_CONN_INVI),
                     "label": invitation_message.label,
                     "recipientKeys": service.recipient_keys,
                     "serviceEndpoint": service.service_endpoint,
@@ -260,13 +257,12 @@ class OutOfBandManager:
 
         elif len(
             invitation_message.request_attach
-        ) == 1 and invitation_message.request_attach[0].data.json["@type"] == (
-            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
-            "/present-proof/1.0/request-presentation"
-        ):
+        ) == 1 and invitation_message.request_attach[0].data.json["@type"] in [
+            pfx.qualify("present-proof/1.0/request-presentation")
+            for pfx in DIDCommPrefix
+        ]:
             raise OutOfBandManagerNotImplementedError(
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
-                "/present-proof/1.0/request-presentation "
+                f"{invitation_message.request_attach[0].data.json['@type']} "
                 "request type not implemented."
             )
         else:

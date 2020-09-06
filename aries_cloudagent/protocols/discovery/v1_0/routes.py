@@ -27,7 +27,8 @@ class QueryFeaturesQueryStringSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["server"], summary="Query supported features",
+    tags=["server"],
+    summary="Query supported features",
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
 @response_schema(QueryResultSchema(), 200)

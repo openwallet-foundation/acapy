@@ -2,12 +2,14 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from aries_cloudagent.connections.models.diddoc import (
+from ......connections.models.diddoc import (
     DIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
 )
+
+from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CONNECTION_REQUEST
 from ...models.connection_detail import ConnectionDetail
@@ -65,7 +67,9 @@ class TestConnectionRequest(TestCase, TestConfig):
 
     def test_type(self):
         """Test type."""
-        assert self.connection_request._type == CONNECTION_REQUEST
+        assert self.connection_request._type == DIDCommPrefix.qualify_current(
+            CONNECTION_REQUEST
+        )
 
     @mock.patch(
         "aries_cloudagent.protocols.connections.v1_0.messages."

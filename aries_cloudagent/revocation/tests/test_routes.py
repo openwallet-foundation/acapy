@@ -436,6 +436,72 @@ class TestRevocationRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.update_registry(request)
 
+    async def test_set_registry_state(self):
+        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+            self.test_did, self.test_did
+        )
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.match_info = {"rev_reg_id": REV_REG_ID}
+        request.json = async_mock.CoroutineMock(
+            return_value={
+                "max_cred_num": "1000",
+            }
+        )
+        request.query = {
+            "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
+        }
+
+        with async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        set_state=async_mock.CoroutineMock(),
+                        save=async_mock.CoroutineMock(),
+                        serialize=async_mock.MagicMock(return_value="dummy"),
+                    )
+                )
+            )
+
+            result = await test_module.set_registry_state(request)
+            mock_json_response.assert_called_once_with({"result": "dummy"})
+            assert result is mock_json_response.return_value
+
+    async def test_set_registry_state_not_found(self):
+        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+            self.test_did, self.test_did
+        )
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.match_info = {"rev_reg_id": REV_REG_ID}
+        request.json = async_mock.CoroutineMock(
+            return_value={
+                "max_cred_num": "1000",
+            }
+        )
+        request.query = {
+            "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
+        }
+
+        with async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc, async_mock.patch.object(
+            test_module.web, "FileResponse", async_mock.Mock()
+        ) as mock_json_response:
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageNotFoundError(error_code="dummy")
+                )
+            )
+
+            with self.assertRaises(HTTPNotFound):
+                result = await test_module.set_registry_state(request)
+            mock_json_response.assert_not_called()
+
     async def test_register(self):
         mock_app = async_mock.MagicMock()
         mock_app.add_routes = async_mock.MagicMock()
