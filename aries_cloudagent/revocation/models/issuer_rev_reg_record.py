@@ -224,10 +224,7 @@ class IssuerRevRegRecord(BaseRecord):
 
         self._check_url(self.tails_public_uri)
 
-        if self.state not in (
-            IssuerRevRegRecord.STATE_GENERATED,
-            IssuerRevRegRecord.STATE_STAGED,
-        ):
+        if self.state != IssuerRevRegRecord.STATE_GENERATED:
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot publish definition".format(
                     self.revoc_reg_id, self.state
@@ -374,7 +371,9 @@ class IssuerRevRegRecord(BaseRecord):
     async def set_state(self, context: InjectionContext, state: str = None):
         """Change the registry state (default full)."""
         self.state = state or IssuerRevRegRecord.STATE_FULL
-        await self.save(context, reason=f"Marked {self.state}")
+        await self.save(
+            context, reason=f"Marked rev reg {self.revoc_reg_id} as {self.state}"
+        )
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
