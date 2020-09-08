@@ -552,10 +552,24 @@ class CredentialManager:
                     tails_path,
                 )
 
-                # If the revocation registry is full
-                if registry and registry.max_creds == int(
-                    cred_ex_record.revocation_id  # monotonic "1"-based
-                ):
+                # If the revocation registry is now full
+                if registry and registry.max_creds == int(cred_ex_record.revocation_id):
+                    # Kick off a task to create and publish the next revocation
+                    # registry in the background. It is assumed that the size of
+                    # the registry is small enough so that this completes before
+                    # we need it
+                    revoc = IndyRevocation(self.context)
+                    pending_registry_record = await revoc.init_issuer_registry(
+                        active_reg.cred_def_id,
+                        active_reg.issuer_did,
+                        max_cred_num=active_reg.max_cred_num,
+                    )
+                    asyncio.ensure_future(
+                        pending_registry_record.stage_pending_registry_definition(
+                            self.context, max_attempts=16
+                        )
+                    )
+
                     # Check to see if we have a registry record staged and waiting
                     pending_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
                         self.context,
@@ -564,28 +578,13 @@ class CredentialManager:
                     )
                     if pending_rev_regs:
                         pending_rev_reg = pending_rev_regs[0]
-                        pending_rev_reg.state = IssuerRevRegRecord.STATE_STAGED
-                        await pending_rev_reg.save(
-                            self.context, reason="revocation registry staged"
+                        await pending_rev_reg.set_state(
+                            self.context,
+                            IssuerRevRegRecord.STATE_STAGED,
                         )
 
-                        # Make it active
+                        # Make that one active
                         await pending_rev_reg.publish_registry_entry(self.context)
-                        # Kick off a task to create and publish the next revocation
-                        # registry in the background. It is assumed that the size of
-                        # the registry is large enough so that this completes before
-                        # the current registry is full
-                        revoc = IndyRevocation(self.context)
-                        pending_registry_record = await revoc.init_issuer_registry(
-                            active_reg.cred_def_id,
-                            active_reg.issuer_did,
-                            max_cred_num=active_reg.max_cred_num,
-                        )
-                        asyncio.ensure_future(
-                            pending_registry_record.stage_pending_registry_definition(
-                                self.context, max_attempts=16
-                            )
-                        )
 
                     # Make the current registry full
                     await active_reg.set_state(

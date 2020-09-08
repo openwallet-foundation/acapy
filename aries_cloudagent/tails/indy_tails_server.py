@@ -14,6 +14,8 @@ class IndyTailsServer(BaseTailsServer):
         context,
         rev_reg_id: str,
         tails_file_path: str,
+        interval: float = 1.0,
+        backoff: float = 0.25,
         max_attempts: int = 5,
     ) -> (bool, str):
         """Upload tails file to tails server.
@@ -22,8 +24,9 @@ class IndyTailsServer(BaseTailsServer):
             context: context with configuration settings
             rev_reg_id: revocation registry identifier
             tails_file_path: path to the tails file to upload
+            interval: initial interval between attempts
+            backoff: exponential backoff in retry interval
             max_attempts: maximum number of attempts to make
-
         """
 
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
