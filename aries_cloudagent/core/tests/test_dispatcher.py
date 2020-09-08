@@ -100,7 +100,7 @@ class TestDispatcher(AsyncTestCase):
         await dispatcher.setup()
         rcv = Receiver()
         message = {
-            "@type": DIDCommPrefix.NEW.qualify(StubAgentMessage.Meta.message_type)
+            "@type": DIDCommPrefix.qualify_current(StubAgentMessage.Meta.message_type)
         }
 
         with async_mock.patch.object(
@@ -127,7 +127,7 @@ class TestDispatcher(AsyncTestCase):
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
-                DIDCommPrefix.NEW.qualify(
+                DIDCommPrefix.qualify_current(
                     StubAgentMessage.Meta.message_type
                 ): StubAgentMessage
             },
@@ -142,7 +142,7 @@ class TestDispatcher(AsyncTestCase):
         await dispatcher.setup()
         rcv = Receiver()
         message = {
-            "@type": DIDCommPrefix.NEW.qualify(StubAgentMessage.Meta.message_type)
+            "@type": DIDCommPrefix.qualify_current(StubAgentMessage.Meta.message_type)
         }
 
         with async_mock.patch.object(
@@ -162,7 +162,7 @@ class TestDispatcher(AsyncTestCase):
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
-                DIDCommPrefix.NEW.qualify(
+                DIDCommPrefix.qualify_current(
                     StubAgentMessage.Meta.message_type
                 ): StubAgentMessage
             },
@@ -185,7 +185,7 @@ class TestDispatcher(AsyncTestCase):
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
-            assert payload["@type"] == DIDCommPrefix.NEW.qualify(
+            assert payload["@type"] == DIDCommPrefix.qualify_current(
                 ProblemReport.Meta.message_type
             )
 
@@ -195,7 +195,7 @@ class TestDispatcher(AsyncTestCase):
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
-                DIDCommPrefix.NEW.qualify(
+                DIDCommPrefix.qualify_current(
                     StubAgentMessage.Meta.message_type
                 ): StubAgentMessage
             },
@@ -225,7 +225,7 @@ class TestDispatcher(AsyncTestCase):
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
-            assert payload["@type"] == DIDCommPrefix.NEW.qualify(
+            assert payload["@type"] == DIDCommPrefix.qualify_current(
                 ProblemReport.Meta.message_type
             )
 
@@ -235,7 +235,7 @@ class TestDispatcher(AsyncTestCase):
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
-                DIDCommPrefix.NEW.qualify(
+                DIDCommPrefix.qualify_current(
                     StubAgentMessage.Meta.message_type
                 ): StubAgentMessage
             },
@@ -250,7 +250,9 @@ class TestDispatcher(AsyncTestCase):
         await dispatcher.setup()
         rcv = Receiver()
         message = {
-            "@type": DIDCommPrefix.NEW.qualify(StubV1_2AgentMessage.Meta.message_type)
+            "@type": DIDCommPrefix.qualify_current(
+                StubV1_2AgentMessage.Meta.message_type
+            )
         }
 
         with async_mock.patch.object(
@@ -270,7 +272,7 @@ class TestDispatcher(AsyncTestCase):
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
-                DIDCommPrefix.NEW.qualify(
+                DIDCommPrefix.qualify_current(
                     StubV1_2AgentMessage.Meta.message_type
                 ): StubV1_2AgentMessage
             },
@@ -285,7 +287,7 @@ class TestDispatcher(AsyncTestCase):
         await dispatcher.setup()
         rcv = Receiver()
         message = {
-            "@type": DIDCommPrefix.NEW.qualify(StubAgentMessage.Meta.message_type)
+            "@type": DIDCommPrefix.qualify_current(StubAgentMessage.Meta.message_type)
         }
 
         with async_mock.patch.object(
@@ -295,7 +297,7 @@ class TestDispatcher(AsyncTestCase):
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
-            assert payload["@type"] == DIDCommPrefix.NEW.qualify(
+            assert payload["@type"] == DIDCommPrefix.qualify_current(
                 ProblemReport.Meta.message_type
             )
 
@@ -308,7 +310,7 @@ class TestDispatcher(AsyncTestCase):
         await dispatcher.task_queue
         assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
         payload = json.loads(rcv.messages[0][1].payload)
-        assert payload["@type"] == DIDCommPrefix.NEW.qualify(
+        assert payload["@type"] == DIDCommPrefix.qualify_current(
             ProblemReport.Meta.message_type
         )
 
@@ -318,7 +320,7 @@ class TestDispatcher(AsyncTestCase):
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
             {
-                DIDCommPrefix.NEW.qualify(
+                DIDCommPrefix.qualify_current(
                     StubAgentMessage.Meta.message_type
                 ): StubAgentMessage
             },
@@ -348,7 +350,7 @@ class TestDispatcher(AsyncTestCase):
             context, message, None, async_mock.CoroutineMock()
         )
         result = await responder.create_outbound(message)
-        assert json.loads(result.payload)["@type"] == DIDCommPrefix.NEW.qualify(
+        assert json.loads(result.payload)["@type"] == DIDCommPrefix.qualify_current(
             StubAgentMessage.Meta.message_type
         )
         await responder.send_webhook("topic", "payload")

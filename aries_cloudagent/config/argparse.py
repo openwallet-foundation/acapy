@@ -607,11 +607,11 @@ class ProtocolGroup(ArgumentGroup):
             help="Keep credential exchange records after exchange has completed.",
         )
         parser.add_argument(
-            "--emit-old-didcomm-prefix",
+            "--emit-new-didcomm-prefix",
             action="store_true",
-            help="Emit protocol messages with old DIDComm prefix; i.e.,\
-            'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/' instead of (default) prefix\
-            'https://didcomm.org/'.",
+            help="Emit protocol messages with new DIDComm prefix; i.e.,\
+            'https://didcomm.org/' instead of (default) prefix\
+            'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'.",
         )
 
     def get_settings(self, args: Namespace) -> dict:
@@ -661,8 +661,8 @@ class ProtocolGroup(ArgumentGroup):
                 raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
-        if args.emit_old_didcomm_prefix:
-            settings["emit_old_didcomm_prefix"] = True
+        if args.emit_new_didcomm_prefix:
+            settings["emit_new_didcomm_prefix"] = True
         return settings
 
 
