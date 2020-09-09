@@ -483,6 +483,29 @@ class CredentialManager:
                 )
             )
         )
+
+        async def retriable_rev_regs(context: InjectionContext, cred_def_id: str) -> (
+            Tuple[IssuerRevRegRecord]
+        ):
+            """Currently ((active or staged), published) rev regs."""
+            active_staged = await IssuerRevRegRecord.query_by_cred_def_id(
+                context,
+                cred_def_id,
+                IssuerRevRegRecord.STATE_ACTIVE,
+            ).extend(
+                await IssuerRevRegRecord.query_by_cred_def_id( 
+                    context,
+                    cred_def_id,
+                    IssuerRevRegRecord.STATE_STAGED,
+                )
+            )
+            published = await IssuerRevRegRecord.query_by_cred_def_id(
+                context,
+                cred_def_id,
+                IssuerRevRegRecord.STATE_PUBLISHED
+            )
+            return (active_staged, published)
+
         if cred_ex_record.state != V10CredentialExchange.STATE_REQUEST_RECEIVED:
             raise CredentialManagerError(
                 f"Credential exchange {cred_ex_record.credential_exchange_id} "
@@ -676,6 +699,7 @@ class CredentialManager:
                         )
                     )
                 )
+                retriable_rrs = await retriable_rev_regs(self.context, cred_ex_record.credential_definition_id)
                 active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
                     self.context,
                     cred_ex_record.credential_definition_id,
@@ -702,38 +726,36 @@ class CredentialManager:
                     )
                 )
 
-                if (
-                    staged_rev_regs or active_rev_regs or published_rev_regs
-                ) and retries > 0:
-
-                    # We know there is a staged registry that will be ready soon.
-                    # So we wait and retry.
-                    await asyncio.sleep(1)
-                    print(
-                        Ink.GREEN(
-                            ".. {} Waited 1 sec and retrying issue-cred call".format(
-                                time_now(),
+                if retries > 0:
+                    if 
+                    if (staged_rev_regs or active_rev_regs):
+                        # a rev reg is ready or about to be: wait and retry
+                        await asyncio.sleep(1)
+                        print(
+                            Ink.GREEN(
+                                ".. {} Waited 1 sec and retrying issue-cred".format(
+                                    time_now(),
+                                )
                             )
                         )
-                    )
-                    return await self.issue_credential(
-                        cred_ex_record=cred_ex_record,
-                        comment=comment,
-                        retries=retries - 1,
-                    )
-                else:
-                    await active_reg.set_state(
-                        self.context,
-                        IssuerRevRegRecord.STATE_FULL,
-                    )
-                    print(
-                        Ink.GREEN(
-                            ".. {} No rev regs look promising: bailing here".format(
-                                time_now(),
+                        return await self.issue_credential(
+                            cred_ex_record=cred_ex_record,
+                            comment=comment,
+                            retries=retries - 1,
+                        )
+                    else:
+                        await active_reg.set_state(
+                            self.context,
+                            IssuerRevRegRecord.STATE_FULL,
+                        )
+                        print(
+                            Ink.GREEN(
+                                ".. {} No rev regs look promising: bailing here".format(
+                                    time_now(),
+                                )
                             )
                         )
-                    )
-                    raise
+                        raise
 
             cred_ex_record.credential = json.loads(credential_json)
 
