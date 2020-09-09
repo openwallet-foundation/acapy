@@ -24,6 +24,9 @@ from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 
+from ..messaging.util import time_now
+from ..utils.frill import Ink
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -143,6 +146,14 @@ async def revocation_create_registry(request: web.BaseRequest):
     credential_definition_id = body.get("credential_definition_id")
     max_cred_num = body.get("max_cred_num")
 
+    print(
+        Ink.MAGENTA(
+            "\n\n%% {} %% ROUTES create-reg for cred-def-id {} START".format(
+                time_now(), credential_definition_id
+            )
+        )
+    )
+
     # check we published this cred def
     storage = await context.inject(BaseStorage)
 
@@ -163,9 +174,25 @@ async def revocation_create_registry(request: web.BaseRequest):
             issuer_did,
             max_cred_num=max_cred_num,
         )
+        print(
+            Ink.MAGENTA(
+                "%% {} ROUTES create-reg for cred-def-id {}, created {}".format(
+                    time_now(),
+                    credential_definition_id,
+                    issuer_rev_reg_rec.revoc_reg_id,
+                )
+            )
+        )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
     await shield(issuer_rev_reg_rec.generate_registry(context))
+    print(
+        Ink.MAGENTA(
+            "%% {} ROUTES create-reg for cred-def-id {}, generated rr {}; END".format(
+                time_now(), credential_definition_id, issuer_rev_reg_rec.revoc_reg_id
+            )
+        )
+    )
 
     return web.json_response({"result": issuer_rev_reg_rec.serialize()})
 
@@ -299,7 +326,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 @response_schema(RevRegResultSchema(), 200)
 async def publish_registry(request: web.BaseRequest):
     """
-    Request handler to publish a revocation registry based on the registry id.
+    Request handler to publish a revocation registry by registry id.
 
     Args:
         request: aiohttp request object
@@ -311,33 +338,109 @@ async def publish_registry(request: web.BaseRequest):
     context = request.app["request_context"]
     rev_reg_id = request.match_info["rev_reg_id"]
 
+    print(
+        Ink.MAGENTA(
+            "\n\n%% {} %% ROUTES publish-registry for rev-reg-id {} START".format(
+                time_now(), rev_reg_id
+            )
+        )
+    )
+
     try:
         revoc = IndyRevocation(context)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
 
         await rev_reg.publish_registry_definition(context)
         LOGGER.debug("published registry definition: %s", rev_reg_id)
+        print(
+            Ink.MAGENTA(
+                "%% {} ROUTES publish-registry({}) published rr-def".format(
+                    time_now(), rev_reg_id
+                )
+            )
+        )
 
-        await rev_reg.publish_registry_entry(context)
         LOGGER.debug("published registry entry: %s", rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except RevocationError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    print(
+        Ink.MAGENTA(
+            "%% {} ROUTES publish-registry({}) END".format(time_now(), rev_reg_id)
+        )
+    )
+
     return web.json_response({"result": rev_reg.serialize()})
 
 
 @docs(
     tags=["revocation"],
-    summary="Update revocation registry with new public URI to the tails file.",
+    summary="Activate a given revocation registry",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevRegResultSchema(), 200)
+async def activate_registry(request: web.BaseRequest):
+    """
+    Request handler to activate a revocation registry by registry id.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The revocation registry record
+
+    """
+    context = request.app["request_context"]
+    rev_reg_id = request.match_info["rev_reg_id"]
+
+    print(
+        Ink.MAGENTA(
+            "\n\n%% {} %% ROUTES activate-registry for rev-reg-id {} START".format(
+                time_now(), rev_reg_id
+            )
+        )
+    )
+
+    try:
+        revoc = IndyRevocation(context)
+        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
+
+        await rev_reg.publish_registry_entry(context)
+        print(
+            Ink.MAGENTA(
+                "%% {} ROUTES activate-registry({}) published rr-entry".format(
+                    time_now(), rev_reg_id
+                )
+            )
+        )
+
+        LOGGER.debug("published registry entry: %s", rev_reg_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except RevocationError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    print(
+        Ink.MAGENTA(
+            "%% {} ROUTES activate-registry({}) END".format(time_now(), rev_reg_id)
+        )
+    )
+
+    return web.json_response({"result": rev_reg.serialize()})
+
+
+@docs(
+    tags=["revocation"],
+    summary="Update revocation registry with new public URI to the tails file",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @request_schema(RevRegUpdateTailsFileUriSchema())
 @response_schema(RevRegResultSchema(), 200)
 async def update_registry(request: web.BaseRequest):
     """
-    Request handler to update a revocation registry based on the registry id.
+    Request handler to update a revocation registry by registry id.
 
     Args:
         request: aiohttp request object
@@ -353,19 +456,44 @@ async def update_registry(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
+    print(
+        Ink.MAGENTA(
+            "\n\n%% {} %% ROUTES update-registry for rev-reg-id {}: {} START".format(
+                time_now(),
+                rev_reg_id,
+                tails_public_uri,
+            )
+        )
+    )
+
     try:
         revoc = IndyRevocation(context)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         await rev_reg.set_tails_file_public_uri(context, tails_public_uri)
+        print(
+            Ink.MAGENTA(
+                "%% {} ROUTES update-registry({}) set public uri {}".format(
+                    time_now(), rev_reg_id, tails_public_uri
+                )
+            )
+        )
+
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except RevocationError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    print(
+        Ink.MAGENTA(
+            "%% {} ROUTES update-registry({}) public uri {} END".format(
+                time_now(), rev_reg_id, tails_public_uri
+            )
+        )
+    )
     return web.json_response({"result": rev_reg.serialize()})
 
 
-@docs(tags=["revocation"], summary="Set revocation registry state manually.")
+@docs(tags=["revocation"], summary="Set revocation registry state manually")
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(SetRevRegStateQueryStringSchema())
 @response_schema(RevRegResultSchema(), 200)
@@ -384,16 +512,42 @@ async def set_registry_state(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
     state = request.query.get("state")
 
+    print(
+        Ink.MAGENTA(
+            "\n\n%% {} %% ROUTES set-state for rev-reg-id {}; state {} START".format(
+                time_now(),
+                rev_reg_id,
+                state,
+            )
+        )
+    )
+
     try:
         revoc = IndyRevocation(context)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         await rev_reg.set_state(context, state)
+
+        print(
+            Ink.MAGENTA(
+                "%% {} ROUTES set-state for rev-reg-id {}: state {}".format(
+                    time_now(), rev_reg_id, rev_reg.state
+                )
+            )
+        )
 
         LOGGER.debug("set registry %s state: %s", rev_reg_id, state)
 
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
+    print(
+        Ink.MAGENTA(
+            "%% {} ROUTES set-state({}) END".format(
+                time_now(),
+                rev_reg_id,
+            )
+        )
+    )
     return web.json_response({"result": rev_reg.serialize()})
 
 
@@ -422,6 +576,7 @@ async def register(app: web.Application):
             ),
             web.patch("/revocation/registry/{rev_reg_id}", update_registry),
             web.post("/revocation/registry/{rev_reg_id}/publish", publish_registry),
+            web.post("/revocation/registry/{rev_reg_id}/activate", activate_registry),
             web.patch(
                 "/revocation/registry/{rev_reg_id}/set-state",
                 set_registry_state,
