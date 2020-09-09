@@ -30,6 +30,9 @@ from ..error import RevocationError
 
 from .revocation_registry import RevocationRegistry
 
+from ...messaging.util import time_now
+from ...utils.frill import Ink, ppjson
+
 DEFAULT_REGISTRY_SIZE = 1000
 
 LOGGER = logging.getLogger(__name__)
@@ -86,6 +89,13 @@ class IssuerRevRegRecord(BaseRecord):
         **kwargs,
     ):
         """Initialize the issuer revocation registry record."""
+        print(
+            Ink.BLUE(
+                "\n\n## {} ## IssuerRR init(rr-id={}, state={}) START".format(
+                    time_now(), revoc_reg_id, state
+                )
+            )
+        )
         super().__init__(
             record_id, state=state or IssuerRevRegRecord.STATE_INIT, **kwargs
         )
@@ -104,6 +114,13 @@ class IssuerRevRegRecord(BaseRecord):
         self.pending_pub = (
             sorted(list(set(pending_pub))) if pending_pub else []
         )  # order for eq comparison between instances
+        print(
+            Ink.BLUE(
+                "  ##  {} IssuerRR init {} END, state {}".format(
+                    time_now(), self.revoc_reg_id, self.state
+                )
+            )
+        )
 
     @property
     def record_id(self) -> str:
@@ -135,6 +152,13 @@ class IssuerRevRegRecord(BaseRecord):
 
     async def generate_registry(self, context: InjectionContext):
         """Create the credential registry definition and tails file."""
+        print(
+            Ink.BLUE(
+                "\n\n## {} ## IssuerRR {} gen-reg(max={}) START".format(
+                    time_now(), self.revoc_reg_id, self.max_cred_num
+                )
+            )
+        )
         if not self.tag:
             self.tag = self._id or str(uuid.uuid4())
 
@@ -178,11 +202,25 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_local_path = tails_path
 
         await self.save(context, reason="Generated registry")
+        print(
+            Ink.BLUE(
+                "  ## {} IssuerRR {} gen-reg END, state {}".format(
+                    time_now(), self.revoc_reg_id, self.state
+                )
+            )
+        )
 
     async def set_tails_file_public_uri(
         self, context: InjectionContext, tails_file_uri: str
     ):
         """Update tails file's publicly accessible URI."""
+        print(
+            Ink.BLUE(
+                "\n\n## {} ## IssuerRR {} set-tails-public-uri({}) START".format(
+                    time_now(), self.revoc_reg_id, tails_file_uri
+                )
+            )
+        )
         if not (
             self.revoc_reg_def
             and self.revoc_reg_def.get("value", {}).get("tailsLocation")
@@ -194,16 +232,45 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_public_uri = tails_file_uri
         self.revoc_reg_def["value"]["tailsLocation"] = tails_file_uri
         await self.save(context, reason="Set tails file public URI")
+        print(
+            Ink.BLUE(
+                "  ## {} IssuerRR {} set-tails-public-uri END, state {}".format(
+                    time_now(), self.revoc_reg_id, self.state
+                )
+            )
+        )
 
     async def stage_pending_registry_definition(
         self, context: InjectionContext, max_attempts: int = 5
     ):
         """Prepare registry definition for future use."""
+        print(
+            Ink.BLUE(
+                "\n\n## {} ## IssuerRR {} stage-pending-rr-def START".format(
+                    time_now(),
+                    self.revoc_reg_id,
+                )
+            )
+        )
         await shield(self.generate_registry(context))
+        print(
+            Ink.BLUE(
+                "  ## {} stage-pending-rr-def() generated registry {}".format(
+                    time_now(), self.revoc_reg_id
+                )
+            )
+        )
         tails_base_url = context.settings.get("tails_server_base_url")
         await self.set_tails_file_public_uri(
             context,
             f"{tails_base_url}/{self.revoc_reg_id}",
+        )
+        print(
+            Ink.BLUE(
+                "  ## {} stage-pending-rr-def({}) set tails file public uri {}".format(
+                    time_now(), self.revoc_reg_id, self.tails_public_uri
+                )
+            )
         )
         await self.publish_registry_definition(context)
 
@@ -216,9 +283,24 @@ class IssuerRevRegRecord(BaseRecord):
             backoff=-0.5,
             max_attempts=max_attempts,
         )
+        print(
+            Ink.BLUE(
+                "  ## {} stage-pending-rr-def({}) END: uploaded {}, state {}".format(
+                    time_now(), self.revoc_reg_id, self.tails_local_path, self.state
+                )
+            )
+        )
 
     async def publish_registry_definition(self, context: InjectionContext):
         """Send the revocation registry definition to the ledger."""
+        print(
+            Ink.BLUE(
+                "\n\n## {} ## IssuerRR {} publish-reg-def START".format(
+                    time_now(),
+                    self.revoc_reg_id,
+                )
+            )
+        )
         if not (self.revoc_reg_def and self.issuer_did):
             raise RevocationError(f"Revocation registry {self.revoc_reg_id} undefined")
 
@@ -236,9 +318,23 @@ class IssuerRevRegRecord(BaseRecord):
             await ledger.send_revoc_reg_def(self.revoc_reg_def, self.issuer_did)
         self.state = IssuerRevRegRecord.STATE_PUBLISHED
         await self.save(context, reason="Published revocation registry definition")
+        print(
+            Ink.BLUE(
+                "  ## {} IssuerRR {} publish-reg-def END: state {}".format(
+                    time_now(), self.revoc_reg_id, self.state
+                )
+            )
+        )
 
     async def publish_registry_entry(self, context: InjectionContext):
         """Send a registry entry to the ledger."""
+        print(
+            Ink.BLUE(
+                "\n\n## {} ## IssuerRR {} publish-rr-entry {} START".format(
+                    time_now(), self.revoc_reg_id, ppjson(self.revoc_reg_entry)
+                )
+            )
+        )
         if not (
             self.revoc_reg_id
             and self.revoc_def_type
@@ -277,6 +373,13 @@ class IssuerRevRegRecord(BaseRecord):
             await self.save(
                 context, reason="Published initial revocation registry entry"
             )
+        print(
+            Ink.BLUE(
+                "  ## {} IssuerRR {} publish-rr-entry END, state {}".format(
+                    time_now(), self.revoc_reg_id, self.state
+                )
+            )
+        )
 
     async def mark_pending(self, context: InjectionContext, cred_rev_id: str) -> None:
         """Mark a credential revocation id as revoked pending publication to ledger.
@@ -373,6 +476,16 @@ class IssuerRevRegRecord(BaseRecord):
         self.state = state or IssuerRevRegRecord.STATE_FULL
         await self.save(
             context, reason=f"Marked rev reg {self.revoc_reg_id} as {self.state}"
+        )
+        print(
+            Ink.BLUE(
+                "  ## {} IssuerRR {} set-state {} with entry {}".format(
+                    time_now(),
+                    self.revoc_reg_id,
+                    self.state,
+                    ppjson(self.revoc_reg_entry),
+                )
+            )
         )
 
     def __eq__(self, other: Any) -> bool:
