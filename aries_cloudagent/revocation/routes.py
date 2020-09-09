@@ -330,7 +330,7 @@ async def publish_registry(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Update revocation registry with new public URI to the tails file.",
+    summary="Update revocation registry with new public URI to the tails file",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @request_schema(RevRegUpdateTailsFileUriSchema())
@@ -365,7 +365,7 @@ async def update_registry(request: web.BaseRequest):
     return web.json_response({"result": rev_reg.serialize()})
 
 
-@docs(tags=["revocation"], summary="Set revocation registry state manually.")
+@docs(tags=["revocation"], summary="Set revocation registry state manually")
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(SetRevRegStateQueryStringSchema())
 @response_schema(RevRegResultSchema(), 200)
