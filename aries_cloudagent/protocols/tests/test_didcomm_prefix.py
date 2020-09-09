@@ -8,18 +8,18 @@ from ..didcomm_prefix import DIDCommPrefix
 class TestDIDCommPrefix(AsyncTestCase):
     async def test_didcomm_prefix(self):
         DIDCommPrefix.set({})
-        assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.NEW.value
-
-        DIDCommPrefix.set({"emit_old_didcomm_prefix": True})
         assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.OLD.value
-        assert DIDCommPrefix.qualify_current("hello") == (
-            f"{DIDCommPrefix.OLD.value}/hello"
-        )
 
-        DIDCommPrefix.set({"emit_old_didcomm_prefix": False})
+        DIDCommPrefix.set({"emit_new_didcomm_prefix": True})
         assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.NEW.value
         assert DIDCommPrefix.qualify_current("hello") == (
             f"{DIDCommPrefix.NEW.value}/hello"
+        )
+
+        DIDCommPrefix.set({"emit_new_didcomm_prefix": False})
+        assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.OLD.value
+        assert DIDCommPrefix.qualify_current("hello") == (
+            f"{DIDCommPrefix.OLD.value}/hello"
         )
 
         old_q_hello = DIDCommPrefix.OLD.qualify("hello")
