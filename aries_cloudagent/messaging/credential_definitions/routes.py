@@ -28,6 +28,8 @@ from ...ledger.error import LedgerError
 
 from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
 
+from ..utils.frill import Ink
+
 
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
@@ -187,6 +189,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 backoff=-0.5,
                 max_attempts=5,  # heuristic: respect HTTP timeout
             )
+            print(
+                Ink.RED(
+                    f'\n\n$$ $$ CRED-DEF upload tails file: {upload_success}; {reason}'
+                )
+            )
+
             if not upload_success:
                 raise web.HTTPInternalServerError(
                     reason=f"Tails file failed to upload: {reason}"
