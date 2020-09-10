@@ -44,6 +44,8 @@ class IndyTailsServer(BaseTailsServer):
                     f"{tails_server_base_url}/{rev_reg_id}",
                     {"tails": tails_file_path},
                     {"genesis": genesis_transactions},
+                    interval=interval,
+                    backoff=backoff,
                     max_attempts=max_attempts,
                 ),
             )

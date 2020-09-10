@@ -56,18 +56,18 @@ class IndyRevocation:
     async def get_active_issuer_rev_reg_record(
         self, cred_def_id: str
     ) -> "IssuerRevRegRecord":
-        """Return the current active registry for issuing a given credential definition.
-
-        If no registry exists, then a new one will be created.
+        """Return current active registry for issuing a given credential definition.
 
         Args:
             cred_def_id: ID of the base credential definition
         """
-        current = await IssuerRevRegRecord.query_by_cred_def_id(
-            self._context, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
+        current = sorted(
+            await IssuerRevRegRecord.query_by_cred_def_id(
+                self._context, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
+            )
         )
         if current:
-            return current[0]
+            return current[0]  # active record is oldest published but not full
         raise StorageNotFoundError(
             f"No active issuer revocation record found for cred def id {cred_def_id}"
         )

@@ -22,7 +22,7 @@ def ppjson(dumpit: Any, elide_to: int = None) -> str:
     return (
         rv
         if elide_to is None or len(rv) <= elide_to
-        else "{}...".format(rv[0:(elide_to - 3)])
+        else "{}...".format(rv[0 : (elide_to - 3)])
     )
 
 

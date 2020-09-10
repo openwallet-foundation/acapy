@@ -1,6 +1,6 @@
 """Libindy utility functions."""
 
-from os import getenv, makedirs
+from os import getenv, listdir, makedirs
 from os.path import isdir, join
 from pathlib import Path
 from platform import system
@@ -38,3 +38,19 @@ def indy_client_dir(subpath: str = None, create: bool = False) -> str:
         makedirs(target_dir, exist_ok=True)
 
     return target_dir
+
+
+def tails_path(rev_reg_id: str) -> str:
+    """
+    Return path to indy tails file for input rev reg id.
+    """
+
+    tails_dir = indy_client_dir(join("tails", rev_reg_id), create=False)
+    if not isdir(tails_dir):
+        return None
+
+    content = listdir(tails_dir)
+    if len(content) != 1:
+        return None
+
+    return join(tails_dir, content[0])
