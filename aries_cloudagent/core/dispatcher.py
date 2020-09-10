@@ -135,6 +135,7 @@ class Dispatcher:
         context = self.context.copy()
         ext_plugins = context.settings.get_value("external_plugins")
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            # if multitenant select the appropriate wallet
             context.start_scope(inbound_message.session_id)
             wallet_handler: WalletHandler = await context.inject(WalletHandler)
             try:
@@ -147,6 +148,9 @@ class Dispatcher:
                 )
                 raise WalletNotFoundError
             context.settings.set_value("wallet.id", wallet_id)
+        else:
+            # if not multitenant use the global wallet id
+            wallet_id = context.settings.get_value("wallet_id")
 
         connection_mgr = ConnectionManager(context)
         connection = await connection_mgr.find_inbound_connection(
