@@ -146,6 +146,7 @@ async def main(
     revocation: bool = False,
     tails_server_base_url: str = None,
     show_timing: bool = False,
+    multitenant: bool = False,
 ):
 
     genesis = await default_genesis_txns()
@@ -164,6 +165,7 @@ async def main(
             no_auto=no_auto,
             tails_server_base_url=tails_server_base_url,
             timing=show_timing,
+            multitenant=multitenant,
         )
         await agent.listen_webhooks(start_port + 2)
         await agent.register_did()
@@ -227,11 +229,7 @@ async def main(
             "    (3) Send Message\n"
         )
         if revocation:
-            options += (
-                "    (4) Revoke Credential\n"
-                "    (5) Publish Revocations\n"
-                "    (6) Add Revocation Registry\n"
-            )
+            options += "    (4) Revoke Credential\n" "    (5) Publish Revocations\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/{}T/X] ".format(
             "4/5/6/" if revocation else ""
@@ -321,18 +319,7 @@ async def main(
                         for req_pred in req_preds
                     },
                 }
-                # test with an attribute group with attribute value restrictions
-                # indy_proof_request["requested_attributes"] = {
-                #     "n_group_attrs": {
-                #         "names": ["name", "degree", "timestamp", "date"],
-                #         "restrictions": [
-                #             {
-                #                 "issuer_did": agent.did,
-                #                 "attr::name::value": "Alice Smith"
-                #             }
-                #         ]
-                #     }
-                # }
+
                 if revocation:
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
@@ -379,11 +366,6 @@ async def main(
                     )
                 except ClientError:
                     pass
-            elif option == "6" and revocation:
-                log_status("#19 Add another revocation registry")
-                await agent.create_and_publish_revocation_registry(
-                    credential_definition_id, TAILS_FILE_COUNT
-                )
 
         if show_timing:
             timing = await agent.fetch_timing()
@@ -433,6 +415,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
+
+    parser.add_argument(
+        "--multitenant", action="store_true", help="Enable multitenancy options"
+    )
+
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
@@ -465,14 +452,22 @@ if __name__ == "__main__":
 
     require_indy()
 
+    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+
+    if args.revocation and not tails_server_base_url:
+        raise Exception(
+            "If revocation is enabled, --tails-server-base-url must be provided"
+        )
+
     try:
         asyncio.get_event_loop().run_until_complete(
             main(
                 args.port,
                 args.no_auto,
                 args.revocation,
-                args.tails_server_base_url,
+                tails_server_base_url,
                 args.timing,
+                args.multitenant,
             )
         )
     except KeyboardInterrupt:

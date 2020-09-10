@@ -52,7 +52,7 @@ async def invitation_create(request: web.BaseRequest):
         The out of band invitation details
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     body = await request.json()
 
@@ -90,7 +90,7 @@ async def invitation_receive(request: web.BaseRequest):
         The out of band invitation details
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     body = await request.json()
 
     oob_mgr = OutOfBandManager(context)

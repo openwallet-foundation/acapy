@@ -415,7 +415,7 @@ class OutboundTransportManager:
             connection_id = queued.message.connection_id
             wallet_handler = await queued.context.inject(WalletHandler)
             wallet_id = await wallet_handler.get_wallet_for_connection(connection_id)
-            await wallet_handler.set_instance(wallet_id)
+            queued.context.settings.set_value("wallet.id", wallet_id)
             wire_format = await queued.context.inject(
                 BaseWireFormat
             )

@@ -16,7 +16,9 @@ from .messages.ping import Ping
 class PingRequestSchema(Schema):
     """Request schema for performing a ping."""
 
-    comment = fields.Str(required=False, description="Comment for the ping message")
+    comment = fields.Str(
+        description="Comment for the ping message", required=False, allow_none=True
+    )
 
 
 class PingRequestResponseSchema(Schema):
@@ -45,7 +47,7 @@ async def connections_send_ping(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     connection_id = request.match_info["conn_id"]
     outbound_handler = request.app["outbound_message_router"]
     body = await request.json()

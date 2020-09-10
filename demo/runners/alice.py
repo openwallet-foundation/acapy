@@ -212,7 +212,12 @@ async def input_invitation(agent):
         await agent.detect_connection()
 
 
-async def main(start_port: int, no_auto: bool = False, show_timing: bool = False):
+async def main(
+    start_port: int,
+    no_auto: bool = False,
+    show_timing: bool = False,
+    multitenant: bool = False,
+):
 
     genesis = await default_genesis_txns()
     if not genesis:
@@ -229,6 +234,7 @@ async def main(start_port: int, no_auto: bool = False, show_timing: bool = False
             genesis_data=genesis,
             no_auto=no_auto,
             timing=show_timing,
+            multitenant=multitenant,
         )
         await agent.listen_webhooks(start_port + 2)
 
@@ -300,6 +306,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
+
+    parser.add_argument(
+        "--multitenant", action="store_true", help="Enable multitenancy options"
+    )
+
     args = parser.parse_args()
 
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
@@ -333,7 +344,12 @@ if __name__ == "__main__":
 
     try:
         asyncio.get_event_loop().run_until_complete(
-            main(args.port, args.no_auto, args.timing)
+            main(
+                args.port,
+                args.no_auto,
+                args.timing,
+                args.multitenant,
+            )
         )
     except KeyboardInterrupt:
         os._exit(1)

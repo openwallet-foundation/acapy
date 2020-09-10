@@ -1,5 +1,7 @@
 """Service provider implementations."""
 
+import logging
+
 from typing import Sequence, Union
 
 from ..utils.classloader import ClassLoader
@@ -7,6 +9,7 @@ from ..utils.stats import Collector
 
 from .base import BaseProvider, BaseSettings, BaseInjector
 
+LOGGER = logging.getLogger(__name__)
 
 class InstanceProvider(BaseProvider):
     """Provider for a previously-created instance."""
@@ -114,12 +117,17 @@ class DynamicProvider(BaseProvider):
             instance_id = id
             if instance_id not in self._instances.keys():
                 raise ValueError(f"Requested instance not in cache.")
-        elif self._requested_instance:
-            instance_id = self._requested_instance
+        #  FIXME: make generic or should it always depend on the  wallet?!
+        elif "wallet.id" in config:
+            instance_id = config.get_value("wallet.id")
+            # If the requested instance is not in instances create it.
             if instance_id not in self._instances.keys():
-                raise ValueError(f"Requested instance not in cache.")
+                self._instances[instance_id] = await self._provider.provide(
+                    config, injector)
         else:
-            # TODO: Log that new instance will be provided based on config.
+            # If no specific instance is provided we either are not in
+            # multitenant agent or want to use base wallet.
+            # FIXME: How to check if setting id was just forgotten?
             instance_id = config.get(self._config_key)
             if instance_id not in self._instances.keys():
                 self._instances[instance_id] = await self._provider.provide(

@@ -150,8 +150,6 @@ class InboundTransportManager:
         can_respond: bool = False,
         client_info: dict = None,
         wire_format: BaseWireFormat = None,
-        context: InjectionContext = None,
-        wallet_id: str = None,
     ):
         """
         Create a new inbound session.
@@ -162,20 +160,12 @@ class InboundTransportManager:
             can_respond: Flag indicating that the transport can send responses
             client_info: An optional dict describing the client
             wire_format: Override the wire format for this session
+            context: Context for the new session [needed in multitenancy]
         """
         if self.session_limit:
             await self.session_limit
 
         context = self.context.copy()
-
-        if client_info.get("inbound_path"):
-            # Set wallet based on inbound information.
-            path = client_info.get("inbound_path")
-            wallet_handler: WalletHandler = await context.inject(WalletHandler)
-            wallet_id = await wallet_handler.get_wallet_for_path(path)
-
-            # TODO: Exceptions: What to do for unmatched inbound communication?
-            await wallet_handler.set_instance(wallet_id)
 
         if not wire_format:
             wire_format = await context.inject(BaseWireFormat)

@@ -39,7 +39,8 @@ class CustodialHttpTransport(BaseInboundTransport):
             app_args["client_max_size"] = self.max_message_size
         app = web.Application(**app_args)
         app.add_routes([web.get("/", self.invite_message_handler)])
-        app.add_routes([web.post("/{handle}", self.inbound_message_handler)])
+        app.add_routes([web.post("/", self.inbound_message_handler)])
+        #app.add_routes([web.post("/{handle}", self.inbound_message_handler)])
         return app
 
     async def start(self) -> None:
@@ -87,14 +88,22 @@ class CustodialHttpTransport(BaseInboundTransport):
 
         client_info = {"host": request.host, "remote": request.remote}
 
-        # Store inbound path in client info
-        client_info["inbound_path"] = request.match_info['handle']
 
         session = await self.create_session(
             accept_undelivered=True,
             can_respond=True,
             client_info=client_info,
         )
+
+        # Adapt session context for correct wallet
+        ext_plugins = session.context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            # Set wallet based on inbound information.
+            wallet_handler: WalletHandler = await session.context.inject(WalletHandler)
+            wallet_ids = await wallet_handler.get_wallet_for_msg(body)
+            session.context = session.context.copy()
+            # FIXME: What if multiple recipients are handled by the agent?
+            session.context.settings.set_value("wallet.id", wallet_ids[0])
 
         async with session:
 

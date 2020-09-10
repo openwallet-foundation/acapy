@@ -118,7 +118,7 @@ async def revocation_create_registry(request: web.BaseRequest):
         The issuer revocation registry record
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     body = await request.json()
 
@@ -167,7 +167,7 @@ async def revocation_registries_created(request: web.BaseRequest):
         List of identifiers of matching revocation registries.
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     search_tags = [
         tag for tag in vars(RevRegsCreatedQueryStringSchema)["_declared_fields"]
@@ -196,7 +196,7 @@ async def get_registry(request: web.BaseRequest):
         The revocation registry
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     registry_id = request.match_info["rev_reg_id"]
 
@@ -226,7 +226,7 @@ async def get_active_registry(request: web.BaseRequest):
         The revocation registry identifier
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     cred_def_id = request.match_info["cred_def_id"]
 
@@ -257,7 +257,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
         The tails file in FileResponse
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     registry_id = request.match_info["rev_reg_id"]
 
@@ -286,7 +286,7 @@ async def publish_registry(request: web.BaseRequest):
         The revocation registry record
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     registry_id = request.match_info["rev_reg_id"]
 
     try:
@@ -324,7 +324,7 @@ async def update_registry(request: web.BaseRequest):
         The revocation registry record
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     body = await request.json()
     tails_public_uri = body.get("tails_public_uri")
