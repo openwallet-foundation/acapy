@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -44,5 +44,6 @@ class RouteUpdateResponseSchema(AgentMessageSchema):
         """RouteUpdateResponseSchema metadata."""
 
         model_class = RouteUpdateResponse
+        unknown = EXCLUDE
 
     updated = fields.List(fields.Nested(RouteUpdatedSchema()), required=True)

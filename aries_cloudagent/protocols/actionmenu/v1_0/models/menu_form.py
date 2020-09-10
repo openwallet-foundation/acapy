@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -47,9 +47,12 @@ class MenuFormSchema(BaseModelSchema):
         """MenuFormSchema metadata."""
 
         model_class = MenuForm
+        unknown = EXCLUDE
 
     title = fields.Str(
-        required=False, description="Menu form title", example="Preferences",
+        required=False,
+        description="Menu form title",
+        example="Preferences",
     )
     description = fields.Str(
         required=False,

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from time import time
 from unittest import TestCase
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -33,6 +33,7 @@ class SampleDecoratorSchema(BaseModelSchema):
 
     class Meta:
         model_class = SampleDecorator
+        unknown = EXCLUDE
 
     score = fields.Int(required=True)
 

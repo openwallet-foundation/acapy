@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 
@@ -44,16 +44,25 @@ class LocalizationDecoratorSchema(BaseModelSchema):
         """LocalizationDecoratorSchema metadata."""
 
         model_class = LocalizationDecorator
+        unknown = EXCLUDE
 
-    locale = fields.Str(required=True, description="Locale specifier", example="en-CA",)
+    locale = fields.Str(
+        required=True,
+        description="Locale specifier",
+        example="en-CA",
+    )
     localizable = fields.List(
-        fields.Str(description="Localizable field", example="note",),
+        fields.Str(
+            description="Localizable field",
+            example="note",
+        ),
         required=False,
         description="List of localizable fields",
     )
     catalogs = fields.List(
         fields.Str(
-            description="", example="https://192.168.56.111/my-project/catalog.json",
+            description="",
+            example="https://192.168.56.111/my-project/catalog.json",
         ),
         required=False,
         description="List of message catalog URIs",

@@ -5,10 +5,11 @@ from collections import namedtuple
 from typing import Sequence
 
 from ..ledger.base import BaseLedger
+from ..ledger.endpoint_type import EndpointType
 
+from .did_posture import DIDPosture
 
 KeyInfo = namedtuple("KeyInfo", "verkey metadata")
-
 DIDInfo = namedtuple("DIDInfo", "did verkey metadata")
 
 
@@ -142,7 +143,7 @@ class BaseWallet(ABC):
         Create and store a new local DID.
 
         Args:
-            seed: Optional seed to use for did
+            seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
 
@@ -160,7 +161,7 @@ class BaseWallet(ABC):
         Implicitly flags all other dids as not public.
 
         Args:
-            seed: Optional seed to use for did
+            seed: Optional seed to use for DID
             did: The DID to use
             metadata: Metadata to store with DID
 
@@ -169,7 +170,7 @@ class BaseWallet(ABC):
 
         """
 
-        metadata["public"] = True
+        metadata = DIDPosture.PUBLIC.metadata
         dids = await self.get_local_dids()
         for info in dids:
             info_meta = info.metadata
@@ -179,7 +180,7 @@ class BaseWallet(ABC):
 
     async def get_public_did(self) -> DIDInfo:
         """
-        Retrieve the public did.
+        Retrieve the public DID.
 
         Returns:
             The created `DIDInfo`
@@ -188,14 +189,14 @@ class BaseWallet(ABC):
 
         dids = await self.get_local_dids()
         for info in dids:
-            if "public" in info.metadata and info.metadata["public"] is True:
+            if info.metadata.get("public"):
                 return info
 
         return None
 
     async def set_public_did(self, did: str) -> DIDInfo:
         """
-        Assign the public did.
+        Assign the public DID.
 
         Returns:
             The created `DIDInfo`
@@ -215,8 +216,7 @@ class BaseWallet(ABC):
                 await self.replace_local_did_metadata(public.did, metadata)
 
             if info:
-                metadata = info.metadata.copy()
-                metadata["public"] = True
+                metadata = {**info.metadata, **DIDPosture.PUBLIC.metadata}
                 await self.replace_local_did_metadata(info.did, metadata)
                 info = await self.get_local_did(info.did)
 
@@ -238,7 +238,7 @@ class BaseWallet(ABC):
         Find info for a local DID.
 
         Args:
-            did: The DID to get info for
+            did: The DID for which to get info
 
         Returns:
             A `DIDInfo` instance for the DID
@@ -251,7 +251,7 @@ class BaseWallet(ABC):
         Resolve a local DID from a verkey.
 
         Args:
-            verkey: Verkey to get DID info for
+            verkey: Verkey for which to get DID info
 
         Returns:
             A `DIDInfo` instance for the DID
@@ -271,21 +271,44 @@ class BaseWallet(ABC):
 
         """
 
-    async def set_did_endpoint(self, did: str, endpoint: str, ledger: BaseLedger):
+    async def get_posted_dids(self) -> Sequence[DIDInfo]:
         """
-        Update the endpoint for a DID in the wallet, send to ledger if public.
+        Get list of defined posted DIDs, excluding public DID.
+
+        Returns:
+            A list of `DIDInfo` instances
+
+        """
+        return [
+            info
+            for info in await self.get_local_dids()
+            if info.metadata.get("posted") and not info.metadata.get("public")
+        ]
+
+    async def set_did_endpoint(
+        self,
+        did: str,
+        endpoint: str,
+        ledger: BaseLedger,
+        endpoint_type: EndpointType = None,
+    ):
+        """
+        Update the endpoint for a DID in the wallet, send to ledger if public or posted.
 
         Args:
             did: DID for which to set endpoint
             endpoint: the endpoint to set, None to clear
-            ledger: the ledger to which to send endpoint update
-                if DID is public - specify None for basic wallet
-
+            ledger: the ledger to which to send endpoint update if
+                DID is public or posted
+            endpoint_type: the type of the endpoint/service. Only endpoint_type
+                'endpoint' affects local wallet
         """
         did_info = await self.get_local_did(did)
         metadata = {**did_info.metadata}
-        metadata.pop("endpoint", None)
-        metadata["endpoint"] = endpoint
+        if not endpoint_type:
+            endpoint_type = EndpointType.ENDPOINT
+        if endpoint_type == EndpointType.ENDPOINT:
+            metadata[endpoint_type.indy] = endpoint
 
         await self.replace_local_did_metadata(did, metadata)
 

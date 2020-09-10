@@ -13,17 +13,14 @@ from typing import Callable, Coroutine, Union
 from aiohttp.web import HTTPException
 
 from ..config.injection_context import InjectionContext
-from ..core.protocol_registry import ProtocolRegistry
 from ..messaging.agent_message import AgentMessage
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder
 from ..messaging.util import datetime_now
-from .error import ProtocolMinorVersionNotSupported
 from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
-
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
@@ -33,6 +30,9 @@ from ..wallet_handler.handler import WalletHandler
 from ..wallet_handler.error import KeyNotFoundError, WalletNotFoundError
 
 from ..utils.tracing import trace_event, get_timer
+
+from .error import ProtocolMinorVersionNotSupported
+from .protocol_registry import ProtocolRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -135,6 +135,7 @@ class Dispatcher:
         context = self.context.copy()
         ext_plugins = context.settings.get_value("external_plugins")
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            # if multitenant select the appropriate wallet
             context.start_scope(inbound_message.session_id)
             wallet_handler: WalletHandler = await context.inject(WalletHandler)
             try:
@@ -147,6 +148,9 @@ class Dispatcher:
                 )
                 raise WalletNotFoundError
             context.settings.set_value("wallet.id", wallet_id)
+        else:
+            # if not multitenant use the global wallet id
+            wallet_id = context.settings.get_value("wallet_id")
 
         connection_mgr = ConnectionManager(context)
         connection = await connection_mgr.find_inbound_connection(
@@ -166,7 +170,9 @@ class Dispatcher:
             message = None
 
         trace_event(
-            self.context.settings, message, outcome="Dispatcher.handle_message.START",
+            self.context.settings,
+            message,
+            outcome="Dispatcher.handle_message.START",
         )
 
         # FIXME Handle the copy() inside `RequestContext()`?

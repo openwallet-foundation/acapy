@@ -63,7 +63,7 @@ class IssuerRevRegRecord(BaseRecord):
     STATE_PUBLISHED = "published"  # definition published
     STATE_STAGED = "staged"
     STATE_ACTIVE = "active"  # first entry published
-    STATE_FULL = "full"
+    STATE_FULL = "full"  # includes corrupt, out of sync, unusable
 
     def __init__(
         self,
@@ -196,19 +196,23 @@ class IssuerRevRegRecord(BaseRecord):
         await self.save(context, reason="Set tails file public URI")
 
     async def stage_pending_registry_definition(
-        self, context: InjectionContext,
+        self,
+        context: InjectionContext,
     ):
         """Prepare registry definition for future use."""
         await shield(self.generate_registry(context))
         tails_base_url = context.settings.get("tails_server_base_url")
         await self.set_tails_file_public_uri(
-            context, f"{tails_base_url}/{self.revoc_reg_id}",
+            context,
+            f"{tails_base_url}/{self.revoc_reg_id}",
         )
         await self.publish_registry_definition(context)
 
         tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
         await tails_server.upload_tails_file(
-            context, self.revoc_reg_id, self.tails_local_path,
+            context,
+            self.revoc_reg_id,
+            self.tails_local_path,
         )
 
     async def publish_registry_definition(self, context: InjectionContext):
@@ -324,7 +328,7 @@ class IssuerRevRegRecord(BaseRecord):
     async def query_by_cred_def_id(
         cls, context: InjectionContext, cred_def_id: str, state: str = None
     ) -> Sequence["IssuerRevRegRecord"]:
-        """Retrieve revocation registry records by credential definition ID.
+        """Retrieve issuer revocation registry records by credential definition ID.
 
         Args:
             context: The injection context to use
@@ -340,7 +344,7 @@ class IssuerRevRegRecord(BaseRecord):
     async def query_by_pending(
         cls, context: InjectionContext
     ) -> Sequence["IssuerRevRegRecord"]:
-        """Retrieve revocation records with revocations pending.
+        """Retrieve issuer revocation records with revocations pending.
 
         Args:
             context: The injection context to use
@@ -365,10 +369,10 @@ class IssuerRevRegRecord(BaseRecord):
         tag_filter = {"revoc_reg_id": revoc_reg_id}
         return await cls.retrieve_by_tag_filter(context, tag_filter)
 
-    async def mark_full(self, context: InjectionContext):
-        """Change the registry state to full."""
-        self.state = IssuerRevRegRecord.STATE_FULL
-        await self.save(context, reason="Marked full")
+    async def set_state(self, context: InjectionContext, state: str = None):
+        """Change the registry state (default full)."""
+        self.state = state or IssuerRevRegRecord.STATE_FULL
+        await self.save(context, reason=f"Marked {self.state}")
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -376,7 +380,7 @@ class IssuerRevRegRecord(BaseRecord):
 
 
 class IssuerRevRegRecordSchema(BaseRecordSchema):
-    """Schema to allow serialization/deserialization of revocation registry records."""
+    """Schema to allow serialization/deserialization of issuer rev reg records."""
 
     class Meta:
         """IssuerRevRegRecordSchema metadata."""

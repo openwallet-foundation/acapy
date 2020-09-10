@@ -57,7 +57,9 @@ class TestRecord(AsyncTestCase):
 
     async def test_generate_registry_etc(self):
         rec = IssuerRevRegRecord(
-            issuer_did=TEST_DID, cred_def_id=CRED_DEF_ID, revoc_reg_id=REV_REG_ID,
+            issuer_did=TEST_DID,
+            cred_def_id=CRED_DEF_ID,
+            revoc_reg_id=REV_REG_ID,
         )
         issuer = async_mock.MagicMock(BaseIssuer)
         self.context.injector.bind_instance(BaseIssuer, issuer)
@@ -125,7 +127,7 @@ class TestRecord(AsyncTestCase):
         )
         assert retrieved.revoc_reg_id == rec.revoc_reg_id
 
-        await rec.mark_full(self.context)
+        await rec.set_state(self.context)
         assert rec.state == IssuerRevRegRecord.STATE_FULL
 
         data = rec.serialize()

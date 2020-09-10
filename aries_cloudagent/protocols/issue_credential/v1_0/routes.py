@@ -11,13 +11,13 @@ from aiohttp_apispec import (
     response_schema,
 )
 from json.decoder import JSONDecodeError
-from marshmallow import fields, Schema, validate
+from marshmallow import fields, validate
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....issuer.base import IssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
-from ....messaging.models.base import BaseModelError
+from ....messaging.models.base import BaseModelError, OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
@@ -34,6 +34,7 @@ from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
 from ....utils.outofband import serialize_outofband
+from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
 from ...problem_report.v1_0 import internal_error
 from ...problem_report.v1_0.message import ProblemReport
@@ -51,10 +52,8 @@ from .models.credential_exchange import (
     V10CredentialExchangeSchema,
 )
 
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
-
-class V10CredentialExchangeListQueryStringSchema(Schema):
+class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange list query."""
 
     connection_id = fields.UUID(
@@ -91,7 +90,7 @@ class V10CredentialExchangeListQueryStringSchema(Schema):
     )
 
 
-class V10CredentialExchangeListResultSchema(Schema):
+class V10CredentialExchangeListResultSchema(OpenAPISchema):
     """Result schema for Aries#0036 v1.0 credential exchange query."""
 
     results = fields.List(
@@ -100,7 +99,7 @@ class V10CredentialExchangeListResultSchema(Schema):
     )
 
 
-class V10CredentialStoreRequestSchema(Schema):
+class V10CredentialStoreRequestSchema(OpenAPISchema):
     """Request schema for sending a credential store admin message."""
 
     credential_id = fields.Str(required=False)
@@ -243,7 +242,7 @@ class V10CredentialOfferRequestSchema(AdminAPIMessageTracingSchema):
     )
 
 
-class V10CredentialIssueRequestSchema(Schema):
+class V10CredentialIssueRequestSchema(OpenAPISchema):
     """Request schema for sending credential issue admin message."""
 
     comment = fields.Str(
@@ -251,13 +250,13 @@ class V10CredentialIssueRequestSchema(Schema):
     )
 
 
-class V10CredentialProblemReportRequestSchema(Schema):
+class V10CredentialProblemReportRequestSchema(OpenAPISchema):
     """Request schema for sending problem report."""
 
     explain_ltxt = fields.Str(required=True)
 
 
-class V10PublishRevocationsSchema(Schema):
+class V10PublishRevocationsSchema(OpenAPISchema):
     """Request and result schema for revocation publication API call."""
 
     rrid2crid = fields.Dict(
@@ -272,7 +271,7 @@ class V10PublishRevocationsSchema(Schema):
     )
 
 
-class V10ClearPendingRevocationsRequestSchema(Schema):
+class V10ClearPendingRevocationsRequestSchema(OpenAPISchema):
     """Request schema for clear pending revocations API call."""
 
     purge = fields.Dict(
@@ -290,14 +289,18 @@ class V10ClearPendingRevocationsRequestSchema(Schema):
     )
 
 
-class RevokeQueryStringSchema(Schema):
+class RevokeQueryStringSchema(OpenAPISchema):
     """Parameters and validators for revocation request."""
 
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier", required=True, **INDY_REV_REG_ID,
+        description="Revocation registry identifier",
+        required=True,
+        **INDY_REV_REG_ID,
     )
     cred_rev_id = fields.Int(
-        description="Credential revocation identifier", required=True, **NATURAL_NUM,
+        description="Credential revocation identifier",
+        required=True,
+        **NATURAL_NUM,
     )
     publish = fields.Boolean(
         description=(
@@ -308,7 +311,7 @@ class RevokeQueryStringSchema(Schema):
     )
 
 
-class CredIdMatchInfoSchema(Schema):
+class CredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     credential_id = fields.Str(
@@ -316,7 +319,7 @@ class CredIdMatchInfoSchema(Schema):
     )
 
 
-class CredExIdMatchInfoSchema(Schema):
+class CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
     cred_ex_id = fields.Str(
@@ -432,7 +435,8 @@ async def credential_exchange_create(request: web.BaseRequest):
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
         credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
+            context.settings,
+            trace_msg,
         )
 
         trace_event(
@@ -447,7 +451,9 @@ async def credential_exchange_create(request: web.BaseRequest):
             credential_exchange_record,
             credential_offer_message,
         ) = await credential_manager.prepare_send(
-            None, credential_proposal=credential_proposal, auto_remove=auto_remove,
+            None,
+            credential_proposal=credential_proposal,
+            auto_remove=auto_remove,
         )
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -514,7 +520,8 @@ async def credential_exchange_send(request: web.BaseRequest):
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
         credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
+            context.settings,
+            trace_msg,
         )
 
         trace_event(
@@ -615,7 +622,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         )
 
     await outbound_handler(
-        credential_proposal, connection_id=connection_id,
+        credential_proposal,
+        connection_id=connection_id,
     )
 
     trace_event(
@@ -647,7 +655,8 @@ async def _create_free_offer(
         cred_def_id=cred_def_id,
     )
     credential_proposal.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     credential_proposal_dict = credential_proposal.serialize()
 
@@ -663,9 +672,10 @@ async def _create_free_offer(
 
     credential_manager = CredentialManager(context)
 
-    (cred_ex_record, credential_offer_message,) = await credential_manager.create_offer(
-        cred_ex_record, comment=comment
-    )
+    (
+        cred_ex_record,
+        credential_offer_message,
+    ) = await credential_manager.create_offer(cred_ex_record, comment=comment)
 
     return (cred_ex_record, credential_offer_message)
 
@@ -1138,7 +1148,8 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"], summary="Revoke an issued credential",
+    tags=["issue-credential"],
+    summary="Revoke an issued credential",
 )
 @querystring_schema(RevokeQueryStringSchema())
 async def credential_exchange_revoke(request: web.BaseRequest):

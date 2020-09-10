@@ -1,7 +1,10 @@
 from unittest import mock, TestCase
 
-from ..menu_request import MenuRequest, MenuRequestSchema
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import MENU_REQUEST, PROTOCOL_PACKAGE
+
+from ..menu_request import MenuRequest, MenuRequestSchema
 
 
 class TestMenuRequest(TestCase):
@@ -14,7 +17,7 @@ class TestMenuRequest(TestCase):
 
     def test_type(self):
         """Test type."""
-        assert self.menu_request._type == MENU_REQUEST
+        assert self.menu_request._type == DIDCommPrefix.qualify_current(MENU_REQUEST)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.menu_request.MenuRequestSchema.load")
     def test_deserialize(self, mock_menu_request_schema_load):

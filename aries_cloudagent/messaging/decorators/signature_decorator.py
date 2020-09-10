@@ -1,12 +1,12 @@
 """Model and schema for working with field signatures within message bodies."""
 
-
 import json
 import struct
 import time
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
+from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
 from ...wallet.util import b64_to_bytes, bytes_to_b64
 
@@ -22,9 +22,7 @@ class SignatureDecorator(BaseModel):
 
         schema_class = "SignatureDecoratorSchema"
 
-    TYPE_ED25519SHA512 = (
-        "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single"
-    )
+    TYPE_ED25519SHA512 = "signature/1.0/ed25519Sha512_single"
 
     def __init__(
         self,
@@ -76,7 +74,7 @@ class SignatureDecorator(BaseModel):
         msg_combined_bin = timestamp_bin + json.dumps(value).encode("ascii")
         signature_bin = await wallet.sign_message(msg_combined_bin, signer)
         return SignatureDecorator(
-            signature_type=cls.TYPE_ED25519SHA512,
+            signature_type=DIDCommPrefix.qualify_current(cls.TYPE_ED25519SHA512),
             signature=bytes_to_b64(signature_bin, urlsafe=True),
             sig_data=bytes_to_b64(msg_combined_bin, urlsafe=True),
             signer=signer,
@@ -105,7 +103,10 @@ class SignatureDecorator(BaseModel):
             True if verification succeeds else False
 
         """
-        if self.signature_type != self.TYPE_ED25519SHA512:
+        if self.signature_type not in [
+            prefix.qualify(SignatureDecorator.TYPE_ED25519SHA512)
+            for prefix in DIDCommPrefix
+        ]:
             return False
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         sig_bin = b64_to_bytes(self.signature, urlsafe=True)
@@ -128,14 +129,13 @@ class SignatureDecoratorSchema(BaseModelSchema):
         """SignatureDecoratorSchema metadata."""
 
         model_class = SignatureDecorator
+        unknown = EXCLUDE
 
     signature_type = fields.Str(
         data_key="@type",
         required=True,
         description="Signature type",
-        example=(
-            "did:sov:BzCbsNYhMrjHiqZDTUASHg;" "spec/signature/1.0/ed25519Sha512_single"
-        ),
+        example=(DIDCommPrefix.NEW.qualify("signature/1.0/ed25519Sha512_single")),
     )
     signature = fields.Str(
         required=True,

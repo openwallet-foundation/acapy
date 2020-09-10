@@ -2,14 +2,15 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, response_schema
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ....core.protocol_registry import ProtocolRegistry
+from ....messaging.models.openapi import OpenAPISchema
 
 from .message_types import SPEC_URI
 
 
-class QueryResultSchema(Schema):
+class QueryResultSchema(OpenAPISchema):
     """Result schema for the protocol list."""
 
     results = fields.Dict(
@@ -19,14 +20,15 @@ class QueryResultSchema(Schema):
     )
 
 
-class QueryFeaturesQueryStringSchema(Schema):
+class QueryFeaturesQueryStringSchema(OpenAPISchema):
     """Query string parameters for feature query."""
 
     query = fields.Str(description="Query", required=False, example="did:sov:*")
 
 
 @docs(
-    tags=["server"], summary="Query supported features",
+    tags=["server"],
+    summary="Query supported features",
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
 @response_schema(QueryResultSchema(), 200)

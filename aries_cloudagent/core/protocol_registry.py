@@ -6,6 +6,7 @@ from typing import Mapping, Sequence
 
 from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader
+
 from .error import ProtocolMinorVersionNotSupported
 
 LOGGER = logging.getLogger(__name__)

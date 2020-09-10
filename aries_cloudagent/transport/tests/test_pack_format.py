@@ -5,6 +5,7 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from ...config.injection_context import InjectionContext
 
 from ...protocols.routing.v1_0.message_types import FORWARD
+from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
 from ...wallet.basic import BasicWallet
 from ...wallet.error import WalletError
@@ -15,7 +16,7 @@ from .. import pack_format as test_module
 
 
 class TestPackWireFormat(AsyncTestCase):
-    test_message_type = "PROTOCOL/MESSAGE"
+    test_message_type = DIDCommPrefix.qualify_current("PROTOCOL/MESSAGE")
     test_message_id = "MESSAGE_ID"
     test_content = "CONTENT"
     test_thread_id = "THREAD_ID"
@@ -178,6 +179,6 @@ class TestPackWireFormat(AsyncTestCase):
         message_dict, delivery = await serializer.parse_message(
             self.context, packed_json
         )
-        assert message_dict["@type"] == FORWARD
+        assert message_dict["@type"] == DIDCommPrefix.qualify_current(FORWARD)
         assert delivery.recipient_verkey == router_did.verkey
         assert delivery.sender_verkey is None

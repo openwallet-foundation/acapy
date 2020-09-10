@@ -10,6 +10,9 @@ from marshmallow.exceptions import ValidationError
 
 from .util import epoch_to_str
 
+from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
+from ..wallet.did_posture import DIDPosture as DIDPostureEnum
+
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
 
@@ -93,7 +96,8 @@ class JSONWebToken(Regexp):
         """Initializer."""
 
         super().__init__(
-            JSONWebToken.PATTERN, error="Value {input} is not a valid JSON Web token",
+            JSONWebToken.PATTERN,
+            error="Value {input} is not a valid JSON Web token",
         )
 
 
@@ -108,6 +112,20 @@ class DIDKey(Regexp):
 
         super().__init__(
             DIDKey.PATTERN, error="Value {input} is not in W3C did:key format"
+        )
+
+
+class DIDPosture(OneOf):
+    """Validate value against defined DID postures."""
+
+    EXAMPLE = DIDPostureEnum.WALLET_ONLY.moniker
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            choices=[did_posture.moniker for did_posture in DIDPostureEnum],
+            error="Value {input} must be one of {choices}",
         )
 
 
@@ -269,7 +287,8 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            IndyWQL.PATTERN, error="Value {input} is not a valid WQL query",
+            IndyWQL.PATTERN,
+            error="Value {input} is not a valid WQL query",
         )
 
     def __call__(self, value):
@@ -296,7 +315,8 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            IndyExtraWQL.PATTERN, error="Value {input} is not a valid extra WQL query",
+            IndyExtraWQL.PATTERN,
+            error="Value {input} is not a valid extra WQL query",
         )
 
     def __call__(self, value):
@@ -323,7 +343,8 @@ class Base64(Regexp):
         """Initializer."""
 
         super().__init__(
-            Base64.PATTERN, error="Value {input} is not a valid base64 encoding",
+            Base64.PATTERN,
+            error="Value {input} is not a valid base64 encoding",
         )
 
 
@@ -337,7 +358,8 @@ class Base64URL(Regexp):
         """Initializer."""
 
         super().__init__(
-            Base64URL.PATTERN, error="Value {input} is not a valid base64url encoding",
+            Base64URL.PATTERN,
+            error="Value {input} is not a valid base64url encoding",
         )
 
 
@@ -422,7 +444,22 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            Endpoint.PATTERN, error="Value {input} is not a valid endpoint",
+            Endpoint.PATTERN,
+            error="Value {input} is not a valid endpoint",
+        )
+
+
+class EndpointType(OneOf):
+    """Validate value against allowed endpoint/service types."""
+
+    EXAMPLE = EndpointTypeEnum.ENDPOINT.w3c
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            choices=[e.w3c for e in EndpointTypeEnum],
+            error="Value {input} must be one of {choices}",
         )
 
 
@@ -433,6 +470,7 @@ NATURAL_NUM = {"validate": NaturalNumber(), "example": NaturalNumber.EXAMPLE}
 JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
+DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),
@@ -460,3 +498,4 @@ BASE58_SHA256_HASH = {
 }
 UUID4 = {"validate": UUIDFour(), "example": UUIDFour.EXAMPLE}
 ENDPOINT = {"validate": Endpoint(), "example": Endpoint.EXAMPLE}
+ENDPOINT_TYPE = {"validate": EndpointType(), "example": EndpointType.EXAMPLE}

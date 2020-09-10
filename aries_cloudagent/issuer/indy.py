@@ -64,7 +64,10 @@ class IndyIssuer(BaseIssuer):
 
         with IndyErrorHandler("Error when creating schema", IssuerError):
             schema_id, schema_json = await indy.anoncreds.issuer_create_schema(
-                origin_did, schema_name, schema_version, json.dumps(attribute_names),
+                origin_did,
+                schema_name,
+                schema_version,
+                json.dumps(attribute_names),
             )
         return (schema_id, schema_json)
 

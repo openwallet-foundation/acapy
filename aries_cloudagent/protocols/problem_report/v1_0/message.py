@@ -2,7 +2,7 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import fields, validate
+from marshmallow import EXCLUDE, fields, validate
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -77,12 +77,13 @@ class ProblemReportSchema(AgentMessageSchema):
         """Problem report schema metadata."""
 
         model_class = ProblemReport
+        unknown = EXCLUDE
 
     msg_catalog = fields.Str(
         data_key="@msg_catalog",
         required=False,
         description="Reference to a message catalog",
-        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/error-codes",
+        example="https://didcomm.org/error-codes",
     )
     locale = fields.Str(
         data_key="@locale", required=False, description="Locale", example="en-US"

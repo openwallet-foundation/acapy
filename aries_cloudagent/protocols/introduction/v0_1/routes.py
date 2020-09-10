@@ -5,8 +5,9 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, querystring_schema
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
+from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError
 
@@ -15,7 +16,7 @@ from .base_service import BaseIntroductionService, IntroductionError
 LOGGER = logging.getLogger(__name__)
 
 
-class IntroStartQueryStringSchema(Schema):
+class IntroStartQueryStringSchema(OpenAPISchema):
     """Query string parameters for request to start introduction."""
 
     target_connection_id = fields.Str(
@@ -28,7 +29,7 @@ class IntroStartQueryStringSchema(Schema):
     )
 
 
-class ConnIdMatchInfoSchema(Schema):
+class ConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
@@ -37,7 +38,8 @@ class ConnIdMatchInfoSchema(Schema):
 
 
 @docs(
-    tags=["introduction"], summary="Start an introduction between two connections",
+    tags=["introduction"],
+    summary="Start an introduction between two connections",
 )
 @match_info_schema(ConnIdMatchInfoSchema())
 @querystring_schema(IntroStartQueryStringSchema())

@@ -7,7 +7,7 @@ context from previous messages.
 
 from typing import Mapping
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUIDFour
@@ -117,6 +117,7 @@ class ThreadDecoratorSchema(BaseModelSchema):
         """ThreadDecoratorSchema metadata."""
 
         model_class = ThreadDecorator
+        unknown = EXCLUDE
 
     thid = fields.Str(
         required=False,
@@ -139,7 +140,8 @@ class ThreadDecoratorSchema(BaseModelSchema):
     received_orders = fields.Dict(
         keys=fields.Str(description="Sender key"),
         values=fields.Integer(
-            description="Highest sender_order value for sender", example="3",
+            description="Highest sender_order value for sender",
+            example="3",
         ),
         required=False,
         allow_none=True,

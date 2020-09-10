@@ -1,13 +1,15 @@
-from ..disclose import Disclose
-from ...message_types import DISCLOSE, PROTOCOL_PACKAGE
-
 from unittest import mock, TestCase
+
+from .....didcomm_prefix import DIDCommPrefix
+
+from ...message_types import DISCLOSE, PROTOCOL_PACKAGE
+from ..disclose import Disclose
 
 
 class TestDisclose(TestCase):
     test_protocols = [
         {
-            "pid": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/basicmessage/1.0/message",
+            "pid": DIDCommPrefix.qualify_current("basicmessage/1.0/message"),
             "roles": [],
         }
     ]
@@ -18,7 +20,7 @@ class TestDisclose(TestCase):
 
     def test_type(self):
         disclose = Disclose(protocols=self.test_protocols)
-        assert disclose._type == DISCLOSE
+        assert disclose._type == DIDCommPrefix.qualify_current(DISCLOSE)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.disclose.DiscloseSchema.load")
     def test_deserialize(self, mock_disclose_schema_load):

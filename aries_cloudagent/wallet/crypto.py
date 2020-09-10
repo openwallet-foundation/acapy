@@ -1,13 +1,15 @@
 """Cryptography functions used by BasicWallet."""
 
-from collections import OrderedDict
 import json
+
+from collections import OrderedDict
 from typing import Callable, Optional, Sequence, Tuple
 
-from marshmallow import fields, Schema, ValidationError
 import nacl.bindings
 import nacl.exceptions
 import nacl.utils
+
+from marshmallow import fields, Schema, ValidationError
 
 from .error import WalletError
 from .util import bytes_to_b58, bytes_to_b64, b64_to_bytes, b58_to_bytes

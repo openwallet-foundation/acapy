@@ -3,9 +3,10 @@
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, request_schema
 
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from ....connections.models.connection_record import ConnectionRecord
+from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageNotFoundError
 
@@ -13,13 +14,13 @@ from .message_types import SPEC_URI
 from .messages.basicmessage import BasicMessage
 
 
-class SendMessageSchema(Schema):
+class SendMessageSchema(OpenAPISchema):
     """Request schema for sending a message."""
 
     content = fields.Str(description="Message content", example="Hello")
 
 
-class ConnIdMatchInfoSchema(Schema):
+class ConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(

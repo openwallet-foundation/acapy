@@ -3,6 +3,8 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
+from marshmallow import EXCLUDE
+
 from ...config.injection_context import InjectionContext
 from ...connections.models.connection_record import ConnectionRecord
 from ...core.protocol_registry import ProtocolRegistry
@@ -10,6 +12,7 @@ from ...messaging.agent_message import AgentMessage, AgentMessageSchema
 from ...messaging.responder import MockResponder
 from ...messaging.util import datetime_now
 
+from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...protocols.problem_report.v1_0.message import ProblemReport
 
 from ...transport.inbound.message import InboundMessage
@@ -56,6 +59,7 @@ class StubAgentMessage(AgentMessage):
 class StubAgentMessageSchema(AgentMessageSchema):
     class Meta:
         model_class = StubAgentMessage
+        unknown = EXCLUDE
 
 
 class StubAgentMessageHandler:
@@ -73,6 +77,7 @@ class StubV1_2AgentMessage(AgentMessage):
 class StubV1_2AgentMessageSchema(AgentMessageSchema):
     class Meta:
         model_class = StubV1_2AgentMessage
+        unknonw = EXCLUDE
 
 
 class StubV1_2AgentMessageHandler:
@@ -86,12 +91,17 @@ class TestDispatcher(AsyncTestCase):
         context.enforce_typing = False
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
-            {StubAgentMessage.Meta.message_type: StubAgentMessage}
+            {
+                pfx.qualify(StubAgentMessage.Meta.message_type): StubAgentMessage
+                for pfx in DIDCommPrefix
+            }
         )
         dispatcher = test_module.Dispatcher(context)
         await dispatcher.setup()
         rcv = Receiver()
-        message = {"@type": StubAgentMessage.Meta.message_type}
+        message = {
+            "@type": DIDCommPrefix.NEW.qualify(StubAgentMessage.Meta.message_type)
+        }
 
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
@@ -116,7 +126,11 @@ class TestDispatcher(AsyncTestCase):
         context.enforce_typing = False
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
-            {StubAgentMessage.Meta.message_type: StubAgentMessage},
+            {
+                DIDCommPrefix.NEW.qualify(
+                    StubAgentMessage.Meta.message_type
+                ): StubAgentMessage
+            },
             version_definition={
                 "major_version": 1,
                 "minimum_minor_version": 0,
@@ -127,7 +141,9 @@ class TestDispatcher(AsyncTestCase):
         dispatcher = test_module.Dispatcher(context)
         await dispatcher.setup()
         rcv = Receiver()
-        message = {"@type": StubAgentMessage.Meta.message_type}
+        message = {
+            "@type": DIDCommPrefix.NEW.qualify(StubAgentMessage.Meta.message_type)
+        }
 
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
@@ -145,7 +161,11 @@ class TestDispatcher(AsyncTestCase):
         context.enforce_typing = False
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
-            {StubAgentMessage.Meta.message_type: StubAgentMessage},
+            {
+                DIDCommPrefix.NEW.qualify(
+                    StubAgentMessage.Meta.message_type
+                ): StubAgentMessage
+            },
             version_definition={
                 "major_version": 1,
                 "minimum_minor_version": 0,
@@ -165,14 +185,20 @@ class TestDispatcher(AsyncTestCase):
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
-            assert payload["@type"] == ProblemReport.Meta.message_type
+            assert payload["@type"] == DIDCommPrefix.NEW.qualify(
+                ProblemReport.Meta.message_type
+            )
 
     async def test_dispatch_versioned_message_message_class_deserialize_x(self):
         context = make_context()
         context.enforce_typing = False
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
-            {StubAgentMessage.Meta.message_type: StubAgentMessage},
+            {
+                DIDCommPrefix.NEW.qualify(
+                    StubAgentMessage.Meta.message_type
+                ): StubAgentMessage
+            },
             version_definition={
                 "major_version": 1,
                 "minimum_minor_version": 0,
@@ -199,14 +225,20 @@ class TestDispatcher(AsyncTestCase):
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
-            assert payload["@type"] == ProblemReport.Meta.message_type
+            assert payload["@type"] == DIDCommPrefix.NEW.qualify(
+                ProblemReport.Meta.message_type
+            )
 
     async def test_dispatch_versioned_message_handle_greater_succeeds(self):
         context = make_context()
         context.enforce_typing = False
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
-            {StubAgentMessage.Meta.message_type: StubAgentMessage},
+            {
+                DIDCommPrefix.NEW.qualify(
+                    StubAgentMessage.Meta.message_type
+                ): StubAgentMessage
+            },
             version_definition={
                 "major_version": 1,
                 "minimum_minor_version": 0,
@@ -217,7 +249,9 @@ class TestDispatcher(AsyncTestCase):
         dispatcher = test_module.Dispatcher(context)
         await dispatcher.setup()
         rcv = Receiver()
-        message = {"@type": StubV1_2AgentMessage.Meta.message_type}
+        message = {
+            "@type": DIDCommPrefix.NEW.qualify(StubV1_2AgentMessage.Meta.message_type)
+        }
 
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
@@ -235,7 +269,11 @@ class TestDispatcher(AsyncTestCase):
         context.enforce_typing = False
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
-            {StubV1_2AgentMessage.Meta.message_type: StubV1_2AgentMessage},
+            {
+                DIDCommPrefix.NEW.qualify(
+                    StubV1_2AgentMessage.Meta.message_type
+                ): StubV1_2AgentMessage
+            },
             version_definition={
                 "major_version": 1,
                 "minimum_minor_version": 2,
@@ -246,7 +284,9 @@ class TestDispatcher(AsyncTestCase):
         dispatcher = test_module.Dispatcher(context)
         await dispatcher.setup()
         rcv = Receiver()
-        message = {"@type": StubAgentMessage.Meta.message_type}
+        message = {
+            "@type": DIDCommPrefix.NEW.qualify(StubAgentMessage.Meta.message_type)
+        }
 
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
@@ -255,7 +295,9 @@ class TestDispatcher(AsyncTestCase):
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
             payload = json.loads(rcv.messages[0][1].payload)
-            assert payload["@type"] == ProblemReport.Meta.message_type
+            assert payload["@type"] == DIDCommPrefix.NEW.qualify(
+                ProblemReport.Meta.message_type
+            )
 
     async def test_bad_message_dispatch(self):
         dispatcher = test_module.Dispatcher(make_context())
@@ -266,14 +308,20 @@ class TestDispatcher(AsyncTestCase):
         await dispatcher.task_queue
         assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
         payload = json.loads(rcv.messages[0][1].payload)
-        assert payload["@type"] == ProblemReport.Meta.message_type
+        assert payload["@type"] == DIDCommPrefix.NEW.qualify(
+            ProblemReport.Meta.message_type
+        )
 
     async def test_dispatch_log(self):
         context = make_context()
         context.enforce_typing = False
         registry = await context.inject(ProtocolRegistry)
         registry.register_message_types(
-            {StubAgentMessage.Meta.message_type: StubAgentMessage}
+            {
+                DIDCommPrefix.NEW.qualify(
+                    StubAgentMessage.Meta.message_type
+                ): StubAgentMessage
+            },
         )
 
         dispatcher = test_module.Dispatcher(context)
@@ -300,7 +348,9 @@ class TestDispatcher(AsyncTestCase):
             context, message, None, async_mock.CoroutineMock()
         )
         result = await responder.create_outbound(message)
-        assert json.loads(result.payload)["@type"] == StubAgentMessage.Meta.message_type
+        assert json.loads(result.payload)["@type"] == DIDCommPrefix.NEW.qualify(
+            StubAgentMessage.Meta.message_type
+        )
         await responder.send_webhook("topic", "payload")
 
     async def test_create_send_outbound(self):

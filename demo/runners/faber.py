@@ -22,9 +22,7 @@ from runners.support.utils import (
     require_indy,
 )
 
-CRED_PREVIEW_TYPE = (
-    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
-)
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 
 LOGGER = logging.getLogger(__name__)
@@ -84,7 +82,8 @@ class FaberAgent(DemoAgent):
 
         self.log(
             "Credential: state = {}, credential_exchange_id = {}".format(
-                state, credential_exchange_id,
+                state,
+                credential_exchange_id,
             )
         )
 
@@ -298,7 +297,9 @@ async def main(
                     )
                 if SELF_ATTESTED:
                     # test self-attested claims
-                    req_attrs.append({"name": "self_attested_thing"},)
+                    req_attrs.append(
+                        {"name": "self_attested_thing"},
+                    )
                 req_preds = [
                     # test zero-knowledge proofs
                     {

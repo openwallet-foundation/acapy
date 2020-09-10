@@ -67,7 +67,9 @@ class InvitationSchema(BaseExchangeSchema):
         model_class = Invitation
 
     invitation_id = fields.Str(
-        required=False, description="Invitation identifier", example=UUIDFour.EXAMPLE,
+        required=False,
+        description="Invitation identifier",
+        example=UUIDFour.EXAMPLE,
     )
     state = fields.Str(
         required=False,
@@ -75,5 +77,6 @@ class InvitationSchema(BaseExchangeSchema):
         example=Invitation.STATE_AWAIT_RESPONSE,
     )
     invitation = fields.Dict(
-        required=False, description="Out of band invitation object",
+        required=False,
+        description="Out of band invitation object",
     )

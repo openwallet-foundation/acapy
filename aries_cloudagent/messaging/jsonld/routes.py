@@ -3,23 +3,21 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
-from ...messaging.jsonld.credential import (
-    sign_credential,
-    verify_credential,
-)
+from marshmallow import fields
+
 from ...wallet.base import BaseWallet
+from ..models.openapi import OpenAPISchema
+from .credential import sign_credential, verify_credential
 
-from marshmallow import fields, Schema
 
-
-class SignRequestSchema(Schema):
+class SignRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
     verkey = fields.Str(required=True, description="verkey to use for signing")
     doc = fields.Dict(required=True, description="JSON-LD Doc to sign")
 
 
-class SignResponseSchema(Schema):
+class SignResponseSchema(OpenAPISchema):
     """Response schema for a signed jsonld doc."""
 
     signed_doc = fields.Dict(required=True)
@@ -60,14 +58,14 @@ async def sign(request: web.BaseRequest):
     return web.json_response(response)
 
 
-class VerifyRequestSchema(Schema):
+class VerifyRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
     verkey = fields.Str(required=True, description="verkey to use for doc verification")
     doc = fields.Dict(required=True, description="JSON-LD Doc to verify")
 
 
-class VerifyResponseSchema(Schema):
+class VerifyResponseSchema(OpenAPISchema):
     """Response schema for verification result."""
 
     valid = fields.Bool(required=True)

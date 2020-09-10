@@ -100,7 +100,8 @@ class DemoIntroductionService(BaseIntroductionService):
         tag_filter = {"target_connection_id": target_connection_id}
         storage: BaseStorage = await self._context.inject(BaseStorage)
         records = await storage.search_records(
-            DemoIntroductionService.RECORD_TYPE, tag_filter,
+            DemoIntroductionService.RECORD_TYPE,
+            tag_filter,
         ).fetch_all()
 
         found = False

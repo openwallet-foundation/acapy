@@ -1,6 +1,6 @@
 """Record used to represent a parameter in a menu form."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
@@ -50,15 +50,20 @@ class MenuFormParamSchema(BaseModelSchema):
         """MenuFormParamSchema metadata."""
 
         model_class = MenuFormParam
+        unknown = EXCLUDE
 
     name = fields.Str(
-        required=True, description="Menu parameter name", example="delay",
+        required=True,
+        description="Menu parameter name",
+        example="delay",
     )
     title = fields.Str(
         required=True, description="Menu parameter title", example="Delay in seconds"
     )
     default = fields.Str(
-        required=False, description="Default parameter value", example="0",
+        required=False,
+        description="Default parameter value",
+        example="0",
     )
     description = fields.Str(
         required=False,
@@ -72,5 +77,7 @@ class MenuFormParamSchema(BaseModelSchema):
         data_key="type",
     )
     required = fields.Bool(
-        required=False, description="Whether parameter is required", example="False",
+        required=False,
+        description="Whether parameter is required",
+        example="False",
     )

@@ -4,9 +4,10 @@ import json
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
-from marshmallow import fields, Schema
+from marshmallow import fields
 
 from .base import BaseHolder, HolderError
+from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_REV_REG_ID,
@@ -19,11 +20,11 @@ from ..messaging.valid import (
 from ..wallet.error import WalletNotFoundError
 
 
-class AttributeMimeTypesResultSchema(Schema):
+class AttributeMimeTypesResultSchema(OpenAPISchema):
     """Result schema for credential attribute MIME type."""
 
 
-class RawEncCredAttrSchema(Schema):
+class RawEncCredAttrSchema(OpenAPISchema):
     """Credential attribute schema."""
 
     raw = fields.Str(description="Raw value", example="Alex")
@@ -33,7 +34,7 @@ class RawEncCredAttrSchema(Schema):
     )
 
 
-class RevRegSchema(Schema):
+class RevRegSchema(OpenAPISchema):
     """Revocation registry schema."""
 
     accum = fields.Str(
@@ -42,7 +43,7 @@ class RevRegSchema(Schema):
     )
 
 
-class WitnessSchema(Schema):
+class WitnessSchema(OpenAPISchema):
     """Witness schema."""
 
     omega = fields.Str(
@@ -51,7 +52,7 @@ class WitnessSchema(Schema):
     )
 
 
-class CredentialSchema(Schema):
+class CredentialSchema(OpenAPISchema):
     """Result schema for a credential query."""
 
     schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
@@ -72,23 +73,33 @@ class CredentialSchema(Schema):
     witness = fields.Nested(WitnessSchema)
 
 
-class CredentialsListSchema(Schema):
+class CredentialsListSchema(OpenAPISchema):
     """Result schema for a credential query."""
 
     results = fields.List(fields.Nested(CredentialSchema()))
 
 
-class CredentialsListQueryStringSchema(Schema):
+class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
-    start = fields.Int(description="Start index", required=False, **WHOLE_NUM,)
-    count = fields.Int(
-        description="Maximum number to retrieve", required=False, **NATURAL_NUM,
+    start = fields.Int(
+        description="Start index",
+        required=False,
+        **WHOLE_NUM,
     )
-    wql = fields.Str(description="(JSON) WQL query", required=False, **INDY_WQL,)
+    count = fields.Int(
+        description="Maximum number to retrieve",
+        required=False,
+        **NATURAL_NUM,
+    )
+    wql = fields.Str(
+        description="(JSON) WQL query",
+        required=False,
+        **INDY_WQL,
+    )
 
 
-class CredIdMatchInfoSchema(Schema):
+class CredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     credential_id = fields.Str(
@@ -172,7 +183,8 @@ async def credentials_remove(request: web.BaseRequest):
 
 
 @docs(
-    tags=["credentials"], summary="Fetch credentials from wallet",
+    tags=["credentials"],
+    summary="Fetch credentials from wallet",
 )
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(CredentialsListSchema(), 200)
