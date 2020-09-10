@@ -34,6 +34,7 @@ class RequestContext(InjectionContext):
         self._connection_record = None
         self._message = None
         self._message_receipt = None
+        self._wallet_name = None
 
     @property
     def connection_ready(self) -> bool:

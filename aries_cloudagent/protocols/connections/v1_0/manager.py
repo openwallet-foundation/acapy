@@ -28,6 +28,8 @@ from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
 from ....protocols.routing.v1_0.manager import RoutingManager
 
+from ....wallet_handler.handler import WalletHandler
+
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
@@ -188,6 +190,14 @@ class ConnectionManager:
         )
         await connection.attach_invitation(self.context, invitation)
 
+        # MULTITENANCY: Add key to handled keys to associate new invitation to wallet.
+        ext_plugins = self.context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
+            wallet_id = self.context.settings.get_value("wallet.id")
+            await wallet_handler.add_connection(connection.connection_id, wallet_id)
+            await wallet_handler.add_key(connection.invitation_key, wallet_id)
+
         return connection, invitation
 
     async def receive_invitation(
@@ -247,6 +257,14 @@ class ConnectionManager:
 
         # Save the invitation for later processing
         await connection.attach_invitation(self.context, invitation)
+
+        # MULTITENANCY: Add new connection to connection mapping to associate
+        # wallet to new connection.
+        ext_plugins = self.context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
+            wallet_id = self.context.settings.get_value("wallet.id")
+            await wallet_handler.add_connection(connection.connection_id, wallet_id)
 
         if connection.accept == ConnectionRecord.ACCEPT_AUTO:
             request = await self.create_request(connection)
@@ -314,6 +332,14 @@ class ConnectionManager:
         connection.state = ConnectionRecord.STATE_REQUEST
 
         await connection.save(self.context, reason="Created connection request")
+
+        # MULTITENANCY: Add new key to handled keys to associate wallet to new connection.
+        ext_plugins = self.context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
+            wallet_id = self.context.settings.get_value("wallet.id")
+            wallet: BaseWallet = await self.context.inject(BaseWallet)
+            await wallet_handler.add_key(my_info.verkey, wallet_id)
 
         return request
 
@@ -499,6 +525,14 @@ class ConnectionManager:
 
         # Update connection state
         connection.state = ConnectionRecord.STATE_RESPONSE
+
+        # MULTITENANCY: Add new key to handled keys to associate wallet to new connection.
+        ext_plugins = self.context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
+            wallet_id = self.context.settings.get_value("wallet.id")
+            wallet: BaseWallet = await self.context.inject(BaseWallet)
+            await wallet_handler.add_key(my_info.verkey, wallet_id)
 
         await connection.save(
             self.context,

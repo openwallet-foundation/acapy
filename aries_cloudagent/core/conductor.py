@@ -18,6 +18,7 @@ from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config, BaseWallet
+from ..wallet_handler import WalletHandler
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
@@ -333,7 +334,16 @@ class Conductor:
                 return
 
         if not outbound.to_session_only:
-            await self.queue_outbound(context, outbound, inbound)
+
+            message_context = context.copy()
+            ext_plugins = context.settings.get_value("external_plugins")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+                wallet_handler: WalletHandler = await context.inject(WalletHandler)
+                wallet_id = await wallet_handler.get_wallet_for_connection(
+                    outbound.connection_id
+                )
+                message_context.settings.set_value("wallet.id", wallet_id)
+            await self.queue_outbound(message_context, outbound, inbound)
 
     def handle_not_returned(self, context: InjectionContext, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""

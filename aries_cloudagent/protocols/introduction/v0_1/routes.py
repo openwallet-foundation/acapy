@@ -52,7 +52,7 @@ async def introduction_start(request: web.BaseRequest):
 
     """
     LOGGER.info("Introduction requested")
-    context = request.app["request_context"]
+    context = request["context"]
     outbound_handler = request.app["outbound_message_router"]
     init_connection_id = request.match_info["conn_id"]
     target_connection_id = request.query.get("target_connection_id")

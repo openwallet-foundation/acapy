@@ -25,6 +25,10 @@ from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
+
+from ..wallet_handler.handler import WalletHandler
+from ..wallet_handler.error import KeyNotFoundError, WalletNotFoundError
+
 from ..utils.tracing import trace_event, get_timer
 
 from .error import ProtocolMinorVersionNotSupported
@@ -127,7 +131,24 @@ class Dispatcher:
         """
         r_time = get_timer()
 
-        connection_mgr = ConnectionManager(self.context)
+        # Set correct context for message
+        context = self.context.copy()
+        ext_plugins = context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            context.start_scope(inbound_message.session_id)
+            wallet_handler: WalletHandler = await context.inject(WalletHandler)
+            try:
+                wallet_id = await wallet_handler.get_wallet_for_key(
+                    inbound_message.receipt.recipient_verkey
+                )
+            except KeyNotFoundError:
+                LOGGER.error(f"Couldn't find wallet for verkey \
+                    {inbound_message.receipt.recipient_verkey}"
+                )
+                raise WalletNotFoundError
+            context.settings.set_value("wallet.id", wallet_id)
+
+        connection_mgr = ConnectionManager(context)
         connection = await connection_mgr.find_inbound_connection(
             inbound_message.receipt
         )
@@ -150,7 +171,10 @@ class Dispatcher:
             outcome="Dispatcher.handle_message.START",
         )
 
-        context = RequestContext(base_context=self.context)
+        # FIXME Handle the copy() inside `RequestContext()`?
+        # OR: Add field to RequestContext to specify the wallet?
+        context = RequestContext(base_context=context)
+        context._wallet_name = wallet_id
         context.message = message
         context.message_receipt = inbound_message.receipt
         context.connection_ready = connection and connection.is_ready

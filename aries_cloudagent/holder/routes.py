@@ -121,7 +121,7 @@ async def credentials_get(request: web.BaseRequest):
         The credential response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     credential_id = request.match_info["credential_id"]
 
@@ -149,7 +149,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
         The MIME types response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
     credential_id = request.match_info["credential_id"]
     holder: BaseHolder = await context.inject(BaseHolder)
 
@@ -169,7 +169,7 @@ async def credentials_remove(request: web.BaseRequest):
         The connection list response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     credential_id = request.match_info["credential_id"]
 
@@ -199,7 +199,7 @@ async def credentials_list(request: web.BaseRequest):
         The credential list response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     start = request.query.get("start")
     count = request.query.get("count")
