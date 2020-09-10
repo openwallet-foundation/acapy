@@ -3,6 +3,7 @@
 import asyncio
 
 from aiohttp import BaseConnector, ClientError, ClientResponse, ClientSession
+from aiohttp.web import HTTPConflict
 
 from ..core.error import BaseError
 
@@ -124,10 +125,10 @@ async def put(
     session: ClientSession = None,
     json: bool = False,
 ):
-    """Fetch from an HTTP server with automatic retries and timeouts.
+    """Put to HTTP server with automatic retries and timeouts.
 
     Args:
-        url: the address to fetch
+        url: the address to use
         file_data: dict with data key and path of file to upload
         extra_data: further content to include in data to put
         headers: an optional dict of headers to send
@@ -154,7 +155,9 @@ async def put(
                     with open(file_path, "rb") as f:
                         data[data_key] = f
                         response: ClientResponse = await session.put(url, data=data)
-                        if response.status < 200 or response.status >= 300:
+                        if (response.status < 200 or response.status >= 300) and (
+                            response.status != HTTPConflict.status_code
+                        ):
                             raise ClientError(
                                 f"Bad response from server: {response.status}, "
                                 f"{response.reason}"
