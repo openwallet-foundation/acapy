@@ -41,9 +41,7 @@ def indy_client_dir(subpath: str = None, create: bool = False) -> str:
 
 
 def tails_path(rev_reg_id: str) -> str:
-    """
-    Return path to indy tails file for input rev reg id.
-    """
+    """Return path to indy tails file for input rev reg id."""
 
     tails_dir = indy_client_dir(join("tails", rev_reg_id), create=False)
     if not isdir(tails_dir):

@@ -214,7 +214,7 @@ class IssuerRevRegRecord(BaseRecord):
             context,
             self.revoc_reg_id,
             self.tails_local_path,
-            interval=0.8,
+            interval=0.25,
             backoff=-0.5,
             max_attempts=max_attempts,
         )

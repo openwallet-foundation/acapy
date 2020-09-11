@@ -483,7 +483,7 @@ class CredentialManager:
             )
 
         schema_id = cred_ex_record.schema_id
-        registry = None
+        rev_reg = None
 
         if cred_ex_record.credential:
             LOGGER.warning(
@@ -506,31 +506,60 @@ class CredentialManager:
             if credential_definition["value"].get("revocation"):
                 revoc = IndyRevocation(self.context)
                 try:
-                    active_reg = await revoc.get_active_issuer_rev_reg_record(
+                    active_rev_reg_rec = await revoc.get_active_issuer_rev_reg_record(
                         cred_ex_record.credential_definition_id
                     )
-                    registry = await active_reg.get_registry()
-                    cred_ex_record.revoc_reg_id = active_reg.revoc_reg_id
+                    rev_reg = await active_rev_reg_rec.get_registry()
+                    cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
 
-                    tails_path = registry.tails_local_path
-                    await registry.get_or_fetch_local_tails_path()
+                    tails_path = rev_reg.tails_local_path
+                    await rev_reg.get_or_fetch_local_tails_path()
 
                 except StorageNotFoundError:
-                    if retries > 0 and await IssuerRevRecord.query_by_cred_def_id(
+                    posted_rev_reg_recs = await IssuerRevRegRecord.query_by_cred_def_id(
                         self.context,
                         cred_ex_record.credential_definition_id,
                         state=IssuerRevRegRecord.STATE_POSTED,
-                    ):  # a registry could be ready soon: wait and retry
+                    )
+                    if not posted_rev_reg_recs:
+                        # Send next 2 rev regs, publish tails files in background
+                        old_rev_reg_recs = sorted(
+                            await IssuerRevRegRecord.query_by_cred_def_id(
+                                self.context,
+                                cred_ex_record.credential_definition_id,
+                            )
+                        )  # prefer to reuse prior rev reg size
+                        for _ in range(2):
+                            pending_rev_reg_rec = await revoc.init_issuer_registry(
+                                cred_ex_record.credential_definition_id,
+                                max_cred_num=(
+                                    old_rev_reg_recs[0].max_cred_num
+                                    if old_rev_reg_recs
+                                    else None
+                                ),
+                            )
+                            asyncio.ensure_future(
+                                pending_rev_reg_rec.stage_pending_registry(
+                                    self.context,
+                                    max_attempts=3,  # fail both in < 2s at worst
+                                )
+                            )
+                    if retries > 0:
                         LOGGER.info(
-                            "Waiting 1s on posted rev reg for cred def %s, retrying",
+                            "Waiting 2s on posted rev reg for cred def %s, retrying",
                             cred_ex_record.credential_definition_id,
                         )
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(2)
                         return await self.issue_credential(
                             cred_ex_record=cred_ex_record,
                             comment=comment,
                             retries=retries - 1,
                         )
+
+                    raise CredentialManagerError(
+                        f"Cred def id {cred_ex_record.credential_definition_id} "
+                        "has no active revocation registry"
+                    )
 
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
@@ -549,21 +578,20 @@ class CredentialManager:
                     tails_path,
                 )
 
-                # If the revocation registry is now full
-                if registry and registry.max_creds == int(cred_ex_record.revocation_id):
-                    await active_reg.set_state(
+                # If the rev reg is now full
+                if rev_reg and rev_reg.max_creds == int(cred_ex_record.revocation_id):
+                    await active_rev_reg_rec.set_state(
                         self.context,
                         IssuerRevRegRecord.STATE_FULL,
                     )
 
-                    # Publish next rev reg in background
-                    pending_registry_record = await revoc.init_issuer_registry(
-                        active_reg.cred_def_id,
-                        active_reg.issuer_did,
-                        max_cred_num=active_reg.max_cred_num,
+                    # Send next 1 rev reg, publish tails file in background
+                    pending_rev_reg_rec = await revoc.init_issuer_registry(
+                        active_rev_reg_rec.cred_def_id,
+                        max_cred_num=active_rev_reg_rec.max_cred_num,
                     )
                     asyncio.ensure_future(
-                        pending_registry_record.stage_pending_registry(
+                        pending_rev_reg_rec.stage_pending_registry(
                             self.context,
                             max_attempts=16,
                         )
@@ -571,24 +599,25 @@ class CredentialManager:
 
             except IssuerRevocationRegistryFullError:
                 # unlucky: duelling instance issued last cred near same time as us
-                await active_reg.set_state(
+                await active_rev_reg_rec.set_state(
                     self.context,
                     IssuerRevRegRecord.STATE_FULL,
                 )
 
                 if retries > 0:
                     # use next rev reg; at worst, lucky instance is putting one up
+                    LOGGER.info(
+                        "Waiting 1s and retrying: revocation registry %s is full",
+                        active_rev_reg_rec.revoc_reg_id,
+                    )
                     await asyncio.sleep(1)
                     return await self.issue_credential(
                         cred_ex_record=cred_ex_record,
                         comment=comment,
                         retries=retries - 1,
                     )
-                else:
-                    raise CredentialManagerError(
-                        "Retries exhausted and no revocation registries active for "
-                        f"{cred_ex_record.credential_definition_id}"
-                    )
+
+                raise
 
             cred_ex_record.credential = json.loads(credential_json)
 
@@ -786,7 +815,7 @@ class CredentialManager:
             )
             if delta_json:
                 registry_record.revoc_reg_entry = json.loads(delta_json)
-                await registry_record.publish_registry_entry(self.context)
+                await registry_record.send_entry(self.context)
                 await registry_record.clear_pending(self.context)
 
         else:
@@ -840,7 +869,7 @@ class CredentialManager:
                     crids,
                 )
                 registry_record.revoc_reg_entry = json.loads(delta_json)
-                await registry_record.publish_registry_entry(self.context)
+                await registry_record.send_entry(self.context)
                 published = [crid for crid in crids if crid not in failed_crids]
                 result[registry_record.revoc_reg_id] = published
                 await registry_record.clear_pending(self.context, published)

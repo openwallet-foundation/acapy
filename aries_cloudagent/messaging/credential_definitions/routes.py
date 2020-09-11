@@ -160,11 +160,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
         try:
             # Create registry
-            issuer_did = cred_def_id.split(":")[0]
             revoc = IndyRevocation(context)
             registry_record = await revoc.init_issuer_registry(
                 cred_def_id,
-                issuer_did,
                 max_cred_num=rev_reg_size,
             )
 
@@ -181,7 +179,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             # stage pending registry independent of whether tails server is OK
             pending_registry_record = await revoc.init_issuer_registry(
                 registry_record.cred_def_id,
-                registry_record.issuer_did,
                 max_cred_num=registry_record.max_cred_num,
             )
             ensure_future(
