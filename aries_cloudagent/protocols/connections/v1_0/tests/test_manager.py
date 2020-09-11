@@ -402,17 +402,18 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         assert not messages
 
     async def test_create_response(self):
-        with self.assertRaises(ConnectionManagerError):
-            await self.manager.create_response(
-                ConnectionRecord(
-                    initiator=ConnectionRecord.INITIATOR_EXTERNAL,
-                    invitation_key=self.test_verkey,
-                    their_label="Hello",
-                    their_role="Point of contact",
-                    alias="Bob",
-                    state=ConnectionRecord.STATE_ERROR,
-                )
-            )
+        conn_rec = ConnectionRecord(state=ConnectionRecord.STATE_REQUEST)
+
+        with async_mock.patch.object(
+            ConnectionRecord, "log_state", autospec=True
+        ) as mock_conn_log_state, async_mock.patch.object(
+            ConnectionRecord, "retrieve_request", autospec=True
+        ) as mock_conn_retrieve_request, async_mock.patch.object(
+            ConnectionRecord, "save", autospec=True
+        ) as mock_conn_save, async_mock.patch.object(
+            ConnectionResponse, "sign_field", autospec=True
+        ) as mock_sign:
+            await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
 
     async def test_create_response_bad_state(self):
         with self.assertRaises(ConnectionManagerError):
