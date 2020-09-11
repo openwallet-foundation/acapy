@@ -317,9 +317,7 @@ async def upload_tails_file(request: web.BaseRequest):
 
     loc_tails_path = tails_path(rev_reg_id)
     if not loc_tails_path:
-        raise web.HTTPNotFound(
-            reason=f"No local tails file for rev reg {rev_reg_id}"
-        )
+        raise web.HTTPNotFound(reason=f"No local tails file for rev reg {rev_reg_id}")
     (upload_success, reason) = await tails_server.upload_tails_file(
         context,
         rev_reg_id,
