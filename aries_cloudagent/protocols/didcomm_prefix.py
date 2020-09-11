@@ -16,9 +16,9 @@ class DIDCommPrefix(Enum):
         """Set current DIDComm prefix value in environment."""
 
         environ["DIDCOMM_PREFIX"] = (
-            DIDCommPrefix.OLD.value
-            if settings.get("emit_old_didcomm_prefix")
-            else DIDCommPrefix.NEW.value
+            DIDCommPrefix.NEW.value
+            if settings.get("emit_new_didcomm_prefix")
+            else DIDCommPrefix.OLD.value
         )
 
     def qualify(self, msg_type: str = None) -> str:
