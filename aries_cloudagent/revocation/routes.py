@@ -158,11 +158,9 @@ async def create_rev_reg(request: web.BaseRequest):
         )
 
     try:
-        issuer_did = credential_definition_id.split(":")[0]
         revoc = IndyRevocation(context)
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
             credential_definition_id,
-            issuer_did,
             max_cred_num=max_cred_num,
         )
     except RevocationNotSupportedError as e:
@@ -310,28 +308,28 @@ async def upload_tails_file(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+    tails_server: BaseTailsServer = await context.inject(
+        BaseTailsServer,
+        required=False,
+    )
     if not tails_server:
         raise web.HTTPForbidden(reason="No tails server configured")
 
-    try:
-        loc_tails_path = tails_path(rev_reg_id)
-        if not loc_tails_path:
-            raise web.HTTPNotFound(
-                reason=f"No local tails file for rev reg {rev_reg_id}"
-            )
-        (upload_success, reason) = await tails_server.upload_tails_file(
-            context,
-            rev_reg_id,
-            loc_tails_path,
-            interval=0.8,
-            backoff=-0.5,
-            max_attempts=16,
+    loc_tails_path = tails_path(rev_reg_id)
+    if not loc_tails_path:
+        raise web.HTTPNotFound(
+            reason=f"No local tails file for rev reg {rev_reg_id}"
         )
-        if not upload_success:
-            raise web.HTTPInternalServerError(reason=reason)
-    except FileNotFoundError as err:  # no tails dir at all
-        raise web.HTTPInternalServerError(reason=str(err)) from err
+    (upload_success, reason) = await tails_server.upload_tails_file(
+        context,
+        rev_reg_id,
+        loc_tails_path,
+        interval=0.8,
+        backoff=-0.5,
+        max_attempts=16,
+    )
+    if not upload_success:
+        raise web.HTTPInternalServerError(reason=reason)
 
     return web.json_response()
 

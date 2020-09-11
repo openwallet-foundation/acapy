@@ -23,7 +23,6 @@ class IndyRevocation:
     async def init_issuer_registry(
         self,
         cred_def_id: str,
-        issuer_did: str,
         max_cred_num: int = None,
         revoc_def_type: str = None,
         tag: str = None,
@@ -45,7 +44,7 @@ class IndyRevocation:
 
         record = IssuerRevRegRecord(
             cred_def_id=cred_def_id,
-            issuer_did=issuer_did,
+            issuer_did=cred_def_id.split(":")[0],
             max_cred_num=max_cred_num,
             revoc_def_type=revoc_def_type,
             tag=tag,

@@ -401,6 +401,19 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         messages = self.responder.messages
         assert not messages
 
+    async def test_create_response(self):
+        with self.assertRaises(ConnectionManagerError):
+            await self.manager.create_response(
+                ConnectionRecord(
+                    initiator=ConnectionRecord.INITIATOR_EXTERNAL,
+                    invitation_key=self.test_verkey,
+                    their_label="Hello",
+                    their_role="Point of contact",
+                    alias="Bob",
+                    state=ConnectionRecord.STATE_ERROR,
+                )
+            )
+
     async def test_create_response_bad_state(self):
         with self.assertRaises(ConnectionManagerError):
             await self.manager.create_response(
