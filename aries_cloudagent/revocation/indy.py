@@ -6,7 +6,7 @@ from ..config.injection_context import InjectionContext
 from ..ledger.base import BaseLedger
 from ..storage.base import StorageNotFoundError
 
-from .error import RevocationNotSupportedError
+from .error import RevocationNotSupportedError, RevocationRegistryBadSizeError
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.revocation_registry import RevocationRegistry
 
@@ -23,7 +23,6 @@ class IndyRevocation:
     async def init_issuer_registry(
         self,
         cred_def_id: str,
-        issuer_did: str,
         max_cred_num: int = None,
         revoc_def_type: str = None,
         tag: str = None,
@@ -38,9 +37,14 @@ class IndyRevocation:
             raise RevocationNotSupportedError(
                 "Credential definition does not support revocation"
             )
+        if max_cred_num and not (4 <= max_cred_num <= 32768):
+            raise RevocationRegistryBadSizeError(
+                f"Bad revocation registry size: {max_cred_num}"
+            )
+
         record = IssuerRevRegRecord(
             cred_def_id=cred_def_id,
-            issuer_did=issuer_did,
+            issuer_did=cred_def_id.split(":")[0],
             max_cred_num=max_cred_num,
             revoc_def_type=revoc_def_type,
             tag=tag,
@@ -51,18 +55,18 @@ class IndyRevocation:
     async def get_active_issuer_rev_reg_record(
         self, cred_def_id: str
     ) -> "IssuerRevRegRecord":
-        """Return the current active registry for issuing a given credential definition.
-
-        If no registry exists, then a new one will be created.
+        """Return current active registry for issuing a given credential definition.
 
         Args:
             cred_def_id: ID of the base credential definition
         """
-        current = await IssuerRevRegRecord.query_by_cred_def_id(
-            self._context, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
+        current = sorted(
+            await IssuerRevRegRecord.query_by_cred_def_id(
+                self._context, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
+            )
         )
         if current:
-            return current[0]
+            return current[0]  # active record is oldest published but not full
         raise StorageNotFoundError(
             f"No active issuer revocation record found for cred def id {cred_def_id}"
         )

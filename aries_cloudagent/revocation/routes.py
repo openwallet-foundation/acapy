@@ -15,10 +15,12 @@ from aiohttp_apispec import (
 
 from marshmallow import fields, validate
 
+from ..indy.util import tails_path
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID
 from ..storage.base import BaseStorage, StorageNotFoundError
+from ..tails.base import BaseTailsServer
 
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
@@ -58,7 +60,7 @@ class RevRegUpdateTailsFileUriSchema(OpenAPISchema):
     tails_public_uri = fields.Url(
         description="Public URI to the tails file",
         example=(
-            "http://192.168.56.133:5000/revocation/registry/"
+            "http://192.168.56.133:6543/revocation/registry/"
             f"{INDY_REV_REG_ID['example']}/tails-file"
         ),
         required=True,
@@ -125,7 +127,7 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
 @docs(tags=["revocation"], summary="Creates a new revocation registry")
 @request_schema(RevRegCreateRequestSchema())
 @response_schema(RevRegResultSchema(), 200)
-async def revocation_create_registry(request: web.BaseRequest):
+async def create_rev_reg(request: web.BaseRequest):
     """
     Request handler to create a new revocation registry.
 
@@ -156,11 +158,9 @@ async def revocation_create_registry(request: web.BaseRequest):
         )
 
     try:
-        issuer_did = credential_definition_id.split(":")[0]
         revoc = IndyRevocation(context)
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
             credential_definition_id,
-            issuer_did,
             max_cred_num=max_cred_num,
         )
     except RevocationNotSupportedError as e:
@@ -176,7 +176,7 @@ async def revocation_create_registry(request: web.BaseRequest):
 )
 @querystring_schema(RevRegsCreatedQueryStringSchema())
 @response_schema(RevRegsCreatedSchema(), 200)
-async def revocation_registries_created(request: web.BaseRequest):
+async def rev_regs_created(request: web.BaseRequest):
     """
     Request handler to get revocation registries that current agent created.
 
@@ -206,9 +206,9 @@ async def revocation_registries_created(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200)
-async def get_registry(request: web.BaseRequest):
+async def get_rev_reg(request: web.BaseRequest):
     """
-    Request handler to get a revocation registry by identifier.
+    Request handler to get a revocation registry by rev reg id.
 
     Args:
         request: aiohttp request object
@@ -232,13 +232,13 @@ async def get_registry(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Get an active revocation registry by credential definition id",
+    summary="Get current active revocation registry by credential definition id",
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200)
-async def get_active_registry(request: web.BaseRequest):
+async def get_active_rev_reg(request: web.BaseRequest):
     """
-    Request handler to get an active revocation registry by cred def id.
+    Request handler to get current active revocation registry by cred def id.
 
     Args:
         request: aiohttp request object
@@ -262,14 +262,14 @@ async def get_active_registry(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Download the tails file of revocation registry",
+    summary="Download tails file",
     produces="application/octet-stream",
     responses={200: {"description": "tails file"}},
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
-    Request handler to download the tails file of the revocation registry.
+    Request handler to download tails file for revocation registry.
 
     Args:
         request: aiohttp request object
@@ -293,13 +293,88 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
 @docs(
     tags=["revocation"],
-    summary="Publish a given revocation registry",
+    summary="Upload local tails file to server",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+async def upload_tails_file(request: web.BaseRequest):
+    """
+    Request handler to upload local tails file for revocation registry.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context = request.app["request_context"]
+
+    rev_reg_id = request.match_info["rev_reg_id"]
+
+    tails_server: BaseTailsServer = await context.inject(
+        BaseTailsServer,
+        required=False,
+    )
+    if not tails_server:
+        raise web.HTTPForbidden(reason="No tails server configured")
+
+    loc_tails_path = tails_path(rev_reg_id)
+    if not loc_tails_path:
+        raise web.HTTPNotFound(reason=f"No local tails file for rev reg {rev_reg_id}")
+    (upload_success, reason) = await tails_server.upload_tails_file(
+        context,
+        rev_reg_id,
+        loc_tails_path,
+        interval=0.8,
+        backoff=-0.5,
+        max_attempts=16,
+    )
+    if not upload_success:
+        raise web.HTTPInternalServerError(reason=reason)
+
+    return web.json_response()
+
+
+@docs(
+    tags=["revocation"],
+    summary="Send revocation registry definition to ledger",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200)
-async def publish_registry(request: web.BaseRequest):
+async def send_rev_reg_def(request: web.BaseRequest):
     """
-    Request handler to publish a revocation registry based on the registry id.
+    Request handler to send revocation registry definition by reg reg id to ledger.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The issuer revocation registry record
+
+    """
+    context = request.app["request_context"]
+    rev_reg_id = request.match_info["rev_reg_id"]
+
+    try:
+        revoc = IndyRevocation(context)
+        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
+
+        await rev_reg.send_def(context)
+        LOGGER.debug("published rev reg definition: %s", rev_reg_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except RevocationError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"result": rev_reg.serialize()})
+
+
+@docs(
+    tags=["revocation"],
+    summary="Send revocation registry entry to ledger",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevRegResultSchema(), 200)
+async def send_rev_reg_entry(request: web.BaseRequest):
+    """
+    Request handler to send rev reg entry by registry id to ledger.
 
     Args:
         request: aiohttp request object
@@ -314,14 +389,12 @@ async def publish_registry(request: web.BaseRequest):
     try:
         revoc = IndyRevocation(context)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-
-        await rev_reg.publish_registry_definition(context)
-        LOGGER.debug("published registry definition: %s", rev_reg_id)
-
-        await rev_reg.publish_registry_entry(context)
+        await rev_reg.send_entry(context)
         LOGGER.debug("published registry entry: %s", rev_reg_id)
+
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
+
     except RevocationError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -330,14 +403,14 @@ async def publish_registry(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Update revocation registry with new public URI to the tails file.",
+    summary="Update revocation registry with new public URI to its tails file",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @request_schema(RevRegUpdateTailsFileUriSchema())
 @response_schema(RevRegResultSchema(), 200)
-async def update_registry(request: web.BaseRequest):
+async def update_rev_reg(request: web.BaseRequest):
     """
-    Request handler to update a revocation registry based on the registry id.
+    Request handler to update a rev reg's public tails URI by registry id.
 
     Args:
         request: aiohttp request object
@@ -357,6 +430,7 @@ async def update_registry(request: web.BaseRequest):
         revoc = IndyRevocation(context)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         await rev_reg.set_tails_file_public_uri(context, tails_public_uri)
+
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except RevocationError as err:
@@ -365,11 +439,11 @@ async def update_registry(request: web.BaseRequest):
     return web.json_response({"result": rev_reg.serialize()})
 
 
-@docs(tags=["revocation"], summary="Set revocation registry state manually.")
+@docs(tags=["revocation"], summary="Set revocation registry state manually")
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(SetRevRegStateQueryStringSchema())
 @response_schema(RevRegResultSchema(), 200)
-async def set_registry_state(request: web.BaseRequest):
+async def set_rev_reg_state(request: web.BaseRequest):
     """
     Request handler to set a revocation registry state manually.
 
@@ -401,18 +475,16 @@ async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
         [
-            web.post("/revocation/create-registry", revocation_create_registry),
+            web.post("/revocation/create-registry", create_rev_reg),
             web.get(
                 "/revocation/registries/created",
-                revocation_registries_created,
+                rev_regs_created,
                 allow_head=False,
             ),
-            web.get(
-                "/revocation/registry/{rev_reg_id}", get_registry, allow_head=False
-            ),
+            web.get("/revocation/registry/{rev_reg_id}", get_rev_reg, allow_head=False),
             web.get(
                 "/revocation/active-registry/{cred_def_id}",
-                get_active_registry,
+                get_active_rev_reg,
                 allow_head=False,
             ),
             web.get(
@@ -420,11 +492,13 @@ async def register(app: web.Application):
                 get_tails_file,
                 allow_head=False,
             ),
-            web.patch("/revocation/registry/{rev_reg_id}", update_registry),
-            web.post("/revocation/registry/{rev_reg_id}/publish", publish_registry),
+            web.put("/revocation/registry/{rev_reg_id}/tails-file", upload_tails_file),
+            web.patch("/revocation/registry/{rev_reg_id}", update_rev_reg),
+            web.post("/revocation/registry/{rev_reg_id}/definition", send_rev_reg_def),
+            web.post("/revocation/registry/{rev_reg_id}/entry", send_rev_reg_entry),
             web.patch(
                 "/revocation/registry/{rev_reg_id}/set-state",
-                set_registry_state,
+                set_rev_reg_state,
             ),
         ]
     )

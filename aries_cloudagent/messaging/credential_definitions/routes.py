@@ -129,7 +129,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     schema_id = body.get("schema_id")
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
-    revocation_registry_size = body.get("revocation_registry_size")
+    rev_reg_size = body.get("revocation_registry_size")
 
     ledger: BaseLedger = await context.inject(BaseLedger, required=False)
     if not ledger:
@@ -160,12 +160,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
         try:
             # Create registry
-            issuer_did = cred_def_id.split(":")[0]
             revoc = IndyRevocation(context)
             registry_record = await revoc.init_issuer_registry(
                 cred_def_id,
-                issuer_did,
-                max_cred_num=revocation_registry_size,
+                max_cred_num=rev_reg_size,
             )
 
         except RevocationNotSupportedError as e:
@@ -175,26 +173,34 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             await registry_record.set_tails_file_public_uri(
                 context, f"{tails_base_url}/{registry_record.revoc_reg_id}"
             )
-            await registry_record.publish_registry_definition(context)
-            await registry_record.publish_registry_entry(context)
+            await registry_record.send_def(context)
+            await registry_record.send_entry(context)
 
-            tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
-            upload_success, reason = await tails_server.upload_tails_file(
-                context, registry_record.revoc_reg_id, registry_record.tails_local_path
-            )
-            if not upload_success:
-                raise web.HTTPInternalServerError(
-                    reason=f"Tails file failed to upload: {reason}"
-                )
-
+            # stage pending registry independent of whether tails server is OK
             pending_registry_record = await revoc.init_issuer_registry(
                 registry_record.cred_def_id,
-                registry_record.issuer_did,
                 max_cred_num=registry_record.max_cred_num,
             )
             ensure_future(
-                pending_registry_record.stage_pending_registry_definition(context)
+                pending_registry_record.stage_pending_registry(context, max_attempts=16)
             )
+
+            tails_server: BaseTailsServer = await context.inject(BaseTailsServer)
+            (upload_success, reason) = await tails_server.upload_tails_file(
+                context,
+                registry_record.revoc_reg_id,
+                registry_record.tails_local_path,
+                interval=0.8,
+                backoff=-0.5,
+                max_attempts=5,  # heuristic: respect HTTP timeout
+            )
+            if not upload_success:
+                raise web.HTTPInternalServerError(
+                    reason=(
+                        f"Tails file for rev reg {registry_record.revoc_reg_id} "
+                        f"failed to upload: {reason}"
+                    )
+                )
 
         except RevocationError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
