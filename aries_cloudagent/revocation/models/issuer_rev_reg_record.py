@@ -360,7 +360,7 @@ class IssuerRevRegRecord(BaseRecord):
     @classmethod
     async def retrieve_by_revoc_reg_id(
         cls, context: InjectionContext, revoc_reg_id: str
-    ) -> Sequence["IssuerRevRegRecord"]:
+    ) -> "IssuerRevRegRecord":
         """Retrieve a revocation registry record by revocation registry ID.
 
         Args:

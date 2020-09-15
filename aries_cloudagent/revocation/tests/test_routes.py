@@ -22,6 +22,48 @@ class TestRevocationRoutes(AsyncTestCase):
         }
         self.test_did = "sample-did"
 
+    async def test_validate_cred_rev_rec_request(self):
+        req = test_module.CredRevRecordRequestSchema()
+        req.validate_fields(
+            {
+                "rev_reg_id": test_module.INDY_REV_REG_ID["example"],
+                "cred_rev_id": test_module.INDY_CRED_REV_ID["example"],
+            }
+        )
+        req.validate_fields({"cred_ex_id": test_module.UUID4["example"]})
+        with self.assertRaises(test_module.ValidationError):
+            req.validate_fields({})
+        with self.assertRaises(test_module.ValidationError):
+            req.validate_fields(
+                {"rev_reg_id": test_module.INDY_REV_REG_ID["example"]}
+            )
+        with self.assertRaises(test_module.ValidationError):
+            req.validate_fields(
+                {"cred_rev_id": test_module.INDY_CRED_REV_ID["example"]}
+            )
+        with self.assertRaises(test_module.ValidationError):
+            req.validate_fields(
+                {
+                    "rev_reg_id": test_module.INDY_REV_REG_ID["example"],
+                    "cred_ex_id": test_module.UUID4["example"],
+                }
+            )
+        with self.assertRaises(test_module.ValidationError):
+            req.validate_fields(
+                {
+                    "cred_rev_id": test_module.INDY_CRED_REV_ID["example"],
+                    "cred_ex_id": test_module.UUID4["example"],
+                }
+            )
+        with self.assertRaises(test_module.ValidationError):
+            req.validate_fields(
+                {
+                    "rev_reg_id": test_module.INDY_REV_REG_ID["example"],
+                    "cred_rev_id": test_module.INDY_CRED_REV_ID["example"],
+                    "cred_ex_id": test_module.UUID4["example"],
+                }
+            )
+
     async def test_create_registry(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
         request = async_mock.MagicMock()
@@ -182,6 +224,129 @@ class TestRevocationRoutes(AsyncTestCase):
             with self.assertRaises(HTTPNotFound):
                 result = await test_module.get_registry(request)
             mock_json_response.assert_not_called()
+
+    async def test_get_rev_reg_issued(self):
+        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+            self.test_did, self.test_did
+        )
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.match_info = {"rev_reg_id": REV_REG_ID}
+
+        with async_mock.patch.object(
+            test_module.IssuerRevRegRecord,
+            "retrieve_by_revoc_reg_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            test_module.IssuerCredRevRecord,
+            "query_by_ids",
+            async_mock.CoroutineMock(),
+        ) as mock_query, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_query.return_value = return_value=[{"...": "..."}, {"...": "..."}]
+            result = await test_module.get_rev_reg_issued(request)
+
+            mock_json_response.assert_called_once_with({"result": 2})
+            assert result is mock_json_response.return_value
+
+    async def test_get_rev_reg_issued_x(self):
+        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+            self.test_did, self.test_did
+        )
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.match_info = {"rev_reg_id": REV_REG_ID}
+
+        with async_mock.patch.object(
+            test_module.IssuerRevRegRecord,
+            "retrieve_by_revoc_reg_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = test_module.StorageNotFoundError("no such rec")
+
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.get_rev_reg_issued(request)
+
+    async def test_get_cred_rev_record(self):
+        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+            self.test_did, self.test_did
+        )
+        CRED_REV_ID = "1"
+
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.json = async_mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": REV_REG_ID,
+                "cred_rev_id": CRED_REV_ID,
+            }
+        )
+
+        with async_mock.patch.object(
+            test_module.IssuerCredRevRecord,
+            "retrieve_by_ids",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_retrieve.return_value = async_mock.MagicMock(
+                serialize=async_mock.MagicMock(
+                    return_value="dummy"
+                )
+            )
+            result = await test_module.get_cred_rev_record(request)
+
+            mock_json_response.assert_called_once_with({"result": "dummy"})
+            assert result is mock_json_response.return_value
+
+    async def test_get_cred_rev_record_by_cred_ex_id(self):
+        CRED_EX_ID = test_module.UUID4["example"]
+
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.json = async_mock.CoroutineMock(return_value={"cred_ex_id": CRED_EX_ID})
+
+        with async_mock.patch.object(
+            test_module.IssuerCredRevRecord,
+            "retrieve_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_retrieve.return_value = async_mock.MagicMock(
+                serialize=async_mock.MagicMock(
+                    return_value="dummy"
+                )
+            )
+            result = await test_module.get_cred_rev_record(request)
+
+            mock_json_response.assert_called_once_with({"result": "dummy"})
+            assert result is mock_json_response.return_value
+
+    async def test_get_cred_rev_record_not_found(self):
+        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+            self.test_did, self.test_did
+        )
+        CRED_REV_ID = "1"
+
+        request = async_mock.MagicMock()
+        request.app = self.app
+        request.json = async_mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": REV_REG_ID,
+                "cred_rev_id": CRED_REV_ID,
+            }
+        )
+
+        with async_mock.patch.object(
+            test_module.IssuerCredRevRecord,
+            "retrieve_by_ids",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = test_module.StorageNotFoundError("no such rec")
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.get_cred_rev_record(request)
 
     async def test_get_active_registry(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
