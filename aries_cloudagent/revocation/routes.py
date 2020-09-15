@@ -13,17 +13,29 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, validate
+from marshmallow import fields, validate, validates_schema
+from marshmallow.exceptions import ValidationError
 
 from ..indy.util import tails_path
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID, INDY_REV_REG_SIZE
-from ..storage.base import BaseStorage, StorageNotFoundError
+from ..messaging.valid import (
+    INDY_CRED_DEF_ID,
+    INDY_CRED_REV_ID,
+    INDY_REV_REG_ID,
+    UUID4,
+    WHOLE_NUM,
+)
+from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
 from ..tails.base import BaseTailsServer
 
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
+from .models.issuer_cred_rev_record import (
+    IssuerCredRevRecord,
+    IssuerCredRevRecordSchema,
+)
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 
 LOGGER = logging.getLogger(__name__)
@@ -36,7 +48,7 @@ class RevRegCreateRequestSchema(OpenAPISchema):
         description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
     max_cred_num = fields.Int(
-        required=False, description="Revocation registry size", **INDY_REV_REG_SIZE
+        required=False, description="Revocation registry size", **INDY_CRED_DEF_ID
     )
 
 
@@ -44,6 +56,57 @@ class RevRegResultSchema(OpenAPISchema):
     """Result schema for revocation registry creation request."""
 
     result = IssuerRevRegRecordSchema()
+
+
+class CredRevRecordRequestSchema(OpenAPISchema):
+    """Request schema for credential revocation record."""
+
+    rev_reg_id = fields.Str(
+        description="Revocation registry identifier",
+        required=False,
+        **INDY_REV_REG_ID,
+    )
+    cred_rev_id = fields.Str(
+        description="Credential revocation identifier",
+        required=False,
+        **INDY_CRED_REV_ID,
+    )
+    cred_ex_id = fields.Str(
+        description="Credential exchange identifier",
+        required=False,
+        **UUID4,
+    )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate schema fields - must have (rr-id and cr-id) xor cx-id."""
+
+        rev_reg_id = data.get("rev_reg_id")
+        cred_rev_id = data.get("cred_rev_id")
+        cred_ex_id = data.get("cred_ex_id")
+
+        if not (
+            (rev_reg_id and cred_rev_id and not cred_ex_id)
+            or (cred_ex_id and not rev_reg_id and not cred_rev_id)
+        ):
+            raise ValidationError(
+                "Request must have either rev_reg_id and cred_rev_id or cred_ex_id"
+            )
+
+
+class CredRevRecordResultSchema(OpenAPISchema):
+    """Result schema for credential revocation record request."""
+
+    result = IssuerCredRevRecordSchema()
+
+
+class RevRegIssuedResultSchema(OpenAPISchema):
+    """Result schema for revocation registry credentials issued request."""
+
+    result = fields.Int(
+        description="Number of credentials issued against revocation registry",
+        **WHOLE_NUM,
+    )
 
 
 class RevRegsCreatedSchema(OpenAPISchema):
@@ -232,7 +295,82 @@ async def get_rev_reg(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Get current active revocation registry by credential definition id",
+    summary="Get number of credentials issued against revocation registry",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevRegIssuedResultSchema(), 200)
+async def get_rev_reg_issued(request: web.BaseRequest):
+    """
+    Request handler to get number of credentials issued against revocation registry.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Number of credentials issued against revocation registry
+
+    """
+    context = request.app["request_context"]
+
+    rev_reg_id = request.match_info["rev_reg_id"]
+
+    try:
+        await IssuerRevRegRecord.retrieve_by_revoc_reg_id(rev_reg_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response(
+        {
+            "result": len(
+                await IssuerCredRevRecord.query_by_ids(context, rev_reg_id=rev_reg_id)
+            )
+        }
+    )
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get credential revocation status",
+)
+@request_schema(CredRevRecordRequestSchema())
+@response_schema(CredRevRecordResultSchema(), 200)
+async def get_cred_rev_record(request: web.BaseRequest):
+    """
+    Request handler to get credential revocation record.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The issuer credential revocation record
+
+    """
+    context = request.app["request_context"]
+
+    body = await request.json()
+
+    rev_reg_id = body.get("rev_reg_id")
+    cred_rev_id = body.get("cred_rev_id")  # numeric string
+    cred_ex_id = body.get("cred_ex_id")
+
+    try:
+        if rev_reg_id and cred_rev_id:
+            rec = await IssuerCredRevRecord.retrieve_by_ids(
+                context,
+                rev_reg_id,
+                cred_rev_id
+            )
+        else:
+            rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(context, cred_ex_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response({"result": rec.serialize()})
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get an active revocation registry by credential definition id",
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200)
@@ -482,6 +620,12 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.get("/revocation/registry/{rev_reg_id}", get_rev_reg, allow_head=False),
+            web.get(
+                "/revocation/registry/{rev_reg_id}/issued",
+                get_rev_reg_issued,
+                allow_head=False,
+            ),
+            web.get("/revocation/record", get_cred_rev_record, allow_head=False),
             web.get(
                 "/revocation/active-registry/{cred_def_id}",
                 get_active_rev_reg,
