@@ -34,7 +34,6 @@ class IssuerCredRevRecord(BaseRecord):
     }
 
     STATE_ISSUED = "issued"
-    STATE_REVOCATION_PENDING = "revocation_pending"
     STATE_REVOKED = "revoked"
 
     def __init__(
@@ -45,7 +44,7 @@ class IssuerCredRevRecord(BaseRecord):
         cred_ex_id: str = None,
         rev_reg_id: str = None,
         cred_rev_id: str = None,
-        cred_def_id: str = None,  # Marshmallow formalism: leave null
+        cred_def_id: str = None,  # Marshmallow formalism: leave None
         **kwargs,
     ):
         """Initialize a new IssuerCredRevRecord."""
@@ -53,9 +52,7 @@ class IssuerCredRevRecord(BaseRecord):
         self.cred_ex_id = cred_ex_id
         self.rev_reg_id = rev_reg_id
         self.cred_rev_id = cred_rev_id
-        self.cred_def_id = (
-            ":".join(self.rev_reg_id.split(":")[-7:-2]) if self.rev_reg_id else None
-        )
+        self.cred_def_id = ":".join(rev_reg_id.split(":")[-7:-2])
 
     @property
     def record_id(self) -> str:
@@ -66,6 +63,7 @@ class IssuerCredRevRecord(BaseRecord):
     async def query_by_ids(
         cls,
         context: InjectionContext,
+        *,
         cred_def_id: str = None,
         rev_reg_id: str = None,
         state: str = None,
