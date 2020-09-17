@@ -1,21 +1,15 @@
 """Classes to manage credential revocation."""
 
-import asyncio
 import json
 import logging
-from typing import Mapping, Sequence, Text, Tuple
+from typing import Mapping, Sequence, Text
 
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..issuer.base import BaseIssuer
-from ..protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange
-)
-from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 
 from .indy import IndyRevocation
-from .models.revocation_registry import RevocationRegistry
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 
@@ -66,21 +60,21 @@ class RevocationManager:
             rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(
                 self.context,
                 cred_ex_id,
-                cred_ex,
             )
         except StorageNotFoundError as err:
             raise RevocationManagerError(
                 "No issuer credential revocation record found for "
                 f"credential exchange id {cred_ex_id}"
-            )
+            ) from err
         return await self.revoke_credential(
-            rev_reg_id=rec.rev_reg_id,
-            cred_rev_id=cred_rev_id,
-            publish=publish
+            rev_reg_id=rec.rev_reg_id, cred_rev_id=rec.cred_rev_id, publish=publish
         )
 
     async def revoke_credential(
-        self, rev_reg_id: str, cred_rev_id: str, publish: bool = False
+        self,
+        rev_reg_id: str,
+        cred_rev_id: str,
+        publish: bool = False,
     ):
         """
         Revoke a credential.
@@ -97,9 +91,9 @@ class RevocationManager:
         issuer: BaseIssuer = await self.context.inject(BaseIssuer)
 
         revoc = IndyRevocation(self.context)
-        registry_record = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        if not registry_record:
-            raise RevocationManagerManagerError(
+        issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
+        if not issuer_rr_rec:
+            raise RevocationManagerError(
                 f"No revocation registry record found for id {rev_reg_id}"
             )
 
@@ -108,17 +102,17 @@ class RevocationManager:
             await rev_reg.get_or_fetch_local_tails_path()
 
             # pick up pending revocations on input revocation registry
-            crids = list(set(registry_record.pending_pub + [cred_rev_id]))
+            crids = list(set(issuer_rr_rec.pending_pub + [cred_rev_id]))
             (delta_json, _) = await issuer.revoke_credentials(
-                registry_record.revoc_reg_id, registry_record.tails_local_path, crids
+                issuer_rr_rec.revoc_reg_id, issuer_rr_rec.tails_local_path, crids
             )
             if delta_json:
-                registry_record.revoc_reg_entry = json.loads(delta_json)
-                await registry_record.publish_registry_entry(self.context)
-                await registry_record.clear_pending(self.context)
+                issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
+                await issuer_rr_rec.send_entry(self.context)
+                await issuer_rr_rec.clear_pending(self.context)
 
         else:
-            await registry_record.mark_pending(self.context, cred_rev_id)
+            await issuer_rr_rec.mark_pending(self.context, cred_rev_id)
 
     async def publish_pending_revocations(
         self, rrid2crid: Mapping[Text, Sequence[Text]] = None
@@ -149,29 +143,29 @@ class RevocationManager:
         result = {}
         issuer: BaseIssuer = await self.context.inject(BaseIssuer)
 
-        registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
-        for registry_record in registry_records:
-            rrid = registry_record.revoc_reg_id
+        issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(self.context)
+        for issuer_rr_rec in issuer_rr_recs:
+            rrid = issuer_rr_rec.revoc_reg_id
             crids = []
             if not rrid2crid:
-                crids = registry_record.pending_pub
+                crids = issuer_rr_rec.pending_pub
             elif rrid in rrid2crid:
                 crids = [
                     crid
-                    for crid in registry_record.pending_pub
+                    for crid in issuer_rr_rec.pending_pub
                     if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
                 ]
             if crids:
                 (delta_json, failed_crids) = await issuer.revoke_credentials(
-                    registry_record.revoc_reg_id,
-                    registry_record.tails_local_path,
+                    issuer_rr_rec.revoc_reg_id,
+                    issuer_rr_rec.tails_local_path,
                     crids,
                 )
-                registry_record.revoc_reg_entry = json.loads(delta_json)
-                await registry_record.publish_registry_entry(self.context)
+                issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
+                await issuer_rr_rec.send_entry(self.context)
                 published = [crid for crid in crids if crid not in failed_crids]
-                result[registry_record.revoc_reg_id] = published
-                await registry_record.clear_pending(self.context, published)
+                result[issuer_rr_rec.revoc_reg_id] = published
+                await issuer_rr_rec.clear_pending(self.context, published)
 
         return result
 
@@ -206,11 +200,11 @@ class RevocationManager:
 
         """
         result = {}
-        registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
-        for registry_record in registry_records:
-            rrid = registry_record.revoc_reg_id
-            await registry_record.clear_pending(self.context, (purge or {}).get(rrid))
-            if registry_record.pending_pub:
-                result[rrid] = registry_record.pending_pub
+        issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(self.context)
+        for issuer_rr_rec in issuer_rr_recs:
+            rrid = issuer_rr_rec.revoc_reg_id
+            await issuer_rr_rec.clear_pending(self.context, (purge or {}).get(rrid))
+            if issuer_rr_rec.pending_pub:
+                result[rrid] = issuer_rr_rec.pending_pub
 
         return result
