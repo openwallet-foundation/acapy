@@ -20,7 +20,7 @@ class V10CredentialExchange(BaseExchangeRecord):
     RECORD_TYPE = "credential_exchange_v10"
     RECORD_ID_NAME = "credential_exchange_id"
     WEBHOOK_TOPIC = "issue_credential"
-    TAG_NAMES = {"thread_id"}
+    TAG_NAMES = {"~thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
