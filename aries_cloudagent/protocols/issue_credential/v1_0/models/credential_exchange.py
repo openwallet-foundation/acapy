@@ -1,5 +1,6 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
+from os import environ
 from typing import Any
 
 from marshmallow import fields, validate
@@ -7,6 +8,8 @@ from marshmallow import fields, validate
 from .....config.injection_context import InjectionContext
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
+
+unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
 
 
 class V10CredentialExchange(BaseExchangeRecord):
@@ -20,7 +23,7 @@ class V10CredentialExchange(BaseExchangeRecord):
     RECORD_TYPE = "credential_exchange_v10"
     RECORD_ID_NAME = "credential_exchange_id"
     WEBHOOK_TOPIC = "issue_credential"
-    TAG_NAMES = {"~thread_id"}
+    TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
