@@ -285,7 +285,11 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(collect_stats)
 
-        app = web.Application(middlewares=middlewares)
+        app_args = {}
+        if self.max_message_size:
+            app_args["client_max_size"] = self.max_message_size
+
+        app = web.Application(middlewares=middlewares, **app_args)
         app["request_context"] = self.context
         app["outbound_message_router"] = self.responder.send
 

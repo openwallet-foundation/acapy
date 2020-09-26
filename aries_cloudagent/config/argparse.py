@@ -716,7 +716,7 @@ class TransportGroup(ArgumentGroup):
             default=2097152,
             type=ByteSize(min_size=1024),
             metavar="<message-size>",
-            help="Set the maximum size in bytes for inbound agent messages.",
+            help="Set the maximum size in bytes for inbound and outbound agent messages.",
         )
         parser.add_argument(
             "--enable-undelivered-queue",
