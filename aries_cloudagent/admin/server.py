@@ -190,6 +190,7 @@ class AdminServer(BaseAdminServer):
         conductor_stop: Coroutine,
         task_queue: TaskQueue = None,
         conductor_stats: Coroutine = None,
+        max_message_size: int = 0,
     ):
         """
         Initialize an AdminServer instance.
@@ -202,6 +203,7 @@ class AdminServer(BaseAdminServer):
             webhook_router: Callable for delivering webhooks
             conductor_stop: Conductor (graceful) stop for shutdown API call
             task_queue: An optional task queue for handlers
+            max_message_size: An optional config for transport outbound messages
         """
         self.app = None
         self.admin_api_key = context.settings.get("admin.admin_api_key")
@@ -226,6 +228,7 @@ class AdminServer(BaseAdminServer):
             self.send_webhook,
         )
         self.context.injector.bind_instance(BaseResponder, self.responder)
+        self.max_message_size = max_message_size
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""

@@ -99,6 +99,7 @@ class Conductor:
             try:
                 admin_host = context.settings.get("admin.host", "0.0.0.0")
                 admin_port = context.settings.get("admin.port", "80")
+                max_message_size = context.settings.get("transport.max_message_size")
                 self.admin_server = AdminServer(
                     admin_host,
                     admin_port,
@@ -108,6 +109,7 @@ class Conductor:
                     self.stop,
                     self.dispatcher.task_queue,
                     self.get_stats,
+                    max_message_size
                 )
                 webhook_urls = context.settings.get("admin.webhook_urls")
                 if webhook_urls:
