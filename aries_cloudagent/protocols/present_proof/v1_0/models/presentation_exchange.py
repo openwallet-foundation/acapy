@@ -1,11 +1,14 @@
 """Aries#0037 v1.0 presentation exchange information with non-secrets storage."""
 
+from os import environ
 from typing import Any
 
 from marshmallow import fields, validate
 
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+
+unencrypted_tags = environ.get("EXCH_UNENCRYPTED_TAGS", "False").upper() == "TRUE"
 
 
 class V10PresentationExchange(BaseExchangeRecord):
@@ -19,7 +22,7 @@ class V10PresentationExchange(BaseExchangeRecord):
     RECORD_TYPE = "presentation_exchange_v10"
     RECORD_ID_NAME = "presentation_exchange_id"
     WEBHOOK_TOPIC = "present_proof"
-    TAG_NAMES = {"thread_id"}
+    TAG_NAMES = {"~thread_id"} if unencrypted_tags else {"thread_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"

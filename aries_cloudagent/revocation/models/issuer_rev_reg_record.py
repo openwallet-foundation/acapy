@@ -341,9 +341,10 @@ class IssuerRevRegRecord(BaseRecord):
             cred_def_id: The credential definition ID to filter by
             state: A state value to filter by
         """
-        tag_filter = {"cred_def_id": cred_def_id}
-        if state:
-            tag_filter["state"] = state
+        tag_filter = {
+            **{"cred_def_id": cred_def_id for _ in [""] if cred_def_id},
+            **{"state": state for _ in [""] if state},
+        }
         return await cls.query(context, tag_filter)
 
     @classmethod
@@ -365,7 +366,7 @@ class IssuerRevRegRecord(BaseRecord):
     @classmethod
     async def retrieve_by_revoc_reg_id(
         cls, context: InjectionContext, revoc_reg_id: str
-    ) -> Sequence["IssuerRevRegRecord"]:
+    ) -> "IssuerRevRegRecord":
         """Retrieve a revocation registry record by revocation registry ID.
 
         Args:

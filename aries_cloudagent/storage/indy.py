@@ -33,7 +33,7 @@ class IndyStorage(BaseStorage):
 
     def __init__(self, wallet: IndyWallet):
         """
-        Initialize a `BasicStorage` instance.
+        Initialize an `IndyStorage` instance.
 
         Args:
             wallet: The indy wallet instance to use
