@@ -344,7 +344,7 @@ async def main(
                 )
                 try:
                     await agent.admin_POST(
-                        "/issue-credential/revoke"
+                        "/revocation/revoke"
                         f"?publish={publish}"
                         f"&rev_reg_id={rev_reg_id}"
                         f"&cred_rev_id={cred_rev_id}"
@@ -353,13 +353,11 @@ async def main(
                     pass
             elif option == "5" and revocation:
                 try:
-                    resp = await agent.admin_POST(
-                        "/issue-credential/publish-revocations", {}
-                    )
+                    resp = await agent.admin_POST("/revocation/publish-revocations", {})
                     agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["rrid2crid"]),
-                            "y" if len(resp) == 1 else "ies",
+                            "y" if len(resp["rrid2crid"]) == 1 else "ies",
                             json.dumps([k for k in resp["rrid2crid"]], indent=4),
                         )
                     )

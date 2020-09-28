@@ -1,5 +1,6 @@
 """Revocation registry admin routes."""
 
+import json
 import logging
 
 from asyncio import shield
@@ -13,20 +14,43 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields, validate
+from marshmallow import fields, validate, validates_schema
+from marshmallow.exceptions import ValidationError
 
 from ..indy.util import tails_path
+from ..issuer.base import IssuerError
+from ..ledger.error import LedgerError
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID
-from ..storage.base import BaseStorage, StorageNotFoundError
+from ..messaging.valid import (
+    INDY_CRED_DEF_ID,
+    INDY_CRED_REV_ID,
+    INDY_REV_REG_ID,
+    UUID4,
+    WHOLE_NUM,
+)
+from ..storage.base import BaseStorage
+from ..storage.error import StorageError, StorageNotFoundError
 from ..tails.base import BaseTailsServer
 
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
+from .manager import RevocationManager, RevocationManagerError
+from .models.issuer_cred_rev_record import (
+    IssuerCredRevRecord,
+    IssuerCredRevRecordSchema,
+)
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 
 LOGGER = logging.getLogger(__name__)
+
+
+class CredExIdMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking credential exchange id."""
+
+    cred_ex_id = fields.Str(
+        description="Credential exchange identifier", required=True, **UUID4
+    )
 
 
 class RevRegCreateRequestSchema(OpenAPISchema):
@@ -44,6 +68,102 @@ class RevRegResultSchema(OpenAPISchema):
     """Result schema for revocation registry creation request."""
 
     result = IssuerRevRegRecordSchema()
+
+
+class CredRevRecordQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for credential revocation record request."""
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate schema fields - must have (rr-id and cr-id) xor cx-id."""
+
+        rev_reg_id = data.get("rev_reg_id")
+        cred_rev_id = data.get("cred_rev_id")
+        cred_ex_id = data.get("cred_ex_id")
+
+        if not (
+            (rev_reg_id and cred_rev_id and not cred_ex_id)
+            or (cred_ex_id and not rev_reg_id and not cred_rev_id)
+        ):
+            raise ValidationError(
+                "Request must have either rev_reg_id and cred_rev_id or cred_ex_id"
+            )
+
+    rev_reg_id = fields.Str(
+        description="Revocation registry identifier",
+        required=False,
+        **INDY_REV_REG_ID,
+    )
+    cred_rev_id = fields.Str(
+        description="Credential revocation identifier",
+        required=False,
+        **INDY_CRED_REV_ID,
+    )
+    cred_ex_id = fields.Str(
+        description="Credential exchange identifier",
+        required=False,
+        **UUID4,
+    )
+
+
+class RevokeQueryStringSchema(CredRevRecordQueryStringSchema):
+    """Parameters and validators for revocation request."""
+
+    publish = fields.Boolean(
+        description=(
+            "(True) publish revocation to ledger immediately, or "
+            "(False) mark it pending (default value)"
+        ),
+        required=False,
+    )
+
+
+class PublishRevocationsSchema(OpenAPISchema):
+    """Request and result schema for revocation publication API call."""
+
+    rrid2crid = fields.Dict(
+        required=False,
+        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        values=fields.List(
+            fields.Str(
+                description="Credential revocation identifier", **INDY_CRED_REV_ID
+            )
+        ),
+        description="Credential revocation ids by revocation registry id",
+    )
+
+
+class ClearPendingRevocationsRequestSchema(OpenAPISchema):
+    """Request schema for clear pending revocations API call."""
+
+    purge = fields.Dict(
+        required=False,
+        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        values=fields.List(
+            fields.Str(
+                description="Credential revocation identifier", **INDY_CRED_REV_ID
+            )
+        ),
+        description=(
+            "Credential revocation ids by revocation registry id: omit for all, "
+            "specify null or empty list for all pending per revocation registry"
+        ),
+    )
+
+
+class CredRevRecordResultSchema(OpenAPISchema):
+    """Result schema for credential revocation record request."""
+
+    result = IssuerCredRevRecordSchema()
+
+
+class RevRegIssuedResultSchema(OpenAPISchema):
+    """Result schema for revocation registry credentials issued request."""
+
+    result = fields.Int(
+        description="Number of credentials issued against revocation registry",
+        **WHOLE_NUM,
+    )
 
 
 class RevRegsCreatedSchema(OpenAPISchema):
@@ -122,6 +242,101 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
         required=True,
         **INDY_CRED_DEF_ID,
     )
+
+
+@docs(
+    tags=["revocation"],
+    summary="Revoke an issued credential",
+)
+@querystring_schema(RevokeQueryStringSchema())
+async def revoke(request: web.BaseRequest):
+    """
+    Request handler for storing a credential request.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential request details.
+
+    """
+    context = request.app["request_context"]
+
+    rev_reg_id = request.query.get("rev_reg_id")
+    cred_rev_id = request.query.get("cred_rev_id")  # numeric str, which indy wants
+    cred_ex_id = request.query.get("cred_ex_id")
+    publish = bool(json.loads(request.query.get("publish", json.dumps(False))))
+
+    rev_manager = RevocationManager(context)
+    try:
+        if cred_ex_id:
+            await rev_manager.revoke_credential_by_cred_ex_id(cred_ex_id, publish)
+        else:
+            await rev_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
+    except (
+        RevocationManagerError,
+        RevocationError,
+        StorageError,
+        IssuerError,
+        LedgerError,
+    ) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({})
+
+
+@docs(tags=["revocation"], summary="Publish pending revocations to ledger")
+@request_schema(PublishRevocationsSchema())
+@response_schema(PublishRevocationsSchema(), 200)
+async def publish_revocations(request: web.BaseRequest):
+    """
+    Request handler for publishing pending revocations to the ledger.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Credential revocation ids published as revoked by revocation registry id.
+
+    """
+    context = request.app["request_context"]
+    body = await request.json()
+    rrid2crid = body.get("rrid2crid")
+
+    rev_manager = RevocationManager(context)
+
+    try:
+        results = await rev_manager.publish_pending_revocations(rrid2crid)
+    except (RevocationError, StorageError, IssuerError, LedgerError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response({"rrid2crid": results})
+
+
+@docs(tags=["revocation"], summary="Clear pending revocations")
+@request_schema(ClearPendingRevocationsRequestSchema())
+@response_schema(PublishRevocationsSchema(), 200)
+async def clear_pending_revocations(request: web.BaseRequest):
+    """
+    Request handler for clearing pending revocations.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Credential revocation ids still pending revocation by revocation registry id.
+
+    """
+    context = request.app["request_context"]
+    body = await request.json()
+    purge = body.get("purge")
+
+    rev_manager = RevocationManager(context)
+
+    try:
+        results = await rev_manager.clear_pending_revocations(purge)
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response({"rrid2crid": results})
 
 
 @docs(tags=["revocation"], summary="Creates a new revocation registry")
@@ -228,6 +443,77 @@ async def get_rev_reg(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.json_response({"result": rev_reg.serialize()})
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get number of credentials issued against revocation registry",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevRegIssuedResultSchema(), 200)
+async def get_rev_reg_issued(request: web.BaseRequest):
+    """
+    Request handler to get number of credentials issued against revocation registry.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Number of credentials issued against revocation registry
+
+    """
+    context = request.app["request_context"]
+
+    rev_reg_id = request.match_info["rev_reg_id"]
+
+    try:
+        await IssuerRevRegRecord.retrieve_by_revoc_reg_id(context, rev_reg_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response(
+        {
+            "result": len(
+                await IssuerCredRevRecord.query_by_ids(context, rev_reg_id=rev_reg_id)
+            )
+        }
+    )
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get credential revocation status",
+)
+@querystring_schema(CredRevRecordQueryStringSchema())
+@response_schema(CredRevRecordResultSchema(), 200)
+async def get_cred_rev_record(request: web.BaseRequest):
+    """
+    Request handler to get credential revocation record.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The issuer credential revocation record
+
+    """
+    context = request.app["request_context"]
+
+    rev_reg_id = request.query.get("rev_reg_id")
+    cred_rev_id = request.query.get("cred_rev_id")  # numeric string
+    cred_ex_id = request.query.get("cred_ex_id")
+
+    try:
+        if rev_reg_id and cred_rev_id:
+            rec = await IssuerCredRevRecord.retrieve_by_ids(
+                context, rev_reg_id, cred_rev_id
+            )
+        else:
+            rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(context, cred_ex_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response({"result": rec.serialize()})
 
 
 @docs(
@@ -475,7 +761,15 @@ async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
         [
-            web.post("/revocation/create-registry", create_rev_reg),
+            web.post("/revocation/revoke", revoke),
+            web.post("/revocation/publish-revocations", publish_revocations),
+            web.post(
+                "/revocation/clear-pending-revocations",
+                clear_pending_revocations,
+            ),
+            web.get(
+                "/revocation/credential-record", get_cred_rev_record, allow_head=False
+            ),
             web.get(
                 "/revocation/registries/created",
                 rev_regs_created,
@@ -488,14 +782,20 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.get(
+                "/revocation/registry/{rev_reg_id}/issued",
+                get_rev_reg_issued,
+                allow_head=False,
+            ),
+            web.post("/revocation/create-registry", create_rev_reg),
+            web.post("/revocation/registry/{rev_reg_id}/definition", send_rev_reg_def),
+            web.post("/revocation/registry/{rev_reg_id}/entry", send_rev_reg_entry),
+            web.patch("/revocation/registry/{rev_reg_id}", update_rev_reg),
+            web.put("/revocation/registry/{rev_reg_id}/tails-file", upload_tails_file),
+            web.get(
                 "/revocation/registry/{rev_reg_id}/tails-file",
                 get_tails_file,
                 allow_head=False,
             ),
-            web.put("/revocation/registry/{rev_reg_id}/tails-file", upload_tails_file),
-            web.patch("/revocation/registry/{rev_reg_id}", update_rev_reg),
-            web.post("/revocation/registry/{rev_reg_id}/definition", send_rev_reg_def),
-            web.post("/revocation/registry/{rev_reg_id}/entry", send_rev_reg_entry),
             web.patch(
                 "/revocation/registry/{rev_reg_id}/set-state",
                 set_rev_reg_state,
