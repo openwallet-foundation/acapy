@@ -368,7 +368,7 @@ class IndyLedger(BaseLedger):
                 )
 
             try:
-                schema_id, schema_json = await issuer.create_and_store_schema(
+                schema_id, schema_json = await issuer.create_schema(
                     public_info.did,
                     schema_name,
                     schema_version,
