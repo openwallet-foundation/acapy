@@ -109,7 +109,7 @@ class Conductor:
                     self.stop,
                     self.dispatcher.task_queue,
                     self.get_stats,
-                    max_message_size
+                    max_message_size,
                 )
                 webhook_urls = context.settings.get("admin.webhook_urls")
                 if webhook_urls:
