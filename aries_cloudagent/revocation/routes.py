@@ -26,6 +26,7 @@ from ..messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
     INDY_REV_REG_ID,
+    INDY_REV_REG_SIZE,
     UUID4,
     WHOLE_NUM,
 )
@@ -60,7 +61,7 @@ class RevRegCreateRequestSchema(OpenAPISchema):
         description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
     max_cred_num = fields.Int(
-        description="Maximum credential numbers", example=100, required=False
+        required=False, description="Revocation registry size", **INDY_REV_REG_SIZE
     )
 
 

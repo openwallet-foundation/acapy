@@ -37,7 +37,9 @@ class IndyRevocation:
             raise RevocationNotSupportedError(
                 "Credential definition does not support revocation"
             )
-        if max_cred_num and not (4 <= max_cred_num <= 32768):
+        if max_cred_num and not (
+            RevocationRegistry.MIN_SIZE <= max_cred_num <= RevocationRegistry.MAX_SIZE
+        ):
             raise RevocationRegistryBadSizeError(
                 f"Bad revocation registry size: {max_cred_num}"
             )
