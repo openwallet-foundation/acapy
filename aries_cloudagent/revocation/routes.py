@@ -18,7 +18,7 @@ from marshmallow import fields, validate
 from ..indy.util import tails_path
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID
+from ..messaging.valid import INDY_CRED_DEF_ID, INDY_REV_REG_ID, INDY_REV_REG_SIZE
 from ..storage.base import BaseStorage, StorageNotFoundError
 from ..tails.base import BaseTailsServer
 
@@ -36,7 +36,7 @@ class RevRegCreateRequestSchema(OpenAPISchema):
         description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
     max_cred_num = fields.Int(
-        description="Maximum credential numbers", example=100, required=False
+        required=False, description="Revocation registry size", **INDY_REV_REG_SIZE
     )
 
 

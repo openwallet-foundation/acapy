@@ -22,6 +22,7 @@ from ..valid import (
     INDY_PREDICATE,
     INDY_RAW_PUBLIC_KEY,
     INDY_REV_REG_ID,
+    INDY_REV_REG_SIZE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
     INDY_WQL,
@@ -66,6 +67,17 @@ class TestValid(TestCase):
         NATURAL_NUM["validate"](1)
         NATURAL_NUM["validate"](2)
         NATURAL_NUM["validate"](12345678901234567890)
+
+    def test_indy_rev_reg_size(self):
+        non_indy_rr_sizes = [-9223372036854775809, 2.3, "Hello", 0, 3, 32769, None]
+        for non_indy_rr_size in non_indy_rr_sizes:
+            with self.assertRaises(ValidationError):
+                INDY_REV_REG_SIZE["validate"](non_indy_rr_size)
+
+        INDY_REV_REG_SIZE["validate"](4)
+        INDY_REV_REG_SIZE["validate"](5)
+        INDY_REV_REG_SIZE["validate"](32767)
+        INDY_REV_REG_SIZE["validate"](32768)
 
     def test_indy_did(self):
         non_indy_dids = [
