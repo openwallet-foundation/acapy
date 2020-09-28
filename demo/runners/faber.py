@@ -191,7 +191,7 @@ async def main(
                 version,
                 ["name", "date", "degree", "age", "timestamp"],
                 support_revocation=revocation,
-                revocation_registry_size=TAILS_FILE_COUNT,
+                revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
             )
 
         # TODO add an additional credential for Student ID

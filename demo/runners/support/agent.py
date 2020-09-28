@@ -190,7 +190,11 @@ class DemoAgent:
         credential_definition_body = {
             "schema_id": schema_id,
             "support_revocation": support_revocation,
-            "revocation_registry_size": revocation_registry_size,
+            **{
+                "revocation_registry_size": revocation_registry_size
+                for _ in [""]
+                if support_revocation
+            },
         }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
