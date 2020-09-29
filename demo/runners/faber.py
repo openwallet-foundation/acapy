@@ -338,16 +338,17 @@ async def main(
             elif option == "4" and revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
                 cred_rev_id = (await prompt("Enter credential revocation ID: ")).strip()
-                publish = json.dumps(
-                    (await prompt("Publish now? [Y/N]: ", default="N")).strip()
-                    in ("yY")
-                )
+                publish = (
+                    await prompt("Publish now? [Y/N]: ", default="N")
+                ).strip() in "yY"
                 try:
                     await agent.admin_POST(
-                        "/revocation/revoke"
-                        f"?publish={publish}"
-                        f"&rev_reg_id={rev_reg_id}"
-                        f"&cred_rev_id={cred_rev_id}"
+                        "/revocation/revoke",
+                        {
+                            "rev_reg_id": rev_reg_id,
+                            "cred_rev_id": cred_rev_id,
+                            "publish": publish,
+                        },
                     )
                 except ClientError:
                     pass
