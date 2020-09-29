@@ -10,7 +10,10 @@ NOW = datetime.now()
 
 class TestTimingDecorator(TestCase):
     def test_serialize_load(self):
-        deco = TimingDecorator(in_time=NOW, out_time=NOW,)
+        deco = TimingDecorator(
+            in_time=NOW,
+            out_time=NOW,
+        )
 
         assert deco.in_time == datetime_to_str(NOW)
         assert deco.out_time == datetime_to_str(NOW)

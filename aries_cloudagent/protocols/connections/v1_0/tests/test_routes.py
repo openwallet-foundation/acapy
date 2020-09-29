@@ -601,8 +601,10 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_conn_mgr.return_value.create_static_connection = async_mock.CoroutineMock(
-                return_value=(mock_my_info, mock_their_info, mock_conn_rec)
+            mock_conn_mgr.return_value.create_static_connection = (
+                async_mock.CoroutineMock(
+                    return_value=(mock_my_info, mock_their_info, mock_conn_rec)
+                )
             )
 
             await test_module.connections_create_static(mock_req)
@@ -653,8 +655,8 @@ class TestConnectionRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
-            mock_conn_mgr.return_value.create_static_connection = async_mock.CoroutineMock(
-                side_effect=test_module.WalletError()
+            mock_conn_mgr.return_value.create_static_connection = (
+                async_mock.CoroutineMock(side_effect=test_module.WalletError())
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):

@@ -27,58 +27,34 @@ class TestIndyTailsServer(AsyncTestCase):
         )
         indy_tails = test_module.IndyTailsServer()
 
-        with async_mock.patch(
-            "builtins.open", async_mock.MagicMock()
-        ) as mock_open, async_mock.patch.object(
-            test_module.aiohttp, "ClientSession", async_mock.MagicMock()
-        ) as mock_cli_session:
-            mock_open.return_value = async_mock.MagicMock(
-                __enter__=async_mock.MagicMock()
-            )
-            mock_cli_session.return_value = async_mock.MagicMock(
-                __aenter__=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        put=async_mock.MagicMock(
-                            return_value=async_mock.MagicMock(
-                                __aenter__=async_mock.CoroutineMock(
-                                    return_value=async_mock.MagicMock(status=200)
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-            (ok, reason) = await indy_tails.upload_tails_file(
-                context, REV_REG_ID, "/tmp/dummy/path"
+        with async_mock.patch.object(
+            test_module, "put", async_mock.CoroutineMock()
+        ) as mock_put:
+            mock_put.return_value = "tails-hash"
+            (ok, text) = await indy_tails.upload_tails_file(
+                context,
+                REV_REG_ID,
+                "/tmp/dummy/path",
             )
             assert ok
-            assert reason is None
+            assert text == "tails-hash"
 
-        with async_mock.patch(
-            "builtins.open", async_mock.MagicMock()
-        ) as mock_open, async_mock.patch.object(
-            test_module.aiohttp, "ClientSession", async_mock.MagicMock()
-        ) as mock_cli_session:
-            mock_open.return_value = async_mock.MagicMock(
-                __enter__=async_mock.MagicMock()
-            )
-            mock_cli_session.return_value = async_mock.MagicMock(
-                __aenter__=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        put=async_mock.MagicMock(
-                            return_value=async_mock.MagicMock(
-                                __aenter__=async_mock.CoroutineMock(
-                                    return_value=async_mock.MagicMock(
-                                        status=403, reason="Unauthorized"
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-            (ok, reason) = await indy_tails.upload_tails_file(
+    async def test_upload_x(self):
+        context = InjectionContext(
+            settings={
+                "ledger.genesis_transactions": "dummy",
+                "tails_server_base_url": "http://1.2.3.4:8088",
+            }
+        )
+        indy_tails = test_module.IndyTailsServer()
+
+        with async_mock.patch.object(
+            test_module, "put", async_mock.CoroutineMock()
+        ) as mock_put:
+            mock_put.side_effect = test_module.PutError("Server down for maintenance")
+
+            (ok, text) = await indy_tails.upload_tails_file(
                 context, REV_REG_ID, "/tmp/dummy/path"
             )
             assert not ok
-            assert reason == "Unauthorized"
+            assert text == "Server down for maintenance"

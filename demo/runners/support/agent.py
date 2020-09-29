@@ -190,7 +190,11 @@ class DemoAgent:
         credential_definition_body = {
             "schema_id": schema_id,
             "support_revocation": support_revocation,
-            "revocation_registry_size": revocation_registry_size,
+            **{
+                "revocation_registry_size": revocation_registry_size
+                for _ in [""]
+                if support_revocation
+            },
         }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
@@ -422,7 +426,7 @@ class DemoAgent:
 
     async def handle_revocation_registry(self, message):
         self.log(
-            f"Revocation registry: {message['record_id']} state: {message['state']}"
+            f"Revocation registry: {message['revoc_reg_id']} state: {message['state']}"
         )
 
     async def admin_request(
@@ -452,7 +456,9 @@ class DemoAgent:
             EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
             response = await self.admin_request("GET", path, None, text, params)
             EVENT_LOGGER.debug(
-                "Response from GET %s received: \n%s", path, repr_json(response),
+                "Response from GET %s received: \n%s",
+                path,
+                repr_json(response),
             )
             return response
         except ClientError as e:
@@ -470,7 +476,9 @@ class DemoAgent:
             )
             response = await self.admin_request("POST", path, data, text, params)
             EVENT_LOGGER.debug(
-                "Response from POST %s received: \n%s", path, repr_json(response),
+                "Response from POST %s received: \n%s",
+                path,
+                repr_json(response),
             )
             return response
         except ClientError as e:

@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import PRESENTATION_PREVIEW, PRESENTATION_PROPOSAL
 
 from ..presentation_proposal import PresentationProposal
@@ -41,12 +43,14 @@ class TestPresentationProposal(TestCase):
         presentation_proposal = PresentationProposal(
             comment="Hello World", presentation_proposal=PRES_PREVIEW
         )
-        assert presentation_proposal._type == PRESENTATION_PROPOSAL
+        assert presentation_proposal._type == DIDCommPrefix.qualify_current(
+            PRESENTATION_PROPOSAL
+        )
 
     def test_deserialize(self):
         """Test deserialization."""
         obj = {
-            "@type": PRESENTATION_PROPOSAL,
+            "@type": DIDCommPrefix.qualify_current(PRESENTATION_PROPOSAL),
             "comment": "Hello World",
             "presentation_proposal": PRES_PREVIEW.serialize(),
         }
@@ -65,7 +69,7 @@ class TestPresentationProposal(TestCase):
         pres_proposal_dict.pop("@id")
 
         assert pres_proposal_dict == {
-            "@type": PRESENTATION_PROPOSAL,
+            "@type": DIDCommPrefix.qualify_current(PRESENTATION_PROPOSAL),
             "comment": "Hello World",
             "presentation_proposal": PRES_PREVIEW.serialize(),
         }

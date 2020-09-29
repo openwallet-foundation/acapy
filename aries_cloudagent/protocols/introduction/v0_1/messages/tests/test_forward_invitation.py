@@ -1,9 +1,9 @@
 from unittest import mock, TestCase
+
 from asynctest import TestCase as AsyncTestCase
 
-from ......protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
+from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import FORWARD_INVITATION, PROTOCOL_PACKAGE
 
@@ -35,7 +35,9 @@ class TestForwardInvitation(TestCase, TestConfig):
 
     def test_type(self):
         """Test type."""
-        assert self.invitation._type == FORWARD_INVITATION
+        assert self.invitation._type == DIDCommPrefix.qualify_current(
+            FORWARD_INVITATION
+        )
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages."

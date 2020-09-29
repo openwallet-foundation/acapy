@@ -88,8 +88,7 @@ class ConnectionManager:
         ::
 
             {
-                "@type":
-                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "@type": "https://didcomm.org/connections/1.0/invitation",
                 "label": "Alice",
                 "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
             }
@@ -99,8 +98,7 @@ class ConnectionManager:
         ::
 
             {
-                "@type":
-                    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
+                "@type": "https://didcomm.org/connections/1.0/invitation",
                 "label": "Alice",
                 "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
                 "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
@@ -293,14 +291,14 @@ class ConnectionManager:
             connection.my_did = my_info.did
 
         # Create connection request message
-        if not my_endpoint:
+        if my_endpoint:
+            my_endpoints = [my_endpoint]
+        else:
             my_endpoints = []
             default_endpoint = self.context.settings.get("default_endpoint")
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.context.settings.get("additional_endpoints", []))
-        else:
-            my_endpoints = [my_endpoint]
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints
         )
@@ -478,7 +476,9 @@ class ConnectionManager:
             connection.my_did = my_info.did
 
         # Create connection response message
-        if not my_endpoint:
+        if my_endpoint:
+            my_endpoints = [my_endpoint]
+        else:
             my_endpoints = []
             default_endpoint = self.context.settings.get("default_endpoint")
             if default_endpoint:

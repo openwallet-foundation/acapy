@@ -2,6 +2,8 @@ from unittest import mock, TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
 
 from ..credential_issue import CredentialIssue
@@ -69,7 +71,8 @@ class TestCredentialIssue(TestCase):
         comment="Test",
         credentials_attach=[
             AttachDecorator.from_indy_dict(
-                indy_dict=indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                indy_dict=indy_cred,
+                ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
             )
         ],
     )
@@ -80,7 +83,8 @@ class TestCredentialIssue(TestCase):
             comment="Test",
             credentials_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                    indy_dict=self.indy_cred,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
                 )
             ],
         )
@@ -94,12 +98,13 @@ class TestCredentialIssue(TestCase):
             comment="Test",
             credentials_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                    indy_dict=self.indy_cred,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
                 )
             ],
         )
 
-        assert credential_issue._type == CREDENTIAL_ISSUE
+        assert credential_issue._type == DIDCommPrefix.qualify_current(CREDENTIAL_ISSUE)
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages.credential_issue.CredentialIssueSchema.load"

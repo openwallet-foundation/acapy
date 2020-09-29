@@ -1,7 +1,5 @@
 """Credential exchange admin routes."""
 
-import json
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -29,7 +27,6 @@ from ....messaging.valid import (
     UUIDFour,
     UUID4,
 )
-from ....revocation.error import RevocationError
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
@@ -293,10 +290,14 @@ class RevokeQueryStringSchema(OpenAPISchema):
     """Parameters and validators for revocation request."""
 
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier", required=True, **INDY_REV_REG_ID,
+        description="Revocation registry identifier",
+        required=True,
+        **INDY_REV_REG_ID,
     )
     cred_rev_id = fields.Int(
-        description="Credential revocation identifier", required=True, **NATURAL_NUM,
+        description="Credential revocation identifier",
+        required=True,
+        **NATURAL_NUM,
     )
     publish = fields.Boolean(
         description=(
@@ -431,7 +432,8 @@ async def credential_exchange_create(request: web.BaseRequest):
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
         credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
+            context.settings,
+            trace_msg,
         )
 
         trace_event(
@@ -446,7 +448,9 @@ async def credential_exchange_create(request: web.BaseRequest):
             credential_exchange_record,
             credential_offer_message,
         ) = await credential_manager.prepare_send(
-            None, credential_proposal=credential_proposal, auto_remove=auto_remove,
+            None,
+            credential_proposal=credential_proposal,
+            auto_remove=auto_remove,
         )
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -513,7 +517,8 @@ async def credential_exchange_send(request: web.BaseRequest):
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
         credential_proposal.assign_trace_decorator(
-            context.settings, trace_msg,
+            context.settings,
+            trace_msg,
         )
 
         trace_event(
@@ -614,7 +619,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         )
 
     await outbound_handler(
-        credential_proposal, connection_id=connection_id,
+        credential_proposal,
+        connection_id=connection_id,
     )
 
     trace_event(
@@ -646,7 +652,8 @@ async def _create_free_offer(
         cred_def_id=cred_def_id,
     )
     credential_proposal.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     credential_proposal_dict = credential_proposal.serialize()
 
@@ -662,9 +669,10 @@ async def _create_free_offer(
 
     credential_manager = CredentialManager(context)
 
-    (cred_ex_record, credential_offer_message,) = await credential_manager.create_offer(
-        cred_ex_record, comment=comment
-    )
+    (
+        cred_ex_record,
+        credential_offer_message,
+    ) = await credential_manager.create_offer(cred_ex_record, comment=comment)
 
     return (cred_ex_record, credential_offer_message)
 
@@ -1137,96 +1145,6 @@ async def credential_exchange_store(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential"], summary="Revoke an issued credential",
-)
-@querystring_schema(RevokeQueryStringSchema())
-async def credential_exchange_revoke(request: web.BaseRequest):
-    """
-    Request handler for storing a credential request.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The credential request details.
-
-    """
-    context = request.app["request_context"]
-
-    rev_reg_id = request.query.get("rev_reg_id")
-    cred_rev_id = request.query.get("cred_rev_id")  # numeric str here, which indy wants
-    publish = bool(json.loads(request.query.get("publish", json.dumps(False))))
-
-    credential_manager = CredentialManager(context)
-    try:
-        await credential_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
-    except (
-        CredentialManagerError,
-        RevocationError,
-        StorageError,
-        IssuerError,
-        LedgerError,
-    ) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({})
-
-
-@docs(tags=["issue-credential"], summary="Publish pending revocations to ledger")
-@request_schema(V10PublishRevocationsSchema())
-@response_schema(V10PublishRevocationsSchema(), 200)
-async def credential_exchange_publish_revocations(request: web.BaseRequest):
-    """
-    Request handler for publishing pending revocations to the ledger.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        Credential revocation ids published as revoked by revocation registry id.
-
-    """
-    context = request.app["request_context"]
-    body = await request.json()
-    rrid2crid = body.get("rrid2crid")
-
-    credential_manager = CredentialManager(context)
-
-    try:
-        results = await credential_manager.publish_pending_revocations(rrid2crid)
-    except (RevocationError, StorageError, IssuerError, LedgerError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"rrid2crid": results})
-
-
-@docs(tags=["issue-credential"], summary="Clear pending revocations")
-@request_schema(V10ClearPendingRevocationsRequestSchema())
-@response_schema(V10PublishRevocationsSchema(), 200)
-async def credential_exchange_clear_pending_revocations(request: web.BaseRequest):
-    """
-    Request handler for clearing pending revocations.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        Credential revocation ids still pending revocation by revocation registry id.
-
-    """
-    context = request.app["request_context"]
-    body = await request.json()
-    purge = body.get("purge")
-
-    credential_manager = CredentialManager(context)
-
-    try:
-        results = await credential_manager.clear_pending_revocations(purge)
-    except StorageError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"rrid2crid": results})
-
-
-@docs(
     tags=["issue-credential"], summary="Remove an existing credential exchange record"
 )
 @match_info_schema(CredExIdMatchInfoSchema())
@@ -1335,19 +1253,6 @@ async def register(app: web.Application):
             web.post(
                 "/issue-credential/records/{cred_ex_id}/store",
                 credential_exchange_store,
-            ),
-            web.post("/issue-credential/revoke", credential_exchange_revoke),
-            web.post(
-                "/issue-credential/publish-revocations",
-                credential_exchange_publish_revocations,
-            ),
-            web.post(
-                "/issue-credential/clear-pending-revocations",
-                credential_exchange_clear_pending_revocations,
-            ),
-            web.post(
-                "/issue-credential/records/{cred_ex_id}/remove",
-                credential_exchange_remove,
             ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/problem-report",

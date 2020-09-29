@@ -1,27 +1,30 @@
 from unittest import mock, TestCase
 
-from ..menu import Menu, MenuSchema
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...models.menu_form import MenuForm
 from ...models.menu_form_param import MenuFormParam
 from ...models.menu_option import MenuOption
 from ...message_types import MENU, PROTOCOL_PACKAGE
 
+from ..menu import Menu, MenuSchema
+
 
 class TestConfig:
     test_menu_message = {
         "title": "Welcome to IIWBook",
-        "description": "IIWBook facilitates connections between attendees by verifying attendance and distributing connection invitations.",
+        "description": "IIWBook facilitates ...",
         "options": [
             MenuOption(
                 **{
                     "name": "search-introductions",
                     "title": "Search introductions",
-                    "description": "Your email address must be verified to perform a search",
+                    "description": "Your email address must be verified ...",
                     "disabled": True,
                     "form": MenuForm(
                         **{
                             "title": "Search introductions",
-                            "description": "Enter a participant name below to perform a search.",
+                            "description": "Enter a participant name below ...",
                             "params": [
                                 MenuFormParam(
                                     **{
@@ -55,7 +58,7 @@ class TestMenu(TestCase, TestConfig):
 
     def test_type(self):
         """Test type."""
-        assert self.menu._type == MENU
+        assert self.menu._type == DIDCommPrefix.qualify_current(MENU)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.menu.MenuSchema.load")
     def test_deserialize(self, mock_menu_schema_load):

@@ -22,9 +22,7 @@ from runners.support.utils import (
     require_indy,
 )
 
-CRED_PREVIEW_TYPE = (
-    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
-)
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 
 LOGGER = logging.getLogger(__name__)
@@ -84,7 +82,8 @@ class FaberAgent(DemoAgent):
 
         self.log(
             "Credential: state = {}, credential_exchange_id = {}".format(
-                state, credential_exchange_id,
+                state,
+                credential_exchange_id,
             )
         )
 
@@ -192,7 +191,7 @@ async def main(
                 version,
                 ["name", "date", "degree", "age", "timestamp"],
                 support_revocation=revocation,
-                revocation_registry_size=TAILS_FILE_COUNT,
+                revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
             )
 
         # TODO add an additional credential for Student ID
@@ -296,7 +295,9 @@ async def main(
                     )
                 if SELF_ATTESTED:
                     # test self-attested claims
-                    req_attrs.append({"name": "self_attested_thing"},)
+                    req_attrs.append(
+                        {"name": "self_attested_thing"},
+                    )
                 req_preds = [
                     # test zero-knowledge proofs
                     {
@@ -343,7 +344,7 @@ async def main(
                 )
                 try:
                     await agent.admin_POST(
-                        "/issue-credential/revoke"
+                        "/revocation/revoke"
                         f"?publish={publish}"
                         f"&rev_reg_id={rev_reg_id}"
                         f"&cred_rev_id={cred_rev_id}"
@@ -352,13 +353,11 @@ async def main(
                     pass
             elif option == "5" and revocation:
                 try:
-                    resp = await agent.admin_POST(
-                        "/issue-credential/publish-revocations", {}
-                    )
+                    resp = await agent.admin_POST("/revocation/publish-revocations", {})
                     agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["rrid2crid"]),
-                            "y" if len(resp) == 1 else "ies",
+                            "y" if len(resp["rrid2crid"]) == 1 else "ies",
                             json.dumps([k for k in resp["rrid2crid"]], indent=4),
                         )
                     )

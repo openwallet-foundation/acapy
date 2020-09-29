@@ -18,7 +18,7 @@ def _canonize(data):
 
 
 def _sha256(data):
-    return hashlib.sha256(data.encode("ascii")).hexdigest()
+    return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 
 def _cannonize_signature_options(signatureOptions):

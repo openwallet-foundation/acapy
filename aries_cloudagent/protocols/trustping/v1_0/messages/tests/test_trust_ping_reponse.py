@@ -2,8 +2,10 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from ..ping_response import PingResponse
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import PING_RESPONSE
+from ..ping_response import PingResponse
 
 
 class TestPingResponse(TestCase):
@@ -18,10 +20,11 @@ class TestPingResponse(TestCase):
 
     def test_type(self):
         """Test type."""
-        assert self.test_ping._type == PING_RESPONSE
+        assert self.test_ping._type == DIDCommPrefix.qualify_current(PING_RESPONSE)
 
     @mock.patch(
-        "aries_cloudagent.protocols.trustping.v1_0.messages.ping_response.PingResponseSchema.load"
+        "aries_cloudagent.protocols.trustping.v1_0."
+        "messages.ping_response.PingResponseSchema.load"
     )
     def test_deserialize(self, mock_ping_schema_load):
         """
@@ -35,7 +38,8 @@ class TestPingResponse(TestCase):
         assert msg is mock_ping_schema_load.return_value
 
     @mock.patch(
-        "aries_cloudagent.protocols.trustping.v1_0.messages.ping_response.PingResponseSchema.dump"
+        "aries_cloudagent.protocols.trustping.v1_0."
+        "messages.ping_response.PingResponseSchema.dump"
     )
     def test_serialize(self, mock_ping_schema_load):
         """

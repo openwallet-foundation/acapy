@@ -2,8 +2,11 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from ..basicmessage import BasicMessage
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import BASIC_MESSAGE, PROTOCOL_PACKAGE
+
+from ..basicmessage import BasicMessage
 
 
 class TestBasicMessage(TestCase):
@@ -18,7 +21,7 @@ class TestBasicMessage(TestCase):
 
     def test_type(self):
         """Test type."""
-        assert self.test_message._type == BASIC_MESSAGE
+        assert self.test_message._type == DIDCommPrefix.qualify_current(BASIC_MESSAGE)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.basicmessage.BasicMessageSchema.load")
     def test_deserialize(self, mock_basic_message_schema_load):

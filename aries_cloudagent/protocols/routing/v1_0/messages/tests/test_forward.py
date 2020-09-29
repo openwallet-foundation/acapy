@@ -1,9 +1,11 @@
 import json
 
-from ..forward import Forward, ForwardSchema
-from ...message_types import FORWARD, PROTOCOL_PACKAGE
-
 from unittest import mock, TestCase
+
+from .....didcomm_prefix import DIDCommPrefix
+
+from ...message_types import FORWARD, PROTOCOL_PACKAGE
+from ..forward import Forward, ForwardSchema
 
 
 class TestForward(TestCase):
@@ -18,7 +20,7 @@ class TestForward(TestCase):
         assert self.message.to == self.to
 
     def test_type(self):
-        assert self.message._type == FORWARD
+        assert self.message._type == DIDCommPrefix.qualify_current(FORWARD)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.forward.ForwardSchema.load")
     def test_deserialize(self, message_schema_load):

@@ -83,7 +83,7 @@ class ProblemReportSchema(AgentMessageSchema):
         data_key="@msg_catalog",
         required=False,
         description="Reference to a message catalog",
-        example="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/error-codes",
+        example="https://didcomm.org/error-codes",
     )
     locale = fields.Str(
         data_key="@locale", required=False, description="Locale", example="en-US"

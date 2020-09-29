@@ -1,7 +1,5 @@
 """Wallet admin routes."""
 
-import json
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -14,9 +12,11 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ..ledger.base import BaseLedger
+from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
+    DID_POSTURE,
     ENDPOINT,
     ENDPOINT_TYPE,
     INDY_CRED_DEF_ID,
@@ -25,9 +25,8 @@ from ..messaging.valid import (
 )
 
 from .base import DIDInfo, BaseWallet
+from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
-
-from ..ledger.util import EndpointType
 
 
 class DIDSchema(OpenAPISchema):
@@ -35,7 +34,14 @@ class DIDSchema(OpenAPISchema):
 
     did = fields.Str(description="DID of interest", **INDY_DID)
     verkey = fields.Str(description="Public verification key", **INDY_RAW_PUBLIC_KEY)
-    public = fields.Boolean(description="Whether DID is public", example=False)
+    posture = fields.Str(
+        description=(
+            "Whether DID is current public DID, "
+            "posted to ledger but not current public DID, "
+            "or local to the wallet"
+        ),
+        **DID_POSTURE,
+    )
 
 
 class DIDResultSchema(OpenAPISchema):
@@ -58,8 +64,10 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
         description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
     )
     endpoint_type = fields.Str(
-        description="""
-        Endpoint type to set (default 'endpoint'). Affects only public DIDs.""",
+        description=(
+            f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); "
+            "affects only public or posted DIDs"
+        ),
         required=False,
         **ENDPOINT_TYPE,
     )
@@ -83,7 +91,15 @@ class DIDListQueryStringSchema(OpenAPISchema):
         required=False,
         **INDY_RAW_PUBLIC_KEY,
     )
-    public = fields.Boolean(description="Whether DID is on the ledger", required=False)
+    posture = fields.Str(
+        description=(
+            "Whether DID is current public DID, "
+            "posted to ledger but current public DID, "
+            "or local to the wallet"
+        ),
+        required=False,
+        **DID_POSTURE,
+    )
 
 
 class DIDQueryStringSchema(OpenAPISchema):
@@ -106,13 +122,11 @@ def format_did_info(info: DIDInfo):
         return {
             "did": info.did,
             "verkey": info.verkey,
-            "public": json.dumps(bool(info.metadata.get("public"))),
+            "posture": DIDPosture.get(info.metadata).moniker,
         }
 
 
-@docs(
-    tags=["wallet"], summary="List wallet DIDs",
-)
+@docs(tags=["wallet"], summary="List wallet DIDs")
 @querystring_schema(DIDListQueryStringSchema())
 @response_schema(DIDListSchema, 200)
 async def wallet_did_list(request: web.BaseRequest):
@@ -132,17 +146,25 @@ async def wallet_did_list(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="No wallet available")
     filter_did = request.query.get("did")
     filter_verkey = request.query.get("verkey")
-    filter_public = json.loads(request.query.get("public", json.dumps(None)))
+    filter_posture = DIDPosture.get(request.query.get("posture"))
     results = []
     public_did_info = await wallet.get_public_did()
+    posted_did_infos = await wallet.get_posted_dids()
 
-    if filter_public:  # True (contrast False or None)
+    if filter_posture is DIDPosture.PUBLIC:
         if (
             public_did_info
             and (not filter_verkey or public_did_info.verkey == filter_verkey)
             and (not filter_did or public_did_info.did == filter_did)
         ):
             results.append(format_did_info(public_did_info))
+    elif filter_posture is DIDPosture.POSTED:
+        results = []
+        for info in posted_did_infos:
+            if (not filter_verkey or info.verkey == filter_verkey) and (
+                not filter_did or info.did == filter_did
+            ):
+                results.append(format_did_info(info))
     elif filter_did:
         try:
             info = await wallet.get_local_did(filter_did)
@@ -152,7 +174,13 @@ async def wallet_did_list(request: web.BaseRequest):
         if (
             info
             and (not filter_verkey or info.verkey == filter_verkey)
-            and (filter_public is None or info != public_did_info)
+            and (
+                filter_posture is None
+                or (
+                    filter_posture is DIDPosture.WALLET_ONLY
+                    and not info.metadata.get("posted")
+                )
+            )
         ):
             results.append(format_did_info(info))
     elif filter_verkey:
@@ -160,16 +188,26 @@ async def wallet_did_list(request: web.BaseRequest):
             info = await wallet.get_local_did_for_verkey(filter_verkey)
         except WalletError:
             info = None
-        if info and (filter_public is None or info != public_did_info):
+        if info and (
+            filter_posture is None
+            or (
+                filter_posture is DID_POSTURE.WALLET_ONLY
+                and not info.metadata.get("posted")
+            )
+        ):
             results.append(format_did_info(info))
     else:
         dids = await wallet.get_local_dids()
-        results = []
-        for info in dids:
-            if filter_public is None or info != public_did_info:
-                results.append(format_did_info(info))
+        results = [
+            format_did_info(info)
+            for info in dids
+            if filter_posture is None
+            or DIDPosture.get(info.metadata) is DIDPosture.WALLET_ONLY
+        ]
 
-    results.sort(key=lambda info: info["did"])
+    results.sort(
+        key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"])
+    )
     return web.json_response({"results": results})
 
 
@@ -255,7 +293,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
         async with ledger:
             if not await ledger.get_key_for_did(did):
-                raise web.HTTPNotFound(reason=f"DID {did} is not public")
+                raise web.HTTPNotFound(reason=f"DID {did} is not posted to the ledger")
 
         did_info = await wallet.get_local_did(did)
         info = await wallet.set_public_did(did)
@@ -274,11 +312,13 @@ async def wallet_set_public_did(request: web.BaseRequest):
     return web.json_response({"result": format_did_info(info)})
 
 
-@docs(tags=["wallet"], summary="Update endpoint in wallet and, if public, on ledger")
+@docs(
+    tags=["wallet"], summary="Update endpoint in wallet and on ledger if posted to it"
+)
 @request_schema(DIDEndpointWithTypeSchema)
 async def wallet_set_did_endpoint(request: web.BaseRequest):
     """
-    Request handler for setting an endpoint for a public or local DID.
+    Request handler for setting an endpoint for a DID.
 
     Args:
         request: aiohttp request object
@@ -291,7 +331,9 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     body = await request.json()
     did = body["did"]
     endpoint = body.get("endpoint")
-    endpoint_type = EndpointType(body.get("endpoint_type", "endpoint"))
+    endpoint_type = EndpointType.get(
+        body.get("endpoint_type", EndpointType.ENDPOINT.w3c)
+    )
 
     try:
         ledger: BaseLedger = await context.inject(BaseLedger, required=False)
@@ -338,7 +380,7 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
     return web.json_response({"did": did, "endpoint": endpoint})
 
 
-@docs(tags=["wallet"], summary="Rotate keypair for a local non-public DID")
+@docs(tags=["wallet"], summary="Rotate keypair for a DID not posted to the ledger")
 @querystring_schema(DIDQueryStringSchema())
 async def wallet_rotate_did_keypair(request: web.BaseRequest):
     """
@@ -360,9 +402,9 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
     try:
         did_info = await wallet.get_local_did(did)
-        if did_info.metadata.get("public", False):
+        if did_info.metadata.get("posted", False):
             # call from ledger API instead to propagate through ledger NYM transaction
-            raise web.HTTPBadRequest(reason=f"DID {did} is public")
+            raise web.HTTPBadRequest(reason=f"DID {did} is posted to the ledger")
         await wallet.rotate_did_keypair_start(did)  # do not take seed over the wire
         await wallet.rotate_did_keypair_apply(did)
     except WalletNotFoundError as err:

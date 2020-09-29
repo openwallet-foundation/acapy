@@ -15,7 +15,11 @@ from ...storage.error import StorageNotFoundError
 from ...wallet.base import BaseWallet
 from ...wallet.indy import IndyWallet
 
-from ..error import RevocationError, RevocationNotSupportedError
+from ..error import (
+    RevocationError,
+    RevocationNotSupportedError,
+    RevocationRegistryBadSizeError,
+)
 from ..indy import IndyRevocation
 from ..models.issuer_rev_reg_record import DEFAULT_REGISTRY_SIZE, IssuerRevRegRecord
 from ..models.revocation_registry import RevocationRegistry
@@ -45,7 +49,7 @@ class TestIndyRevocation(AsyncTestCase):
     async def test_init_issuer_registry(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
-        result = await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+        result = await self.revoc.init_issuer_registry(CRED_DEF_ID)
 
         assert result.cred_def_id == CRED_DEF_ID
         assert result.issuer_did == self.test_did
@@ -63,7 +67,7 @@ class TestIndyRevocation(AsyncTestCase):
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with self.assertRaises(RevocationNotSupportedError) as x_revo:
-            await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+            await self.revoc.init_issuer_registry(CRED_DEF_ID)
             assert x_revo.message == "Credential definition not found"
 
     async def test_init_issuer_registry_no_revocation(self):
@@ -76,12 +80,28 @@ class TestIndyRevocation(AsyncTestCase):
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with self.assertRaises(RevocationNotSupportedError) as x_revo:
-            await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+            await self.revoc.init_issuer_registry(CRED_DEF_ID)
             assert x_revo.message == "Credential definition does not support revocation"
+
+    async def test_init_issuer_registry_bad_size(self):
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+
+        self.context.injector.clear_binding(BaseLedger)
+        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            return_value={"value": {"revocation": "..."}}
+        )
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        with self.assertRaises(RevocationRegistryBadSizeError) as x_revo:
+            await self.revoc.init_issuer_registry(
+                CRED_DEF_ID,
+                max_cred_num=1,
+            )
+            assert "Bad revocation registry size" in x_revo.message
 
     async def test_get_active_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         rec.revoc_reg_id = "dummy"
         rec.state = IssuerRevRegRecord.STATE_ACTIVE
         await rec.save(self.context)
@@ -104,12 +124,12 @@ class TestIndyRevocation(AsyncTestCase):
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with self.assertRaises(RevocationNotSupportedError) as x_revo:
-            await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+            await self.revoc.init_issuer_registry(CRED_DEF_ID)
             assert x_revo.message == "Credential definition does not support revocation"
 
     async def test_get_active_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         rec.revoc_reg_id = "dummy"
         rec.state = IssuerRevRegRecord.STATE_ACTIVE
         await rec.save(self.context)
@@ -125,7 +145,7 @@ class TestIndyRevocation(AsyncTestCase):
     async def test_get_issuer_rev_reg_record(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
-        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID, self.test_did)
+        rec = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         rec.revoc_reg_id = "dummy"
         rec.generate_registry = async_mock.CoroutineMock()
 
@@ -142,7 +162,7 @@ class TestIndyRevocation(AsyncTestCase):
         CRED_DEF_ID = [f"{self.test_did}:3:CL:{i}:default" for i in (1234, 5678)]
 
         for cd_id in CRED_DEF_ID:
-            rec = await self.revoc.init_issuer_registry(cd_id, self.test_did)
+            rec = await self.revoc.init_issuer_registry(cd_id)
 
         assert len(await self.revoc.list_issuer_registries()) == 2
 

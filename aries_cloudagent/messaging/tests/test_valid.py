@@ -11,7 +11,9 @@ from ..valid import (
     BASE64URL,
     BASE64URL_NO_PAD,
     DID_KEY,
+    DID_POSTURE,
     ENDPOINT,
+    ENDPOINT_TYPE,
     INDY_CRED_DEF_ID,
     INDY_CRED_REV_ID,
     INDY_DID,
@@ -20,6 +22,7 @@ from ..valid import (
     INDY_PREDICATE,
     INDY_RAW_PUBLIC_KEY,
     INDY_REV_REG_ID,
+    INDY_REV_REG_SIZE,
     INDY_SCHEMA_ID,
     INDY_VERSION,
     INDY_WQL,
@@ -64,6 +67,17 @@ class TestValid(TestCase):
         NATURAL_NUM["validate"](1)
         NATURAL_NUM["validate"](2)
         NATURAL_NUM["validate"](12345678901234567890)
+
+    def test_indy_rev_reg_size(self):
+        non_indy_rr_sizes = [-9223372036854775809, 2.3, "Hello", 0, 3, 32769, None]
+        for non_indy_rr_size in non_indy_rr_sizes:
+            with self.assertRaises(ValidationError):
+                INDY_REV_REG_SIZE["validate"](non_indy_rr_size)
+
+        INDY_REV_REG_SIZE["validate"](4)
+        INDY_REV_REG_SIZE["validate"](5)
+        INDY_REV_REG_SIZE["validate"](32767)
+        INDY_REV_REG_SIZE["validate"](32768)
 
     def test_indy_did(self):
         non_indy_dids = [
@@ -143,6 +157,22 @@ class TestValid(TestCase):
                 DID_KEY["validate"](non_did_key)
 
         DID_KEY["validate"]("did:key:zQ4zqM7aXqm7gDQkUVLng9h")
+
+    def test_did_posture(self):
+        non_did_postures = [
+            "not-me",
+            None,
+            "PUBLIC",
+            "Posted",
+            "wallet only",
+        ]
+        for non_did_posture in non_did_postures:
+            with self.assertRaises(ValidationError):
+                DID_POSTURE["validate"](non_did_posture)
+
+        DID_POSTURE["validate"]("public")
+        DID_POSTURE["validate"]("posted")
+        DID_POSTURE["validate"]("wallet_only")
 
     def test_indy_base58_sha256_hash(self):
         non_base58_sha256_hashes = [
@@ -426,3 +456,22 @@ class TestValid(TestCase):
         ENDPOINT["validate"]("newproto://myhost.ca:8080/path")
         ENDPOINT["validate"]("ftp://10.10.100.90:8021")
         ENDPOINT["validate"]("zzzp://someplace.ca:9999/path")
+
+    def test_endpoint_type(self):
+        non_endpoint_types = [
+            "123",
+            "endpoint",
+            "end point",
+            "end-point",
+            "profile",
+            "linked_domains",
+            None,
+        ]
+
+        for non_endpoint_type in non_endpoint_types:
+            with self.assertRaises(ValidationError):
+                ENDPOINT_TYPE["validate"](non_endpoint_type)
+
+        ENDPOINT_TYPE["validate"]("Endpoint")
+        ENDPOINT_TYPE["validate"]("Profile")
+        ENDPOINT_TYPE["validate"]("LinkedDomains")

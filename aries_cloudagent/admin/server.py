@@ -61,7 +61,11 @@ class AdminResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
     def __init__(
-        self, context: InjectionContext, send: Coroutine, webhook: Coroutine, **kwargs,
+        self,
+        context: InjectionContext,
+        send: Coroutine,
+        webhook: Coroutine,
+        **kwargs,
     ):
         """
         Initialize an instance of `AdminResponder`.
@@ -128,10 +132,14 @@ class WebhookTarget:
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     """Only continue if application is ready to take work."""
 
-    if str(request.rel_url).rstrip("/") in (
-        "/status/live",
-        "/status/ready",
-    ) or request.app._state.get("ready"):
+    if (
+        str(request.rel_url).rstrip("/")
+        in (
+            "/status/live",
+            "/status/ready",
+        )
+        or request.app._state.get("ready")
+    ):
         try:
             return await handler(request)
         except (LedgerConfigError, LedgerTransactionError) as e:
@@ -140,10 +148,18 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             request.app._state["ready"] = False
             request.app._state["alive"] = False
             raise
+        except web.HTTPFound as e:
+            # redirect, typically / -> /api/doc
+            LOGGER.info("Handler redirect to: %s", e.location)
+            raise
+        except asyncio.CancelledError:
+            # redirection spawns new task and cancels old
+            LOGGER.debug("Task cancelled")
+            raise
         except Exception as e:
             # some other error?
             LOGGER.error("Handler error with exception: %s", str(e))
-            raise e
+            raise
 
     raise web.HTTPServiceUnavailable(reason="Shutdown in progress")
 
@@ -205,7 +221,9 @@ class AdminServer(BaseAdminServer):
 
         self.context = context.start_scope("admin")
         self.responder = AdminResponder(
-            self.context, outbound_message_router, self.send_webhook,
+            self.context,
+            outbound_message_router,
+            self.send_webhook,
         )
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
@@ -220,12 +238,16 @@ class AdminServer(BaseAdminServer):
         assert self.admin_insecure_mode ^ bool(self.admin_api_key)
 
         def is_unprotected_path(path: str):
-            return path in [
-                "/api/doc",
-                "/api/docs/swagger.json",
-                "/favicon.ico",
-                "/ws",  # ws handler checks authentication
-            ] or path.startswith("/static/swagger/")
+            return (
+                path
+                in [
+                    "/api/doc",
+                    "/api/docs/swagger.json",
+                    "/favicon.ico",
+                    "/ws",  # ws handler checks authentication
+                ]
+                or path.startswith("/static/swagger/")
+            )
 
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security

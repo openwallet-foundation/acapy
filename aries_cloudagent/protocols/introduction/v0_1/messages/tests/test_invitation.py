@@ -1,9 +1,9 @@
-from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
-from ......protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
+from unittest import mock, TestCase
+
+from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from .....didcomm_prefix import DIDCommPrefix
 
 from ..invitation import Invitation
 from ...message_types import INVITATION, PROTOCOL_PACKAGE
@@ -34,7 +34,7 @@ class TestInvitation(TestCase, TestConfig):
 
     def test_type(self):
         """Test type."""
-        assert self.invitation._type == INVITATION
+        assert self.invitation._type == DIDCommPrefix.qualify_current(INVITATION)
 
     @mock.patch(f"{PROTOCOL_PACKAGE}.messages.invitation.InvitationSchema.load")
     def test_deserialize(self, mock_invitation_schema_load):
