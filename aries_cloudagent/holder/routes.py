@@ -27,42 +27,14 @@ class AttributeMimeTypesResultSchema(OpenAPISchema):
     """Result schema for credential attribute MIME type."""
 
 
-class RawEncCredAttrSchema(OpenAPISchema):
-    """Credential attribute schema."""
-
-    raw = fields.Str(description="Raw value", example="Alex")
-    encoded = fields.Str(
-        description="(Numeric string) encoded value",
-        example="412821674062189604125602903860586582569826459817431467861859655321",
-    )
-
-
-class RevRegSchema(OpenAPISchema):
-    """Revocation registry schema."""
-
-    accum = fields.Str(
-        description="Revocation registry accumulator state",
-        example="21 136D54EA439FC26F03DB4b812 21 123DE9F624B86823A00D ...",
-    )
-
-
-class WitnessSchema(OpenAPISchema):
-    """Witness schema."""
-
-    omega = fields.Str(
-        description="Revocation registry witness omega state",
-        example="21 129EA8716C921058BB91826FD 21 8F19B91313862FE916C0 ...",
-    )
-
-
 class CredBriefSchema(OpenAPISchema):
     """Result schema with credential brief for a credential query."""
 
     referent = fields.Str(description="Credential referent", example=UUIDFour.EXAMPLE)
     attrs = fields.Dict(
         keys=fields.Str(description="Attribute name"),
-        values=fields.Nested(RawEncCredAttrSchema),
-        description="Attribute names mapped to their raw and encoded values",
+        values=fields.Str(description="Attribute value"),
+        description="Attribute names mapped to their raw values",
     )
     schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
     cred_def_id = fields.Str(
