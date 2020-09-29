@@ -1,4 +1,4 @@
-"""Model for out of band invitations."""
+"""Record for out of band invitations."""
 
 from typing import Any
 
@@ -8,13 +8,13 @@ from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSc
 from .....messaging.valid import UUIDFour
 
 
-class Invitation(BaseExchangeRecord):
-    """Represents an out of band invitation flow."""
+class InvitationRecord(BaseExchangeRecord):
+    """Represents an out of band invitation record."""
 
     class Meta:
-        """Invitation metadata."""
+        """InvitationRecord metadata."""
 
-        schema_class = "InvitationSchema"
+        schema_class = "InvitationRecordSchema"
 
     RECORD_TYPE = "oob-invitation"
     RECORD_ID_NAME = "invitation_id"
@@ -33,7 +33,7 @@ class Invitation(BaseExchangeRecord):
         trace: bool = False,
         **kwargs,
     ):
-        """Initialize a new Invitation."""
+        """Initialize a new InvitationRecord."""
         super().__init__(invitation_id, state, trace=trace, **kwargs)
         self._id = invitation_id
         self.invitation = invitation
@@ -58,13 +58,13 @@ class Invitation(BaseExchangeRecord):
         }
 
 
-class InvitationSchema(BaseExchangeSchema):
+class InvitationRecordSchema(BaseExchangeSchema):
     """Schema to allow serialization/deserialization of invitation records."""
 
     class Meta:
-        """InvitationSchema metadata."""
+        """InvitationRecordSchema metadata."""
 
-        model_class = Invitation
+        model_class = InvitationRecord
 
     invitation_id = fields.Str(
         required=False,
@@ -74,7 +74,7 @@ class InvitationSchema(BaseExchangeSchema):
     state = fields.Str(
         required=False,
         description="Out of band message exchange state",
-        example=Invitation.STATE_AWAIT_RESPONSE,
+        example=InvitationRecord.STATE_AWAIT_RESPONSE,
     )
     invitation = fields.Dict(
         required=False,

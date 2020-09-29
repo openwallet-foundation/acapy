@@ -12,7 +12,7 @@ from ....messaging.models.openapi import OpenAPISchema
 from ....storage.error import StorageNotFoundError
 
 from .manager import OutOfBandManager, OutOfBandManagerError
-from .messages.invitation import InvitationSchema
+from .messages.invitation import InvitationMessageSchema
 from .message_types import SPEC_URI
 
 
@@ -33,8 +33,8 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     use_public_did = fields.Boolean(default=False)
 
 
-class InvitationReceiveRequestSchema(InvitationSchema):
-    """Invitation Schema."""
+class InvitationReceiveRequestSchema(InvitationMessageSchema):
+    """Invitation request schema."""
 
     service = fields.Field()
 

@@ -11,37 +11,37 @@ from .....didcomm_prefix import DIDCommPrefix
 from ...message_types import INVITATION, PROTOCOL_PACKAGE
 
 from .. import invitation as test_module
-from ..invitation import Invitation, InvitationSchema
+from ..invitation import InvitationMessage, InvitationMessageSchema
 from ..service import Service
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
-class TestInvitation(TestCase):
+class TestInvitationMessage(TestCase):
     def test_init(self):
-        """Test initialization."""
-        invi = Invitation(comment="Hello", label="A label", service=["service"])
+        """Test initialization message."""
+        invi = InvitationMessage(comment="Hello", label="A label", service=["service"])
         assert invi.service_dids == ["service"]
         assert not invi.service_blocks
         assert invi._type == DIDCommPrefix.qualify_current(INVITATION)
 
         service = Service(_id="abc123", _type="a-type", did="My service")
-        invi = Invitation(comment="Hello", label="A label", service=[service])
+        invi = InvitationMessage(comment="Hello", label="A label", service=[service])
         assert invi.service_blocks == [service]
         assert invi._type == DIDCommPrefix.qualify_current(INVITATION)
 
     def test_wrap_serde(self):
         """Test conversion of aries message to attachment decorator."""
         msg = {"aries": "message"}
-        deco = Invitation.wrap_message(msg)
+        deco = InvitationMessage.wrap_message(msg)
         assert deco.ident == "request-0"
 
         obj_x = {"label": "label", "service": ["sample-did"]}
         with pytest.raises(BaseModelError):
-            Invitation.deserialize(obj_x)
+            InvitationMessage.deserialize(obj_x)
 
-        invi_schema = InvitationSchema()
+        invi_schema = InvitationMessageSchema()
         with pytest.raises(test_module.ValidationError):
             invi_schema.validate_fields(obj_x)
 

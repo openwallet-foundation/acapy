@@ -14,8 +14,8 @@ from ...didcomm_prefix import DIDCommPrefix
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
-from .models.invitation import Invitation as InvitationModel
-from .messages.invitation import Invitation as InvitationMessage
+from .models.invitation import InvitationRecord
+from .messages.invitation import InvitationMessage
 from .messages.service import Service as ServiceMessage
 
 HS_PROTO_CONN_INVI = "connections/1.0/invitation"
@@ -61,7 +61,7 @@ class OutOfBandManager:
         include_handshake: bool = False,
         multi_use: bool = False,
         attachments: list = None,
-    ) -> InvitationModel:
+    ) -> InvitationRecord:
         """
         Generate new out of band invitation.
 
@@ -78,7 +78,7 @@ class OutOfBandManager:
                 {"id": "jh5k23j5gh2123", "type": "credential-offer"}
 
         Returns:
-            A tuple of the new `InvitationModel` and out of band `InvitationMessage`
+            A tuple of the new `InvitationRecord` and out of band `InvitationMessage`
             instances
 
         """
@@ -168,8 +168,8 @@ class OutOfBandManager:
         ).validate()
 
         # Create record
-        invitation_model = InvitationModel(
-            state=InvitationModel.STATE_INITIAL,
+        invitation_model = InvitationRecord(
+            state=InvitationRecord.STATE_INITIAL,
             invitation=invitation_message.serialize(),
         )
 

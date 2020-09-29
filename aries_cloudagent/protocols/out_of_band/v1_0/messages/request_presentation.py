@@ -1,4 +1,4 @@
-"""An invitation content message."""
+"""A request-presentation content message."""
 
 from typing import Sequence, Text, Union
 
@@ -22,13 +22,13 @@ from .service import Service, ServiceSchema
 from ..message_types import INVITATION
 
 
-class InvitationMessage(AgentMessage):
-    """Class representing an out of band invitation message."""
+class ReqPresMessage(AgentMessage):
+    """Class representing an out of band request-presentation message."""
 
     class Meta:
-        """InvitationMessage metadata."""
+        """ReqPresMessage metadata."""
 
-        schema_class = "InvitationMessageSchema"
+        schema_class = "ReqPresMessageSchema"
         message_type = INVITATION
 
     def __init__(

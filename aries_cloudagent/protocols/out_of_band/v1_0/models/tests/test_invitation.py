@@ -2,14 +2,14 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ..invitation import Invitation, InvitationSchema
+from ..invitation import InvitationRecord, InvitationRecordSchema
 
 
-class TestInvitation(AsyncTestCase):
-    def test_invitation(self):
-        """Test invitation."""
-        invi = Invitation(invitation_id="0")
-        assert isinstance(invi, Invitation)
+class TestInvitationRecord(AsyncTestCase):
+    def test_invitation_record(self):
+        """Test invitation record."""
+        invi = InvitationRecord(invitation_id="0")
+        assert isinstance(invi, InvitationRecord)
         assert invi.invitation_id == "0"
         assert invi.record_value == {
             "invitation_id": "0",
@@ -18,17 +18,17 @@ class TestInvitation(AsyncTestCase):
             "trace": False,
         }
 
-        another = Invitation(invitation_id="1")
+        another = InvitationRecord(invitation_id="1")
         assert invi != another
 
 
-class TestInvitationSchema(AsyncTestCase):
-    def test_make_model(self):
-        """Test making model."""
+class TestInvitationRecordSchema(AsyncTestCase):
+    def test_make_record(self):
+        """Test making record."""
         data = {
             "invitation_id": "0",
-            "state": Invitation.STATE_AWAIT_RESPONSE,
+            "state": InvitationRecord.STATE_AWAIT_RESPONSE,
             "invitation": {"sample": "value"},
         }
-        model_instance = Invitation.deserialize(data)
-        assert isinstance(model_instance, Invitation)
+        model_instance = InvitationRecord.deserialize(data)
+        assert isinstance(model_instance, InvitationRecord)
