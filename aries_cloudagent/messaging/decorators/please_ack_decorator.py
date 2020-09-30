@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUIDFour
@@ -17,7 +17,9 @@ class PleaseAckDecorator(BaseModel):
         schema_class = "PleaseAckDecoratorSchema"
 
     def __init__(
-        self, message_id: str = None, on: Sequence[str] = None,
+        self,
+        message_id: str = None,
+        on: Sequence[str] = None,
     ):
         """
         Initialize a PleaseAckDecorator instance.
@@ -39,6 +41,7 @@ class PleaseAckDecoratorSchema(BaseModelSchema):
         """PleaseAckDecoratorSchema metadata."""
 
         model_class = PleaseAckDecorator
+        unknown = EXCLUDE
 
     message_id = fields.Str(
         description="Message identifier",

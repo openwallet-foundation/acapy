@@ -22,9 +22,7 @@ from runners.support.utils import (
     require_indy,
 )
 
-CRED_PREVIEW_TYPE = (
-    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/1.0/credential-preview"
-)
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/1.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 
 LOGGER = logging.getLogger(__name__)
@@ -84,7 +82,8 @@ class FaberAgent(DemoAgent):
 
         self.log(
             "Credential: state = {}, credential_exchange_id = {}".format(
-                state, credential_exchange_id,
+                state,
+                credential_exchange_id,
             )
         )
 
@@ -192,7 +191,7 @@ async def main(
                 version,
                 ["name", "date", "degree", "age", "timestamp"],
                 support_revocation=revocation,
-                revocation_registry_size=TAILS_FILE_COUNT,
+                revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
             )
 
         # TODO add an additional credential for Student ID
@@ -227,11 +226,7 @@ async def main(
             "    (3) Send Message\n"
         )
         if revocation:
-            options += (
-                "    (4) Revoke Credential\n"
-                "    (5) Publish Revocations\n"
-                "    (6) Add Revocation Registry\n"
-            )
+            options += "    (4) Revoke Credential\n" "    (5) Publish Revocations\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/{}T/X] ".format(
             "4/5/6/" if revocation else ""
@@ -300,7 +295,9 @@ async def main(
                     )
                 if SELF_ATTESTED:
                     # test self-attested claims
-                    req_attrs.append({"name": "self_attested_thing"},)
+                    req_attrs.append(
+                        {"name": "self_attested_thing"},
+                    )
                 req_preds = [
                     # test zero-knowledge proofs
                     {
@@ -321,18 +318,7 @@ async def main(
                         for req_pred in req_preds
                     },
                 }
-                # test with an attribute group with attribute value restrictions
-                # indy_proof_request["requested_attributes"] = {
-                #     "n_group_attrs": {
-                #         "names": ["name", "degree", "timestamp", "date"],
-                #         "restrictions": [
-                #             {
-                #                 "issuer_did": agent.did,
-                #                 "attr::name::value": "Alice Smith"
-                #             }
-                #         ]
-                #     }
-                # }
+
                 if revocation:
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
                 proof_request_web_request = {
@@ -358,7 +344,7 @@ async def main(
                 )
                 try:
                     await agent.admin_POST(
-                        "/issue-credential/revoke"
+                        "/revocation/revoke"
                         f"?publish={publish}"
                         f"&rev_reg_id={rev_reg_id}"
                         f"&cred_rev_id={cred_rev_id}"
@@ -367,23 +353,16 @@ async def main(
                     pass
             elif option == "5" and revocation:
                 try:
-                    resp = await agent.admin_POST(
-                        "/issue-credential/publish-revocations", {}
-                    )
+                    resp = await agent.admin_POST("/revocation/publish-revocations", {})
                     agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["rrid2crid"]),
-                            "y" if len(resp) == 1 else "ies",
+                            "y" if len(resp["rrid2crid"]) == 1 else "ies",
                             json.dumps([k for k in resp["rrid2crid"]], indent=4),
                         )
                     )
                 except ClientError:
                     pass
-            elif option == "6" and revocation:
-                log_status("#19 Add another revocation registry")
-                await agent.create_and_publish_revocation_registry(
-                    credential_definition_id, TAILS_FILE_COUNT
-                )
 
         if show_timing:
             timing = await agent.fetch_timing()
@@ -465,13 +444,20 @@ if __name__ == "__main__":
 
     require_indy()
 
+    tails_server_base_url = args.tails_server_base_url or os.getenv("PUBLIC_TAILS_URL")
+
+    if args.revocation and not tails_server_base_url:
+        raise Exception(
+            "If revocation is enabled, --tails-server-base-url must be provided"
+        )
+
     try:
         asyncio.get_event_loop().run_until_complete(
             main(
                 args.port,
                 args.no_auto,
                 args.revocation,
-                args.tails_server_base_url,
+                tails_server_base_url,
                 args.timing,
             )
         )

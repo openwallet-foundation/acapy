@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import CREDENTIAL_PREVIEW, CREDENTIAL_PROPOSAL
 
 from ..credential_proposal import CredentialProposal
@@ -36,14 +38,16 @@ class TestCredentialProposal(TestCase):
             cred_def_id="GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag",
         )
 
-        assert credential_proposal._type == CREDENTIAL_PROPOSAL
+        assert credential_proposal._type == DIDCommPrefix.qualify_current(
+            CREDENTIAL_PROPOSAL
+        )
 
     def test_deserialize(self):
         """Test deserialize."""
         obj = {
             "comment": "Hello World",
             "credential_proposal": {
-                "@type": CREDENTIAL_PREVIEW,
+                "@type": DIDCommPrefix.qualify_current(CREDENTIAL_PREVIEW),
                 "attributes": [
                     {"name": "name", "value": "Alexander Delarge"},
                     {"name": "pic", "mime-type": "image/png", "value": "Abcd0123..."},
@@ -70,10 +74,10 @@ class TestCredentialProposal(TestCase):
         cred_proposal_dict.pop("@id")
 
         assert cred_proposal_dict == {
-            "@type": CREDENTIAL_PROPOSAL,
+            "@type": DIDCommPrefix.qualify_current(CREDENTIAL_PROPOSAL),
             "comment": "Hello World",
             "credential_proposal": {
-                "@type": CREDENTIAL_PREVIEW,
+                "@type": DIDCommPrefix.qualify_current(CREDENTIAL_PREVIEW),
                 "attributes": [
                     {"name": "test", "value": "123"},
                     {"name": "hello", "value": "world"},
@@ -98,7 +102,7 @@ class TestCredentialProposal(TestCase):
         cred_proposal_dict.pop("@id")
 
         assert cred_proposal_dict == {
-            "@type": CREDENTIAL_PROPOSAL,
+            "@type": DIDCommPrefix.qualify_current(CREDENTIAL_PROPOSAL),
             "comment": "Hello World",
             "schema_id": "GMm4vMw8LLrLJjp81kRRLp:2:ahoy:1560364003.0",
             "cred_def_id": "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag",
@@ -109,7 +113,9 @@ class TestCredentialProposalSchema(TestCase):
     """Test credential cred proposal schema."""
 
     credential_proposals = [
-        CredentialProposal(credential_proposal=CRED_PREVIEW,),
+        CredentialProposal(
+            credential_proposal=CRED_PREVIEW,
+        ),
         CredentialProposal(
             comment="Hello World",
             credential_proposal=CRED_PREVIEW,

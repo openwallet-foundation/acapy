@@ -6,20 +6,19 @@ from ....connections.models.connection_record import ConnectionRecord
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....ledger.base import BaseLedger
-from ....protocols.connections.v1_0.manager import ConnectionManager
-from ....protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
-from ....protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange,
-)
-from ....protocols.present_proof.v1_0.models.presentation_exchange import (
-    V10PresentationExchange,
-)
+from ....wallet.util import did_key_to_naked, naked_to_did_key
+
+from ...connections.v1_0.manager import ConnectionManager
+from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from ...didcomm_prefix import DIDCommPrefix
+from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 
 from .models.invitation import Invitation as InvitationModel
 from .messages.invitation import Invitation as InvitationMessage
 from .messages.service import Service as ServiceMessage
+
+HS_PROTO_CONN_INVI = "connections/1.0/invitation"
 
 
 class OutOfBandManagerError(BaseError):
@@ -142,8 +141,14 @@ class OutOfBandManager:
             service = ServiceMessage(
                 _id="#inline",
                 _type="did-communication",
-                recipient_keys=connection_invitation.recipient_keys,
-                routing_keys=connection_invitation.routing_keys,
+                recipient_keys=[
+                    naked_to_did_key(key)
+                    for key in connection_invitation.recipient_keys or []
+                ],
+                routing_keys=[
+                    naked_to_did_key(key)
+                    for key in connection_invitation.routing_keys or []
+                ],
                 service_endpoint=connection_invitation.endpoint,
             ).validate()
 
@@ -151,8 +156,8 @@ class OutOfBandManager:
         if include_handshake:
             # handshake_protocols.append("https://didcomm.org/connections/1.0")
             # handshake_protocols.append("https://didcomm.org/didexchange/1.0")
-            handshake_protocols.append(
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+            handshake_protocols.extend(
+                pfx.qualify(HS_PROTO_CONN_INVI) for pfx in DIDCommPrefix
             )
 
         invitation_message = InvitationMessage(
@@ -196,39 +201,48 @@ class OutOfBandManager:
         # Get the single service item
         if invitation_message.service_blocks:
             service = invitation_message.service_blocks[0]
+
         else:
             # If it's in the did format, we need to convert to a full service block
             service_did = invitation_message.service_dids[0]
             async with ledger:
                 verkey = await ledger.get_key_for_did(service_did)
+                did_key = naked_to_did_key(verkey)
                 endpoint = await ledger.get_endpoint_for_did(service_did)
             service = ServiceMessage.deserialize(
                 {
                     "id": "#inline",
                     "type": "did-communication",
-                    "recipientKeys": [verkey],
+                    "recipientKeys": [did_key],
                     "routingKeys": [],
                     "serviceEndpoint": endpoint,
                 }
             )
 
+        unq_handshake_protos = {
+            DIDCommPrefix.unqualify(proto)
+            for proto in invitation_message.handshake_protocols
+        }
         # If we are dealing with an invitation
-        if (
-            len(invitation_message.handshake_protocols) == 1
-            and invitation_message.handshake_protocols[0]
-            == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
-        ):
-
+        if unq_handshake_protos == {HS_PROTO_CONN_INVI}:
             if len(invitation_message.request_attach) != 0:
                 raise OutOfBandManagerError(
                     "request block must be empty for invitation message type."
                 )
 
+            # Transform back to 'naked' verkey
+            service.recipient_keys = [
+                did_key_to_naked(key) for key in service.recipient_keys or []
+            ]
+            service.routing_keys = [
+                did_key_to_naked(key) for key in service.routing_keys
+            ] or []
+
             # Convert to the old message format
             connection_invitation = ConnectionInvitation.deserialize(
                 {
                     "@id": invitation_message._id,
-                    "@type": invitation_message.handshake_protocols[0],
+                    "@type": DIDCommPrefix.qualify_current(HS_PROTO_CONN_INVI),
                     "label": invitation_message.label,
                     "recipientKeys": service.recipient_keys,
                     "serviceEndpoint": service.service_endpoint,
@@ -243,13 +257,12 @@ class OutOfBandManager:
 
         elif len(
             invitation_message.request_attach
-        ) == 1 and invitation_message.request_attach[0].data.json["@type"] == (
-            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
-            "/present-proof/1.0/request-presentation"
-        ):
+        ) == 1 and invitation_message.request_attach[0].data.json["@type"] in [
+            pfx.qualify("present-proof/1.0/request-presentation")
+            for pfx in DIDCommPrefix
+        ]:
             raise OutOfBandManagerNotImplementedError(
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
-                "/present-proof/1.0/request-presentation "
+                f"{invitation_message.request_attach[0].data.json['@type']} "
                 "request type not implemented."
             )
         else:

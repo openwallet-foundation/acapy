@@ -54,8 +54,9 @@ In the Acme code ```acme.py``` we are going to add code to issue a proof request
 First the following import statements and a constant we will need near the top of acme.py:
 ```
         import random
-        from uuid import uuid4
+
         from datetime import date
+        from uuid import uuid4
 ```
 
 ```
@@ -72,7 +73,7 @@ Next locate the code that is triggered by option ```2```:
                 # TODO presentation requests
 ```
 
-Add the replace the ```# TODO``` commment:
+Replace the ```# TODO``` comment with the following code:
 
 ```
                 req_attrs = [

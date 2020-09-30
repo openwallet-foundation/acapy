@@ -3,10 +3,12 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......wallet.util import b64_to_str
+
+from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CREDENTIAL_PREVIEW
 
@@ -74,6 +76,7 @@ class CredAttrSpecSchema(BaseModelSchema):
         """Attribute preview schema metadata."""
 
         model_class = CredAttrSpec
+        unknown = EXCLUDE
 
     name = fields.Str(
         description="Attribute name", required=True, example="favourite_drink"
@@ -128,7 +131,7 @@ class CredentialPreview(BaseModel):
     @property
     def _type(self):
         """Accessor for message type."""
-        return CredentialPreview.Meta.message_type
+        return DIDCommPrefix.qualify_current(CredentialPreview.Meta.message_type)
 
     def attr_dict(self, decode: bool = False):
         """
@@ -163,6 +166,7 @@ class CredentialPreviewSchema(BaseModelSchema):
         """Credential preview schema metadata."""
 
         model_class = CredentialPreview
+        unknown = EXCLUDE
 
     _type = fields.Str(
         description="Message type identifier",

@@ -1,9 +1,8 @@
 """A (proof) presentation content message."""
 
-
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -12,7 +11,6 @@ from .....messaging.decorators.attach_decorator import (
 )
 
 from ..message_types import PRESENTATION, PROTOCOL_PACKAGE
-
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.presentation_handler.PresentationHandler"
 
@@ -68,8 +66,11 @@ class PresentationSchema(AgentMessageSchema):
         """Presentation schema metadata."""
 
         model_class = Presentation
+        unknown = EXCLUDE
 
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        description="Human-readable comment", required=False, allow_none=True
+    )
     presentations_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="presentations~attach"
     )

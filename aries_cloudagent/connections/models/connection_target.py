@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
@@ -51,6 +51,7 @@ class ConnectionTargetSchema(BaseModelSchema):
         """ConnectionTargetSchema metadata."""
 
         model_class = ConnectionTarget
+        unknown = EXCLUDE
 
     did = fields.Str(required=False, description="", **INDY_DID)
     endpoint = fields.Str(

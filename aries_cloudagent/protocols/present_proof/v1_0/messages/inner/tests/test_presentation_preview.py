@@ -11,6 +11,8 @@ from asynctest import mock as async_mock
 from .......messaging.util import canon
 from .......revocation.models.indy import NonRevocationInterval
 
+from ......didcomm_prefix import DIDCommPrefix
+
 from ....message_types import PRESENTATION_PREVIEW
 from ....util.predicate import Predicate
 
@@ -528,12 +530,12 @@ class TestPresentationPreview(TestCase):
 
     def test_type(self):
         """Test type."""
-        assert PRES_PREVIEW._type == PRESENTATION_PREVIEW
+        assert PRES_PREVIEW._type == DIDCommPrefix.qualify_current(PRESENTATION_PREVIEW)
 
     def test_deserialize(self):
         """Test deserialization."""
         dump = {
-            "@type": PRESENTATION_PREVIEW,
+            "@type": DIDCommPrefix.qualify_current(PRESENTATION_PREVIEW),
             "attributes": [
                 {
                     "name": "player",
@@ -565,7 +567,7 @@ class TestPresentationPreview(TestCase):
 
         preview_dict = PRES_PREVIEW.serialize()
         assert preview_dict == {
-            "@type": PRESENTATION_PREVIEW,
+            "@type": DIDCommPrefix.qualify_current(PRESENTATION_PREVIEW),
             "attributes": [
                 {
                     "name": "player",

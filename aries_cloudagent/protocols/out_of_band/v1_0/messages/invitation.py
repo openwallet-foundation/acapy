@@ -2,7 +2,14 @@
 
 from typing import Sequence, Text, Union
 
-from marshmallow import fields, validates_schema, ValidationError, pre_load, post_dump
+from marshmallow import (
+    EXCLUDE,
+    fields,
+    post_dump,
+    pre_load,
+    validates_schema,
+    ValidationError,
+)
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -83,6 +90,7 @@ class InvitationSchema(AgentMessageSchema):
         """Invitation schema metadata."""
 
         model_class = Invitation
+        unknown = EXCLUDE
 
     label = fields.Str(required=False, description="Optional label", example="Bob")
     handshake_protocols = fields.List(fields.String, required=False, many=True)

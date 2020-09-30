@@ -1,6 +1,6 @@
 """Represents an response to a trust ping message."""
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -38,6 +38,7 @@ class PingResponseSchema(AgentMessageSchema):
         """PingResponseSchema metadata."""
 
         model_class = PingResponse
+        unknown = EXCLUDE
 
     comment = fields.Str(
         required=False,

@@ -3,17 +3,20 @@
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 
-from marshmallow import fields, Schema, validate
+from marshmallow import fields, validate
 
-from ..messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from ..messaging.models.openapi import OpenAPISchema
+from ..messaging.valid import ENDPOINT_TYPE, INDY_DID, INDY_RAW_PUBLIC_KEY
 from ..storage.error import StorageError
 from ..wallet.error import WalletError
+
 from .base import BaseLedger
-from .indy import Role
+from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
+from .indy import Role
 
 
-class AMLRecordSchema(Schema):
+class AMLRecordSchema(OpenAPISchema):
     """Ledger AML record."""
 
     version = fields.Str()
@@ -21,7 +24,7 @@ class AMLRecordSchema(Schema):
     amlContext = fields.Str()
 
 
-class TAARecordSchema(Schema):
+class TAARecordSchema(OpenAPISchema):
     """Ledger TAA record."""
 
     version = fields.Str()
@@ -29,14 +32,14 @@ class TAARecordSchema(Schema):
     digest = fields.Str()
 
 
-class TAAAcceptanceSchema(Schema):
+class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
     time = fields.Int()
 
 
-class TAAInfoSchema(Schema):
+class TAAInfoSchema(OpenAPISchema):
     """Transaction author agreement info."""
 
     aml_record = fields.Nested(AMLRecordSchema())
@@ -45,13 +48,13 @@ class TAAInfoSchema(Schema):
     taa_accepted = fields.Nested(TAAAcceptanceSchema())
 
 
-class TAAResultSchema(Schema):
+class TAAResultSchema(OpenAPISchema):
     """Result schema for a transaction author agreement."""
 
     result = fields.Nested(TAAInfoSchema())
 
 
-class TAAAcceptSchema(Schema):
+class TAAAcceptSchema(OpenAPISchema):
     """Input schema for accepting the TAA."""
 
     version = fields.Str()
@@ -59,14 +62,22 @@ class TAAAcceptSchema(Schema):
     mechanism = fields.Str()
 
 
-class RegisterLedgerNymQueryStringSchema(Schema):
+class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for register ledger nym request."""
 
-    did = fields.Str(description="DID to register", required=True, **INDY_DID,)
+    did = fields.Str(
+        description="DID to register",
+        required=True,
+        **INDY_DID,
+    )
     verkey = fields.Str(
         description="Verification key", required=True, **INDY_RAW_PUBLIC_KEY
     )
-    alias = fields.Str(description="Alias", required=False, example="Barry",)
+    alias = fields.Str(
+        description="Alias",
+        required=False,
+        example="Barry",
+    )
     role = fields.Str(
         description="Role",
         required=False,
@@ -76,14 +87,28 @@ class RegisterLedgerNymQueryStringSchema(Schema):
     )
 
 
-class QueryStringDIDSchema(Schema):
+class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
     did = fields.Str(description="DID of interest", required=True, **INDY_DID)
 
 
+class QueryStringEndpointSchema(OpenAPISchema):
+    """Parameters and validators for query string with DID and endpoint type."""
+
+    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    endpoint_type = fields.Str(
+        description=(
+            f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
+        ),
+        required=False,
+        **ENDPOINT_TYPE,
+    )
+
+
 @docs(
-    tags=["ledger"], summary="Send a NYM registration to the ledger.",
+    tags=["ledger"],
+    summary="Send a NYM registration to the ledger.",
 )
 @querystring_schema(RegisterLedgerNymQueryStringSchema())
 async def register_ledger_nym(request: web.BaseRequest):
@@ -120,7 +145,53 @@ async def register_ledger_nym(request: web.BaseRequest):
             success = True
         except LedgerTransactionError as err:
             raise web.HTTPForbidden(reason=err.roll_up)
+        except LedgerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up)
+        except WalletError as err:
+            raise web.HTTPBadRequest(
+                reason=(
+                    f"Registered NYM for DID {did} on ledger but could not "
+                    f"replace metadata in wallet: {err.roll_up}"
+                )
+            )
+
     return web.json_response({"success": success})
+
+
+@docs(
+    tags=["ledger"],
+    summary="Get the role from the NYM registration of a public DID.",
+)
+@querystring_schema(QueryStringDIDSchema)
+async def get_nym_role(request: web.BaseRequest):
+    """
+    Request handler for getting the role from the NYM registration of a public DID.
+
+    Args:
+        request: aiohttp request object
+    """
+    context = request.app["request_context"]
+    ledger = await context.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
+
+    did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+
+    async with ledger:
+        try:
+            role = await ledger.get_nym_role(did)
+        except LedgerTransactionError as err:
+            raise web.HTTPForbidden(reason=err.roll_up)
+        except BadLedgerRequestError as err:
+            raise web.HTTPNotFound(reason=err.roll_up)
+        except LedgerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up)
+    return web.json_response({"role": role.name})
 
 
 @docs(tags=["ledger"], summary="Rotate key pair for public DID.")
@@ -148,7 +219,8 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"], summary="Get the verkey for a DID from the ledger.",
+    tags=["ledger"],
+    summary="Get the verkey for a DID from the ledger.",
 )
 @querystring_schema(QueryStringDIDSchema())
 async def get_did_verkey(request: web.BaseRequest):
@@ -182,9 +254,10 @@ async def get_did_verkey(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"], summary="Get the endpoint for a DID from the ledger.",
+    tags=["ledger"],
+    summary="Get the endpoint for a DID from the ledger.",
 )
-@querystring_schema(QueryStringDIDSchema())
+@querystring_schema(QueryStringEndpointSchema())
 async def get_did_endpoint(request: web.BaseRequest):
     """
     Request handler for getting a verkey for a DID from the ledger.
@@ -201,12 +274,16 @@ async def get_did_endpoint(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
+    endpoint_type = EndpointType.get(
+        request.query.get("endpoint_type", EndpointType.ENDPOINT.w3c)
+    )
+
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
         try:
-            r = await ledger.get_endpoint_for_did(did)
+            r = await ledger.get_endpoint_for_did(did, endpoint_type)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -303,6 +380,7 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/ledger/register-nym", register_ledger_nym),
+            web.get("/ledger/get-nym-role", get_nym_role, allow_head=False),
             web.patch("/ledger/rotate-public-did-keypair", rotate_public_did_keypair),
             web.get("/ledger/did-verkey", get_did_verkey, allow_head=False),
             web.get("/ledger/did-endpoint", get_did_endpoint, allow_head=False),

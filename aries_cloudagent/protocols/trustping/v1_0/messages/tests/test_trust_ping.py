@@ -2,8 +2,10 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from ..ping import Ping
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import PING
+from ..ping import Ping
 
 
 class TestPing(TestCase):
@@ -21,7 +23,7 @@ class TestPing(TestCase):
 
     def test_type(self):
         """Test type."""
-        assert self.test_ping._type == PING
+        assert self.test_ping._type == DIDCommPrefix.qualify_current(PING)
 
     @mock.patch(
         "aries_cloudagent.protocols.trustping.v1_0.messages.ping.PingSchema.load"

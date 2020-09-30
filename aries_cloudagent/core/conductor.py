@@ -18,6 +18,7 @@ from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config, BaseWallet
+from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
@@ -255,12 +256,18 @@ class Conductor:
         # Note: at this point we could send the message to a shared queue
         # if this pod is too busy to process it
 
-        self.dispatcher.queue_message(
-            message,
-            self.outbound_message_router,
-            self.admin_server and self.admin_server.send_webhook,
-            lambda completed: self.dispatch_complete(message, completed),
-        )
+        try:
+            self.dispatcher.queue_message(
+                message,
+                self.outbound_message_router,
+                self.admin_server and self.admin_server.send_webhook,
+                lambda completed: self.dispatch_complete(message, completed),
+            )
+        except (LedgerConfigError, LedgerTransactionError) as e:
+            LOGGER.error("Shutdown on ledger error %s", str(e))
+            if self.admin_server:
+                self.admin_server.notify_fatal_error()
+            raise
 
     def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
         """Handle completion of message dispatch."""
@@ -268,6 +275,22 @@ class Conductor:
             LOGGER.exception(
                 "Exception in message handler:", exc_info=completed.exc_info
             )
+            if isinstance(completed.exc_info[1], LedgerConfigError) or isinstance(
+                completed.exc_info[1], LedgerTransactionError
+            ):
+                LOGGER.error(
+                    "%shutdown on ledger error %s",
+                    "S" if self.admin_server else "No admin server to s",
+                    str(completed.exc_info[1]),
+                )
+                if self.admin_server:
+                    self.admin_server.notify_fatal_error()
+            else:
+                LOGGER.error(
+                    "DON'T shutdown on %s %s",
+                    completed.exc_info[0].__name__,
+                    str(completed.exc_info[1]),
+                )
         self.inbound_transport_manager.dispatch_complete(message, completed)
 
     async def get_stats(self) -> dict:
@@ -314,7 +337,13 @@ class Conductor:
 
     def handle_not_returned(self, context: InjectionContext, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
-        self.dispatcher.run_task(self.queue_outbound(context, outbound))
+        try:
+            self.dispatcher.run_task(self.queue_outbound(context, outbound))
+        except (LedgerConfigError, LedgerTransactionError) as e:
+            LOGGER.error("Shutdown on ledger error %s", str(e))
+            if self.admin_server:
+                self.admin_server.notify_fatal_error()
+            raise
 
     async def queue_outbound(
         self,
@@ -341,6 +370,11 @@ class Conductor:
             except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return
+            except (LedgerConfigError, LedgerTransactionError) as e:
+                LOGGER.error("Shutdown on ledger error %s", str(e))
+                if self.admin_server:
+                    self.admin_server.notify_fatal_error()
+                raise
 
         try:
             self.outbound_transport_manager.enqueue_message(context, outbound)

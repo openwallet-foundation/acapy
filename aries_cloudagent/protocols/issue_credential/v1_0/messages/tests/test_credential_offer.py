@@ -2,6 +2,8 @@ from unittest import mock, TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ...message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER, PROTOCOL_PACKAGE
 from ..credential_offer import CredentialOffer
 from ..inner.credential_preview import CredAttrSpec, CredentialPreview
@@ -43,7 +45,8 @@ class TestCredentialOffer(TestCase):
         credential_preview=preview,
         offers_attach=[
             AttachDecorator.from_indy_dict(
-                indy_dict=indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                indy_dict=indy_offer,
+                ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
             )
         ],
     )
@@ -55,7 +58,8 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
         )
@@ -70,12 +74,13 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
         )
 
-        assert credential_offer._type == CREDENTIAL_OFFER
+        assert credential_offer._type == DIDCommPrefix.qualify_current(CREDENTIAL_OFFER)
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages.credential_offer.CredentialOfferSchema.load"
@@ -103,7 +108,8 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.from_indy_dict(
-                    indy_dict=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    indy_dict=self.indy_offer,
+                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
                 )
             ],
         )

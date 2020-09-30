@@ -10,14 +10,16 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, Schema, validate, validates_schema
+from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ....connections.models.connection_record import ConnectionRecord
 from ....holder.base import BaseHolder, HolderError
+from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
+from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_DID,
@@ -32,7 +34,8 @@ from ....messaging.valid import (
     WHOLE_NUM,
 )
 from ....storage.error import StorageError, StorageNotFoundError
-from ....indy.util import generate_pr_nonce
+from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+from ....wallet.error import WalletNotFoundError
 
 from ...problem_report.v1_0 import internal_error
 
@@ -50,10 +53,7 @@ from .models.presentation_exchange import (
 )
 
 
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
-
-
-class V10PresentationExchangeListQueryStringSchema(Schema):
+class V10PresentationExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
     connection_id = fields.UUID(
@@ -90,7 +90,7 @@ class V10PresentationExchangeListQueryStringSchema(Schema):
     )
 
 
-class V10PresentationExchangeListSchema(Schema):
+class V10PresentationExchangeListSchema(OpenAPISchema):
     """Result schema for an Aries RFC 37 v1.0 presentation exchange query."""
 
     results = fields.List(
@@ -106,7 +106,7 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, default=""
+        description="Human-readable comment", required=False, allow_none=True
     )
     presentation_proposal = fields.Nested(PresentationPreviewSchema(), required=True)
     auto_present = fields.Boolean(
@@ -124,7 +124,7 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
     )
 
 
-class IndyProofReqPredSpecRestrictionsSchema(Schema):
+class IndyProofReqPredSpecRestrictionsSchema(OpenAPISchema):
     """Schema for restrictions in attr or pred specifier indy proof request."""
 
     schema_id = fields.String(
@@ -149,7 +149,7 @@ class IndyProofReqPredSpecRestrictionsSchema(Schema):
     )
 
 
-class IndyProofReqNonRevokedSchema(Schema):
+class IndyProofReqNonRevokedSchema(OpenAPISchema):
     """Non-revocation times specification in indy proof request."""
 
     fro = fields.Int(
@@ -182,7 +182,7 @@ class IndyProofReqNonRevokedSchema(Schema):
             )
 
 
-class IndyProofReqAttrSpecSchema(Schema):
+class IndyProofReqAttrSpecSchema(OpenAPISchema):
     """Schema for attribute specification in indy proof request."""
 
     name = fields.String(
@@ -245,7 +245,7 @@ class IndyProofReqAttrSpecSchema(Schema):
             )
 
 
-class IndyProofReqPredSpecSchema(Schema):
+class IndyProofReqPredSpecSchema(OpenAPISchema):
     """Schema for predicate specification in indy proof request."""
 
     name = fields.String(example="index", description="Attribute name", required=True)
@@ -263,7 +263,7 @@ class IndyProofReqPredSpecSchema(Schema):
     non_revoked = fields.Nested(IndyProofReqNonRevokedSchema(), required=False)
 
 
-class IndyProofRequestSchema(Schema):
+class IndyProofRequestSchema(OpenAPISchema):
     """Schema for indy proof request."""
 
     nonce = fields.String(description="Nonce", required=False, example="1234567890")
@@ -298,7 +298,7 @@ class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for creating a proof request free of any connection."""
 
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
-    comment = fields.Str(required=False)
+    comment = fields.Str(required=False, allow_none=True)
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -316,7 +316,7 @@ class V10PresentationSendRequestRequestSchema(
     )
 
 
-class IndyRequestedCredsRequestedAttrSchema(Schema):
+class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):
     """Schema for requested attributes within indy requested credentials structure."""
 
     cred_id = fields.Str(
@@ -336,7 +336,7 @@ class IndyRequestedCredsRequestedAttrSchema(Schema):
     )
 
 
-class IndyRequestedCredsRequestedPredSchema(Schema):
+class IndyRequestedCredsRequestedPredSchema(OpenAPISchema):
     """Schema for requested predicates within indy requested credentials structure."""
 
     cred_id = fields.Str(
@@ -393,7 +393,7 @@ class V10PresentationRequestSchema(AdminAPIMessageTracingSchema):
     )
 
 
-class CredentialsFetchQueryStringSchema(Schema):
+class CredentialsFetchQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credentials fetch request query string."""
 
     referent = fields.Str(
@@ -412,7 +412,7 @@ class CredentialsFetchQueryStringSchema(Schema):
     )
 
 
-class PresExIdMatchInfoSchema(Schema):
+class PresExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking presentation exchange id."""
 
     pres_ex_id = fields.Str(
@@ -599,7 +599,8 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 
     trace_msg = body.get("trace")
     presentation_proposal_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     auto_present = body.get(
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
@@ -679,7 +680,8 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     )
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
 
     presentation_manager = PresentationManager(context)
@@ -756,7 +758,8 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     )
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
 
     presentation_manager = PresentationManager(context)
@@ -852,7 +855,8 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     await outbound_handler(presentation_request_message, connection_id=connection_id)
 
@@ -926,7 +930,13 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
             comment=body.get("comment"),
         )
         result = pres_ex_record.serialize()
-    except (BaseModelError, HolderError, LedgerError, StorageError) as err:
+    except (
+        BaseModelError,
+        HolderError,
+        LedgerError,
+        StorageError,
+        WalletNotFoundError,
+    ) as err:
         await internal_error(
             err,
             web.HTTPBadRequest,
@@ -936,7 +946,8 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 
     trace_msg = body.get("trace")
     presentation_message.assign_trace_decorator(
-        context.settings, trace_msg,
+        context.settings,
+        trace_msg,
     )
     await outbound_handler(presentation_message, connection_id=connection_id)
 
@@ -1059,13 +1070,16 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post(
-                "/present-proof/send-proposal", presentation_exchange_send_proposal,
+                "/present-proof/send-proposal",
+                presentation_exchange_send_proposal,
             ),
             web.post(
-                "/present-proof/create-request", presentation_exchange_create_request,
+                "/present-proof/create-request",
+                presentation_exchange_create_request,
             ),
             web.post(
-                "/present-proof/send-request", presentation_exchange_send_free_request,
+                "/present-proof/send-request",
+                presentation_exchange_send_free_request,
             ),
             web.post(
                 "/present-proof/records/{pres_ex_id}/send-request",

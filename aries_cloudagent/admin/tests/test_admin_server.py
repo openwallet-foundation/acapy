@@ -55,6 +55,51 @@ class TestAdminServer(AsyncTestCase):
             mock_logger.isEnabledFor.assert_called_once()
             assert mock_logger.debug.call_count == 3
 
+    async def test_ready_middleware(self):
+        with async_mock.patch.object(
+            test_module, "LOGGER", async_mock.MagicMock()
+        ) as mock_logger:
+            mock_logger.isEnabledFor = async_mock.MagicMock(return_value=True)
+            mock_logger.debug = async_mock.MagicMock()
+            mock_logger.info = async_mock.MagicMock()
+            mock_logger.error = async_mock.MagicMock()
+
+            request = async_mock.MagicMock(
+                rel_url="/", app=async_mock.MagicMock(_state={"ready": False})
+            )
+            handler = async_mock.CoroutineMock(return_value="OK")
+            with self.assertRaises(test_module.web.HTTPServiceUnavailable):
+                await test_module.ready_middleware(request, handler)
+
+            request.app._state["ready"] = True
+            assert await test_module.ready_middleware(request, handler) == "OK"
+
+            request.app._state["ready"] = True
+            handler = async_mock.CoroutineMock(
+                side_effect=test_module.LedgerConfigError("Bad config")
+            )
+            with self.assertRaises(test_module.LedgerConfigError):
+                await test_module.ready_middleware(request, handler)
+
+            request.app._state["ready"] = True
+            handler = async_mock.CoroutineMock(
+                side_effect=test_module.web.HTTPFound(location="/api/doc")
+            )
+            with self.assertRaises(test_module.web.HTTPFound):
+                await test_module.ready_middleware(request, handler)
+
+            request.app._state["ready"] = True
+            handler = async_mock.CoroutineMock(
+                side_effect=test_module.asyncio.CancelledError("Cancelled")
+            )
+            with self.assertRaises(test_module.asyncio.CancelledError):
+                await test_module.ready_middleware(request, handler)
+
+            request.app._state["ready"] = True
+            handler = async_mock.CoroutineMock(side_effect=KeyError("No such thing"))
+            with self.assertRaises(KeyError):
+                await test_module.ready_middleware(request, handler)
+
     def get_admin_server(
         self, settings: dict = None, context: InjectionContext = None
     ) -> AdminServer:
@@ -265,4 +310,37 @@ class TestAdminServer(AsyncTestCase):
             f"http://127.0.0.1:{self.port}/status/live", headers={}
         ) as response:
             assert response.status == 200
+        await server.stop()
+
+    async def test_server_health_state(self):
+        settings = {
+            "admin.admin_insecure_mode": True,
+        }
+        server = self.get_admin_server(settings)
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/live", headers={}
+        ) as response:
+            assert response.status == 200
+            response_json = await response.json()
+            assert response_json["alive"]
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/ready", headers={}
+        ) as response:
+            assert response.status == 200
+            response_json = await response.json()
+            assert response_json["ready"]
+
+        server.notify_fatal_error()
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/live", headers={}
+        ) as response:
+            assert response.status == 503
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status/ready", headers={}
+        ) as response:
+            assert response.status == 503
         await server.stop()

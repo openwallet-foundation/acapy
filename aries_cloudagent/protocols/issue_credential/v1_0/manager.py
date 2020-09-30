@@ -3,7 +3,8 @@
 import asyncio
 import json
 import logging
-from typing import Mapping, Sequence, Text, Tuple
+
+from typing import Mapping, Tuple
 
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
@@ -29,6 +30,8 @@ from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
+LOGGER = logging.getLogger(__name__)
+
 
 class CredentialManagerError(BaseError):
     """Credential error."""
@@ -45,7 +48,6 @@ class CredentialManager:
             context: The context for this credential
         """
         self._context = context
-        self._logger = logging.getLogger(__name__)
 
     @property
     def context(self) -> InjectionContext:
@@ -380,7 +382,7 @@ class CredentialManager:
             }
 
         if cred_ex_record.credential_request:
-            self._logger.warning(
+            LOGGER.warning(
                 "create_request called multiple times for v1.0 credential exchange: %s",
                 cred_ex_record.credential_exchange_id,
             )
@@ -472,6 +474,7 @@ class CredentialManager:
             Tuple: (Updated credential exchange record, credential message)
 
         """
+
         if cred_ex_record.state != V10CredentialExchange.STATE_REQUEST_RECEIVED:
             raise CredentialManagerError(
                 f"Credential exchange {cred_ex_record.credential_exchange_id} "
@@ -480,12 +483,12 @@ class CredentialManager:
             )
 
         schema_id = cred_ex_record.schema_id
-        registry = None
+        rev_reg = None
 
         if cred_ex_record.credential:
-            self._logger.warning(
+            LOGGER.warning(
                 "issue_credential called multiple times for "
-                + "v1.0 credential exchange: %s",
+                + "credential exchange record %s - abstaining",
                 cred_ex_record.credential_exchange_id,
             )
         else:
@@ -501,38 +504,62 @@ class CredentialManager:
 
             tails_path = None
             if credential_definition["value"].get("revocation"):
-                staged_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
-                    self.context,
-                    cred_ex_record.credential_definition_id,
-                    state=IssuerRevRegRecord.STATE_STAGED,
-                )
-
-                if staged_rev_regs and retries > 0:
-                    # We know there is a staged registry that will be ready soon.
-                    # So we wait and retry.
-                    await asyncio.sleep(1)
-                    return await self.issue_credential(
-                        cred_ex_record=cred_ex_record,
-                        comment=comment,
-                        retries=retries - 1,
+                revoc = IndyRevocation(self.context)
+                try:
+                    active_rev_reg_rec = await revoc.get_active_issuer_rev_reg_record(
+                        cred_ex_record.credential_definition_id
                     )
-                else:
-                    active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                    rev_reg = await active_rev_reg_rec.get_registry()
+                    cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
+
+                    tails_path = rev_reg.tails_local_path
+                    await rev_reg.get_or_fetch_local_tails_path()
+
+                except StorageNotFoundError:
+                    posted_rev_reg_recs = await IssuerRevRegRecord.query_by_cred_def_id(
                         self.context,
                         cred_ex_record.credential_definition_id,
-                        state=IssuerRevRegRecord.STATE_ACTIVE,
+                        state=IssuerRevRegRecord.STATE_POSTED,
                     )
-                    if not active_rev_regs:
-                        raise CredentialManagerError(
-                            "Cred def id {} has no active revocation registry".format(
-                                cred_ex_record.credential_definition_id
+                    if not posted_rev_reg_recs:
+                        # Send next 2 rev regs, publish tails files in background
+                        old_rev_reg_recs = sorted(
+                            await IssuerRevRegRecord.query_by_cred_def_id(
+                                self.context,
+                                cred_ex_record.credential_definition_id,
                             )
+                        )  # prefer to reuse prior rev reg size
+                        for _ in range(2):
+                            pending_rev_reg_rec = await revoc.init_issuer_registry(
+                                cred_ex_record.credential_definition_id,
+                                max_cred_num=(
+                                    old_rev_reg_recs[0].max_cred_num
+                                    if old_rev_reg_recs
+                                    else None
+                                ),
+                            )
+                            asyncio.ensure_future(
+                                pending_rev_reg_rec.stage_pending_registry(
+                                    self.context,
+                                    max_attempts=3,  # fail both in < 2s at worst
+                                )
+                            )
+                    if retries > 0:
+                        LOGGER.info(
+                            "Waiting 2s on posted rev reg for cred def %s, retrying",
+                            cred_ex_record.credential_definition_id,
+                        )
+                        await asyncio.sleep(2)
+                        return await self.issue_credential(
+                            cred_ex_record=cred_ex_record,
+                            comment=comment,
+                            retries=retries - 1,
                         )
 
-                    active_reg = active_rev_regs[0]
-                    registry = await active_reg.get_registry()
-                    cred_ex_record.revoc_reg_id = active_reg.revoc_reg_id
-                    tails_path = registry.tails_local_path
+                    raise CredentialManagerError(
+                        f"Cred def id {cred_ex_record.credential_definition_id} "
+                        "has no active revocation registry"
+                    )
 
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
@@ -547,80 +574,51 @@ class CredentialManager:
                     credential_offer,
                     credential_request,
                     credential_values,
+                    cred_ex_record.credential_exchange_id,
                     cred_ex_record.revoc_reg_id,
                     tails_path,
                 )
 
-                # If the revocation registry is full
-                if registry and registry.max_creds == int(
-                    cred_ex_record.revocation_id  # monotonic "1"-based
-                ):
-                    # Check to see if we have a registry record staged and waiting
-                    pending_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                # If the rev reg is now full
+                if rev_reg and rev_reg.max_creds == int(cred_ex_record.revocation_id):
+                    await active_rev_reg_rec.set_state(
                         self.context,
-                        cred_ex_record.credential_definition_id,
-                        state=IssuerRevRegRecord.STATE_PUBLISHED,
+                        IssuerRevRegRecord.STATE_FULL,
                     )
-                    if pending_rev_regs:
-                        pending_rev_reg = pending_rev_regs[0]
-                        pending_rev_reg.state = IssuerRevRegRecord.STATE_STAGED
-                        await pending_rev_reg.save(
-                            self.context, reason="revocation registry staged"
-                        )
 
-                        # Make it active
-                        await pending_rev_reg.publish_registry_entry(self.context)
-                        # Kick off a task to create and publish the next revocation
-                        # registry in the background. It is assumed that the size of
-                        # the registry is large enough so that this completes before
-                        # the current registry is full
-                        revoc = IndyRevocation(self.context)
-                        pending_registry_record = await revoc.init_issuer_registry(
-                            active_reg.cred_def_id,
-                            active_reg.issuer_did,
-                            max_cred_num=active_reg.max_cred_num,
+                    # Send next 1 rev reg, publish tails file in background
+                    pending_rev_reg_rec = await revoc.init_issuer_registry(
+                        active_rev_reg_rec.cred_def_id,
+                        max_cred_num=active_rev_reg_rec.max_cred_num,
+                    )
+                    asyncio.ensure_future(
+                        pending_rev_reg_rec.stage_pending_registry(
+                            self.context,
+                            max_attempts=16,
                         )
-                        asyncio.ensure_future(
-                            pending_registry_record.stage_pending_registry_definition(
-                                self.context
-                            )
-                        )
-
-                    # Make the current registry full
-                    await active_reg.mark_full(self.context)
+                    )
 
             except IssuerRevocationRegistryFullError:
-                active_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
+                # unlucky: duelling instance issued last cred near same time as us
+                await active_rev_reg_rec.set_state(
                     self.context,
-                    cred_ex_record.credential_definition_id,
-                    state=IssuerRevRegRecord.STATE_ACTIVE,
-                )
-                staged_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
-                    self.context,
-                    cred_ex_record.credential_definition_id,
-                    state=IssuerRevRegRecord.STATE_STAGED,
-                )
-                published_rev_regs = await IssuerRevRegRecord.query_by_cred_def_id(
-                    self.context,
-                    cred_ex_record.credential_definition_id,
-                    state=IssuerRevRegRecord.STATE_PUBLISHED,
+                    IssuerRevRegRecord.STATE_FULL,
                 )
 
-                if (
-                    staged_rev_regs or active_rev_regs or published_rev_regs
-                ) and retries > 0:
-
-                    # We know there is a staged registry that will be ready soon.
-                    # So we wait and retry.
+                if retries > 0:
+                    # use next rev reg; at worst, lucky instance is putting one up
+                    LOGGER.info(
+                        "Waiting 1s and retrying: revocation registry %s is full",
+                        active_rev_reg_rec.revoc_reg_id,
+                    )
                     await asyncio.sleep(1)
                     return await self.issue_credential(
                         cred_ex_record=cred_ex_record,
                         comment=comment,
                         retries=retries - 1,
                     )
-                else:
-                    await active_reg.mark_full(self.context)
-                    raise
+
+                raise
 
             cred_ex_record.credential = json.loads(credential_json)
 
@@ -729,7 +727,7 @@ class CredentialManager:
                 rev_reg_def=revoc_reg_def,
             )
         except HolderError as e:
-            self._logger.error(f"Error storing credential. {e.error_code}: {e.message}")
+            LOGGER.error(f"Error storing credential. {e.error_code}: {e.message}")
             raise e
 
         credential_json = await holder.get_credential(credential_id)
@@ -782,139 +780,3 @@ class CredentialManager:
             await cred_ex_record.delete_record(self.context)
 
         return cred_ex_record
-
-    async def revoke_credential(
-        self, rev_reg_id: str, cred_rev_id: str, publish: bool = False
-    ):
-        """
-        Revoke a previously-issued credential.
-
-        Optionally, publish the corresponding revocation registry delta to the ledger.
-
-        Args:
-            rev_reg_id: revocation registry id
-            cred_rev_id: credential revocation id
-            publish: whether to publish the resulting revocation registry delta,
-                along with any revocations pending against it
-
-        """
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-
-        revoc = IndyRevocation(self.context)
-        registry_record = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        if not registry_record:
-            raise CredentialManagerError(
-                f"No revocation registry record found for id {rev_reg_id}"
-            )
-
-        if publish:
-            rev_reg = await revoc.get_ledger_registry(rev_reg_id)
-            await rev_reg.get_or_fetch_local_tails_path()
-
-            # pick up pending revocations on input revocation registry
-            crids = list(set(registry_record.pending_pub + [cred_rev_id]))
-            (delta_json, _) = await issuer.revoke_credentials(
-                registry_record.revoc_reg_id, registry_record.tails_local_path, crids
-            )
-            if delta_json:
-                registry_record.revoc_reg_entry = json.loads(delta_json)
-                await registry_record.publish_registry_entry(self.context)
-                await registry_record.clear_pending(self.context)
-
-        else:
-            await registry_record.mark_pending(self.context, cred_rev_id)
-
-    async def publish_pending_revocations(
-        self, rrid2crid: Mapping[Text, Sequence[Text]] = None
-    ) -> Mapping[Text, Sequence[Text]]:
-        """
-        Publish pending revocations to the ledger.
-
-        Args:
-            rrid2crid: Mapping from revocation registry identifiers to all credential
-                revocation identifiers within each to publish. Specify null/empty map
-                for all revocation registries. Specify empty sequence per revocation
-                registry identifier for all pending within the revocation registry;
-                e.g.,
-
-            ::
-
-                {} - publish all pending revocations from all revocation registries
-                {
-                    "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:0": [],
-                    "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:1": ["1", "2"]
-                } - publish:
-                    - all pending revocations from all revocation registry tagged 0
-                    - pending ["1", "2"] from revocation registry tagged 1
-                    - no pending revocations from any other revocation registries.
-
-        Returns: mapping from each revocation registry id to its cred rev ids published.
-        """
-        result = {}
-        issuer: BaseIssuer = await self.context.inject(BaseIssuer)
-
-        registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
-        for registry_record in registry_records:
-            rrid = registry_record.revoc_reg_id
-            crids = []
-            if not rrid2crid:
-                crids = registry_record.pending_pub
-            elif rrid in rrid2crid:
-                crids = [
-                    crid
-                    for crid in registry_record.pending_pub
-                    if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
-                ]
-            if crids:
-                (delta_json, failed_crids) = await issuer.revoke_credentials(
-                    registry_record.revoc_reg_id,
-                    registry_record.tails_local_path,
-                    crids,
-                )
-                registry_record.revoc_reg_entry = json.loads(delta_json)
-                await registry_record.publish_registry_entry(self.context)
-                published = [crid for crid in crids if crid not in failed_crids]
-                result[registry_record.revoc_reg_id] = published
-                await registry_record.clear_pending(self.context, published)
-
-        return result
-
-    async def clear_pending_revocations(
-        self, purge: Mapping[Text, Sequence[Text]] = None
-    ) -> Mapping[Text, Sequence[Text]]:
-        """
-        Clear pending revocation publications.
-
-        Args:
-            purge: Mapping from revocation registry identifiers to all credential
-                revocation identifiers within each to clear. Specify null/empty map
-                for all revocation registries. Specify empty sequence per revocation
-                registry identifier for all pending within the revocation registry;
-                e.g.,
-
-            ::
-
-                {} - clear all pending revocations from all revocation registries
-                {
-                    "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:0": [],
-                    "R17v42T4pk...:4:R17v42T4pk...:3:CL:19:tag:CL_ACCUM:1": ["1", "2"]
-                } - clear:
-                    - all pending revocations from all revocation registry tagged 0
-                    - pending ["1", "2"] from revocation registry tagged 1
-                    - no pending revocations from any other revocation registries.
-
-        Returns:
-            mapping from revocation registry id to its remaining
-            cred rev ids still marked pending, omitting revocation registries
-            with no remaining pending publications.
-
-        """
-        result = {}
-        registry_records = await IssuerRevRegRecord.query_by_pending(self.context)
-        for registry_record in registry_records:
-            rrid = registry_record.revoc_reg_id
-            await registry_record.clear_pending(self.context, (purge or {}).get(rrid))
-            if registry_record.pending_pub:
-                result[rrid] = registry_record.pending_pub
-
-        return result

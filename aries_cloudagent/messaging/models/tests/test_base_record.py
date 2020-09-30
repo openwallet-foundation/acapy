@@ -1,7 +1,7 @@
 import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields
 
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
@@ -25,6 +25,7 @@ class BaseRecordImpl(BaseRecord):
 class BaseRecordImplSchema(BaseRecordSchema):
     class Meta:
         model_class = BaseRecordImpl
+        unknown = EXCLUDE
 
 
 class ARecordImpl(BaseRecord):
@@ -50,6 +51,7 @@ class ARecordImpl(BaseRecord):
 class ARecordImplSchema(BaseRecordSchema):
     class Meta:
         model_class = BaseRecordImpl
+        unknown = EXCLUDE
 
     ident = fields.Str(attribute="_id")
     a = fields.Str()
