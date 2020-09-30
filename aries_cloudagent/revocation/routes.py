@@ -170,7 +170,7 @@ class RevRegsCreatedSchema(OpenAPISchema):
     """Result schema for request for revocation registries created."""
 
     rev_reg_ids = fields.List(
-        fields.Str(description="Revocation Registry identifiers", **INDY_REV_REG_ID)
+        fields.Str(description="Revocation registry identifiers", **INDY_REV_REG_ID)
     )
 
 
