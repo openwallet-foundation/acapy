@@ -3,7 +3,7 @@ import requests
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ...protocols.out_of_band.v1_0.messages.invitation import Invitation
+from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
@@ -24,7 +24,7 @@ class TestTracing(AsyncTestCase):
         assert test_module.get_timer() > 0.0
 
     def test_tracing_enabled(self):
-        invi = Invitation(
+        invi = InvitationMessage(
             comment="no comment", label="cable guy", service=[TestTracing.test_did]
         )
         assert not test_module.tracing_enabled({}, invi)
@@ -72,7 +72,7 @@ class TestTracing(AsyncTestCase):
         assert test_module.tracing_enabled({}, outbound_message)
 
     def test_decode_inbound_message(self):
-        invi = Invitation(
+        invi = InvitationMessage(
             comment="no comment", label="cable guy", service=[TestTracing.test_did]
         )
         message = OutboundMessage(payload=invi)
