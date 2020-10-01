@@ -374,31 +374,11 @@ class GeneralGroup(ArgumentGroup):
             "--storage-type",
             type=str,
             metavar="<storage-type>",
+            default="basic",
             help="Specifies the type of storage provider to use for the internal\
             storage engine. This storage interface is used to store internal state.\
-            Supported internal storage types are 'basic' (memory) and 'indy'.",
-        )
-        parser.add_argument(
-            "-e",
-            "--endpoint",
-            type=str,
-            nargs="+",
-            metavar="<endpoint>",
-            help="Specifies the endpoints to put into DIDDocs\
-            to inform other agents of where they should send messages destined\
-            for this agent. Each endpoint could be one of the specified inbound\
-            transports for this agent, or the endpoint could be that of\
-            another agent (e.g. 'https://example.com/agent-endpoint') if the\
-            routing of messages to this agent by a mediator is configured.\
-            The first endpoint specified will be used in invitations.\
-            The endpoints are used in the formation of a connection\
-            with another agent.",
-        )
-        parser.add_argument(
-            "--profile-endpoint",
-            type=str,
-            metavar="<profile_endpoint>",
-            help="Specifies the profile endpoint for the (public) DID.",
+            Supported internal storage types are 'basic' (memory)\
+            and 'indy'.  The default (if not specified) is 'basic'.",
         )
         parser.add_argument(
             "--read-only-ledger",
@@ -420,11 +400,6 @@ class GeneralGroup(ArgumentGroup):
             settings["external_plugins"] = args.external_plugins
         if args.storage_type:
             settings["storage_type"] = args.storage_type
-        if args.endpoint:
-            settings["default_endpoint"] = args.endpoint[0]
-            settings["additional_endpoints"] = args.endpoint[1:]
-        if args.profile_endpoint:
-            settings["profile_endpoint"] = args.profile_endpoint
         if args.read_only_ledger:
             settings["read_only_ledger"] = True
         if args.tails_server_base_url:
@@ -473,18 +448,32 @@ class LedgerGroup(ArgumentGroup):
             the URL might be 'http://localhost:9000/genesis'.\
             Genesis transactions URLs are available for the Sovrin test/main networks.",
         )
+        parser.add_argument(
+            "--no-ledger",
+            action="store_true",
+            help="Specifies that aca-py will run with no ledger configured.\
+            This must be set if running in no-ledger mode.  Overrides any\
+            specified ledger or genesis configurations.  Default: false.",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
         settings = {}
-        if args.genesis_url:
-            settings["ledger.genesis_url"] = args.genesis_url
-        elif args.genesis_file:
-            settings["ledger.genesis_file"] = args.genesis_file
-        elif args.genesis_transactions:
-            settings["ledger.genesis_transactions"] = args.genesis_transactions
-        if args.ledger_pool_name:
-            settings["ledger.pool_name"] = args.ledger_pool_name
+        if not args.no_ledger:
+            if args.genesis_url:
+                settings["ledger.genesis_url"] = args.genesis_url
+            elif args.genesis_file:
+                settings["ledger.genesis_file"] = args.genesis_file
+            elif args.genesis_transactions:
+                settings["ledger.genesis_transactions"] = args.genesis_transactions
+            else:
+                raise ArgsParseError(
+                        "One of --genesis-url --genesis-file or --genesis-transactions "
+                        + "must be specified (unless --no-ledger is specified to "
+                        + "explicitely configure aca-py to run with no ledger)."
+                )
+            if args.ledger_pool_name:
+                settings["ledger.pool_name"] = args.ledger_pool_name
         return settings
 
 
@@ -684,6 +673,29 @@ class TransportGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add transport-specific command line arguments to the parser."""
         parser.add_argument(
+            "-e",
+            "--endpoint",
+            type=str,
+            nargs="+",
+            required=True,
+            metavar="<endpoint>",
+            help="Specifies the endpoints to put into DIDDocs\
+            to inform other agents of where they should send messages destined\
+            for this agent. Each endpoint could be one of the specified inbound\
+            transports for this agent, or the endpoint could be that of\
+            another agent (e.g. 'https://example.com/agent-endpoint') if the\
+            routing of messages to this agent by a mediator is configured.\
+            The first endpoint specified will be used in invitations.\
+            The endpoints are used in the formation of a connection\
+            with another agent.",
+        )
+        parser.add_argument(
+            "--profile-endpoint",
+            type=str,
+            metavar="<profile_endpoint>",
+            help="Specifies the profile endpoint for the (public) DID.",
+        )
+        parser.add_argument(
             "-it",
             "--inbound-transport",
             dest="inbound_transports",
@@ -750,6 +762,12 @@ class TransportGroup(ArgumentGroup):
         settings["transport.outbound_configs"] = args.outbound_transports
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
+        if args.endpoint:
+            settings["default_endpoint"] = args.endpoint[0]
+            settings["additional_endpoints"] = args.endpoint[1:]
+        if args.profile_endpoint:
+            settings["profile_endpoint"] = args.profile_endpoint
+
         if args.label:
             settings["default_label"] = args.label
         if args.max_message_size:
@@ -808,16 +826,20 @@ class WalletGroup(ArgumentGroup):
             "--wallet-type",
             type=str,
             metavar="<wallet-type>",
+            default="basic",
             help="Specifies the type of Indy wallet provider to use.\
-            Supported internal storage types are 'basic' (memory) and 'indy'.",
+            Supported internal storage types are 'basic' (memory) and 'indy'.\
+            The default (if not specified) is 'basic'.",
         )
         parser.add_argument(
             "--wallet-storage-type",
             type=str,
             metavar="<storage-type>",
+            default="default",
             help="Specifies the type of Indy wallet backend to use.\
             Supported internal storage types are 'basic' (memory),\
-            'default' (sqlite), and 'postgres_storage'.",
+            'default' (sqlite), and 'postgres_storage'.  The default,\
+            if not specified, is 'default'.",
         )
         parser.add_argument(
             "--wallet-storage-config",
@@ -874,4 +896,20 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_creds"] = args.wallet_storage_creds
         if args.replace_public_did:
             settings["wallet.replace_public_did"] = True
+        # check required settings for 'indy' wallets
+        if settings["wallet.type"] == "indy":
+            # requires name, key
+            if not args.wallet_name or not args.wallet_key:
+                raise ArgsParseError(
+                    "Parameters --wallet-name and --wallet-key must be provided"
+                    + " for indy wallets"
+                )
+            # postgres storage requires additional configuration
+            if ("wallet.storage_config" in settings and
+                    settings["wallet.storage_config"] == "postgres_storage"):
+                if not args.wallet_storage_config or not args.wallet_storage_creds:
+                    raise ArgsParseError(
+                        "Parameters --wallet-storage-config and --wallet-storage-creds"
+                        + " must be provided for indy postgres wallets"
+                    )
         return settings

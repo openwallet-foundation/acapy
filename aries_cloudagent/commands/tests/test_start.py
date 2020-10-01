@@ -24,7 +24,14 @@ class TestStart(AsyncTestCase):
         ) as run_loop, async_mock.patch.object(
             command, "shutdown_app", autospec=True
         ) as shutdown_app:
-            command.execute(["-it", "http", "0.0.0.0", "80", "-ot", "http"])
+            command.execute(
+                [
+                    "-it", "http", "0.0.0.0", "80",
+                    "-ot", "http",
+                    "--endpoint", "0.0.0.0", "80",
+                    "--no-ledger"
+                ]
+            )
             start_app.assert_called_once()
             assert isinstance(start_app.call_args[0][0], command.Conductor)
             shutdown_app.assert_called_once()
