@@ -344,6 +344,14 @@ class AdminServer(BaseAdminServer):
             AdminSetupError: If there was an error starting the webserver
 
         """
+
+        def sort_dict(raw: dict) -> dict:
+            """Order (JSON, string keys) dict asciibetically by key, recursively."""
+            for (k, v) in raw.items():
+                if isinstance(v, dict):
+                    raw[k] = sort_dict(v)
+            return dict(sorted([item for item in raw.items()], key=lambda x: x[0]))
+
         self.app = await self.make_application()
         runner = web.AppRunner(self.app)
         await runner.setup()
@@ -362,6 +370,9 @@ class AdminServer(BaseAdminServer):
                 method_spec["parameters"].sort(
                     key=lambda p: (p["in"], not p["required"], p["name"])
                 )
+
+        # order definitions alphabetically by dict key
+        swagger_dict["definitions"] = sort_dict(swagger_dict["definitions"])
 
         self.site = web.TCPSite(runner, host=self.host, port=self.port)
 
