@@ -88,3 +88,16 @@ When a webhook is dispatched, the record `topic` is appended as a path component
  * `verified`: (string) whether the presentation is verified: `true` or `false`
  * `auto_present`: (boolean) prover choice to auto-present proof as verifier requests
  * `error_msg`: the previous error message
+
+## API Standard Behaviour
+
+In general the API's should return:
+
+ * HTTP 400 (with an error message) for errors on input parameters (user can retry with different parameters)
+ * HTTP 404 if a record is expected and not found (generally for GET requests that fetch a single record)
+ * HTTP 500 if there is some other processing error (i.e. won't make any difference what parameters the user tries) with an error message
+
+.. and should not return:
+
+ * HTTP 500 with a stack trace (we should handle error conditions with a 400 or 404 response, and catch errors and provide a meaningful error message)
+
