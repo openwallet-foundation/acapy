@@ -1,7 +1,7 @@
 """Provision command for setting up agent settings before starting."""
 
 import asyncio
-from argparse import ArgumentParser
+from configargparse import ArgumentParser
 from typing import Sequence
 
 from ..config import argparse as arg

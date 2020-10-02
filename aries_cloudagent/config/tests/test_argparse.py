@@ -1,5 +1,5 @@
 import itertools
-from argparse import ArgumentParser, ArgumentTypeError
+from configargparse import ArgumentParser, ArgumentTypeError
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
