@@ -1,6 +1,5 @@
 """Revocation registry admin routes."""
 
-import json
 import logging
 
 from asyncio import shield
@@ -107,13 +106,13 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
     )
 
 
-class RevokeQueryStringSchema(CredRevRecordQueryStringSchema):
+class RevokeRequestSchema(CredRevRecordQueryStringSchema):
     """Parameters and validators for revocation request."""
 
     publish = fields.Boolean(
         description=(
             "(True) publish revocation to ledger immediately, or "
-            "(False) mark it pending (default value)"
+            "(default, False) mark it pending"
         ),
         required=False,
     )
@@ -171,7 +170,7 @@ class RevRegsCreatedSchema(OpenAPISchema):
     """Result schema for request for revocation registries created."""
 
     rev_reg_ids = fields.List(
-        fields.Str(description="Revocation Registry identifiers", **INDY_REV_REG_ID)
+        fields.Str(description="Revocation registry identifiers", **INDY_REV_REG_ID)
     )
 
 
@@ -249,7 +248,7 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     tags=["revocation"],
     summary="Revoke an issued credential",
 )
-@querystring_schema(RevokeQueryStringSchema())
+@request_schema(RevokeRequestSchema())
 async def revoke(request: web.BaseRequest):
     """
     Request handler for storing a credential request.
@@ -263,10 +262,12 @@ async def revoke(request: web.BaseRequest):
     """
     context = request.app["request_context"]
 
-    rev_reg_id = request.query.get("rev_reg_id")
-    cred_rev_id = request.query.get("cred_rev_id")  # numeric str, which indy wants
-    cred_ex_id = request.query.get("cred_ex_id")
-    publish = bool(json.loads(request.query.get("publish", json.dumps(False))))
+    body = await request.json()
+
+    rev_reg_id = body.get("rev_reg_id")
+    cred_rev_id = body.get("cred_rev_id")  # numeric str, which indy wants
+    cred_ex_id = body.get("cred_ex_id")
+    publish = body.get("publish")
 
     rev_manager = RevocationManager(context)
     try:
