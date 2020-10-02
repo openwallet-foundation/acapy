@@ -91,13 +91,21 @@ When a webhook is dispatched, the record `topic` is appended as a path component
 
 ## API Standard Behaviour
 
-In general the API's should return:
+The best way to develop a new admin API or protocol is to follow one of the existing protocols, such as the Credential Exchange or Presentation Exchange.
 
- * HTTP 400 (with an error message) for errors on input parameters (user can retry with different parameters)
+The `routes.py` file contains the API definitions - API endpoints and payload schemas (note that these are not the Aries message schemas).
+
+The payload schemas are defined using [marshmallow](https://marshmallow.readthedocs.io/) and will be validated automatically when the API is executed (using a middleware).  (This raises a status `400` HTTP response with an error message if the schema validation fails.)
+
+API endpoints are defined using [aiohttp_apispec](https://github.com/maximdanilchenko/aiohttp-apispec) tags (e.g. `@doc`, `@request_schema`, `@response_schema` etc.) which define the input and output parameters of the endpoint.  API url paths are defined in the `register()` method and added to the swagger page in the `post_process_routes()` method.
+
+The API's should return the folowing HTTP status:
+
+ * HTTP 200 for successful API completion, with appropriate response
+ * HTTP 400 (with an error message) for errors on input parameters (i.e. the user can retry with different parameters and potentially get a successful API call)
  * HTTP 404 if a record is expected and not found (generally for GET requests that fetch a single record)
  * HTTP 500 if there is some other processing error (i.e. won't make any difference what parameters the user tries) with an error message
 
 .. and should not return:
 
  * HTTP 500 with a stack trace (we should handle error conditions with a 400 or 404 response, and catch errors and provide a meaningful error message)
-
