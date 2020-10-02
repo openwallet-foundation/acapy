@@ -9,7 +9,7 @@ from ..message_types import MEDIATION_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
-    ".mediaton_request_handler.MediationRequestHandler"
+    ".mediation_request_handler.MediationRequestHandler"
 )
 
 
