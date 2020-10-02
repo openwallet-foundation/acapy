@@ -344,6 +344,7 @@ class AdminServer(BaseAdminServer):
             AdminSetupError: If there was an error starting the webserver
 
         """
+
         def sort_dict(raw: dict) -> dict:
             """Order (JSON, string keys) dict asciibetically by key, recursively."""
             for (k, v) in raw.items():
