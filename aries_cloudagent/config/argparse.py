@@ -3,8 +3,7 @@
 import abc
 from os import environ
 
-from argparse import ArgumentParser, Namespace
-from argparse import Action as ArgparseAction
+from configargparse import ArgumentParser, Namespace
 from typing import Type
 
 from .error import ArgsParseError
@@ -357,16 +356,6 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
-class LoadFromFile(ArgparseAction):
-    """Utility to load args from a file."""
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        """Load arg values from the specified file."""
-        with values as f:
-            fargs = f.read().split()
-            parser.parse_args(fargs, namespace)
-
-
 @group(CAT_PROVISION, CAT_START)
 class GeneralGroup(ArgumentGroup):
     """General settings."""
@@ -377,8 +366,7 @@ class GeneralGroup(ArgumentGroup):
         """Add general command line arguments to the parser."""
         parser.add_argument(
             "--arg-file",
-            type=open,
-            action=LoadFromFile,
+            is_config_file=True,
             help="Load aca-py arguments from the specified file.",
         )
         parser.add_argument(
