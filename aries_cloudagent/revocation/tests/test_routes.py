@@ -32,10 +32,10 @@ class TestRevocationRoutes(AsyncTestCase):
         }
         self.test_did = "sample-did"
 
-    async def test_validate_cred_rev_rec_and_revoke_query_strings(self):
+    async def test_validate_cred_rev_rec_qs_and_revoke_req(self):
         for req in (
             test_module.CredRevRecordQueryStringSchema(),
-            test_module.RevokeQueryStringSchema(),
+            test_module.RevokeRequestSchema(),
         ):
             req.validate_fields(
                 {
@@ -78,19 +78,20 @@ class TestRevocationRoutes(AsyncTestCase):
                 )
 
     async def test_revoke(self):
-        mock = async_mock.MagicMock(
-            query={
+        request = async_mock.MagicMock()
+        request.app = {
+            "request_context": async_mock.patch.object(
+                aio_web, "BaseRequest", autospec=True
+            ),
+        }
+        request.app["request_context"].settings = {}
+        request.json = async_mock.CoroutineMock(
+            return_value={
                 "rev_reg_id": "rr_id",
                 "cred_rev_id": "23",
                 "publish": "false",
             }
         )
-        mock.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
             test_module, "RevocationManager", autospec=True
@@ -100,23 +101,24 @@ class TestRevocationRoutes(AsyncTestCase):
 
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock()
 
-            await test_module.revoke(mock)
+            await test_module.revoke(request)
 
             mock_response.assert_called_once_with({})
 
     async def test_revoke_by_cred_ex_id(self):
-        mock = async_mock.MagicMock(
-            query={
-                "cred_ex_id": "dummy-cxid",
-                "publish": "false",
-            }
-        )
-        mock.app = {
+        request = async_mock.MagicMock()
+        request.app = {
             "request_context": async_mock.patch.object(
                 aio_web, "BaseRequest", autospec=True
             ),
         }
-        mock.app["request_context"].settings = {}
+        request.app["request_context"].settings = {}
+        request.json = async_mock.CoroutineMock(
+            return_value={
+                "cred_ex_id": "dummy-cxid",
+                "publish": "false",
+            }
+        )
 
         with async_mock.patch.object(
             test_module, "RevocationManager", autospec=True
@@ -126,24 +128,25 @@ class TestRevocationRoutes(AsyncTestCase):
 
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock()
 
-            await test_module.revoke(mock)
+            await test_module.revoke(request)
 
             mock_response.assert_called_once_with({})
 
     async def test_revoke_not_found(self):
-        mock = async_mock.MagicMock(
-            query={
+        request = async_mock.MagicMock()
+        request.app = {
+            "request_context": async_mock.patch.object(
+                aio_web, "BaseRequest", autospec=True
+            ),
+        }
+        request.app["request_context"].settings = {}
+        request.json = async_mock.CoroutineMock(
+            return_value={
                 "rev_reg_id": "rr_id",
                 "cred_rev_id": "23",
                 "publish": "false",
             }
         )
-        mock.app = {
-            "request_context": async_mock.patch.object(
-                aio_web, "BaseRequest", autospec=True
-            ),
-        }
-        mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
             test_module, "RevocationManager", autospec=True
@@ -156,17 +159,17 @@ class TestRevocationRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.revoke(mock)
+                await test_module.revoke(request)
 
     async def test_publish_revocations(self):
-        mock = async_mock.MagicMock()
-        mock.app = {
+        request = async_mock.MagicMock()
+        request.app = {
             "request_context": async_mock.patch.object(
                 aio_web, "BaseRequest", autospec=True
             ),
         }
-        mock.app["request_context"].settings = {}
-        mock.json = async_mock.CoroutineMock()
+        request.app["request_context"].settings = {}
+        request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             test_module, "RevocationManager", autospec=True
@@ -176,21 +179,21 @@ class TestRevocationRoutes(AsyncTestCase):
             pub_pending = async_mock.CoroutineMock()
             mock_mgr.return_value.publish_pending_revocations = pub_pending
 
-            await test_module.publish_revocations(mock)
+            await test_module.publish_revocations(request)
 
             mock_response.assert_called_once_with(
                 {"rrid2crid": pub_pending.return_value}
             )
 
     async def test_publish_revocations_x(self):
-        mock = async_mock.MagicMock()
-        mock.app = {
+        request = async_mock.MagicMock()
+        request.app = {
             "request_context": async_mock.patch.object(
                 aio_web, "BaseRequest", autospec=True
             ),
         }
-        mock.app["request_context"].settings = {}
-        mock.json = async_mock.CoroutineMock()
+        request.app["request_context"].settings = {}
+        request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             test_module, "RevocationManager", autospec=True
@@ -201,17 +204,17 @@ class TestRevocationRoutes(AsyncTestCase):
             mock_mgr.return_value.publish_pending_revocations = pub_pending
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.publish_revocations(mock)
+                await test_module.publish_revocations(request)
 
     async def test_clear_pending_revocations(self):
-        mock = async_mock.MagicMock()
-        mock.app = {
+        request = async_mock.MagicMock()
+        request.app = {
             "request_context": async_mock.patch.object(
                 aio_web, "BaseRequest", autospec=True
             ),
         }
-        mock.app["request_context"].settings = {}
-        mock.json = async_mock.CoroutineMock()
+        request.app["request_context"].settings = {}
+        request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             test_module, "RevocationManager", autospec=True
@@ -221,21 +224,21 @@ class TestRevocationRoutes(AsyncTestCase):
             clear_pending = async_mock.CoroutineMock()
             mock_mgr.return_value.clear_pending_revocations = clear_pending
 
-            await test_module.clear_pending_revocations(mock)
+            await test_module.clear_pending_revocations(request)
 
             mock_response.assert_called_once_with(
                 {"rrid2crid": clear_pending.return_value}
             )
 
     async def test_clear_pending_revocations_x(self):
-        mock = async_mock.MagicMock()
-        mock.app = {
+        request = async_mock.MagicMock()
+        request.app = {
             "request_context": async_mock.patch.object(
                 aio_web, "BaseRequest", autospec=True
             ),
         }
-        mock.app["request_context"].settings = {}
-        mock.json = async_mock.CoroutineMock()
+        request.app["request_context"].settings = {}
+        request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             test_module, "RevocationManager", autospec=True
@@ -248,7 +251,7 @@ class TestRevocationRoutes(AsyncTestCase):
             mock_mgr.return_value.clear_pending_revocations = clear_pending
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.clear_pending_revocations(mock)
+                await test_module.clear_pending_revocations(request)
 
     async def test_create_rev_reg(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
