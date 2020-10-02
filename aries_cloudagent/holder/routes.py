@@ -6,7 +6,8 @@ from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
 from marshmallow import fields
 
-from .base import BaseHolder, HolderError
+from ..ledger.base import BaseLedger
+from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     INDY_CRED_DEF_ID,
@@ -19,6 +20,7 @@ from ..messaging.valid import (
     UUIDFour,
 )
 from ..wallet.error import WalletNotFoundError
+from .base import BaseHolder, HolderError
 
 
 class AttributeMimeTypesResultSchema(OpenAPISchema):
@@ -80,6 +82,12 @@ class CredIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class CredRevokedResultSchema(OpenAPISchema):
+    """Result schema for credential revoked request."""
+
+    revoked = fields.Bool(description="Whether credential is revoked on the ledger")
+
+
 @docs(tags=["credentials"], summary="Fetch a credential from wallet by id")
 @match_info_schema(CredIdMatchInfoSchema())
 @response_schema(CredBriefSchema(), 200)
@@ -106,6 +114,43 @@ async def credentials_get(request: web.BaseRequest):
 
     credential_json = json.loads(credential)
     return web.json_response(credential_json)
+
+
+@docs(tags=["credentials"], summary="Query credential revocation status by id")
+@match_info_schema(CredIdMatchInfoSchema())
+@response_schema(CredRevokedResultSchema(), 200)
+async def credentials_revoked(request: web.BaseRequest):
+    """
+    Request handler for querying revocation status of credential.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential response
+
+    """
+    context = request.app["request_context"]
+
+    credential_id = request.match_info["credential_id"]
+
+    ledger: BaseLedger = await context.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
+
+    async with ledger:
+        try:
+            holder: BaseHolder = await context.inject(BaseHolder)
+            revoked = await holder.credential_revoked(credential_id, ledger)
+        except WalletNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except LedgerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"revoked": revoked})
 
 
 @docs(tags=["credentials"], summary="Get attribute MIME types from wallet")
@@ -200,6 +245,11 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get("/credential/{credential_id}", credentials_get, allow_head=False),
+            web.get(
+                "/credential/revoked/{credential_id}",
+                credentials_revoked,
+                allow_head=False,
+            ),
             web.get(
                 "/credential/mime-types/{credential_id}",
                 credentials_attr_mime_types_get,

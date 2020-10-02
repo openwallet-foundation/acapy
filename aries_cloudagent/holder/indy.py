@@ -11,10 +11,10 @@ from indy.error import ErrorCode, IndyError
 
 from ..indy import create_tails_reader
 from ..indy.error import IndyErrorHandler
+from ..ledger.base import BaseLedger
 from ..storage.indy import IndyStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord
-
 from ..wallet.error import WalletNotFoundError
 
 from .base import BaseHolder, HolderError
@@ -287,6 +287,26 @@ class IndyHolder(BaseHolder):
                 ) from err
 
         return credential_json
+
+    async def credential_revoked(self, credential_id: str, ledger: BaseLedger) -> bool:
+        """
+        Check ledger for revocation status of credential by cred id.
+
+        Args:
+            credential_id: Credential id to check
+            ledger: ledger to open and query
+
+        """
+        cred = json.loads(await self.get_credential(credential_id))
+        rev_reg_id = cred["rev_reg_id"]
+
+        if rev_reg_id:
+            cred_rev_id = int(cred["cred_rev_id"])
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_reg_id)
+
+            return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
+        else:
+            return False
 
     async def delete_credential(self, credential_id: str):
         """
