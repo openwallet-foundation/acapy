@@ -68,7 +68,10 @@ class TestArgParse(AsyncTestCase):
             exit_parser.assert_called_once()
 
         result = parser.parse_args(
-            ["--arg-file", "./aries_cloudagent/config/tests/test-general-args.cfg",]
+            [
+                "--arg-file",
+                "./aries_cloudagent/config/tests/test-general-args.cfg",
+            ]
         )
 
         assert result.external_plugins == ["foo"]
