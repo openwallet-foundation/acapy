@@ -19,11 +19,15 @@ class TestProvision(AsyncTestCase):
         test_seed = "testseed000000000000000000000001"
         command.execute(
             [
-                "--wallet-type", "indy",
-                "--wallet-name", "test_wallet",
-                "--wallet-key", "key",
-                "--seed", test_seed,
-                "--no-ledger"
+                "--wallet-type",
+                "indy",
+                "--wallet-name",
+                "test_wallet",
+                "--wallet-key",
+                "key",
+                "--seed",
+                test_seed,
+                "--no-ledger",
             ]
         )
 
