@@ -4,6 +4,7 @@ import abc
 from os import environ
 
 from argparse import ArgumentParser, Namespace
+from argparse import Action as ArgparseAction
 from typing import Type
 
 from .error import ArgsParseError
@@ -69,8 +70,12 @@ def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
 
     def get_settings(args: Namespace):
         settings = {}
-        for group in group_inst:
-            settings.update(group.get_settings(args))
+        try:
+            for group in group_inst:
+                settings.update(group.get_settings(args))
+        except ArgsParseError as e:
+            parser.print_help()
+            raise e
         return settings
 
     return get_settings
@@ -352,6 +357,16 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
+class LoadFromFile(ArgparseAction):
+    """Utility to load args from a file."""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        """Load arg values from the specified file."""
+        with values as f:
+            fargs = f.read().split()
+            parser.parse_args(fargs, namespace)
+
+
 @group(CAT_PROVISION, CAT_START)
 class GeneralGroup(ArgumentGroup):
     """General settings."""
@@ -360,6 +375,12 @@ class GeneralGroup(ArgumentGroup):
 
     def add_arguments(self, parser: ArgumentParser):
         """Add general command line arguments to the parser."""
+        parser.add_argument(
+            "--arg-file",
+            type=open,
+            action=LoadFromFile,
+            help="Load aca-py arguments from the specified file.",
+        )
         parser.add_argument(
             "--plugin",
             dest="external_plugins",
@@ -468,9 +489,9 @@ class LedgerGroup(ArgumentGroup):
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
             else:
                 raise ArgsParseError(
-                        "One of --genesis-url --genesis-file or --genesis-transactions "
-                        + "must be specified (unless --no-ledger is specified to "
-                        + "explicitely configure aca-py to run with no ledger)."
+                    "One of --genesis-url --genesis-file or --genesis-transactions "
+                    + "must be specified (unless --no-ledger is specified to "
+                    + "explicitely configure aca-py to run with no ledger)."
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
@@ -568,9 +589,7 @@ class ProtocolGroup(ArgumentGroup):
             help="Write timing information to a given log file.",
         )
         parser.add_argument(
-            "--trace",
-            action="store_true",
-            help="Generate tracing events.",
+            "--trace", action="store_true", help="Generate tracing events.",
         )
         parser.add_argument(
             "--trace-target",
@@ -677,7 +696,6 @@ class TransportGroup(ArgumentGroup):
             "--endpoint",
             type=str,
             nargs="+",
-            required=True,
             metavar="<endpoint>",
             help="Specifies the endpoints to put into DIDDocs\
             to inform other agents of where they should send messages destined\
@@ -702,7 +720,6 @@ class TransportGroup(ArgumentGroup):
             type=str,
             action="append",
             nargs=3,
-            required=True,
             metavar=("<module>", "<host>", "<port>"),
             help="REQUIRED. Defines the inbound transport(s) on which the agent\
             listens for receiving messages from other agents. This parameter can\
@@ -717,7 +734,6 @@ class TransportGroup(ArgumentGroup):
             dest="outbound_transports",
             type=str,
             action="append",
-            required=True,
             metavar="<module>",
             help="REQUIRED. Defines the outbound transport(s) on which the agent\
             will send outgoing messages to other agents. This parameter can be passed\
@@ -758,13 +774,21 @@ class TransportGroup(ArgumentGroup):
     def get_settings(self, args: Namespace):
         """Extract transport settings."""
         settings = {}
-        settings["transport.inbound_configs"] = args.inbound_transports
-        settings["transport.outbound_configs"] = args.outbound_transports
+        if args.inbound_transports:
+            settings["transport.inbound_configs"] = args.inbound_transports
+        else:
+            raise ArgsParseError("-it/--inbound-transport is required")
+        if args.outbound_transports:
+            settings["transport.outbound_configs"] = args.outbound_transports
+        else:
+            raise ArgsParseError("-ot/--outbound-transport is required")
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
         if args.endpoint:
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
+        else:
+            raise ArgsParseError("-e/--endpoint is required")
         if args.profile_endpoint:
             settings["profile_endpoint"] = args.profile_endpoint
 
@@ -905,8 +929,10 @@ class WalletGroup(ArgumentGroup):
                     + " for indy wallets"
                 )
             # postgres storage requires additional configuration
-            if ("wallet.storage_config" in settings and
-                    settings["wallet.storage_config"] == "postgres_storage"):
+            if (
+                "wallet.storage_config" in settings
+                and settings["wallet.storage_config"] == "postgres_storage"
+            ):
                 if not args.wallet_storage_config or not args.wallet_storage_creds:
                     raise ArgsParseError(
                         "Parameters --wallet-storage-config and --wallet-storage-creds"

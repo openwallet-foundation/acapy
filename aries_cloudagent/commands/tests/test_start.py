@@ -1,17 +1,14 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from ...config.error import ArgsParseError
 from .. import start as command
 
 
 class TestStart(AsyncTestCase):
     def test_bad_args(self):
-        with async_mock.patch.object(
-            command.ArgumentParser, "print_usage"
-        ) as print_usage:
-            with self.assertRaises(SystemExit):
-                command.execute([])
-            print_usage.assert_called_once()
+        with self.assertRaises(ArgsParseError):
+            command.execute([])
 
         with self.assertRaises(SystemExit):
             command.execute(["bad"])
@@ -26,10 +23,16 @@ class TestStart(AsyncTestCase):
         ) as shutdown_app:
             command.execute(
                 [
-                    "-it", "http", "0.0.0.0", "80",
-                    "-ot", "http",
-                    "--endpoint", "0.0.0.0", "80",
-                    "--no-ledger"
+                    "-it",
+                    "http",
+                    "0.0.0.0",
+                    "80",
+                    "-ot",
+                    "http",
+                    "--endpoint",
+                    "0.0.0.0",
+                    "80",
+                    "--no-ledger",
                 ]
             )
             start_app.assert_called_once()
