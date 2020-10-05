@@ -830,6 +830,7 @@ class WalletGroup(ArgumentGroup):
             "--wallet-rekey",
             type=str,
             metavar="<wallet-rekey>",
+            env_var="ACAPY_WALLET_REKEY",
             help="Specifies a new master key value to which to rotate and to\
             open the wallet next time.",
         )
@@ -837,7 +838,6 @@ class WalletGroup(ArgumentGroup):
             "--wallet-name",
             type=str,
             metavar="<wallet-name>",
-            env_var="ACAPY_WALLET_REKEY",
             help="Specifies the wallet name to be used by the agent.\
             This is useful if your deployment has multiple wallets.",
         )
