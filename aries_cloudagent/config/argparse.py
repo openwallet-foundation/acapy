@@ -100,6 +100,7 @@ class AdminGroup(ArgumentGroup):
             "--admin-api-key",
             type=str,
             metavar="<api-key>",
+            env_var="ACAPY_ADMIN_API_KEY",
             help="Protect all admin endpoints with the provided API key.\
             API clients (e.g. the controller) must pass the key in the HTTP\
             header using 'X-API-Key: <api key>'. Either this parameter or the\
@@ -131,6 +132,7 @@ class AdminGroup(ArgumentGroup):
             "--webhook-url",
             action="append",
             metavar="<url>",
+            env_var="ACAPY_WEBHOOK_URL",
             help="Send webhooks containing internal state changes to the specified\
             URL. This is useful for a controller to monitor agent events and respond\
             to those events using the admin API. If not specified, webhooks are not\
@@ -804,6 +806,7 @@ class WalletGroup(ArgumentGroup):
             "--seed",
             type=str,
             metavar="<wallet-seed>",
+            env_var="ACAPY_WALLET_SEED",
             help="Specifies the seed to use for the creation of a public\
             DID for the agent to use with a Hyperledger Indy ledger, or a local\
             ('--wallet-local-did') DID. If public, the DID must already exist\
@@ -820,6 +823,7 @@ class WalletGroup(ArgumentGroup):
             "--wallet-key",
             type=str,
             metavar="<wallet-key>",
+            env_var="ACAPY_WALLET_KEY",
             help="Specifies the master key value to use to open the wallet.",
         )
         parser.add_argument(
@@ -833,6 +837,7 @@ class WalletGroup(ArgumentGroup):
             "--wallet-name",
             type=str,
             metavar="<wallet-name>",
+            env_var="ACAPY_WALLET_REKEY",
             help="Specifies the wallet name to be used by the agent.\
             This is useful if your deployment has multiple wallets.",
         )
@@ -859,6 +864,7 @@ class WalletGroup(ArgumentGroup):
             "--wallet-storage-config",
             type=str,
             metavar="<storage-config>",
+            env_var="ACAPY_WALLET_STORAGE_CONFIG",
             help='Specifies the storage configuration to use for the wallet.\
             This is required if you are for using \'postgres_storage\' wallet\
             storage type. For example, \'{"url":"localhost:5432",\
@@ -870,6 +876,7 @@ class WalletGroup(ArgumentGroup):
             "--wallet-storage-creds",
             type=str,
             metavar="<storage-creds>",
+            env_var="ACAPY_WALLET_STORAGE_CREDS",
             help='Specifies the storage credentials to use for the wallet.\
             This is required if you are for using \'postgres_storage\' wallet\
             For example, \'{"account":"postgres","password":\
