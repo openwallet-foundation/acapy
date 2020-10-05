@@ -18,6 +18,7 @@ from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config, BaseWallet
+from ..connections.models.conn23rec import Conn23Record
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
@@ -190,13 +191,13 @@ class Conductor:
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
-            mgr = ConnectionManager(self.context)
+            mgr = ConnectionManager(self.context)  # TODO flip to conn23mgr
             their_endpoint = context.settings["debug.test_suite_endpoint"]
             test_conn = await mgr.create_static_connection(
                 my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
                 their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
                 their_endpoint=their_endpoint,
-                their_role="tester",
+                their_role=Conn23.ROLE_REQUESTER,
                 alias="test-suite",
             )
             print("Created static connection for test suite")
@@ -208,9 +209,9 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                mgr = ConnectionManager(self.context)
+                mgr = ConnectionManager(self.context)  # TODO flip to conn23mgr
                 _connection, invitation = await mgr.create_invitation(
-                    their_role=context.settings.get("debug.invite_role"),
+                    their_role=Conn23Record.ROLE_REQUESTER,
                     my_label=context.settings.get("debug.invite_label"),
                     multi_use=context.settings.get("debug.invite_multi_use", False),
                     public=context.settings.get("debug.invite_public", False),
