@@ -16,7 +16,7 @@ with open(os.path.abspath("./README.md"), "r") as fh:
 def parse_requirements(filename):
     """Load requirements from a pip requirements file."""
     lineiter = (line.strip() for line in open(filename))
-    return [line for line in lineiter if line and not line.startswith("#")]
+    return [line for line in lineiter if line and not line.startswith("#") and not line.startswith("git+")]
 
 
 if __name__ == "__main__":
