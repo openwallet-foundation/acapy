@@ -19,7 +19,7 @@ from ...storage.base import BaseStorage
 from ...tails.base import BaseTailsServer
 
 from ..models.openapi import OpenAPISchema
-from ..valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, INDY_VERSION
+from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID, INDY_VERSION
 
 from ...revocation.error import RevocationError, RevocationNotSupportedError
 from ...revocation.indy import IndyRevocation
@@ -36,7 +36,9 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     support_revocation = fields.Boolean(
         required=False, description="Revocation supported flag"
     )
-    revocation_registry_size = fields.Int(required=False)
+    revocation_registry_size = fields.Int(
+        description="Revocation registry size", required=False, **INDY_REV_REG_SIZE
+    )
     tag = fields.Str(
         required=False,
         description="Credential definition identifier tag",

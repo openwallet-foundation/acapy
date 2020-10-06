@@ -1,7 +1,7 @@
 """Command line option parsing."""
 
 import abc
-import os
+from os import environ
 
 from argparse import ArgumentParser, Namespace
 from typing import Type
@@ -159,7 +159,7 @@ class AdminGroup(ArgumentGroup):
             if args.no_receive_invites:
                 settings["admin.no_receive_invites"] = True
             hook_urls = list(args.webhook_url) if args.webhook_url else []
-            hook_url = os.environ.get("WEBHOOK_URL")
+            hook_url = environ.get("WEBHOOK_URL")
             if hook_url:
                 hook_urls.append(hook_url)
             settings["admin.webhook_urls"] = hook_urls
@@ -613,6 +613,12 @@ class ProtocolGroup(ArgumentGroup):
             'https://didcomm.org/' instead of (default) prefix\
             'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'.",
         )
+        parser.add_argument(
+            "--exch-use-unencrypted-tags",
+            action="store_true",
+            help="Store tags for exchange protocols (credential and presentation)\
+            using unencrypted rather than encrypted tags",
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
@@ -663,6 +669,9 @@ class ProtocolGroup(ArgumentGroup):
             settings["preserve_exchange_records"] = True
         if args.emit_new_didcomm_prefix:
             settings["emit_new_didcomm_prefix"] = True
+        if args.exch_use_unencrypted_tags:
+            settings["exch_use_unencrypted_tags"] = True
+            environ["EXCH_UNENCRYPTED_TAGS"] = "True"
         return settings
 
 

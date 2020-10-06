@@ -191,7 +191,7 @@ async def main(
                 version,
                 ["name", "date", "degree", "age", "timestamp"],
                 support_revocation=revocation,
-                revocation_registry_size=TAILS_FILE_COUNT,
+                revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
             )
 
         # TODO add an additional credential for Student ID
@@ -338,28 +338,27 @@ async def main(
             elif option == "4" and revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
                 cred_rev_id = (await prompt("Enter credential revocation ID: ")).strip()
-                publish = json.dumps(
-                    (await prompt("Publish now? [Y/N]: ", default="N")).strip()
-                    in ("yY")
-                )
+                publish = (
+                    await prompt("Publish now? [Y/N]: ", default="N")
+                ).strip() in "yY"
                 try:
                     await agent.admin_POST(
-                        "/issue-credential/revoke"
-                        f"?publish={publish}"
-                        f"&rev_reg_id={rev_reg_id}"
-                        f"&cred_rev_id={cred_rev_id}"
+                        "/revocation/revoke",
+                        {
+                            "rev_reg_id": rev_reg_id,
+                            "cred_rev_id": cred_rev_id,
+                            "publish": publish,
+                        },
                     )
                 except ClientError:
                     pass
             elif option == "5" and revocation:
                 try:
-                    resp = await agent.admin_POST(
-                        "/issue-credential/publish-revocations", {}
-                    )
+                    resp = await agent.admin_POST("/revocation/publish-revocations", {})
                     agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["rrid2crid"]),
-                            "y" if len(resp) == 1 else "ies",
+                            "y" if len(resp["rrid2crid"]) == 1 else "ies",
                             json.dumps([k for k in resp["rrid2crid"]], indent=4),
                         )
                     )

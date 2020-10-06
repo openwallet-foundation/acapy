@@ -277,7 +277,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     "0_score_GE_uuid": {
                         "name": "score",
                         "p_type": ">=",
-                        "p_value": "1000000",
+                        "p_value": 1000000,
                         "restrictions": [
                             {
                                 "cred_def_id": CD_ID,
@@ -341,7 +341,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     "0_score_GE_uuid": {
                         "name": "score",
                         "p_type": ">=",
-                        "p_value": "1000000",
+                        "p_value": 1000000,
                         "restrictions": [
                             {
                                 "cred_def_id": CD_ID,
@@ -411,7 +411,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                     "0_score_GE_uuid": {
                         "name": "score",
                         "p_type": ">=",
-                        "p_value": "1000000",
+                        "p_value": 1000000,
                         "restrictions": [
                             {
                                 "cred_def_id": CD_ID,
