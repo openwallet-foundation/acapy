@@ -9,24 +9,14 @@ PERFORM = f"action-menu/1.0/perform"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.actionmenu.v1_0"
 
-MESSAGE_TYPES = {
-    **{
-        pfx.qualify(MENU): f"{PROTOCOL_PACKAGE}.messages.menu.Menu"
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(MENU_REQUEST): (
-            f"{PROTOCOL_PACKAGE}.messages.menu_request.MenuRequest"
-        )
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(PERFORM): f"{PROTOCOL_PACKAGE}.messages.perform.Perform"
-        for pfx in DIDCommPrefix
-    },
-}
+MESSAGE_TYPES = DIDCommPrefix.qualify_all(
+    {
+        MENU: f"{PROTOCOL_PACKAGE}.messages.menu.Menu",
+        MENU_REQUEST: f"{PROTOCOL_PACKAGE}.messages.menu_request.MenuRequest",
+        PERFORM: f"{PROTOCOL_PACKAGE}.messages.perform.Perform",
+    }
+)
 
-CONTROLLERS = {
-    pfx.qualify("action-menu/1.0"): f"{PROTOCOL_PACKAGE}.controller.Controller"
-    for pfx in DIDCommPrefix
-}
+CONTROLLERS = DIDCommPrefix.qualify_all(
+    {"action-menu/1.0": f"{PROTOCOL_PACKAGE}.controller.Controller"}
+)

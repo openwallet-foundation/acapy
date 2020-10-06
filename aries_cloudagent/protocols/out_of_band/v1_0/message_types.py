@@ -12,7 +12,6 @@ INVITATION = f"out-of-band/1.0/invitation"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.out_of_band.v1_0"
 
-MESSAGE_TYPES = {
-    pfx.qualify(INVITATION): f"{PROTOCOL_PACKAGE}.messages.invitation.Invitation"
-    for pfx in DIDCommPrefix
-}
+MESSAGE_TYPES = DIDCommPrefix.qualify_all(
+    {INVITATION: f"{PROTOCOL_PACKAGE}.messages.invitation.Invitation"}
+)

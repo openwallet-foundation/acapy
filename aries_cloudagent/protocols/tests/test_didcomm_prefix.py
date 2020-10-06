@@ -6,7 +6,7 @@ from ..didcomm_prefix import DIDCommPrefix
 
 
 class TestDIDCommPrefix(AsyncTestCase):
-    async def test_didcomm_prefix(self):
+    def test_didcomm_prefix(self):
         DIDCommPrefix.set({})
         assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.OLD.value
 
@@ -31,3 +31,17 @@ class TestDIDCommPrefix(AsyncTestCase):
         assert DIDCommPrefix.unqualify(new_q_hello) == "hello"
         assert DIDCommPrefix.unqualify("already unqualified") == "already unqualified"
         assert DIDCommPrefix.unqualify(None) is None
+
+        qualified = "http://custom-prefix/message/type/1.0"
+        assert DIDCommPrefix.qualify_current(qualified) == qualified
+        assert DIDCommPrefix.NEW.qualify(qualified) == qualified
+        assert DIDCommPrefix.unqualify(qualified) == qualified
+
+    def test_didcomm_qualify_all(self):
+        mtype = "a/message/1.0"
+        mcls = "protocol.Cls"
+        messages = {mtype: mcls}
+        assert DIDCommPrefix.qualify_all(messages) == {
+            DIDCommPrefix.NEW.qualify(mtype): mcls,
+            DIDCommPrefix.OLD.qualify(mtype): mcls,
+        }
