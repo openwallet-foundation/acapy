@@ -411,12 +411,12 @@ class GeneralGroup(ArgumentGroup):
             "--storage-type",
             type=str,
             metavar="<storage-type>",
-            default="basic",
-            env_var="ACAPY_AUTO_STORAGE_TYPE",
+            env_var="ACAPY_STORAGE_TYPE",
             help="Specifies the type of storage provider to use for the internal\
             storage engine. This storage interface is used to store internal state.\
             Supported internal storage types are 'basic' (memory)\
-            and 'indy'.  The default (if not specified) is 'basic'.",
+            and 'indy'.  The default (if not specified) is 'indy' if the wallet type\
+            is set to 'indy', otherwise 'basic'.",
         )
         parser.add_argument(
             "--read-only-ledger",
