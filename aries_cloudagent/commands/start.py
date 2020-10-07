@@ -5,7 +5,7 @@ import functools
 import logging
 import os
 import signal
-from argparse import ArgumentParser
+from configargparse import ArgumentParser
 from typing import Coroutine, Sequence
 
 try:
