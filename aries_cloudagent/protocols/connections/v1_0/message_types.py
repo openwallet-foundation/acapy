@@ -18,13 +18,13 @@ PROTOCOL_PACKAGE = "aries_cloudagent.protocols.connections.v1_0"
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
         CONNECTION_INVITATION: (
-            f"{PROTOCOL_PACKAGE}.messages.connection_invitation.ConnectionInvitation",
+            f"{PROTOCOL_PACKAGE}.messages.connection_invitation.ConnectionInvitation"
         ),
         CONNECTION_REQUEST: (
-            f"{PROTOCOL_PACKAGE}.messages.connection_request.ConnectionRequest",
+            f"{PROTOCOL_PACKAGE}.messages.connection_request.ConnectionRequest"
         ),
         CONNECTION_RESPONSE: (
-            f"{PROTOCOL_PACKAGE}.messages.connection_response.ConnectionResponse",
+            f"{PROTOCOL_PACKAGE}.messages.connection_response.ConnectionResponse"
         ),
         PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
     }
