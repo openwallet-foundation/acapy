@@ -419,6 +419,30 @@ class GeneralGroup(ArgumentGroup):
             is set to 'indy', otherwise 'basic'.",
         )
         parser.add_argument(
+            "-e",
+            "--endpoint",
+            type=str,
+            nargs="+",
+            metavar="<endpoint>",
+            env_var="ACAPY_ENDPOINT",
+            help="Specifies the endpoints to put into DIDDocs\
+            to inform other agents of where they should send messages destined\
+            for this agent. Each endpoint could be one of the specified inbound\
+            transports for this agent, or the endpoint could be that of\
+            another agent (e.g. 'https://example.com/agent-endpoint') if the\
+            routing of messages to this agent by a mediator is configured.\
+            The first endpoint specified will be used in invitations.\
+            The endpoints are used in the formation of a connection\
+            with another agent.",
+        )
+        parser.add_argument(
+            "--profile-endpoint",
+            type=str,
+            metavar="<profile_endpoint>",
+            env_var="ACAPY_PROFILE_ENDPOINT",
+            help="Specifies the profile endpoint for the (public) DID.",
+        )
+        parser.add_argument(
             "--read-only-ledger",
             action="store_true",
             env_var="ACAPY_READ_ONLY_LEDGER",
@@ -440,6 +464,15 @@ class GeneralGroup(ArgumentGroup):
             settings["external_plugins"] = args.external_plugins
         if args.storage_type:
             settings["storage_type"] = args.storage_type
+
+        if args.endpoint:
+            settings["default_endpoint"] = args.endpoint[0]
+            settings["additional_endpoints"] = args.endpoint[1:]
+        else:
+            raise ArgsParseError("-e/--endpoint is required")
+        if args.profile_endpoint:
+            settings["profile_endpoint"] = args.profile_endpoint
+
         if args.read_only_ledger:
             settings["read_only_ledger"] = True
         if args.tails_server_base_url:
@@ -734,30 +767,6 @@ class TransportGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add transport-specific command line arguments to the parser."""
         parser.add_argument(
-            "-e",
-            "--endpoint",
-            type=str,
-            nargs="+",
-            metavar="<endpoint>",
-            env_var="ACAPY_ENDPOINT",
-            help="Specifies the endpoints to put into DIDDocs\
-            to inform other agents of where they should send messages destined\
-            for this agent. Each endpoint could be one of the specified inbound\
-            transports for this agent, or the endpoint could be that of\
-            another agent (e.g. 'https://example.com/agent-endpoint') if the\
-            routing of messages to this agent by a mediator is configured.\
-            The first endpoint specified will be used in invitations.\
-            The endpoints are used in the formation of a connection\
-            with another agent.",
-        )
-        parser.add_argument(
-            "--profile-endpoint",
-            type=str,
-            metavar="<profile_endpoint>",
-            env_var="ACAPY_PROFILE_ENDPOINT",
-            help="Specifies the profile endpoint for the (public) DID.",
-        )
-        parser.add_argument(
             "-it",
             "--inbound-transport",
             dest="inbound_transports",
@@ -833,14 +842,6 @@ class TransportGroup(ArgumentGroup):
         else:
             raise ArgsParseError("-ot/--outbound-transport is required")
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
-
-        if args.endpoint:
-            settings["default_endpoint"] = args.endpoint[0]
-            settings["additional_endpoints"] = args.endpoint[1:]
-        else:
-            raise ArgsParseError("-e/--endpoint is required")
-        if args.profile_endpoint:
-            settings["profile_endpoint"] = args.profile_endpoint
 
         if args.label:
             settings["default_label"] = args.label

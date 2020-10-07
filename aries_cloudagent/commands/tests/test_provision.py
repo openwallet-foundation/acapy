@@ -28,6 +28,8 @@ class TestProvision(AsyncTestCase):
                 "--seed",
                 test_seed,
                 "--no-ledger",
+                "--endpoint",
+                "test_endpoint",
             ]
         )
 
