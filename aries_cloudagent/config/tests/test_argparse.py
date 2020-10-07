@@ -1,5 +1,5 @@
 import itertools
-from argparse import ArgumentParser, ArgumentTypeError
+from configargparse import ArgumentParser, ArgumentTypeError
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
@@ -29,7 +29,7 @@ class TestArgParse(AsyncTestCase):
         group.add_arguments(parser)
 
         with async_mock.patch.object(parser, "exit") as exit_parser:
-            parser.parse_args([])
+            parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
         result = parser.parse_args(
@@ -42,6 +42,8 @@ class TestArgParse(AsyncTestCase):
                 "http",
                 "--max-outbound-retry",
                 "5",
+                "--endpoint",
+                "http://0.0.0.0:80",
             ]
         )
 
@@ -53,6 +55,32 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("transport.inbound_configs") == [["http", "0.0.0.0", "80"]]
         assert settings.get("transport.outbound_configs") == ["http"]
         assert result.max_outbound_retry == 5
+
+    async def test_transport_settings_file(self):
+        """Test file argument parsing."""
+
+        parser = ArgumentParser()
+        group = argparse.GeneralGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--arg-file",
+                "./aries_cloudagent/config/tests/test-general-args.cfg",
+            ]
+        )
+
+        assert result.external_plugins == ["foo"]
+        assert result.storage_type == "bar"
+
+        settings = group.get_settings(result)
+
+        assert settings.get("external_plugins") == ["foo"]
+        assert settings.get("storage_type") == "bar"
 
     def test_bytesize(self):
         bs = ByteSize()
