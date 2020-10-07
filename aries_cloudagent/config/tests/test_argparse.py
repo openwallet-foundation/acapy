@@ -42,8 +42,6 @@ class TestArgParse(AsyncTestCase):
                 "http",
                 "--max-outbound-retry",
                 "5",
-                "--endpoint",
-                "http://0.0.0.0:80",
             ]
         )
 
