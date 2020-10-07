@@ -7,10 +7,11 @@ from asynctest import mock as async_mock
 from aiohttp.web import HTTPForbidden
 
 from ...config.injection_context import InjectionContext
+from ...ledger.base import BaseLedger
+from ...ledger.error import LedgerError
 from ...wallet.base import BaseWallet
 
 from .. import routes as test_module
-from ..base import BaseHolder
 
 
 class TestHolderRoutes(AsyncTestCase):
@@ -20,7 +21,6 @@ class TestHolderRoutes(AsyncTestCase):
         self.wallet = async_mock.create_autospec(BaseWallet)
         self.context.injector.bind_instance(BaseWallet, self.wallet)
 
-        self.holder = async_mock.create_autospec(BaseHolder)
         self.app = {
             "request_context": self.context,
         }
@@ -58,6 +58,80 @@ class TestHolderRoutes(AsyncTestCase):
         )
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.credentials_get(request)
+
+    async def test_credentials_revoked(self):
+        request = async_mock.MagicMock(
+            app=self.app, match_info={"credential_id": "dummy"}
+        )
+        ledger = async_mock.create_autospec(BaseLedger)
+
+        request.app["request_context"].inject = async_mock.CoroutineMock(
+            side_effect=[
+                ledger,
+                async_mock.MagicMock(
+                    credential_revoked=async_mock.CoroutineMock(return_value=False)
+                ),
+            ]
+        )
+
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            result = await test_module.credentials_revoked(request)
+            json_response.assert_called_once_with({"revoked": False})
+            assert result is json_response.return_value
+
+    async def test_credentials_revoked_no_ledger(self):
+        request = async_mock.MagicMock(
+            app=self.app, match_info={"credential_id": "dummy"}
+        )
+
+        request.app["request_context"].inject = async_mock.CoroutineMock(
+            return_value=None
+        )
+
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.credentials_revoked(request)
+
+    async def test_credentials_not_found(self):
+        request = async_mock.MagicMock(
+            app=self.app, match_info={"credential_id": "dummy"}
+        )
+        ledger = async_mock.create_autospec(BaseLedger)
+
+        request.app["request_context"].inject = async_mock.CoroutineMock(
+            side_effect=[
+                ledger,
+                async_mock.MagicMock(
+                    credential_revoked=async_mock.CoroutineMock(
+                        side_effect=test_module.WalletNotFoundError("no such cred")
+                    )
+                ),
+            ]
+        )
+
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.credentials_revoked(request)
+
+    async def test_credentials_x_ledger(self):
+        request = async_mock.MagicMock(
+            app=self.app, match_info={"credential_id": "dummy"}
+        )
+        ledger = async_mock.create_autospec(BaseLedger)
+
+        request.app["request_context"].inject = async_mock.CoroutineMock(
+            side_effect=[
+                ledger,
+                async_mock.MagicMock(
+                    credential_revoked=async_mock.CoroutineMock(
+                        side_effect=test_module.LedgerError("down for maintenance")
+                    )
+                ),
+            ]
+        )
+
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.credentials_revoked(request)
 
     async def test_attribute_mime_types_get(self):
         request = async_mock.MagicMock(
