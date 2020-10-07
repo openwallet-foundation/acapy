@@ -11,7 +11,7 @@ PROTOCOL_PACKAGE = "aries_cloudagent.protocols.introduction.v0_1"
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
         INVITATION_REQUEST: (
-            f"{PROTOCOL_PACKAGE}.messages.invitation_request.InvitationRequest",
+            f"{PROTOCOL_PACKAGE}.messages.invitation_request.InvitationRequest"
         ),
         INVITATION: f"{PROTOCOL_PACKAGE}.messages.invitation.Invitation",
         FORWARD_INVITATION: (
