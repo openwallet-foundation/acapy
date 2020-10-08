@@ -40,7 +40,7 @@ def init_argument_parser(parser: ArgumentParser):
 
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
-    parser = ArgumentParser()
+    parser = arg.create_argument_parser()
     parser.prog += " start"
     get_settings = init_argument_parser(parser)
     args = parser.parse_args(argv)
