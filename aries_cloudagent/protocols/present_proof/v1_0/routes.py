@@ -1093,7 +1093,7 @@ async def register(app: web.Application):
                 "/present-proof/records/{pres_ex_id}/verify-presentation",
                 presentation_exchange_verify_presentation,
             ),
-            web.post(
+            web.delete(
                 "/present-proof/records/{pres_ex_id}/remove",
                 presentation_exchange_remove,
             ),

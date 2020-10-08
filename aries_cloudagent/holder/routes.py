@@ -255,7 +255,7 @@ async def register(app: web.Application):
                 credentials_attr_mime_types_get,
                 allow_head=False,
             ),
-            web.post("/credential/{credential_id}/remove", credentials_remove),
+            web.delete("/credential/{credential_id}/remove", credentials_remove),
             web.get("/credentials", credentials_list, allow_head=False),
         ]
     )
