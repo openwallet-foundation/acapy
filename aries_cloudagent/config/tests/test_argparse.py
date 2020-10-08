@@ -1,5 +1,5 @@
 import itertools
-from configargparse import ArgumentParser, ArgumentTypeError
+from configargparse import ArgumentParser, ArgumentTypeError, YAMLConfigFileParser
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
@@ -10,7 +10,7 @@ from ..util import ByteSize
 class TestArgParse(AsyncTestCase):
     async def test_groups(self):
         """Test optional argument parsing."""
-        parser = ArgumentParser()
+        parser = argparse.create_argument_parser()
 
         groups = (
             g
@@ -24,7 +24,7 @@ class TestArgParse(AsyncTestCase):
     async def test_transport_settings(self):
         """Test required argument parsing."""
 
-        parser = ArgumentParser()
+        parser = argparse.create_argument_parser()
         group = argparse.TransportGroup()
         group.add_arguments(parser)
 
@@ -54,10 +54,10 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("transport.outbound_configs") == ["http"]
         assert result.max_outbound_retry == 5
 
-    async def test_transport_settings_file(self):
+    async def test_general_settings_file(self):
         """Test file argument parsing."""
 
-        parser = ArgumentParser()
+        parser = argparse.create_argument_parser()
         group = argparse.GeneralGroup()
         group.add_arguments(parser)
 
@@ -68,7 +68,7 @@ class TestArgParse(AsyncTestCase):
         result = parser.parse_args(
             [
                 "--arg-file",
-                "./aries_cloudagent/config/tests/test-general-args.cfg",
+                "./aries_cloudagent/config/tests/test-general-args.yaml",
             ]
         )
 
@@ -79,6 +79,27 @@ class TestArgParse(AsyncTestCase):
 
         assert settings.get("external_plugins") == ["foo"]
         assert settings.get("storage_type") == "bar"
+
+    async def test_transport_settings_file(self):
+        """Test file argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.GeneralGroup()
+        group.add_arguments(parser)
+        group = argparse.TransportGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--arg-file",
+                "./aries_cloudagent/config/tests/test-transport-args.yaml",
+            ]
+        )
+        # no asserts, just testing that the parser doesn't fail
 
     def test_bytesize(self):
         bs = ByteSize()
