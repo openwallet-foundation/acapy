@@ -98,6 +98,8 @@ For revocation to function, we need another component running that is used to st
 
 If you are not running with revocation enabled you can skip this step.
 
+#### Running locally in a bash shell?
+
 Open a new bash shell, and in a project directory, run:
 
 ```bash
@@ -118,7 +120,15 @@ ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel"
 
 Note the server name in the `url=https://c5789aa0.ngrok.io` parameter (`https://c5789aa0.ngrok.io`) - this is the external url for your tails server. Make sure you use the `https` url!
 
+#### Running in Play with Docker?
+
+Run the same steps on _PWD_ as you would run locally (see above).  Open a new shell (click on "ADD NEW INSTANCE") to run the tails server.
+
+Note that with _Play with Docker_ it can be challenging to capture the information you need from the log file as it scrolls by, you can try leaving off the `--events` option when you run the Faber agent to reduce the quantity of information logged to the screen.
+
 ### Run `faber` With Extra Parameters
+
+#### Running locally in a bash shell?
 
 If you are running in a _local bash shell_, navigate to [The demo direcory](/demo) and run:
 
@@ -128,15 +138,21 @@ TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_d
 
 The `TAILS_NETWORK` parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).
 
+#### Running in Play with Docker?
+
 If you are running in _Play with Docker_, navigate to [The demo direcory](/demo) and run:
 
 ```bash
-PUBLIC_TAILS_URL=https://def456.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
+
+*Note - you may want to leave off the `--events` option when you run the Faber agent.
 
 The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
 
 Note that you _must_ use the `https` url for the tails server endpoint.
+
+#### Waiting for the Faber agent to start ...
 
 The `Preparing agent image...` step on the first run takes a bit of time, so while we wait, let's look at the details of the commands. Running Faber is similar to the instructions in the [Aries OpenAPI Demo](./AriesOpenAPIDemo.md) "Play with Docker" section, except:
 
@@ -157,6 +173,8 @@ As part of its startup process, the agent will publish a revocation registry to 
 ## Accept the Invitation
 
 When the Faber agent starts up it automatically creates an invitation and generates a QR code on the screen. On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code. The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.
+
+*Note on _PWD_ you may not see the entire QR code - you can copy the Invitation URL (it will look something like `http://ip10-3-171-4-btvnaqcpt4vga4r1msl0-8020.direct.play-with-von.vonx.io?c_i=eyJAdHl...JdfQ==`) to a QR generator app (for example `https://www.the-qrcode-generator.com/`) and then scan the generated QR code with your mobile app.
 
 <details>
     <summary>Click here to view screenshot</summary>
