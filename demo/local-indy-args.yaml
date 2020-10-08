@@ -32,6 +32,6 @@ wallet-name: testwallet
 #    docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres:10
 wallet-storage-type: postgres_storage
 # could be sent using env var ACAPY_WALLET_STORAGE_CONFIG
-wallet-storage-config: "{\"url\":\"localhost:5432\",\"max_connections\":5}"
+wallet-storage-config: '{"url":"localhost:5432","max_connections":5}'
 # could be sent using env var ACAPY_WALLET_STORAGE_CREDS
-wallet-storage-creds: "{\"account\":\"postgres\",\"password\":\"mysecretpassword\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}"
+wallet-storage-creds: '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}'
