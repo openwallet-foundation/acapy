@@ -399,7 +399,8 @@ class GeneralGroup(ArgumentGroup):
         parser.add_argument(
             "--arg-file",
             is_config_file=True,
-            help="Load aca-py arguments from the specified file.",
+            help="Load aca-py arguments from the specified file.  Note that\
+            this file *must* be in YAML format.",
         )
         parser.add_argument(
             "--plugin",
