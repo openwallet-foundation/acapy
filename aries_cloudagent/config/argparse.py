@@ -3,7 +3,7 @@
 import abc
 from os import environ
 
-from configargparse import ArgumentParser, Namespace
+from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 from typing import Type
 
 from .error import ArgsParseError
@@ -51,6 +51,11 @@ class group:
             for (cats, grp) in cls._registered
             if category is None or category in cats
         )
+
+
+def create_argument_parser():
+    """Create am instance of an arg parser, force yaml format for external config."""
+    return ArgumentParser(config_file_parser_class=YAMLConfigFileParser)
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
