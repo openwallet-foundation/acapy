@@ -130,7 +130,7 @@ Note that with _Play with Docker_ it can be challenging to capture the informati
 
 #### Running locally in a bash shell?
 
-If you are running in a _local bash shell_, navigate to [The demo direcory](/demo) and run:
+If you are running in a _local bash shell_, navigate to [The demo directory](/demo) and run:
 
 ```bash
 TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
@@ -140,17 +140,19 @@ The `TAILS_NETWORK` parameter lets the demo script know how to connect to the ta
 
 #### Running in Play with Docker?
 
-If you are running in _Play with Docker_, navigate to [The demo direcory](/demo) and run:
+If you are running in _Play with Docker_, navigate to [The demo directory](/demo) and run:
 
 ```bash
 PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
 
-*Note - you may want to leave off the `--events` option when you run the Faber agent.
-
 The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
 
-Note that you _must_ use the `https` url for the tails server endpoint.
+Use the ngrok url for the tails server that you noted earlier.
+
+*Note that you _must_ use the `https` url for the tails server endpoint.
+
+*Note - you may want to leave off the `--events` option when you run the Faber agent, if you are finding you are getting too much logging output.
 
 #### Waiting for the Faber agent to start ...
 
@@ -174,7 +176,7 @@ As part of its startup process, the agent will publish a revocation registry to 
 
 When the Faber agent starts up it automatically creates an invitation and generates a QR code on the screen. On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code. The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.
 
-*Note on _PWD_ you may not see the entire QR code - you can copy the Invitation URL (it will look something like `http://ip10-3-171-4-btvnaqcpt4vga4r1msl0-8020.direct.play-with-von.vonx.io?c_i=eyJAdHl...JdfQ==`) to a QR generator app (for example `https://www.the-qrcode-generator.com/`) and then scan the generated QR code with your mobile app.
+*Note on _PWD_ you may not see the entire QR code - you can copy the Invitation URL (it will look something like `http://ip10-3-171-4-btvnaqcpt4vga4r1msl0-8020.direct.play-with-von.vonx.io?c_i=eyJAdHl...JdfQ==`) and paste it into a QR generator app (for example https://www.the-qrcode-generator.com/), and then scan the generated QR code with your mobile app.
 
 <details>
     <summary>Click here to view screenshot</summary>
