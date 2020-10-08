@@ -176,8 +176,6 @@ As part of its startup process, the agent will publish a revocation registry to 
 
 When the Faber agent starts up it automatically creates an invitation and generates a QR code on the screen. On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code. The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.
 
-*Note on _PWD_ you may not see the entire QR code - you can copy the Invitation URL (it will look something like `http://ip10-3-171-4-btvnaqcpt4vga4r1msl0-8020.direct.play-with-von.vonx.io?c_i=eyJAdHl...JdfQ==`) and paste it into a QR generator app (for example https://www.the-qrcode-generator.com/), and then scan the generated QR code with your mobile app.
-
 <details>
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/S-1-connect-1.jpg" alt="Accept Invitation">
