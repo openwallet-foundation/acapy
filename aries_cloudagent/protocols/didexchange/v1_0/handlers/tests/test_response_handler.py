@@ -9,6 +9,7 @@ from aries_cloudagent.connections.models.diddoc import (
     Service,
 )
 from aries_cloudagent.messaging.base_handler import HandlerException
+from aries_cloudagent.messaging.decorators import AttachDecorator
 from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.messaging.responder import MockResponder
 
@@ -16,11 +17,10 @@ from aries_cloudagent.protocols.trustping.v1_0.messages.ping import Ping
 
 from aries_cloudagent.transport.inbound.receipt import MessageReceipt
 
-from ...handlers import connection_response_handler as handler
-from ...manager import ConnectionManagerError
-from ...messages.connection_response import ConnectionResponse
+from ...handlers import response_handler as handler
+from ...manager import Conn23ManagerError
+from ...messages.response import Conn23Response
 from ...messages.problem_report import ProblemReport, ProblemReportReason
-from ...models.connection_detail import ConnectionDetail
 
 
 @pytest.fixture()
@@ -38,41 +38,26 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
 @pytest.fixture()
-def did_doc():
-    doc = DIDDoc(did=TEST_DID)
-    controller = TEST_DID
-    ident = "1"
-    pk_value = TEST_VERKEY
-    pk = PublicKey(
-        TEST_DID,
-        ident,
-        pk_value,
-        PublicKeyType.ED25519_SIG_2018,
-        controller,
-        False,
-    )
-    doc.set(pk)
-    recip_keys = [pk]
-    router_keys = []
-    service = Service(
-        TEST_DID,
-        "indy",
-        "IndyAgent",
-        recip_keys,
-        router_keys,
-        TEST_ENDPOINT,
-    )
-    doc.set(service)
-    yield doc
+def did_doc_attach():
+    yield {
+        "base64": "...",
+        "jws": {
+            "header": {
+                "kid": "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th"
+            },
+            "protected": "eyJhbGciOiJFZERTQSIsImlhdCI6MTU4Mzg4..."
+            "signature": "3dZWsuru7QAVFUCtTd0s7uc1peYEijx4eyt5..."
+        }
+    }
 
 
 class TestResponseHandler:
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @async_mock.patch.object(handler, "Conn23Manager")
     async def test_called(self, mock_conn_mgr, request_context):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
-        request_context.message = ConnectionResponse()
-        handler_inst = handler.ConnectionResponseHandler()
+        request_context.message = Conn23Response()
+        handler_inst = handler.Conn23ResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
 
@@ -83,12 +68,12 @@ class TestResponseHandler:
         assert not responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @async_mock.patch.object(handler, "Conn23Manager")
     async def test_called_auto_ping(self, mock_conn_mgr, request_context):
         request_context.update_settings({"auto_ping_connection": True})
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
-        request_context.message = ConnectionResponse()
-        handler_inst = handler.ConnectionResponseHandler()
+        request_context.message = Conn23Response()
+        handler_inst = handler.Conn23ResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
 
@@ -102,14 +87,14 @@ class TestResponseHandler:
         assert isinstance(result, Ping)
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @async_mock.patch.object(handler, "Conn23Manager")
     async def test_problem_report(self, mock_conn_mgr, request_context):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
-        mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
+        mock_conn_mgr.return_value.accept_response.side_effect = Conn23ManagerError(
             error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
         )
-        request_context.message = ConnectionResponse()
-        handler_inst = handler.ConnectionResponseHandler()
+        request_context.message = Conn23Response()
+        handler_inst = handler.Conn23ResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         messages = responder.messages
@@ -122,22 +107,23 @@ class TestResponseHandler:
         assert target == {"target_list": None}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @async_mock.patch.object(handler, "Conn23Manager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
-        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc_attach
     ):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
-        mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
+        mock_conn_mgr.return_value.accept_response.side_effect = Conn23ManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
             return_value=[mock_conn_target]
         )
-        request_context.message = ConnectionResponse(
-            connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc)
+        request_context.message = Conn23Response(
+            did=TEST_DID,
+            did_doc_attach=did_doc_attach
         )
-        handler_inst = handler.ConnectionResponseHandler()
+        handler_inst = handler.Conn23ResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         messages = responder.messages
@@ -150,22 +136,22 @@ class TestResponseHandler:
         assert target == {"target_list": [mock_conn_target]}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @async_mock.patch.object(handler, "Conn23Manager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
-        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc_attach
     ):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
-        mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
+        mock_conn_mgr.return_value.accept_response.side_effect = Conn23ManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
             side_effect=ConnectionManagerError("no target")
         )
-        request_context.message = ConnectionResponse(
-            connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc)
+        request_context.message = Conn23Response(
+            connection=ConnectionDetail(did=TEST_DID, did_doc_attach=did_doc_attach)
         )
-        handler_inst = handler.ConnectionResponseHandler()
+        handler_inst = handler.Conn23ResponseHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         messages = responder.messages

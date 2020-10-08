@@ -190,7 +190,7 @@ class DIDExManager:
         did_info = await wallet.create_local_did()
         did_doc = await self.create_did_doc(did_info, [endpoint])
         attach_data = AttachDecorator.from_aries_msg(did_doc.serialize()).data
-        await attach_data.sign(did_doc.verkey, wallet)
+        await attach_data.sign(did_info.verkey, wallet)
         didex_req = DIDExRequest(
             label=label or f"DID exchange - {did_info.did}",
             did=did_info.did,

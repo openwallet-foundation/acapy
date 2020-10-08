@@ -1,4 +1,4 @@
-"""Connection response handler."""
+"""Connection response handler under RFC 23 (DID exchange)."""
 
 from .....messaging.base_handler import (
     BaseHandler,
@@ -7,41 +7,41 @@ from .....messaging.base_handler import (
 )
 from .....protocols.trustping.v1_0.messages.ping import Ping
 
-from ..manager import ConnectionManager, ConnectionManagerError
-from ..messages.connection_response import ConnectionResponse
+from ..manager import Conn23Manager, Conn23ManagerError
+from ..messages.response import Conn23Response
 from ..messages.problem_report import ProblemReport
 
 
-class ConnectionResponseHandler(BaseHandler):
-    """Handler class for connection responses."""
+class Conn23ResponseHandler(BaseHandler):
+    """Handler class for connection responses under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """
-        Handle connection response.
+        Handle connection response under RFC 23 (DID exchange).
 
         Args:
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"ConnectionResponseHandler called with context {context}")
-        assert isinstance(context.message, ConnectionResponse)
+        self._logger.debug(f"Conn23ResponseHandler called with context {context}")
+        assert isinstance(context.message, Conn23Response)
 
-        mgr = ConnectionManager(context)
+        mgr = Conn23Manager(context)
         try:
-            connection = await mgr.accept_response(
+            conn_rec = await mgr.accept_response(
                 context.message, context.message_receipt
             )
-        except ConnectionManagerError as e:
+        except Conn23ManagerError as e:
             self._logger.exception("Error receiving connection response")
             if e.error_code:
                 targets = None
-                if context.message.connection and context.message.connection.did_doc:
+                if context.message.did_doc_attach:
                     try:
                         targets = mgr.diddoc_connection_targets(
-                            context.message.connection.did_doc,
+                            context.message.did_doc_attach,
                             context.message_receipt.recipient_verkey,
                         )
-                    except ConnectionManagerError:
+                    except Conn23ManagerError:
                         self._logger.exception(
                             "Error parsing DIDDoc for problem report"
                         )
@@ -53,4 +53,4 @@ class ConnectionResponseHandler(BaseHandler):
 
         # send trust ping in response
         if context.settings.get("auto_ping_connection"):
-            await responder.send(Ping(), connection_id=connection.connection_id)
+            await responder.send(Ping(), connection_id=conn_rec.connection_id)

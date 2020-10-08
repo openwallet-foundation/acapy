@@ -1,11 +1,11 @@
-"""Classes to manage connections."""
+"""Classes to manage connection establishment under RFC 23 (DID exchange)."""
 
 import logging
 
 from typing import Sequence, Tuple
 
 from ....cache.base import BaseCache
-from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.conn23rec import Conn23Record
 from ....connections.models.connection_target import ConnectionTarget
 from ....connections.models.diddoc import (
     DIDDoc,
@@ -26,28 +26,30 @@ from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
-from ....protocols.routing.v1_0.manager import RoutingManager
 
-from .messages.connection_invitation import ConnectionInvitation
-from .messages.connection_request import ConnectionRequest
-from .messages.connection_response import ConnectionResponse
+from ...didcomm_prefix import DIDCommPrefix
+from ...out_of_band.v1_0.messages.invitation import InviatationMessage
+from ...routing.v1_0.manager import RoutingManager
+
+from .messages.invitation import Conn23Invitation
+from .messages.connection_request import Conn23Request
+from .messages.connection_response import Conn23Response
 from .messages.problem_report import ProblemReportReason
-from .models.connection_detail import ConnectionDetail
 
 
-class ConnectionManagerError(BaseError):
+class Conn23ManagerError(BaseError):
     """Connection error."""
 
 
-class ConnectionManager:
-    """Class for managing connections."""
+class Conn23Manager:
+    """Class for managing connections under RFC 23 (DID exchange)."""
 
     RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, context: InjectionContext):
         """
-        Initialize a ConnectionManager.
+        Initialize a Conn23Manager.
 
         Args:
             context: The context for this connection manager
@@ -70,12 +72,11 @@ class ConnectionManager:
         self,
         my_label: str = None,
         my_endpoint: str = None,
-        their_role: str = None,
         auto_accept: bool = None,
         public: bool = False,
         multi_use: bool = False,
         alias: str = None,
-    ) -> Tuple[ConnectionRecord, ConnectionInvitation]:
+    ) -> Tuple[Conn23Record, InvitationMessage]:
         """
         Generate new connection invitation.
 
@@ -83,34 +84,9 @@ class ConnectionManager:
         and in practice, these sort of invitations will be received over any number of
         channels such as SMS, Email, QR Code, NFC, etc.
 
-        Structure of an invite message:
-
-        ::
-
-            {
-                "@type": "https://didcomm.org/connections/1.0/invitation",
-                "label": "Alice",
-                "did": "did:sov:QmWbsNYhMrjHiqZDTUTEJs"
-            }
-
-        Or, in the case of a peer DID:
-
-        ::
-
-            {
-                "@type": "https://didcomm.org/connections/1.0/invitation",
-                "label": "Alice",
-                "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
-                "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
-                "serviceEndpoint": "https://example.com/endpoint"
-            }
-
-        Currently, only peer DID is supported.
-
         Args:
             my_label: label for this connection
             my_endpoint: endpoint where other party can reach me
-            their_role: a role to assign the connection
             auto_accept: auto-accept a corresponding connection request
                 (None to use config)
             public: set to create an invitation from the public DID
@@ -118,7 +94,7 @@ class ConnectionManager:
             alias: optional alias to apply to connection for later use
 
         Returns:
-            A tuple of the new `ConnectionRecord` and `ConnectionInvitation` instances
+            A tuple of the new `Conn23Record` and `InvitationMessage` instances
 
         """
         if not my_label:
@@ -127,33 +103,37 @@ class ConnectionManager:
 
         if public:
             if not self.context.settings.get("public_invites"):
-                raise ConnectionManagerError("Public invitations are not enabled")
+                raise Conn23ManagerError("Public invitations are not enabled")
 
             public_did = await wallet.get_public_did()
             if not public_did:
-                raise ConnectionManagerError(
+                raise Conn23ManagerError(
                     "Cannot create public invitation with no public DID"
                 )
 
             if multi_use:
-                raise ConnectionManagerError(
+                raise Conn23ManagerError(
                     "Cannot use public and multi_use at the same time"
                 )
 
             # FIXME - allow ledger instance to format public DID with prefix?
-            invitation = ConnectionInvitation(
-                label=my_label, did=f"did:sov:{public_did.did}"
+            invitation = InvitationMessage(
+                label=my_label,
+                handshake_protocols=[DIDCommPrefix.qualify_current("didexchange/1.0")],
+                service=[f"did:sov:{public_did.did}"],
             )
             return None, invitation
 
-        invitation_mode = ConnectionRecord.INVITATION_MODE_ONCE
-        if multi_use:
-            invitation_mode = ConnectionRecord.INVITATION_MODE_MULTI
+        invitation_mode = (
+            Conn23Record.INVITATION_MODE_MULTI
+            if multi_use
+            else Conn23Record.INVITATION_MODE_ONCE
+        )
 
         if not my_endpoint:
             my_endpoint = self.context.settings.get("default_endpoint")
         accept = (
-            ConnectionRecord.ACCEPT_AUTO
+            Conn23Record.ACCEPT_AUTO
             if (
                 auto_accept
                 or (
@@ -161,18 +141,17 @@ class ConnectionManager:
                     and self.context.settings.get("debug.auto_accept_requests")
                 )
             )
-            else ConnectionRecord.ACCEPT_MANUAL
+            else Conn23Record.ACCEPT_MANUAL
         )
 
         # Create and store new invitation key
         connection_key = await wallet.create_signing_key()
 
         # Create connection record
-        connection = ConnectionRecord(
-            initiator=ConnectionRecord.INITIATOR_SELF,
+        connection = Conn23Record(
             invitation_key=connection_key.verkey,
-            their_role=their_role,
-            state=ConnectionRecord.STATE_INVITATION,
+            their_role=Conn23Record.Role.REQUESTER,
+            state=ConnectionRecord.STATE_INVITATION_SENT,
             accept=accept,
             invitation_mode=invitation_mode,
             alias=alias,
@@ -183,41 +162,41 @@ class ConnectionManager:
         # Create connection invitation message
         # Note: Need to split this into two stages to support inbound routing of invites
         # Would want to reuse create_did_document and convert the result
-        invitation = ConnectionInvitation(
-            label=my_label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint
+        invitation = Conn23Invitation(
+            label=my_label,
+            recipient_keys=[connection_key.verkey],
+            endpoint=my_endpoint,
         )
         await connection.attach_invitation(self.context, invitation)
 
-        return connection, invitation
+        return (connection, invitation)
 
     async def receive_invitation(
         self,
-        invitation: ConnectionInvitation,
-        their_role: str = None,
+        invitation: Conn23Invitation,
         auto_accept: bool = None,
         alias: str = None,
-    ) -> ConnectionRecord:
+    ) -> Conn23Record:
         """
         Create a new connection record to track a received invitation.
 
         Args:
-            invitation: The `ConnectionInvitation` to store
-            their_role: The role assigned to this connection
+            invitation: The `Conn23Invitation` to store
             auto_accept: set to auto-accept the invitation (None to use config)
             alias: optional alias to set on the record
 
         Returns:
-            The new `ConnectionRecord` instance
+            The new `Conn23Record` instance
 
         """
         if not invitation.did:
             if not invitation.recipient_keys:
-                raise ConnectionManagerError("Invitation must contain recipient key(s)")
+                raise Conn23ManagerError("Invitation must contain recipient key(s)")
             if not invitation.endpoint:
-                raise ConnectionManagerError("Invitation must contain an endpoint")
+                raise Conn23ManagerError("Invitation must contain an endpoint")
 
         accept = (
-            ConnectionRecord.ACCEPT_AUTO
+            Conn23Record.ACCEPT_AUTO
             if (
                 auto_accept
                 or (
@@ -225,16 +204,15 @@ class ConnectionManager:
                     and self.context.settings.get("debug.auto_accept_invites")
                 )
             )
-            else ConnectionRecord.ACCEPT_MANUAL
+            else Conn23Record.ACCEPT_MANUAL
         )
 
         # Create connection record
-        connection = ConnectionRecord(
-            initiator=ConnectionRecord.INITIATOR_EXTERNAL,
+        connection = Conn23Record(
             invitation_key=invitation.recipient_keys and invitation.recipient_keys[0],
             their_label=invitation.label,
-            their_role=their_role,
-            state=ConnectionRecord.STATE_INVITATION,
+            their_role=Conn23Record.Role.RESPONDER,
+            state=Conn23Record.STATE_INVITATION_RECEIVED,
             accept=accept,
             alias=alias,
         )
@@ -248,7 +226,7 @@ class ConnectionManager:
         # Save the invitation for later processing
         await connection.attach_invitation(self.context, invitation)
 
-        if connection.accept == ConnectionRecord.ACCEPT_AUTO:
+        if connection.accept == Conn23Record.ACCEPT_AUTO:
             request = await self.create_request(connection)
             responder: BaseResponder = await self._context.inject(
                 BaseResponder, required=False
@@ -256,7 +234,7 @@ class ConnectionManager:
             if responder:
                 await responder.send(request, connection_id=connection.connection_id)
                 # refetch connection for accurate state
-                connection = await ConnectionRecord.retrieve_by_id(
+                connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
         else:
@@ -266,20 +244,20 @@ class ConnectionManager:
 
     async def create_request(
         self,
-        connection: ConnectionRecord,
+        connection: Conn23Record,
         my_label: str = None,
         my_endpoint: str = None,
-    ) -> ConnectionRequest:
+    ) -> Conn23Request:
         """
         Create a new connection request for a previously-received invitation.
 
         Args:
-            connection: The `ConnectionRecord` representing the invitation to accept
+            connection: The `Conn23Record` representing the invitation to accept
             my_label: My label
             my_endpoint: My endpoint
 
         Returns:
-            A new `ConnectionRequest` message to send to the other agent
+            A new `Conn23Request` message to send to the other agent
 
         """
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -302,36 +280,39 @@ class ConnectionManager:
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints
         )
+        attach_data = AttachDecorator.from_aries_msg(did_doc.serialize()).data
+        await attach_data.sign(my_info.verkey, wallet)
         if not my_label:
             my_label = self.context.settings.get("default_label")
-        request = ConnectionRequest(
+        request = Conn23Request(
             label=my_label,
-            connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
+            did=connection.my_did,
+            did_doc_attach=attach_data,
         )
 
         # Update connection state
         connection.request_id = request._id
-        connection.state = ConnectionRecord.STATE_REQUEST
+        connection.state = ConnectionRecord.STATE_REQUEST_SENT
 
         await connection.save(self.context, reason="Created connection request")
 
         return request
 
     async def receive_request(
-        self, request: ConnectionRequest, receipt: MessageReceipt
-    ) -> ConnectionRecord:
+        self, request: Conn23Request, receipt: MessageReceipt
+    ) -> Conn23Record:
         """
         Receive and store a connection request.
 
         Args:
-            request: The `ConnectionRequest` to accept
+            request: The `Conn23Request` to accept
             receipt: The message receipt
 
         Returns:
-            The new or updated `ConnectionRecord` instance
+            The new or updated `Conn23Record` instance
 
         """
-        ConnectionRecord.log_state(
+        Conn23Record.log_state(
             self.context, "Receiving connection request", {"request": request}
         )
 
@@ -346,8 +327,10 @@ class ConnectionManager:
         else:
             connection_key = receipt.recipient_verkey
             try:
-                connection = await ConnectionRecord.retrieve_by_invitation_key(
-                    self.context, connection_key, ConnectionRecord.INITIATOR_SELF
+                connection = await Conn23Record.retrieve_by_invitation_key(
+                    context=self.context,
+                    invitation_key=connection_key,
+                    my_role=Conn23Record.Role.RESPONDER
                 )
             except StorageNotFoundError:
                 raise ConnectionManagerError(
@@ -358,18 +341,17 @@ class ConnectionManager:
         if connection:
             invitation = await connection.retrieve_invitation(self.context)
             connection_key = connection.invitation_key
-            ConnectionRecord.log_state(
+            Conn23Record.log_state(
                 self.context, "Found invitation", {"invitation": invitation}
             )
 
             if connection.is_multiuse_invitation:
                 wallet: BaseWallet = await self.context.inject(BaseWallet)
                 my_info = await wallet.create_local_did()
-                new_connection = ConnectionRecord(
-                    initiator=ConnectionRecord.INITIATOR_MULTIUSE,
+                new_connection = Conn23Record(
                     invitation_key=connection_key,
                     my_did=my_info.did,
-                    state=ConnectionRecord.STATE_INVITATION,
+                    state=ConnectionRecord.STATE_REQUEST_RECEIVED,
                     accept=connection.accept,
                     their_role=connection.their_role,
                 )
@@ -395,21 +377,21 @@ class ConnectionManager:
         if connection:
             connection.their_label = request.label
             connection.their_did = request.connection.did
-            connection.state = ConnectionRecord.STATE_REQUEST
+            connection.state = Conn23Record.STATE_REQUEST_RECEIVED
             await connection.save(
                 self.context, reason="Received connection request from invitation"
             )
         elif not self.context.settings.get("public_invites"):
-            raise ConnectionManagerError("Public invitations are not enabled")
+            raise Conn23ManagerError("Public invitations are not enabled")
         else:
             my_info = await wallet.create_local_did()
-            connection = ConnectionRecord(
-                initiator=ConnectionRecord.INITIATOR_EXTERNAL,
+            connection = Conn23Record(
                 invitation_key=connection_key,
                 my_did=my_info.did,
                 their_did=request.connection.did,
                 their_label=request.label,
-                state=ConnectionRecord.STATE_REQUEST,
+                their_role=Conn23Record.Role.REQUESTER,
+                state=ConnectionRecord.STATE_REQUEST_RECEIVED,
             )
             if self.context.settings.get("debug.auto_accept_requests"):
                 connection.accept = ConnectionRecord.ACCEPT_AUTO
@@ -421,7 +403,7 @@ class ConnectionManager:
         # Attach the connection request so it can be found and responded to
         await connection.attach_request(self.context, request)
 
-        if connection.accept == ConnectionRecord.ACCEPT_AUTO:
+        if connection.accept == Conn23Record.ACCEPT_AUTO:
             response = await self.create_response(connection)
             responder: BaseResponder = await self._context.inject(
                 BaseResponder, required=False
@@ -431,7 +413,7 @@ class ConnectionManager:
                     response, connection_id=connection.connection_id
                 )
                 # refetch connection for accurate state
-                connection = await ConnectionRecord.retrieve_by_id(
+                connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
         else:
@@ -508,28 +490,29 @@ class ConnectionManager:
         return response
 
     async def accept_response(
-        self, response: ConnectionResponse, receipt: MessageReceipt
-    ) -> ConnectionRecord:
+        self, response: Conn23Response, receipt: MessageReceipt
+    ) -> Conn23Record:
         """
-        Accept a connection response.
+        Accept a connection response under RFC 23 (DID exchange).
 
-        Process a ConnectionResponse message by looking up
+        Process a Conn23Response message by looking up
         the connection request and setting up the pairwise connection.
 
         Args:
-            response: The `ConnectionResponse` to accept
+            response: The `Conn23Response` to accept
             receipt: The message receipt
 
         Returns:
-            The updated `ConnectionRecord` representing the connection
+            The updated `Conn23Record` representing the connection
 
         Raises:
-            ConnectionManagerError: If there is no DID associated with the
+            Conn23ManagerError: If there is no DID associated with the
                 connection response
-            ConnectionManagerError: If the corresponding connection is not
-                at the request or response stage
+            Conn23ManagerError: If the corresponding connection is not
+                in the request-sent state
 
         """
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
 
         connection = None
         if response._thread:
@@ -544,108 +527,46 @@ class ConnectionManager:
         if not connection and receipt.sender_did:
             # identify connection by the DID they used for us
             try:
-                connection = await ConnectionRecord.retrieve_by_did(
-                    self.context, receipt.sender_did, receipt.recipient_did
+                connection = await Conn23Record.retrieve_by_did(
+                    context=self.context,
+                    their_did=receipt.sender_did,
+                    my_did=receipt.recipient_did,
+                    my_role=Conn23Record.Role.REQUESTER,
                 )
             except StorageNotFoundError:
                 pass
 
         if not connection:
-            raise ConnectionManagerError(
+            raise Conn23ManagerError(
                 "No corresponding connection request found",
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
             )
 
-        if connection.state not in (
-            ConnectionRecord.STATE_REQUEST,
-            ConnectionRecord.STATE_RESPONSE,
-        ):
-            raise ConnectionManagerError(
+        if connection.state != Conn23Record.STATE_REQUEST_SENT:
+            raise Conn23ManagerError(
                 f"Cannot accept connection response for connection"
                 " in state: {connection.state}"
             )
 
         their_did = response.connection.did
-        conn_did_doc = response.connection.did_doc
-        if not conn_did_doc:
+        if not response.connection.did_doc_attach:
             raise ConnectionManagerError(
-                "No DIDDoc provided; cannot connect to public DID"
+                "No DIDDoc attached; cannot connect to public DID"
             )
+        conn_did_doc = await self.verify_diddoc(response.connection.did_doc_attach)
         if their_did != conn_did_doc.did:
-            raise ConnectionManagerError("Connection DID does not match DIDDoc id")
+            raise ConnectionManagerError(
+                f"Connection DID {their_did} "
+                f"does not match DID doc id {conn_did_doc.did}"
+            )
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did
-        connection.state = ConnectionRecord.STATE_RESPONSE
+        connection.state = ConnectionRecord.STATE_RESPONSE_RECEIVED
 
         await connection.save(self.context, reason="Accepted connection response")
 
         return connection
-
-    async def create_static_connection(
-        self,
-        my_did: str = None,
-        my_seed: str = None,
-        their_did: str = None,
-        their_seed: str = None,
-        their_verkey: str = None,
-        their_endpoint: str = None,
-        their_role: str = None,
-        their_label: str = None,
-        alias: str = None,
-    ) -> (DIDInfo, DIDInfo, ConnectionRecord):
-        """
-        Register a new static connection (for use by the test suite).
-
-        Args:
-            my_did: override the DID used in the connection
-            my_seed: provide a seed used to generate our DID and keys
-            their_did: provide the DID used by the other party
-            their_seed: provide a seed used to generate their DID and keys
-            their_verkey: provide the verkey used by the other party
-            their_endpoint: their URL endpoint for routing messages
-            their_role: their role in this connection
-            alias: an alias for this connection record
-
-        Returns:
-            The new `ConnectionRecord` instance
-
-        """
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
-
-        # seed and DID optional
-        my_info = await wallet.create_local_did(my_seed, my_did)
-
-        # must provide their DID and verkey if the seed is not known
-        if (not their_did or not their_verkey) and not their_seed:
-            raise ConnectionManagerError(
-                "Either a verkey or seed must be provided for the other party"
-            )
-        if not their_did:
-            their_did = seed_to_did(their_seed)
-        if not their_verkey:
-            their_verkey_bin, _ = create_keypair(their_seed.encode())
-            their_verkey = bytes_to_b58(their_verkey_bin)
-        their_info = DIDInfo(their_did, their_verkey, {})
-
-        # Create connection record
-        connection = ConnectionRecord(
-            initiator=ConnectionRecord.INITIATOR_SELF,
-            invitation_mode=ConnectionRecord.INVITATION_MODE_STATIC,
-            my_did=my_info.did,
-            their_did=their_info.did,
-            their_role=their_role,
-            their_label=their_label,
-            state=ConnectionRecord.STATE_ACTIVE,
-            alias=alias,
-        )
-        await connection.save(self.context, reason="Created new static connection")
-
-        # Synthesize their DID doc
-        did_doc = await self.create_did_document(their_info, None, [their_endpoint])
-        await self.store_did_document(did_doc)
-
-        return my_info, their_info, connection
 
     async def find_connection(
         self,
@@ -806,7 +727,7 @@ class ConnectionManager:
         inbound_connection_id: str = None,
         svc_endpoints: Sequence[str] = None,
     ) -> DIDDoc:
-        """Create our DID document for a given DID.
+        """Create our DID doc for a given DID.
 
         Args:
             did_info: The DID information (DID and verkey) used in the connection
@@ -1045,6 +966,21 @@ class ConnectionManager:
             )
 
         return results
+
+    async def verify_diddoc(self, attached: AttachDecoratorData) -> DIDDoc:
+        """Verify DIDDoc attachment and return signed data."""
+        signed_diddoc_bytes = attached.signed
+        if not signed_diddoc_bytes:
+            raise Conn23ManagerError(
+                "DID doc attachment is not signed."
+            )
+        if not await verify(attached, wallet):
+            raise Conn23ManagerError(
+                f"Connection {connection.connection_id} DID doc attachment "
+                "signature failed verification"
+            )
+
+        return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
 
     def diddoc_connection_targets(
         self, doc: DIDDoc, sender_verkey: str, their_label: str = None

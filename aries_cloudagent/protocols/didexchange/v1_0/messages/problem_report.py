@@ -13,9 +13,9 @@ HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReport
 class ProblemReportReason(str, Enum):
     """Supported reason codes."""
 
-    INVITATION_NOT_ACCEPTED = "invitation_not_accepted"
     REQUEST_NOT_ACCEPTED = "request_not_accepted"
     REQUEST_PROCESSING_ERROR = "request_processing_error"
+    INVITATION_NOT_ACCEPTED = "invitation_not_accepted"
     RESPONSE_NOT_ACCEPTED = "response_not_accepted"
     RESPONSE_PROCESSING_ERROR = "response_processing_error"
 
@@ -55,7 +55,7 @@ class ProblemReportSchema(AgentMessageSchema):
     explain = fields.Str(
         required=False,
         description="Localized error explanation",
-        example="Invitation not accepted",
+        example=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
     )
     problem_code = fields.Str(
         data_key="problem-code",
@@ -65,5 +65,5 @@ class ProblemReportSchema(AgentMessageSchema):
             choices=[prr.value for prr in ProblemReportReason],
             error="Value {input} must be one of {choices}.",
         ),
-        example=ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
+        example=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
     )

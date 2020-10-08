@@ -1,4 +1,4 @@
-"""Connect invitation handler."""
+"""Connect invitation handler under RFC 23 (DID exchange)."""
 
 from .....messaging.base_handler import (
     BaseHandler,
@@ -6,24 +6,24 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
-from ..messages.connection_invitation import ConnectionInvitation
+from ..messages.invitation import Conn23Invitation
 from ..messages.problem_report import ProblemReport, ProblemReportReason
 
 
-class ConnectionInvitationHandler(BaseHandler):
-    """Handler class for connection invitations."""
+class Conn23InvitationHandler(BaseHandler):
+    """Handler class for connection invitations under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """
-        Handle connection invitation.
+        Handle connection invitation under RFC 23 (DID exchange).
 
         Args:
             context: Request context
             responder: Responder callback
         """
 
-        self._logger.debug(f"ConnectionInvitationHandler called with context {context}")
-        assert isinstance(context.message, ConnectionInvitation)
+        self._logger.debug(f"Conn23InvitationHandler called with context {context}")
+        assert isinstance(context.message, Conn23Invitation)
 
         report = ProblemReport(
             problem_code=ProblemReportReason.INVITATION_NOT_ACCEPTED,

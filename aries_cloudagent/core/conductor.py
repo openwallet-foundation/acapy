@@ -189,23 +189,6 @@ class Conductor:
             self.admin_server,
         )
 
-        # Create a static connection for use by the test-suite
-        if context.settings.get("debug.test_suite_endpoint"):
-            mgr = ConnectionManager(self.context)  # TODO flip to conn23mgr
-            their_endpoint = context.settings["debug.test_suite_endpoint"]
-            test_conn = await mgr.create_static_connection(
-                my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
-                their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
-                their_endpoint=their_endpoint,
-                their_role=Conn23.ROLE_REQUESTER,
-                alias="test-suite",
-            )
-            print("Created static connection for test suite")
-            print(" - My DID:", test_conn.my_did)
-            print(" - Their DID:", test_conn.their_did)
-            print(" - Their endpoint:", their_endpoint)
-            print()
-
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:

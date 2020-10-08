@@ -1,20 +1,21 @@
 """Handle connection information interface with non-secrets storage."""
 
+from enum import Enum
+from typing import Any, Union
+
 from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
-from ...protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
-from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
+from ...protocols.didexchange.v1_0.messages.invitation import Conn23Invitation
+from ...protocols.didexchange.v1_0.messages.request import Conn23Request
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 
 
-class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
+class Conn23Record(BaseRecord):
     """Represents a single pairwise connection."""
 
     class Meta:
@@ -22,37 +23,66 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
 
         schema_class = "Conn23RecordSchema"
 
+    class Role(Enum):
+        """RFC 160 (inviter, invitee) = RFC 23 (responder, requester)."""
+
+        REQUESTER = ("invitee", "requester")  # aka initiator in RFC 160
+        RESPONDER = ("inviter", "responder")  # aka initiator in RFC 23: it's confusing
+
+        @property
+        def rfc160(self):
+            """Return RFC 160 (connection protocol) nomenclature."""
+            return self[0]
+
+        @property
+        def rfc23(self):
+            """Return RFC 23 (DID exchange protocol) nomenclature."""
+            return self[1]
+
+        @classmethod
+        def get(cls, label: str):
+            """Get role enum for label."""
+            for role in Role:
+                if label in role.value:
+                    return role
+            return None
+
+        def flip(self):
+            """Return interlocutor role."""
+            return Role.REQUESTER if self is Role.RESPONDER else ROLE.RESPONDER
+
+        def __eq__(self, other: Union[str, Role]) -> bool:
+            """Comparison between roles."""
+            if isinstance(other, str):
+                return self is Role.get(other)
+
     RECORD_ID_NAME = "connection_id"
-    WEBHOOK_TOPIC = "connections"
+    WEBHOOK_TOPIC = "connections_23"
     LOG_STATE_FLAG = "debug.connections"
     CACHE_ENABLED = True
     TAG_NAMES = {"my_did", "their_did", "request_id", "invitation_key"}
 
-    RECORD_TYPE = "connection"
-    RECORD_TYPE_INVITATION = "connection_invitation"
-    RECORD_TYPE_REQUEST = "connection_request"
+    RECORD_TYPE = "conn23"
+    RECORD_TYPE_INVITATION = "conn23_invitation"
+    RECORD_TYPE_REQUEST = "conn23_request"
 
     DIRECTION_RECEIVED = "received"
     DIRECTION_SENT = "sent"
 
-    INITIATOR_SELF = "self"
-    INITIATOR_EXTERNAL = "external"
-    INITIATOR_MULTIUSE = "multiuse"
+    MULTIUSE = "multiuse"
 
-    ROLE_REQUESTER = "requester"
-    ROLE_RESPONDER = "responder"
-
-    STATE_INIT = "init"
-    STATE_INVITATION = "invitation"
-    STATE_REQUEST = "request"
-    STATE_RESPONSE = "response"
-    STATE_ACTIVE = "active"
-    STATE_ERROR = "error"
-    STATE_INACTIVE = "inactive"
+    STATE_START = "start"
+    STATE_INVITATION_SENT = "invitation-sent"
+    STATE_INVITATION_RECEIVED = "invitation-received"
+    STATE_REQUEST_SENT = "request-sent"
+    STATE_REQUEST_RECEIVED = "request-received"
+    STATE_RESPONSE_SENT = "response-sent"
+    STATE_RESPONSE_RECEIVED = "response-received"
+    STATE_ABANDONED = "abandoned"
+    STATE_COMPLETED = "completed"
 
     INVITATION_MODE_ONCE = "once"
     INVITATION_MODE_MULTI = "multi"
-    INVITATION_MODE_STATIC = "static"
 
     ROUTING_STATE_NONE = "none"
     ROUTING_STATE_REQUEST = "request"
@@ -70,7 +100,6 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         their_did: str = None,
         their_label: str = None,
         their_role: str = None,
-        initiator: str = None,
         invitation_key: str = None,
         request_id: str = None,
         state: str = None,
@@ -88,7 +117,6 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         self.their_did = their_did
         self.their_label = their_label
         self.their_role = their_role
-        self.initiator = initiator
         self.invitation_key = invitation_key
         self.request_id = request_id
         self.error_msg = error_msg
@@ -109,8 +137,6 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         return {
             prop: getattr(self, prop)
             for prop in (
-                "initiator",
-                "their_role",
                 "inbound_connection_id",
                 "routing_state",
                 "accept",
@@ -118,6 +144,7 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
                 "alias",
                 "error_msg",
                 "their_label",
+                "their_role",
                 "state",
             )
         }
@@ -128,7 +155,7 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         context: InjectionContext,
         their_did: str = None,
         my_did: str = None,
-        initiator: str = None,
+        my_role: Conn23Record.Role = None,
     ) -> "Conn23Record":
         """Retrieve a connection record by target DID.
 
@@ -136,7 +163,7 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
             context: The injection context to use
             their_did: The target DID to filter by
             my_did: One of our DIDs to filter by
-            initiator: Filter connections by the initiator value
+            my_role: Filter connections by record owner role
         """
         tag_filter = {}
         if their_did:
@@ -144,25 +171,28 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         if my_did:
             tag_filter["my_did"] = my_did
         post_filter = {}
-        if initiator:
-            post_filter["initiator"] = initiator
+        if my_role:
+            post_filter["their_role"] = my_role.flip().rfc23
         return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_invitation_key(
-        cls, context: InjectionContext, invitation_key: str, initiator: str = None
+        cls,
+        context: InjectionContext,
+        invitation_key: str,
+        my_role: Conn23Record.Role = None
     ) -> "Conn23Record":
-        """Retrieve a connection record by invitation key.
+        """Retrieve a connection record by invitation key and interlocuter role.
 
         Args:
             context: The injection context to use
             invitation_key: The key on the originating invitation
-            initiator: Filter by the initiator value
+            my_role: Filter by record owner role value
         """
         tag_filter = {"invitation_key": invitation_key}
         post_filter = {"state": cls.STATE_INVITATION}
-        if initiator:
-            post_filter["initiator"] = initiator
+        if my_role:
+            post_filter["their_role"] = my_role.flip().rfc23
         return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
     @classmethod
@@ -179,7 +209,7 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         return await cls.retrieve_by_tag_filter(context, tag_filter)
 
     async def attach_invitation(
-        self, context: InjectionContext, invitation: ConnectionInvitation
+        self, context: InjectionContext, invitation: Conn23Invitation
     ):
         """Persist the related connection invitation to storage.
 
@@ -198,7 +228,7 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
 
     async def retrieve_invitation(
         self, context: InjectionContext
-    ) -> ConnectionInvitation:
+    ) -> Conn23Invitation:
         """Retrieve the related connection invitation.
 
         Args:
@@ -212,7 +242,7 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         return ConnectionInvitation.from_json(result.value)
 
     async def attach_request(
-        self, context: InjectionContext, request: ConnectionRequest
+        self, context: InjectionContext, request: Conn23Request
     ):
         """Persist the related connection request to storage.
 
@@ -229,7 +259,7 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
 
-    async def retrieve_request(self, context: InjectionContext) -> ConnectionRequest:
+    async def retrieve_request(self, context: InjectionContext) -> Conn23Request:
         """Retrieve the related connection invitation.
 
         Args:
@@ -264,6 +294,10 @@ class Conn23Record(BaseRecord):  # lgtm[py/missing-equals]
         cache_key = self.cache_key(self.connection_id, "connection_target")
         await self.clear_cached_key(context, cache_key)
 
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
+
 
 class Conn23RecordSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of connection records."""
@@ -288,25 +322,13 @@ class Conn23RecordSchema(BaseRecordSchema):
     their_role = fields.Str(
         required=False,
         description="Their assigned role for connection",
-        validate=validate.OneOf(
-            [
-                getattr(Conn23Record, m)
-                for m in vars(Conn23Record)
-                if m.startswith("ROLE_")
-            ]
-        ),
-        example=Conn23Record.ROLE_REQUESTER,
+        validate=validate.OneOf([label for role in Role for label in role.value]),
+        example=Conn23Record.ROLE_REQUESTER.rfc23,
     )
     inbound_connection_id = fields.Str(
         required=False,
         description="Inbound routing connection id to use",
         example=UUIDFour.EXAMPLE,
-    )
-    initiator = fields.Str(
-        required=False,
-        description="Connection initiator: self, external, or multiuse",
-        example=ConnectionRecord.INITIATOR_SELF,
-        validate=validate.OneOf(["self", "external", "multiuse"]),
     )
     invitation_key = fields.Str(
         required=False, description="Public key for connection", **INDY_RAW_PUBLIC_KEY
@@ -323,9 +345,15 @@ class Conn23RecordSchema(BaseRecordSchema):
     )
     accept = fields.Str(
         required=False,
-        description="Connection acceptance: manual or auto",
+        description="Connection acceptance",
         example=Conn23Record.ACCEPT_AUTO,
-        validate=validate.OneOf(["manual", "auto"]),
+        validate=validate.OneOf(
+            [
+                getattr(Conn23Record, a)
+                for a in vars(Conn23Record)
+                if a.startswith("ACCEPT_")
+            ]
+        )
     )
     error_msg = fields.Str(
         required=False,
@@ -334,9 +362,15 @@ class Conn23RecordSchema(BaseRecordSchema):
     )
     invitation_mode = fields.Str(
         required=False,
-        description="Invitation mode: once, multi, or static",
+        description="Invitation mode",
         example=Conn23Record.INVITATION_MODE_ONCE,
-        validate=validate.OneOf(["once", "multi", "static"]),
+        validate=validate.OneOf(
+            [
+                getattr(Conn23Record, i)
+                for i in vars(Conn23Record)
+                if i.startswith("INVITATION_MODE_")
+            ]
+        )
     )
     alias = fields.Str(
         required=False,

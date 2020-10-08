@@ -14,11 +14,11 @@ from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
-    ".connection_invitation_handler.ConnectionInvitationHandler"
+    ".invitation_handler.Conn23InvitationHandler"
 )
 
 
-class ConnectionInvitation(AgentMessage):
+class Conn23Invitation(AgentMessage):
     """Class representing a connection invitation."""
 
     class Meta:
@@ -26,7 +26,7 @@ class ConnectionInvitation(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = CONNECTION_INVITATION
-        schema_class = "ConnectionInvitationSchema"
+        schema_class = "Conn23InvitationSchema"
 
     def __init__(
         self,
@@ -71,15 +71,15 @@ class ConnectionInvitation(AgentMessage):
         return result
 
     @classmethod
-    def from_url(cls, url: str) -> "ConnectionInvitation":
+    def from_url(cls, url: str) -> "Conn23Invitation":
         """
-        Parse a URL-encoded invitation into a `ConnectionInvitation` message.
+        Parse a URL-encoded invitation into a `Conn23Invitation` message.
 
         Args:
             url: Url to decode
 
         Returns:
-            A `ConnectionInvitation` object.
+            A `Conn23Invitation` object.
 
         """
         parts = urlparse(url)
@@ -90,13 +90,13 @@ class ConnectionInvitation(AgentMessage):
         return None
 
 
-class ConnectionInvitationSchema(AgentMessageSchema):
-    """Connection invitation schema class."""
+class Conn23InvitationSchema(AgentMessageSchema):
+    """Conn23 invitation schema class."""
 
     class Meta:
-        """Connection invitation schema metadata."""
+        """Conn23 invitation schema metadata."""
 
-        model_class = ConnectionInvitation
+        model_class = Conn23Invitation
         unknown = EXCLUDE
 
     label = fields.Str(

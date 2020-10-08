@@ -8,29 +8,29 @@ SPEC_URI = (
 )
 
 # Message types
-DIDEX_REQUEST = f"didexchange/1.0/request"
-DIDEX_RESPONSE = f"didexchange/1.0/response"
-DIDEX_COMPLETE = f"didexchange/1.0/complete"
+CONN23_REQUEST = f"didexchange/1.0/request"
+CONN23_RESPONSE = f"didexchange/1.0/response"
+CONN23_COMPLETE = f"didexchange/1.0/complete"
 PROBLEM_REPORT = f"didexchange/1.0/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.didexchange.v1_0"
 
 MESSAGE_TYPES = {
     **{
-        pfx.qualify(DIDEX_REQUEST): (
-            f"{PROTOCOL_PACKAGE}.messages.request.DIDExRequest"
+        pfx.qualify(CONN23_REQUEST): (
+            f"{PROTOCOL_PACKAGE}.messages.request.Conn23Request"
         )
         for pfx in DIDCommPrefix
     },
     **{
-        pfx.qualify(DIDEX_RESPONSE): (
-            f"{PROTOCOL_PACKAGE}.messages.response.DIDExResponse"
+        pfx.qualify(CONN23_RESPONSE): (
+            f"{PROTOCOL_PACKAGE}.messages.response.Conn23Response"
         )
         for pfx in DIDCommPrefix
     },
     **{
-        pfx.qualify(DIDEX_COMPLETE): (
-            f"{PROTOCOL_PACKAGE}.messages.complete.DIDExComplete"
+        pfx.qualify(CONN23_COMPLETE): (
+            f"{PROTOCOL_PACKAGE}.messages.complete.Conn23Complete"
         )
         for pfx in DIDCommPrefix
     },
