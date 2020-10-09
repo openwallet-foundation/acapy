@@ -1259,7 +1259,7 @@ async def register(app: web.Application):
                 credential_exchange_problem_report,
             ),
             web.delete(
-                "/issue-credential/records/{cred_ex_id}/remove",
+                "/issue-credential/records/{cred_ex_id}",
                 credential_exchange_remove,
             ),
         ]
