@@ -26,7 +26,7 @@ class MediationRequestHandler(BaseHandler):
             raise HandlerException("Cannot update routes: no active connection")
 
         mgr = RoutingManager(context)
-        updated = await mgr.update_routes(
+        await mgr.update_routes(
             context.connection_record.connection_id, context.message.updates
         )
         response = MediationGrant(

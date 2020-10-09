@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATION_DENY, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -30,10 +30,11 @@ class MediationDeny(AgentMessage):
         recipient_terms: Sequence[str] = None,
         **kwargs,
     ):
+
         """
         Initialize mediation deny object.
         Args:
-            mediator_terms: Terms that were agreeed by the recipient
+            mediator_terms: Terms that were agreed by the recipient
             recipient_terms: Terms that recipient wants to mediator to agree to
         """
         super(MediationDeny, self).__init__(**kwargs)

@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATION_GRANT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -50,7 +50,8 @@ class MediationGrantSchema(AgentMessageSchema):
         model_class = MediationGrant
 
     endpoint = fields.Str(
-            description="endpoint on which messages destined for the recipient are received.",
+            description="endpoint on which messages destined "
+            "for the recipient are received.",
             example="http://192.168.56.102:8020/"
         )
     routing_keys = fields.List(

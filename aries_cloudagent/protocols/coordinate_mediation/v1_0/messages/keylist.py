@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import KEYLIST, PROTOCOL_PACKAGE
 
 from .inner.keylist_query_paginate import (

@@ -23,27 +23,33 @@ MESSAGE_TYPES = {
         for pfx in DIDCommPrefix
     },
     **{
-        pfx.qualify(KEYLIST_QUERY): f"{PROTOCOL_PACKAGE}.messages.keylist_query.KeylistQuery"
+        pfx.qualify(KEYLIST_QUERY): f"{PROTOCOL_PACKAGE}."
+        "messages.keylist_query.KeylistQuery"
         for pfx in DIDCommPrefix
     },
     **{
-        pfx.qualify(KEYLIST_UPDATE): f"{PROTOCOL_PACKAGE}.messages.keylist_update.KeylistUpdate"
+        pfx.qualify(KEYLIST_UPDATE): f"{PROTOCOL_PACKAGE}."
+        "messages.keylist_update.KeylistUpdate"
         for pfx in DIDCommPrefix
     },
     **{
-        pfx.qualify(KEYLIST_UPDATE_RESPONSE): f"{PROTOCOL_PACKAGE}.messages.keylist_update_response.KeylistUpdateResponse"
+        pfx.qualify(KEYLIST_UPDATE_RESPONSE): f"{PROTOCOL_PACKAGE}."
+        "messages.keylist_update_response.KeylistUpdateResponse"
         for pfx in DIDCommPrefix
     },
     **{
-        pfx.qualify(MEDIATE_DENY): f"{PROTOCOL_PACKAGE}.messages.mediate_deny.MediationDeny"
+        pfx.qualify(MEDIATE_DENY): f"{PROTOCOL_PACKAGE}."
+        "messages.mediate_deny.MediationDeny"
         for pfx in DIDCommPrefix
     },
     **{
-        pfx.qualify(MEDIATE_GRANT): f"{PROTOCOL_PACKAGE}.messages.mediate_grant.MediationGrant"
+        pfx.qualify(MEDIATE_GRANT): f"{PROTOCOL_PACKAGE}."
+        "messages.mediate_grant.MediationGrant"
         for pfx in DIDCommPrefix
     },
     **{
-        pfx.qualify(MEDIATE_REQUEST): f"{PROTOCOL_PACKAGE}.messages.mediate_request.MediationRequest"
+        pfx.qualify(MEDIATE_REQUEST): f"{PROTOCOL_PACKAGE}."
+        "messages.mediate_request.MediationRequest"
         for pfx in DIDCommPrefix
     },
 }

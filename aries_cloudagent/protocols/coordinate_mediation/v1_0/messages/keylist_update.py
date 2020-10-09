@@ -4,7 +4,7 @@ from typing import Sequence
 
 from marshmallow import fields
 
-from ....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import KEYLIST_UPDATE, PROTOCOL_PACKAGE
 
 from .inner.keylist_update_rule import KeylistUpdateRule, KeylistUpdateRuleSchema
