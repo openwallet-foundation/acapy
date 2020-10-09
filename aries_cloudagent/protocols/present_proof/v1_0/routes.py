@@ -1094,7 +1094,7 @@ async def register(app: web.Application):
                 presentation_exchange_verify_presentation,
             ),
             web.delete(
-                "/present-proof/records/{pres_ex_id}/remove",
+                "/present-proof/records/{pres_ex_id}",
                 presentation_exchange_remove,
             ),
         ]
