@@ -13,13 +13,9 @@ QUERY = f"discover-features/1.0/query"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.discovery.v1_0"
 
-MESSAGE_TYPES = {
-    **{
-        pfx.qualify(DISCLOSE): (f"{PROTOCOL_PACKAGE}.messages.disclose.Disclose")
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(QUERY): (f"{PROTOCOL_PACKAGE}.messages.query.Query")
-        for pfx in DIDCommPrefix
-    },
-}
+MESSAGE_TYPES = DIDCommPrefix.qualify_all(
+    {
+        DISCLOSE: f"{PROTOCOL_PACKAGE}.messages.disclose.Disclose",
+        QUERY: f"{PROTOCOL_PACKAGE}.messages.query.Query",
+    }
+)
