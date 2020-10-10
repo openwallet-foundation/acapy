@@ -93,7 +93,7 @@ class WalletHandler():
             context: Injection context.
         """
 
-        wallet_type = config['type'] or self.DEFAULT_WALLET_CLASS
+        wallet_type = config.get('type') or 'indy'
         wallet_class = self.WALLET_CLASSES[wallet_type]
 
         if config["name"] in self._provider._instances.keys():
@@ -105,41 +105,35 @@ class WalletHandler():
         config["storage_creds"] = self._storage_creds
         wallet = ClassLoader.load_class(wallet_class)(config)
         await wallet.open()
-        storage = ClassLoader.load_class(self.DEFAULT_STORAGE_CLASS)(wallet)
-        ledger = ClassLoader.load_class(self.DEFAULT_LEDGER_CLASS)("default", wallet)
 
         # Store wallet in wallet provider.
         # FIXME: might be possible  to handle cleaner?
-        # FIXME: Delete storage and ledger if wallet is closed, is it possible to reopen?
-        # FIXME: What  about `holder`, `issuer`, etc?
         self._provider._instances[wallet.name] = wallet
-        storage_provider = context.injector._providers[BaseStorage]
-        storage_provider._instances[wallet.name] = storage
-        ledger_provider = context.injector._providers[BaseLedger]
-        ledger_provider._instances[wallet.name] = ledger
 
+        # We need to adapt the context, so that the storage
+        # provider picks up the correct wallet for fetching the connections.
+        # TODO: Maybe there is a nicer way to handle this?
+        new_context = context.copy()
+        new_context.settings.set_value("wallet.id", wallet.name)
+        # As each leder instance has a wallet instance as property but a 
+        # second ledger_pool with the same name cannot be opened we need
+        # Also to set a ledger.pool_name.
+        new_context.settings.set_value("ledger.pool_name", wallet.name)
+        # Inject storage and ledger to add instances with new wallet
+        # to provider
+        # FIXME: What  about `holder`, `issuer`, etc?
+        storage = await new_context.inject(BaseStorage)
+        ledger = await new_context.inject(BaseLedger)
 
         # Get dids and check for paths in metadata.
         dids = await wallet.get_local_dids()
         for did in dids:
             self._handled_keys[did.verkey] = wallet.name
-            # Get path matppings of wallet (path, wallet.name).
-            if did.metadata.get('path'):
-                path = did.metadata['path']
-                self.add_path_mapping(
-                    wallet.name, path)
-
-        # TODO: We need to change the requested instance so that the storage
-        # provider picks up the correct wallet for fetching the connections.
-        # Maybe there is a nicer way to handle this?
-        context.injector._providers[BaseWallet]._requested_instance = wallet.name
-        context.settings.set_value("wallet.id", wallet.name)
 
         # Add connections of opened wallet to handler.
         tag_filter = {}
         post_filter = {}
-        # wallet_handler.set_instance(config["name"])
-        records = await ConnectionRecord.query(context, tag_filter, post_filter)
+        records = await ConnectionRecord.query(new_context, tag_filter, post_filter)
         connections = [record.serialize() for record in records]
         for connection in connections:
             await self.add_connection(connection["connection_id"], config["name"])
@@ -150,6 +144,7 @@ class WalletHandler():
         if wallet not in instances:
             raise WalletNotFoundError('Requested not exisiting wallet instance.')
         context.settings.set_value("wallet.id", wallet)
+        context.settings.set_value("ledger.pool_name", wallet)
 
     async def delete_instance(self, id: str):
         """

@@ -88,15 +88,15 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_provider(
             BaseLedger,
             DynamicProvider(
-            StatsProvider(
-                LedgerProvider(),
-                (
-                    "create_and_send_credential_definition",
-                    "create_and_send_schema",
-                    "get_credential_definition",
-                    "get_schema",
+                StatsProvider(
+                    LedgerProvider(),
+                    (
+                        "create_and_send_credential_definition",
+                        "create_and_send_schema",
+                        "get_credential_definition",
+                        "get_schema",
+                    ),
                 ),
-            ),
                 'wallet.name'
             ),
         )

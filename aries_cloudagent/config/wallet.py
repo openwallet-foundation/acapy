@@ -5,8 +5,10 @@ import logging
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import seed_to_did
 
+
 from .base import ConfigError
 from .injection_context import InjectionContext
+
 
 LOGGER = logging.getLogger(__name__)
 

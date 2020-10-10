@@ -73,7 +73,7 @@ class ClassProvider(BaseProvider):
 class CachedProvider(BaseProvider):
     """Cache the result of another provider."""
 
-    def __init__(self, provider: BaseProvider):
+    def __init__(self, provider: BaseProvider, unique_settings_keys: tuple = ()):
         """Initialize the cached provider instance."""
         if not provider:
             raise ValueError("Cache provider input must not be empty.")

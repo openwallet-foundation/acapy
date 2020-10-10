@@ -24,6 +24,8 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
+from ..wallet.base import BaseWallet
+from ..wallet.models.wallet_record import WalletRecord
 from ..version import __version__
 from ..wallet_handler import WalletHandler
 from ..wallet_handler.error import WalletNotFoundError

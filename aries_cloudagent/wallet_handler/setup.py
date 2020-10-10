@@ -4,6 +4,7 @@ from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader
 from .handler import WalletHandler
 from ..wallet.base import BaseWallet
+from ..wallet.models.wallet_record import WalletRecord
 
 HANDLER_CLASS = "aries_cloudagent.wallet_handler.handler.WalletHandler"
 HANDLED_CLASSES = {
@@ -37,3 +38,12 @@ async def setup(context: InjectionContext):
 
     handler = ClassLoader.load_class(HANDLER_CLASS)(handeled_provider, wallet_cfg)
     context.injector.bind_instance(WalletHandler, handler)
+
+    # Reload wallet records stored in base wallet
+    wallet_handler: WalletHandler = await context.inject(WalletHandler)
+    wallet_records = await WalletRecord.query(context)
+    for wallet_record in wallet_records:
+        await wallet_handler.add_instance(
+            wallet_record.wallet_config,
+            context
+        )

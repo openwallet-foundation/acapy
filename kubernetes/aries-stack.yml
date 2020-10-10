@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 11Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/data/postgres"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      volumes:
+      - name: postgres-pv-claim
+        persistentVolumeClaim:
+          claimName: postgres-pv-claim
+      containers:
+      - env:
+        - name: POSTGRES_PASSWORD
+          value: mysecretpassword
+        - name: PGDATA
+          value: "/usr/data/postgres"
+        image: postgres
+        imagePullPolicy: ""
+        name: postgres
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: "/usr/data/postgres"
+          name: postgres-pv-claim
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+   app: postgres
+spec:
+  type: NodePort
+  ports:
+  - name: "psql"
+    port: 5432
+    targetPort: 5432
+    nodePort: 30432
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aries
+spec:
+  selector:
+    matchLabels:
+      app: aries
+  template:
+    metadata:
+      labels:
+        app: aries
+    spec:
+      containers:
+      - name: aries
+        image: aries-cloudagent:local
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8001
+        - containerPort: 8000
+        args:
+        - start
+        - --genesis-url
+        - <GENESIS_URL>
+        - --inbound-transport
+        - http_custodial
+        - 0.0.0.0
+        - "8000"
+        - --outbound-transport
+        - http
+        - --admin
+        - 0.0.0.0
+        - "8001"
+        - --endpoint
+        - <ENDPOINT_URL>:30100
+        - --label
+        - BMW-Aries-Agent
+        - --wallet-type
+        - indy
+        - --wallet-name
+        - base
+        - --wallet-key
+        - "123456"
+        - --wallet-storage-type 
+        - postgres_storage
+        - --wallet-storage-config 
+        - '{"url":"postgres.default:5432", "wallet_scheme":"DatabasePerWallet"}'
+        - --wallet-storage-creds 
+        - '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}'
+        - --seed
+        - bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+        - --admin-api-key
+        - eNLsWFkAZP2kd3MxR65kM3WXx7aOoXZ44nGfuCxy
+        - --debug-connections
+        - --debug-credentials
+        - --debug-presentations
+        - --replace-public-did
+        - --auto-respond-credential-offer
+        - --auto-ping-connection
+        - --plugin 
+        - aries_cloudagent.wallet_handler
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aries
+  labels:
+    app: aries
+spec:
+  type: NodePort
+  ports:
+  - name: "8001"
+    port: 8001
+    targetPort: 8001
+    nodePort: 30101
+  - name: "8000"
+    port: 8000
+    targetPort: 8000
+    nodePort: 30100
+  selector:
+    app: aries
