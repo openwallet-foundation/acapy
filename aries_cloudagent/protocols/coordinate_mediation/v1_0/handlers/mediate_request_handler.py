@@ -7,7 +7,7 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
-from ..manager import RoutingManager
+from ..manager import MediationManager
 from ..messages.mediate_request import MediationRequest
 from ..messages.mediate_grant import MediationGrant
 
@@ -23,14 +23,20 @@ class MediationRequestHandler(BaseHandler):
         assert isinstance(context.message, MediationRequest)
 
         if not context.connection_ready:
+            mgr = MediationManager(context)
             raise HandlerException("Cannot update routes: no active connection")
 
-        mgr = RoutingManager(context)
-        await mgr.update_routes(
-            context.connection_record.connection_id, context.message.updates
-        )
-        response = MediationGrant(
-            endpoint=context.settings.get("default_endpoint"),
-            routing_keys=None
-        )
-        await responder.send_reply(response)
+        if True: #the agreements present in the request are not sufficient
+            await responder.send_reply()
+
+        else: # agreements fullfilled
+            mgr = MediationManager(context)
+            #TODO: update state of mediation routes
+            #await mgr.update_routes(
+            #    context.connection_record.connection_id, context.message.updates
+            #)
+            response = MediationGrant(
+                endpoint=context.settings.get("default_endpoint"),
+                routing_keys=None
+            )
+            await responder.send_reply(response)

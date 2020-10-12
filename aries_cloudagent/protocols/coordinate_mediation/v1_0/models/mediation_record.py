@@ -40,7 +40,15 @@ class MediationRecord(BaseRecord):
         **kwargs
     ):
 
-        """Initialize a MediationRecord instance."""
+        """
+        Initialize a MediationRecord instance.
+        
+        Args:
+            mediation_id: 
+            state:
+            connection_id: 
+            terms: 
+        """
         super().__init__(
             mediation_id, state or self.STATE_REQUEST_RECEIVED, **kwargs
         )

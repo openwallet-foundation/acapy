@@ -50,9 +50,10 @@ class MediationManager:
             mediation:
         """
         # Set state, 
+        mediation.state = MediationRecord.STATE_DENIED
         await mediation.save(self.context, reason="Mediation Request Denied")
         #prepare message
-        deny = MediationDeny("Denied") # TODO: update message
+        deny = MediationDeny("Mediation Request Denied") # TODO: update message
         return deny
 
 
@@ -70,55 +71,3 @@ class MediationManager:
         self, keylist: Sequence[RouteRecord]
     ) -> Keylist:
         """Prepare a keylist message from keylist."""
-
-    async def update_routes(
-        self, client_connection_id: str, updates: Sequence[RouteUpdate]
-    ) -> Sequence[RouteUpdated]:
-        """
-        Update routes associated with the current connection.
-
-        Args:
-            client_connection_id: The ID of the connection record
-            updates: The sequence of route updates (create/delete) to perform.
-
-        """
-        exist_routes = await self.get_routes(client_connection_id)
-        exist = {}
-        for route in exist_routes:
-            exist[route.recipient_key] = route
-
-        updated = []
-        for update in updates:
-            result = RouteUpdated(
-                recipient_key=update.recipient_key, action=update.action
-            )
-            recip_key = update.recipient_key
-            if not recip_key:
-                result.result = RouteUpdated.RESULT_CLIENT_ERROR
-            elif update.action == RouteUpdate.ACTION_CREATE:
-                if recip_key in exist:
-                    result.result = RouteUpdated.RESULT_NO_CHANGE
-                else:
-                    try:
-                        await self.create_route_record(
-                            client_connection_id=client_connection_id,
-                            recipient_key=recip_key
-                        )
-                    except RoutingManagerError:
-                        result.result = RouteUpdated.RESULT_SERVER_ERROR
-                    else:
-                        result.result = RouteUpdated.RESULT_SUCCESS
-            elif update.action == RouteUpdate.ACTION_DELETE:
-                if recip_key in exist:
-                    try:
-                        await self.delete_route_record(exist[recip_key])
-                    except StorageError:
-                        result.result = RouteUpdated.RESULT_SERVER_ERROR
-                    else:
-                        result.result = RouteUpdated.RESULT_SUCCESS
-                else:
-                    result.result = RouteUpdated.RESULT_NO_CHANGE
-            else:
-                result.result = RouteUpdated.RESULT_CLIENT_ERROR
-            updated.append(result)
-        return updated
