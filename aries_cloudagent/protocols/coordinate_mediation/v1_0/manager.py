@@ -32,13 +32,15 @@ class MediationManager:
         if not context:
             raise MediationManagerError("Missing request context")
 
-    async def receive_request(self, request: MediationRequest):
+    async def receive_request(self, request: MediationRequest) -> MediationRecord:
         """Create a new mediation record to track this request."""
+        # TODO: Determine if terms are acceptable
         record = MediationRecord(
             connection_id=self.context.connection_id,
             terms=request.recipient_terms
         )
         await record.save(self.context, reason="New mediation request received")
+        return record
 
     async def grant_request(self, mediation: MediationRecord) -> MediationGrant:
         """Grant a mediation request and prepare grant message."""
