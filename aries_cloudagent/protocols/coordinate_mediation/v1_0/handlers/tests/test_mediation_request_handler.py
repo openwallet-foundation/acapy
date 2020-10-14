@@ -6,8 +6,8 @@ from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 
-from .. import mediate_request_handler as test_module
-_handler = test_module.MediationRequestHandler()
+from .. import mediate_request_handler as TestModule
+_handler = TestModule.MediationRequestHandler()
 from ...messages.mediate_request import MediationRequest as request
 from ...messages.mediate_grant import MediationGrant as response
 from ...messages.mediate_deny import MediationDeny as denied
@@ -32,7 +32,7 @@ class TestMediationRequestHandler:
 
         mediate_request = request( mediator_terms = [], recipient_terms = [] )
         with async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            TestModule, "ConnectionManager", autospec=True
         ) as mock_mgr:
             await handler.handle(self.context,responder)
 
@@ -44,7 +44,7 @@ class TestMediationRequestHandler:
         #TODO: update terms to real terms
         mediate_request = request( mediator_terms = [False], recipient_terms = [False] ) 
         with async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            TestModule, "ConnectionManager", autospec=True
         ) as mock_mgr:
             await handler.handle(self.context,responder)
             messages = responder.messages
@@ -64,7 +64,7 @@ class TestMediationRequestHandler:
         #TODO: update terms to real terms
         mediate_request = request( mediator_terms = [True], recipient_terms = [True] ) 
         with async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            TestModule, "ConnectionManager", autospec=True
         ) as mock_mgr:
             await handler.handle(self.context,responder)
             messages = responder.messages

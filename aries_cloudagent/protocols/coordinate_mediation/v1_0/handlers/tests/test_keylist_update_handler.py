@@ -6,8 +6,8 @@ from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 
-from .. import keylist_update_handler as test_module
-_handler = test_module.KeylistUpdateHandler()
+from .. import keylist_update_handler as TestModule
+_handler = TestModule.KeylistUpdateHandler()
 from ...messages.keylist_update_response import KeylistUpdateResponse as response
 from ...messages.keylist_update import KeylistUpdate as update
 from ...messages.keylist_query import KeylistQuery as query
@@ -25,7 +25,7 @@ class TestKeyListUpdateRequestHandler:
 
         mediate_request = update( updates = [])
         with async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            TestModule, "ConnectionManager", autospec=True
         ) as mock_mgr:
             await handler.handle(self.context,responder)
     
@@ -34,7 +34,7 @@ class TestKeyListUpdateRequestHandler:
 
         mediate_request = query( filter = None, paginate = None)
         with async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            TestModule, "ConnectionManager", autospec=True
         ) as mock_mgr:
             await handler.handle(self.context,responder)
 
@@ -43,7 +43,7 @@ class TestKeyListUpdateRequestHandler:
 
         mediate_request = update( updates = [])
         with async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            TestModule, "ConnectionManager", autospec=True
         ) as mock_mgr:
             await handler.handle(self.context,responder)
             messages = responder.messages
