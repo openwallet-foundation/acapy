@@ -42,10 +42,9 @@ class KeylistUpdateHandler(BaseHandler):
             return
 
         mgr = MediationManager(context)
-        updated = await mgr.update_routes(
-            context.connection_record.connection_id, context.message.updates
+        response = await mgr.update_keylist(
+            record, updates=context.message.updates
         )
-        response = KeylistUpdateResponse(updated=updated)
         await responder.send_reply(response)
 
     async def reject(responder: BaseResponder):
