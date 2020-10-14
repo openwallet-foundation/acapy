@@ -146,12 +146,10 @@ class MediationManager:
         updated = map(updated_to_keylist_updated, updated)
         return KeylistUpdateResponse(updated=updated)
 
-    async def get_keylist(self, record: MediationRecord) -> Keylist:
+    async def get_keylist(self, record: MediationRecord) -> Sequence[RouteRecord]:
         """Retrieve routes for connection."""
         route_mgr = RoutingManager(self.context)
-        routes = await route_mgr.get_routes(record.connection_id)
-        # TODO: handle pagination request
-        return Keylist(keys=routes, pagination=None) 
+        return await route_mgr.get_routes(record.connection_id)
 
     async def create_keylist_query_response(
         self, keylist: Sequence[RouteRecord]
