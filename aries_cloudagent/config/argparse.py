@@ -684,13 +684,6 @@ class TransportGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add transport-specific command line arguments to the parser."""
         parser.add_argument(
-            "--mediation",
-            metavar="<label>",
-            help="Enables didcomm mediation. After establishing a connection, if enabled, \
-                an agent may request message mediation, which will allow the mediator to \
-                forward messages on behalf of the recipient. See aries-rfc:0211.",
-        )
-        parser.add_argument(
             "-it",
             "--inbound-transport",
             dest="inbound_transports",
