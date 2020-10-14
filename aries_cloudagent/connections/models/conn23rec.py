@@ -16,7 +16,7 @@ from ...storage.record import StorageRecord
 
 
 class Conn23Record(BaseRecord):
-    """Represents a single pairwise connection."""
+    """Represents a single pairwise connection under RFC 23 (DID exchange) protocol."""
 
     class Meta:
         """Conn23Record metadata."""
@@ -72,10 +72,13 @@ class Conn23Record(BaseRecord):
     MULTIUSE = "multiuse"
 
     STATE_START = "start"
+    STATE_INVITATION_CREATED = "invitation-created"  # impl-only: not in RFC 23
     STATE_INVITATION_SENT = "invitation-sent"
     STATE_INVITATION_RECEIVED = "invitation-received"
+    STATE_REQUEST_CREATED = "request-created"  # impl-only: not in RFC 23
     STATE_REQUEST_SENT = "request-sent"
     STATE_REQUEST_RECEIVED = "request-received"
+    STATE_RESPONSE_CREATED = "response-created"  # impl-only: not in RFC 23
     STATE_RESPONSE_SENT = "response-sent"
     STATE_RESPONSE_RECEIVED = "response-received"
     STATE_ABANDONED = "abandoned"
@@ -112,7 +115,7 @@ class Conn23Record(BaseRecord):
         **kwargs,
     ):
         """Initialize a new Conn23Record."""
-        super().__init__(connection_id, state or self.STATE_INIT, **kwargs)
+        super().__init__(connection_id, state or self.STATE_START, **kwargs)
         self.my_did = my_did
         self.their_did = their_did
         self.their_label = their_label
@@ -239,7 +242,7 @@ class Conn23Record(BaseRecord):
         result = await storage.search_records(
             self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         ).fetch_single()
-        return ConnectionInvitation.from_json(result.value)
+        return Conn23Invitation.from_json(result.value)
 
     async def attach_request(
         self, context: InjectionContext, request: Conn23Request
@@ -270,12 +273,15 @@ class Conn23Record(BaseRecord):
         result = await storage.search_records(
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         ).fetch_single()
-        return ConnectionRequest.from_json(result.value)
+        return Conn23Request.from_json(result.value)
 
     @property
     def is_ready(self) -> str:
         """Accessor for connection readiness."""
-        return self.state == self.STATE_ACTIVE or self.state == self.STATE_RESPONSE
+        return self.state in (
+            Conn23Record.STATE_COMPLETED,
+            Conn23Record.STATE_RESPONSE_RECEIVED
+        )
 
     @property
     def is_multiuse_invitation(self) -> bool:

@@ -4,8 +4,8 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
-    AttachDecoratorData,
-    AttachDecoratorDataSchema,
+    AttachDecorator,
+    AttachDecoratorSchema,
 )
 
 from ..message_types import CONN23_RESPONSE, PROTOCOL_PACKAGE
@@ -17,7 +17,7 @@ class Conn23Response(AgentMessage):
     """Class representing a connection response under RFC 23 (DID exchange)."""
 
     class Meta:
-        """Metadata for a connection response under RFC 23 (DID exchange)."""
+        """Metadata for connection response under RFC 23 (DID exchange)."""
 
         handler_class = HANDLER_CLASS
         message_type = CONN23_RESPONSE
@@ -27,7 +27,7 @@ class Conn23Response(AgentMessage):
         self,
         *,
         did: str = None,
-        did_doc_attach: AttachDecoratorData = None,
+        did_doc_attach: AttachDecorator = None,
         **kwargs,
     ):
         """
@@ -48,7 +48,7 @@ class Conn23ResponseSchema(AgentMessageSchema):
     class Meta:
         """DID exchange connection response schema class metadata."""
 
-        model_class = DIDExResponse
+        model_class = Conn23Response
         signed_fields = ["did_doc_attach"]
         unknown = EXCLUDE
 
@@ -56,6 +56,6 @@ class Conn23ResponseSchema(AgentMessageSchema):
     did_doc_attach = fields.Nested(
         AttachDecoratorDataSchema,
         required=False,
-        description="DID Doc associated with DID as signed attachment",
+        description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
     )

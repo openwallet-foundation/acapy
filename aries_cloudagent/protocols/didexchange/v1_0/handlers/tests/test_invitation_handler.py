@@ -5,8 +5,8 @@ from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.messaging.responder import MockResponder
 from aries_cloudagent.transport.inbound.receipt import MessageReceipt
 
-from ...handlers.connection_invitation_handler import ConnectionInvitationHandler
-from ...messages.connection_invitation import ConnectionInvitation
+from ...handlers.invitation_handler import Conn23InvitationHandler
+from ...messages.invitation import Conn23Invitation
 from ...messages.problem_report import ProblemReport, ProblemReportReason
 
 
@@ -17,11 +17,11 @@ def request_context() -> RequestContext:
     yield ctx
 
 
-class TestInvitationHandler:
+class TestConn23InvitationHandler:
     @pytest.mark.asyncio
     async def test_problem_report(self, request_context):
-        request_context.message = ConnectionInvitation()
-        handler = ConnectionInvitationHandler()
+        request_context.message = Conn23Invitation()
+        handler = Conn23InvitationHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)
         messages = responder.messages

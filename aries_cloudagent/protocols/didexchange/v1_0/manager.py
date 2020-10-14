@@ -31,9 +31,10 @@ from ...didcomm_prefix import DIDCommPrefix
 from ...out_of_band.v1_0.messages.invitation import InviatationMessage
 from ...routing.v1_0.manager import RoutingManager
 
+from .messages.complete import Conn23Complete
 from .messages.invitation import Conn23Invitation
-from .messages.connection_request import Conn23Request
-from .messages.connection_response import Conn23Response
+from .messages.request import Conn23Request
+from .messages.response import Conn23Response
 from .messages.problem_report import ProblemReportReason
 
 
@@ -147,18 +148,6 @@ class Conn23Manager:
         # Create and store new invitation key
         connection_key = await wallet.create_signing_key()
 
-        # Create connection record
-        connection = Conn23Record(
-            invitation_key=connection_key.verkey,
-            their_role=Conn23Record.Role.REQUESTER,
-            state=ConnectionRecord.STATE_INVITATION_SENT,
-            accept=accept,
-            invitation_mode=invitation_mode,
-            alias=alias,
-        )
-
-        await connection.save(self.context, reason="Created new invitation")
-
         # Create connection invitation message
         # Note: Need to split this into two stages to support inbound routing of invites
         # Would want to reuse create_did_document and convert the result
@@ -167,6 +156,18 @@ class Conn23Manager:
             recipient_keys=[connection_key.verkey],
             endpoint=my_endpoint,
         )
+
+        # Create connection record
+        connection = Conn23Record(
+            invitation_key=connection_key.verkey,
+            their_role=Conn23Record.Role.REQUESTER,
+            state=Conn23Record.STATE_INVITATION_CREATED,
+            accept=accept,
+            invitation_mode=invitation_mode,
+            alias=alias,
+        )
+
+        await connection.save(self.context, reason="Created new invitation")
         await connection.attach_invitation(self.context, invitation)
 
         return (connection, invitation)
@@ -232,11 +233,17 @@ class Conn23Manager:
                 BaseResponder, required=False
             )
             if responder:
-                await responder.send(request, connection_id=connection.connection_id)
+                await responder.send_reply(
+                    request,
+                    connection_id=connection.connection_id,
+                )
+
                 # refetch connection for accurate state
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
+                connection.state = Conn23Record.STATE_REQUEST_SENT
+                await connection.save(self.context, reason="Sent connection request")
         else:
             self._logger.debug("Connection invitation will await acceptance")
 
@@ -280,20 +287,21 @@ class Conn23Manager:
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints
         )
-        attach_data = AttachDecorator.from_aries_msg(did_doc.serialize()).data
-        await attach_data.sign(my_info.verkey, wallet)
+        pthid = did_doc.service[[s for s in did_doc.service][0]].id
+        attach = AttachDecorator.from_aries_msg(did_doc.serialize())
+        await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
             my_label = self.context.settings.get("default_label")
         request = Conn23Request(
             label=my_label,
             did=connection.my_did,
-            did_doc_attach=attach_data,
+            did_doc_attach=attach,
         )
+        request.assign_thread_id(thid=request._id, pthid=pthid)
 
         # Update connection state
         connection.request_id = request._id
-        connection.state = ConnectionRecord.STATE_REQUEST_SENT
-
+        connection.state = Conn23Record.STATE_REQUEST_CREATED
         await connection.save(self.context, reason="Created connection request")
 
         return request
@@ -351,7 +359,7 @@ class Conn23Manager:
                 new_connection = Conn23Record(
                     invitation_key=connection_key,
                     my_did=my_info.did,
-                    state=ConnectionRecord.STATE_REQUEST_RECEIVED,
+                    state=Conn23Record.STATE_REQUEST_RECEIVED,
                     accept=connection.accept,
                     their_role=connection.their_role,
                 )
@@ -391,10 +399,10 @@ class Conn23Manager:
                 their_did=request.connection.did,
                 their_label=request.label,
                 their_role=Conn23Record.Role.REQUESTER,
-                state=ConnectionRecord.STATE_REQUEST_RECEIVED,
+                state=Conn23Record.STATE_REQUEST_RECEIVED,
             )
             if self.context.settings.get("debug.auto_accept_requests"):
-                connection.accept = ConnectionRecord.ACCEPT_AUTO
+                connection.accept = Conn23Record.ACCEPT_AUTO
 
             await connection.save(
                 self.context, reason="Received connection request from public DID"
@@ -416,37 +424,36 @@ class Conn23Manager:
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
+                connection.state = Conn23Record.STATE_RESPONSE_SENT
+                await connection.save(self.context, reason="Sent connection response")
         else:
             self._logger.debug("Connection request will await acceptance")
 
         return connection
 
     async def create_response(
-        self, connection: ConnectionRecord, my_endpoint: str = None
-    ) -> ConnectionResponse:
+        self, connection: Conn23Record, my_endpoint: str = None
+    ) -> Conn23Response:
         """
         Create a connection response for a received connection request.
 
         Args:
-            connection: The `ConnectionRecord` with a pending connection request
-            my_endpoint: The endpoint I can be reached at
+            connection: The `Conn23Record` with a pending connection request
+            my_endpoint: Current agent endpoint
 
         Returns:
-            A tuple of the updated `ConnectionRecord` new `ConnectionResponse` message
+            New `Conn23Response` message
 
         """
-        ConnectionRecord.log_state(
+        Conn23Record.log_state(
             self.context,
             "Creating connection response",
             {"connection_id": connection.connection_id},
         )
 
-        if connection.state not in (
-            ConnectionRecord.STATE_REQUEST,
-            ConnectionRecord.STATE_RESPONSE,
-        ):
-            raise ConnectionManagerError(
-                "Connection is not in the request or response state"
+        if connection.state != Conn23Record.STATE_REQUEST_RECEIVED:
+            raise Conn23ManagerError(
+                f"Connection not in state {Conn23Record.STATE_REQUEST_RECEIVED}"
             )
 
         request = await connection.retrieve_request(self.context)
@@ -469,24 +476,26 @@ class Conn23Manager:
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints
         )
-        response = ConnectionResponse(
-            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
-        )
+        attach = AttachDecorator.from_aries_msg(did_doc.serialize())
+        await attach.data.sign(connection.invitation_key, wallet)
+        response = Conn23Response(did=my_info.did, did_doc_attach=attach)
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)
+        '''  # TODO - re-evaluate what code signs? With what key?
         # Sign connection field using the invitation key
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)
+        '''
 
         # Update connection state
-        connection.state = ConnectionRecord.STATE_RESPONSE
-
+        connection.state = Conn23Record.STATE_RESPONSE_CREATED
         await connection.save(
             self.context,
             reason="Created connection response",
             log_params={"response": response},
         )
+
         return response
 
     async def accept_response(
@@ -518,7 +527,7 @@ class Conn23Manager:
         if response._thread:
             # identify the request by the thread ID
             try:
-                connection = await ConnectionRecord.retrieve_by_request_id(
+                connection = await Conn23Record.retrieve_by_request_id(
                     self.context, response._thread_id
                 )
             except StorageNotFoundError:
@@ -555,17 +564,81 @@ class Conn23Manager:
             )
         conn_did_doc = await self.verify_diddoc(response.connection.did_doc_attach)
         if their_did != conn_did_doc.did:
-            raise ConnectionManagerError(
+            raise Conn23ManagerError(
                 f"Connection DID {their_did} "
                 f"does not match DID doc id {conn_did_doc.did}"
             )
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did
-        connection.state = ConnectionRecord.STATE_RESPONSE_RECEIVED
-
+        connection.state = Conn23Record.STATE_RESPONSE_RECEIVED
         await connection.save(self.context, reason="Accepted connection response")
 
+        # create and send connection-complete message
+        complete = Conn23Complete()
+        complete.assign_thread_from(response)
+        responder: BaseResponder = await self._context.inject(
+            BaseResponder, required=False
+        )
+        if responder:
+            await responder.send_reply(
+                complete,
+                connection_id=connection.connection_id
+            )
+
+            # refetch connection for accurate state
+            connection = await Conn23Record.retrieve_by_id(
+                self._context, connection.connection_id
+            )
+            connection.state = Conn23Record.STATE_COMPLETED
+            await connection.save(self.context, reason="Sent connection complete")
+        
+        return connection
+
+    async def accept_complete(
+        self, complete: Conn23Complete, receipt: MessageReceipt
+    ) -> Conn23Record:
+        """
+        Accept a connection complete message under RFC 23 (DID exchange).
+
+        Process a Conn23Complete message by looking up
+        the connection record and marking the exchange complete.
+
+        Args:
+            complete: The `Conn23Complete` to accept
+            receipt: The message receipt
+
+        Returns:
+            The updated `Conn23Record` representing the connection
+
+        Raises:
+            Conn23ManagerError: If the corresponding connection does not exist
+                or is not in the response-sent state
+
+        """
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+
+        connection = None
+
+        # identify the request by the thread ID
+        try:
+            connection = await Conn23Record.retrieve_by_request_id(
+                self.context, response._thread_id
+            )
+        except StorageNotFoundError:
+            connection.state = Conn23Record.STATE_ABANDONED
+            await connection.save(
+                self.context,
+                reason="Received connection complete for absent invitation",
+            )
+            raise Conn23ManagerError(
+                "No corresponding connection request found",
+                error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED
+            )
+
+        connection.state = Conn23Record.STATE_COMPLETED
+        await connection.save(self.context, reason="Received connection complete")
+        
         return connection
 
     async def find_connection(
@@ -574,7 +647,7 @@ class Conn23Manager:
         my_did: str = None,
         my_verkey: str = None,
         auto_complete=False,
-    ) -> ConnectionRecord:
+    ) -> Conn23Record:
         """
         Look up existing connection information for a sender verkey.
 
@@ -582,20 +655,20 @@ class Conn23Manager:
             their_did: Their DID
             my_did: My DID
             my_verkey: My verkey
-            auto_complete: Should this connection automatically be promoted to active
+            auto_complete: Whether to promote connection automatically to completed
 
         Returns:
-            The located `ConnectionRecord`, if any
+            The located `Conn23Record`, if any
 
         """
-        # self._log_state(
-        #    "Finding connection",
-        #    {"their_did": their_did, "my_did": my_did, "my_verkey": my_verkey},
-        # )
+        self._log_state(
+           "Finding connection",
+           {"their_did": their_did, "my_did": my_did, "my_verkey": my_verkey},
+        )
         connection = None
         if their_did:
             try:
-                connection = await ConnectionRecord.retrieve_by_did(
+                connection = await Conn23Record.retrieve_by_did(
                     self.context, their_did, my_did
                 )
             except StorageNotFoundError:
@@ -603,29 +676,37 @@ class Conn23Manager:
 
         if (
             connection
-            and connection.state == ConnectionRecord.STATE_RESPONSE
+            and connection.state in (
+                Conn23Record.STATE_RESPONSE_SENT,
+                Conn23Record.STATE_RESPONSE_RECEIVED,
+            )
             and auto_complete
         ):
-            connection.state = ConnectionRecord.STATE_ACTIVE
+            connection.state = Conn23Record.STATE_COMPLETED
 
-            await connection.save(self.context, reason="Connection promoted to active")
-        elif connection and connection.state == ConnectionRecord.STATE_INACTIVE:
-            connection.state = ConnectionRecord.STATE_ACTIVE
-            await connection.save(self.context, reason="Connection restored to active")
+            await connection.save(
+                self.context, reason="Connection promoted to completed"
+            )
 
         if not connection and my_verkey:
             try:
-                connection = await ConnectionRecord.retrieve_by_invitation_key(
-                    self.context, my_verkey, ConnectionRecord.INITIATOR_SELF
+                connection = await Conn23Record.retrieve_by_invitation_key(
+                    context=self.context,
+                    invitation_key=my_verkey,
+                    my_role=ConnRecord.Role.REQUESTER
                 )
             except StorageError:
+                self._logger.warning(
+                    "No corresponding connection record found for sender verkey: %s",
+                    my_verkey,
+                )
                 pass
 
         return connection
 
     async def find_inbound_connection(
         self, receipt: MessageReceipt
-    ) -> ConnectionRecord:
+    ) -> Conn23Record:
         """
         Deserialize an incoming message and further populate the request context.
 
@@ -633,7 +714,7 @@ class Conn23Manager:
             receipt: The message receipt
 
         Returns:
-            The `ConnectionRecord` associated with the expanded message, if any
+            The `Conn23Record` associated with the expanded message, if any
 
         """
 
@@ -654,7 +735,7 @@ class Conn23Manager:
                         receipt.sender_did = cached["sender_did"]
                         receipt.recipient_did_public = cached["recipient_did_public"]
                         receipt.recipient_did = cached["recipient_did"]
-                        connection = await ConnectionRecord.retrieve_by_id(
+                        connection = await Conn23Record.retrieve_by_id(
                             self.context, cached["id"]
                         )
                     else:
@@ -675,15 +756,15 @@ class Conn23Manager:
 
     async def resolve_inbound_connection(
         self, receipt: MessageReceipt
-    ) -> ConnectionRecord:
+    ) -> Conn23Record:
         """
-        Populate the receipt DID information and find the related `ConnectionRecord`.
+        Populate the receipt DID information and find the related `Conn23Record`.
 
         Args:
             receipt: The message receipt
 
         Returns:
-            The `ConnectionRecord` associated with the expanded message, if any
+            The `Conn23Record` associated with the expanded message, if any
 
         """
 
@@ -703,7 +784,7 @@ class Conn23Manager:
                     receipt.recipient_verkey
                 )
                 receipt.recipient_did = my_info.did
-                if "public" in my_info.metadata and my_info.metadata["public"] is True:
+                if "public" in my_info.metadata and my_info.metadata["public"]:
                     receipt.recipient_did_public = True
             except InjectorError:
                 self._logger.warning(
@@ -757,23 +838,23 @@ class Conn23Manager:
         router_idx = 1
         while router_id:
             # look up routing connection information
-            router = await ConnectionRecord.retrieve_by_id(self.context, router_id)
-            if router.state != ConnectionRecord.STATE_ACTIVE:
+            router = await Conn23Record.retrieve_by_id(self.context, router_id)
+            if router.state != Conn23Record.STATE_COMPLETED:
                 raise ConnectionManagerError(
-                    f"Router connection not active: {router_id}"
+                    f"Router connection not completed: {router_id}"
                 )
             routing_doc, _ = await self.fetch_did_document(router.their_did)
             if not routing_doc.service:
-                raise ConnectionManagerError(
+                raise Conn23ManagerError(
                     f"No services defined by routing DIDDoc: {router_id}"
                 )
             for service in routing_doc.service.values():
                 if not service.endpoint:
-                    raise ConnectionManagerError(
+                    raise Conn23ManagerError(
                         "Routing DIDDoc service has no service endpoint"
                     )
                 if not service.recip_keys:
-                    raise ConnectionManagerError(
+                    raise Conn23ManagerError(
                         "Routing DIDDoc service has no recipient key(s)"
                     )
                 rk = PublicKey(
@@ -789,7 +870,7 @@ class Conn23Manager:
                 break
             router_id = router.inbound_connection_id
 
-        for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
+        for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
             service = Service(
                 did_info.did,
@@ -807,19 +888,19 @@ class Conn23Manager:
         """Retrieve a DID Document for a given DID.
 
         Args:
-            did: The DID to search for
+            did: The DID for which to search
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
         record = await storage.search_records(
             self.RECORD_TYPE_DID_DOC, {"did": did}
         ).fetch_single()
-        return DIDDoc.from_json(record.value), record
+        return (DIDDoc.from_json(record.value), record)
 
     async def store_did_document(self, did_doc: DIDDoc):
         """Store a DID document.
 
         Args:
-            did_doc: The `DIDDoc` instance to be persisted
+            did_doc: The `DIDDoc` instance to persist
         """
         assert did_doc.did
         storage: BaseStorage = await self.context.inject(BaseStorage)
@@ -864,7 +945,7 @@ class Conn23Manager:
         """Remove all keys associated with a DID.
 
         Args:
-            did: The DID to remove keys for
+            did: The DID for which to remove keys
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
         keys = await storage.search_records(
@@ -874,9 +955,9 @@ class Conn23Manager:
             await storage.delete_record(record)
 
     async def get_connection_targets(
-        self, *, connection_id: str = None, connection: ConnectionRecord = None
+        self, *, connection_id: str = None, connection: Conn23Record = None
     ):
-        """Create a connection target from a `ConnectionRecord`.
+        """Create a connection target from a `Conn23Record`.
 
         Args:
             connection_id: The connection ID to search for
@@ -894,7 +975,7 @@ class Conn23Manager:
                     ]
                 else:
                     if not connection:
-                        connection = await ConnectionRecord.retrieve_by_id(
+                        connection = await Conn23Record.retrieve_by_id(
                             self.context, connection_id
                         )
                     targets = await self.fetch_connection_targets(connection)
@@ -904,9 +985,9 @@ class Conn23Manager:
         return targets
 
     async def fetch_connection_targets(
-        self, connection: ConnectionRecord
+        self, connection: Conn23Record
     ) -> Sequence[ConnectionTarget]:
-        """Get a list of connection target from a `ConnectionRecord`.
+        """Get a list of connection target from a `Conn23Record`.
 
         Args:
             connection: The connection record (with associated `DIDDoc`)
@@ -921,10 +1002,16 @@ class Conn23Manager:
         my_info = await wallet.get_local_did(connection.my_did)
         results = None
 
+        ''' was (for RFC 160)
         if (
             connection.state
             in (ConnectionRecord.STATE_INVITATION, ConnectionRecord.STATE_REQUEST)
             and connection.initiator == ConnectionRecord.INITIATOR_EXTERNAL
+        ):
+        '''
+        if (
+            connection.state in (Conn23Record.STATE..., Conn23Record.STATE_...)
+            and connection.their_role is Conn23Record.Role.REQUESTER
         ):
             invitation = await connection.retrieve_invitation(self.context)
             if invitation.did:
@@ -933,7 +1020,7 @@ class Conn23Manager:
                     BaseLedger, required=False
                 )
                 if not ledger:
-                    raise ConnectionManagerError(
+                    raise Conn23ManagerError(
                         "Cannot resolve DID without ledger instance"
                     )
                 async with ledger:
@@ -957,7 +1044,10 @@ class Conn23Manager:
             ]
         else:
             if not connection.their_did:
-                self._logger.debug("No target DID associated with connection")
+                self._logger.debug(
+                    "No target DID associated with connection %s",
+                    connection.connection_id
+                )
                 return None
 
             did_doc, _ = await self.fetch_did_document(connection.their_did)
@@ -994,11 +1084,11 @@ class Conn23Manager:
         """
 
         if not doc:
-            raise ConnectionManagerError("No DIDDoc provided for connection target")
+            raise Conn23ManagerError("No DIDDoc provided for connection target")
         if not doc.did:
-            raise ConnectionManagerError("DIDDoc has no DID")
+            raise Conn23ManagerError("DIDDoc has no DID")
         if not doc.service:
-            raise ConnectionManagerError("No services defined by DIDDoc")
+            raise Conn23ManagerError("No services defined by DIDDoc")
 
         targets = []
         for service in doc.service.values():
@@ -1020,12 +1110,11 @@ class Conn23Manager:
         return targets
 
     async def establish_inbound(
-        self, connection: ConnectionRecord, inbound_connection_id: str, outbound_handler
+        self, connection: Conn23Record, inbound_connection_id: str, outbound_handler
     ) -> str:
         """Assign the inbound routing connection for a connection record.
 
-        Returns: the current routing state (request or done)
-
+        Returns: the current routing state ("request")
         """
 
         # The connection must have a verkey, but in the case of a received
@@ -1039,15 +1128,15 @@ class Conn23Manager:
             connection.my_did = my_info.did
 
         try:
-            router = await ConnectionRecord.retrieve_by_id(
+            router = await Conn23Record.retrieve_by_id(
                 self.context, inbound_connection_id
             )
         except StorageNotFoundError:
-            raise ConnectionManagerError(
+            raise Conn23ManagerError(
                 f"Routing connection not found: {inbound_connection_id}"
             )
         if not router.is_ready:
-            raise ConnectionManagerError(
+            raise Conn23ManagerError(
                 f"Routing connection is not ready: {inbound_connection_id}"
             )
         connection.inbound_connection_id = inbound_connection_id
@@ -1057,7 +1146,7 @@ class Conn23Manager:
         await route_mgr.send_create_route(
             inbound_connection_id, my_info.verkey, outbound_handler
         )
-        connection.routing_state = ConnectionRecord.ROUTING_STATE_REQUEST
+        connection.routing_state = Conn23Record.ROUTING_STATE_REQUEST
         await connection.save(self.context)
         return connection.routing_state
 
@@ -1069,7 +1158,7 @@ class Conn23Manager:
         Looks up pending connections associated with the inbound routing
         connection and marks the routing as complete.
         """
-        conns = await ConnectionRecord.query(
+        conns = await Conn23Record.query(
             self.context, {"inbound_connection_id": inbound_connection_id}
         )
         wallet: BaseWallet = await self.context.inject(BaseWallet)

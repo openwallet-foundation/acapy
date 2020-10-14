@@ -13,7 +13,7 @@ from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.messaging.responder import MockResponder
 from aries_cloudagent.transport.inbound.receipt import MessageReceipt
 
-from ...handlers import request_handler as handler
+from ...handlers import request_handler as test_module
 from ...manager import Conn23ManagerError
 from ...messages.request import Conn23Request
 from ...messages.problem_report import ProblemReport, ProblemReportReason
@@ -33,42 +33,55 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-@pytest.fixture()
-def did_doc():
-    doc = DIDDoc(did=TEST_DID)
-    controller = TEST_DID
-    ident = "1"
-    pk_value = TEST_VERKEY
-    pk = PublicKey(
-        TEST_DID,
-        ident,
-        pk_value,
-        PublicKeyType.ED25519_SIG_2018,
-        controller,
-        False,
-    )
-    doc.set(pk)
-    recip_keys = [pk]
-    router_keys = []
-    service = Service(
-        TEST_DID,
-        "indy",
-        "IndyAgent",
-        recip_keys,
-        router_keys,
-        TEST_ENDPOINT,
-    )
-    doc.set(service)
-    yield doc
+class TestConn23RequestHandler:
+    """Class unit testing request handler."""
 
+    def did_doc(self):
+        doc = DIDDoc(did=TEST_DID)
+        controller = TEST_DID
+        ident = "1"
+        pk_value = TEST_VERKEY
+        pk = PublicKey(
+            TEST_DID,
+            ident,
+            pk_value,
+            PublicKeyType.ED25519_SIG_2018,
+            controller,
+            False,
+        )
+        doc.set(pk)
+        recip_keys = [pk]
+        router_keys = []
+        service = Service(
+            TEST_DID,
+            "indy",
+            "IndyAgent",
+            recip_keys,
+            router_keys,
+            TEST_ENDPOINT,
+        )
+        doc.set(service)
+        return doc
 
-class TestRequestHandler:
+    async def setUp(self):
+        self.wallet = BasicWallet()
+        self.did_info = await self.wallet.create_local_did()
+
+        self.did_doc_attach = AttachDecorator.from_aries_msg(message=self.did_doc())
+        await self.did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
+
+        self.request = Conn23Request(
+            label=TestConfig.label,
+            did=TestConfig.test_did,
+            did_doc_attach=self.did_doc_attach,
+        )
+
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "Conn23Manager")
+    @async_mock.patch.object(test_module, "Conn23Manager")
     async def test_called(self, mock_conn_mgr, request_context):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         request_context.message = Conn23Request()
-        handler_inst = handler.Conn23RequestHandler()
+        handler_inst = test_module.Conn23RequestHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
 
@@ -79,14 +92,14 @@ class TestRequestHandler:
         assert not responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "Conn23Manager")
+    @async_mock.patch.object(test_module, "Conn23Manager")
     async def test_problem_report(self, mock_conn_mgr):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = Conn23ManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
         request_context.message = Conn23Request()
-        handler_inst = handler.Conn23RequestHandler()
+        handler_inst = test_module.Conn23RequestHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         messages = responder.messages
@@ -99,10 +112,10 @@ class TestRequestHandler:
         assert target == {"target_list": None}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "Conn23Manager")
+    @async_mock.patch.object(test_module, "Conn23Manager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
-        self, mock_conn_target, mock_conn_mgr, did_doc, request_context
+        self, mock_conn_target, mock_conn_mgr, request_context
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = Conn23ManagerError(
@@ -114,9 +127,9 @@ class TestRequestHandler:
         request_context.message = Conn23Request(
             label=TEST_LABEL,
             did=TEST_DID,
-            did_doc=did_doc,  # TODO sign?
+            did_doc_attach=self.did_doc_attach,
         )
-        handler_inst = handler.Conn23RequestHandler()
+        handler_inst = test_module.Conn23RequestHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         messages = responder.messages
@@ -129,10 +142,10 @@ class TestRequestHandler:
         assert target == {"target_list": [mock_conn_target]}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "Conn23Manager")
+    @async_mock.patch.object(test_module, "Conn23Manager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
-        self, mock_conn_target, mock_conn_mgr, did_doc, request_context
+        self, mock_conn_target, mock_conn_mgr, request_context
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = Conn23ManagerError(
@@ -144,9 +157,9 @@ class TestRequestHandler:
         request_context.message = Conn23Request(
             label=TEST_LABEL,
             did=TEST_DID,
-            did_doc=did_doc,  # TODO sign?
+            did_doc_attach=self.did_doc_attach,
         )
-        handler_inst = handler.Conn23RequestHandler()
+        handler_inst = test_module.Conn23RequestHandler()
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         messages = responder.messages

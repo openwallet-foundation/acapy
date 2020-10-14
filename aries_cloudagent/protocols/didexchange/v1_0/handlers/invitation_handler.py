@@ -11,7 +11,7 @@ from ..messages.problem_report import ProblemReport, ProblemReportReason
 
 
 class Conn23InvitationHandler(BaseHandler):
-    """Handler class for connection invitations under RFC 23 (DID exchange)."""
+    """Handler class for connection invitation message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """

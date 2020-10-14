@@ -8,7 +8,7 @@ from ..messages.problem_report import ProblemReport
 
 
 class Conn23RequestHandler(BaseHandler):
-    """Handler class for connection requests under RFC 23 (DID exchange)."""
+    """Handler class for connection request message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """

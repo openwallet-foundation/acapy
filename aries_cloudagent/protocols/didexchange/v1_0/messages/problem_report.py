@@ -18,6 +18,7 @@ class ProblemReportReason(str, Enum):
     INVITATION_NOT_ACCEPTED = "invitation_not_accepted"
     RESPONSE_NOT_ACCEPTED = "response_not_accepted"
     RESPONSE_PROCESSING_ERROR = "response_processing_error"
+    COMPLETE_NOT_ACCEPTED = "complete_not_accepted"
 
 
 class ProblemReport(AgentMessage):

@@ -413,13 +413,17 @@ async def connections_accept_invitation(request: web.BaseRequest):
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
         request = await connection_mgr.create_request(connection, my_label, my_endpoint)
-        result = connection.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, WalletError, ConnectionManagerError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    # TODO - maybe move this into the manager?
     await outbound_handler(request, connection_id=connection.connection_id)
+    connection.state = Conn23Record.STATE_REQUEST_SENT
+    await connection.save(context, "Sent connection request")
+    result = connection.serialize()
+
     return web.json_response(result)
 
 

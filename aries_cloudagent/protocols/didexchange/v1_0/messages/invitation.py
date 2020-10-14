@@ -9,12 +9,10 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
 from .....wallet.util import b64_to_bytes, bytes_to_b64
 
-from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
-
+from ..message_types import CONN23_INVITATION, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".invitation_handler.Conn23InvitationHandler"
+    f"{PROTOCOL_PACKAGE}.handlers" ".invitation_handler.Conn23InvitationHandler"
 )
 
 
@@ -22,10 +20,10 @@ class Conn23Invitation(AgentMessage):
     """Class representing a connection invitation."""
 
     class Meta:
-        """Metadata for a connection invitation."""
+        """Metadata for connection invitation."""
 
         handler_class = HANDLER_CLASS
-        message_type = CONNECTION_INVITATION
+        message_type = CONN23_INVITATION
         schema_class = "Conn23InvitationSchema"
 
     def __init__(

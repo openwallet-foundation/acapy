@@ -13,7 +13,7 @@ from ..messages.problem_report import ProblemReport
 
 
 class Conn23ResponseHandler(BaseHandler):
-    """Handler class for connection responses under RFC 23 (DID exchange)."""
+    """Handler class for connection response message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """

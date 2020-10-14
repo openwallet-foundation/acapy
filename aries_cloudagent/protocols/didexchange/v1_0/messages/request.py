@@ -4,8 +4,8 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
-    AttachDecoratorData,
-    AttachDecoratorDataSchema,
+    AttachDecorator,
+    AttachDecoratorSchema,
 )
 
 from ..message_types import CONN23_REQUEST, PROTOCOL_PACKAGE
@@ -17,7 +17,7 @@ class Conn23Request(AgentMessage):
     """Class representing a connection request under RFC 23 (DID exchange)."""
 
     class Meta:
-        """Metadata for a connection request under RFC 23 (DID exchange)."""
+        """Metadata for connection request under RFC 23 (DID exchange)."""
 
         handler_class = HANDLER_CLASS
         message_type = CONN23_REQUEST
@@ -28,7 +28,7 @@ class Conn23Request(AgentMessage):
         *,
         label: str = None,
         did: str = None,
-        did_doc_attach: AttachDecoratorData = None,
+        did_doc_attach: AttachDecorator = None,
         **kwargs,
     ):
         """
@@ -51,7 +51,7 @@ class Conn23RequestSchema(AgentMessageSchema):
     class Meta:
         """DID exchange connection request schema class metadata."""
 
-        model_class = DIDExRequest
+        model_class = Conn23Request
         signed_fields = ["did_doc_attach"]
         unknown = EXCLUDE
 
@@ -62,8 +62,8 @@ class Conn23RequestSchema(AgentMessageSchema):
     )
     did = fields.Str(description="DID of exchange", **INDY_DID)
     did_doc_attach = fields.Nested(
-        AttachDecoratorDataSchema,
+        AttachDecoratorSchema,
         required=False,
-        description="DID Doc associated with DID as signed attachment",
+        description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
     )
