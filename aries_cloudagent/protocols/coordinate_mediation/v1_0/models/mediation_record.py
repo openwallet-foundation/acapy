@@ -13,18 +13,18 @@ class MediationRecord(BaseRecord):
     """Class representing stored route information.
 
     Args:
-        connection id: 
-        terms: 
+        connection id:
+        terms:
     """
 
     class Meta:
         """RouteRecord metadata."""
 
-        schema_class = "RouteRecordSchema"
+        schema_class = "MediationRecordSchema"
 
     RECORD_TYPE = "mediation_requests"
     RECORD_ID_NAME = "mediation_id"
-    TAG_NAMES = {"connection_id", "recipient_key"}
+    TAG_NAMES = {"connection_id"}
 
     STATE_REQUEST_RECEIVED = "request_received"
     STATE_GRANTED = "granted"
@@ -36,24 +36,25 @@ class MediationRecord(BaseRecord):
         mediation_id: str = None,
         state: str = None,
         connection_id: str = None,
-        terms: Sequence[str] = [],
+        mediator_terms: Sequence[str] = None,
+        recipient_terms: Sequence[str] = None,
         **kwargs
     ):
-
         """
         Initialize a MediationRecord instance.
-        
+
         Args:
-            mediation_id: 
+            mediation_id:
             state:
-            connection_id: 
-            terms: 
+            connection_id:
+            terms:
         """
         super().__init__(
             mediation_id, state or self.STATE_REQUEST_RECEIVED, **kwargs
         )
         self.connection_id = connection_id
-        self.terms = terms
+        self.mediator_terms = list(mediator_terms) if mediator_terms else []
+        self.recipient_terms = list(recipient_terms) if recipient_terms else []
 
     @property
     def mediation_id(self) -> str:
@@ -71,14 +72,15 @@ class MediationRecord(BaseRecord):
 
 
 class MediationRecordSchema(BaseRecordSchema):
-    """RouteRecord schema."""
+    """MediationRecordSchema schema."""
 
     class Meta:
-        """RouteRecordSchema metadata."""
+        """MediationRecordSchema metadata."""
 
         model_class = MediationRecord
         unknown = EXCLUDE
 
     mediation_id = fields.Str(required=False)
     connection_id = fields.Str(required=True)
-    terms = fields.List(fields.Str(), required=False)
+    mediator_terms = fields.List(fields.Str(), required=False)
+    recipient_terms = fields.List(fields.Str(), required=False)

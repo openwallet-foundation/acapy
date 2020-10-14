@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import MEDIATION_DENY, PROTOCOL_PACKAGE
+from ..message_types import MEDIATE_DENY, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
@@ -20,7 +20,7 @@ class MediationDeny(AgentMessage):
         """Metadata for a mediation deny."""
 
         handler_class = HANDLER_CLASS
-        message_type = MEDIATION_DENY
+        message_type = MEDIATE_DENY
         schema_class = "MediationDenySchema"
 
     def __init__(
@@ -30,7 +30,6 @@ class MediationDeny(AgentMessage):
         recipient_terms: Sequence[str] = None,
         **kwargs,
     ):
-
         """
         Initialize mediation deny object.
         Args:

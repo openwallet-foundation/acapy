@@ -5,18 +5,13 @@ from marshmallow import EXCLUDE, fields
 from ......messaging.models.base import BaseModel, BaseModelSchema
 
 
-class KeylistUpdated(BaseModel):
-    """Class representing a route update response."""
+class KeylistKey(BaseModel):
+    """Inner structure of Keylist keys attribute."""
 
     class Meta:
-        """KeylistUpdated metadata."""
+        """KeylistKey metadata."""
 
-        schema_class = "KeylistUpdatedSchema"
-
-    RESULT_CLIENT_ERROR = "client_error"
-    RESULT_SERVER_ERROR = "server_error"
-    RESULT_NO_CHANGE = "no_change"
-    RESULT_SUCCESS = "success"
+        schema_class = "KeylistKeySchema"
 
     def __init__(
         self,
@@ -27,7 +22,7 @@ class KeylistUpdated(BaseModel):
         **kwargs
     ):
         """
-        Initialize a KeylistUpdated instance.
+        Initialize a KeylistKey instance.
 
         Args:
             recipient_key: The recipient verkey of the route
@@ -37,19 +32,15 @@ class KeylistUpdated(BaseModel):
         """
         super().__init__(**kwargs)
         self.recipient_key = recipient_key
-        self.action = action
-        self.result = result
 
 
-class KeylistUpdatedSchema(BaseModelSchema):
-    """KeylistUpdated schema."""
+class KeylistKeySchema(BaseModelSchema):
+    """KeylistKey schema."""
 
     class Meta:
-        """KeylistUpdatedSchema metadata."""
+        """KeylistKeySchema metadata."""
 
-        model_class = KeylistUpdated
+        model_class = KeylistKey
         unknown = EXCLUDE
 
     recipient_key = fields.Str(required=True)
-    action = fields.Str(required=True)
-    result = fields.Str(required=True)

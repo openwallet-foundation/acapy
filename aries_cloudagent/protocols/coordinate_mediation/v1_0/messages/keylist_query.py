@@ -55,15 +55,14 @@ class KeylistQuerySchema(AgentMessageSchema):
         model_class = KeylistQuery
 
     filter = fields.Dict(
+        required=False,
         description="Query dictionary object",
         example={
-            "routing_key": [
-                "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
-                "2wUJCoyzkJz1tTxehfT7Usq5FgJz3EQHBQC7b2mXxbRZ"
-            ]
+            "filter": {}
         }
     )
     paginate = fields.Nested(
         KeylistQueryPaginateSchema(),
-        description="List of update rules"
+        required=False,
+        description="Pagination info"
     )

@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ..message_types import MEDIATION_GRANT, PROTOCOL_PACKAGE
+from ..message_types import MEDIATE_GRANT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
@@ -20,7 +20,7 @@ class MediationGrant(AgentMessage):
         """Metadata for a mediation grant."""
 
         handler_class = HANDLER_CLASS
-        message_type = MEDIATION_GRANT
+        message_type = MEDIATE_GRANT
         schema_class = "MediationGrantSchema"
 
     def __init__(

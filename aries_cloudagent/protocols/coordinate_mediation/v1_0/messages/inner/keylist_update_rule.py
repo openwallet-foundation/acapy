@@ -4,8 +4,8 @@
 from marshmallow import fields
 from marshmallow.validate import OneOf
 
-from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import INDY_RAW_PUBLIC_KEY
+from ......messaging.models.base import BaseModel, BaseModelSchema
+from ......messaging.valid import INDY_RAW_PUBLIC_KEY
 
 
 class KeylistUpdateRule(BaseModel):
@@ -52,7 +52,7 @@ class KeylistUpdateRuleSchema(BaseModelSchema):
         **INDY_RAW_PUBLIC_KEY
     )
     action = fields.Str(
-        required=False,
+        required=True,
         description="Action for specific key",
         example=KeylistUpdateRule.RULE_ADD,
         validate=OneOf(["add", "remove"]),
