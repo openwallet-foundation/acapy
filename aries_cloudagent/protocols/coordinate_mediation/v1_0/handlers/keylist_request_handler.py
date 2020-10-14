@@ -39,7 +39,7 @@ class KeylistRequestHandler(BaseHandler):
             mgr = Manager(context)
             keylist = await mgr.get_keylist(record)
             keylist_response = mgr.create_keylist_query_response(keylist)
-            await responder.send_reply(keylist)
+            await responder.send_reply(keylist_response)
         else:
             await self.reject(responder)
 
