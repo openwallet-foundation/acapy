@@ -11,6 +11,7 @@ from marshmallow.exceptions import ValidationError
 from .util import epoch_to_str
 
 from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
+from ..revocation.models.revocation_registry import RevocationRegistry
 from ..wallet.did_posture import DIDPosture as DIDPostureEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
@@ -64,6 +65,36 @@ class NaturalNumber(Range):
 
         if type(value) != int:
             raise ValidationError("Value {input} is not a valid natural number")
+        super().__call__(value)
+
+
+class IndyRevRegSize(Range):
+    """Validate value as indy revocation registry size."""
+
+    EXAMPLE = 1000
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            min=RevocationRegistry.MIN_SIZE,
+            max=RevocationRegistry.MAX_SIZE,
+            error=(
+                "Value {input} must be an integer between "
+                f"{RevocationRegistry.MIN_SIZE} and "
+                f"{RevocationRegistry.MAX_SIZE} inclusively"
+            ),
+        )
+
+    def __call__(self, value):
+        """Validate input value."""
+
+        if type(value) != int:
+            raise ValidationError(
+                "Value {input} must be an integer between "
+                f"{RevocationRegistry.MIN_SIZE} and "
+                f"{RevocationRegistry.MAX_SIZE} inclusively"
+            )
         super().__call__(value)
 
 
@@ -467,6 +498,7 @@ class EndpointType(OneOf):
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
 WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
 NATURAL_NUM = {"validate": NaturalNumber(), "example": NaturalNumber.EXAMPLE}
+INDY_REV_REG_SIZE = {"validate": IndyRevRegSize(), "example": IndyRevRegSize.EXAMPLE}
 JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}

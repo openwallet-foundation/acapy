@@ -2,11 +2,6 @@ import json
 
 from os.path import join
 
-import indy.anoncreds
-import indy.blob_storage
-
-import pytest
-
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....config.injection_context import InjectionContext
@@ -49,11 +44,20 @@ class TestRecord(AsyncTestCase):
 
         TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = async_mock.CoroutineMock()
+        self.tails_server.upload_tails_file = async_mock.CoroutineMock(
+            return_value=(False, "Internal Server Error")
+        )
         self.context.injector.bind_instance(BaseTailsServer, self.tails_server)
 
         self.storage = BasicStorage()
         self.context.injector.bind_instance(BaseStorage, self.storage)
+
+    async def test_order(self):
+        rec0 = IssuerRevRegRecord()
+        await rec0.save(self.context, reason="a record")
+        rec1 = IssuerRevRegRecord()
+        await rec1.save(self.context, reason="another record")
+        assert rec0 < rec1
 
     async def test_generate_registry_etc(self):
         rec = IssuerRevRegRecord(
@@ -104,11 +108,11 @@ class TestRecord(AsyncTestCase):
         assert rec.revoc_reg_def["value"]["tailsLocation"] == "http://localhost/dummy"
 
         ledger = await self.context.inject(BaseLedger)
-        await rec.publish_registry_definition(self.context)
-        assert rec.state == IssuerRevRegRecord.STATE_PUBLISHED
+        await rec.send_def(self.context)
+        assert rec.state == IssuerRevRegRecord.STATE_POSTED
         ledger.send_revoc_reg_def.assert_called_once()
 
-        await rec.publish_registry_entry(self.context)
+        await rec.send_entry(self.context)
         assert rec.state == IssuerRevRegRecord.STATE_ACTIVE
         ledger.send_revoc_reg_entry.assert_called_once()
 
@@ -151,11 +155,11 @@ class TestRecord(AsyncTestCase):
             await rec_full.generate_registry(self.context)
 
         with self.assertRaises(RevocationError) as x_state:
-            await rec_full.publish_registry_definition(self.context)
+            await rec_full.send_def(self.context)
 
         rec_full.state = IssuerRevRegRecord.STATE_INIT
         with self.assertRaises(RevocationError) as x_state:
-            await rec_full.publish_registry_entry(self.context)
+            await rec_full.send_entry(self.context)
 
     async def test_pending(self):
         rec = IssuerRevRegRecord()
@@ -190,7 +194,7 @@ class TestRecord(AsyncTestCase):
         with self.assertRaises(RevocationError):
             await rec.set_tails_file_public_uri(self.context, "dummy")
 
-    async def test_stage_pending_registry_definition(self):
+    async def test_stage_pending_registry(self):
         issuer = async_mock.MagicMock(BaseIssuer)
         issuer.create_and_store_revocation_registry = async_mock.CoroutineMock(
             return_value=(
@@ -203,20 +207,24 @@ class TestRecord(AsyncTestCase):
                         }
                     }
                 ),
-                json.dumps({}),
+                json.dumps({"revoc_reg_entry": "dummy-entry"}),
             )
         )
         self.context.injector.bind_instance(BaseIssuer, issuer)
-        rec = IssuerRevRegRecord(issuer_did=TEST_DID, revoc_reg_id=REV_REG_ID)
+        rec = IssuerRevRegRecord(
+            issuer_did=TEST_DID,
+            revoc_reg_id=REV_REG_ID,
+        )
+
         with async_mock.patch.object(
             test_module, "move", async_mock.MagicMock()
         ) as mock_move:
-            await rec.stage_pending_registry_definition(self.context)
+            await rec.stage_pending_registry(self.context)
 
-    async def test_publish_rev_reg_undef(self):
+    async def test_send_rev_reg_undef(self):
         rec = IssuerRevRegRecord()
         with self.assertRaises(RevocationError):
-            await rec.publish_registry_definition(self.context)
+            await rec.send_def(self.context)
 
         with self.assertRaises(RevocationError):
-            await rec.publish_registry_entry(self.context)
+            await rec.send_entry(self.context)

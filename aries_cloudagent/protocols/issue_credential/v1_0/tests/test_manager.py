@@ -884,32 +884,22 @@ class TestCredentialManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
         with async_mock.patch.object(
-            test_module, "IssuerRevRegRecord", autospec=True
-        ) as issuer_rr_rec, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc, async_mock.patch.object(
             asyncio, "ensure_future", autospec=True
         ) as asyncio_mock, async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
-            issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
-                return_value=[
-                    async_mock.MagicMock(
-                        get_registry=async_mock.CoroutineMock(
-                            return_value=async_mock.MagicMock(
-                                get_or_fetch_local_tails_path=(
-                                    async_mock.CoroutineMock()
-                                ),
-                                tails_local_path="dummy-path",
-                                max_creds=1000,
-                            )
-                        ),
-                        set_state=async_mock.CoroutineMock(),
-                        revoc_reg_id=REV_REG_ID,
-                        save=async_mock.CoroutineMock(),
-                        publish_registry_entry=async_mock.CoroutineMock(),
-                    )
-                ]
+            revoc.return_value.get_active_issuer_rev_reg_record = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(  # active_rev_reg_rec
+                    revoc_reg_id=REV_REG_ID,
+                    get_registry=async_mock.CoroutineMock(
+                        return_value=async_mock.MagicMock(  # rev_reg
+                            tails_local_path="dummy-path",
+                            get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
+                        )
+                    ),
+                )
             )
             (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
                 stored_exchange, comment=comment, retries=1
@@ -918,7 +908,13 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             issuer.create_credential.assert_called_once_with(
-                SCHEMA, indy_offer, indy_cred_req, cred_values, REV_REG_ID, "dummy-path"
+                SCHEMA,
+                indy_offer,
+                indy_cred_req,
+                cred_values,
+                stored_exchange.credential_exchange_id,
+                REV_REG_ID,
+                "dummy-path",
             )
 
             assert ret_exchange.credential == cred
@@ -994,7 +990,100 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             issuer.create_credential.assert_called_once_with(
-                SCHEMA, indy_offer, indy_cred_req, cred_values, None, None
+                SCHEMA,
+                indy_offer,
+                indy_cred_req,
+                cred_values,
+                stored_exchange.credential_exchange_id,
+                None,
+                None,
+            )
+
+            assert ret_exchange.credential == cred
+            assert ret_cred_issue.indy_credential() == cred
+            assert ret_exchange.state == V10CredentialExchange.STATE_ISSUED
+            assert ret_cred_issue._thread_id == thread_id
+
+    async def test_issue_credential_fills_rr(self):
+        connection_id = "test_conn_id"
+        comment = "comment"
+        cred_values = {"attr": "value"}
+        indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID, "nonce": "0"}
+        indy_cred_req = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
+        thread_id = "thread-id"
+
+        stored_exchange = V10CredentialExchange(
+            credential_exchange_id="dummy-cxid",
+            connection_id=connection_id,
+            credential_definition_id=CRED_DEF_ID,
+            credential_offer=indy_offer,
+            credential_request=indy_cred_req,
+            credential_proposal_dict=CredentialProposal(
+                credential_proposal=CredentialPreview.deserialize(
+                    {"attributes": [{"name": "attr", "value": "value"}]}
+                ),
+                cred_def_id=CRED_DEF_ID,
+                schema_id=SCHEMA_ID,
+            ).serialize(),
+            initiator=V10CredentialExchange.INITIATOR_SELF,
+            role=V10CredentialExchange.ROLE_ISSUER,
+            state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
+            thread_id=thread_id,
+            revocation_id="1000",
+        )
+
+        issuer = async_mock.MagicMock()
+        cred = {"indy": "credential"}
+        issuer.create_credential = async_mock.CoroutineMock(
+            return_value=(json.dumps(cred), stored_exchange.revocation_id)
+        )
+        self.context.injector.bind_instance(BaseIssuer, issuer)
+
+        with async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as revoc, async_mock.patch.object(
+            asyncio, "ensure_future", autospec=True
+        ) as asyncio_mock, async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as save_ex:
+            revoc.return_value = async_mock.MagicMock(
+                get_active_issuer_rev_reg_record=(
+                    async_mock.CoroutineMock(
+                        return_value=async_mock.MagicMock(  # active_rev_reg_rec
+                            revoc_reg_id=REV_REG_ID,
+                            get_registry=async_mock.CoroutineMock(
+                                return_value=async_mock.MagicMock(  # rev_reg
+                                    tails_local_path="dummy-path",
+                                    max_creds=1000,
+                                    get_or_fetch_local_tails_path=(
+                                        async_mock.CoroutineMock()
+                                    ),
+                                )
+                            ),
+                            set_state=async_mock.CoroutineMock(),
+                        )
+                    )
+                ),
+                init_issuer_registry=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(  # pending_rev_reg_rec
+                        stage_pending_registry=async_mock.CoroutineMock()
+                    )
+                ),
+            )
+            (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
+                stored_exchange, comment=comment, retries=0
+            )
+
+            save_ex.assert_called_once()
+
+            issuer.create_credential.assert_called_once_with(
+                SCHEMA,
+                indy_offer,
+                indy_cred_req,
+                cred_values,
+                stored_exchange.credential_exchange_id,
+                REV_REG_ID,
+                "dummy-path",
             )
 
             assert ret_exchange.credential == cred
@@ -1022,7 +1111,7 @@ class TestCredentialManager(AsyncTestCase):
         with self.assertRaises(CredentialManagerError):
             await self.manager.issue_credential(stored_exchange)
 
-    async def test_issue_credential_no_active_rr(self):
+    async def test_issue_credential_no_active_rr_no_retries(self):
         connection_id = "test_conn_id"
         comment = "comment"
         cred_values = {"attr": "value"}
@@ -1060,14 +1149,87 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "IssuerRevRegRecord", autospec=True
         ) as issuer_rr_rec, async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as revoc, async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
+            revoc.return_value.get_active_issuer_rev_reg_record = (
+                async_mock.CoroutineMock(side_effect=test_module.StorageNotFoundError())
+            )
+            revoc.return_value.init_issuer_registry = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(  # pending_rev_reg_rec
+                    stage_pending_registry=async_mock.CoroutineMock()
+                )
+            )
             issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
                 return_value=[]
             )
             with self.assertRaises(CredentialManagerError) as x_cred_mgr:
                 await self.manager.issue_credential(
                     stored_exchange, comment=comment, retries=0
+                )
+                assert "has no active revocation registry" in x_cred_mgr.message
+
+    async def test_issue_credential_no_active_rr_retry(self):
+        connection_id = "test_conn_id"
+        comment = "comment"
+        cred_values = {"attr": "value"}
+        indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID, "nonce": "0"}
+        indy_cred_req = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
+        thread_id = "thread-id"
+
+        stored_exchange = V10CredentialExchange(
+            credential_exchange_id="dummy-cxid",
+            connection_id=connection_id,
+            credential_definition_id=CRED_DEF_ID,
+            credential_offer=indy_offer,
+            credential_request=indy_cred_req,
+            credential_proposal_dict=CredentialProposal(
+                credential_proposal=CredentialPreview.deserialize(
+                    {"attributes": [{"name": "attr", "value": "value"}]}
+                ),
+                cred_def_id=CRED_DEF_ID,
+                schema_id=SCHEMA_ID,
+            ).serialize(),
+            initiator=V10CredentialExchange.INITIATOR_SELF,
+            role=V10CredentialExchange.ROLE_ISSUER,
+            state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
+            thread_id=thread_id,
+        )
+
+        issuer = async_mock.MagicMock()
+        cred = {"indy": "credential"}
+        cred_rev_id = "1"
+        issuer.create_credential = async_mock.CoroutineMock(
+            return_value=(json.dumps(cred), cred_rev_id)
+        )
+        self.context.injector.bind_instance(BaseIssuer, issuer)
+
+        with async_mock.patch.object(
+            test_module, "IssuerRevRegRecord", autospec=True
+        ) as issuer_rr_rec, async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as revoc, async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as save_ex:
+            revoc.return_value.get_active_issuer_rev_reg_record = (
+                async_mock.CoroutineMock(side_effect=test_module.StorageNotFoundError())
+            )
+            issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
+                side_effect=[
+                    [],  # posted_rev_reg_recs
+                    [async_mock.MagicMock(max_cred_num=1000)],  # old_rev_reg_recs
+                ]
+                * 2
+            )
+            revoc.return_value.init_issuer_registry = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(  # pending_rev_reg_rec
+                    stage_pending_registry=async_mock.CoroutineMock()
+                )
+            )
+            with self.assertRaises(CredentialManagerError) as x_cred_mgr:
+                await self.manager.issue_credential(
+                    stored_exchange, comment=comment, retries=1
                 )
                 assert "has no active revocation registry" in x_cred_mgr.message
 
@@ -1106,136 +1268,29 @@ class TestCredentialManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseIssuer, issuer)
 
         with async_mock.patch.object(
-            test_module, "IssuerRevRegRecord", autospec=True
-        ) as issuer_rr_rec:
-            issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
-                return_value=[
-                    async_mock.MagicMock(
+            test_module, "IndyRevocation", autospec=True
+        ) as revoc:
+            revoc.return_value.get_active_issuer_rev_reg_record = (
+                async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(  # active_rev_reg_rec
+                        revoc_reg_id=REV_REG_ID,
+                        set_state=async_mock.CoroutineMock(),
                         get_registry=async_mock.CoroutineMock(
-                            return_value=async_mock.MagicMock(
+                            return_value=async_mock.MagicMock(  # rev_reg
+                                tails_local_path="dummy-path",
                                 get_or_fetch_local_tails_path=(
                                     async_mock.CoroutineMock()
                                 ),
-                                tails_local_path="dummy-path",
                             )
                         ),
-                        revoc_reg_id=REV_REG_ID,
-                        set_state=async_mock.CoroutineMock(),
                     )
-                ]
+                )
             )
 
             with self.assertRaises(test_module.IssuerRevocationRegistryFullError):
                 await self.manager.issue_credential(
-                    stored_exchange, comment=comment, retries=0
+                    stored_exchange, comment=comment, retries=1
                 )
-
-    async def test_issue_credential_rr_full_rr_staged_retry(self):
-        connection_id = "test_conn_id"
-        comment = "comment"
-        cred_values = {"attr": "value"}
-        indy_offer = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID, "nonce": "0"}
-        indy_cred_req = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
-        thread_id = "thread-id"
-        revocation_id = 1
-
-        stored_exchange = V10CredentialExchange(
-            credential_exchange_id="dummy-cxid",
-            connection_id=connection_id,
-            credential_definition_id=CRED_DEF_ID,
-            credential_offer=indy_offer,
-            credential_request=indy_cred_req,
-            credential_proposal_dict=CredentialProposal(
-                credential_proposal=CredentialPreview.deserialize(
-                    {"attributes": [{"name": "attr", "value": "value"}]}
-                ),
-                cred_def_id=CRED_DEF_ID,
-                schema_id=SCHEMA_ID,
-            ).serialize(),
-            initiator=V10CredentialExchange.INITIATOR_SELF,
-            role=V10CredentialExchange.ROLE_ISSUER,
-            state=V10CredentialExchange.STATE_REQUEST_RECEIVED,
-            thread_id=thread_id,
-            revocation_id=revocation_id,
-        )
-
-        stored_exchange.save = async_mock.CoroutineMock()
-
-        issuer = async_mock.MagicMock()
-        cred = {"indy": "credential"}
-        cred_rev_id = "1"
-        issuer.create_credential = async_mock.CoroutineMock(
-            side_effect=[
-                test_module.IssuerRevocationRegistryFullError("it's full"),
-                (json.dumps({"good": "credential"}), str(revocation_id)),
-            ]
-        )
-        self.context.injector.bind_instance(BaseIssuer, issuer)
-
-        active_full_reg = [
-            async_mock.MagicMock(
-                get_registry=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
-                        tails_local_path="dummy-path",
-                        max_creds=revocation_id,
-                    )
-                ),
-                revoc_reg_id=REV_REG_ID,
-                set_state=async_mock.CoroutineMock(),
-            )
-        ]
-
-        active_non_full_reg = [
-            async_mock.MagicMock(
-                get_registry=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
-                        tails_local_path="dummy-path",
-                        max_creds=1000,
-                    )
-                ),
-                revoc_reg_id=REV_REG_ID,
-                set_state=async_mock.CoroutineMock(),
-            )
-        ]
-
-        pending_reg = [
-            async_mock.MagicMock(
-                get_registry=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
-                        tails_local_path="dummy-path",
-                    )
-                ),
-                revoc_reg_id=REV_REG_ID,
-                set_state=async_mock.CoroutineMock(),
-                state="published",
-                save=async_mock.CoroutineMock(),
-                publish_registry_entry=async_mock.CoroutineMock(),
-            )
-        ]
-
-        with async_mock.patch.object(
-            test_module, "IssuerRevRegRecord", autospec=True
-        ) as issuer_rr_rec, async_mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc, async_mock.patch.object(
-            asyncio, "ensure_future", autospec=True
-        ) as asyncio_mock:
-            issuer_rr_rec.query_by_cred_def_id.side_effect = [
-                [],  # First call checking for staged registries
-                active_full_reg,  # Get active full registry
-                [],  # Get active full registry after rev-reg-full
-                [],  # Get staged
-                pending_reg,  # Get published
-                [],  # Get staged, on retry pass
-                active_non_full_reg,  # Get active
-            ]
-
-            await self.manager.issue_credential(
-                stored_exchange, comment=comment, retries=1
-            )
 
     async def test_receive_credential(self):
         connection_id = "test_conn_id"
@@ -1493,311 +1548,6 @@ class TestCredentialManager(AsyncTestCase):
 
             assert ret_exchange.state == V10CredentialExchange.STATE_ACKED
             delete_ex.assert_called_once()
-
-    async def test_revoke_credential_publish(self):
-        CRED_REV_ID = 1
-        with async_mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc:
-            mock_issuer_rev_reg_record = async_mock.MagicMock(
-                revoc_reg_id=REV_REG_ID,
-                tails_local_path=TAILS_LOCAL,
-                publish_registry_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
-            )
-            mock_rev_reg = async_mock.MagicMock(
-                get_or_fetch_local_tails_path=async_mock.CoroutineMock()
-            )
-            revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
-                return_value=mock_issuer_rev_reg_record
-            )
-            revoc.return_value.get_ledger_registry = async_mock.CoroutineMock(
-                return_value=mock_rev_reg
-            )
-
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
-            issuer.revoke_credentials = async_mock.CoroutineMock(
-                return_value=(
-                    json.dumps(
-                        {
-                            "ver": "1.0",
-                            "value": {
-                                "prevAccum": "1 ...",
-                                "accum": "21 ...",
-                                "issued": [1],
-                            },
-                        }
-                    ),
-                    [],
-                )
-            )
-            self.context.injector.bind_instance(BaseIssuer, issuer)
-
-            await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID, True)
-
-    async def test_revoke_credential_no_rev_reg_rec(self):
-        CRED_REV_ID = 1
-        exchange = V10CredentialExchange(
-            credential_exchange_id="dummy-cxid",
-            credential_definition_id=CRED_DEF_ID,
-            role=V10CredentialExchange.ROLE_ISSUER,
-            revocation_id=CRED_REV_ID,
-            revoc_reg_id=REV_REG_ID,
-        )
-
-        with async_mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc:
-            revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
-                return_value=None
-            )
-
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
-            self.context.injector.bind_instance(BaseIssuer, issuer)
-
-            with self.assertRaises(CredentialManagerError):
-                await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID)
-
-    async def test_revoke_credential_pend(self):
-        CRED_REV_ID = 1
-        with async_mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc:
-            mock_issuer_rev_reg_record = async_mock.MagicMock(
-                mark_pending=async_mock.CoroutineMock()
-            )
-            revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
-                return_value=mock_issuer_rev_reg_record
-            )
-
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
-            self.context.injector.bind_instance(BaseIssuer, issuer)
-
-            await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID, False)
-            mock_issuer_rev_reg_record.mark_pending.assert_called_once_with(
-                self.context, CRED_REV_ID
-            )
-
-    async def test_publish_pending_revocations(self):
-        deltas = [
-            {
-                "ver": "1.0",
-                "value": {"prevAccum": "1 ...", "accum": "21 ...", "issued": [1, 2, 3]},
-            },
-            {
-                "ver": "1.0",
-                "value": {
-                    "prevAccum": "21 ...",
-                    "accum": "36 ...",
-                    "issued": [1, 2, 3],
-                },
-            },
-        ]
-
-        mock_issuer_rev_reg_record = async_mock.MagicMock(
-            revoc_reg_id=REV_REG_ID,
-            tails_local_path=TAILS_LOCAL,
-            pending_pub=["1", "2"],
-            publish_registry_entry=async_mock.CoroutineMock(),
-            clear_pending=async_mock.CoroutineMock(),
-        )
-        with async_mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            async_mock.CoroutineMock(return_value=[mock_issuer_rev_reg_record]),
-        ) as record:
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
-            issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
-                side_effect=deltas
-            )
-
-            issuer.revoke_credentials = async_mock.CoroutineMock(
-                side_effect=[(json.dumps(delta), []) for delta in deltas]
-            )
-            self.context.injector.bind_instance(BaseIssuer, issuer)
-
-            result = await self.manager.publish_pending_revocations()
-            assert result == {REV_REG_ID: ["1", "2"]}
-            mock_issuer_rev_reg_record.clear_pending.assert_called_once()
-
-    async def test_publish_pending_revocations_1_rev_reg_all(self):
-        deltas = [
-            {
-                "ver": "1.0",
-                "value": {"prevAccum": "1 ...", "accum": "21 ...", "issued": [1, 2, 3]},
-            },
-            {
-                "ver": "1.0",
-                "value": {
-                    "prevAccum": "21 ...",
-                    "accum": "36 ...",
-                    "issued": [1, 2, 3],
-                },
-            },
-        ]
-
-        mock_issuer_rev_reg_records = [
-            async_mock.MagicMock(
-                revoc_reg_id=REV_REG_ID,
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=["1", "2"],
-                publish_registry_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-            async_mock.MagicMock(
-                revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag2",
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=["9", "99"],
-                publish_registry_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-        ]
-        with async_mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ) as record:
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
-            issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
-                side_effect=deltas
-            )
-
-            issuer.revoke_credentials = async_mock.CoroutineMock(
-                side_effect=[(json.dumps(delta), []) for delta in deltas]
-            )
-            self.context.injector.bind_instance(BaseIssuer, issuer)
-
-            result = await self.manager.publish_pending_revocations({REV_REG_ID: None})
-            assert result == {REV_REG_ID: ["1", "2"]}
-            mock_issuer_rev_reg_records[0].clear_pending.assert_called_once()
-            mock_issuer_rev_reg_records[1].clear_pending.assert_not_called()
-
-    async def test_publish_pending_revocations_1_rev_reg_some(self):
-        deltas = [
-            {
-                "ver": "1.0",
-                "value": {"prevAccum": "1 ...", "accum": "21 ...", "issued": [1, 2, 3]},
-            },
-            {
-                "ver": "1.0",
-                "value": {
-                    "prevAccum": "21 ...",
-                    "accum": "36 ...",
-                    "issued": [1, 2, 3],
-                },
-            },
-        ]
-
-        mock_issuer_rev_reg_records = [
-            async_mock.MagicMock(
-                revoc_reg_id=REV_REG_ID,
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=["1", "2"],
-                publish_registry_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-            async_mock.MagicMock(
-                revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag2",
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=["9", "99"],
-                publish_registry_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-        ]
-        with async_mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ) as record:
-            issuer = async_mock.MagicMock(BaseIssuer, autospec=True)
-            issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
-                side_effect=deltas
-            )
-
-            issuer.revoke_credentials = async_mock.CoroutineMock(
-                side_effect=[(json.dumps(delta), []) for delta in deltas]
-            )
-            self.context.injector.bind_instance(BaseIssuer, issuer)
-
-            result = await self.manager.publish_pending_revocations({REV_REG_ID: "2"})
-            assert result == {REV_REG_ID: ["2"]}
-            mock_issuer_rev_reg_records[0].clear_pending.assert_called_once()
-            mock_issuer_rev_reg_records[1].clear_pending.assert_not_called()
-
-    async def test_clear_pending(self):
-        mock_issuer_rev_reg_records = [
-            async_mock.MagicMock(
-                revoc_reg_id=REV_REG_ID,
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=[],
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-            async_mock.MagicMock(
-                revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag2",
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=[],
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-        ]
-        with async_mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ) as record:
-            result = await self.manager.clear_pending_revocations()
-            assert result == {}
-
-    async def test_clear_pending_1_rev_reg_all(self):
-        mock_issuer_rev_reg_records = [
-            async_mock.MagicMock(
-                revoc_reg_id=REV_REG_ID,
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=["1", "2"],
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-            async_mock.MagicMock(
-                revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag2",
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=["9", "99"],
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-        ]
-        with async_mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ) as record:
-            result = await self.manager.clear_pending_revocations({REV_REG_ID: None})
-            assert result == {
-                REV_REG_ID: ["1", "2"],
-                f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag2": ["9", "99"],
-            }
-
-    async def test_clear_pending_1_rev_reg_some(self):
-        mock_issuer_rev_reg_records = [
-            async_mock.MagicMock(
-                revoc_reg_id=REV_REG_ID,
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=["1", "2"],
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-            async_mock.MagicMock(
-                revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag2",
-                tails_local_path=TAILS_LOCAL,
-                pending_pub=["99"],
-                clear_pending=async_mock.CoroutineMock(),
-            ),
-        ]
-        with async_mock.patch.object(
-            test_module.IssuerRevRegRecord,
-            "query_by_pending",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ) as record:
-            result = await self.manager.clear_pending_revocations({REV_REG_ID: ["9"]})
-            assert result == {
-                REV_REG_ID: ["1", "2"],
-                f"{TEST_DID}:4:{CRED_DEF_ID}:{REV_REG_DEF_TYPE}:tag2": ["99"],
-            }
 
     async def test_retrieve_records(self):
         self.cache = BasicCache()
