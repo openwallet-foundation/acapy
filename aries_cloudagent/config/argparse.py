@@ -763,8 +763,6 @@ class TransportGroup(ArgumentGroup):
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
-        if args.mediation:
-            settings["open_mediation"] = True
 
         return settings
 
