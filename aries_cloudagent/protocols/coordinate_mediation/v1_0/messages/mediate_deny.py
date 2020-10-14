@@ -32,6 +32,7 @@ class MediationDeny(AgentMessage):
     ):
         """
         Initialize mediation deny object.
+
         Args:
             mediator_terms: Terms that were agreed by the recipient
             recipient_terms: Terms that recipient wants to mediator to agree to

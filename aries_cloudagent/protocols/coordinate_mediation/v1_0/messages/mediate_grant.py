@@ -32,8 +32,9 @@ class MediationGrant(AgentMessage):
     ):
         """
         Initialize mediation grant object.
+
         Args:
-            endpoint: Endpoint adress for the mediation route
+            endpoint: Endpoint address for the mediation route
             routing_keys: Keys for the mediation route
         """
         super(MediationGrant, self).__init__(**kwargs)

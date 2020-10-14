@@ -31,10 +31,11 @@ class MediationManagerError(BaseError):
 
 class MediationManager:
     """Class for handling Mediation."""
+
     RECORD_TYPE = "routing_did"
 
     def __init__(self, context: InjectionContext):
-        """Initializer for Mediation Manager.
+        """Initialize Mediation Manager.
 
         Args:
             context: The context for this manager
@@ -45,7 +46,8 @@ class MediationManager:
         self.context = context
 
     async def _retrieve_routing_did(self) -> Optional[DIDInfo]:
-        """Get the routing DID out of the wallet if it exists"""
+        """Retrieve routing DID from the wallet."""
+
         storage: BaseStorage = await self.context.inject(BaseStorage)
         try:
             record = await storage.get_record(
@@ -144,10 +146,12 @@ class MediationManager:
         updated = map(updated_to_keylist_updated, updated)
         return KeylistUpdateResponse(updated=updated)
 
-    async def get_keylist(self, record: MediationRecord) -> Sequence[RouteRecord]:
+    async def get_keylist(self, record: MediationRecord) -> Keylist:
         """Retrieve routes for connection."""
         route_mgr = RoutingManager(self.context)
-        return await route_mgr.get_routes(record.connection_id)
+        routes = await route_mgr.get_routes(record.connection_id)
+        # TODO: handle pagination request
+        return Keylist(keys=routes, pagination=None) 
 
     async def create_keylist_query_response(
         self, keylist: Sequence[RouteRecord]

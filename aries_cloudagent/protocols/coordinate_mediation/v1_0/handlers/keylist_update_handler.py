@@ -11,8 +11,8 @@ from .....storage.error import StorageNotFoundError
 from ....problem_report.v1_0.message import ProblemReport
 
 from ..manager import MediationManager
-from ..messages.keylist_update_request import KeylistUpdate
-from ..messages.keylist_update_response import KeylistUpdateResponse
+from ..messages.keylist_update import KeylistUpdate
+# from ..messages.keylist_update_response import KeylistUpdateResponse
 from ..models.mediation_record import MediationRecord
 
 
@@ -47,7 +47,7 @@ class KeylistUpdateHandler(BaseHandler):
         )
         await responder.send_reply(response)
 
-    async def reject(responder: BaseResponder):
+    async def reject(self, responder: BaseResponder):
         """Send problem report."""
         await responder.send_reply(
             ProblemReport(

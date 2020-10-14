@@ -19,7 +19,6 @@ from ...messages.keylist_query import KeylistQuery as query
 
 
 class TestKeyListUpdateRequestHandler:
-    @pytest.mark.asyncio
 
     async def test_update_handle(self):
         handler, responder = _handler(), MockResponder()

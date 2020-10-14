@@ -6,7 +6,7 @@ from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 
-from .. import mediator_request_handler as test_module
+from .. import mediate_request_handler as test_module
 _handler = test_module.MediationRequestHandler()
 from ...messages.mediate_request import MediationRequest as request
 from ...messages.mediate_grant import MediationGrant as response

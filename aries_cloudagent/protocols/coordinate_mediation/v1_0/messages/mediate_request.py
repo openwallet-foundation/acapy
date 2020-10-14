@@ -31,6 +31,7 @@ class MediationRequest(AgentMessage):
     ):
         """
         Initialize mediation request object.
+
         Args:
             mediator_terms: Mediator's terms for granting mediation.
             recipient_terms: Recipient's proposed mediation terms.
