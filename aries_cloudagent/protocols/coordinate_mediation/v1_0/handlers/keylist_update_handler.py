@@ -7,9 +7,13 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
-from ..manager import RoutingManager
+from .....storage.error import StorageNotFoundError
+from ....problem_report.v1_0.message import ProblemReport
+
+from ..manager import MediationManager
 from ..messages.keylist_update_request import KeylistUpdate
 from ..messages.keylist_update_response import KeylistUpdateResponse
+from ..models.mediation_record import MediationRecord
 
 
 class KeylistUpdateHandler(BaseHandler):
@@ -25,9 +29,29 @@ class KeylistUpdateHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Cannot update routes: no active connection")
 
-        mgr = RoutingManager(context)
+        try:
+            record = await MediationRecord.retrieve_by_connection_id(
+                context, context.connection_record.connection_id
+            )
+        except StorageNotFoundError:
+            await self.reject(responder)
+            return
+
+        if record.state != MediationRecord.STATE_GRANTED:
+            await self.reject(responder)
+            return
+
+        mgr = MediationManager(context)
         updated = await mgr.update_routes(
             context.connection_record.connection_id, context.message.updates
         )
         response = KeylistUpdateResponse(updated=updated)
         await responder.send_reply(response)
+
+    async def reject(responder: BaseResponder):
+        """Send problem report."""
+        await responder.send_reply(
+            ProblemReport(
+                explain_ltxt="Mediation has not been granted for this connection."
+            )
+        )

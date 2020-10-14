@@ -8,8 +8,8 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import MEDIATE_REQUEST, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.mediate_request_handler."
-"MediationRequestHandler"
+HANDLER_CLASS = \
+    f"{PROTOCOL_PACKAGE}.handlers.mediate_request_handler.MediationRequestHandler"
 
 
 class MediationRequest(AgentMessage):
@@ -29,7 +29,6 @@ class MediationRequest(AgentMessage):
         recipient_terms: Sequence[str] = None,
         **kwargs,
     ):
-    
         """
         Initialize mediation request object.
         Args:
