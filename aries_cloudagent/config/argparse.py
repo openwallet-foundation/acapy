@@ -770,7 +770,7 @@ class MediationGroup(ArgumentGroup):
         """Add mediation command line arguments to the parser."""
         parser.add_argument(
             "--open-mediation",
-            metavar="<label>",
+            action="store_true",
             help="Enables didcomm mediation. After establishing a connection, if enabled, \
                 an agent may request message mediation, which will allow the mediator to \
                 forward messages on behalf of the recipient. See aries-rfc:0211."
@@ -780,8 +780,7 @@ class MediationGroup(ArgumentGroup):
     def get_settings(self, args: Namespace):
         """Extract mediation settings."""
         settings = {}
-        if args.mediation:
-            settings["mediation.open"] = True
+        settings["mediation.open"] = args.open_mediation
 
         return settings
 
