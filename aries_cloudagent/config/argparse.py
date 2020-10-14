@@ -684,6 +684,13 @@ class TransportGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add transport-specific command line arguments to the parser."""
         parser.add_argument(
+            "--mediation",
+            metavar="<label>",
+            help="Enables didcomm mediation. After establishing a connection, if enabled, \
+                an agent may request message mediation, which will allow the mediator to \
+                forward messages on behalf of the recipient. See aries-rfc:0211.",
+        )
+        parser.add_argument(
             "-it",
             "--inbound-transport",
             dest="inbound_transports",
@@ -756,6 +763,34 @@ class TransportGroup(ArgumentGroup):
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
+        if args.mediation:
+            settings["open_mediation"] = True
+
+        return settings
+
+
+@group(CAT_START)
+class MediationGroup(ArgumentGroup):
+    """Mediation settings."""
+
+    GROUP_NAME = "Mediation"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add mediation command line arguments to the parser."""
+        parser.add_argument(
+            "--open-mediation",
+            metavar="<label>",
+            help="Enables didcomm mediation. After establishing a connection, if enabled, \
+                an agent may request message mediation, which will allow the mediator to \
+                forward messages on behalf of the recipient. See aries-rfc:0211."
+        )
+        # TODO: add flags for terms and queue
+
+    def get_settings(self, args: Namespace):
+        """Extract mediation settings."""
+        settings = {}
+        if args.mediation:
+            settings["mediation.open"] = True
 
         return settings
 

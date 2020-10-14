@@ -26,6 +26,6 @@ class MediationRequestHandler(BaseHandler):
 
         mgr = MediationManager(context)
         record = await mgr.receive_request(context.message)
-        if context.settings.get("open_mediation", False):
+        if context.settings.get("mediation.open", False):
             grant = await mgr.grant_request(record)
             await responder.send_reply(grant)
