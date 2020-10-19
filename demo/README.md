@@ -190,7 +190,7 @@ To run the demo, make sure that you shut down any running Alice/Faber agents. Th
 
 The script starts both agents, runs the performance test, spits out performance results and shuts down the agents. Note that this is just one demonstration of how performance metrics tracking can be done with ACA-Py.
 
-A second version of the performance test can be run by adding the parameter `--router` to the invocation above. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
+A second version of the performance test can be run by adding the parameter `--routing` to the invocation above. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
 
 ## Coding Challenge: Adding ACME
 
