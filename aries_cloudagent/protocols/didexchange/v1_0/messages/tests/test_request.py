@@ -8,6 +8,7 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......wallet.basic import BasicWallet
 
 from .....didcomm_prefix import DIDCommPrefix
@@ -57,11 +58,13 @@ class TestConn23Request(AsyncTestCase, TestConfig):
         self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
 
-        did_doc_attach = AttachDecorator.from_aries_msg(message=self.make_did_doc())
+        did_doc_attach = AttachDecorator.from_indy_dict(
+            self.make_did_doc().serialize()
+        )
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.request = Conn23Request(
-            label=TestConfig.label,
+            label=TestConfig.test_label,
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
         )
@@ -111,7 +114,9 @@ class TestConn23RequestSchema(AsyncTestCase, TestConfig):
         self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
 
-        did_doc_attach = AttachDecorator.from_aries_msg(message=self.make_did_doc())
+        did_doc_attach = AttachDecorator.from_indy_dict(
+            self.make_did_doc().serialize()
+        )
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.request = Conn23Request(

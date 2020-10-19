@@ -8,13 +8,14 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......wallet.basic import BasicWallet
 
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CONN23_RESPONSE
 
-from ..connection_response import Conn23Response
+from ..response import Conn23Response
 
 
 class TestConfig:
@@ -56,11 +57,13 @@ class TestConn23Response(AsyncTestCase, TestConfig):
         self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
 
-        did_doc_attach = AttachDecorator.from_aries_msg(message=self.make_did_doc())
+        did_doc_attach = AttachDecorator.from_indy_dict(
+            self.make_did_doc().serialize()
+        )
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
-        self.response = ConnResponse(
-            did=self.TestConfig.test_did,
+        self.response = Conn23Response(
+            did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
         )
 
@@ -107,7 +110,9 @@ class TestConn23ResponseSchema(AsyncTestCase, TestConfig):
         self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
 
-        did_doc_attach = AttachDecorator.from_aries_msg(message=self.make_did_doc())
+        did_doc_attach = AttachDecorator.from_indy_dict(
+            self.make_did_doc().serialize()
+        )
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.response = Conn23Response(

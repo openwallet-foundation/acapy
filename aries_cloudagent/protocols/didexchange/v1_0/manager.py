@@ -1,8 +1,9 @@
 """Classes to manage connection establishment under RFC 23 (DID exchange)."""
 
+import json
 import logging
 
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Union
 
 from ....cache.base import BaseCache
 from ....connections.models.conn23rec import Conn23Record
@@ -17,6 +18,7 @@ from ....config.base import InjectorError
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....ledger.base import BaseLedger
+from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
@@ -25,14 +27,16 @@ from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
-from ....wallet.util import bytes_to_b58
+from ....wallet.util import bytes_to_b58, naked_to_did_key
 
 from ...didcomm_prefix import DIDCommPrefix
-from ...out_of_band.v1_0.messages.invitation import InviatationMessage
+from ...out_of_band.v1_0.messages.invitation import InvitationMessage as OOBInvitation
+from ...out_of_band.v1_0.messages.service import Service as OOBService
 from ...routing.v1_0.manager import RoutingManager
 
+from .message_types import CONN23_INVITATION
 from .messages.complete import Conn23Complete
-from .messages.invitation import Conn23Invitation
+# from .messages.invitation import Conn23Invitation
 from .messages.request import Conn23Request
 from .messages.response import Conn23Response
 from .messages.problem_report import ProblemReportReason
@@ -77,7 +81,8 @@ class Conn23Manager:
         public: bool = False,
         multi_use: bool = False,
         alias: str = None,
-    ) -> Tuple[Conn23Record, InvitationMessage]:
+        include_handshake: bool = False
+    ) -> Tuple[Conn23Record, OOBInvitation]:
         """
         Generate new connection invitation.
 
@@ -93,9 +98,10 @@ class Conn23Manager:
             public: set to create an invitation from the public DID
             multi_use: set to True to create an invitation for multiple use
             alias: optional alias to apply to connection for later use
+            include_handshake: whether to include handshake protocols
 
         Returns:
-            A tuple of the new `Conn23Record` and `InvitationMessage` instances
+            A tuple of the new `Conn23Record` and invitation instance
 
         """
         if not my_label:
@@ -117,13 +123,17 @@ class Conn23Manager:
                     "Cannot use public and multi_use at the same time"
                 )
 
-            # FIXME - allow ledger instance to format public DID with prefix?
-            invitation = InvitationMessage(
+            invitation = OOBInvitation(
                 label=my_label,
-                handshake_protocols=[DIDCommPrefix.qualify_current("didexchange/1.0")],
+                handshake_protocols=(
+                    [DIDCommPrefix.qualify_current(CONN23_INVITATION)]
+                    if include_handshake
+                    else None
+                ),
                 service=[f"did:sov:{public_did.did}"],
             )
-            return None, invitation
+
+            return (None, invitation)
 
         invitation_mode = (
             Conn23Record.INVITATION_MODE_MULTI
@@ -151,17 +161,29 @@ class Conn23Manager:
         # Create connection invitation message
         # Note: Need to split this into two stages to support inbound routing of invites
         # Would want to reuse create_did_document and convert the result
-        invitation = Conn23Invitation(
+        invitation = OOBInvitation(
             label=my_label,
-            recipient_keys=[connection_key.verkey],
-            endpoint=my_endpoint,
+            handshake_protocols=(
+                [DIDCommPrefix.qualify_current(CONN23_INVITATION)]
+                if include_handshake
+                else None
+            ),
+            service=[
+                OOBService(
+                    _id="#inline",
+                    _type="did-communication",
+                    recipient_keys=[connection_key.verkey],
+                    service_endpoint=my_endpoint,
+                    # FIXME shouldn't there be a DID in here? What DID would it be?
+                )
+            ]
         )
 
         # Create connection record
         connection = Conn23Record(
             invitation_key=connection_key.verkey,
-            their_role=Conn23Record.Role.REQUESTER,
-            state=Conn23Record.STATE_INVITATION_CREATED,
+            their_role=Conn23Record.Role.REQUESTER.rfc23,
+            state=Conn23Record.STATE_INVITATION,
             accept=accept,
             invitation_mode=invitation_mode,
             alias=alias,
@@ -174,7 +196,7 @@ class Conn23Manager:
 
     async def receive_invitation(
         self,
-        invitation: Conn23Invitation,
+        invitation: OOBInvitation,
         auto_accept: bool = None,
         alias: str = None,
     ) -> Conn23Record:
@@ -190,11 +212,15 @@ class Conn23Manager:
             The new `Conn23Record` instance
 
         """
-        if not invitation.did:
+        if not invitation.service_dids:
             if not invitation.recipient_keys:
-                raise Conn23ManagerError("Invitation must contain recipient key(s)")
+                raise Conn23ManagerError(
+                    "Invitation with no service DIDs must contain recipient key(s)"
+                )
             if not invitation.endpoint:
-                raise Conn23ManagerError("Invitation must contain an endpoint")
+                raise Conn23ManagerError(
+                    "Invitation with no service DIDs must contain an endpoint"
+                )
 
         accept = (
             Conn23Record.ACCEPT_AUTO
@@ -212,8 +238,8 @@ class Conn23Manager:
         connection = Conn23Record(
             invitation_key=invitation.recipient_keys and invitation.recipient_keys[0],
             their_label=invitation.label,
-            their_role=Conn23Record.Role.RESPONDER,
-            state=Conn23Record.STATE_INVITATION_RECEIVED,
+            their_role=Conn23Record.Role.RESPONDER.rfc23,
+            state=Conn23Record.STATE_INVITATION,
             accept=accept,
             alias=alias,
         )
@@ -221,7 +247,10 @@ class Conn23Manager:
         await connection.save(
             self.context,
             reason="Created new connection record from invitation",
-            log_params={"invitation": invitation, "role": their_role},
+            log_params={
+                "invitation": invitation,
+                "role": Conn23Record.Role.RESPONDER.rfc23,
+            },
         )
 
         # Save the invitation for later processing
@@ -242,7 +271,7 @@ class Conn23Manager:
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
-                connection.state = Conn23Record.STATE_REQUEST_SENT
+                connection.state = Conn23Record.STATE_REQUEST
                 await connection.save(self.context, reason="Sent connection request")
         else:
             self._logger.debug("Connection invitation will await acceptance")
@@ -288,7 +317,7 @@ class Conn23Manager:
             my_info, connection.inbound_connection_id, my_endpoints
         )
         pthid = did_doc.service[[s for s in did_doc.service][0]].id
-        attach = AttachDecorator.from_aries_msg(did_doc.serialize())
+        attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
             my_label = self.context.settings.get("default_label")
@@ -301,7 +330,7 @@ class Conn23Manager:
 
         # Update connection state
         connection.request_id = request._id
-        connection.state = Conn23Record.STATE_REQUEST_CREATED
+        connection.state = Conn23Record.STATE_REQUEST
         await connection.save(self.context, reason="Created connection request")
 
         return request
@@ -326,10 +355,10 @@ class Conn23Manager:
 
         connection = None
         connection_key = None
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
-            wallet: BaseWallet = await self.context.inject(BaseWallet)
             my_info = await wallet.get_local_did(receipt.recipient_did)
             connection_key = my_info.verkey
         else:
@@ -341,7 +370,7 @@ class Conn23Manager:
                     my_role=Conn23Record.Role.RESPONDER
                 )
             except StorageNotFoundError:
-                raise ConnectionManagerError(
+                raise Conn23ManagerError(
                     "No invitation found for pairwise connection"
                 )
 
@@ -359,7 +388,7 @@ class Conn23Manager:
                 new_connection = Conn23Record(
                     invitation_key=connection_key,
                     my_did=my_info.did,
-                    state=Conn23Record.STATE_REQUEST_RECEIVED,
+                    state=Conn23Record.STATE_REQUEST,
                     accept=connection.accept,
                     their_role=connection.their_role,
                 )
@@ -370,12 +399,14 @@ class Conn23Manager:
                 )
                 connection = new_connection
 
-        conn_did_doc = request.connection.did_doc
+        if not await request.did_doc_attach.data.verify(wallet):
+            raise Conn23ManagerError("DID Doc signature failed verification")
+        conn_did_doc = DIDDoc.from_json(request.did_doc_attach.data.signed.decode())
         if not conn_did_doc:
-            raise ConnectionManagerError(
+            raise Conn23ManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if request.connection.did != conn_did_doc.did:
+        if request.did != conn_did_doc.did:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
@@ -384,8 +415,8 @@ class Conn23Manager:
 
         if connection:
             connection.their_label = request.label
-            connection.their_did = request.connection.did
-            connection.state = Conn23Record.STATE_REQUEST_RECEIVED
+            connection.their_did = request.did
+            connection.state = Conn23Record.STATE_REQUEST
             await connection.save(
                 self.context, reason="Received connection request from invitation"
             )
@@ -396,10 +427,10 @@ class Conn23Manager:
             connection = Conn23Record(
                 invitation_key=connection_key,
                 my_did=my_info.did,
-                their_did=request.connection.did,
+                their_did=request.did,
                 their_label=request.label,
-                their_role=Conn23Record.Role.REQUESTER,
-                state=Conn23Record.STATE_REQUEST_RECEIVED,
+                their_role=Conn23Record.Role.REQUESTER.rfc23,
+                state=Conn23Record.STATE_REQUEST,
             )
             if self.context.settings.get("debug.auto_accept_requests"):
                 connection.accept = Conn23Record.ACCEPT_AUTO
@@ -424,7 +455,7 @@ class Conn23Manager:
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
-                connection.state = Conn23Record.STATE_RESPONSE_SENT
+                connection.state = Conn23Record.STATE_RESPONSE
                 await connection.save(self.context, reason="Sent connection response")
         else:
             self._logger.debug("Connection request will await acceptance")
@@ -451,9 +482,9 @@ class Conn23Manager:
             {"connection_id": connection.connection_id},
         )
 
-        if connection.state != Conn23Record.STATE_REQUEST_RECEIVED:
+        if connection.state != Conn23Record.STATE_REQUEST:
             raise Conn23ManagerError(
-                f"Connection not in state {Conn23Record.STATE_REQUEST_RECEIVED}"
+                f"Connection not in state {Conn23Record.STATE_REQUEST}"
             )
 
         request = await connection.retrieve_request(self.context)
@@ -476,7 +507,7 @@ class Conn23Manager:
         did_doc = await self.create_did_document(
             my_info, connection.inbound_connection_id, my_endpoints
         )
-        attach = AttachDecorator.from_aries_msg(did_doc.serialize())
+        attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await attach.data.sign(connection.invitation_key, wallet)
         response = Conn23Response(did=my_info.did, did_doc_attach=attach)
         # Assign thread information
@@ -489,7 +520,7 @@ class Conn23Manager:
         '''
 
         # Update connection state
-        connection.state = Conn23Record.STATE_RESPONSE_CREATED
+        connection.state = Conn23Record.STATE_RESPONSE
         await connection.save(
             self.context,
             reason="Created connection response",
@@ -551,7 +582,7 @@ class Conn23Manager:
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
             )
 
-        if connection.state != Conn23Record.STATE_REQUEST_SENT:
+        if connection.state != Conn23Record.STATE_REQUEST:
             raise Conn23ManagerError(
                 f"Cannot accept connection response for connection"
                 " in state: {connection.state}"
@@ -571,7 +602,7 @@ class Conn23Manager:
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did
-        connection.state = Conn23Record.STATE_RESPONSE_RECEIVED
+        connection.state = Conn23Record.STATE_RESPONSE
         await connection.save(self.context, reason="Accepted connection response")
 
         # create and send connection-complete message
@@ -590,7 +621,7 @@ class Conn23Manager:
             connection = await Conn23Record.retrieve_by_id(
                 self._context, connection.connection_id
             )
-            connection.state = Conn23Record.STATE_COMPLETED
+            connection.state = Conn23Record.STATE_
             await connection.save(self.context, reason="Sent connection complete")
         
         return connection
@@ -626,7 +657,7 @@ class Conn23Manager:
                 self.context, response._thread_id
             )
         except StorageNotFoundError:
-            connection.state = Conn23Record.STATE_ABANDONED
+            connection.state = Conn23Record.STATE
             await connection.save(
                 self.context,
                 reason="Received connection complete for absent invitation",
@@ -676,10 +707,7 @@ class Conn23Manager:
 
         if (
             connection
-            and connection.state in (
-                Conn23Record.STATE_RESPONSE_SENT,
-                Conn23Record.STATE_RESPONSE_RECEIVED,
-            )
+            and connection.state == Conn23Record.STATE_RESPONSE
             and auto_complete
         ):
             connection.state = Conn23Record.STATE_COMPLETED
@@ -1003,6 +1031,7 @@ class Conn23Manager:
         results = None
 
         ''' was (for RFC 160)
+            # KEEP THIS COMMENT AROUND until certain the logic maps OK to RFC 23
         if (
             connection.state
             in (ConnectionRecord.STATE_INVITATION, ConnectionRecord.STATE_REQUEST)
@@ -1010,8 +1039,11 @@ class Conn23Manager:
         ):
         '''
         if (
-            connection.state in (Conn23Record.STATE..., Conn23Record.STATE_...)
-            and connection.their_role is Conn23Record.Role.REQUESTER
+            connection.state in (
+                Conn23Record.STATE_INVITATION,
+                Conn23Record.STATE_REQUEST
+            )
+            and connection.their_role is Conn23Record.Role.RESPONDER
         ):
             invitation = await connection.retrieve_invitation(self.context)
             if invitation.did:
@@ -1057,14 +1089,14 @@ class Conn23Manager:
 
         return results
 
-    async def verify_diddoc(self, attached: AttachDecoratorData) -> DIDDoc:
+    async def verify_diddoc(self, attached: AttachDecorator) -> DIDDoc:
         """Verify DIDDoc attachment and return signed data."""
-        signed_diddoc_bytes = attached.signed
+        signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
             raise Conn23ManagerError(
                 "DID doc attachment is not signed."
             )
-        if not await verify(attached, wallet):
+        if not await attached.data.verify(wallet):
             raise Conn23ManagerError(
                 f"Connection {connection.connection_id} DID doc attachment "
                 "signature failed verification"

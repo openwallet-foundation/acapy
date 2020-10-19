@@ -16,24 +16,25 @@ class TestConn23Complete(TestCase):
         complete = Conn23Complete()
         assert complete._type == DIDCommPrefix.qualify_current(CONN23_COMPLETE)
 
-    def test_serde(self, mock_invitation_schema_load):
+    def test_serde(self):
         obj = {"~thread": {"thid": THID, "pthid": PTHID}}
         complete = Conn23Complete.deserialize(obj)
         assert complete._type == DIDCommPrefix.qualify_current(CONN23_COMPLETE)
 
         complete_dict = complete.serialize()
-        assert complete_dict["~thread"] == obj
+        assert complete_dict["~thread"] == obj["~thread"]
 
 
 class TestConn23CompleteSchema(TestCase):
     def test_make_model(self):
-        complete = Conn23Complete().assign_thread_id(THID, PTHID)
+        complete = Conn23Complete()
+        complete.assign_thread_id(THID, PTHID)
         data = complete.serialize()
         model_instance = Conn23Complete.deserialize(data)
         assert isinstance(model_instance, Conn23Complete)
 
-    def test_make_model_x(self):
-        x_complete = Conn23Complete()  # no thread attachment
-        data = x_complete.serialize()
+    def test_serde_x(self):
+        Conn23Complete.deserialize({})  # no thread attachment: OK as model
+        x_complete = Conn23Complete()  # no thread attachment: should not deserialize
         with self.assertRaises(BaseModelError):
-            Conn23Complete.deserialize(data)
+            data = x_complete.serialize()

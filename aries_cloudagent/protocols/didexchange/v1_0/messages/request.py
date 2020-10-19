@@ -7,6 +7,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+from .....messaging.valid import INDY_DID
 
 from ..message_types import CONN23_REQUEST, PROTOCOL_PACKAGE
 
@@ -52,7 +53,6 @@ class Conn23RequestSchema(AgentMessageSchema):
         """DID exchange connection request schema class metadata."""
 
         model_class = Conn23Request
-        signed_fields = ["did_doc_attach"]
         unknown = EXCLUDE
 
     label = fields.Str(

@@ -6,11 +6,12 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
-from ..messages.invitation import Conn23Invitation
+from .....protocols.outofband.v1_0.messages.invitation import InvitationMessage
+
 from ..messages.problem_report import ProblemReport, ProblemReportReason
 
 
-class Conn23InvitationHandler(BaseHandler):
+class InvitationHandler(BaseHandler):
     """Handler class for connection invitation message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
@@ -22,8 +23,8 @@ class Conn23InvitationHandler(BaseHandler):
             responder: Responder callback
         """
 
-        self._logger.debug(f"Conn23InvitationHandler called with context {context}")
-        assert isinstance(context.message, Conn23Invitation)
+        self._logger.debug(f"InvitationHandler called with context {context}")
+        assert isinstance(context.message, InvitationMessage)
 
         report = ProblemReport(
             problem_code=ProblemReportReason.INVITATION_NOT_ACCEPTED,

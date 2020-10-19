@@ -1,12 +1,12 @@
 import pytest
 
-from aries_cloudagent.messaging.base_handler import HandlerException
-from aries_cloudagent.messaging.request_context import RequestContext
-from aries_cloudagent.messaging.responder import MockResponder
-from aries_cloudagent.transport.inbound.receipt import MessageReceipt
+from ......messaging.base_handler import HandlerException
+from ......messaging.request_context import RequestContext
+from ......messaging.responder import MockResponder
+from ......protocols.outofband.v1_0.messages.invitation import InvitationMessage
+from ......transport.inbound.receipt import MessageReceipt
 
-from ...handlers.invitation_handler import Conn23InvitationHandler
-from ...messages.invitation import Conn23Invitation
+from ...handlers.invitation_handler import InvitationHandler
 from ...messages.problem_report import ProblemReport, ProblemReportReason
 
 
@@ -20,8 +20,8 @@ def request_context() -> RequestContext:
 class TestConn23InvitationHandler:
     @pytest.mark.asyncio
     async def test_problem_report(self, request_context):
-        request_context.message = Conn23Invitation()
-        handler = Conn23InvitationHandler()
+        request_context.message = InvitationMessage()
+        handler = InvitationHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)
         messages = responder.messages

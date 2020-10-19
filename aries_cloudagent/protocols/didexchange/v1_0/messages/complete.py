@@ -1,8 +1,12 @@
 """Represents a connection complete message under RFC 23 (DID exchange)."""
 
-from marshmallow import EXCLUDE, validates_schema, ValidationError
+from marshmallow import EXCLUDE, fields, pre_dump, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....messaging.decorators.thread_decorator import (
+    ThreadDecorator,
+    ThreadDecoratorSchema,
+)
 
 from ..message_types import CONN23_COMPLETE, PROTOCOL_PACKAGE
 
@@ -21,12 +25,10 @@ class Conn23Complete(AgentMessage):
 
     def __init__(
         self,
-        *,
         **kwargs,
     ):
         """
         Initialize connection complete message object.
-
         """
         super().__init__(**kwargs)
 
@@ -40,18 +42,9 @@ class Conn23CompleteSchema(AgentMessageSchema):
         model_class = Conn23Complete
         unknown = EXCLUDE
 
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields (thread deco thid, pthid are required here).
-
-        Args:
-            data: The data to validate
-
-        Raises:
-            ValidationError: If any of the fields do not validate
-
-        """
-        thread_deco = data.get("~thread", {})
-        if not (("thid" in thread_deco) and ("pthid" in thread_deco)):
+    @pre_dump
+    def check_thread_deco(self, obj, **kwargs):
+        """Thread decorator, and its thid and pthid, are mandatory."""
+        if not obj._decorators.to_dict().get("~thread", {}).keys() >= {"thid", "pthid"}:
             raise ValidationError("Missing required field(s) in thread decorator")
+        return obj

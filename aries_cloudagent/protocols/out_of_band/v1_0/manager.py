@@ -8,8 +8,7 @@ from ....core.error import BaseError
 from ....ledger.base import BaseLedger
 from ....wallet.util import did_key_to_naked, naked_to_did_key
 
-from ...connections.v1_0.manager import ConnectionManager
-from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from ...didexchange.v1_0.manager import Conn23Manager
 from ...didcomm_prefix import DIDCommPrefix
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
@@ -78,12 +77,11 @@ class OutOfBandManager:
                 {"id": "jh5k23j5gh2123", "type": "credential-offer"}
 
         Returns:
-            A tuple of the new `InvitationRecord` and out of band `InvitationMessage`
-            instances
+            Invitation record
 
         """
 
-        connection_mgr = ConnectionManager(self.context)
+        connection_mgr = Conn23Manager(self.context)
         (connection, connection_invitation) = await connection_mgr.create_invitation(
             my_label=my_label,
             my_endpoint=my_endpoint,
@@ -125,6 +123,7 @@ class OutOfBandManager:
                         f"Unknown attachment type: {attachment_type}"
                     )
 
+        '''  # did-exchange manager does this now
         # We plug into existing connection structure during migration phase
         if use_public_did:
             # service = (await wallet.get_public_did()).did
@@ -159,6 +158,7 @@ class OutOfBandManager:
             handshake_protocols.extend(
                 pfx.qualify(HS_PROTO_CONN_INVI) for pfx in DIDCommPrefix
             )
+        '''
 
         invitation_message = InvitationMessage(
             label=my_label,
@@ -168,14 +168,14 @@ class OutOfBandManager:
         ).validate()
 
         # Create record
-        invitation_model = InvitationRecord(
+        invitation_record = InvitationRecord(
             state=InvitationRecord.STATE_INITIAL,
             invitation=invitation_message.serialize(),
         )
 
-        await invitation_model.save(self.context, reason="Created new invitation")
+        await invitation_record.save(self.context, reason="Created new invitation")
 
-        return invitation_model
+        return invitation_record
 
     async def receive_invitation(
         self, invitation: InvitationMessage

@@ -7,6 +7,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+from .....messaging.valid import INDY_DID
 
 from ..message_types import CONN23_RESPONSE, PROTOCOL_PACKAGE
 
@@ -49,12 +50,11 @@ class Conn23ResponseSchema(AgentMessageSchema):
         """DID exchange connection response schema class metadata."""
 
         model_class = Conn23Response
-        signed_fields = ["did_doc_attach"]
         unknown = EXCLUDE
 
     did = fields.Str(description="DID of exchange", **INDY_DID)
     did_doc_attach = fields.Nested(
-        AttachDecoratorDataSchema,
+        AttachDecoratorSchema,
         required=False,
         description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",

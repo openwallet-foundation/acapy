@@ -32,12 +32,12 @@ class Conn23Record(BaseRecord):
         @property
         def rfc160(self):
             """Return RFC 160 (connection protocol) nomenclature."""
-            return self[0]
+            return self.value[0]
 
         @property
         def rfc23(self):
             """Return RFC 23 (DID exchange protocol) nomenclature."""
-            return self[1]
+            return self.value[1]
 
         @classmethod
         def get(cls, label: str):
@@ -49,9 +49,13 @@ class Conn23Record(BaseRecord):
 
         def flip(self):
             """Return interlocutor role."""
-            return Role.REQUESTER if self is Role.RESPONDER else ROLE.RESPONDER
+            return (
+                Conn23Record.Role.REQUESTER
+                if self is Conn23Record.Role.RESPONDER
+                else Conn23Record.Role.RESPONDER
+            )
 
-        def __eq__(self, other: Union[str, Role]) -> bool:
+        def __eq__(self, other: Union[str, "Role"]) -> bool:
             """Comparison between roles."""
             if isinstance(other, str):
                 return self is Role.get(other)
@@ -72,15 +76,9 @@ class Conn23Record(BaseRecord):
     MULTIUSE = "multiuse"
 
     STATE_START = "start"
-    STATE_INVITATION_CREATED = "invitation-created"  # impl-only: not in RFC 23
-    STATE_INVITATION_SENT = "invitation-sent"
-    STATE_INVITATION_RECEIVED = "invitation-received"
-    STATE_REQUEST_CREATED = "request-created"  # impl-only: not in RFC 23
-    STATE_REQUEST_SENT = "request-sent"
-    STATE_REQUEST_RECEIVED = "request-received"
-    STATE_RESPONSE_CREATED = "response-created"  # impl-only: not in RFC 23
-    STATE_RESPONSE_SENT = "response-sent"
-    STATE_RESPONSE_RECEIVED = "response-received"
+    STATE_INVITATION = "invitation"  # requester: received; responder: created/sent
+    STATE_REQUEST = "request"  # requester: created/sent; responder: received
+    STATE_RESPONSE = "response-sent"  # requester: received; requester: created/sent
     STATE_ABANDONED = "abandoned"
     STATE_COMPLETED = "completed"
 
@@ -158,7 +156,7 @@ class Conn23Record(BaseRecord):
         context: InjectionContext,
         their_did: str = None,
         my_did: str = None,
-        my_role: Conn23Record.Role = None,
+        my_role: Role = None,
     ) -> "Conn23Record":
         """Retrieve a connection record by target DID.
 
@@ -183,7 +181,7 @@ class Conn23Record(BaseRecord):
         cls,
         context: InjectionContext,
         invitation_key: str,
-        my_role: Conn23Record.Role = None
+        my_role: Role,
     ) -> "Conn23Record":
         """Retrieve a connection record by invitation key and interlocuter role.
 
@@ -192,10 +190,13 @@ class Conn23Record(BaseRecord):
             invitation_key: The key on the originating invitation
             my_role: Filter by record owner role value
         """
+        assert my_role
+
         tag_filter = {"invitation_key": invitation_key}
-        post_filter = {"state": cls.STATE_INVITATION}
-        if my_role:
-            post_filter["their_role"] = my_role.flip().rfc23
+        post_filter = {
+            "state": cls.STATE_INVITATION,
+            "their_role": my_role.flip().rfc23
+        }
         return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
     @classmethod
@@ -280,7 +281,7 @@ class Conn23Record(BaseRecord):
         """Accessor for connection readiness."""
         return self.state in (
             Conn23Record.STATE_COMPLETED,
-            Conn23Record.STATE_RESPONSE_RECEIVED
+            Conn23Record.STATE_RESPONSE
         )
 
     @property
@@ -328,8 +329,10 @@ class Conn23RecordSchema(BaseRecordSchema):
     their_role = fields.Str(
         required=False,
         description="Their assigned role for connection",
-        validate=validate.OneOf([label for role in Role for label in role.value]),
-        example=Conn23Record.ROLE_REQUESTER.rfc23,
+        validate=validate.OneOf(
+            [label for role in Conn23Record.Role for label in role.value]
+        ),
+        example=Conn23Record.Role.REQUESTER.rfc23,
     )
     inbound_connection_id = fields.Str(
         required=False,

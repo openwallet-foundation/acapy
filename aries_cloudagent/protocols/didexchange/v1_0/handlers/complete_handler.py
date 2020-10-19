@@ -7,8 +7,7 @@ from .....messaging.base_handler import (
 )
 
 from ..manager import Conn23Manager, Conn23ManagerError
-from ..messages.response import Conn23Response
-from ..messages.problem_report import ProblemReport
+from ..messages.complete import Conn23Complete
 
 
 class Conn23CompleteHandler(BaseHandler):
