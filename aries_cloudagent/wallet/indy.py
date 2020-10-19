@@ -586,8 +586,9 @@ class IndyWallet(BaseWallet):
                 raise LedgerConfigError(
                     f"No ledger available but DID {did} is public: missing wallet-type?"
                 )
-            async with ledger:
-                await ledger.update_endpoint_for_did(did, endpoint, endpoint_type)
+            if not ledger.read_only:
+                async with ledger:
+                    await ledger.update_endpoint_for_did(did, endpoint, endpoint_type)
 
         await self.replace_local_did_metadata(did, metadata)
 
