@@ -17,7 +17,7 @@ from .models.invitation import InvitationRecord
 from .messages.invitation import InvitationMessage
 from .messages.service import Service as ServiceMessage
 
-HS_PROTO_CONN_INVI = "connections/1.0/invitation"
+HS_PROTO_CONN_INVI = "didexchange/1.0/invitation"
 
 
 class OutOfBandManagerError(BaseError):
@@ -179,7 +179,7 @@ class OutOfBandManager:
 
     async def receive_invitation(
         self, invitation: InvitationMessage
-    ) -> ConnectionRecord:
+    ) -> Conn23Record:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -187,8 +187,10 @@ class OutOfBandManager:
         # New message format
         invitation_message = InvitationMessage.deserialize(invitation)
 
+        ''' # TODO Remove this
         # Convert to old format and pass to relevant manager
         # The following logic adheres to Aries RFC 0496
+        '''
 
         # There must be exactly 1 service entry
         if (
@@ -238,6 +240,7 @@ class OutOfBandManager:
                 did_key_to_naked(key) for key in service.routing_keys
             ] or []
 
+            '''  # did-exchange manager uses new format now
             # Convert to the old message format
             connection_invitation = ConnectionInvitation.deserialize(
                 {
@@ -249,10 +252,11 @@ class OutOfBandManager:
                     "routingKeys": service.routing_keys,
                 }
             )
+            '''
 
-            connection_mgr = ConnectionManager(self.context)
+            connection_mgr = Conn23Manager(self.context)
             connection = await connection_mgr.receive_invitation(
-                connection_invitation, auto_accept=True
+                invitation, auto_accept=True
             )
 
         elif len(

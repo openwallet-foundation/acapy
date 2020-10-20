@@ -9,7 +9,7 @@ from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
-from ...protocols.didexchange.v1_0.messages.invitation import Conn23Invitation
+from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.didexchange.v1_0.messages.request import Conn23Request
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
@@ -26,8 +26,8 @@ class Conn23Record(BaseRecord):
     class Role(Enum):
         """RFC 160 (inviter, invitee) = RFC 23 (responder, requester)."""
 
-        REQUESTER = ("invitee", "requester")  # aka initiator in RFC 160
-        RESPONDER = ("inviter", "responder")  # aka initiator in RFC 23: it's confusing
+        REQUESTER = ("invitee", "requester")  # == RFC 160 initiator, RFC 434 receiver
+        RESPONDER = ("inviter", "responder")  # == RFC 23 initiator(!), RFC 434 sender
 
         @property
         def rfc160(self):
@@ -213,7 +213,7 @@ class Conn23Record(BaseRecord):
         return await cls.retrieve_by_tag_filter(context, tag_filter)
 
     async def attach_invitation(
-        self, context: InjectionContext, invitation: Conn23Invitation
+        self, context: InjectionContext, invitation: InvitationMessage
     ):
         """Persist the related connection invitation to storage.
 
@@ -232,7 +232,7 @@ class Conn23Record(BaseRecord):
 
     async def retrieve_invitation(
         self, context: InjectionContext
-    ) -> Conn23Invitation:
+    ) -> InvitationMessage:
         """Retrieve the related connection invitation.
 
         Args:
@@ -243,7 +243,7 @@ class Conn23Record(BaseRecord):
         result = await storage.search_records(
             self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         ).fetch_single()
-        return Conn23Invitation.from_json(result.value)
+        return InvitationMessage.from_json(result.value)
 
     async def attach_request(
         self, context: InjectionContext, request: Conn23Request
@@ -264,7 +264,7 @@ class Conn23Record(BaseRecord):
         await storage.add_record(record)
 
     async def retrieve_request(self, context: InjectionContext) -> Conn23Request:
-        """Retrieve the related connection invitation.
+        """Retrieve the related connection request.
 
         Args:
             context: The injection context to use

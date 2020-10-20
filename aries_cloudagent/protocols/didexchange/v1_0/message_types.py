@@ -8,7 +8,6 @@ SPEC_URI = (
 )
 
 # Message types
-CONN23_INVITATION = f"didexchange/1.0/invitation"
 CONN23_REQUEST = f"didexchange/1.0/request"
 CONN23_RESPONSE = f"didexchange/1.0/response"
 CONN23_COMPLETE = f"didexchange/1.0/complete"
@@ -18,7 +17,6 @@ PROTOCOL_PACKAGE = "aries_cloudagent.protocols.didexchange.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
-        CONN23_INVITATION: f"{PROTOCOL_PACKAGE}.messages.invitation.Conn23Invitation",
         CONN23_REQUEST: f"{PROTOCOL_PACKAGE}.messages.request.Conn23Request",
         CONN23_RESPONSE: f"{PROTOCOL_PACKAGE}.messages.response.Conn23Response",
         CONN23_COMPLETE: f"{PROTOCOL_PACKAGE}.messages.complete.Conn23Complete",

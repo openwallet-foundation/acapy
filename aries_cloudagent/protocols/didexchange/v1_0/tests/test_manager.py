@@ -24,10 +24,11 @@ from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.basic import BasicWallet
 from .....wallet.error import WalletNotFoundError
 
+from ....out_of_band.v1_0.messages.invitation import InvitationMessage
+from ....out_of_band.v1_0.messages.service import Service as OOBService
 from ....routing.v1_0.manager import RoutingManager
 
 from ..manager import Conn23Manager, Conn23ManagerError
-from ..messages.invitation import Conn23Invitation
 from ..messages.request import Conn23Request
 from ..messages.response import Conn23Response
 from ..messages.complete import Conn23Complete
@@ -104,9 +105,8 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         )
 
         invitee_record = await self.manager.receive_invitation(connect_invite)
-        assert invitee_record.state == ConnectionRecord.STATE_REQUEST
+        assert invitee_record.state == Conn23Record.STATE_REQUEST
 
-    '''
     async def test_receive_invitation_no_auto_accept(self):
         (_, connect_invite) = await self.manager.create_invitation(
             my_endpoint="testendpoint"
@@ -115,20 +115,28 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         invitee_record = await self.manager.receive_invitation(
             connect_invite, auto_accept=False
         )
-        assert invitee_record.state == ConnectionRecord.STATE_INVITATION
+        assert invitee_record.state == Conn23Record.STATE_INVITATION
 
     async def test_receive_invitation_bad_invitation(self):
         x_invites = [
-            ConnectionInvitation(),
-            ConnectionInvitation(
-                recipient_keys=["3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"]
+            InvitationMessage(),
+            InvitationMessage(
+                service=[OOBService()]
+            ),
+            InvitationMessage(
+                service=[
+                    OOBService(
+                        recipient_keys=["3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"]
+                    )
+                ]
             ),
         ]
 
         for x_invite in x_invites:
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_invitation(x_invite)
 
+    '''
     async def test_create_request(self):
         conn_req = await self.manager.create_request(
             ConnectionRecord(
