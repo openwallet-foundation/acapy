@@ -13,15 +13,9 @@ PING_RESPONSE = f"trust_ping/1.0/ping_response"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.trustping.v1_0"
 
-MESSAGE_TYPES = {
-    **{
-        pfx.qualify(PING): f"{PROTOCOL_PACKAGE}.messages.ping.Ping"
-        for pfx in DIDCommPrefix
-    },
-    **{
-        pfx.qualify(PING_RESPONSE): (
-            f"{PROTOCOL_PACKAGE}.messages.ping_response.PingResponse"
-        )
-        for pfx in DIDCommPrefix
-    },
-}
+MESSAGE_TYPES = DIDCommPrefix.qualify_all(
+    {
+        PING: f"{PROTOCOL_PACKAGE}.messages.ping.Ping",
+        PING_RESPONSE: f"{PROTOCOL_PACKAGE}.messages.ping_response.PingResponse",
+    }
+)

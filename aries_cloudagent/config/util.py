@@ -3,7 +3,7 @@
 import os
 import re
 
-from argparse import ArgumentTypeError
+from configargparse import ArgumentTypeError
 from typing import Any, Mapping
 
 from .logging import LoggingConfigurator

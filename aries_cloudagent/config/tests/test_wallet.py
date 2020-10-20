@@ -38,6 +38,24 @@ class TestWallet(AsyncTestCase):
 
             await test_module.wallet_config(context, provision=True)
 
+    async def test_wallet_config_non_indy_x(self):
+        settings = {
+            "wallet.seed": "00000000000000000000000000000000",
+        }
+        mock_wallet = async_mock.MagicMock(
+            type="not-indy",
+            name="Test Wallet",
+            created=False,
+            get_public_did=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            ),
+        )
+        context = InjectionContext(settings=settings, enforce_typing=False)
+        context.injector.bind_instance(BaseWallet, mock_wallet)
+
+        with self.assertRaises(test_module.ConfigError):
+            await test_module.wallet_config(context, provision=True)
+
     async def test_wallet_config_bad_seed_x(self):
         settings = {
             "wallet.seed": "00000000000000000000000000000000",

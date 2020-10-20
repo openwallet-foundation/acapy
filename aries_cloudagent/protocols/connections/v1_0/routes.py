@@ -582,7 +582,7 @@ async def register(app: web.Application):
                 "/connections/{conn_id}/establish-inbound/{ref_id}",
                 connections_establish_inbound,
             ),
-            web.post("/connections/{conn_id}/remove", connections_remove),
+            web.delete("/connections/{conn_id}", connections_remove),
         ]
     )
 

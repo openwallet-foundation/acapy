@@ -8,4 +8,8 @@ class RevocationError(BaseError):
 
 
 class RevocationNotSupportedError(RevocationError):
-    """Attempted to create registry for non-revocable cred def."""
+    """Attempted to perform revocation-related operation where inapplicable."""
+
+
+class RevocationRegistryBadSizeError(RevocationError):
+    """Attempted to create registry with maximum credentials too large or too small."""

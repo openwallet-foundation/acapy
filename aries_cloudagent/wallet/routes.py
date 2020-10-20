@@ -28,6 +28,11 @@ from .base import DIDInfo, BaseWallet
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 
+WALLET_TYPES = {
+    "basic": "aries_cloudagent.wallet.basic.BasicWallet",
+    "indy": "aries_cloudagent.wallet.indy.IndyWallet",
+}
+
 
 class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
@@ -126,7 +131,9 @@ def format_did_info(info: DIDInfo):
         }
 
 
-@docs(tags=["wallet"], summary="List wallet DIDs")
+@docs(
+    tags=["wallet"], summary="List wallet DIDs",
+)
 @querystring_schema(DIDListQueryStringSchema())
 @response_schema(DIDListSchema, 200)
 async def wallet_did_list(request: web.BaseRequest):
@@ -286,7 +293,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
     try:
         ledger = await context.inject(BaseLedger, required=False)
         if not ledger:
-            reason = f"No ledger available"
+            reason = "No ledger available"
             if not context.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
             raise web.HTTPForbidden(reason=reason)

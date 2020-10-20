@@ -21,6 +21,9 @@ LOGGER = logging.getLogger(__name__)
 class RevocationRegistry:
     """Manage a revocation registry and tails file."""
 
+    MIN_SIZE = 4
+    MAX_SIZE = 32768
+
     def __init__(
         self,
         registry_id: str = None,

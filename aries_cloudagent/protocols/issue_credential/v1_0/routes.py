@@ -1,7 +1,5 @@
 """Credential exchange admin routes."""
 
-import json
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -29,7 +27,6 @@ from ....messaging.valid import (
     UUIDFour,
     UUID4,
 )
-from ....revocation.error import RevocationError
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
@@ -1348,22 +1345,13 @@ async def register(app: web.Application):
                 "/issue-credential/records/{cred_ex_id}/store",
                 credential_exchange_store,
             ),
-            web.post("/issue-credential/revoke", credential_exchange_revoke),
-            web.post(
-                "/issue-credential/publish-revocations",
-                credential_exchange_publish_revocations,
-            ),
-            web.post(
-                "/issue-credential/clear-pending-revocations",
-                credential_exchange_clear_pending_revocations,
-            ),
-            web.post(
-                "/issue-credential/records/{cred_ex_id}/remove",
-                credential_exchange_remove,
-            ),
             web.post(
                 "/issue-credential/records/{cred_ex_id}/problem-report",
                 credential_exchange_problem_report,
+            ),
+            web.delete(
+                "/issue-credential/records/{cred_ex_id}",
+                credential_exchange_remove,
             ),
         ]
     )

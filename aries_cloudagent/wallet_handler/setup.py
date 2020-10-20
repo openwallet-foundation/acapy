@@ -4,6 +4,7 @@ from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader
 from .handler import WalletHandler
 from ..wallet.base import BaseWallet
+from ..wallet.models.wallet_record import WalletRecord
 
 HANDLER_CLASS = "aries_cloudagent.wallet_handler.handler.WalletHandler"
 HANDLED_CLASSES = {

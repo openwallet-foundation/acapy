@@ -202,7 +202,11 @@ class DemoAgent:
         credential_definition_body = {
             "schema_id": schema_id,
             "support_revocation": support_revocation,
-            "revocation_registry_size": revocation_registry_size,
+            **{
+                "revocation_registry_size": revocation_registry_size
+                for _ in [""]
+                if support_revocation
+            },
         }
         credential_definition_response = await self.admin_POST(
             "/credential-definitions", credential_definition_body
@@ -447,7 +451,7 @@ class DemoAgent:
 
     async def handle_revocation_registry(self, message):
         self.log(
-            f"Revocation registry: {message['record_id']} state: {message['state']}"
+            f"Revocation registry: {message['revoc_reg_id']} state: {message['state']}"
         )
 
     async def admin_request(

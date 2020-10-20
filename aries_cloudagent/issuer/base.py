@@ -38,7 +38,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         """Derive the ID for a schema."""
 
     @abstractmethod
-    async def create_and_store_schema(
+    async def create_schema(
         self,
         origin_did: str,
         schema_name: str,
@@ -120,6 +120,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
+        cred_ex_id: str,
         revoc_reg_id: str = None,
         tails_reader_handle: int = None,
     ) -> Tuple[str, str]:
@@ -131,6 +132,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
+            cred_ex_id: credential exchange identifier to use in issuer cred rev rec
             revoc_reg_id: ID of the revocation registry
             tails_reader_handle: Handle for the tails file blob reader
 
@@ -141,7 +143,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def revoke_credentials(
-        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
+        self, revoc_reg_id: str, tails_file_path: str, cred_rev_ids: Sequence[str]
     ) -> (str, Sequence[str]):
         """
         Revoke a set of credentials in a revocation registry.
@@ -149,7 +151,7 @@ class BaseIssuer(ABC, metaclass=ABCMeta):
         Args:
             revoc_reg_id: ID of the revocation registry
             tails_file_path: path to the local tails file
-            cred_revoc_ids: sequences of credential indexes in the revocation registry
+            cred_rev_ids: sequences of credential indexes in the revocation registry
 
         Returns:
             Tuple with the combined revocation delta, list of cred rev ids not revoked

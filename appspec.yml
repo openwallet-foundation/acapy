@@ -1,0 +1,40 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /aries/src
+
+permissions:
+  - object: /aries
+    pattern: "**"
+    owner: ubuntu
+    group: root
+    mode: 775
+    type:
+      - directory
+  - object: /aries/
+    pattern: "**"
+    owner: ubuntu
+    group: root
+    mode: 775
+    type:
+      - file
+
+hooks:
+  BeforeInstall:
+    - location: /aws/code_deploy/01_stopService.sh
+      timeout: 60
+    - location: /aws/code_deploy/02_clearData.sh
+      timeout: 20
+  AfterInstall:
+    - location: /aws/code_deploy/10_setupService.sh
+      timeout: 300
+      runas: root
+  ApplicationStart:
+    - location: /aws/code_deploy/20_startService.sh
+      timeout: 600
+      runas: ubuntu
+  ValidateService:
+    - location: /aws/code_deploy/30_checkService.sh
+      timeout: 60
+      runas: root

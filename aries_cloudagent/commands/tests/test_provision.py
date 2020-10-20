@@ -2,12 +2,13 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 import pytest
 
+from ...config.error import ArgsParseError
 from .. import provision as command
 
 
 class TestProvision(AsyncTestCase):
     def test_bad_calls(self):
-        with self.assertRaises(command.ProvisionError):
+        with self.assertRaises(ArgsParseError):
             command.execute([])
 
         with self.assertRaises(SystemExit):
@@ -16,7 +17,21 @@ class TestProvision(AsyncTestCase):
     @pytest.mark.indy
     def test_provision_wallet(self):
         test_seed = "testseed000000000000000000000001"
-        command.execute(["--wallet-type", "indy", "--seed", test_seed])
+        command.execute(
+            [
+                "--wallet-type",
+                "indy",
+                "--wallet-name",
+                "test_wallet",
+                "--wallet-key",
+                "key",
+                "--seed",
+                test_seed,
+                "--no-ledger",
+                "--endpoint",
+                "test_endpoint",
+            ]
+        )
 
     async def test_provision_ledger_configured(self):
         with async_mock.patch.object(
