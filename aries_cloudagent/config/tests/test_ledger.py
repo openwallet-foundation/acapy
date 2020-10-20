@@ -245,6 +245,36 @@ class TestLedger(AsyncTestCase):
             mock_ledger.get_txn_author_agreement.assert_not_called()
             mock_ledger.get_latest_txn_author_acceptance.assert_not_called()
 
+    async def test_ledger_config_read_only_skip_profile_endpoint_publish(self):
+        settings = {
+            "ledger.genesis_url": "00000000000000000000000000000000",
+            "read_only_ledger": True,
+            "profile_endpoint": "http://agent.ca",
+        }
+        mock_ledger = async_mock.MagicMock(
+            type="indy",
+            get_txn_author_agreement=async_mock.CoroutineMock(),
+            get_latest_txn_author_acceptance=async_mock.CoroutineMock(),
+        )
+        mock_wallet = async_mock.MagicMock(
+            type="indy",
+            set_did_endpoint=async_mock.CoroutineMock(),
+        )
+
+        context = InjectionContext(settings=settings, enforce_typing=False)
+        context.injector.bind_instance(BaseLedger, mock_ledger)
+        context.injector.bind_instance(BaseWallet, mock_wallet)
+
+        with async_mock.patch.object(
+            test_module, "fetch_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_fetch, async_mock.patch.object(
+            test_module, "accept_taa", async_mock.CoroutineMock()
+        ) as mock_accept_taa:
+            await test_module.ledger_config(context, TEST_DID, provision=True)
+            mock_ledger.get_txn_author_agreement.assert_not_called()
+            mock_ledger.get_latest_txn_author_acceptance.assert_not_called()
+            mock_ledger.update_endpoint_for_did.assert_not_called()
+
     async def test_ledger_config_genesis_file_non_indy_wallet(self):
         settings = {
             "ledger.genesis_file": "/tmp/genesis/path",
