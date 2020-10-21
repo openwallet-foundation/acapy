@@ -24,7 +24,7 @@ class MediationRecord(BaseRecord):
 
     RECORD_TYPE = "mediation_requests"
     RECORD_ID_NAME = "mediation_id"
-    TAG_NAMES = {"connection_id"}
+    TAG_NAMES = {"state", "connection_id"}
 
     STATE_REQUEST_RECEIVED = "request_received"
     STATE_GRANTED = "granted"
