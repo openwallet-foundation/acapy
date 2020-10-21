@@ -73,6 +73,7 @@ class TestUtil(TestCase):
 
         full = full_verkey(did, abbr_verkey)
         assert full == full_vk
+        assert full == full_verkey(f"did:sov:{did}", abbr_verkey)
         assert full_verkey(did, full_vk) == full_vk
 
     def test_naked_to_did_key(self):

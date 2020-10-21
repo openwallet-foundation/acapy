@@ -64,7 +64,7 @@ def bytes_to_b58(val: bytes) -> str:
 def full_verkey(did: str, abbr_verkey: str) -> str:
     """Given a DID and a short verkey, return the full verkey."""
     return (
-        bytes_to_b58(b58_to_bytes(did) + b58_to_bytes(abbr_verkey[1:]))
+        bytes_to_b58(b58_to_bytes(did.split(":")[-1]) + b58_to_bytes(abbr_verkey[1:]))
         if abbr_verkey.startswith("~")
         else abbr_verkey
     )

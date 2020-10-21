@@ -25,6 +25,7 @@ from ..storage.base import StorageRecord
 from ..storage.indy import IndyStorage
 from ..utils import sentinel
 from ..wallet.base import BaseWallet, DIDInfo
+from ..wallet.util import full_verkey
 from ..wallet.did_posture import DIDPosture
 
 from .base import BaseLedger
@@ -754,7 +755,7 @@ class IndyLedger(BaseLedger):
             request_json = await indy.ledger.build_get_nym_request(public_did, nym)
         response_json = await self._submit(request_json, sign_did=public_info)
         data_json = (json.loads(response_json))["result"]["data"]
-        return json.loads(data_json)["verkey"] if data_json else None
+        return full_verkey(did, json.loads(data_json)["verkey"]) if data_json else None
 
     async def get_all_endpoints_for_did(self, did: str) -> dict:
         """Fetch all endpoints for a ledger DID.
