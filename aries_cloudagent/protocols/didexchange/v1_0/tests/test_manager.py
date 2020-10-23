@@ -28,6 +28,7 @@ from ....out_of_band.v1_0.messages.invitation import InvitationMessage
 from ....out_of_band.v1_0.messages.service import Service as OOBService
 from ....routing.v1_0.manager import RoutingManager
 
+from .. import manager as test_module
 from ..manager import Conn23Manager, Conn23ManagerError
 from ..messages.request import Conn23Request
 from ..messages.response import Conn23Response
@@ -95,7 +96,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         self.test_conn_rec = Conn23Record(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=None,
+            their_role=Conn23Record.Role.REQUESTER.rfc23,
             state=Conn23Record.STATE_COMPLETED,
         )
 
@@ -136,53 +137,47 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_invitation(x_invite)
 
-    '''
     async def test_create_request(self):
         conn_req = await self.manager.create_request(
-            ConnectionRecord(
-                initiator=ConnectionRecord.INITIATOR_EXTERNAL,
-                invitation_key=self.test_verkey,
-                their_label="Hello",
-                their_role="Point of contact",
-                alias="Bob",
+            Conn23Record(
+                my_did=self.did_info.did,
+                their_did=self.test_target_did,
+                their_role=Conn23Record.Role.RESPONDER.rfc23,
+                state=Conn23Record.STATE_REQUEST,
             )
         )
         assert conn_req
 
     async def test_create_request_my_endpoint(self):
         conn_req = await self.manager.create_request(
-            ConnectionRecord(
-                initiator=ConnectionRecord.INITIATOR_EXTERNAL,
+            Conn23Record(
+                my_did=self.did_info.did,
+                their_did=self.test_target_did,
+                their_label="Bob",
+                their_role=Conn23Record.Role.RESPONDER.rfc23,
                 invitation_key=self.test_verkey,
-                their_label="Hello",
-                their_role="Point of contact",
+                state=Conn23Record.STATE_REQUEST,
                 alias="Bob",
             ),
             my_endpoint="http://testendpoint.com/endpoint",
         )
         assert conn_req
 
-    async def test_create_request_my_did(self):
-        wallet = await self.context.inject(BaseWallet)
-        await wallet.create_local_did(seed=None, did=self.test_did)
-        conn_req = await self.manager.create_request(
-            ConnectionRecord(
-                initiator=ConnectionRecord.INITIATOR_EXTERNAL,
-                invitation_key=self.test_verkey,
-                my_did=self.test_did,
-                their_label="Hello",
-                their_role="Point of contact",
-                alias="Bob",
-            )
-        )
-        assert conn_req
-
     async def test_receive_request_public_did(self):
         mock_request = async_mock.MagicMock()
-        mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.did = self.test_did
+        mock_request.did = self.test_did
+        mock_request.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value="dummy-did-doc"
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -191,28 +186,62 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
 
         self.manager.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
-        ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "attach_request", autospec=True
-        ) as mock_conn_attach_request, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_id", autospec=True
-        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
-            ConnectionRecord, "retrieve_request", autospec=True
-        ):
+            test_module, "Conn23Record", async_mock.MagicMock()
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "DIDDoc", autospec=True
+        ) as mock_did_doc, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_deco, async_mock.patch.object(
+            test_module, "Conn23Response", autospec=True
+        ) as mock_response, async_mock.patch.object(
+            self.manager, "create_did_document", async_mock.CoroutineMock()
+        ) as mock_create_did_doc:
+            mock_create_did_doc.return_value = async_mock.MagicMock(
+                serialize=async_mock.MagicMock(
+                    return_value={}
+                )
+            )
+            mock_conn_rec.STATE_REQUEST = Conn23Record.STATE_REQUEST
+            mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    save=async_mock.CoroutineMock()
+                )
+            )
+            mock_conn_rec.return_value = async_mock.MagicMock(
+                accept=Conn23Record.ACCEPT_AUTO,
+                my_did=None,
+                state=Conn23Record.STATE_REQUEST,
+                attach_request=async_mock.CoroutineMock(),
+                retrieve_request=async_mock.CoroutineMock(),
+                save=async_mock.CoroutineMock(),
+            )
+            mock_did_doc.from_json = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(did=self.test_did)
+            )
+            mock_attach_deco.from_indy_dict=async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        sign=async_mock.CoroutineMock()
+                    )
+                )
+            )
+            mock_response.return_value=async_mock.MagicMock(
+                assign_thread_from=async_mock.MagicMock(),
+                assign_trace_from=async_mock.MagicMock(),
+            )
+
             conn_rec = await self.manager.receive_request(mock_request, receipt)
             assert conn_rec
 
         messages = self.responder.messages
         assert len(messages) == 1
         (result, target) = messages[0]
-        assert type(result) == ConnectionResponse
         assert "connection_id" in target
 
-    async def test_receive_request_public_did_no_did_doc(self):
+    async def test_receive_request_public_did_no_did_doc_attachment(self):
         mock_request = async_mock.MagicMock()
-        mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = None
+        mock_request.did = self.test_did
+        mock_request.did_doc_attach = None
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -221,23 +250,26 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
 
         self.manager.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
-        ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "attach_request", autospec=True
-        ) as mock_conn_attach_request, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_id", autospec=True
-        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
-            ConnectionRecord, "retrieve_request", autospec=True
-        ):
-            with self.assertRaises(ConnectionManagerError):
+            test_module, "Conn23Record", async_mock.MagicMock()
+        ) as mock_conn_rec:
+            with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_request(mock_request, receipt)
 
     async def test_receive_request_public_did_wrong_did(self):
         mock_request = async_mock.MagicMock()
-        mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.did = "dummy"
+        mock_request.did = self.test_did
+        mock_request.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value="dummy-did-doc"
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -246,23 +278,31 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
 
         self.manager.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
-        ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "attach_request", autospec=True
-        ) as mock_conn_attach_request, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_id", autospec=True
-        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
-            ConnectionRecord, "retrieve_request", autospec=True
-        ):
-            with self.assertRaises(ConnectionManagerError):
+            test_module, "Conn23Record", async_mock.MagicMock()
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module.DIDDoc, "from_json", async_mock.MagicMock()
+        ) as mock_did_doc_from_json:
+            mock_did_doc_from_json.return_value = async_mock.MagicMock(
+                did="wrong-did"
+            )
+            with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_request(mock_request, receipt)
 
     async def test_receive_request_public_did_no_public_invites(self):
         mock_request = async_mock.MagicMock()
-        mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.did = self.test_did
+        mock_request.did = self.test_did
+        mock_request.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value="dummy-did-doc"
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -271,23 +311,35 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
 
         self.manager.context.update_settings({"public_invites": False})
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
-        ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "attach_request", autospec=True
-        ) as mock_conn_attach_request, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_id", autospec=True
-        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
-            ConnectionRecord, "retrieve_request", autospec=True
-        ):
-            with self.assertRaises(ConnectionManagerError):
+            test_module, "Conn23Record", async_mock.MagicMock()
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "DIDDoc", autospec=True
+        ) as mock_did_doc, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_deco, async_mock.patch.object(
+            test_module, "Conn23Response", autospec=True
+        ) as mock_response, async_mock.patch.object(
+            self.manager, "create_did_document", async_mock.CoroutineMock()
+        ) as mock_create_did_doc:
+
+            with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_request(mock_request, receipt)
 
     async def test_receive_request_public_did_no_auto_accept(self):
         mock_request = async_mock.MagicMock()
-        mock_request.connection = async_mock.MagicMock()
-        mock_request.connection.did = self.test_did
-        mock_request.connection.did_doc = async_mock.MagicMock()
-        mock_request.connection.did_doc.did = self.test_did
+        mock_request.did = self.test_did
+        mock_request.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value="dummy-did-doc"
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
@@ -298,14 +350,28 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             {"public_invites": True, "debug.auto_accept_requests": False}
         )
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
-        ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "attach_request", autospec=True
-        ) as mock_conn_attach_request, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_id", autospec=True
-        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
-            ConnectionRecord, "retrieve_request", autospec=True
-        ):
+            test_module, "Conn23Record", async_mock.MagicMock()
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "DIDDoc", autospec=True
+        ) as mock_did_doc, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_deco, async_mock.patch.object(
+            test_module, "Conn23Response", autospec=True
+        ) as mock_response, async_mock.patch.object(
+            self.manager, "create_did_document", async_mock.CoroutineMock()
+        ) as mock_create_did_doc:
+            mock_conn_rec.return_value = async_mock.MagicMock(
+                accept=Conn23Record.ACCEPT_MANUAL,
+                my_did=None,
+                state=Conn23Record.STATE_REQUEST,
+                attach_request=async_mock.CoroutineMock(),
+                retrieve_request=async_mock.CoroutineMock(),
+                save=async_mock.CoroutineMock(),
+            )
+
+            mock_did_doc.from_json = async_mock.MagicMock(
+                return_value=async_mock.MagicMock(did=self.test_did)
+            )
             conn_rec = await self.manager.receive_request(mock_request, receipt)
             assert conn_rec
 
@@ -313,32 +379,47 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         assert not messages
 
     async def test_create_response(self):
-        conn_rec = ConnectionRecord(state=ConnectionRecord.STATE_REQUEST)
+        conn_rec = Conn23Record(connection_id="dummy", state=Conn23Record.STATE_REQUEST)
 
         with async_mock.patch.object(
-            ConnectionRecord, "log_state", autospec=True
-        ) as mock_conn_log_state, async_mock.patch.object(
-            ConnectionRecord, "retrieve_request", autospec=True
-        ) as mock_conn_retrieve_request, async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
-        ) as mock_conn_save, async_mock.patch.object(
-            ConnectionResponse, "sign_field", autospec=True
-        ) as mock_sign:
-            await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
-
-    async def test_create_response_bad_state(self):
-        with self.assertRaises(ConnectionManagerError):
-            await self.manager.create_response(
-                ConnectionRecord(
-                    initiator=ConnectionRecord.INITIATOR_EXTERNAL,
-                    invitation_key=self.test_verkey,
-                    their_label="Hello",
-                    their_role="Point of contact",
-                    alias="Bob",
-                    state=ConnectionRecord.STATE_ERROR,
+            test_module.Conn23Record, "retrieve_request", async_mock.CoroutineMock()
+        ) as mock_retrieve_req, async_mock.patch.object(
+            conn_rec, "save", async_mock.CoroutineMock()
+        ) as mock_save, async_mock.patch.object(
+            test_module, "DIDDoc", autospec=True
+        ) as mock_did_doc, async_mock.patch.object(
+            test_module, "AttachDecorator", autospec=True
+        ) as mock_attach_deco, async_mock.patch.object(
+            test_module, "Conn23Response", autospec=True
+        ) as mock_response, async_mock.patch.object(
+            self.manager, "create_did_document", async_mock.CoroutineMock()
+        ) as mock_create_did_doc:
+            mock_create_did_doc.return_value = async_mock.MagicMock(
+                serialize=async_mock.MagicMock()
+            )
+            mock_attach_deco.from_indy_dict=async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        sign=async_mock.CoroutineMock()
+                    )
                 )
             )
 
+            await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
+
+    async def test_create_response_bad_state(self):
+        with self.assertRaises(Conn23ManagerError):
+            await self.manager.create_response(
+                Conn23Record(
+                    invitation_key=self.test_verkey,
+                    their_label="Hello",
+                    their_role="Point of contact",
+                    state=Conn23Record.STATE_ABANDONED,
+                    alias="Bob",
+                )
+            )
+
+    '''
     async def test_accept_response_find_by_thread_id(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()

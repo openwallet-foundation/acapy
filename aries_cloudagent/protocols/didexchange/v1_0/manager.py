@@ -404,14 +404,22 @@ class Conn23Manager:
                 )
                 connection = new_connection
 
+        if not (request.did_doc_attach and request.did_doc_attach.data):
+            raise Conn23ManagerError(
+                "DID Doc attachment missing or has no data: "
+                "cannot connect to public DID"
+            )
         if not await request.did_doc_attach.data.verify(wallet):
             raise Conn23ManagerError("DID Doc signature failed verification")
         conn_did_doc = DIDDoc.from_json(request.did_doc_attach.data.signed.decode())
         if not conn_did_doc:
             raise Conn23ManagerError("No DIDDoc provided; cannot connect to public DID")
         if request.did != conn_did_doc.did:
-            raise ConnectionManagerError(
-                "Connection DID does not match DIDDoc id",
+            raise Conn23ManagerError(
+                (
+                    f"Connection DID {request.did} does not match "
+                    f"DID Doc id {conn_did_doc.did}"
+                ),
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED,
             )
         await self.store_did_document(conn_did_doc)
@@ -454,7 +462,7 @@ class Conn23Manager:
                 await responder.send_reply(
                     response, connection_id=connection.connection_id
                 )
-                # refetch connection for accurate state
+                # refetch connection for accurate state  # TODO is this necessary?
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
@@ -864,7 +872,7 @@ class Conn23Manager:
             # look up routing connection information
             router = await Conn23Record.retrieve_by_id(self.context, router_id)
             if router.state != Conn23Record.STATE_COMPLETED:
-                raise ConnectionManagerError(
+                raise Conn23ManagerError(
                     f"Router connection not completed: {router_id}"
                 )
             routing_doc, _ = await self.fetch_did_document(router.their_did)
