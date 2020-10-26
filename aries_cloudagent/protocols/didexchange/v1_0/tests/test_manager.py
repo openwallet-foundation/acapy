@@ -1,3 +1,5 @@
+import json
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -419,163 +421,272 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 )
             )
 
-    '''
     async def test_accept_response_find_by_thread_id(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
-        mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
-        mock_response.connection.did_doc.did = self.test_target_did
+        mock_response.did = self.test_target_did
+        mock_response.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value=json.dumps({"dummy": "did-doc"})
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
 
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
+            Conn23Record, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id:
-            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock()
-            mock_conn_retrieve_by_req_id.return_value.did = self.test_target_did
-            mock_conn_retrieve_by_req_id.return_value.did_doc = async_mock.MagicMock()
-            mock_conn_retrieve_by_req_id.return_value.did_doc.did = self.test_target_did
-            mock_conn_retrieve_by_req_id.return_value.state = (
-                ConnectionRecord.STATE_RESPONSE
+            Conn23Record, "retrieve_by_request_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
+            Conn23Record, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
+            DIDDoc, "deserialize", async_mock.MagicMock()
+        ) as mock_did_doc_deser:
+            mock_did_doc_deser.return_value=async_mock.MagicMock(
+                did=self.test_target_did
             )
-            mock_conn_retrieve_by_req_id.return_value.save = async_mock.CoroutineMock()
+            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
+                did=self.test_target_did,
+                did_doc_attach=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        verify=async_mock.CoroutineMock(
+                            return_value=True
+                        ),
+                        signed=async_mock.MagicMock(
+                            decode=async_mock.MagicMock(
+                                return_value=json.dumps({"dummy": "did-doc"})
+                            )
+                        )
+                    )
+                ),
+                state=Conn23Record.STATE_REQUEST,
+                save=async_mock.CoroutineMock(),
+            )
+            mock_conn_retrieve_by_id.return_value = async_mock.MagicMock(
+                their_did=self.test_target_did,
+                save=async_mock.CoroutineMock(),
+            )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
             assert conn_rec.their_did == self.test_target_did
-            assert conn_rec.state == ConnectionRecord.STATE_RESPONSE
+            assert conn_rec.state == Conn23Record.STATE_RESPONSE
 
     async def test_accept_response_not_found_by_thread_id_receipt_has_sender_did(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
-        mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
-        mock_response.connection.did_doc.did = self.test_target_did
+        mock_response.did = self.test_target_did
+        mock_response.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value=json.dumps({"dummy": "did-doc"})
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(sender_did=self.test_target_did)
 
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
+            Conn23Record, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
+            Conn23Record, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_did", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_did:
-            mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
-            mock_conn_retrieve_by_did.return_value = async_mock.MagicMock()
-            mock_conn_retrieve_by_did.return_value.did = self.test_target_did
-            mock_conn_retrieve_by_did.return_value.did_doc = async_mock.MagicMock()
-            mock_conn_retrieve_by_did.return_value.did_doc.did = self.test_target_did
-            mock_conn_retrieve_by_did.return_value.state = (
-                ConnectionRecord.STATE_RESPONSE
+            Conn23Record, "retrieve_by_did", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_did, async_mock.patch.object(
+            DIDDoc, "deserialize", async_mock.MagicMock()
+        ) as mock_did_doc_deser:
+            mock_did_doc_deser.return_value=async_mock.MagicMock(
+                did=self.test_target_did
             )
-            mock_conn_retrieve_by_did.return_value.save = async_mock.CoroutineMock()
+            mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
+            mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
+                did=self.test_target_did,
+                did_doc_attach=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        verify=async_mock.CoroutineMock(
+                            return_value=True
+                        ),
+                        signed=async_mock.MagicMock(
+                            decode=async_mock.MagicMock(
+                                return_value=json.dumps({"dummy": "did-doc"})
+                            )
+                        )
+                    )
+                ),
+                state=Conn23Record.STATE_REQUEST,
+                save=async_mock.CoroutineMock(),
+            )
 
             conn_rec = await self.manager.accept_response(mock_response, receipt)
             assert conn_rec.their_did == self.test_target_did
-            assert conn_rec.state == ConnectionRecord.STATE_RESPONSE
+            assert conn_rec.state == Conn23Record.STATE_RESPONSE
 
     async def test_accept_response_not_found_by_thread_id_nor_receipt_sender_did(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
-        mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
-        mock_response.connection.did_doc.did = self.test_target_did
+        mock_response.did = self.test_target_did
+        mock_response.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value=json.dumps({"dummy": "did-doc"})
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(sender_did=self.test_target_did)
 
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
+            Conn23Record, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
+            Conn23Record, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_did", async_mock.CoroutineMock()
+            Conn23Record, "retrieve_by_did", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_did:
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.side_effect = StorageNotFoundError()
 
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(Conn23ManagerError):
                 await self.manager.accept_response(mock_response, receipt)
 
     async def test_accept_response_find_by_thread_id_bad_state(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
-        mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
-        mock_response.connection.did_doc.did = self.test_target_did
+        mock_response.did = self.test_target_did
+        mock_response.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value=json.dumps({"dummy": "did-doc"})
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(sender_did=self.test_target_did)
 
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
+            Conn23Record, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
+            Conn23Record, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id:
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock()
             mock_conn_retrieve_by_req_id.return_value.state = (
-                ConnectionRecord.STATE_ERROR
+                Conn23Record.STATE_ABANDONED
             )
 
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(Conn23ManagerError):
                 await self.manager.accept_response(mock_response, receipt)
 
-    async def test_accept_response_find_by_thread_id_no_connection_did_doc(self):
+    async def test_accept_response_find_by_thread_id_no_did_doc_attached(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
-        mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = None
+        mock_response.did = self.test_target_did
+        mock_response.did_doc_attach = None
 
         receipt = MessageReceipt(sender_did=self.test_target_did)
 
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
+            Conn23Record, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
+            Conn23Record, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id:
-            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock()
-            mock_conn_retrieve_by_req_id.return_value.did = self.test_target_did
-            mock_conn_retrieve_by_req_id.return_value.did_doc = async_mock.MagicMock()
-            mock_conn_retrieve_by_req_id.return_value.did_doc.did = self.test_target_did
-            mock_conn_retrieve_by_req_id.return_value.state = (
-                ConnectionRecord.STATE_RESPONSE
+            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
+                did=self.test_target_did,
+                did_doc_attach=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        verify=async_mock.CoroutineMock(
+                            return_value=True
+                        ),
+                        signed=async_mock.MagicMock(
+                            decode=async_mock.MagicMock(
+                                return_value=json.dumps({"dummy": "did-doc"})
+                            )
+                        )
+                    )
+                ),
+                state=Conn23Record.STATE_REQUEST,
+                save=async_mock.CoroutineMock(),
             )
 
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(Conn23ManagerError):
                 await self.manager.accept_response(mock_response, receipt)
 
     async def test_accept_response_find_by_thread_id_did_mismatch(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
-        mock_response.connection = async_mock.MagicMock()
-        mock_response.connection.did = self.test_target_did
-        mock_response.connection.did_doc = async_mock.MagicMock()
-        mock_response.connection.did_doc.did = self.test_did
+        mock_response.did = self.test_target_did
+        mock_response.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=True
+                ),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value=json.dumps({"dummy": "did-doc"})
+                    )
+                )
+            )
+        )
 
         receipt = MessageReceipt(sender_did=self.test_target_did)
 
         with async_mock.patch.object(
-            ConnectionRecord, "save", autospec=True
+            Conn23Record, "save", autospec=True
         ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnectionRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id:
-            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock()
-            mock_conn_retrieve_by_req_id.return_value.did = self.test_target_did
-            mock_conn_retrieve_by_req_id.return_value.did_doc = async_mock.MagicMock()
-            mock_conn_retrieve_by_req_id.return_value.did_doc.did = self.test_target_did
-            mock_conn_retrieve_by_req_id.return_value.state = (
-                ConnectionRecord.STATE_RESPONSE
+            Conn23Record, "retrieve_by_request_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
+            Conn23Record, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
+            DIDDoc, "deserialize", async_mock.MagicMock()
+        ) as mock_did_doc_deser:
+            mock_did_doc_deser.return_value=async_mock.MagicMock(
+                did=self.test_did
+            )
+            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
+                did=self.test_target_did,
+                did_doc_attach=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        verify=async_mock.CoroutineMock(
+                            return_value=True
+                        ),
+                        signed=async_mock.MagicMock(
+                            decode=async_mock.MagicMock(
+                                return_value=json.dumps({"dummy": "did-doc"})
+                            )
+                        )
+                    )
+                ),
+                state=Conn23Record.STATE_REQUEST,
+                save=async_mock.CoroutineMock(),
+            )
+            mock_conn_retrieve_by_id.return_value = async_mock.MagicMock(
+                their_did=self.test_target_did,
+                save=async_mock.CoroutineMock(),
             )
 
-            with self.assertRaises(ConnectionManagerError):
+            with self.assertRaises(Conn23ManagerError):
                 await self.manager.accept_response(mock_response, receipt)
 
+    '''
     async def test_create_static_connection(self):
         with async_mock.patch.object(
             ConnectionRecord, "save", autospec=True

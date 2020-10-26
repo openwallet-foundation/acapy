@@ -274,10 +274,12 @@ class Conn23Manager:
                     connection_id=connection.connection_id,
                 )
 
-                # refetch connection for accurate state
+                '''
+                # refetch connection for accurate state  # TODO is this necessary?
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
+                '''
                 connection.state = Conn23Record.STATE_REQUEST
                 await connection.save(self.context, reason="Sent connection request")
         else:
@@ -462,10 +464,12 @@ class Conn23Manager:
                 await responder.send_reply(
                     response, connection_id=connection.connection_id
                 )
+                '''
                 # refetch connection for accurate state  # TODO is this necessary?
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
+                '''
                 connection.state = Conn23Record.STATE_RESPONSE
                 await connection.save(self.context, reason="Sent connection response")
         else:
@@ -593,18 +597,19 @@ class Conn23Manager:
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED,
             )
 
+        # TODO: RFC impl included STATE_RESPONSE: why?
         if connection.state != Conn23Record.STATE_REQUEST:
             raise Conn23ManagerError(
-                f"Cannot accept connection response for connection"
-                " in state: {connection.state}"
+                "Cannot accept connection response for connection"
+                f" in state: {connection.state}"
             )
 
-        their_did = response.connection.did
-        if not response.connection.did_doc_attach:
-            raise ConnectionManagerError(
+        their_did = response.did
+        if not response.did_doc_attach:
+            raise Conn23ManagerError(
                 "No DIDDoc attached; cannot connect to public DID"
             )
-        conn_did_doc = await self.verify_diddoc(response.connection.did_doc_attach)
+        conn_did_doc = await self.verify_diddoc(wallet, response.did_doc_attach)
         if their_did != conn_did_doc.did:
             raise Conn23ManagerError(
                 f"Connection DID {their_did} "
@@ -625,11 +630,7 @@ class Conn23Manager:
         if responder:
             await responder.send_reply(complete, connection_id=connection.connection_id)
 
-            # refetch connection for accurate state
-            connection = await Conn23Record.retrieve_by_id(
-                self._context, connection.connection_id
-            )
-            connection.state = Conn23Record.STATE_
+            connection.state = Conn23Record.STATE_RESPONSE
             await connection.save(self.context, reason="Sent connection complete")
 
         return connection
@@ -1091,7 +1092,9 @@ class Conn23Manager:
 
         return results
 
-    async def verify_diddoc(self, attached: AttachDecorator) -> DIDDoc:
+    async def verify_diddoc(
+        self, wallet: BaseWallet, attached: AttachDecorator
+    ) -> DIDDoc:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
