@@ -701,10 +701,6 @@ class Conn23Manager:
             The located `Conn23Record`, if any
 
         """
-        self._log_state(
-            "Finding connection",
-            {"their_did": their_did, "my_did": my_did, "my_verkey": my_verkey},
-        )
         connection = None
         if their_did:
             try:
@@ -730,7 +726,7 @@ class Conn23Manager:
                 connection = await Conn23Record.retrieve_by_invitation_key(
                     context=self.context,
                     invitation_key=my_verkey,
-                    my_role=ConnRecord.Role.REQUESTER,
+                    my_role=Conn23Record.Role.REQUESTER,
                 )
             except StorageError:
                 self._logger.warning(
