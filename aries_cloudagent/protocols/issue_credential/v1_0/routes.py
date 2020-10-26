@@ -651,11 +651,24 @@ async def _create_free_offer(
         credential_proposal=credential_preview,
         cred_def_id=cred_def_id,
     )
+    
+    # CHANGES BY HARSH MULTANi
+    print("In _create_free_offer 1")
+    print(credential_preview)
+
+    print("In _create_free_offer 2")
+    print(credential_proposal)
+
     credential_proposal.assign_trace_decorator(
         context.settings,
         trace_msg,
     )
+    print("In _create_free_offer 3")
+    print(credential_proposal)
     credential_proposal_dict = credential_proposal.serialize()
+
+    print("In _create_free_offer 4")
+    print(credential_proposal_dict)
 
     cred_ex_record = V10CredentialExchange(
         connection_id=connection_id,
@@ -667,12 +680,20 @@ async def _create_free_offer(
         trace=trace_msg,
     )
 
+    print("In _create_free_offer 5")
+    print(cred_ex_record)
+
     credential_manager = CredentialManager(context)
 
     (
         cred_ex_record,
         credential_offer_message,
     ) = await credential_manager.create_offer(cred_ex_record, comment=comment)
+
+    print("In _create_free_offer 6")
+    print(cred_ex_record)
+    print("In _create_free_offer 7")
+    print(credential_offer_message)
 
     return (cred_ex_record, credential_offer_message)
 
@@ -802,6 +823,11 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     outbound_handler = request.app["outbound_message_router"]
 
     body = await request.json()
+    # CHANGES BY HARSH MULTANI
+    print("In credential_exchange_send_free_offer 1")
+    print(body)
+    print("Just to explore")
+    print(outbound_handler)
 
     connection_id = body.get("connection_id")
     cred_def_id = body.get("cred_def_id")
@@ -838,6 +864,12 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             comment,
             trace_msg,
         )
+        # CHANGES BY HARSH MULTANI
+        print("In credential_exchange_send_free_offer 2")
+        print(cred_ex_record)
+        print("The below item is another record")
+        print(credential_offer_message)
+
         result = cred_ex_record.serialize()
     except (
         StorageNotFoundError,
@@ -860,6 +892,10 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         outcome="credential_exchange_send_free_offer.END",
         perf_counter=r_time,
     )
+
+    # CHANGES BY HARSH MULTANI
+    print("In credential_exchange_send_free_offer 3")
+    print(result)
 
     return web.json_response(result)
 
@@ -978,6 +1014,11 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
+        print("In credential exchange send request 1")
+        print(cred_ex_record)
+        print("In credential exchange send request 2")
+        print(connection_record)
+
         credential_manager = CredentialManager(context)
         (
             cred_ex_record,
@@ -1003,6 +1044,11 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         outcome="credential_exchange_send_request.END",
         perf_counter=r_time,
     )
+
+    print("In credential exchange send request 3")
+    print(result)
+    print("In credential exchange send request 4")
+    print(credential_request_message)
 
     return web.json_response(result)
 
@@ -1047,6 +1093,11 @@ async def credential_exchange_issue(request: web.BaseRequest):
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
+        print("In credential exchange issue 1")
+        print(cred_ex_record)
+        print("In credential exchange issue 2")
+        print(connection_record)
+
         credential_manager = CredentialManager(context)
         (
             cred_ex_record,
@@ -1070,6 +1121,11 @@ async def credential_exchange_issue(request: web.BaseRequest):
         outcome="credential_exchange_issue.END",
         perf_counter=r_time,
     )
+
+    print("In credential exchange issue 3")
+    print(result)
+    print("In credential exchange issue 4")
+    print(credential_issue_message)
 
     return web.json_response(result)
 

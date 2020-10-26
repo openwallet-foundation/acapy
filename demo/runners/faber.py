@@ -136,6 +136,7 @@ class FaberAgent(DemoAgent):
             self.log("Proof =", proof["verified"])
 
     async def handle_basicmessages(self, message):
+	#print("In faber handle_basicmessages")
         self.log("Received message:", message["content"])
 
 

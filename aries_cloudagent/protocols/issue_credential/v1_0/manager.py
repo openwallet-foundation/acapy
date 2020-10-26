@@ -228,9 +228,17 @@ class CredentialManager:
         credential_proposal_message = CredentialProposal.deserialize(
             cred_ex_record.credential_proposal_dict
         )
+        # CHANGES BY HARSH MULTANI
+        print("In create offer 1")
+        print(credential_proposal_message)
+
         credential_proposal_message.assign_trace_decorator(
             self.context.settings, cred_ex_record.trace
         )
+
+        print("In create offer 2")
+        print(credential_proposal_message)
+
         cred_def_id = await self._match_sent_cred_def_id(
             {
                 t: getattr(credential_proposal_message, t)
@@ -239,6 +247,8 @@ class CredentialManager:
             }
         )
         cred_preview = credential_proposal_message.credential_proposal
+        print(" In create offer 3")
+        print(cred_preview)
 
         # vet attributes
         ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -266,16 +276,28 @@ class CredentialManager:
         if not credential_offer:
             credential_offer = await _create(cred_def_id)
 
+        print("In create offer 4")
+        print(credential_offer)
+        print(type(credential_offer))
+
         credential_offer_message = CredentialOffer(
             comment=comment,
             credential_preview=cred_preview,
             offers_attach=[CredentialOffer.wrap_indy_offer(credential_offer)],
         )
 
+        print("In create offer 5")
+        print(credential_offer_message)
+        print(type(credential_offer_message))
+
         credential_offer_message._thread = {"thid": cred_ex_record.thread_id}
         credential_offer_message.assign_trace_decorator(
             self.context.settings, cred_ex_record.trace
         )
+
+        print("In create offer 6")
+        print(credential_offer_message)
+        print(type(credential_offer_message))
 
         cred_ex_record.thread_id = credential_offer_message._thread_id
         cred_ex_record.schema_id = credential_offer["schema_id"]
@@ -284,6 +306,9 @@ class CredentialManager:
         cred_ex_record.credential_offer = credential_offer
 
         cred_ex_record.credential_offer_dict = credential_offer_message.serialize()
+
+        print("In create offer 7")
+        print(cred_ex_record)
 
         await cred_ex_record.save(self.context, reason="create credential offer")
 
@@ -297,13 +322,24 @@ class CredentialManager:
             The credential exchange record, updated
 
         """
+        # CHANGES BY HARSH MULTANI
+        #print("In receive_offer 1")
+
         credential_offer_message: CredentialOffer = self.context.message
         connection_id = self.context.connection_record.connection_id
+
+        print("In receive offer 1")
+        print(credential_offer_message)
 
         credential_preview = credential_offer_message.credential_preview
         indy_offer = credential_offer_message.indy_offer(0)
         schema_id = indy_offer["schema_id"]
         cred_def_id = indy_offer["cred_def_id"]
+
+        print("In receive offer 2")
+        print(credential_preview)
+        print("In receive offer 3")
+        print(indy_offer)
 
         credential_proposal_dict = CredentialProposal(
             comment=credential_offer_message.comment,
@@ -312,6 +348,8 @@ class CredentialManager:
             cred_def_id=cred_def_id,
         ).serialize()
 
+        print("In receive offer 4")
+        print(credential_proposal_dict)
         # Get credential exchange record (holder sent proposal first)
         # or create it (issuer sent offer first)
         try:
@@ -335,6 +373,9 @@ class CredentialManager:
         cred_ex_record.state = V10CredentialExchange.STATE_OFFER_RECEIVED
         cred_ex_record.schema_id = schema_id
         cred_ex_record.credential_definition_id = cred_def_id
+
+        print("In receive offer 5")
+        print(cred_ex_record)
 
         await cred_ex_record.save(self.context, reason="receive credential offer")
 
@@ -405,11 +446,17 @@ class CredentialManager:
             if not cred_req_result:
                 cred_req_result = await _create()
 
+            print("In create request 1")
+            print(cred_req_result)
+            
             (
                 cred_ex_record.credential_request,
                 cred_ex_record.credential_request_metadata,
             ) = (cred_req_result["request"], cred_req_result["metadata"])
 
+        print("In create request 2")
+        print(cred_ex_record)
+        
         credential_request_message = CredentialRequest(
             requests_attach=[
                 CredentialRequest.wrap_indy_cred_req(cred_ex_record.credential_request)
@@ -419,6 +466,9 @@ class CredentialManager:
         credential_request_message.assign_trace_decorator(
             self.context.settings, cred_ex_record.trace
         )
+
+        print("In create request 3")
+        print(credential_request_message)
 
         cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_SENT
         await cred_ex_record.save(self.context, reason="create credential request")
@@ -439,6 +489,10 @@ class CredentialManager:
         credential_request_message = self.context.message
         assert len(credential_request_message.requests_attach or []) == 1
         credential_request = credential_request_message.indy_cred_req(0)
+        print("In receive request 1")
+        print(credential_request_message)
+        print("In receive request 2")
+        print(credential_request)
         connection_id = (
             self.context.connection_record
             and self.context.connection_record.connection_id
@@ -449,10 +503,14 @@ class CredentialManager:
         ) = await V10CredentialExchange.retrieve_by_connection_and_thread(
             self.context, connection_id, credential_request_message._thread_id
         )
+        print("In receive request 3")
+        print(cred_ex_record)
         cred_ex_record.credential_request = credential_request
         cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
         await cred_ex_record.save(self.context, reason="receive credential request")
-
+        
+        print("In receive request 4")
+        print(cred_ex_record)
         return cred_ex_record
 
     async def issue_credential(
@@ -564,6 +622,9 @@ class CredentialManager:
             credential_values = CredentialProposal.deserialize(
                 cred_ex_record.credential_proposal_dict
             ).credential_proposal.attr_dict(decode=False)
+
+            print("In issue credential 1")
+            print(credential_values)
             issuer: BaseIssuer = await self.context.inject(BaseIssuer)
             try:
                 (
@@ -578,6 +639,11 @@ class CredentialManager:
                     cred_ex_record.revoc_reg_id,
                     tails_path,
                 )
+
+                print("In issue credential 2")
+                print(credential_json)
+                print("In issue credential 3")
+                print(cred_ex_record.revocation_id)
 
                 # If the rev reg is now full
                 if rev_reg and rev_reg.max_creds == int(cred_ex_record.revocation_id):
@@ -623,6 +689,9 @@ class CredentialManager:
             cred_ex_record.credential = json.loads(credential_json)
 
         cred_ex_record.state = V10CredentialExchange.STATE_ISSUED
+
+        print("In issue credential 4")
+        print(cred_ex_record)
         await cred_ex_record.save(self.context, reason="issue credential")
 
         credential_message = CredentialIssue(
@@ -635,6 +704,9 @@ class CredentialManager:
         credential_message.assign_trace_decorator(
             self.context.settings, cred_ex_record.trace
         )
+
+        print("In issue credential ")
+        print(credential_message)
 
         return (cred_ex_record, credential_message)
 
@@ -649,8 +721,13 @@ class CredentialManager:
 
         """
         credential_message = self.context.message
+        print("In receive credential 1")
+        print(credential_message)
         assert len(credential_message.credentials_attach or []) == 1
         raw_credential = credential_message.indy_credential(0)
+
+        print("In receive credential 2")
+        print(raw_credential)
 
         (
             cred_ex_record
@@ -659,11 +736,16 @@ class CredentialManager:
             self.context.connection_record.connection_id,
             credential_message._thread_id,
         )
+        print("In receive credential 3")
+        print(cred_ex_record)
 
         cred_ex_record.raw_credential = raw_credential
         cred_ex_record.state = V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
 
         await cred_ex_record.save(self.context, reason="receive credential")
+
+        print("In receive credential 4")
+        print(cred_ex_record)
         return cred_ex_record
 
     async def store_credential(

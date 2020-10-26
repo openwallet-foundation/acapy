@@ -3,6 +3,8 @@
 import logging
 
 from typing import Sequence, Tuple
+# CHANGES BY HARSH MULTANI
+from aiohttp import web
 
 from ....cache.base import BaseCache
 from ....connections.models.connection_record import ConnectionRecord
@@ -26,6 +28,8 @@ from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
+# CHANGES BY HARSH MULTANI
+from ....wallet.routes import wallet_get_public_did
 from ....protocols.routing.v1_0.manager import RoutingManager
 
 from .messages.connection_invitation import ConnectionInvitation
@@ -269,6 +273,7 @@ class ConnectionManager:
         connection: ConnectionRecord,
         my_label: str = None,
         my_endpoint: str = None,
+        request: web.BaseRequest = None,
     ) -> ConnectionRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -289,6 +294,19 @@ class ConnectionManager:
             # Create new DID for connection
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
+            
+            # CHANGES BY HARSH MULTANI
+            did_info = await wallet.get_public_did()
+            print("In create request 1")
+            print(did_info)
+            public_did = did_info.did
+            context = request.app["request_context"]
+            ledger = await context.inject(BaseLedger, required=False)
+            await ledger.open()
+            role = await ledger.get_nym_role(public_did)
+            role = str(role).split(".")[1]
+            connection.my_role = role
+
 
         # Create connection request message
         if my_endpoint:
@@ -307,11 +325,18 @@ class ConnectionManager:
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
+            # CHANGES BY HARSH MULTANI
+            role=role,
         )
+
+        print("In create request 2")
+        print(request)
 
         # Update connection state
         connection.request_id = request._id
         connection.state = ConnectionRecord.STATE_REQUEST
+        print("In create_request 3")
+        print(connection)
 
         await connection.save(self.context, reason="Created connection request")
 
@@ -331,6 +356,8 @@ class ConnectionManager:
             The new or updated `ConnectionRecord` instance
 
         """
+        print("In receive request 1")
+        print(request)
         ConnectionRecord.log_state(
             self.context, "Receiving connection request", {"request": request}
         )
@@ -395,10 +422,17 @@ class ConnectionManager:
         if connection:
             connection.their_label = request.label
             connection.their_did = request.connection.did
+            # CHANGES BY HARSH MULTANI
+            connection.their_role = request.role
             connection.state = ConnectionRecord.STATE_REQUEST
+            print("In receive request 2")
+            print(request.role)
+            print(connection)
             await connection.save(
                 self.context, reason="Received connection request from invitation"
             )
+            print("In receive request 3")
+            print(connection)
         elif not self.context.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")
         else:
@@ -440,7 +474,7 @@ class ConnectionManager:
         return connection
 
     async def create_response(
-        self, connection: ConnectionRecord, my_endpoint: str = None
+        self, connection: ConnectionRecord, my_endpoint: str = None, request_context: web.BaseRequest = None,
     ) -> ConnectionResponse:
         """
         Create a connection response for a received connection request.
@@ -467,6 +501,8 @@ class ConnectionManager:
                 "Connection is not in the request or response state"
             )
 
+        print("in create response 1")
+        print(connection)
         request = await connection.retrieve_request(self.context)
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         if connection.my_did:
@@ -474,7 +510,23 @@ class ConnectionManager:
         else:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
+            
+            # CHANGES BY HARSH MULTANI
+            #connection.my_role = "AUTHOR"
+            did_info = await wallet.get_public_did()
+            print("In create response 2")
+            print(did_info)
+            public_did = did_info.did
+            context = request_context.app["request_context"]
+            ledger = await context.inject(BaseLedger, required=False)
+            await ledger.open()
+            role = await ledger.get_nym_role(public_did)
+            role = str(role).split(".")[1]
+            connection.my_role = role
 
+        
+        print("In create response 3")
+        print(connection)
         # Create connection response message
         if my_endpoint:
             my_endpoints = [my_endpoint]
@@ -488,7 +540,8 @@ class ConnectionManager:
             my_info, connection.inbound_connection_id, my_endpoints
         )
         response = ConnectionResponse(
-            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
+            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc),
+            role = role,
         )
         # Assign thread information
         response.assign_thread_from(request)
@@ -497,6 +550,8 @@ class ConnectionManager:
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)
 
+        print("In create response 4")
+        print(response)
         # Update connection state
         connection.state = ConnectionRecord.STATE_RESPONSE
 
@@ -575,8 +630,15 @@ class ConnectionManager:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
         await self.store_did_document(conn_did_doc)
 
+        print("In accept response 1")
+        print(connection)
         connection.their_did = their_did
+        # CHANGES BY HARSH MULTANI
+        connection.their_role = response.role
         connection.state = ConnectionRecord.STATE_RESPONSE
+
+        print("In accept response 2")
+        print(connection)
 
         await connection.save(self.context, reason="Accepted connection response")
 
