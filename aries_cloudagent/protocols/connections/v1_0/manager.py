@@ -297,15 +297,15 @@ class ConnectionManager:
             
             # CHANGES BY HARSH MULTANI
             did_info = await wallet.get_public_did()
-            print("In create request 1")
-            print(did_info)
-            public_did = did_info.did
-            context = request.app["request_context"]
-            ledger = await context.inject(BaseLedger, required=False)
-            await ledger.open()
-            role = await ledger.get_nym_role(public_did)
-            role = str(role).split(".")[1]
-            connection.my_role = role
+            role = ""
+            if did_info:
+                public_did = did_info.did
+                context = request.app["request_context"]
+                ledger = await context.inject(BaseLedger, required=False)
+                await ledger.open()
+                role = await ledger.get_nym_role(public_did)
+                role = str(role).split(".")[1]
+                connection.my_role = role
 
 
         # Create connection request message
@@ -329,14 +329,10 @@ class ConnectionManager:
             role=role,
         )
 
-        print("In create request 2")
-        print(request)
 
         # Update connection state
         connection.request_id = request._id
         connection.state = ConnectionRecord.STATE_REQUEST
-        print("In create_request 3")
-        print(connection)
 
         await connection.save(self.context, reason="Created connection request")
 
@@ -356,8 +352,7 @@ class ConnectionManager:
             The new or updated `ConnectionRecord` instance
 
         """
-        print("In receive request 1")
-        print(request)
+
         ConnectionRecord.log_state(
             self.context, "Receiving connection request", {"request": request}
         )
@@ -425,14 +420,9 @@ class ConnectionManager:
             # CHANGES BY HARSH MULTANI
             connection.their_role = request.role
             connection.state = ConnectionRecord.STATE_REQUEST
-            print("In receive request 2")
-            print(request.role)
-            print(connection)
             await connection.save(
                 self.context, reason="Received connection request from invitation"
             )
-            print("In receive request 3")
-            print(connection)
         elif not self.context.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")
         else:
@@ -501,8 +491,6 @@ class ConnectionManager:
                 "Connection is not in the request or response state"
             )
 
-        print("in create response 1")
-        print(connection)
         request = await connection.retrieve_request(self.context)
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         if connection.my_did:
@@ -514,19 +502,17 @@ class ConnectionManager:
             # CHANGES BY HARSH MULTANI
             #connection.my_role = "AUTHOR"
             did_info = await wallet.get_public_did()
-            print("In create response 2")
-            print(did_info)
-            public_did = did_info.did
-            context = request_context.app["request_context"]
-            ledger = await context.inject(BaseLedger, required=False)
-            await ledger.open()
-            role = await ledger.get_nym_role(public_did)
-            role = str(role).split(".")[1]
-            connection.my_role = role
+            role = ""
+            if did_info:
+                public_did = did_info.did
+                context = request_context.app["request_context"]
+                ledger = await context.inject(BaseLedger, required=False)
+                await ledger.open()
+                role = await ledger.get_nym_role(public_did)
+                role = str(role).split(".")[1]
+                connection.my_role = role
 
         
-        print("In create response 3")
-        print(connection)
         # Create connection response message
         if my_endpoint:
             my_endpoints = [my_endpoint]
@@ -550,8 +536,6 @@ class ConnectionManager:
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await response.sign_field("connection", connection.invitation_key, wallet)
 
-        print("In create response 4")
-        print(response)
         # Update connection state
         connection.state = ConnectionRecord.STATE_RESPONSE
 
@@ -630,15 +614,11 @@ class ConnectionManager:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
         await self.store_did_document(conn_did_doc)
 
-        print("In accept response 1")
-        print(connection)
         connection.their_did = their_did
         # CHANGES BY HARSH MULTANI
         connection.their_role = response.role
         connection.state = ConnectionRecord.STATE_RESPONSE
 
-        print("In accept response 2")
-        print(connection)
 
         await connection.save(self.context, reason="Accepted connection response")
 

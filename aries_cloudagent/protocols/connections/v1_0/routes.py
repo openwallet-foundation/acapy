@@ -293,11 +293,7 @@ async def connections_retrieve(request: web.BaseRequest):
 
     try:
         record = await ConnectionRecord.retrieve_by_id(context, connection_id)
-        print("In connections retrieve 1")
-        print(record)
         result = record.serialize()
-        print("In connections retrieve 2")
-        print(result)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
@@ -419,19 +415,11 @@ async def connections_accept_invitation(request: web.BaseRequest):
 
     try:
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
-        print("Here 1")
-        print(connection)
         connection_mgr = ConnectionManager(context)
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
         request = await connection_mgr.create_request(connection, my_label, my_endpoint, request)
-        print("Here 2")
-        print(connection)
-        print("Here 3")
-        print(request)
         result = connection.serialize()
-        print("Here 4")
-        print(result)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, WalletError, ConnectionManagerError, BaseModelError) as err:
@@ -467,14 +455,8 @@ async def connections_accept_request(request: web.BaseRequest):
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
         connection_mgr = ConnectionManager(context)
         my_endpoint = request.query.get("my_endpoint") or None
-        print("In connection accept request 1")
-        print(connection)
         response = await connection_mgr.create_response(connection, my_endpoint, request)
-        result = connection.serialize()
-        print("In connection accept request 2")
-        print(response)
-        print("In connection accept request 3")
-        print(result)        
+        result = connection.serialize()       
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, WalletError, ConnectionManagerError, BaseModelError) as err:
