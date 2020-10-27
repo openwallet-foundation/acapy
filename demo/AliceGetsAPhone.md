@@ -98,6 +98,8 @@ For revocation to function, we need another component running that is used to st
 
 If you are not running with revocation enabled you can skip this step.
 
+#### Running locally in a bash shell?
+
 Open a new bash shell, and in a project directory, run:
 
 ```bash
@@ -118,9 +120,17 @@ ngrok-tails-server_1  | t=2020-05-13T22:51:14+0000 lvl=info msg="started tunnel"
 
 Note the server name in the `url=https://c5789aa0.ngrok.io` parameter (`https://c5789aa0.ngrok.io`) - this is the external url for your tails server. Make sure you use the `https` url!
 
+#### Running in Play with Docker?
+
+Run the same steps on _PWD_ as you would run locally (see above).  Open a new shell (click on "ADD NEW INSTANCE") to run the tails server.
+
+Note that with _Play with Docker_ it can be challenging to capture the information you need from the log file as it scrolls by, you can try leaving off the `--events` option when you run the Faber agent to reduce the quantity of information logged to the screen.
+
 ### Run `faber` With Extra Parameters
 
-If you are running in a _local bash shell_, navigate to [The demo direcory](/demo) and run:
+#### Running locally in a bash shell?
+
+If you are running in a _local bash shell_, navigate to [The demo directory](/demo) and run:
 
 ```bash
 TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
@@ -128,15 +138,23 @@ TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_d
 
 The `TAILS_NETWORK` parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).
 
-If you are running in _Play with Docker_, navigate to [The demo direcory](/demo) and run:
+#### Running in Play with Docker?
+
+If you are running in _Play with Docker_, navigate to [The demo directory](/demo) and run:
 
 ```bash
-PUBLIC_TAILS_URL=https://def456.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
 ```
 
 The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
 
-Note that you _must_ use the `https` url for the tails server endpoint.
+Use the ngrok url for the tails server that you noted earlier.
+
+*Note that you _must_ use the `https` url for the tails server endpoint.
+
+*Note - you may want to leave off the `--events` option when you run the Faber agent, if you are finding you are getting too much logging output.
+
+#### Waiting for the Faber agent to start ...
 
 The `Preparing agent image...` step on the first run takes a bit of time, so while we wait, let's look at the details of the commands. Running Faber is similar to the instructions in the [Aries OpenAPI Demo](./AriesOpenAPIDemo.md) "Play with Docker" section, except:
 
