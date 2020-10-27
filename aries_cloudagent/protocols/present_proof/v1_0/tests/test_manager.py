@@ -317,7 +317,7 @@ class TestPresentationManager(AsyncTestCase):
         )
         indy_proof_req["non_revoked"] = {  # exercise nudge to int
             "from": 1234567890.1,
-            "to": NOW + 0.1
+            "to": NOW + 0.1,
         }
         for uuid in indy_proof_req["requested_attributes"]:
             indy_proof_req["requested_attributes"][uuid]["non_revoked"]["from"] -= 0.1

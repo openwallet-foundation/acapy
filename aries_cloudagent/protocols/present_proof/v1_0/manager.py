@@ -263,6 +263,7 @@ class PresentationManager:
             A tuple (updated presentation exchange record, presentation message)
 
         """
+
         def nudge_interval(interval: dict):
             """Coerce non-revocation interval to integer values."""
             if isinstance(interval.get("from", 0), float):
@@ -353,9 +354,7 @@ class PresentationManager:
                     continue
                 rev_reg_id = credentials[credential_id]["rev_reg_id"]
                 referent_non_revoc_interval = nudge_interval(
-                    precis.get(
-                        "non_revoked", non_revoc_interval
-                    )
+                    precis.get("non_revoked", non_revoc_interval)
                 )
 
                 if referent_non_revoc_interval:
