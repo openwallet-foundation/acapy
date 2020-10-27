@@ -7,6 +7,7 @@ from ..util import (
     b64_to_str,
     bytes_to_b58,
     bytes_to_b64,
+    full_verkey,
     pad,
     str_to_b64,
     set_urlsafe_b64,
@@ -64,6 +65,16 @@ class TestUtil(TestCase):
     def test_b58(self):
         b58 = bytes_to_b58(BYTES)
         assert b58_to_bytes(b58) == BYTES
+
+    def test_full_verkey(self):
+        did = "N76kAdywAdHCySjgymbZ9t"
+        full_vk = "CWBBfFmEVUDbs7rSCeKaFKfaeYXS2dKynAk7e2sCv23b"
+        abbr_verkey = "~79woMYnyEk6XnQaBA39i57"
+
+        full = full_verkey(did, abbr_verkey)
+        assert full == full_vk
+        assert full == full_verkey(f"did:sov:{did}", abbr_verkey)
+        assert full_verkey(did, full_vk) == full_vk
 
     def test_naked_to_did_key(self):
         assert (

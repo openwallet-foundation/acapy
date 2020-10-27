@@ -61,6 +61,15 @@ def bytes_to_b58(val: bytes) -> str:
     return base58.b58encode(val).decode("ascii")
 
 
+def full_verkey(did: str, abbr_verkey: str) -> str:
+    """Given a DID and a short verkey, return the full verkey."""
+    return (
+        bytes_to_b58(b58_to_bytes(did.split(":")[-1]) + b58_to_bytes(abbr_verkey[1:]))
+        if abbr_verkey.startswith("~")
+        else abbr_verkey
+    )
+
+
 def naked_to_did_key(key: str) -> str:
     """Convert a naked ed25519 verkey to did:key format."""
     key_bytes = b58_to_bytes(key)
