@@ -61,8 +61,11 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_revoked(self):
         request = async_mock.MagicMock(
-            app=self.app, match_info={"credential_id": "dummy"}
+            app=self.app,
+            match_info={"credential_id": "dummy"},
+            query={},
         )
+
         ledger = async_mock.create_autospec(BaseLedger)
 
         request.app["request_context"].inject = async_mock.CoroutineMock(
@@ -83,7 +86,9 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_revoked_no_ledger(self):
         request = async_mock.MagicMock(
-            app=self.app, match_info={"credential_id": "dummy"}
+            app=self.app,
+            match_info={"credential_id": "dummy"},
+            query={},
         )
 
         request.app["request_context"].inject = async_mock.CoroutineMock(

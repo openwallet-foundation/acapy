@@ -1094,8 +1094,8 @@ class IndyLedger(BaseLedger):
         Look up a revocation registry delta by ID.
 
         :param revoc_reg_id revocation registry id
-        :param timestamp_from from time. a total number of seconds from Unix Epoch
-        :param timestamp_to to time. a total number of seconds from Unix Epoch
+        :param timestamp_from from time: total number of seconds from Unix Epoch
+        :param timestamp_to to time: total number of seconds from Unix Epoch
 
         :returns delta response, delta timestamp
         """
