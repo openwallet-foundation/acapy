@@ -304,6 +304,7 @@ class ConnectionManager:
                 ledger = await context.inject(BaseLedger, required=False)
                 await ledger.open()
                 role = await ledger.get_nym_role(public_did)
+                await ledger.close()
                 role = str(role).split(".")[1]
                 connection.my_role = role
 
@@ -509,6 +510,7 @@ class ConnectionManager:
                 ledger = await context.inject(BaseLedger, required=False)
                 await ledger.open()
                 role = await ledger.get_nym_role(public_did)
+                await ledger.close()
                 role = str(role).split(".")[1]
                 connection.my_role = role
 

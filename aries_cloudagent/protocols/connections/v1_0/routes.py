@@ -139,6 +139,12 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         required=False,
         example="Point of contact",
     )
+    # CHANGES BY HARSH MULTANI
+    my_role = fields.Str(
+        description="My assigned connection role",
+        required=False,
+        example="Point of contact",
+    )
 
 
 class CreateInvitationQueryStringSchema(OpenAPISchema):
@@ -261,6 +267,8 @@ async def connections_list(request: web.BaseRequest):
         "alias",
         "initiator",
         "state",
+        # CHANGES BY HARSH MULTANI
+        "my_role",
         "their_role",
     ):
         if param_name in request.query and request.query[param_name] != "":
