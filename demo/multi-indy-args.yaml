@@ -28,6 +28,7 @@ auto-ping-connection: true
 # note that the env var name is configured in argparse.py
 # seed = comes from ACAPY_WALLET_SEED
 wallet-type: indy
+# specify the wallet in a header, e.g. curl -H "Wallet: testwallet" http://localhost:8031/wallet
 wallet-name: agencywallet
 # wallet-key = comes from ACAPY_WALLET_KEY
 # run a local postgres (docker) like:
