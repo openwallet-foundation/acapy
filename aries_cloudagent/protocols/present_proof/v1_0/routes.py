@@ -176,9 +176,10 @@ class IndyProofReqNonRevokedSchema(OpenAPISchema):
             ValidationError: if data has neither from nor to
 
         """
-        if not (data.get("from") or data.get("to")):
+        if not (data.get("fro") or data.get("to")):
             raise ValidationError(
-                "Non-revocation interval must have at least one end", ("fro", "to")
+                "Non-revocation interval must have at least one end",
+                "(from, to)",
             )
 
 
@@ -1093,8 +1094,8 @@ async def register(app: web.Application):
                 "/present-proof/records/{pres_ex_id}/verify-presentation",
                 presentation_exchange_verify_presentation,
             ),
-            web.post(
-                "/present-proof/records/{pres_ex_id}/remove",
+            web.delete(
+                "/present-proof/records/{pres_ex_id}",
                 presentation_exchange_remove,
             ),
         ]

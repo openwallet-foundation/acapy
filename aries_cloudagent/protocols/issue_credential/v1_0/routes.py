@@ -1314,6 +1314,10 @@ async def register(app: web.Application):
                 "/issue-credential/records/{cred_ex_id}/problem-report",
                 credential_exchange_problem_report,
             ),
+            web.delete(
+                "/issue-credential/records/{cred_ex_id}",
+                credential_exchange_remove,
+            ),
         ]
     )
 

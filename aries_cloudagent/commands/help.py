@@ -1,6 +1,6 @@
 """Help command for indexing available commands."""
 
-from argparse import ArgumentParser
+from configargparse import ArgumentParser
 from typing import Sequence
 
 from ..version import __version__

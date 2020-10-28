@@ -1,18 +1,17 @@
 import base64
 import json
 import os
-import pytest
-
-from asynctest import mock as async_mock
-from asynctest import TestCase as AsyncTestCase
 
 import indy.anoncreds
 import indy.crypto
 import indy.did
 import indy.wallet
-
+import pytest
+from aries_cloudagent.ledger.endpoint_type import EndpointType
 from aries_cloudagent.wallet.basic import BasicWallet
 from aries_cloudagent.wallet.indy import IndyWallet
+from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
 
 from .. import indy as test_module
 from . import test_basic_wallet
@@ -111,10 +110,28 @@ class TestIndyWallet(test_basic_wallet.TestBasicWallet):
     @pytest.mark.asyncio
     async def test_set_did_endpoint_ledger(self, wallet):
         mock_ledger = async_mock.MagicMock(
-            update_endpoint_for_did=async_mock.CoroutineMock()
+            read_only=False, update_endpoint_for_did=async_mock.CoroutineMock()
         )
         info_pub = await wallet.create_public_did()
         await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", mock_ledger)
+        mock_ledger.update_endpoint_for_did.assert_called_once_with(
+            info_pub.did, "http://1.2.3.4:8021", EndpointType.ENDPOINT
+        )
+        info_pub2 = await wallet.get_public_did()
+        assert info_pub2.metadata["endpoint"] == "http://1.2.3.4:8021"
+
+        with pytest.raises(test_module.LedgerConfigError) as excinfo:
+            await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", None)
+        assert "No ledger available" in str(excinfo.value)
+
+    @pytest.mark.asyncio
+    async def test_set_did_endpoint_readonly_ledger(self, wallet):
+        mock_ledger = async_mock.MagicMock(
+            read_only=True, update_endpoint_for_did=async_mock.CoroutineMock()
+        )
+        info_pub = await wallet.create_public_did()
+        await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", mock_ledger)
+        mock_ledger.update_endpoint_for_did.assert_not_called()
         info_pub2 = await wallet.get_public_did()
         assert info_pub2.metadata["endpoint"] == "http://1.2.3.4:8021"
 

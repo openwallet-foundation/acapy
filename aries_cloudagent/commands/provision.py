@@ -1,12 +1,12 @@
 """Provision command for setting up agent settings before starting."""
 
 import asyncio
-from argparse import ArgumentParser
+from configargparse import ArgumentParser
 from typing import Sequence
 
 from ..config import argparse as arg
-from ..config.base import BaseError
 from ..config.default_context import DefaultContextBuilder
+from ..config.base import BaseError
 from ..config.ledger import ledger_config
 from ..config.util import common_config
 from ..config.wallet import wallet_config
@@ -41,7 +41,7 @@ async def provision(settings: dict):
 
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
-    parser = ArgumentParser()
+    parser = arg.create_argument_parser()
     parser.prog += " provision"
     get_settings = init_argument_parser(parser)
     args = parser.parse_args(argv)

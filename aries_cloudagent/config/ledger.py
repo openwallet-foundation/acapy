@@ -64,8 +64,10 @@ async def ledger_config(
         return False
 
     async with ledger:
+        read_only_ledger = context.settings.get("read_only_ledger")
+
         # Check transaction author agreement acceptance
-        if not context.settings.get("read_only_ledger"):
+        if not read_only_ledger:
             taa_info = await ledger.get_txn_author_agreement()
             if taa_info["taa_required"] and public_did:
                 taa_accepted = await ledger.get_latest_txn_author_acceptance()
@@ -87,9 +89,9 @@ async def ledger_config(
             except LedgerError as x_ledger:
                 raise ConfigError(x_ledger.message) from x_ledger  # e.g., read-only
 
-            # Publish profile endpoint
+            # Publish profile endpoint if ledger is NOT read-only
             profile_endpoint = context.settings.get("profile_endpoint")
-            if profile_endpoint:
+            if profile_endpoint and not read_only_ledger:
                 await ledger.update_endpoint_for_did(
                     public_did, profile_endpoint, EndpointType.PROFILE
                 )
