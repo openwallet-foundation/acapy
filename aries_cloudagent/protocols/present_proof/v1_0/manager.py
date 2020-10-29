@@ -264,14 +264,6 @@ class PresentationManager:
 
         """
 
-        def nudge_interval(interval: dict):
-            """Coerce non-revocation interval to integer values."""
-            if isinstance(interval.get("from", 0), float):
-                interval["from"] = int(interval["from"] + 1)
-            if isinstance(interval.get("to", 0), float):
-                interval["to"] = int(interval["to"])
-            return interval
-
         # Get all credentials for this presentation
         holder: BaseHolder = await self.context.inject(BaseHolder)
         credentials = {}
@@ -342,7 +334,6 @@ class PresentationManager:
         non_revoc_interval.update(
             presentation_exchange_record.presentation_request.get("non_revoked") or {}
         )
-        nudge_interval(non_revoc_interval)
 
         revoc_reg_deltas = {}
         async with ledger:
@@ -353,8 +344,8 @@ class PresentationManager:
                 if "timestamp" in precis:
                     continue
                 rev_reg_id = credentials[credential_id]["rev_reg_id"]
-                referent_non_revoc_interval = nudge_interval(
-                    precis.get("non_revoked", non_revoc_interval)
+                referent_non_revoc_interval = precis.get(
+                    "non_revoked", non_revoc_interval
                 )
 
                 if referent_non_revoc_interval:
