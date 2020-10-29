@@ -263,6 +263,7 @@ class PresentationManager:
             A tuple (updated presentation exchange record, presentation message)
 
         """
+
         # Get all credentials for this presentation
         holder: BaseHolder = await self.context.inject(BaseHolder)
         credentials = {}

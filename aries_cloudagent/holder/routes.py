@@ -60,11 +60,13 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
     start = fields.Int(
         description="Start index",
         required=False,
+        strict=True,
         **WHOLE_NUM,
     )
     count = fields.Int(
         description="Maximum number to retrieve",
         required=False,
+        strict=True,
         **NATURAL_NUM,
     )
     wql = fields.Str(

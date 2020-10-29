@@ -2527,6 +2527,9 @@ class TestIndyLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
+        mock_wallet.get_public_did = async_mock.CoroutineMock(
+            return_value=self.test_did_info
+        )
         mock_indy_parse_get_rr_resp.return_value = (
             "rr-id",
             '{"hello": "world"}',
@@ -2536,12 +2539,36 @@ class TestIndyLedger(AsyncTestCase):
         ledger = IndyLedger("name", mock_wallet, read_only=True)
 
         async with ledger:
-            mock_wallet.get_public_did = async_mock.CoroutineMock(
-                return_value=self.test_did_info
-            )
-
             (result, _) = await ledger.get_revoc_reg_entry("rr-id", 1234567890)
             assert result == {"hello": "world"}
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._submit")
+    @async_mock.patch("indy.ledger.build_get_revoc_reg_request")
+    @async_mock.patch("indy.ledger.parse_get_revoc_reg_response")
+    async def test_get_revoc_reg_entry_x(
+        self,
+        mock_indy_parse_get_rr_resp,
+        mock_indy_build_get_rr_req,
+        mock_submit,
+        mock_close,
+        mock_open,
+    ):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.type = "indy"
+        mock_wallet.get_public_did = async_mock.CoroutineMock(
+            return_value=self.test_did_info
+        )
+        mock_indy_parse_get_rr_resp.side_effect = IndyError(
+            error_code=ErrorCode.PoolLedgerTimeout,
+            error_details={"message": "bye"},
+        )
+        ledger = IndyLedger("name", mock_wallet, read_only=True)
+
+        with self.assertRaises(LedgerError):
+            async with ledger:
+                await ledger.get_revoc_reg_entry("rr-id", 1234567890)
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")

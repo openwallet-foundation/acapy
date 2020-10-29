@@ -156,11 +156,13 @@ class IndyProofReqNonRevokedSchema(OpenAPISchema):
         description="Earliest epoch of interest for non-revocation proof",
         required=False,
         data_key="from",
+        strict=True,
         **INT_EPOCH,
     )
     to = fields.Int(
         description="Latest epoch of interest for non-revocation proof",
         required=False,
+        strict=True,
         **INT_EPOCH,
     )
 
@@ -176,9 +178,10 @@ class IndyProofReqNonRevokedSchema(OpenAPISchema):
             ValidationError: if data has neither from nor to
 
         """
-        if not (data.get("from") or data.get("to")):
+        if not data:
             raise ValidationError(
-                "Non-revocation interval must have at least one end", ("fro", "to")
+                "Non-revocation interval must have at least one end",
+                "(from, to)",
             )
 
 
@@ -254,7 +257,7 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
         required=True,
         **INDY_PREDICATE,
     )
-    p_value = fields.Integer(description="Threshold value", required=True)
+    p_value = fields.Int(description="Threshold value", required=True, strict=True)
     restrictions = fields.List(
         fields.Nested(IndyProofReqPredSpecRestrictionsSchema()),
         description="If present, credential must satisfy one of given restrictions",
@@ -332,6 +335,7 @@ class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):
     timestamp = fields.Int(
         description="Epoch timestamp of interest for non-revocation proof",
         required=False,
+        strict=True,
         **INT_EPOCH,
     )
 
@@ -349,6 +353,7 @@ class IndyRequestedCredsRequestedPredSchema(OpenAPISchema):
     timestamp = fields.Int(
         description="Epoch timestamp of interest for non-revocation proof",
         required=False,
+        strict=True,
         **INT_EPOCH,
     )
 
@@ -401,9 +406,17 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
         required=False,
         example="1_name_uuid,2_score_uuid",
     )
-    start = fields.Int(description="Start index", required=False, **WHOLE_NUM)
+    start = fields.Int(
+        description="Start index",
+        required=False,
+        strict=True,
+        **WHOLE_NUM,
+    )
     count = fields.Int(
-        description="Maximum number to retrieve", required=False, **NATURAL_NUM
+        description="Maximum number to retrieve",
+        required=False,
+        strict=True,
+        **NATURAL_NUM,
     )
     extra_query = fields.Str(
         description="(JSON) object mapping referents to extra WQL queries",
