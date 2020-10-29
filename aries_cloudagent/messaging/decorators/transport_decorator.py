@@ -60,5 +60,8 @@ class TransportDecoratorSchema(BaseModelSchema):
         example=UUIDFour.EXAMPLE,
     )
     queued_message_count = fields.Int(
-        required=False, description="Number of queued messages", **WHOLE_NUM
+        required=False,
+        description="Number of queued messages",
+        strict=True,
+        **WHOLE_NUM,
     )

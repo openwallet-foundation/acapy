@@ -71,7 +71,7 @@ class SchemaSchema(OpenAPISchema):
         description="Schema attribute names",
         data_key="attrNames",
     )
-    seqNo = fields.Int(description="Schema sequence number", **NATURAL_NUM)
+    seqNo = fields.Int(description="Schema sequence number", strict=True, **NATURAL_NUM)
 
 
 class SchemaGetResultsSchema(OpenAPISchema):

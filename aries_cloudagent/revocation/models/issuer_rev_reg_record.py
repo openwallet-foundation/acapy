@@ -424,6 +424,7 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
     max_cred_num = fields.Int(
         required=False,
         description="Maximum number of credentials for revocation registry",
+        strict=True,
         example=1000,
     )
     revoc_def_type = fields.Str(
