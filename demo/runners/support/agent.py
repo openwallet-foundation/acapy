@@ -174,6 +174,7 @@ class DemoAgent:
             self.agency_ident       = self.ident
             self.agency_wallet_name = self.wallet_name
             self.agency_wallet_seed = self.seed
+            self.agency_wallet_did  = self.did
             self.agency_wallet_key  = self.wallet_key
 
     async def get_wallets(self):
@@ -308,13 +309,18 @@ class DemoAgent:
         if self.prefix:
             return f"{self.prefix:10s} |"
 
-    async def register_did(self, ledger_url: str = None, alias: str = None):
+    async def register_did(self, ledger_url: str = None, alias: str = None, did: str = None, verkey: str = None):
         self.log(f"Registering {self.ident} with seed {self.seed}")
         if not ledger_url:
             ledger_url = LEDGER_URL
         if not ledger_url:
             ledger_url = f"http://{self.external_host}:9000"
-        data = {"alias": alias or self.ident, "seed": self.seed, "role": "TRUST_ANCHOR"}
+        data = {"alias": alias or self.ident, "role": "TRUST_ANCHOR"}
+        if did and verkey:
+            data["did"] = did
+            data["verkey"] = verkey
+        else:
+            data["seed"] = self.seed
         async with self.client_session.post(
             ledger_url + "/register", json=data
         ) as resp:
@@ -322,6 +328,9 @@ class DemoAgent:
                 raise Exception(f"Error registering DID, response code {resp.status}")
             nym_info = await resp.json()
             self.did = nym_info["did"]
+            if self.multitenant:
+                if not self.agency_wallet_did:
+                    self.agency_wallet_did = self.did
         self.log(f"Got DID: {self.did}")
 
     async def register_or_switch_wallet(self, target_wallet_name, public_did=False):
@@ -330,6 +339,7 @@ class DemoAgent:
             self.ident = self.agency_ident
             self.wallet_name = self.agency_wallet_name
             self.seed = self.agency_wallet_seed
+            self.did = self.agency_wallet_did
             self.wallet_key = self.agency_wallet_key
             self.log(f"Switching to AGENCY wallet {target_wallet_name}")
             return False
@@ -349,6 +359,7 @@ class DemoAgent:
                 return False
 
         # if not then create it
+        # TODO seed is required but not used
         seed = (target_wallet_name + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:32]
         wallet_params = {
           "seed": seed,
@@ -362,13 +373,18 @@ class DemoAgent:
         self.seed        = seed
         if (public_did):
             # create did on ledger
-            await self.register_did()
+            #await self.register_did()
+            # TODO don't create from seed
+            pass
         await self.agency_admin_POST('/wallet', wallet_params)
         if (public_did):
             # assign public did
             # TODO this fails because the above seed doesn't create a did in the wallet (as expected)
-            existing_dids = await self.admin_GET('/wallet/did')
-            await self.admin_POST('/wallet/did/public?did=' + existing_dids["results"][0]["did"])
+            new_did = await self.admin_POST('/wallet/did/create')
+            self.did = new_did["result"]["did"]
+            await self.register_did(did=new_did["result"]["did"], verkey=new_did["result"]["verkey"])
+            await self.admin_POST('/wallet/did/public?did=' + self.did)
+            pass
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
 
