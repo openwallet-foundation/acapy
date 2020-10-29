@@ -223,7 +223,7 @@ class Conn23Record(BaseRecord):
         """
         assert self.connection_id
         record = StorageRecord(
-            self.RECORD_TYPE_INVITATION,
+            Conn23Record.RECORD_TYPE_INVITATION,
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
@@ -241,8 +241,9 @@ class Conn23Record(BaseRecord):
         assert self.connection_id
         storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.search_records(
-            self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
+            Conn23Record.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         ).fetch_single()
+        print(f'\n\n-- -- RETR value {type(result.value)}; {result.value}')
         return InvitationMessage.from_json(result.value)
 
     async def attach_request(
@@ -256,7 +257,7 @@ class Conn23Record(BaseRecord):
         """
         assert self.connection_id
         record = StorageRecord(
-            self.RECORD_TYPE_REQUEST,
+            Conn23Record.RECORD_TYPE_REQUEST,
             request.to_json(),
             {"connection_id": self.connection_id},
         )
@@ -272,7 +273,7 @@ class Conn23Record(BaseRecord):
         assert self.connection_id
         storage: BaseStorage = await context.inject(BaseStorage)
         result = await storage.search_records(
-            self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
+            Conn23Record.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         ).fetch_single()
         return Conn23Request.from_json(result.value)
 

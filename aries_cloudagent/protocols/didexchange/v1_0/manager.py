@@ -586,7 +586,7 @@ class Conn23Manager:
                     context=self.context,
                     their_did=receipt.sender_did,
                     my_did=receipt.recipient_did,
-                    my_role=Conn23Record.Role.REQUESTER,
+                    my_role=Conn23Record.Role.REQUESTER.rfc23,
                 )
             except StorageNotFoundError:
                 pass
@@ -726,7 +726,7 @@ class Conn23Manager:
                 connection = await Conn23Record.retrieve_by_invitation_key(
                     context=self.context,
                     invitation_key=my_verkey,
-                    my_role=Conn23Record.Role.REQUESTER,
+                    my_role=Conn23Record.Role.REQUESTER.rfc23,
                 )
             except StorageError:
                 self._logger.warning(
@@ -921,7 +921,7 @@ class Conn23Manager:
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
         record = await storage.search_records(
-            self.RECORD_TYPE_DID_DOC, {"did": did}
+            Conn23Manager.RECORD_TYPE_DID_DOC, {"did": did}
         ).fetch_single()
         return (DIDDoc.from_json(record.value), record)
 
@@ -937,7 +937,8 @@ class Conn23Manager:
             stored_doc, record = await self.fetch_did_document(did_doc.did)
         except StorageNotFoundError:
             record = StorageRecord(
-                self.RECORD_TYPE_DID_DOC, did_doc.to_json(), {"did": did_doc.did}
+                Conn23Manager.RECORD_TYPE_DID_DOC, did_doc.to_json(),
+                {"did": did_doc.did},
             )
             await storage.add_record(record)
         else:
@@ -954,7 +955,9 @@ class Conn23Manager:
             did: The DID to associate with this key
             key: The verkey to be added
         """
-        record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
+        record = StorageRecord(
+            Conn23Manager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
+        )
         storage: BaseStorage = await self.context.inject(BaseStorage)
         await storage.add_record(record)
 
@@ -966,7 +969,7 @@ class Conn23Manager:
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
         record = await storage.search_records(
-            self.RECORD_TYPE_DID_KEY, {"key": key}
+            Conn23Manager.RECORD_TYPE_DID_KEY, {"key": key}
         ).fetch_single()
         return record.tags["did"]
 
@@ -978,7 +981,7 @@ class Conn23Manager:
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
         keys = await storage.search_records(
-            self.RECORD_TYPE_DID_KEY, {"did": did}
+            Conn23Manager.RECORD_TYPE_DID_KEY, {"did": did}
         ).fetch_all()
         for record in keys:
             await storage.delete_record(record)
@@ -1042,7 +1045,7 @@ class Conn23Manager:
         if (
             connection.state
             in (Conn23Record.STATE_INVITATION, Conn23Record.STATE_REQUEST)
-            and connection.their_role is Conn23Record.Role.RESPONDER
+            and connection.their_role == Conn23Record.Role.REQUESTER.rfc23
         ):
             invitation = await connection.retrieve_invitation(self.context)
             if invitation.did:
