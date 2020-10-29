@@ -35,7 +35,9 @@ class BaseHolder(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def credential_revoked(self, credential_id: str, ledger: BaseLedger) -> bool:
+    async def credential_revoked(
+        self, credential_id: str, ledger: BaseLedger, fro: int = None, to: int = None
+    ) -> bool:
         """
         Check ledger for revocation status of credential by cred id.
 
