@@ -35,7 +35,7 @@ class SampleDecoratorSchema(BaseModelSchema):
         model_class = SampleDecorator
         unknown = EXCLUDE
 
-    score = fields.Int(required=True)
+    score = fields.Int(required=True, strict=True)
 
 
 class TestBaseDecoratorSet(TestCase):

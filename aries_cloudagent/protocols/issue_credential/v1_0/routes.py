@@ -297,6 +297,7 @@ class RevokeQueryStringSchema(OpenAPISchema):
     cred_rev_id = fields.Int(
         description="Credential revocation identifier",
         required=True,
+        strict=True,
         **NATURAL_NUM,
     )
     publish = fields.Boolean(
@@ -660,6 +661,7 @@ async def _create_free_offer(
     cred_ex_record = V10CredentialExchange(
         connection_id=connection_id,
         initiator=V10CredentialExchange.INITIATOR_SELF,
+        role=V10CredentialExchange.ROLE_ISSUER,
         credential_definition_id=cred_def_id,
         credential_proposal_dict=credential_proposal_dict,
         auto_issue=auto_issue,

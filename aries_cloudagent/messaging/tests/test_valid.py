@@ -38,15 +38,14 @@ from ..valid import (
 
 class TestValid(TestCase):
     def test_epoch(self):
-        non_epochs = [-9223372036854775809, 9223372036854775808]
+        non_epochs = [-1, 18446744073709551616]
         for non_epoch in non_epochs:
             with self.assertRaises(ValidationError):
                 INT_EPOCH["validate"](non_epoch)
 
         INT_EPOCH["validate"](0)
         INT_EPOCH["validate"](2147483647)
-        INT_EPOCH["validate"](-9223372036854775808)
-        INT_EPOCH["validate"](9223372036854775807)
+        INT_EPOCH["validate"](18446744073709551615)
 
     def test_whole(self):
         non_wholes = [-9223372036854775809, 2.3, "Hello", None]

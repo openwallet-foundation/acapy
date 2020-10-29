@@ -87,7 +87,7 @@ class PresPredSpecSchema(BaseModelSchema):
         required=True,
         **INDY_PREDICATE,
     )
-    threshold = fields.Int(description="Threshold value", required=True)
+    threshold = fields.Int(description="Threshold value", required=True, strict=True)
 
 
 class PresAttrSpec(BaseModel):
