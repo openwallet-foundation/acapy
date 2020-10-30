@@ -227,7 +227,7 @@ async def register(app: web.Application):
             web.post("/action-menu/{conn_id}/fetch", actionmenu_fetch),
             web.post("/action-menu/{conn_id}/perform", actionmenu_perform),
             web.post("/action-menu/{conn_id}/request", actionmenu_request),
-            web.post("/connections/{conn_id}/send-menu", actionmenu_send),
+            web.post("/action-menu/{conn_id}/send-menu", actionmenu_send),
         ]
     )
 

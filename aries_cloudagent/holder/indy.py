@@ -288,7 +288,9 @@ class IndyHolder(BaseHolder):
 
         return credential_json
 
-    async def credential_revoked(self, credential_id: str, ledger: BaseLedger) -> bool:
+    async def credential_revoked(
+        self, credential_id: str, ledger: BaseLedger, fro: int = None, to: int = None
+    ) -> bool:
         """
         Check ledger for revocation status of credential by cred id.
 
@@ -302,7 +304,7 @@ class IndyHolder(BaseHolder):
 
         if rev_reg_id:
             cred_rev_id = int(cred["cred_rev_id"])
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_reg_id)
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_reg_id, fro, to)
 
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:
