@@ -140,6 +140,7 @@ class InvitationMessageSchema(AgentMessageSchema):
         del data["service"]
 
         import json
+
         return data
 
     @post_dump

@@ -212,7 +212,7 @@ class Conn23Manager:
         """
         if not invitation.service_dids:
             if invitation.service_blocks:
-                if not all (
+                if not all(
                     s.recipient_keys and s.service_endpoint
                     for s in invitation.service_blocks
                 ):
@@ -274,12 +274,12 @@ class Conn23Manager:
                     connection_id=connection.connection_id,
                 )
 
-                '''
+                """
                 # refetch connection for accurate state  # TODO is this necessary?
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
-                '''
+                """
                 connection.state = Conn23Record.STATE_REQUEST
                 await connection.save(self.context, reason="Sent connection request")
         else:
@@ -462,12 +462,12 @@ class Conn23Manager:
                 await responder.send_reply(
                     response, connection_id=connection.connection_id
                 )
-                '''
+                """
                 # refetch connection for accurate state  # TODO is this necessary?
                 connection = await Conn23Record.retrieve_by_id(
                     self._context, connection.connection_id
                 )
-                '''
+                """
                 connection.state = Conn23Record.STATE_RESPONSE
                 await connection.save(self.context, reason="Sent connection response")
         else:
@@ -604,9 +604,7 @@ class Conn23Manager:
 
         their_did = response.did
         if not response.did_doc_attach:
-            raise Conn23ManagerError(
-                "No DIDDoc attached; cannot connect to public DID"
-            )
+            raise Conn23ManagerError("No DIDDoc attached; cannot connect to public DID")
         conn_did_doc = await self.verify_diddoc(wallet, response.did_doc_attach)
         if their_did != conn_did_doc.did:
             raise Conn23ManagerError(
@@ -928,7 +926,8 @@ class Conn23Manager:
             stored_doc, record = await self.fetch_did_document(did_doc.did)
         except StorageNotFoundError:
             record = StorageRecord(
-                Conn23Manager.RECORD_TYPE_DID_DOC, did_doc.to_json(),
+                Conn23Manager.RECORD_TYPE_DID_DOC,
+                did_doc.to_json(),
                 {"did": did_doc.did},
             )
             await storage.add_record(record)

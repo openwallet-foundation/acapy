@@ -20,6 +20,6 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         CONN23_REQUEST: f"{PROTOCOL_PACKAGE}.messages.request.Conn23Request",
         CONN23_RESPONSE: f"{PROTOCOL_PACKAGE}.messages.response.Conn23Response",
         CONN23_COMPLETE: f"{PROTOCOL_PACKAGE}.messages.complete.Conn23Complete",
-        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport"
+        PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.ProblemReport",
     }
 )

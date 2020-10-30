@@ -42,7 +42,7 @@ class TestConn23CompleteHandler:
     @async_mock.patch.object(test_module, "Conn23Manager")
     async def test_x(self, mock_conn_mgr, request_context):
         mock_conn_mgr.return_value.accept_complete = async_mock.CoroutineMock(
-            side_effect = Conn23ManagerError(
+            side_effect=Conn23ManagerError(
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED
             )
         )

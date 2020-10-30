@@ -197,7 +197,7 @@ class Conn23Record(BaseRecord):
         tag_filter = {"invitation_key": invitation_key}
         post_filter = {
             "state": cls.STATE_INVITATION,
-            "their_role": my_role.flip().rfc23
+            "their_role": my_role.flip().rfc23,
         }
         return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
@@ -232,9 +232,7 @@ class Conn23Record(BaseRecord):
         storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
 
-    async def retrieve_invitation(
-        self, context: InjectionContext
-    ) -> InvitationMessage:
+    async def retrieve_invitation(self, context: InjectionContext) -> InvitationMessage:
         """Retrieve the related connection invitation.
 
         Args:
@@ -247,9 +245,7 @@ class Conn23Record(BaseRecord):
         ).fetch_single()
         return InvitationMessage.from_json(result.value)
 
-    async def attach_request(
-        self, context: InjectionContext, request: Conn23Request
-    ):
+    async def attach_request(self, context: InjectionContext, request: Conn23Request):
         """Persist the related connection request to storage.
 
         Args:
@@ -281,10 +277,7 @@ class Conn23Record(BaseRecord):
     @property
     def is_ready(self) -> str:
         """Accessor for connection readiness."""
-        return self.state in (
-            Conn23Record.STATE_COMPLETED,
-            Conn23Record.STATE_RESPONSE
-        )
+        return self.state in (Conn23Record.STATE_COMPLETED, Conn23Record.STATE_RESPONSE)
 
     @property
     def is_multiuse_invitation(self) -> bool:
@@ -364,7 +357,7 @@ class Conn23RecordSchema(BaseRecordSchema):
                 for a in vars(Conn23Record)
                 if a.startswith("ACCEPT_")
             ]
-        )
+        ),
     )
     error_msg = fields.Str(
         required=False,
@@ -381,7 +374,7 @@ class Conn23RecordSchema(BaseRecordSchema):
                 for i in vars(Conn23Record)
                 if i.startswith("INVITATION_MODE_")
             ]
-        )
+        ),
     )
     alias = fields.Str(
         required=False,

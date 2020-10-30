@@ -123,7 +123,7 @@ class OutOfBandManager:
                         f"Unknown attachment type: {attachment_type}"
                     )
 
-        '''  # did-exchange manager does this now
+        """  # did-exchange manager does this now
         # We plug into existing connection structure during migration phase
         if use_public_did:
             # service = (await wallet.get_public_did()).did
@@ -158,7 +158,7 @@ class OutOfBandManager:
             handshake_protocols.extend(
                 pfx.qualify(HS_PROTO_CONN_INVI) for pfx in DIDCommPrefix
             )
-        '''
+        """
 
         invitation_message = InvitationMessage(
             label=my_label,
@@ -177,9 +177,7 @@ class OutOfBandManager:
 
         return invitation_record
 
-    async def receive_invitation(
-        self, invitation: InvitationMessage
-    ) -> Conn23Record:
+    async def receive_invitation(self, invitation: InvitationMessage) -> Conn23Record:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -187,10 +185,10 @@ class OutOfBandManager:
         # New message format
         invitation_message = InvitationMessage.deserialize(invitation)
 
-        ''' # TODO Remove this
+        """ # TODO Remove this
         # Convert to old format and pass to relevant manager
         # The following logic adheres to Aries RFC 0496
-        '''
+        """
 
         # There must be exactly 1 service entry
         if (
@@ -240,7 +238,7 @@ class OutOfBandManager:
                 did_key_to_naked(key) for key in service.routing_keys
             ] or []
 
-            '''  # did-exchange manager uses new format now
+            """  # did-exchange manager uses new format now
             # Convert to the old message format
             connection_invitation = ConnectionInvitation.deserialize(
                 {
@@ -252,7 +250,7 @@ class OutOfBandManager:
                     "routingKeys": service.routing_keys,
                 }
             )
-            '''
+            """
 
             connection_mgr = Conn23Manager(self.context)
             connection = await connection_mgr.receive_invitation(

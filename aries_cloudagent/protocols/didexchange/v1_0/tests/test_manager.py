@@ -233,9 +233,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_bad_invitation(self):
         x_invites = [
             InvitationMessage(),
-            InvitationMessage(
-                service=[OOBService()]
-            ),
+            InvitationMessage(service=[OOBService()]),
             InvitationMessage(
                 service=[
                     OOBService(
@@ -280,14 +278,10 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_request.did = self.test_did
         mock_request.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(
-                        return_value="dummy-did-doc"
-                    )
-                )
+                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                ),
             )
         )
 
@@ -309,15 +303,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             self.manager, "create_did_document", async_mock.CoroutineMock()
         ) as mock_create_did_doc:
             mock_create_did_doc.return_value = async_mock.MagicMock(
-                serialize=async_mock.MagicMock(
-                    return_value={}
-                )
+                serialize=async_mock.MagicMock(return_value={})
             )
             mock_conn_rec.STATE_REQUEST = Conn23Record.STATE_REQUEST
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    save=async_mock.CoroutineMock()
-                )
+                return_value=async_mock.MagicMock(save=async_mock.CoroutineMock())
             )
             mock_conn_rec.return_value = async_mock.MagicMock(
                 accept=Conn23Record.ACCEPT_AUTO,
@@ -330,14 +320,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_did_doc.from_json = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(did=self.test_did)
             )
-            mock_attach_deco.from_indy_dict=async_mock.MagicMock(
+            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    data=async_mock.MagicMock(
-                        sign=async_mock.CoroutineMock()
-                    )
+                    data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
             )
-            mock_response.return_value=async_mock.MagicMock(
+            mock_response.return_value = async_mock.MagicMock(
                 assign_thread_from=async_mock.MagicMock(),
                 assign_trace_from=async_mock.MagicMock(),
             )
@@ -372,14 +360,10 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_request.did = self.test_did
         mock_request.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(
-                        return_value="dummy-did-doc"
-                    )
-                )
+                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                ),
             )
         )
 
@@ -394,9 +378,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module.DIDDoc, "from_json", async_mock.MagicMock()
         ) as mock_did_doc_from_json:
-            mock_did_doc_from_json.return_value = async_mock.MagicMock(
-                did="wrong-did"
-            )
+            mock_did_doc_from_json.return_value = async_mock.MagicMock(did="wrong-did")
             with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_request(mock_request, receipt)
 
@@ -405,9 +387,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_request.did = self.test_did
         mock_request.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=False
-                )
+                verify=async_mock.CoroutineMock(return_value=False)
             )
         )
 
@@ -428,14 +408,10 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_request.did = self.test_did
         mock_request.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(
-                        return_value="dummy-did-doc"
-                    )
-                )
+                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                ),
             )
         )
 
@@ -467,14 +443,10 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_request.did = self.test_did
         mock_request.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
-                    decode=async_mock.MagicMock(
-                        return_value="dummy-did-doc"
-                    )
-                )
+                    decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                ),
             )
         )
 
@@ -534,11 +506,9 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_create_did_doc.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock()
             )
-            mock_attach_deco.from_indy_dict=async_mock.MagicMock(
+            mock_attach_deco.from_indy_dict = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    data=async_mock.MagicMock(
-                        sign=async_mock.CoroutineMock()
-                    )
+                    data=async_mock.MagicMock(sign=async_mock.CoroutineMock())
                 )
             )
 
@@ -562,14 +532,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_response.did = self.test_target_did
         mock_response.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
                         return_value=json.dumps({"dummy": "did-doc"})
                     )
-                )
+                ),
             )
         )
 
@@ -584,21 +552,19 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         ) as mock_conn_retrieve_by_id, async_mock.patch.object(
             DIDDoc, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_deser:
-            mock_did_doc_deser.return_value=async_mock.MagicMock(
+            mock_did_doc_deser.return_value = async_mock.MagicMock(
                 did=self.test_target_did
             )
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
-                        verify=async_mock.CoroutineMock(
-                            return_value=True
-                        ),
+                        verify=async_mock.CoroutineMock(return_value=True),
                         signed=async_mock.MagicMock(
                             decode=async_mock.MagicMock(
                                 return_value=json.dumps({"dummy": "did-doc"})
                             )
-                        )
+                        ),
                     )
                 ),
                 state=Conn23Record.STATE_REQUEST,
@@ -619,14 +585,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_response.did = self.test_target_did
         mock_response.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
                         return_value=json.dumps({"dummy": "did-doc"})
                     )
-                )
+                ),
             )
         )
 
@@ -641,7 +605,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         ) as mock_conn_retrieve_by_did, async_mock.patch.object(
             DIDDoc, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_deser:
-            mock_did_doc_deser.return_value=async_mock.MagicMock(
+            mock_did_doc_deser.return_value = async_mock.MagicMock(
                 did=self.test_target_did
             )
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
@@ -649,14 +613,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 did=self.test_target_did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
-                        verify=async_mock.CoroutineMock(
-                            return_value=True
-                        ),
+                        verify=async_mock.CoroutineMock(return_value=True),
                         signed=async_mock.MagicMock(
                             decode=async_mock.MagicMock(
                                 return_value=json.dumps({"dummy": "did-doc"})
                             )
-                        )
+                        ),
                     )
                 ),
                 state=Conn23Record.STATE_REQUEST,
@@ -673,14 +635,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_response.did = self.test_target_did
         mock_response.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
                         return_value=json.dumps({"dummy": "did-doc"})
                     )
-                )
+                ),
             )
         )
 
@@ -705,14 +665,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_response.did = self.test_target_did
         mock_response.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
                         return_value=json.dumps({"dummy": "did-doc"})
                     )
-                )
+                ),
             )
         )
 
@@ -748,14 +706,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 did=self.test_target_did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
-                        verify=async_mock.CoroutineMock(
-                            return_value=True
-                        ),
+                        verify=async_mock.CoroutineMock(return_value=True),
                         signed=async_mock.MagicMock(
                             decode=async_mock.MagicMock(
                                 return_value=json.dumps({"dummy": "did-doc"})
                             )
-                        )
+                        ),
                     )
                 ),
                 state=Conn23Record.STATE_REQUEST,
@@ -771,14 +727,12 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         mock_response.did = self.test_target_did
         mock_response.did_doc_attach = async_mock.MagicMock(
             data=async_mock.MagicMock(
-                verify=async_mock.CoroutineMock(
-                    return_value=True
-                ),
+                verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
                         return_value=json.dumps({"dummy": "did-doc"})
                     )
-                )
+                ),
             )
         )
 
@@ -793,21 +747,17 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         ) as mock_conn_retrieve_by_id, async_mock.patch.object(
             DIDDoc, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_deser:
-            mock_did_doc_deser.return_value=async_mock.MagicMock(
-                did=self.test_did
-            )
+            mock_did_doc_deser.return_value = async_mock.MagicMock(did=self.test_did)
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=self.test_target_did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
-                        verify=async_mock.CoroutineMock(
-                            return_value=True
-                        ),
+                        verify=async_mock.CoroutineMock(return_value=True),
                         signed=async_mock.MagicMock(
                             decode=async_mock.MagicMock(
                                 return_value=json.dumps({"dummy": "did-doc"})
                             )
-                        )
+                        ),
                     )
                 ),
                 state=Conn23Record.STATE_REQUEST,
@@ -843,7 +793,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             with self.assertRaises(Conn23ManagerError):
                 await self.manager.accept_complete(mock_complete, receipt)
 
-    '''
+    """
     async def test_create_static_connection(self):
         with async_mock.patch.object(
             ConnectionRecord, "save", autospec=True
@@ -883,7 +833,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             )
 
             assert conn_rec.state == ConnectionRecord.STATE_ACTIVE
-    '''
+    """
 
     async def test_find_connection_retrieve_by_did(self):
         with async_mock.patch.object(
@@ -1494,7 +1444,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         assert target.routing_keys == []
         assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
 
-    '''
+    """
     async def test_fetch_connection_targets_conn_initiator_multi_no_their_did(self):
         wallet: BaseWallet = await self.context.inject(BaseWallet)
         await wallet.create_local_did(
@@ -1532,7 +1482,8 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         assert target.routing_keys == []
         assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
 
-    '''
+    """
+
     async def test_diddoc_connection_targets_diddoc_underspecified(self):
         with self.assertRaises(Conn23ManagerError):
             self.manager.diddoc_connection_targets(None, self.test_verkey)

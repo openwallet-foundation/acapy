@@ -61,9 +61,7 @@ class TestConn23ResponseHandler(AsyncTestCase):
         self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
 
-        self.did_doc_attach = AttachDecorator.from_indy_dict(
-            self.did_doc().serialize()
-        )
+        self.did_doc_attach = AttachDecorator.from_indy_dict(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.request = Conn23Response(
@@ -111,7 +109,7 @@ class TestConn23ResponseHandler(AsyncTestCase):
     @async_mock.patch.object(test_module, "Conn23Manager")
     async def test_problem_report(self, mock_conn_mgr):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock(
-            side_effect = Conn23ManagerError(
+            side_effect=Conn23ManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
             )
         )
@@ -137,7 +135,7 @@ class TestConn23ResponseHandler(AsyncTestCase):
         mock_conn_mgr,
     ):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock(
-            side_effect = Conn23ManagerError(
+            side_effect=Conn23ManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
             )
         )
@@ -169,7 +167,7 @@ class TestConn23ResponseHandler(AsyncTestCase):
         mock_conn_mgr,
     ):
         mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock(
-            side_effect = Conn23ManagerError(
+            side_effect=Conn23ManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
             )
         )

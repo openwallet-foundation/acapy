@@ -58,9 +58,7 @@ class TestConn23Request(AsyncTestCase, TestConfig):
         self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
 
-        did_doc_attach = AttachDecorator.from_indy_dict(
-            self.make_did_doc().serialize()
-        )
+        did_doc_attach = AttachDecorator.from_indy_dict(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.request = Conn23Request(
@@ -114,9 +112,7 @@ class TestConn23RequestSchema(AsyncTestCase, TestConfig):
         self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
 
-        did_doc_attach = AttachDecorator.from_indy_dict(
-            self.make_did_doc().serialize()
-        )
+        did_doc_attach = AttachDecorator.from_indy_dict(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.request = Conn23Request(
