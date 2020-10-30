@@ -116,7 +116,7 @@ class InvitationMessageSchema(AgentMessageSchema):
         ):
             raise ValidationError(
                 "Model must include non-empty "
-                + "handshake_protocols or request_attach or both"
+                "handshake_protocols or request_attach or both"
             )
 
         # service = data.get("service")
@@ -128,7 +128,6 @@ class InvitationMessageSchema(AgentMessageSchema):
     @pre_load
     def pre_load(self, data, **kwargs):
         """Pre load hook."""
-        print('\n\n.. .. PRE-LOAD')
         data["service_dids"] = []
         data["service_blocks"] = []
 
@@ -141,7 +140,6 @@ class InvitationMessageSchema(AgentMessageSchema):
         del data["service"]
 
         import json
-        print(f'  .. returning {json.dumps(dict(data), indent=4)}')
         return data
 
     @post_dump

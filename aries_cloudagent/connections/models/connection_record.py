@@ -1,5 +1,7 @@
 """Handle connection information interface with non-secrets storage."""
 
+import json
+
 from marshmallow import fields, validate
 
 from ...config.injection_context import InjectionContext

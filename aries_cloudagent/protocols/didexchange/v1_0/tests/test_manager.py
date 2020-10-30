@@ -99,6 +99,56 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             state=Conn23Record.STATE_COMPLETED,
         )
 
+    async def test_verify_diddoc(self):
+        did_doc = self.make_did_doc(self.test_target_did, self.test_target_verkey)
+        did_doc_attach = AttachDecorator.from_indy_dict(did_doc.serialize())
+        with self.assertRaises(Conn23ManagerError):
+            await self.manager.verify_diddoc(self.wallet, did_doc_attach)
+
+        await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
+
+        await self.manager.verify_diddoc(self.wallet, did_doc_attach)
+
+        did_doc_attach.data.base64_ = "YmFpdCBhbmQgc3dpdGNo"
+        with self.assertRaises(Conn23ManagerError):
+            await self.manager.verify_diddoc(self.wallet, did_doc_attach)
+
+    async def test_create_invitation_public(self):
+        self.manager.context.update_settings({"public_invites": True})
+
+        with async_mock.patch.object(
+            BaseWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                self.test_did, self.test_verkey, None
+            )
+            connect_record, connect_invite = await self.manager.create_invitation(
+                public=True, my_endpoint="testendpoint", include_handshake=True
+            )
+
+            assert connect_record == None
+            assert connect_invite.service_dids[0].endswith(self.test_did)
+
+    async def test_create_invitation_public_x_no_public_invites(self):
+        self.manager.context.update_settings({"public_invites": False})
+
+        with self.assertRaises(Conn23ManagerError):
+            await self.manager.create_invitation(
+                public=True, my_endpoint="testendpoint", include_handshake=True
+            )
+
+    async def test_create_invitation_public_no_public_did(self):
+        self.manager.context.update_settings({"public_invites": True})
+
+        with async_mock.patch.object(
+            BaseWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = None
+            with self.assertRaises(Conn23ManagerError):
+                await self.manager.create_invitation(
+                    public=True, my_endpoint="testendpoint", include_handshake=True
+                )
+
     async def tests_create_invitation_x_public_multi_use(self):
         self.manager.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
@@ -111,10 +161,11 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
                 await self.manager.create_invitation(public=True, multi_use=True)
 
     async def test_create_invitation_x_reuse_non_multi_use_invitation(self):
-        connect_record, connect_invite = await self.manager.create_invitation()
+        connect_record, connect_invite = await self.manager.create_invitation(
+            include_handshake=True
+        )
 
         receipt = MessageReceipt(recipient_verkey=connect_record.invitation_key)
-
         did_doc = self.make_did_doc(self.test_target_did, self.test_target_verkey)
         did_doc_attach = AttachDecorator.from_indy_dict(did_doc.serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
@@ -126,7 +177,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         )
         await self.manager.receive_request(requestA, receipt)
 
-        requestB = ConnectionRequest(
+        requestB = Conn23Request(
             label="SameInviteRequestB",
             did=self.test_target_did,
             did_doc_attach=did_doc_attach,
@@ -136,7 +187,31 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         with self.assertRaises(Conn23ManagerError):
             await self.manager.receive_request(requestB, receipt)
 
-    '''
+    async def test_create_invitation_multi_use(self):
+        connect_record, connect_invite = await self.manager.create_invitation(
+            my_endpoint="testendpoint", multi_use=True, include_handshake=True
+        )
+
+        receipt = MessageReceipt(recipient_verkey=connect_record.invitation_key)
+        did_doc = self.make_did_doc(self.test_target_did, self.test_target_verkey)
+        did_doc_attach = AttachDecorator.from_indy_dict(did_doc.serialize())
+        await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
+
+        requestA = Conn23Request(
+            label="SameInviteRequestA",
+            did=self.test_target_did,
+            did_doc_attach=did_doc_attach,
+        )
+        await self.manager.receive_request(requestA, receipt)
+
+        requestB = Conn23Request(
+            label="SameInviteRequestB",
+            did=self.test_target_did,
+            did_doc_attach=did_doc_attach,
+        )
+
+        await self.manager.receive_request(requestB, receipt)
+
     async def test_receive_invitation(self):
         (_, connect_invite) = await self.manager.create_invitation(
             my_endpoint="testendpoint"
@@ -292,7 +367,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_request(mock_request, receipt)
 
-    async def test_receive_request_public_did_wrong_did(self):
+    async def test_receive_request_public_did_x_wrong_did(self):
         mock_request = async_mock.MagicMock()
         mock_request.did = self.test_did
         mock_request.did_doc_attach = async_mock.MagicMock(
@@ -325,6 +400,29 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_request(mock_request, receipt)
 
+    async def test_receive_request_public_did_x_did_doc_attach_bad_sig(self):
+        mock_request = async_mock.MagicMock()
+        mock_request.did = self.test_did
+        mock_request.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(
+                    return_value=False
+                )
+            )
+        )
+
+        receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
+
+        wallet = await self.context.inject(BaseWallet)
+        await wallet.create_local_did(seed=None, did=self.test_did)
+
+        self.manager.context.update_settings({"public_invites": True})
+        with async_mock.patch.object(
+            test_module, "Conn23Record", async_mock.MagicMock()
+        ) as mock_conn_rec:
+            with self.assertRaises(Conn23ManagerError):
+                await self.manager.receive_request(mock_request, receipt)
+
     async def test_receive_request_public_did_no_public_invites(self):
         mock_request = async_mock.MagicMock()
         mock_request.did = self.test_did
@@ -350,15 +448,17 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         with async_mock.patch.object(
             test_module, "Conn23Record", async_mock.MagicMock()
         ) as mock_conn_rec, async_mock.patch.object(
-            test_module, "DIDDoc", autospec=True
-        ) as mock_did_doc, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_deco, async_mock.patch.object(
             test_module, "Conn23Response", autospec=True
         ) as mock_response, async_mock.patch.object(
             self.manager, "create_did_document", async_mock.CoroutineMock()
-        ) as mock_create_did_doc:
-
+        ) as mock_create_did_doc, async_mock.patch.object(
+            test_module.DIDDoc, "from_json", async_mock.MagicMock()
+        ) as mock_did_doc_from_json:
+            mock_did_doc_from_json.return_value = async_mock.MagicMock(
+                did=self.test_did
+            )
             with self.assertRaises(Conn23ManagerError):
                 await self.manager.receive_request(mock_request, receipt)
 
@@ -721,6 +821,28 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             with self.assertRaises(Conn23ManagerError):
                 await self.manager.accept_response(mock_response, receipt)
 
+    async def test_accept_complete(self):
+        mock_complete = async_mock.MagicMock()
+        receipt = MessageReceipt(sender_did=self.test_target_did)
+
+        with async_mock.patch.object(
+            Conn23Record, "retrieve_by_request_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id:
+            mock_conn_retrieve_by_req_id.return_value.save = async_mock.CoroutineMock()
+            conn23rec = await self.manager.accept_complete(mock_complete, receipt)
+            assert conn23rec.state == Conn23Record.STATE_COMPLETED
+
+    async def test_accept_complete_x_not_found(self):
+        mock_complete = async_mock.MagicMock()
+        receipt = MessageReceipt(sender_did=self.test_target_did)
+
+        with async_mock.patch.object(
+            Conn23Record, "retrieve_by_request_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id:
+            mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
+            with self.assertRaises(Conn23ManagerError):
+                await self.manager.accept_complete(mock_complete, receipt)
+
     '''
     async def test_create_static_connection(self):
         with async_mock.patch.object(
@@ -768,7 +890,7 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             Conn23Record, "retrieve_by_did", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_did:
             mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
-                state=Conn23Record.STATE_COMPLETED,
+                state=Conn23Record.STATE_RESPONSE,
                 save=async_mock.CoroutineMock(),
             )
 
@@ -1335,6 +1457,43 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
         assert target.routing_keys == []
         assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
 
+    async def test_fetch_connection_targets_conn_responder_no_their_did(self):
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        await wallet.create_local_did(
+            seed=self.test_seed, did=self.test_did, metadata=None
+        )
+
+        mock_conn = async_mock.MagicMock()
+        mock_conn.my_did = self.test_did
+        mock_conn.their_did = None
+        mock_conn.their_role = Conn23Record.Role.RESPONDER.rfc23
+        assert await self.manager.fetch_connection_targets(mock_conn) is None
+
+    async def test_fetch_connection_targets_conn_responder_their_did(self):
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+        await wallet.create_local_did(
+            seed=self.test_seed, did=self.test_did, metadata=None
+        )
+
+        did_doc = self.make_did_doc(did=self.test_did, verkey=self.test_verkey)
+        await self.manager.store_did_document(did_doc)
+
+        mock_conn = async_mock.MagicMock()
+        mock_conn.my_did = self.test_did
+        mock_conn.their_did = self.test_did
+        mock_conn.their_label = "self-connection formalism"
+        mock_conn.their_role = Conn23Record.Role.RESPONDER.rfc23
+
+        targets = await self.manager.fetch_connection_targets(mock_conn)
+        assert len(targets) == 1
+        target = targets[0]
+        assert target.did == mock_conn.their_did
+        assert target.endpoint == self.test_endpoint
+        assert target.label == mock_conn.their_label
+        assert target.recipient_keys == [self.test_verkey]
+        assert target.routing_keys == []
+        assert target.sender_key == (await wallet.get_local_did(self.test_did)).verkey
+
     '''
     async def test_fetch_connection_targets_conn_initiator_multi_no_their_did(self):
         wallet: BaseWallet = await self.context.inject(BaseWallet)
@@ -1514,4 +1673,3 @@ class TestConnectionManager(AsyncTestCase, TestConfig):
             mock_conn_rec_query.return_value[1].save.assert_called_once_with(
                 self.context
             )
-    '''

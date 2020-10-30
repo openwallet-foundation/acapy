@@ -30,6 +30,7 @@ from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58, naked_to_did_key
 
 from ...didcomm_prefix import DIDCommPrefix
+from ...out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
 from ...out_of_band.v1_0.messages.invitation import InvitationMessage as OOBInvitation
 from ...out_of_band.v1_0.messages.service import Service as OOBService
 from ...routing.v1_0.manager import RoutingManager
@@ -124,7 +125,7 @@ class Conn23Manager:
             invitation = OOBInvitation(
                 label=my_label,
                 handshake_protocols=(
-                    [DIDCommPrefix.qualify_current(CONN23_INVITATION)]
+                    [DIDCommPrefix.qualify_current(OOB_INVITATION)]
                     if include_handshake
                     else None
                 ),
@@ -170,9 +171,8 @@ class Conn23Manager:
                 OOBService(
                     _id="#inline",
                     _type="did-communication",
-                    recipient_keys=[connection_key.verkey],
+                    recipient_keys=[naked_to_did_key(connection_key.verkey)],
                     service_endpoint=my_endpoint,
-                    # FIXME shouldn't there be a DID in here? What DID would it be?
                 )
             ],
         )
@@ -414,8 +414,6 @@ class Conn23Manager:
         if not await request.did_doc_attach.data.verify(wallet):
             raise Conn23ManagerError("DID Doc signature failed verification")
         conn_did_doc = DIDDoc.from_json(request.did_doc_attach.data.signed.decode())
-        if not conn_did_doc:
-            raise Conn23ManagerError("No DIDDoc provided; cannot connect to public DID")
         if request.did != conn_did_doc.did:
             raise Conn23ManagerError(
                 (
@@ -656,21 +654,14 @@ class Conn23Manager:
                 or is not in the response-sent state
 
         """
-        wallet: BaseWallet = await self.context.inject(BaseWallet)
-
         connection = None
 
         # identify the request by the thread ID
         try:
             connection = await Conn23Record.retrieve_by_request_id(
-                self.context, response._thread_id
+                self.context, complete._thread_id
             )
         except StorageNotFoundError:
-            connection.state = Conn23Record.STATE
-            await connection.save(
-                self.context,
-                reason="Received connection complete for absent invitation",
-            )
             raise Conn23ManagerError(
                 "No corresponding connection request found",
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED,
@@ -1100,8 +1091,7 @@ class Conn23Manager:
             raise Conn23ManagerError("DID doc attachment is not signed.")
         if not await attached.data.verify(wallet):
             raise Conn23ManagerError(
-                f"Connection {connection.connection_id} DID doc attachment "
-                "signature failed verification"
+                f"DID doc attachment signature failed verification"
             )
 
         return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))

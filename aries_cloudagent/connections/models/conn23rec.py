@@ -1,5 +1,7 @@
 """Handle connection information interface with non-secrets storage."""
 
+import json
+
 from enum import Enum
 from typing import Any, Union
 
@@ -243,7 +245,6 @@ class Conn23Record(BaseRecord):
         result = await storage.search_records(
             Conn23Record.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         ).fetch_single()
-        print(f'\n\n-- -- RETR value {type(result.value)}; {result.value}')
         return InvitationMessage.from_json(result.value)
 
     async def attach_request(
