@@ -51,7 +51,7 @@ class FaberAgent(DemoAgent):
             **kwargs,
         )
         self.connection_id = None
-        self._connection_ready = asyncio.Future()
+        self._connection_ready = None
         self.cred_state = {}
         # TODO define a dict to hold credential attributes
         # based on credential_definition_id
@@ -139,6 +139,56 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
+async def generate_invitation(agent):
+    agent._connection_ready = asyncio.Future()
+    with log_timer("Generate invitation duration:"):
+        # Generate an invitation
+        log_status(
+            "#7 Create a connection to alice and print out the invite details"
+        )
+        connection = await agent.admin_POST("/connections/create-invitation")
+
+    agent.connection_id = connection["connection_id"]
+
+    qr = QRCode()
+    qr.add_data(connection["invitation_url"])
+    log_msg(
+        "Use the following JSON to accept the invite from another demo agent."
+        " Or use the QR code to connect from a mobile agent."
+    )
+    log_msg(
+        json.dumps(connection["invitation"]), label="Invitation Data:", color=None
+    )
+    qr.print_ascii(invert=True)
+
+    log_msg("Waiting for connection...")
+    await agent.detect_connection()
+
+
+async def create_schema_and_cred_def(agent, revocation):
+    with log_timer("Publish schema/cred def duration:"):
+        log_status("#3/4 Create a new schema/cred def on the ledger")
+        version = format(
+            "%d.%d.%d"
+            % (
+                random.randint(1, 101),
+                random.randint(1, 101),
+                random.randint(1, 101),
+            )
+        )
+        (
+            _,  # schema id
+            credential_definition_id,
+        ) = await agent.register_schema_and_creddef(
+            "degree schema",
+            version,
+            ["name", "date", "degree", "age", "timestamp"],
+            support_revocation=revocation,
+            revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
+        )
+        return credential_definition_id
+
+
 async def main(
     start_port: int,
     no_auto: bool = False,
@@ -175,63 +225,27 @@ async def main(
         log_msg("Endpoint URL is at:", agent.endpoint)
 
         # Create a schema
-        with log_timer("Publish schema/cred def duration:"):
-            log_status("#3/4 Create a new schema/cred def on the ledger")
-            version = format(
-                "%d.%d.%d"
-                % (
-                    random.randint(1, 101),
-                    random.randint(1, 101),
-                    random.randint(1, 101),
-                )
-            )
-            (
-                _,  # schema id
-                credential_definition_id,
-            ) = await agent.register_schema_and_creddef(
-                "degree schema",
-                version,
-                ["name", "date", "degree", "age", "timestamp"],
-                support_revocation=revocation,
-                revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
-            )
+        credential_definition_id = await create_schema_and_cred_def(agent, revocation)
 
         # TODO add an additional credential for Student ID
 
-        with log_timer("Generate invitation duration:"):
-            # Generate an invitation
-            log_status(
-                "#7 Create a connection to alice and print out the invite details"
-            )
-            connection = await agent.admin_POST("/connections/create-invitation")
-
-        agent.connection_id = connection["connection_id"]
-
-        qr = QRCode()
-        qr.add_data(connection["invitation_url"])
-        log_msg(
-            "Use the following JSON to accept the invite from another demo agent."
-            " Or use the QR code to connect from a mobile agent."
-        )
-        log_msg(
-            json.dumps(connection["invitation"]), label="Invitation Data:", color=None
-        )
-        qr.print_ascii(invert=True)
-
-        log_msg("Waiting for connection...")
-        await agent.detect_connection()
+        await generate_invitation(agent)
 
         exchange_tracing = False
         options = (
             "    (1) Issue Credential\n"
             "    (2) Send Proof Request\n"
             "    (3) Send Message\n"
+            "    (4) Create New Invitation\n"
         )
+        if multitenant:
+            options += "    (W) Create and/or Enable Wallet\n"
         if revocation:
-            options += "    (4) Revoke Credential\n" "    (5) Publish Revocations\n"
+            options += "    (5) Revoke Credential\n" "    (6) Publish Revocations\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
-        options += "    (X) Exit?\n[1/2/3/{}T/X] ".format(
-            "4/5/6/" if revocation else ""
+        options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
+            "5/6/" if revocation else "",
+            "W/" if multitenant else "",
         )
         async for option in prompt_loop(options):
             if option is not None:
@@ -239,6 +253,16 @@ async def main(
 
             if option is None or option in "xX":
                 break
+
+            elif option in "wW" and multitenant:
+                target_wallet_name = await prompt("Enter wallet name: ")
+                created = await agent.register_or_switch_wallet(target_wallet_name, public_did=True)
+                # create a schema and cred def for the new wallet
+                # TODO check first in case we are switching between existing wallets
+                if created:
+                    # TODO this fails because the new wallet doesn't get a public DID
+                    credential_definition_id = await create_schema_and_cred_def(agent, revocation)
+                    pass
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
@@ -280,20 +304,20 @@ async def main(
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
                 req_attrs = [
-                    {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
-                    {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
+                    {"name": "name", "restrictions": [{"schema_name": "degree schema"}]},
+                    {"name": "date", "restrictions": [{"schema_name": "degree schema"}]},
                 ]
                 if revocation:
                     req_attrs.append(
                         {
                             "name": "degree",
-                            "restrictions": [{"issuer_did": agent.did}],
+                            "restrictions": [{"schema_name": "degree schema"}],
                             "non_revoked": {"to": int(time.time() - 1)},
                         },
                     )
                 else:
                     req_attrs.append(
-                        {"name": "degree", "restrictions": [{"issuer_did": agent.did}]}
+                        {"name": "degree", "restrictions": [{"schema_name": "degree schema"}]}
                     )
                 if SELF_ATTESTED:
                     # test self-attested claims
@@ -306,7 +330,7 @@ async def main(
                         "name": "age",
                         "p_type": ">=",
                         "p_value": 18,
-                        "restrictions": [{"issuer_did": agent.did}],
+                        "restrictions": [{"schema_name": "degree schema"}],
                     }
                 ]
                 indy_proof_request = {
@@ -337,7 +361,12 @@ async def main(
                 await agent.admin_POST(
                     f"/connections/{agent.connection_id}/send-message", {"content": msg}
                 )
-            elif option == "4" and revocation:
+
+            elif option == "4":
+                log_msg("Creating a new invitation, please Receive and Accept this invitation using Alice agent")
+                await generate_invitation(agent)
+
+            elif option == "5" and revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
                 cred_rev_id = (await prompt("Enter credential revocation ID: ")).strip()
                 publish = (
@@ -354,7 +383,7 @@ async def main(
                     )
                 except ClientError:
                     pass
-            elif option == "5" and revocation:
+            elif option == "6" and revocation:
                 try:
                     resp = await agent.admin_POST("/revocation/publish-revocations", {})
                     agent.log(

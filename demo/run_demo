@@ -26,14 +26,14 @@ do
     continue
   fi
   case $i in
-  --events)
-    if [ "${AGENT}" = "performance" ]; then
-      echo -e "\nIgnoring the \"--events\" option when running the ${AGENT} agent.\n"
-    else
-      EVENTS=1
-    fi
-    continue
-  ;;
+    --events)
+      if [ "${AGENT}" = "performance" ]; then
+        echo -e "\nIgnoring the \"--events\" option when running the ${AGENT} agent.\n"
+      else
+        EVENTS=1
+      fi
+      continue
+    ;;
     --self-attested)
       SELF_ATTESTED=1
       continue

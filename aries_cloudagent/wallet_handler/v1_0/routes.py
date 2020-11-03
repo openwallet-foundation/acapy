@@ -83,7 +83,7 @@ async def add_wallet(request: web.BaseRequest):
     wallet_record = WalletRecord(wallet_config=config, wallet_name=config['name'])
     await wallet_record.save(context)
 
-    return web.Response(body='created', status=201)
+    return web.Response(body='{"result": "created"}', status=201)
 
 
 @docs(
