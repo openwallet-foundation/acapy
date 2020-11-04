@@ -159,7 +159,7 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
 
     alias = fields.Str(
         description="Alias",
-        required=True,
+        required=False,
         example="Barry",
     )
     auto_accept = fields.Boolean(
@@ -172,11 +172,6 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
     multi_use = fields.Boolean(
         description="Create invitation for multiple use (default false)", required=False
     )
-    """ Changes By Harsh Multani"""
-    #my_role = fields.str(
-    #	description="The role I play in the connection",
-#	required=True
- #   )
 
 
 

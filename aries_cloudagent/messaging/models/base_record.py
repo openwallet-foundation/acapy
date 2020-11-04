@@ -31,10 +31,19 @@ def match_post_filter(record: dict, post_filter: dict, positive: bool = True) ->
     if not post_filter:
         return True
 
+    return_flag = True
+
     for k, v in post_filter.items():
-        if record.get(k) != v:
-            return not positive
-    return positive
+
+        if isinstance(record.get(k), list) == True:
+            if v not in record.get(k):
+                return_flag = False
+
+        else:
+            if record.get(k) != v:
+                return_flag = False
+
+    return return_flag
 
 
 class BaseRecord(BaseModel):
