@@ -23,7 +23,7 @@ class ConnectionResponse(AgentMessage):
         schema_class = "ConnectionResponseSchema"
         message_type = CONNECTION_RESPONSE
 
-    def __init__(self, *, connection: ConnectionDetail = None, **kwargs):
+    def __init__(self, *, connection: ConnectionDetail = None, role: str = None, **kwargs):
         """
         Initialize connection response object.
 
@@ -33,6 +33,7 @@ class ConnectionResponse(AgentMessage):
         """
         super().__init__(**kwargs)
         self.connection = connection
+        self.role = role
 
 
 class ConnectionResponseSchema(AgentMessageSchema):
@@ -46,3 +47,9 @@ class ConnectionResponseSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     connection = fields.Nested(ConnectionDetailSchema, required=True)
+
+    role = fields.Str(
+        required=False,
+        description="The Role that needs to be passed",
+        example="AUTHOR",
+    )

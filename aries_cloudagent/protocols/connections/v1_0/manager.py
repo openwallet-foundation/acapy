@@ -269,6 +269,7 @@ class ConnectionManager:
         connection: ConnectionRecord,
         my_label: str = None,
         my_endpoint: str = None,
+        my_role: str = None,
     ) -> ConnectionRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -289,6 +290,7 @@ class ConnectionManager:
             # Create new DID for connection
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
+            connection.tx_my_role.append(my_role)
 
         # Create connection request message
         if my_endpoint:
@@ -307,7 +309,10 @@ class ConnectionManager:
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
+            
+            role=my_role,
         )
+
 
         # Update connection state
         connection.request_id = request._id
@@ -331,6 +336,8 @@ class ConnectionManager:
             The new or updated `ConnectionRecord` instance
 
         """
+
+
         ConnectionRecord.log_state(
             self.context, "Receiving connection request", {"request": request}
         )
@@ -395,6 +402,8 @@ class ConnectionManager:
         if connection:
             connection.their_label = request.label
             connection.their_did = request.connection.did
+            
+            connection.tx_their_role.append(request.role)
             connection.state = ConnectionRecord.STATE_REQUEST
             await connection.save(
                 self.context, reason="Received connection request from invitation"
@@ -437,10 +446,11 @@ class ConnectionManager:
         else:
             self._logger.debug("Connection request will await acceptance")
 
+
         return connection
 
     async def create_response(
-        self, connection: ConnectionRecord, my_endpoint: str = None
+        self, connection: ConnectionRecord, my_endpoint: str = None, my_role: str = None,
     ) -> ConnectionResponse:
         """
         Create a connection response for a received connection request.
@@ -474,7 +484,11 @@ class ConnectionManager:
         else:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
+            
+            
+            connection.tx_my_role.append(my_role)
 
+        
         # Create connection response message
         if my_endpoint:
             my_endpoints = [my_endpoint]
@@ -488,7 +502,8 @@ class ConnectionManager:
             my_info, connection.inbound_connection_id, my_endpoints
         )
         response = ConnectionResponse(
-            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
+            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc),
+            role = my_role,
         )
         # Assign thread information
         response.assign_thread_from(request)
@@ -505,6 +520,8 @@ class ConnectionManager:
             reason="Created connection response",
             log_params={"response": response},
         )
+
+
         return response
 
     async def accept_response(
@@ -576,7 +593,10 @@ class ConnectionManager:
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did
+        
+        connection.tx_their_role.append(response.role)
         connection.state = ConnectionRecord.STATE_RESPONSE
+
 
         await connection.save(self.context, reason="Accepted connection response")
 
