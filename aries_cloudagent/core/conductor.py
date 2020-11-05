@@ -103,10 +103,7 @@ class Conductor:
             wallet_handler: WalletHandler = await context.inject(WalletHandler)
             wallet_records = await WalletRecord.query(context)
             for wallet_record in wallet_records:
-                await wallet_handler.add_instance(
-                    wallet_record.wallet_config,
-                    context
-                )
+                await wallet_handler.add_instance(wallet_record.config)
 
 
         # Admin API

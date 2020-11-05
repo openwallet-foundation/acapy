@@ -1,14 +1,14 @@
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    # match_info_schema,
-    request_schema,
+    request_schema, response_schema,
 )
+
 from ...storage.base import BaseStorage
 from ...wallet_handler import WalletHandler
 from marshmallow import fields, Schema
 
-from ...wallet.models.wallet_record import WalletRecord
+from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ...wallet.error import WalletError, WalletNotFoundError, WalletDuplicateError
 from ...ledger.base import BaseLedger
 
@@ -16,23 +16,15 @@ from ...ledger.base import BaseLedger
 class AddWalletSchema(Schema):
     """Request schema for adding a new wallet which will be registered by the agent."""
 
-    wallet_name = fields.Str(
-        description="Wallet identifier.",
-        example='MyNewWallet'
-    )
-    wallet_key = fields.Str(
-        description="Master key used for key derivation.",
-        example='MySecretKey123'
-    )
-    seed = fields.Str(
-        description="Seed used for did derivation.",
-        example='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-    )
-    wallet_type = fields.Str(
-        description="Type the newly generated wallet should be [basic | indy].",
-        example='indy',
-        default='indy'
-    )
+    name = fields.Str(required=True, description="Wallet name", example='faber',)
+    key = fields.Str(required=True, description="Master key used for key derivation", example='faber.key.123',)
+    type = fields.Str(required=True, description="Type of wallet [basic | indy]", example='indy',)
+    label = fields.Str(required=False, description="Optional label when connection is established", example='faber',)
+    image_url = fields.Str(required=False, description="Optional image URL for connection invitation",
+                           example="http://image_url/logo.jpg",)
+    webhook_urls = fields.List(
+        fields.Str(required=False, description="Optional webhook URL to receive webhook messages",
+                   example="http://localhost:8022/webhooks",))
 
 
 WALLET_TYPES = {
@@ -46,6 +38,7 @@ WALLET_TYPES = {
     summary="Add new wallet to be handled by this agent.",
 )
 @request_schema(AddWalletSchema())
+@response_schema(WalletRecordSchema(), 201)
 async def add_wallet(request: web.BaseRequest):
     """
     Request handler for adding a new wallet for handling by the agent.
@@ -54,36 +47,32 @@ async def add_wallet(request: web.BaseRequest):
         request: aiohttp request object
 
     Raises:
-        HTTPBadRequest: if no name is provided to identify new wallet.
         HTTPBadRequest: if a not supported wallet type is specified.
+        HTTPBadRequest: if webhook_urls is not list type.
 
     """
     context = request["context"]
-
     body = await request.json()
 
-    config = {}
-    if body.get("wallet_name"):
-        config["name"] = body.get("wallet_name")
-    else:
-        raise web.HTTPBadRequest(reason="Name needs to be provided to create a wallet.")
-    config["key"] = body.get("wallet_key")
-    wallet_type = body.get("wallet_type")
-    if wallet_type not in WALLET_TYPES:
+    config = {"name": body.get("name"), "key": body.get("key"), "type": body.get("type")}
+    label = body.get("label", "")
+    image_url = body.get("image_url", "")
+    webhook_urls = body.get("webhook_urls", [])
+
+    if config["type"] not in WALLET_TYPES:
         raise web.HTTPBadRequest(reason="Specified wallet type is not supported.")
-    config["type"] = wallet_type
+    if type(webhook_urls) != list:
+        raise web.HTTPBadRequest(reason="webhook_urls must be list")
 
     wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
-
     try:
-        await wallet_handler.add_instance(config, context)
-    except WalletDuplicateError:
-        raise web.HTTPBadRequest(reason="Wallet with specified name already exists.")
+        record = await wallet_handler.add_wallet(
+            config=config, label=label, image_url=image_url, webhook_urls=webhook_urls
+        )
+    except WalletDuplicateError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    wallet_record = WalletRecord(wallet_config=config, wallet_name=config['name'])
-    await wallet_record.save(context)
-
-    return web.Response(body='{"result": "created"}', status=201)
+    return web.json_response(record.get_response(), status=201)
 
 
 @docs(

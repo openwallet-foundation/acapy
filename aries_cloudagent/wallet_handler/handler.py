@@ -11,17 +11,14 @@ import hashlib
 from indy.error import IndyError, ErrorCode
 from base64 import b64encode, b64decode
 
-from ..wallet.base import BaseWallet
 from ..storage.base import BaseStorage
 from ..ledger.base import BaseLedger
 from ..wallet.error import WalletError, WalletDuplicateError
+from ..wallet.models.wallet_record import WalletRecord
 from ..wallet.plugin import load_postgres_plugin
 from ..utils.classloader import ClassLoader
 from ..config.provider import DynamicProvider
 from ..config.injection_context import InjectionContext
-from ..connections.models.connection_record import (
-    ConnectionRecord,
-)
 
 from .error import KeyNotFoundError
 from .error import WalletNotFoundError
@@ -48,8 +45,9 @@ class WalletHandler():
     KEY_DERIVATION_ARGON2I_INT = "ARGON2I_INT"
     KEY_DERIVATION_ARGON2I_MOD = "ARGON2I_MOD"
 
-    def __init__(self, provider: DynamicProvider, config: dict = None):
+    def __init__(self, context: InjectionContext, provider: DynamicProvider, config: dict = None):
         """Initilaize the handler."""
+        self.context = context
         self._auto_create = config.get("auto_create", True)
         self._auto_remove = config.get("auto_remove", False)
         self._freshness_time = config.get("freshness_time", False)
@@ -84,13 +82,12 @@ class WalletHandler():
         """Return list of handled instances."""
         return list(self._provider._instances.keys())
 
-    async def add_instance(self, config: dict, context: InjectionContext):
+    async def add_instance(self, config: dict):
         """
         Add a new instance to the handler to be used during runtime.
 
         Args:
             config: Settings for the new instance.
-            context: Injection context.
         """
 
         wallet_type = config.get('type') or 'indy'
@@ -99,10 +96,6 @@ class WalletHandler():
         if config["name"] in self._provider._instances.keys():
             raise WalletDuplicateError()
 
-        # Pass default values into config
-        config["storage_type"] = self._storage_type
-        config["storage_config"] = self._storage_config
-        config["storage_creds"] = self._storage_creds
         wallet = ClassLoader.load_class(wallet_class)(config)
         await wallet.open()
 
@@ -113,7 +106,7 @@ class WalletHandler():
         # We need to adapt the context, so that the storage
         # provider picks up the correct wallet for fetching the connections.
         # TODO: Maybe there is a nicer way to handle this?
-        new_context = context.copy()
+        new_context = self.context.copy()
         new_context.settings.set_value("wallet.id", wallet.name)
         # As each leder instance has a wallet instance as property but a 
         # second ledger_pool with the same name cannot be opened we need
@@ -124,19 +117,6 @@ class WalletHandler():
         # FIXME: What  about `holder`, `issuer`, etc?
         storage = await new_context.inject(BaseStorage)
         ledger = await new_context.inject(BaseLedger)
-
-        # Get dids and check for paths in metadata.
-        dids = await wallet.get_local_dids()
-        for did in dids:
-            self._handled_keys[did.verkey] = wallet.name
-
-        # Add connections of opened wallet to handler.
-        tag_filter = {}
-        post_filter = {}
-        records = await ConnectionRecord.query(new_context, tag_filter, post_filter)
-        connections = [record.serialize() for record in records]
-        for connection in connections:
-            await self.add_connection(connection["connection_id"], config["name"])
 
     async def set_instance(self, wallet: str, context: InjectionContext):
         """Set a specific wallet to open by the provider."""
@@ -182,6 +162,44 @@ class WalletHandler():
         self._connections = {
             key: val for key, val in self._path_mappings.items() if val != id
             }
+
+    async def add_wallet(self, config: dict, label: str, image_url: str, webhook_urls: list):
+        """
+        Add a new wallet
+
+        Args:
+            config: Settings for the new instance.
+            label: label for the new instance.
+            image_url: image_url for the new instance.
+            webhook_urls: webhook_urls for the new instance.
+        """
+        # Pass default values into config
+        config["storage_type"] = self._storage_type
+        config["storage_config"] = self._storage_config
+        config["storage_creds"] = self._storage_creds
+
+        # check wallet name is already exist in wallet_record
+        wallet_name = config["name"]
+        post_filter = {"name": wallet_name}
+        wallet_records = await WalletRecord.query(self.context, post_filter_positive=post_filter)
+        if wallet_records:
+            raise WalletDuplicateError(f"specified wallet name already exist: {wallet_name}")
+
+        wallet_record = WalletRecord(
+            name=wallet_name,
+            config=config,
+            label=label,
+            image_url=image_url,
+            webhook_urls=webhook_urls
+        )
+        await wallet_record.save(self.context)
+
+        # open wallet if not opened
+        instances = await self.get_instances()
+        if wallet_name not in instances:
+            await self.add_instance(config)
+
+        return wallet_record
 
     async def generate_path_mapping(self, wallet_id: str, did: str = None) -> str:
         """
