@@ -12,9 +12,11 @@ from indy.error import ErrorCode, IndyError
 from ..indy import create_tails_reader
 from ..indy.error import IndyErrorHandler
 from ..ledger.base import BaseLedger
+from ..protocols.present_proof.v1_0.util.indy import indy_proof_req2non_revoc_intervals
 from ..storage.indy import IndyStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord
+from ..wallet.base import BaseWallet
 from ..wallet.error import WalletNotFoundError
 
 from .base import BaseHolder, HolderError
@@ -26,7 +28,7 @@ class IndyHolder(BaseHolder):
     RECORD_TYPE_MIME_TYPES = "attribute-mime-types"
     CHUNK = 256
 
-    def __init__(self, wallet):
+    def __init__(self, wallet: BaseWallet):
         """
         Initialize an IndyHolder instance.
 
@@ -213,10 +215,16 @@ class IndyHolder(BaseHolder):
                             search_handle, reft, CHUNK
                         )
                     )
-                    creds.extend(batch)
+                    creds.extend(
+                        batch
+                        if non_revoc_intervals.get(reft)
+                        else [c for c in batch if c["cred_info"]["rev_reg_id"] is None]
+                    )
                     if len(batch) < CHUNK:
                         break
             return creds
+
+        non_revoc_intervals = indy_proof_req2non_revoc_intervals(presentation_request)
 
         with IndyErrorHandler(
             "Error when constructing wallet credential query", HolderError
@@ -242,6 +250,7 @@ class IndyHolder(BaseHolder):
                     if start > 0:
                         await fetch(reft, start)
                     credentials = await fetch(reft, count - len(creds_dict))
+
                     for cred in credentials:
                         cred_id = cred["cred_info"]["referent"]
                         if cred_id not in creds_dict:
@@ -260,7 +269,22 @@ class IndyHolder(BaseHolder):
         for cred in creds_dict.values():
             cred["presentation_referents"] = list(cred["presentation_referents"])
 
-        return tuple(creds_dict.values())[:count]
+        creds_ordered = tuple(
+            [
+                cred
+                for cred in sorted(
+                    creds_dict.values(),
+                    key=lambda c: (
+                        c["cred_info"]["rev_reg_id"] or "",  # irrevocable 1st
+                        c["cred_info"][
+                            "referent"
+                        ],  # should be 0-timestamp if we had it
+                    ),
+                )
+            ]
+        )[:count]
+        # return tuple(creds_dict.values())[:count]
+        return creds_ordered
 
     async def get_credential(self, credential_id: str) -> str:
         """
@@ -289,14 +313,13 @@ class IndyHolder(BaseHolder):
         return credential_json
 
     async def credential_revoked(
-        self, credential_id: str, ledger: BaseLedger, fro: int = None, to: int = None
+        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
         """
         Check ledger for revocation status of credential by cred id.
 
         Args:
             credential_id: Credential id to check
-            ledger: ledger to open and query
 
         """
         cred = json.loads(await self.get_credential(credential_id))
@@ -304,7 +327,11 @@ class IndyHolder(BaseHolder):
 
         if rev_reg_id:
             cred_rev_id = int(cred["cred_rev_id"])
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_reg_id, fro, to)
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                rev_reg_id,
+                fro,
+                to,
+            )
 
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:

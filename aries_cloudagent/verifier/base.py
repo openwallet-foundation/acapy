@@ -37,4 +37,3 @@ class BaseVerifier(ABC, metaclass=ABCMeta):
             rev_reg_defs: revocation registry definitions
             rev_reg_entries: revocation registry entries
         """
-        pass

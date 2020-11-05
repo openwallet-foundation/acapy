@@ -2,14 +2,15 @@ import json
 import pytest
 
 from copy import deepcopy
+from time import time
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from indy.error import IndyError
 
-from ..indy import IndyVerifier, PreVerifyResult
-
+from .. import indy as test_module
+from ..indy import IndyVerifier
 
 INDY_PROOF_REQ_NAME = {
     "nonce": "15606741555044336341559",
@@ -280,6 +281,12 @@ INDY_PROOF_PRED_NAMES = {
     ],
 }
 
+REV_REG_DEFS = {
+    "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0": {
+        "txnTime": 1500000000
+    }
+}
+
 
 @pytest.mark.indy
 class TestIndyVerifier(AsyncTestCase):
@@ -309,6 +316,138 @@ class TestIndyVerifier(AsyncTestCase):
         self.verifier = IndyVerifier(mock_ledger)
         assert repr(self.verifier) == "<IndyVerifier>"
 
+    async def test_check_timestamps(self):
+        # all clear, with timestamps
+        self.verifier.check_timestamps(
+            INDY_PROOF_REQ_NAME,
+            INDY_PROOF_NAME,
+            REV_REG_DEFS,
+        )
+
+        # missing timestamp only
+        proof_x = deepcopy(INDY_PROOF_NAME)
+        proof_x["identifiers"][0]["timestamp"] = None
+        with self.assertRaises(ValueError) as context:
+            self.verifier.check_timestamps(
+                INDY_PROOF_REQ_NAME,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "both timestamp and rev reg id or neither" in str(context.exception)
+
+        # all clear, no timestamps
+        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+        proof_x["identifiers"][0]["rev_reg_id"] = None
+        proof_req_x.pop("non_revoked")
+        self.verifier.check_timestamps(
+            proof_req_x,
+            proof_x,
+            REV_REG_DEFS,
+        )
+
+        # timestamp in the future
+        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+        proof_x = deepcopy(INDY_PROOF_NAME)
+        proof_x["identifiers"][0]["timestamp"] = int(time()) + 3600
+        with self.assertRaises(ValueError) as context:
+            self.verifier.check_timestamps(
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "in the future" in str(context.exception)
+
+        # timestamp in the distant past
+        proof_x["identifiers"][0]["timestamp"] = 1234567890
+        with self.assertRaises(ValueError) as context:
+            self.verifier.check_timestamps(
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "predates rev reg" in str(context.exception)
+
+        # timestamp otherwise outside non-revocation interval: log and continue
+        proof_x["identifiers"][0]["timestamp"] = 1579890000
+        with async_mock.patch.object(
+            test_module, "LOGGER", async_mock.MagicMock()
+        ) as mock_logger:
+            self.verifier.check_timestamps(
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+            mock_logger.warning.assert_called_once()
+
+        # superfluous timestamp
+        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+        proof_x = deepcopy(INDY_PROOF_NAME)
+        proof_req_x.pop("non_revoked")
+        with self.assertRaises(ValueError) as context:
+            self.verifier.check_timestamps(
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "superfluous" in str(context.exception)
+
+        # missing revealed attr
+        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+        proof_x = deepcopy(INDY_PROOF_NAME)
+        proof_x["requested_proof"]["revealed_attrs"] = {}
+        with self.assertRaises(ValueError) as context:
+            self.verifier.check_timestamps(
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "Presentation attributes mismatch requested" in str(context.exception)
+
+        # all clear, attribute group ('names')
+        self.verifier.check_timestamps(
+            INDY_PROOF_REQ_PRED_NAMES,
+            INDY_PROOF_PRED_NAMES,
+            REV_REG_DEFS,
+        )
+
+        # missing revealed attr groups
+        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+        proof_x["requested_proof"].pop("revealed_attr_groups")
+        with self.assertRaises(ValueError) as context:
+            self.verifier.check_timestamps(
+                INDY_PROOF_REQ_PRED_NAMES,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "Missing requested attribute group" in str(context.exception)
+
+        # superfluous timestamp, attr group
+        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+        proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
+        proof_req_x["requested_attributes"]["18_uuid"].pop("non_revoked")
+        proof_req_x["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
+        proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
+        with self.assertRaises(ValueError) as context:
+            self.verifier.check_timestamps(
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "is superfluous vs. requested" in str(context.exception)
+
+        # superfluous timestamp, predicates
+        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+        proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
+        proof_req_x["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
+        proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
+        with self.assertRaises(ValueError) as context:
+            self.verifier.check_timestamps(
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "is superfluous vs. requested predicate" in str(context.exception)
+
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_verify_presentation(self, mock_verify):
         mock_verify.return_value = "val"
@@ -318,22 +457,21 @@ class TestIndyVerifier(AsyncTestCase):
         ) as mock_pre_verify, async_mock.patch.object(
             self.verifier, "non_revoc_intervals", async_mock.MagicMock()
         ) as mock_non_revox:
-            mock_pre_verify.return_value = (PreVerifyResult.OK, None)
             verified = await self.verifier.verify_presentation(
-                "presentation_request",
-                "presentation",
+                INDY_PROOF_REQ_PRED_NAMES,
+                INDY_PROOF_PRED_NAMES,
                 "schemas",
                 "credential_definitions",
-                "rev_reg_defs",
+                REV_REG_DEFS,
                 "rev_reg_entries",
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps("presentation_request"),
-            json.dumps("presentation"),
+            json.dumps(INDY_PROOF_REQ_PRED_NAMES),
+            json.dumps(INDY_PROOF_PRED_NAMES),
             json.dumps("schemas"),
             json.dumps("credential_definitions"),
-            json.dumps("rev_reg_defs"),
+            json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
 
@@ -348,22 +486,21 @@ class TestIndyVerifier(AsyncTestCase):
         ) as mock_pre_verify, async_mock.patch.object(
             self.verifier, "non_revoc_intervals", async_mock.MagicMock()
         ) as mock_non_revox:
-            mock_pre_verify.return_value = (PreVerifyResult.OK, None)
             verified = await self.verifier.verify_presentation(
-                {"nonce": "1234567890"},
-                "presentation",
+                INDY_PROOF_REQ_NAME,
+                INDY_PROOF_NAME,
                 "schemas",
                 "credential_definitions",
-                "rev_reg_defs",
+                REV_REG_DEFS,
                 "rev_reg_entries",
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps({"nonce": "1234567890"}),
-            json.dumps("presentation"),
+            json.dumps(INDY_PROOF_REQ_NAME),
+            json.dumps(INDY_PROOF_NAME),
             json.dumps("schemas"),
             json.dumps("credential_definitions"),
-            json.dumps("rev_reg_defs"),
+            json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
 
@@ -490,33 +627,26 @@ class TestIndyVerifier(AsyncTestCase):
             assert "non_revoked" not in spec
 
     async def test_pre_verify(self):
-        assert (
-            PreVerifyResult.INCOMPLETE
-            == (
-                await self.verifier.pre_verify(
-                    None, {"requested_proof": "...", "proof": "..."}
-                )
-            )[0]
-        )
-        assert PreVerifyResult.INCOMPLETE == (
+        with self.assertRaises(ValueError):
+            await self.verifier.pre_verify(
+                None, {"requested_proof": "...", "proof": "..."}
+            )
+        with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
                 {"requested_predicates": "...", "requested_attributes": "..."},
                 None,
             )
-        )[0]
-        assert PreVerifyResult.INCOMPLETE == (
+        with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
                 {"requested_predicates": "...", "requested_attributes": "..."},
                 {"requested_proof": "..."},
             )
-        )[0]
-        assert PreVerifyResult.INCOMPLETE == (
+        with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
                 {"requested_predicates": "...", "requested_attributes": "..."},
                 {"proof": "..."},
             )
-        )[0]
-        assert PreVerifyResult.INCOMPLETE == (
+        with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
                 {
                     "requested_predicates": {"0_name_uuid": "..."},
@@ -524,8 +654,7 @@ class TestIndyVerifier(AsyncTestCase):
                 },
                 INDY_PROOF_PRED_NAMES,
             )
-        )[0]
-        assert PreVerifyResult.INCOMPLETE == (
+        with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
                 INDY_PROOF_REQ_NAME,
                 {
@@ -546,8 +675,7 @@ class TestIndyVerifier(AsyncTestCase):
                     ],
                 },
             )
-        )[0]
-        assert PreVerifyResult.INCOMPLETE == (
+        with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
                 {
                     "nonce": "15606741555044336341559",
@@ -574,8 +702,7 @@ class TestIndyVerifier(AsyncTestCase):
                     ],
                 },
             )
-        )[0]
-        assert PreVerifyResult.INCOMPLETE == (
+        with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
                 {
                     "nonce": "15606741555044336341559",
@@ -610,8 +737,7 @@ class TestIndyVerifier(AsyncTestCase):
                     ],
                 },
             )
-        )[0]
-        assert PreVerifyResult.INCOMPLETE == (
+        with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
                 INDY_PROOF_REQ_NAME,
                 {
@@ -652,35 +778,32 @@ class TestIndyVerifier(AsyncTestCase):
                     ],
                 },
             )
-        )[0]
-        assert PreVerifyResult.OK == (
-            await self.verifier.pre_verify(
-                {
-                    "nonce": "15606741555044336341559",
-                    "name": "proof_req",
-                    "version": "0.0",
-                    "requested_attributes": {"19_uuid": {"name": "Preferred Name"}},
-                    "requested_predicates": {},
+        await self.verifier.pre_verify(
+            {
+                "nonce": "15606741555044336341559",
+                "name": "proof_req",
+                "version": "0.0",
+                "requested_attributes": {"19_uuid": {"name": "Preferred Name"}},
+                "requested_predicates": {},
+            },
+            {
+                "proof": "...",
+                "requested_proof": {
+                    "revealed_attrs": {},
+                    "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
+                    "unrevealed_attrs": {},
+                    "predicates": {},
                 },
-                {
-                    "proof": "...",
-                    "requested_proof": {
-                        "revealed_attrs": {},
-                        "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
-                        "unrevealed_attrs": {},
-                        "predicates": {},
-                    },
-                    "identifiers": [
-                        {
-                            "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
-                            "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
-                            "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
-                            "timestamp": 1579892963,
-                        }
-                    ],
-                },
-            )
-        )[0]
+                "identifiers": [
+                    {
+                        "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                        "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                        "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
+                        "timestamp": 1579892963,
+                    }
+                ],
+            },
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr(self, mock_verify):
@@ -690,7 +813,7 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_NAME,
             "schemas",
             "credential_definitions",
-            "rev_reg_defs",
+            REV_REG_DEFS,
             "rev_reg_entries",
         )
 
@@ -699,7 +822,7 @@ class TestIndyVerifier(AsyncTestCase):
             json.dumps(INDY_PROOF_NAME),
             json.dumps("schemas"),
             json.dumps("credential_definitions"),
-            json.dumps("rev_reg_defs"),
+            json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
 
@@ -717,7 +840,7 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_X,
             "schemas",
             "credential_definitions",
-            "rev_reg_defs",
+            REV_REG_DEFS,
             "rev_reg_entries",
         )
 
@@ -737,7 +860,7 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_X,
             "schemas",
             "credential_definitions",
-            "rev_reg_defs",
+            REV_REG_DEFS,
             "rev_reg_entries",
         )
 
@@ -753,7 +876,7 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_PRED_NAMES,
             "schemas",
             "credential_definitions",
-            "rev_reg_defs",
+            REV_REG_DEFS,
             "rev_reg_entries",
         )
 
@@ -762,7 +885,7 @@ class TestIndyVerifier(AsyncTestCase):
             json.dumps(INDY_PROOF_PRED_NAMES),
             json.dumps("schemas"),
             json.dumps("credential_definitions"),
-            json.dumps("rev_reg_defs"),
+            json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
 
@@ -780,7 +903,7 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_X,
             "schemas",
             "credential_definitions",
-            "rev_reg_defs",
+            REV_REG_DEFS,
             "rev_reg_entries",
         )
 
@@ -804,7 +927,7 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_X,
             "schemas",
             "credential_definitions",
-            "rev_reg_defs",
+            REV_REG_DEFS,
             "rev_reg_entries",
         )
 
@@ -822,7 +945,7 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_PRED_NAMES,
             "schemas",
             "credential_definitions",
-            "rev_reg_defs",
+            REV_REG_DEFS,
             "rev_reg_entries",
         )
 
@@ -842,7 +965,7 @@ class TestIndyVerifier(AsyncTestCase):
             INDY_PROOF_X,
             "schemas",
             "credential_definitions",
-            "rev_reg_defs",
+            REV_REG_DEFS,
             "rev_reg_entries",
         )
 

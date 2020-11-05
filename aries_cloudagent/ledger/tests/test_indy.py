@@ -2475,7 +2475,11 @@ class TestIndyLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         mock_wallet.type = "indy"
-        mock_indy_parse_get_rrdef_resp.return_value = ("rr-id", '{"hello": "world"}')
+        mock_indy_parse_get_rrdef_resp.return_value = (
+            "rr-id",
+            json.dumps({"...": "..."}),
+        )
+        mock_submit.return_value = json.dumps({"result": {"txnTime": 1234567890}})
 
         ledger = IndyLedger("name", mock_wallet, read_only=True)
 
@@ -2485,7 +2489,7 @@ class TestIndyLedger(AsyncTestCase):
             )
 
             result = await ledger.get_revoc_reg_def("rr-id")
-            assert result == {"hello": "world"}
+            assert result == {"...": "...", "txnTime": 1234567890}
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndyLedger._context_close")

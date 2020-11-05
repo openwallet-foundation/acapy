@@ -1,26 +1,21 @@
 """Indy verifier implementation."""
 
-from enum import Enum
 import json
 import logging
+
+from time import time
+from typing import Mapping
 
 import indy.anoncreds
 from indy.error import IndyError
 
 from ..messaging.util import canon, encode
 from ..ledger.base import BaseLedger
+from ..protocols.present_proof.v1_0.util.indy import indy_proof_req2non_revoc_intervals
 
 from .base import BaseVerifier
 
 LOGGER = logging.getLogger(__name__)
-
-
-class PreVerifyResult(Enum):
-    """Represent the result of IndyVerifier.pre_verify."""
-
-    OK = "ok"
-    INCOMPLETE = "missing essential components"
-    ENCODING_MISMATCH = "demonstrates tampering with raw values"
 
 
 class IndyVerifier(BaseVerifier):
@@ -48,7 +43,6 @@ class IndyVerifier(BaseVerifier):
             pres: corresponding presentation
 
         """
-
         for (req_proof_key, pres_key) in {
             "revealed_attrs": "requested_attributes",
             "revealed_attr_groups": "requested_attributes",
@@ -81,7 +75,7 @@ class IndyVerifier(BaseVerifier):
                 pres_req["nonce"],
             )
 
-    async def pre_verify(self, pres_req: dict, pres: dict) -> (PreVerifyResult, str):
+    async def pre_verify(self, pres_req: dict, pres: dict):
         """
         Check for essential components and tampering in presentation.
 
@@ -92,23 +86,19 @@ class IndyVerifier(BaseVerifier):
             pres_req: presentation request
             pres: corresponding presentation
 
-        Returns:
-            A tuple with `PreVerifyResult` representing the validation result and
-            reason text for failure or None for OK.
-
         """
         if not (
             pres_req
             and "requested_predicates" in pres_req
             and "requested_attributes" in pres_req
         ):
-            return (PreVerifyResult.INCOMPLETE, "Incomplete or missing proof request")
+            raise ValueError("Incomplete or missing proof request")
         if not pres:
-            return (PreVerifyResult.INCOMPLETE, "No proof provided")
+            raise ValueError("No proof provided")
         if "requested_proof" not in pres:
-            return (PreVerifyResult.INCOMPLETE, "Missing 'requested_proof'")
+            raise ValueError("Presentation missing 'requested_proof'")
         if "proof" not in pres:
-            return (PreVerifyResult.INCOMPLETE, "Missing 'proof'")
+            raise ValueError("Presentation missing 'proof'")
 
         async with self.ledger:
             for (index, ident) in enumerate(pres["identifiers"]):
@@ -116,12 +106,9 @@ class IndyVerifier(BaseVerifier):
                     cred_def_id = ident["cred_def_id"]
                     cred_def = await self.ledger.get_credential_definition(cred_def_id)
                     if cred_def["value"].get("revocation"):
-                        return (
-                            PreVerifyResult.INCOMPLETE,
-                            (
-                                f"Missing timestamp in presentation identifier "
-                                f"#{index} for cred def id {cred_def_id}"
-                            ),
+                        raise ValueError(
+                            f"Missing timestamp in presentation identifier "
+                            f"#{index} for cred def id {cred_def_id}"
                         )
 
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
@@ -133,21 +120,14 @@ class IndyVerifier(BaseVerifier):
                     pred = ge_proof["predicate"]
                     if pred["attr_name"] == canon_attr:
                         if pred["value"] != req_pred["p_value"]:
-                            return (
-                                PreVerifyResult.INCOMPLETE,
-                                f"Predicate value != p_value: {pred['attr_name']}",
+                            raise ValueError(
+                                f"Predicate value != p_value: {pred['attr_name']}"
                             )
                         break
                 else:
-                    return (
-                        PreVerifyResult.INCOMPLETE,
-                        f"Missing requested predicate '{uuid}'",
-                    )
+                    raise ValueError(f"Missing requested predicate '{uuid}'")
             except (KeyError, TypeError):
-                return (
-                    PreVerifyResult.INCOMPLETE,
-                    f"Missing requested predicate '{uuid}'",
-                )
+                raise ValueError(f"Missing requested predicate '{uuid}'")
 
         revealed_attrs = pres["requested_proof"].get("revealed_attrs", {})
         revealed_groups = pres["requested_proof"].get("revealed_attr_groups", {})
@@ -159,28 +139,16 @@ class IndyVerifier(BaseVerifier):
                 elif uuid in self_attested:
                     if not req_attr.get("restrictions"):
                         continue
-                    else:
-                        return (
-                            PreVerifyResult.INCOMPLETE,
-                            "Attribute with restrictions cannot be self-attested "
-                            f"'{req_attr['name']}'",
-                        )
+                    raise ValueError(
+                        "Attribute with restrictions cannot be self-attested: "
+                        f"'{req_attr['name']}'"
+                    )
                 else:
-                    return (
-                        PreVerifyResult.INCOMPLETE,
-                        f"Missing requested attribute '{req_attr['name']}'",
+                    raise ValueError(
+                        f"Missing requested attribute '{req_attr['name']}'"
                     )
             elif "names" in req_attr:
-                group_spec = revealed_groups.get(uuid)
-                if (
-                    group_spec is None
-                    or "sub_proof_index" not in group_spec
-                    or "values" not in group_spec
-                ):
-                    return (
-                        PreVerifyResult.INCOMPLETE,
-                        f"Missing requested attribute group '{uuid}'",
-                    )
+                group_spec = revealed_groups[uuid]
                 pres_req_attr_spec = {
                     attr: {
                         "sub_proof_index": group_spec["sub_proof_index"],
@@ -189,9 +157,8 @@ class IndyVerifier(BaseVerifier):
                     for attr in req_attr["names"]
                 }
             else:
-                return (
-                    PreVerifyResult.INCOMPLETE,
-                    f"Request attribute missing 'name' and 'names': '{uuid}'",
+                raise ValueError(
+                    f"Request attribute missing 'name' and 'names': '{uuid}'"
                 )
 
             for (attr, spec) in pres_req_attr_spec.items():
@@ -200,58 +167,163 @@ class IndyVerifier(BaseVerifier):
                         "primary_proof"
                     ]["eq_proof"]["revealed_attrs"][canon(attr)]
                 except (KeyError, TypeError):
-                    return (
-                        PreVerifyResult.INCOMPLETE,
-                        f"Missing revealed attribute: '{attr}'",
-                    )
+                    raise ValueError(f"Missing revealed attribute: '{attr}'")
                 if primary_enco != spec["encoded"]:
-                    return (
-                        PreVerifyResult.ENCODING_MISMATCH,
-                        f"Encoded representation mismatch for '{attr}'",
-                    )
+                    raise ValueError(f"Encoded representation mismatch for '{attr}'")
                 if primary_enco != encode(spec["raw"]):
-                    return (
-                        PreVerifyResult.ENCODING_MISMATCH,
-                        f"Encoded representation mismatch for '{attr}'",
+                    raise ValueError(f"Encoded representation mismatch for '{attr}'")
+
+    def check_timestamps(self, pres_req: Mapping, pres: Mapping, rev_reg_defs: Mapping):
+        """
+        Check for suspicious, missing, and superfluous timestamps.
+
+        Raises ValueError on timestamp in the future, prior to rev reg creation,
+        superfluous or missing.
+
+        Args:
+            pres_req: indy proof request
+            pres: indy proof request
+            rev_reg_defs: rev reg defs by rev reg id, augmented with transaction times
+        """
+        now = int(time())
+
+        # nothing in the future nor too far in the past
+        for ident in pres["identifiers"]:
+            timestamp = ident.get("timestamp")
+            rev_reg_id = ident.get("rev_reg_id")
+
+            if bool(timestamp) ^ bool(rev_reg_id):
+                raise ValueError(
+                    f"Proof identifier needs both timestamp and rev reg id or neither"
+                )
+            if not timestamp:
+                continue
+
+            if timestamp > now:
+                raise ValueError(f"Timestamp {timestamp} is in the future")
+            if timestamp < rev_reg_defs[rev_reg_id]["txnTime"]:
+                raise ValueError(
+                    f"Timestamp {timestamp} predates rev reg {rev_reg_id} creation"
+                )
+
+        # superfluous or missing timestamps
+        revealed_attrs = pres["requested_proof"].get("revealed_attrs", {})
+        revealed_groups = pres["requested_proof"].get("revealed_attr_groups", {})
+        self_attested = pres["requested_proof"].get("self_attested_attrs", {})
+        preds = pres["requested_proof"].get("predicates", {})
+        non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
+        for (uuid, req_attr) in pres_req["requested_attributes"].items():
+            if "name" in req_attr:
+                if uuid in revealed_attrs:
+                    index = revealed_attrs[uuid]["sub_proof_index"]
+                    timestamp = pres["identifiers"][index].get("timestamp")
+                    if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
+                        raise ValueError(
+                            f"Timestamp on sub-proof #{index} "
+                            f"is {'superfluous' if timestamp else 'missing'} "
+                            f"vs. requested attribute {uuid}"
+                        )
+                    if non_revoc_intervals.get(uuid) and not (
+                        non_revoc_intervals[uuid].get("from", 0)
+                        < timestamp
+                        < non_revoc_intervals[uuid].get("to", now)
+                    ):
+                        LOGGER.warning(
+                            f"Timestamp {timestamp} from ledger for item"
+                            f"{uuid} falls outside non-revocation interval "
+                            f"{non_revoc_intervals[uuid]}"
+                        )
+                elif uuid not in self_attested:
+                    raise ValueError(
+                        f"Presentation attributes mismatch requested attribute {uuid}"
                     )
 
-        return (PreVerifyResult.OK, None)
+            elif "names" in req_attr:
+                group_spec = revealed_groups.get(uuid)
+                if (
+                    group_spec is None
+                    or "sub_proof_index" not in group_spec
+                    or "values" not in group_spec
+                ):
+                    raise ValueError(f"Missing requested attribute group {uuid}")
+                index = group_spec["sub_proof_index"]
+                timestamp = pres["identifiers"][index].get("timestamp")
+                if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
+                    raise ValueError(
+                        f"Timestamp on sub-proof #{index} "
+                        f"is {'superfluous' if timestamp else 'missing'} "
+                        f"vs. requested attribute group {uuid}"
+                    )
+                if non_revoc_intervals.get(uuid) and not (
+                    non_revoc_intervals[uuid].get("from", 0)
+                    < timestamp
+                    < non_revoc_intervals[uuid].get("to", now)
+                ):
+                    LOGGER.warning(
+                        f"Timestamp {timestamp} from ledger for item"
+                        f"{uuid} falls outside non-revocation interval "
+                        f"{non_revoc_intervals[uuid]}"
+                    )
+
+        for (uuid, req_pred) in pres_req["requested_predicates"].items():
+            pred_spec = preds.get(uuid)
+            if pred_spec is None or "sub_proof_index" not in pred_spec:
+                f"Presentation predicates mismatch requested predicate {uuid}"
+            index = pred_spec["sub_proof_index"]
+            timestamp = pres["identifiers"][index].get("timestamp")
+            if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
+                raise ValueError(
+                    f"Timestamp on sub-proof #{index} "
+                    f"is {'superfluous' if timestamp else 'missing'} "
+                    f"vs. requested predicate {uuid}"
+                )
+            if non_revoc_intervals.get(uuid) and not (
+                non_revoc_intervals[uuid].get("from", 0)
+                < timestamp
+                < non_revoc_intervals[uuid].get("to", now)
+            ):
+                LOGGER.warning(
+                    f"Best-effort timestamp {timestamp} "
+                    "from ledger falls outside non-revocation interval "
+                    f"{non_revoc_intervals[uuid]}"
+                )
 
     async def verify_presentation(
         self,
-        presentation_request,
-        presentation,
-        schemas,
-        credential_definitions,
-        rev_reg_defs,
-        rev_reg_entries,
+        pres_req: Mapping,
+        pres: Mapping,
+        schemas: Mapping,
+        credential_definitions: Mapping,
+        rev_reg_defs: Mapping,
+        rev_reg_entries: Mapping,
     ) -> bool:
         """
         Verify a presentation.
 
         Args:
-            presentation_request: Presentation request data
-            presentation: Presentation data
+            pres_req: Presentation request data
+            pres: Presentation data
             schemas: Schema data
             credential_definitions: credential definition data
             rev_reg_defs: revocation registry definitions
             rev_reg_entries: revocation registry entries
         """
-
-        self.non_revoc_intervals(presentation_request, presentation)
-
-        (pv_result, pv_msg) = await self.pre_verify(presentation_request, presentation)
-        if pv_result != PreVerifyResult.OK:
+        try:
+            self.check_timestamps(pres_req, pres, rev_reg_defs)
+            await self.pre_verify(pres_req, pres)
+        except ValueError as err:
             LOGGER.error(
-                f"Presentation on nonce={presentation_request['nonce']} "
-                f"cannot be validated: {pv_result.value} [{pv_msg}]"
+                f"Presentation on nonce={pres_req['nonce']} "
+                f"cannot be validated: {str(err)}"
             )
             return False
 
+        self.non_revoc_intervals(pres_req, pres)
+
         try:
             verified = await indy.anoncreds.verifier_verify_proof(
-                json.dumps(presentation_request),
-                json.dumps(presentation),
+                json.dumps(pres_req),
+                json.dumps(pres),
                 json.dumps(schemas),
                 json.dumps(credential_definitions),
                 json.dumps(rev_reg_defs),
@@ -259,7 +331,7 @@ class IndyVerifier(BaseVerifier):
             )
         except IndyError:
             LOGGER.exception(
-                f"Validation of presentation on nonce={presentation_request['nonce']} "
+                f"Validation of presentation on nonce={pres_req['nonce']} "
                 "failed with error"
             )
             verified = False

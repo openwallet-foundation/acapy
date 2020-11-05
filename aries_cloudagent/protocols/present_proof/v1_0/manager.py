@@ -19,6 +19,7 @@ from .messages.presentation_proposal import PresentationProposal
 from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
 from .message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
+from .util.indy import indy_proof_req2non_revoc_intervals
 
 LOGGER = logging.getLogger(__name__)
 
@@ -238,7 +239,8 @@ class PresentationManager:
             comment: optional human-readable comment
 
 
-        Example `requested_credentials` format:
+        Example `requested_credentials` format, mapping proof request referents (uuid)
+        to wallet referents (cred id):
 
         ::
 
@@ -271,35 +273,38 @@ class PresentationManager:
         # extract credential ids and non_revoked
         requested_referents = {}
         presentation_request = presentation_exchange_record.presentation_request
+        non_revoc_intervals = indy_proof_req2non_revoc_intervals(presentation_request)
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = presentation_request.get("requested_attributes", {})
-        for referent in attr_creds:
-            requested_referents[referent] = {"cred_id": attr_creds[referent]["cred_id"]}
-            if referent in req_attrs and "non_revoked" in req_attrs[referent]:
-                requested_referents[referent]["non_revoked"] = req_attrs[referent][
-                    "non_revoked"
-                ]
+        for reft in attr_creds:
+            requested_referents[reft] = {"cred_id": attr_creds[reft]["cred_id"]}
+            if reft in req_attrs and reft in non_revoc_intervals:
+                requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
 
         preds_creds = requested_credentials.get("requested_predicates", {})
         req_preds = presentation_request.get("requested_predicates", {})
-        for referent in preds_creds:
-            requested_referents[referent] = {
-                "cred_id": preds_creds[referent]["cred_id"]
+        for reft in preds_creds:
+            requested_referents[reft] = {
+                "cred_id": preds_creds[reft]["cred_id"]
             }
+            if reft in req_preds and reft in non_revoc_intervals:
+                requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
+            """
             if referent in req_preds and "non_revoked" in req_preds[referent]:
                 requested_referents[referent]["non_revoked"] = req_preds[referent][
                     "non_revoked"
                 ]
+            """
 
         # extract mapping of presentation referents to credential ids
-        for referent in requested_referents:
-            credential_id = requested_referents[referent]["cred_id"]
+        for reft in requested_referents:
+            credential_id = requested_referents[reft]["cred_id"]
             if credential_id not in credentials:
                 credentials[credential_id] = json.loads(
                     await holder.get_credential(credential_id)
                 )
 
-        # Get all schema, credential definition, and revocation registry in use
+        # Get all schemas, credential definitions, revocation registries in use
         ledger: BaseLedger = await self.context.inject(BaseLedger)
         schemas = {}
         credential_definitions = {}
@@ -330,10 +335,12 @@ class PresentationManager:
         # of the presentation request or attributes
         epoch_now = int(time.time())
 
+        """
         non_revoc_interval = {"from": 0, "to": epoch_now}
         non_revoc_interval.update(
             presentation_exchange_record.presentation_request.get("non_revoked") or {}
         )
+        """
 
         revoc_reg_deltas = {}
         async with ledger:
@@ -344,6 +351,31 @@ class PresentationManager:
                 if "timestamp" in precis:
                     continue
                 rev_reg_id = credentials[credential_id]["rev_reg_id"]
+                reft_non_revoc_interval = precis.get("non_revoked")
+                if reft_non_revoc_interval:
+                    key = (
+                        f"{rev_reg_id}_"
+                        f"{reft_non_revoc_interval.get('from', 0)}_"
+                        f"{reft_non_revoc_interval.get('to', epoch_now)}"
+                    )
+                    if key not in revoc_reg_deltas:
+                        (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
+                            rev_reg_id,
+                            reft_non_revoc_interval.get("from", 0),
+                            reft_non_revoc_interval.get("to", epoch_now),
+                        )
+                        revoc_reg_deltas[key] = (
+                            rev_reg_id,
+                            credential_id,
+                            delta,
+                            delta_timestamp,
+                        )
+                    for stamp_me in requested_referents.values():
+                        # often one cred satisfies many requested attrs/preds
+                        if stamp_me["cred_id"] == credential_id:
+                            stamp_me["timestamp"] = revoc_reg_deltas[key][3]
+
+                """
                 referent_non_revoc_interval = precis.get(
                     "non_revoked", non_revoc_interval
                 )
@@ -369,6 +401,7 @@ class PresentationManager:
                         # often one cred satisfies many requested attrs/preds
                         if stamp_me["cred_id"] == credential_id:
                             stamp_me["timestamp"] = revoc_reg_deltas[key][3]
+                """
 
         # Get revocation states to prove non-revoked
         revocation_states = {}

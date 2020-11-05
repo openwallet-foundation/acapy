@@ -6,7 +6,7 @@ from ..messages.inner.presentation_preview import PresentationPreview
 
 
 async def indy_proof_req_preview2indy_requested_creds(
-    indy_proof_request: dict, preview: PresentationPreview = None, *, holder: BaseHolder
+    indy_proof_req: dict, preview: PresentationPreview = None, *, holder: BaseHolder
 ):
     """
     Build indy requested-credentials structure.
@@ -16,7 +16,7 @@ async def indy_proof_req_preview2indy_requested_creds(
     to proof creation.
 
     Args:
-        indy_proof_request: indy proof request
+        indy_proof_req: indy proof request
         pres_preview: preview from presentation proposal, if applicable
         holder: holder injected into current context
 
@@ -27,9 +27,9 @@ async def indy_proof_req_preview2indy_requested_creds(
         "requested_predicates": {},
     }
 
-    for referent in indy_proof_request["requested_attributes"]:
+    for (referent, req_item) in indy_proof_req["requested_attributes"].items():
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            presentation_request=indy_proof_request,
+            presentation_request=indy_proof_req,
             referents=(referent,),
             start=0,
             count=100,
@@ -37,8 +37,8 @@ async def indy_proof_req_preview2indy_requested_creds(
         if not credentials:
             raise ValueError(
                 f"Could not automatically construct presentation for "
-                + f"presentation request {indy_proof_request['name']}"
-                + f":{indy_proof_request['version']} because referent "
+                + f"presentation request {indy_proof_req['name']}"
+                + f":{indy_proof_req['version']} because referent "
                 + f"{referent} did not produce any credentials."
             )
 
@@ -46,9 +46,9 @@ async def indy_proof_req_preview2indy_requested_creds(
         if len(credentials) == 1:
             cred_match = credentials[0]
         elif preview:
-            reft = indy_proof_request["requested_attributes"][referent]
+            reft = indy_proof_req["requested_attributes"][referent]
             names = [reft["name"]] if "name" in reft else reft.get("names")
-            for cred in sorted(credentials, key=lambda c: c["cred_info"]["referent"]):
+            for cred in credentials:  # holder sorts by irrevocability, least referent
                 if all(
                     preview.has_attr_spec(
                         cred_def_id=cred["cred_info"]["cred_def_id"],
@@ -62,15 +62,15 @@ async def indy_proof_req_preview2indy_requested_creds(
             else:
                 raise ValueError(
                     f"Could not automatically construct presentation for "
-                    + f"presentation request {indy_proof_request['name']}"
-                    + f":{indy_proof_request['version']} because referent "
+                    + f"presentation request {indy_proof_req['name']}"
+                    + f":{indy_proof_req['version']} because referent "
                     + f"{referent} did not produce any credentials matching "
                     + f"proposed preview."
                 )
         else:
-            cred_match = min(credentials, key=lambda c: c["cred_info"]["referent"])
+            cred_match = credentials[0]  # holder sorts
 
-        if "restrictions" in indy_proof_request["requested_attributes"][referent]:
+        if "restrictions" in indy_proof_req["requested_attributes"][referent]:
             req_creds["requested_attributes"][referent] = {
                 "cred_id": cred_match["cred_info"]["referent"],
                 "revealed": True,
@@ -78,11 +78,11 @@ async def indy_proof_req_preview2indy_requested_creds(
         else:
             req_creds["self_attested_attributes"][referent] = cred_match["cred_info"][
                 "attrs"
-            ][indy_proof_request["requested_attributes"][referent]["name"]]
+            ][indy_proof_req["requested_attributes"][referent]["name"]]
 
-    for referent in indy_proof_request["requested_predicates"]:
+    for referent in indy_proof_req["requested_predicates"]:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
-            presentation_request=indy_proof_request,
+            presentation_request=indy_proof_req,
             referents=(referent,),
             start=0,
             count=100,
@@ -90,13 +90,13 @@ async def indy_proof_req_preview2indy_requested_creds(
         if not credentials:
             raise ValueError(
                 f"Could not automatically construct presentation for "
-                + f"presentation request {indy_proof_request['name']}"
-                + f":{indy_proof_request['version']} because predicate "
+                + f"presentation request {indy_proof_req['name']}"
+                + f":{indy_proof_req['version']} because predicate "
                 + f"referent {referent} did not produce any credentials."
             )
 
-        cred_match = min(credentials, key=lambda c: c["cred_info"]["referent"])
-        if "restrictions" in indy_proof_request["requested_predicates"][referent]:
+        cred_match = credentials[0]  # holder sorts
+        if "restrictions" in indy_proof_req["requested_predicates"][referent]:
             req_creds["requested_predicates"][referent] = {
                 "cred_id": cred_match["cred_info"]["referent"],
                 "revealed": True,
@@ -104,6 +104,18 @@ async def indy_proof_req_preview2indy_requested_creds(
         else:
             req_creds["self_attested_attributes"][referent] = cred_match["cred_info"][
                 "attrs"
-            ][indy_proof_request["requested_predicates"][referent]["name"]]
+            ][indy_proof_req["requested_predicates"][referent]["name"]]
 
     return req_creds
+
+
+def indy_proof_req2non_revoc_intervals(indy_proof_req: dict):
+    """Return non-revocation intervals by requested item referent in proof request."""
+    non_revoc_intervals = {}
+    for req_item_type in ("requested_attributes", "requested_predicates"):
+        for (reft, req_item) in indy_proof_req[req_item_type].items():
+            non_revoc_intervals[reft] = req_item.get(
+                "non_revoked",
+                indy_proof_req.get("non_revoked"),
+            )
+    return non_revoc_intervals
