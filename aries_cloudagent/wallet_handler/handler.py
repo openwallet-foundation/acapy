@@ -201,6 +201,15 @@ class WalletHandler():
 
         return wallet_record
 
+    async def get_wallets(self, query: dict = None, ):
+        """
+        Return list of wallets
+
+        Args:
+            query: query
+        """
+        return await WalletRecord.query(self.context, post_filter_positive=query)
+
     async def generate_path_mapping(self, wallet_id: str, did: str = None) -> str:
         """
         Create and store new path mapped to the currently active wallet.

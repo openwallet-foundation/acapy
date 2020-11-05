@@ -33,10 +33,7 @@ WALLET_TYPES = {
 }
 
 
-@docs(
-    tags=["wallet"],
-    summary="Add new wallet to be handled by this agent.",
-)
+@docs(tags=["wallet"], summary="Add new wallet to be handled by this agent",)
 @request_schema(AddWalletSchema())
 @response_schema(WalletRecordSchema(), 201)
 async def add_wallet(request: web.BaseRequest):
@@ -66,19 +63,16 @@ async def add_wallet(request: web.BaseRequest):
 
     wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
     try:
-        record = await wallet_handler.add_wallet(
+        wallet_record = await wallet_handler.add_wallet(
             config=config, label=label, image_url=image_url, webhook_urls=webhook_urls
         )
     except WalletDuplicateError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(record.get_response(), status=201)
+    return web.json_response(wallet_record.get_response(), status=201)
 
 
-@docs(
-    tags=["wallet"],
-    summary="Get identifiers of all handled wallets.",
-)
+@docs(tags=["wallet"], summary="Get identifiers of all handled wallets.",)
 async def get_wallets(request: web.BaseRequest):
     """
     Request handler to obtain all identifiers of the handled wallets.
@@ -93,6 +87,31 @@ async def get_wallets(request: web.BaseRequest):
     wallet_names = await wallet_handler.get_instances()
 
     return web.json_response({"result": wallet_names})
+
+
+@docs(tags=["wallet"], summary="Get information of my wallet",)
+@response_schema(WalletRecordSchema(), 200)
+async def get_my_wallet(request: web.BaseRequest):
+    """
+    Request handler to obtain all identifiers of the handled wallets.
+
+    Args:
+        request: aiohttp request object.
+
+    """
+    context = request["context"]
+    wallet_name = context.settings.get_value("wallet.id")
+
+    wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
+    query = {"name": wallet_name}
+    wallet_records = await wallet_handler.get_wallets(query)
+    if len(wallet_records) < 1:
+        raise web.HTTPNotFound(reason=f"No record for wallet {wallet_name} found.")
+    elif len(wallet_records) > 1:
+        raise web.HTTPError(reason=f"Found multiple records for wallet with name {wallet_name}.")
+    wallet_record: WalletRecord = wallet_records[0]
+
+    return web.json_response(wallet_record.get_response(), status=200)
 
 
 @docs(
@@ -142,7 +161,8 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get("/wallet", get_wallets),
+            web.get("/wallet", get_wallets, allow_head=False),
+            web.get("/wallet/me", get_my_wallet, allow_head=False),
             web.post("/wallet", add_wallet),
             web.post("/wallet/{id}/remove", remove_wallet)
         ]
