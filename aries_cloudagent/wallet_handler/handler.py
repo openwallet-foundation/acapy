@@ -14,13 +14,13 @@ from base64 import b64encode, b64decode
 from ..storage.base import BaseStorage
 from ..ledger.base import BaseLedger
 from ..storage.error import StorageNotFoundError
-from ..wallet.error import WalletError, WalletDuplicateError
 from ..wallet.models.wallet_record import WalletRecord
 from ..wallet.plugin import load_postgres_plugin
 from ..utils.classloader import ClassLoader
 from ..config.provider import DynamicProvider
 from ..config.injection_context import InjectionContext
 
+from .error import WalletError, WalletDuplicateError
 from .error import KeyNotFoundError, WalletAccessError
 from .error import WalletNotFoundError
 from .error import DuplicateMappingError
@@ -272,6 +272,49 @@ class WalletHandler():
         instances = await self.get_instances()
         if wallet_name in instances:
             await self.delete_instance(wallet_name)
+
+    async def update_wallet(
+            self,
+            wallet_id: str = None,
+            wallet_name: str = None,
+            label: str = None,
+            image_url: str = None,
+            webhook_urls: list = None
+    ):
+        """
+        Remove a wallet
+
+        Args:
+            wallet_id: Identifier of the instance to be updated.
+            wallet_name: name of the instance to be updated.
+            label: label for the new instance.
+            image_url: image_url for the new instance.
+            webhook_urls: webhook_urls for the new instance.
+        """
+        if wallet_id:
+            wallet_record: WalletRecord = await self.get_wallet(wallet_id)
+            if not wallet_record:
+                raise WalletNotFoundError(f"No record for wallet_id {wallet_id} found.")
+        elif wallet_name:
+            wallet_records = await self.get_wallets({"name": wallet_name})
+            if len(wallet_records) < 1:
+                raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
+            elif len(wallet_records) > 1:
+                raise WalletNotFoundError(f"Found multiple records for wallet with name {wallet_name}.")
+            else:
+                wallet_record: WalletRecord = wallet_records[0]
+        else:
+            raise WalletNotFoundError(f"Wallet id or wallet id must be specified.")
+
+        if label is not None:
+            wallet_record.label = label
+        if image_url is not None:
+            wallet_record.image_url = image_url
+        if webhook_urls is not None:
+            wallet_record.webhook_urls = webhook_urls
+        await wallet_record.save(self.context)
+
+        return wallet_record
 
     async def generate_path_mapping(self, wallet_id: str, did: str = None) -> str:
         """

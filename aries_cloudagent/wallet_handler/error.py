@@ -21,3 +21,7 @@ class WalletNotFoundError(WalletError):
 
 class DuplicateMappingError(WalletError):
     """Mapping already exists exception."""
+
+
+class WalletDuplicateError(WalletError):
+    """Duplicate record exception."""

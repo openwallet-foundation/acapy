@@ -6,19 +6,19 @@ from aiohttp_apispec import (
     request_schema, response_schema, querystring_schema, match_info_schema,
 )
 
-from ..error import WalletAccessError
 from ...messaging.valid import UUIDFour
-from ...storage.base import BaseStorage
 from ...wallet_handler import WalletHandler
 from marshmallow import fields, Schema
 
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
-from ...wallet.error import WalletError, WalletNotFoundError, WalletDuplicateError
-from ...ledger.base import BaseLedger
 from ...messaging.models.openapi import OpenAPISchema
 
+from ..error import WalletError, WalletDuplicateError
+from ..error import WalletAccessError
+from ..error import WalletNotFoundError
 
-class AddWalletSchema(Schema):
+
+class WalletAddSchema(Schema):
     """Request schema for adding a new wallet which will be registered by the agent."""
 
     name = fields.Str(required=True, description="Wallet name", example='faber',)
@@ -57,6 +57,17 @@ class WalletIdMatchInfoSchema(Schema):
     wallet_id = fields.Str(description="wallet identifier", example=UUIDFour.EXAMPLE,)
 
 
+class WalletUpdateSchema(Schema):
+    """schema for updating a wallet."""
+
+    label = fields.Str(required=False, description="Label when connection is established", example='faber',)
+    image_url = fields.Str(required=False, description="Image URL for connection invitation",
+                           example="http://image_url/logo.jpg",)
+    webhook_urls = fields.List(
+        fields.Str(required=False, description="Webhook URL to receive webhook messages",
+                   example="http://localhost:8022/webhooks",))
+
+
 WALLET_TYPES = {
     "basic": "aries_cloudagent.wallet.basic.BasicWallet",
     "indy": "aries_cloudagent.wallet.indy.IndyWallet",
@@ -64,7 +75,7 @@ WALLET_TYPES = {
 
 
 @docs(tags=["wallet"], summary="Add new wallet to be handled by this agent",)
-@request_schema(AddWalletSchema())
+@request_schema(WalletAddSchema())
 @response_schema(WalletRecordSchema(), 201)
 async def add_wallet(request: web.BaseRequest):
     """
@@ -222,6 +233,86 @@ async def remove_my_wallet(request: web.BaseRequest):
     return web.Response(status=204)
 
 
+@docs(tags=["wallet"], summary="Update information of a wallet (base wallet only)",)
+@match_info_schema(WalletIdMatchInfoSchema())
+@request_schema(WalletUpdateSchema())
+@response_schema(WalletRecordSchema(), 200)
+async def update_wallet(request: web.BaseRequest):
+    """
+    Request handler to update a wallet from storage.
+
+    Args:
+        request: aiohttp request object.
+
+    """
+    context = request["context"]
+    wallet_name = context.settings.get_value("wallet.id")
+    wallet_id = request.match_info["wallet_id"]
+    body = await request.json()
+
+    # base wallet only can do this
+    if wallet_name != context.settings.get_value("wallet.name"):
+        raise web.HTTPUnauthorized(reason="Only base wallet allowed.")
+
+    label = body.get("label")
+    image_url = body.get("image_url")
+    webhook_urls = body.get("webhook_urls")
+    if label is None and image_url is None and webhook_urls is None:
+        raise web.HTTPBadRequest(reason="At least one parameter is required.")
+    if webhook_urls is not None and type(webhook_urls) != list:
+        raise web.HTTPBadRequest(reason="Webhook_urls must be list")
+
+    wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
+    try:
+        wallet_record = await wallet_handler.update_wallet(
+            wallet_id=wallet_id,
+            label=label,
+            image_url=image_url,
+            webhook_urls=webhook_urls
+        )
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response(wallet_record.get_response())
+
+
+@docs(tags=["wallet"], summary="Update information of my wallet",)
+@request_schema(WalletUpdateSchema())
+@response_schema(WalletRecordSchema(), 200)
+async def update_my_wallet(request: web.BaseRequest):
+    """
+    Request handler to update my wallet from storage.
+
+    Args:
+        request: aiohttp request object.
+
+    """
+    context = request["context"]
+    wallet_name = context.settings.get_value("wallet.id")
+    body = await request.json()
+
+    label = body.get("label")
+    image_url = body.get("image_url")
+    webhook_urls = body.get("webhook_urls")
+    if label is None and image_url is None and webhook_urls is None:
+        raise web.HTTPBadRequest(reason="At least one parameter is required.")
+    if webhook_urls is not None and type(webhook_urls) != list:
+        raise web.HTTPBadRequest(reason="Webhook_urls must be list")
+
+    wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
+    try:
+        wallet_record = await wallet_handler.update_wallet(
+            wallet_name=wallet_name,
+            label=label,
+            image_url=image_url,
+            webhook_urls=webhook_urls
+        )
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response(wallet_record.get_response())
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -230,6 +321,8 @@ async def register(app: web.Application):
             web.get("/wallet", get_wallets, allow_head=False),
             web.get("/wallet/me", get_my_wallet, allow_head=False),
             web.post("/wallet", add_wallet),
+            web.put("/wallet/me", update_my_wallet),
+            web.put("/wallet/{wallet_id}", update_wallet),
             web.delete("/wallet/me", remove_my_wallet),
             web.delete("/wallet/{wallet_id}", remove_wallet),
         ]
