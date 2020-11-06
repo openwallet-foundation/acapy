@@ -22,7 +22,7 @@ class BaseWallet(ABC):
         Initialize a `BaseWallet` instance.
 
         Args:
-            config: {name, key, seed, did, auto-create, auto-remove}
+            config: {name, key, seed, did, auto_create, auto_remove}
 
         """
 
