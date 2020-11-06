@@ -1,9 +1,12 @@
+import json
+
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    request_schema, response_schema,
+    request_schema, response_schema, querystring_schema,
 )
 
+from ...messaging.valid import UUIDFour
 from ...storage.base import BaseStorage
 from ...wallet_handler import WalletHandler
 from marshmallow import fields, Schema
@@ -11,6 +14,7 @@ from marshmallow import fields, Schema
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ...wallet.error import WalletError, WalletNotFoundError, WalletDuplicateError
 from ...ledger.base import BaseLedger
+from ...messaging.models.openapi import OpenAPISchema
 
 
 class AddWalletSchema(Schema):
@@ -25,6 +29,25 @@ class AddWalletSchema(Schema):
     webhook_urls = fields.List(
         fields.Str(required=False, description="Optional webhook URL to receive webhook messages",
                    example="http://localhost:8022/webhooks",))
+
+
+class WalletRecordListQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for wallet list request query string."""
+
+    wallet_id = fields.Str(required=False, description="Wallet identifier",
+                           example=UUIDFour.EXAMPLE,)
+    name = fields.Str(required=False, description="Wallet name of interest", example="faber")
+    label = fields.Str(required=False, description="Label when connection is established", example='faber',)
+    image_url = fields.Str(required=False, description="Image URL for connection invitation",
+                           example="http://image_url/logo.jpg",)
+    webhook_urls = fields.Str(required=False, description="Webhook URLs to receive webhook messages",
+                              example="http://localhost:8022/webhooks",)
+
+
+class WalletRecordListSchema(Schema):
+    """Schema for a list of wallets."""
+
+    results = fields.List(fields.Nested(WalletRecordSchema()), description="a list of wallet")
 
 
 WALLET_TYPES = {
@@ -72,7 +95,9 @@ async def add_wallet(request: web.BaseRequest):
     return web.json_response(wallet_record.get_response(), status=201)
 
 
-@docs(tags=["wallet"], summary="Get identifiers of all handled wallets.",)
+@docs(tags=["wallet"], summary="Get information of wallets (base wallet only)",)
+@querystring_schema(WalletRecordListQueryStringSchema())
+@response_schema(WalletRecordListSchema(), 200)
 async def get_wallets(request: web.BaseRequest):
     """
     Request handler to obtain all identifiers of the handled wallets.
@@ -82,11 +107,29 @@ async def get_wallets(request: web.BaseRequest):
 
     """
     context = request["context"]
+    wallet_name = context.settings.get_value("wallet.id")
+
+    # base wallet only can do this
+    if wallet_name != context.settings.get_value("wallet.name"):
+        raise web.HTTPUnauthorized(reason="only base wallet allowed.")
 
     wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
-    wallet_names = await wallet_handler.get_instances()
+    if request.query.get("webhook_id"):
+        wallet_records = [await wallet_handler.get_wallet(request.query.get("webhook_id"))]
+    else:
+        query = {}
+        for param_name in ("name", "label", "image_url"):
+            if param_name in request.query:
+                query[param_name] = request.query[param_name]
+        if "webhook_urls" in request.query:
+            query["webhook_urls"] = json.loads(request.query["webhook_urls"])
 
-    return web.json_response({"result": wallet_names})
+        wallet_records = await wallet_handler.get_wallets(query)
+
+    results = []
+    for wallet_record in wallet_records:
+        results.append(wallet_record.get_response())
+    return web.json_response({"results": results}, status=200)
 
 
 @docs(tags=["wallet"], summary="Get information of my wallet",)

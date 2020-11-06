@@ -203,12 +203,21 @@ class WalletHandler():
 
     async def get_wallets(self, query: dict = None, ):
         """
-        Return list of wallets
+        Return wallet records
 
         Args:
             query: query
         """
         return await WalletRecord.query(self.context, post_filter_positive=query)
+
+    async def get_wallet(self, wallet_id: str):
+        """
+        Return a wallet record
+
+        Args:
+            wallet_id: identifier of wallet
+        """
+        return await WalletRecord.retrieve_by_id(self.context, record_id=wallet_id)
 
     async def generate_path_mapping(self, wallet_id: str, did: str = None) -> str:
         """
