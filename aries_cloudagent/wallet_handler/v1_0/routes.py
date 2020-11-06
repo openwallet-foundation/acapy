@@ -3,9 +3,10 @@ import json
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    request_schema, response_schema, querystring_schema,
+    request_schema, response_schema, querystring_schema, match_info_schema,
 )
 
+from ..error import WalletAccessError
 from ...messaging.valid import UUIDFour
 from ...storage.base import BaseStorage
 from ...wallet_handler import WalletHandler
@@ -48,6 +49,12 @@ class WalletRecordListSchema(Schema):
     """Schema for a list of wallets."""
 
     results = fields.List(fields.Nested(WalletRecordSchema()), description="a list of wallet")
+
+
+class WalletIdMatchInfoSchema(Schema):
+    """Path parameters and validators for request taking wallet id."""
+
+    wallet_id = fields.Str(description="wallet identifier", example=UUIDFour.EXAMPLE,)
 
 
 WALLET_TYPES = {
@@ -111,7 +118,7 @@ async def get_wallets(request: web.BaseRequest):
 
     # base wallet only can do this
     if wallet_name != context.settings.get_value("wallet.name"):
-        raise web.HTTPUnauthorized(reason="only base wallet allowed.")
+        raise web.HTTPUnauthorized(reason="Only base wallet allowed.")
 
     wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
     if request.query.get("webhook_id"):
@@ -157,11 +164,8 @@ async def get_my_wallet(request: web.BaseRequest):
     return web.json_response(wallet_record.get_response(), status=200)
 
 
-@docs(
-    tags=["wallet"],
-    summary="Remove a wallet from handled wallets and delete it from storage.",
-    parameters=[{"in": "path", "name": "id", "description": "Identifier of wallet."}],
-)
+@docs(tags=["wallet"], summary="Remove a wallet (base wallet only)",)
+@match_info_schema(WalletIdMatchInfoSchema())
 async def remove_wallet(request: web.BaseRequest):
     """
     Request handler to remove a wallet from agent and storage.
@@ -171,32 +175,51 @@ async def remove_wallet(request: web.BaseRequest):
 
     """
     context = request["context"]
-    wallet_name = request.match_info["id"]
+    wallet_name = context.settings.get_value("wallet.id")
+    wallet_id = request.match_info["wallet_id"]
 
-    wallet_handler: WalletHandler = await context.inject(WalletHandler)
+    # base wallet only can do this
+    if wallet_name != context.settings.get_value("wallet.name"):
+        raise web.HTTPUnauthorized(reason="Only base wallet allowed.")
 
-    # Remove wallet record. Because wallet_records are only stored in storage
-    # of base wallet right know, only base wallet can remove wallets.
-    post_filter = {"wallet_name": wallet_name}
-    wallet_records = await WalletRecord.query(context, post_filter_positive=post_filter)
-    if len(wallet_records) < 1:
-        raise web.HTTPNotFound(reason=f"No record for wallet {wallet_name} found.")
-    elif len(wallet_records) > 1:
-        raise web.HTTPError(
-            reason=f"Found multiple records for wallet with name {wallet_name}.")
-    await wallet_records[0].delete_record(context)
+    wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
 
     try:
-        await wallet_handler.delete_instance(wallet_name)
-        ledger = context.injector._providers[BaseLedger]._instances.pop(wallet_name)
-        context.injector._providers[BaseStorage]._instances.pop(wallet_name)
-        await ledger.close()
-    except WalletNotFoundError:
-        raise web.HTTPNotFound(reason="Requested wallet to delete not in storage.")
-    except WalletError:
-        raise web.HTTPError(reason=WalletError.message)
+        await wallet_handler.remove_wallet(wallet_id=wallet_id)
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletAccessError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"result": "Deleted wallet {}".format(wallet_name)})
+    return web.Response(status=204)
+
+
+@docs(tags=["wallet"], summary="Remove my wallet",)
+async def remove_my_wallet(request: web.BaseRequest):
+    """
+    Request handler to remove a wallet from agent and storage.
+
+    Args:
+        request: aiohttp request object.
+
+    """
+    context = request["context"]
+    wallet_name = context.settings.get_value("wallet.id")
+
+    wallet_handler: WalletHandler = await context.inject(WalletHandler, required=False)
+
+    try:
+        await wallet_handler.remove_wallet(wallet_name=wallet_name)
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletAccessError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.Response(status=204)
 
 
 async def register(app: web.Application):
@@ -207,6 +230,7 @@ async def register(app: web.Application):
             web.get("/wallet", get_wallets, allow_head=False),
             web.get("/wallet/me", get_my_wallet, allow_head=False),
             web.post("/wallet", add_wallet),
-            web.post("/wallet/{id}/remove", remove_wallet)
+            web.delete("/wallet/me", remove_my_wallet),
+            web.delete("/wallet/{wallet_id}", remove_wallet),
         ]
     )

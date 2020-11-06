@@ -13,6 +13,7 @@ from base64 import b64encode, b64decode
 
 from ..storage.base import BaseStorage
 from ..ledger.base import BaseLedger
+from ..storage.error import StorageNotFoundError
 from ..wallet.error import WalletError, WalletDuplicateError
 from ..wallet.models.wallet_record import WalletRecord
 from ..wallet.plugin import load_postgres_plugin
@@ -20,7 +21,7 @@ from ..utils.classloader import ClassLoader
 from ..config.provider import DynamicProvider
 from ..config.injection_context import InjectionContext
 
-from .error import KeyNotFoundError
+from .error import KeyNotFoundError, WalletAccessError
 from .error import WalletNotFoundError
 from .error import DuplicateMappingError
 
@@ -126,18 +127,18 @@ class WalletHandler():
         context.settings.set_value("wallet.id", wallet)
         context.settings.set_value("ledger.pool_name", wallet)
 
-    async def delete_instance(self, id: str):
+    async def delete_instance(self, wallet_name: str):
         """
         Delete handled instance from handler and storage.
 
         Args:
-            id: Identifier of the instance to be deleted.
+            wallet_name: Identifier of the instance to be deleted.
         """
 
         try:
-            wallet = self._provider._instances.pop(id)
+            wallet = self._provider._instances.pop(wallet_name)
         except KeyError:
-            raise WalletNotFoundError(f"Wallet not found: {id}")
+            raise WalletNotFoundError(f"Wallet not found: {wallet_name}")
 
         if wallet.WALLET_TYPE == 'indy':
             # Delete wallet from storage.
@@ -149,8 +150,17 @@ class WalletHandler():
                 )
             except IndyError as x_indy:
                 if x_indy.error_code == ErrorCode.WalletNotFoundError:
-                    raise WalletNotFoundError(f"Wallet not found: {id}")
+                    raise WalletNotFoundError(f"Wallet not found: {wallet_name}")
                 raise WalletError(str(x_indy))
+
+        # Remove storage in dynamic provider
+        storage_provider = self.context.injector._providers[BaseStorage]
+        if wallet_name in storage_provider._instances: del storage_provider._instances[wallet_name]
+
+        # Remove ledger in dynamic provider
+        ledger_provider = self.context.injector._providers[BaseLedger]
+        if wallet_name in ledger_provider._instances: ledger = ledger_provider._instances.pop(wallet_name)
+        await ledger.close()
 
         # Remove all path mappings of wallet.
         self._path_mappings = {
@@ -217,7 +227,51 @@ class WalletHandler():
         Args:
             wallet_id: identifier of wallet
         """
-        return await WalletRecord.retrieve_by_id(self.context, record_id=wallet_id)
+        try:
+            wallet_record = await WalletRecord.retrieve_by_id(self.context, record_id=wallet_id)
+        except StorageNotFoundError:
+            return None
+        return wallet_record
+
+    async def remove_wallet(
+            self,
+            wallet_id: str = None,
+            wallet_name: str = None,
+    ):
+        """
+        Remove a wallet
+
+        Args:
+            wallet_id: Identifier of the instance to be deleted.
+            wallet_name: name of the instance to be deleted.
+        """
+        if wallet_id:
+            wallet_record: WalletRecord = await self.get_wallet(wallet_id)
+            if not wallet_record:
+                raise WalletNotFoundError(f"No record for wallet_id {wallet_id} found.")
+        elif wallet_name:
+            wallet_records = await self.get_wallets({"name": wallet_name})
+            if len(wallet_records) < 1:
+                raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
+            elif len(wallet_records) > 1:
+                raise WalletNotFoundError(f"Found multiple records for wallet with name {wallet_name}.")
+            else:
+                wallet_record: WalletRecord = wallet_records[0]
+        else:
+            raise WalletNotFoundError(f"Wallet id or wallet id must be specified.")
+
+        wallet_name = wallet_record.name
+
+        # can not delete base wallet
+        if wallet_name == self.context.settings.get_value("wallet.name"):
+            raise WalletAccessError(f"deleting base wallet is not allowed")
+
+        await wallet_record.delete_record(self.context)
+
+        # close wallet if opened
+        instances = await self.get_instances()
+        if wallet_name in instances:
+            await self.delete_instance(wallet_name)
 
     async def generate_path_mapping(self, wallet_id: str, did: str = None) -> str:
         """
