@@ -284,9 +284,7 @@ class PresentationManager:
         preds_creds = requested_credentials.get("requested_predicates", {})
         req_preds = presentation_request.get("requested_predicates", {})
         for reft in preds_creds:
-            requested_referents[reft] = {
-                "cred_id": preds_creds[reft]["cred_id"]
-            }
+            requested_referents[reft] = {"cred_id": preds_creds[reft]["cred_id"]}
             if reft in req_preds and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
             """

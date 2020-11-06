@@ -377,7 +377,7 @@ class TestIndyVerifier(AsyncTestCase):
                 proof_x,
                 REV_REG_DEFS,
             )
-            mock_logger.warning.assert_called_once()
+            mock_logger.info.assert_called_once()
 
         # superfluous timestamp
         proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)

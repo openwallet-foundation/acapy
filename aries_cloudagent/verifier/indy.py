@@ -228,7 +228,7 @@ class IndyVerifier(BaseVerifier):
                         < timestamp
                         < non_revoc_intervals[uuid].get("to", now)
                     ):
-                        LOGGER.warning(
+                        LOGGER.info(
                             f"Timestamp {timestamp} from ledger for item"
                             f"{uuid} falls outside non-revocation interval "
                             f"{non_revoc_intervals[uuid]}"

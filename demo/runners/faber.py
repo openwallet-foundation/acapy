@@ -286,7 +286,7 @@ async def main(
                         {
                             "name": "degree",
                             "restrictions": [{"issuer_did": agent.did}],
-                            "non_revoked": {"to": int(time.time() - 1)},
+                            "non_revoked": {"to": int(time.time() - 10)},
                         },
                     )
                 else:
