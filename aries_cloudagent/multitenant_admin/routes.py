@@ -1,6 +1,6 @@
 """Multitenant admin routes."""
 
-from aries_cloudagent.wallet.error import WalletDuplicateError
+from aries_cloudagent.wallet.base import BaseWallet
 from typing import cast
 from aries_cloudagent.messaging.valid import UUIDFour
 from aries_cloudagent.messaging.models.openapi import OpenAPISchema
@@ -11,6 +11,7 @@ from aiohttp_apispec import docs, request_schema, match_info_schema
 from marshmallow import fields, Schema, validate, validates_schema, ValidationError
 
 from aries_cloudagent.wallet.provider import WalletProvider
+from aries_cloudagent.wallet.indy import IndyWallet
 from aries_cloudagent.wallet.models.wallet_record import WalletRecord
 
 
@@ -20,14 +21,10 @@ def format_wallet_record(wallet_record: WalletRecord):
     wallet_info = {
         "wallet_id": wallet_record.wallet_record_id,
         "wallet_type": wallet_record.wallet_config.get("type"),
-        # MTODO: make variable
-        "wallet_mode": "managed",
+        "wallet_name": wallet_record.wallet_name,
         "created_at": wallet_record.created_at,
         "updated_at": wallet_record.updated_at,
     }
-
-    if "name" in wallet_record.wallet_config:
-        wallet_info["wallet_name"] = wallet_record.wallet_config.get("name")
 
     return wallet_info
 
@@ -206,16 +203,14 @@ async def wallet_remove(request: web.BaseRequest):
             WalletRecord, await WalletRecord.retrieve_by_id(context, wallet_id)
         )
 
-        if wallet_record.wallet_config.get("type") == "indy":
-            # MTODO: remove wallet, possible when we can have multiple wallet instances
-            # Alternate approach is adding `auto-remove` property to wallet and then
-            # calling `close()`. This will remove the wallet in indy, and means we
-            # don't have to write `IndyWallet` specific logic
-            # wallet_instance = cast(
-            #     IndyWallet, await wallet_record.get_instance(context)
-            # )
-            # wallet_instance.remove()
-            pass
+        # MTODO: We need to remove all instances from cache
+        # We can't use auto_remove, because the wallet provider does
+        #  not support it at the moment.
+        wallet_instance = await wallet_record.get_instance(context)
+
+        if wallet_instance.type == "indy":
+            indy_wallet = cast(IndyWallet, wallet_instance)
+            await indy_wallet.remove()
 
         await wallet_record.delete_record(context)
     except StorageNotFoundError:

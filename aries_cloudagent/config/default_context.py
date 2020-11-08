@@ -64,7 +64,8 @@ class DefaultContextBuilder(ContextBuilder):
             CachedProvider(
                 StatsProvider(
                     StorageProvider(), ("add_record", "get_record", "search_records")
-                )
+                ),
+                ("wallet.name",),
             ),
         )
         context.injector.bind_provider(
@@ -79,7 +80,8 @@ class DefaultContextBuilder(ContextBuilder):
                         # "unpack_message",
                         "get_local_did",
                     ),
-                )
+                ),
+                ("wallet.name",),
             ),
         )
 
@@ -94,7 +96,11 @@ class DefaultContextBuilder(ContextBuilder):
                         "get_credential_definition",
                         "get_schema",
                     ),
-                )
+                ),
+                # MTODO: It would be better to not create a separate ledger instance
+                # per wallet (besides the wallet_handle they share everyting)
+                # but only create a ledger instance per wallet.type or something?
+                ("wallet.name",),
             ),
         )
         context.injector.bind_provider(
