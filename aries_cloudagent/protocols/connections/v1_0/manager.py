@@ -193,8 +193,11 @@ class ConnectionManager:
         # Would want to reuse create_did_document and convert the result
 
         invitation = ConnectionInvitation(
-            label=my_label, recipient_keys=recipient_keys,
-            endpoint=my_endpoint, routing_keys=routing_keys, tx_my_role=tx_my_role
+            label=my_label,
+            recipient_keys=recipient_keys,
+            endpoint=my_endpoint,
+            routing_keys=routing_keys,
+            tx_my_role=tx_my_role
         )
         await connection.attach_invitation(self.context, invitation)
 

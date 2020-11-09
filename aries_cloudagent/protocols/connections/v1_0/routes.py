@@ -393,9 +393,14 @@ async def connections_create_invitation(request: web.BaseRequest):
     connection_mgr = ConnectionManager(context)
     try:
         (connection, invitation) = await connection_mgr.create_invitation(
-            auto_accept=auto_accept, public=public, multi_use=multi_use,
-            alias=alias, recipient_keys=recipient_keys, my_endpoint=service_endpoint,
-            routing_keys=routing_keys, tx_my_role=tx_my_role
+            auto_accept=auto_accept,
+            public=public,
+            multi_use=multi_use,
+            alias=alias,
+            recipient_keys=recipient_keys,
+            my_endpoint=service_endpoint,
+            routing_keys=routing_keys,
+            tx_my_role=tx_my_role
         )
 
         result = {

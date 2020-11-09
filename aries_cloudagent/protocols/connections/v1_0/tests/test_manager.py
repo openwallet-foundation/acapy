@@ -195,7 +195,7 @@ class TestConnectionManager(AsyncTestCase):
         connect_record, connect_invite = await self.manager.create_invitation(
             my_endpoint=self.test_endpoint,
             recipient_keys=[self.test_verkey],
-            routing_keys=[self.test_verkey]
+            routing_keys=[self.test_verkey],
         )
 
         receipt = MessageReceipt(recipient_verkey=connect_record.invitation_key)
