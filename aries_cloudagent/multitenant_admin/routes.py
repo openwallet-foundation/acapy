@@ -1,18 +1,17 @@
 """Multitenant admin routes."""
 
-from aries_cloudagent.wallet.base import BaseWallet
 from typing import cast
-from aries_cloudagent.messaging.valid import UUIDFour
-from aries_cloudagent.messaging.models.openapi import OpenAPISchema
-from aries_cloudagent.storage.error import StorageNotFoundError
+from marshmallow import fields, Schema, validate, validates_schema, ValidationError
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, match_info_schema
 
-from marshmallow import fields, Schema, validate, validates_schema, ValidationError
-
-from aries_cloudagent.wallet.provider import WalletProvider
-from aries_cloudagent.wallet.indy import IndyWallet
-from aries_cloudagent.wallet.models.wallet_record import WalletRecord
+from .util import get_wallet_jwt
+from ..messaging.valid import UUIDFour
+from ..messaging.models.openapi import OpenAPISchema
+from ..storage.error import StorageNotFoundError
+from ..wallet.provider import WalletProvider
+from ..wallet.indy import IndyWallet
+from ..wallet.models.wallet_record import WalletRecord
 
 
 def format_wallet_record(wallet_record: WalletRecord):
@@ -141,41 +140,42 @@ async def wallet_create(request: web.BaseRequest):
     """
 
     context = request.app["request_context"]
-
     body = await request.json()
 
     wallet_name = body.get("wallet_name")
+    wallet_key = body.get("wallet_key")
+    wallet_type = body.get("wallet_type")
+    # MTODO: make mode variable. Either trough setting or body parameter
+    key_management_mode = WalletRecord.MODE_MANAGED  # body.get("key_management_mode")
 
-    config = {"type": body.get("wallet_type"), "name": wallet_name}
-    if body.get("wallet_key"):
-        config["key"] = body.get("wallet_key")
+    wallet_config = {"type": wallet_type, "name": wallet_name}
+    if key_management_mode == WalletRecord.MODE_MANAGED:
+        wallet_config["key"] = wallet_key
 
-    # MTODO: This only checks if we have a record.
-    # Not if the (indy) wallet actually exists
+    # MTODO: This only checks if we have a record. Not if the wallet actually exists
     # MTODO: we need to check the wallet_name is not the same as the base wallet
+    # MTODO: optionally remove wallet_name input and use wallet_record_id instead
     wallet_records = await WalletRecord.query(context, {"wallet_name": wallet_name})
     if len(wallet_records) > 0:
         raise web.HTTPConflict(reason=f"Wallet with name {wallet_name} already exists")
 
-    wallet_record = WalletRecord(wallet_config=config)
+    # create wallet record
+    wallet_record = WalletRecord(
+        wallet_config=wallet_config,
+        key_management_mode=key_management_mode,
+    )
     await wallet_record.save(context)
 
-    # We need to create the wallet (for indy) to check whether the config is correct
-    # e.g. the wallet does not already exist
-    # MTODO: Allow for multiple wallet instances to be available
-    # wallet_instance = await wallet_record.get_instance(context)
+    # create actual wallet
+    wallet_instance = await wallet_record.get_instance(context, {"key": wallet_key})
+    await wallet_instance.close()
 
-    # MTODO: Generate JWT
-    return web.json_response(
-        {
-            **format_wallet_record(wallet_record),
-            "token": (
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3YWxsZXRfbmFtZSI6In"
-                "dhbGxldF9uYW1lIiwid2FsbGV0X2tleSI6IndhbGxldF9rZXkifQ"
-                "._AoH14usFHUbEX9USAOfuYMUBJme27TpSFJlEw1c2x8"
-            ),
-        }
-    )
+    token = get_wallet_jwt(context, wallet_record, wallet_key)
+    result = {
+        **format_wallet_record(wallet_record),
+        "token": token,
+    }
+    return web.json_response(result)
 
 
 @docs(

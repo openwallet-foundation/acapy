@@ -3,6 +3,7 @@
 from typing import Any
 
 from marshmallow import fields
+from marshmallow import validate
 from marshmallow.utils import EXCLUDE
 
 from ...messaging.models.base_record import (
@@ -26,12 +27,16 @@ class WalletRecord(BaseRecord):
 
     TAG_NAMES = {"wallet_name"}
 
+    MODE_MANAGED = "managed"
+    MODE_UNMANAGED = "unmanaged"
+
     def __init__(
         self,
         *,
         wallet_record_id: str = None,
         wallet_name: str = None,
         wallet_config: dict = None,
+        key_management_mode: str = None,
         **kwargs,
     ):
         """Initialize a new WalletRecord."""
@@ -39,17 +44,20 @@ class WalletRecord(BaseRecord):
         self._id = wallet_record_id
         self.wallet_config = wallet_config
         self.wallet_name = wallet_name or wallet_config.get("name")
+        self.key_management_mode = key_management_mode
 
-    def get_config_as_settings(self):
+    def get_config_as_settings(self, extra_config=None):
         """Get the wallet config as settings dict."""
+        # MTODO: better approach for injecting wallet_key?
+        config = {**self.wallet_config, **(extra_config or {})}
         # Wallet settings need to be prefixed with `wallet.`
-        return {f"wallet.{k}": v for k, v in self.wallet_config.items()}
+        return {f"wallet.{k}": v for k, v in config.items()}
 
-    async def get_instance(self, context):
+    async def get_instance(self, context, extra_config=None):
         """Get instance of wallet using wallet config."""
         wallet_instance: BaseWallet = await context.inject(
             BaseWallet,
-            settings=self.get_config_as_settings(),
+            settings=self.get_config_as_settings(extra_config),
         )
         return wallet_instance
 
@@ -61,7 +69,10 @@ class WalletRecord(BaseRecord):
     @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
-        return {prop: getattr(self, prop) for prop in ("wallet_config", "wallet_name")}
+        return {
+            prop: getattr(self, prop)
+            for prop in ("wallet_config", "wallet_name", "key_management_mode")
+        }
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -83,3 +94,13 @@ class WalletRecordSchema(BaseRecordSchema):
         example=UUIDFour.EXAMPLE,
     )
     wallet_config = fields.Dict(required=True, description="Wallet config")
+    key_management_mode = fields.Str(
+        required=True,
+        description="Mode regarding management of wallet key",
+        validate=validate.OneOf(
+            [
+                WalletRecord.MODE_MANAGED,
+                WalletRecord.MODE_UNMANAGED,
+            ]
+        ),
+    )
