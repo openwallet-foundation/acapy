@@ -100,7 +100,7 @@ class CustodialHttpTransport(BaseInboundTransport):
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             # Set wallet based on inbound information.
             wallet_handler: WalletHandler = await session.context.inject(WalletHandler)
-            wallet_ids = await wallet_handler.get_wallet_for_msg(body)
+            wallet_ids = await wallet_handler.get_wallet_by_msg(body)
             session.context = session.context.copy()
             # FIXME: What if multiple recipients are handled by the agent?
             session.context.settings.set_value("wallet.id", wallet_ids[0])

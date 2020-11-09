@@ -350,7 +350,7 @@ class Conductor:
             ext_plugins = context.settings.get_value("external_plugins")
             if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
                 wallet_handler: WalletHandler = await context.inject(WalletHandler)
-                wallet_id = await wallet_handler.get_wallet_for_connection(
+                wallet_id = await wallet_handler.get_wallet_by_conn_id(
                     outbound.connection_id
                 )
                 message_context.settings.set_value("wallet.id", wallet_id)

@@ -195,8 +195,9 @@ class ConnectionManager:
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
             wallet_id = self.context.settings.get_value("wallet.id")
-            await wallet_handler.add_connection(connection.connection_id, wallet_id)
-            await wallet_handler.add_key(connection.invitation_key, wallet_id)
+            await wallet_handler.add_mapping(
+                connection_id=connection.connection_id, key=connection.invitation_key, wallet_name=wallet_id
+            )
 
         return connection, invitation
 
@@ -264,7 +265,7 @@ class ConnectionManager:
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
             wallet_id = self.context.settings.get_value("wallet.id")
-            await wallet_handler.add_connection(connection.connection_id, wallet_id)
+            await wallet_handler.add_mapping(connection_id=connection.connection_id, wallet_name=wallet_id)
 
         if connection.accept == ConnectionRecord.ACCEPT_AUTO:
             request = await self.create_request(connection)
@@ -338,8 +339,7 @@ class ConnectionManager:
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
             wallet_id = self.context.settings.get_value("wallet.id")
-            wallet: BaseWallet = await self.context.inject(BaseWallet)
-            await wallet_handler.add_key(my_info.verkey, wallet_id)
+            await wallet_handler.add_mapping(key=my_info.verkey, wallet_name=wallet_id)
 
         return request
 
@@ -531,8 +531,7 @@ class ConnectionManager:
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
             wallet_id = self.context.settings.get_value("wallet.id")
-            wallet: BaseWallet = await self.context.inject(BaseWallet)
-            await wallet_handler.add_key(my_info.verkey, wallet_id)
+            await wallet_handler.add_mapping(key=my_info.verkey, wallet_name=wallet_id)
 
         await connection.save(
             self.context,

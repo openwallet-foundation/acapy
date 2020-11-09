@@ -139,7 +139,7 @@ class Dispatcher:
             context.start_scope(inbound_message.session_id)
             wallet_handler: WalletHandler = await context.inject(WalletHandler)
             try:
-                wallet_id = await wallet_handler.get_wallet_for_key(
+                wallet_id = await wallet_handler.get_wallet_by_key(
                     inbound_message.receipt.recipient_verkey
                 )
             except KeyNotFoundError:
