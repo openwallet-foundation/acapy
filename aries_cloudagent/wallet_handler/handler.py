@@ -423,3 +423,22 @@ class WalletHandler():
             raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
 
         return wallet_record.label or None
+
+    async def get_image_url(self, context: InjectionContext) -> str:
+        """
+        Return the image_url of the wallet to which the given context.
+
+        Args:
+            context: InjectionContext for which the image_url shall be returned.
+
+        Raises:
+            WalletNotFoundError: if given wallet does not exist
+        """
+        wallet_name = context.settings.get_value("wallet.id")
+        wallet_records = await self.get_wallets({"name": wallet_name})
+        if wallet_records:
+            wallet_record: WalletRecord = wallet_records[0]
+        else:
+            raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
+
+        return wallet_record.image_url or None
