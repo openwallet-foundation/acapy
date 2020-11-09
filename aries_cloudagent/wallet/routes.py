@@ -1,4 +1,5 @@
 """Wallet admin routes."""
+from json import JSONDecodeError
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -47,6 +48,13 @@ class DIDSchema(OpenAPISchema):
         ),
         **DID_POSTURE,
     )
+
+
+class DIDCreateSchema(OpenAPISchema):
+    """Request schema to create a DID."""
+
+    seed = fields.Str(description="Seed used for did derivation. (if not given random seed used)", required=False,
+                      example="00000000000000000000000Endorser1")
 
 
 class DIDResultSchema(OpenAPISchema):
@@ -219,6 +227,7 @@ async def wallet_did_list(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Create a local DID")
+@request_schema(DIDCreateSchema)
 @response_schema(DIDResultSchema, 200)
 async def wallet_create_did(request: web.BaseRequest):
     """
@@ -235,8 +244,15 @@ async def wallet_create_did(request: web.BaseRequest):
     wallet: BaseWallet = await context.inject(BaseWallet, required=False)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
+
     try:
-        info = await wallet.create_local_did()
+        body = await request.json() or {}
+        seed = body.get("seed")
+    except JSONDecodeError:
+        seed = None
+
+    try:
+        info = await wallet.create_local_did(seed=seed)
     except WalletError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
