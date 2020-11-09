@@ -8,6 +8,7 @@ in response to the message being handled.
 from abc import ABC, abstractmethod
 from typing import Sequence, Union
 
+from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..connections.models.connection_target import ConnectionTarget
 from ..transport.outbound.message import OutboundMessage
@@ -112,11 +113,12 @@ class BaseResponder(ABC):
         """
 
     @abstractmethod
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, context: InjectionContext, topic: str, payload: dict):
         """
         Dispatch a webhook.
 
         Args:
+            context: The injection context to use
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
@@ -142,6 +144,6 @@ class MockResponder(BaseResponder):
         """Send an outbound message."""
         self.messages.append((message, None))
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, context: InjectionContext, topic: str, payload: dict):
         """Send an outbound message."""
-        self.webhooks.append((topic, payload))
+        self.webhooks.append((context, topic, payload))

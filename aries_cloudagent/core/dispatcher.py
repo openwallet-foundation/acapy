@@ -318,13 +318,14 @@ class DispatcherResponder(BaseResponder):
         """
         await self._send(self._context, message, self._inbound_message)
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, context: InjectionContext, topic: str, payload: dict):
         """
         Dispatch a webhook.
 
         Args:
+            context: The injection context to use
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
         if self._webhook:
-            await self._webhook(topic, payload)
+            await self._webhook(context, topic, payload)

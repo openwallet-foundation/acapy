@@ -26,7 +26,7 @@ from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
 from ..wallet_handler import WalletHandler
-from ..wallet_handler.error import WalletNotFoundError
+from ..wallet_handler.error import WalletNotFoundError, KeyNotFoundError
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -90,15 +90,16 @@ class AdminResponder(BaseResponder):
         """
         await self._send(self._context, message)
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, context: InjectionContext, topic: str, payload: dict):
         """
         Dispatch a webhook.
 
         Args:
+            context: The injection context to use
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        await self._webhook(topic, payload)
+        await self._webhook(context, topic, payload)
 
 
 class WebhookTarget:
@@ -303,7 +304,6 @@ class AdminServer(BaseAdminServer):
             # the request
             ext_plugins = self.context.settings.get_value("external_plugins")
             if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
-
                 wallet_handler: WalletHandler = await context.inject(WalletHandler)
                 # TODO: Authorization concept.
                 header_auth = request.headers.get("Wallet")
@@ -682,14 +682,25 @@ class AdminServer(BaseAdminServer):
         if target_url in self.webhook_targets:
             del self.webhook_targets[target_url]
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, context: InjectionContext, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
         if self.webhook_router:
-            for idx, target in self.webhook_targets.items():
-                if not target.topic_filter or topic in target.topic_filter:
-                    self.webhook_router(
-                        topic, payload, target.endpoint, target.max_attempts
-                    )
+            ext_plugins = self.context.settings.get_value("external_plugins")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+                wallet_handler: WalletHandler = await context.inject(WalletHandler)
+                try:
+                    webhook_urls = await wallet_handler.get_webhook_urls(context)
+                    for webhook_url in webhook_urls:
+                        # FIXME: Do we need topic filter and max attempts configurable ?
+                        self.webhook_router(topic, payload, webhook_url)
+                except KeyNotFoundError:
+                    LOGGER.exception("webhook urls is not found with given context")
+            else:
+                for idx, target in self.webhook_targets.items():
+                    if not target.topic_filter or topic in target.topic_filter:
+                        self.webhook_router(
+                            topic, payload, target.endpoint, target.max_attempts
+                        )
 
         for queue in self.websocket_queues.values():
             if queue.authenticated or topic in ("ping", "settings"):

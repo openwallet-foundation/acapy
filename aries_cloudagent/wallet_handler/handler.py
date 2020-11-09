@@ -384,3 +384,22 @@ class WalletHandler():
         wallet_mapping_records = await WalletMappingRecord.query_by_wallet_name(self.context, wallet_name)
         for wallet_mapping_record in wallet_mapping_records:
             await wallet_mapping_record.delete_record(self.context)
+
+    async def get_webhook_urls(self, context: InjectionContext) -> list:
+        """
+        Return the list of webhook url of the wallet to which the given context.
+
+        Args:
+            context: InjectionContext for which the list of webhook url shall be returned.
+
+        Raises:
+            WalletNotFoundError: if given wallet does not exist
+        """
+        wallet_name = context.settings.get_value("wallet.id")
+        wallet_records = await self.get_wallets({"name": wallet_name})
+        if wallet_records:
+            wallet_record: WalletRecord = wallet_records[0]
+        else:
+            raise WalletNotFoundError(f"No record for wallet {wallet_name} found.")
+
+        return wallet_record.webhook_urls
