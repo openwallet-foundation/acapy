@@ -55,14 +55,6 @@ class WalletRecord(BaseExchangeRecord):
         )
         return wallet_instance
 
-    def get_response(self) -> dict:
-        response = self.record_value
-        response["wallet_id"] = self.wallet_id
-        response["key"] = response["config"]["key"]
-        response["type"] = response["config"]["type"]
-        del response["config"]
-        return response
-
     def add_key(self, key: str):
         """Add new associated key to wallet."""
         self._associated_keys.append(key)
@@ -80,8 +72,16 @@ class WalletRecord(BaseExchangeRecord):
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
         return {prop: getattr(self, prop) for prop in (
-            "name", "config", "label", "image_url", "webhook_urls", "trace", "created_at", "updated_at",
+            "name", "config", "label", "image_url", "webhook_urls",
         )}
+
+    @property
+    def key(self) -> str:
+        return self.config.get("key")
+
+    @property
+    def type(self) -> str:
+        return self.config.get("type")
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

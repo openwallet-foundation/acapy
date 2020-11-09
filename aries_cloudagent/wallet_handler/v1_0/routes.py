@@ -110,7 +110,7 @@ async def add_wallet(request: web.BaseRequest):
     except WalletDuplicateError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(wallet_record.get_response(), status=201)
+    return web.json_response(wallet_record.serialize(), status=201)
 
 
 @docs(tags=["wallet"], summary="Get information of wallets (base wallet only)",)
@@ -146,7 +146,7 @@ async def get_wallets(request: web.BaseRequest):
 
     results = []
     for wallet_record in wallet_records:
-        results.append(wallet_record.get_response())
+        results.append(wallet_record.serialize())
     return web.json_response({"results": results}, status=200)
 
 
@@ -172,7 +172,7 @@ async def get_my_wallet(request: web.BaseRequest):
         raise web.HTTPError(reason=f"Found multiple records for wallet with name {wallet_name}.")
     wallet_record: WalletRecord = wallet_records[0]
 
-    return web.json_response(wallet_record.get_response(), status=200)
+    return web.json_response(wallet_record.serialize(), status=200)
 
 
 @docs(tags=["wallet"], summary="Remove a wallet (base wallet only)",)
@@ -273,7 +273,7 @@ async def update_wallet(request: web.BaseRequest):
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    return web.json_response(wallet_record.get_response())
+    return web.json_response(wallet_record.serialize())
 
 
 @docs(tags=["wallet"], summary="Update information of my wallet",)
@@ -310,7 +310,7 @@ async def update_my_wallet(request: web.BaseRequest):
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    return web.json_response(wallet_record.get_response())
+    return web.json_response(wallet_record.serialize())
 
 
 async def register(app: web.Application):
