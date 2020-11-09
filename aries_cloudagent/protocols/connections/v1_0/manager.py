@@ -75,6 +75,8 @@ class ConnectionManager:
         multi_use: bool = False,
         alias: str = None,
         tx_my_role: str = None,
+        routing_keys: Sequence[str] = None,
+        recipient_keys: Sequence[str] = None,
     ) -> Tuple[ConnRecord, ConnectionInvitation]:
         """
         Generate new connection invitation.
@@ -101,8 +103,9 @@ class ConnectionManager:
                 "@type": "https://didcomm.org/connections/1.0/invitation",
                 "label": "Alice",
                 "did": "did:peer:oiSqsNYhMrjHiqZDTUthsw",
-                "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
-                "serviceEndpoint": "https://example.com/endpoint"
+                "recipient_keys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+                "service_endpoint": "https://example.com/endpoint"
+                "routing_keys": ["9EH5gYEeNc3z7PYXmd53d5x6qAfCNrqQqEB4nS7Zfu6K"],
             }
 
         Currently, only peer DID is supported.
@@ -164,12 +167,17 @@ class ConnectionManager:
             else ConnRecord.ACCEPT_MANUAL
         )
 
-        # Create and store new invitation key
-        connection_key = await wallet.create_signing_key()
-
+        if recipient_keys:
+            # TODO: check that recipient keys are in wallet
+            invitation_key = recipient_keys[0]
+        else:
+            # Create and store new invitation key
+            invitation_signing_key = await wallet.create_signing_key()
+            invitation_key = invitation_signing_key.verkey
+            recipient_keys = [invitation_key]
         # Create connection record
         connection = ConnRecord(
-            invitation_key=connection_key.verkey,
+            invitation_key=invitation_key,
             their_role=ConnRecord.Role.REQUESTER.rfc160,
             state=ConnRecord.State.INVITATION.rfc160,
             accept=accept,
@@ -185,7 +193,8 @@ class ConnectionManager:
         # Would want to reuse create_did_document and convert the result
 
         invitation = ConnectionInvitation(
-            label=my_label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint, tx_my_role=tx_my_role
+            label=my_label, recipient_keys=recipient_keys,
+            endpoint=my_endpoint, routing_keys=routing_keys, tx_my_role=tx_my_role
         )
         await connection.attach_invitation(self.context, invitation)
 
