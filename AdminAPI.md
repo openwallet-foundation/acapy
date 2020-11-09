@@ -27,7 +27,7 @@ The combination of an OpenAPI client and webhook processor is referred to as an 
 
 When ACA-Py is started with the `--webhook-url {URL}` command line parameter, state-management records are sent to the provided URL via POST requests whenever a record is created or its `state` property is updated.
 
-When a webhook is dispatched, the record `topic` is appended as a path component to the URL, for example: `https://webhook.host.example` becomes `https://webhook.host.example/connections` when a connection record is updated. A POST request is made to the resulting URL with the body of the request comprised by a serialized JSON object. The full set of properties of the current set of webhook payloads are listed below. Note that empty (null-value) properties are omitted.
+When a webhook is dispatched, the record `topic` is appended as a path component to the URL, for example: `https://webhook.host.example` becomes `https://webhook.host.example/topic/connections` when a connection record is updated. A POST request is made to the resulting URL with the body of the request comprised by a serialized JSON object. The full set of properties of the current set of webhook payloads are listed below. Note that empty (null-value) properties are omitted.
 
 #### Pairwise Connection Record Updated (`/connections`)
 
