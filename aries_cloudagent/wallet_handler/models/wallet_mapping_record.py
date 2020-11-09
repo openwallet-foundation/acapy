@@ -1,4 +1,4 @@
-"""Wallet record"""
+"""Wallet mapping record"""
 
 from typing import Any, Sequence
 
@@ -66,7 +66,7 @@ class WalletMappingRecord(BaseRecord):
         context: InjectionContext,
         wallet_name: str,
     ) -> Sequence["WalletMappingRecord"]:
-        """Retrieve wallet mappings record by wallet_name."""
+        """Retrieve wallet mapping records by wallet_name."""
         return await cls.query(context, {"wallet_name": wallet_name})
 
     def __eq__(self, other: Any) -> bool:
@@ -78,7 +78,7 @@ class WalletMappingRecordSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of record."""
 
     class Meta:
-        """WalletRecordSchema metadata."""
+        """WalletMappingRecordSchema metadata."""
 
         model_class = WalletMappingRecord
 
