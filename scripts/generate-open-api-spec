@@ -72,10 +72,13 @@ function waitActiveWebInterface() {
   do
     curl -s -f ${1}
     if [ $? == 0 ]; then
-      break
+      return 0
     fi
+    echo "Waiting for web interface to activate"
     sleep 1
   done
+  echo "**** FAIL - Web interface failed to activate in ${2} seconds. ****"
+  return 1
 }
 
 # Create an ACA-py docker image from the current code checked
@@ -188,6 +191,10 @@ runACAPy "${ACA_PY_DOCKER_IMAGE_DEFAULT}" "${ACA_PY_DOCKER_PORTS}" "${ACA_PY_CMD
 # Make sure ACA-py container gets terminated when we do
 trap 'docker kill ${ACA_PY_CONTAINER_ID}' EXIT
 waitActiveWebInterface "http://localhost:${ACA_PY_ADMIN_PORT}" 20
+returnValue=$?
+if [ $returnValue != 0 ]; then
+  exit
+fi
 printMilestone "ACA-Py Admin interface active\n\t Docker Id '${ACA_PY_CONTAINER_ID}'"
 
 # Pull the swagger raw format spec file from ACA-py
