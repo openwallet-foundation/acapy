@@ -345,6 +345,13 @@ class Conn23RecordSchema(BaseRecordSchema):
     routing_state = fields.Str(
         required=False,
         description="Routing state of connection",
+        validate=validate.OneOf(
+            [
+                getattr(Conn23Record, m)
+                for m in vars(Conn23Record)
+                if m.startswith("ROUTING_STATE_")
+            ]
+        ),
         example=Conn23Record.ROUTING_STATE_ACTIVE,
     )
     accept = fields.Str(
