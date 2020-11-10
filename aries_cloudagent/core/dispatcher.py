@@ -27,7 +27,8 @@ from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 
 from ..wallet_handler.handler import WalletHandler
-from ..wallet_handler.error import KeyNotFoundError, WalletNotFoundError
+from ..wallet.error import WalletNotFoundError
+from ..wallet_handler.error import KeyNotFoundError
 
 from ..utils.tracing import trace_event, get_timer
 

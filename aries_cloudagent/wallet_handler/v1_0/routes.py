@@ -13,9 +13,9 @@ from marshmallow import fields, Schema
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ...messaging.models.openapi import OpenAPISchema
 
-from ..error import WalletError, WalletDuplicateError
+from ..error import WalletError
 from ..error import WalletAccessError
-from ..error import WalletNotFoundError
+from ...wallet.error import WalletNotFoundError, WalletDuplicateError
 
 
 class WalletAddSchema(Schema):

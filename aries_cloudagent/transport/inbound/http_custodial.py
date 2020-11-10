@@ -9,7 +9,6 @@ from ...messaging.error import MessageParseError
 from .base import BaseInboundTransport, InboundTransportSetupError
 
 from ...wallet_handler.handler import WalletHandler
-from ...wallet_handler.error import WalletNotFoundError
 
 LOGGER = logging.getLogger(__name__)
 

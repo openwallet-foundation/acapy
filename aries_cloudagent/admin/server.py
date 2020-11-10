@@ -26,7 +26,7 @@ from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
 from ..wallet_handler import WalletHandler
-from ..wallet_handler.error import WalletNotFoundError, KeyNotFoundError
+from ..wallet.error import WalletNotFoundError
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -691,7 +691,7 @@ class AdminServer(BaseAdminServer):
                     for webhook_url in webhook_urls:
                         # FIXME: Do we need topic filter and max attempts configurable ?
                         self.webhook_router(topic, payload, webhook_url)
-                except KeyNotFoundError:
+                except WalletNotFoundError:
                     LOGGER.exception("webhook urls is not found with given context")
             else:
                 for idx, target in self.webhook_targets.items():

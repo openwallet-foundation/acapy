@@ -18,9 +18,9 @@ from ..utils.classloader import ClassLoader
 from ..config.provider import DynamicProvider
 from ..config.injection_context import InjectionContext
 
-from .error import WalletError, WalletDuplicateError
+from .error import WalletError
 from .error import KeyNotFoundError, WalletAccessError
-from .error import WalletNotFoundError
+from ..wallet.error import WalletNotFoundError, WalletDuplicateError
 
 
 class WalletHandler():
