@@ -684,7 +684,8 @@ class AdminServer(BaseAdminServer):
         """Add a webhook to the queue, to send to all registered targets."""
         if self.webhook_router:
             ext_plugins = self.context.settings.get_value("external_plugins")
-            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            base_wallet = context.settings.get_value("wallet.id") == self.context.settings.get_value("wallet.name")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins and not base_wallet:
                 wallet_handler: WalletHandler = await context.inject(WalletHandler)
                 try:
                     webhook_urls = await wallet_handler.get_webhook_urls(context)

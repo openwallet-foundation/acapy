@@ -126,7 +126,8 @@ class ConnectionManager:
         if not my_label:
             # get label for wallet if exist
             ext_plugins = self.context.settings.get_value("external_plugins")
-            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            base_wallet = self.context.settings.get_value("wallet.id") == self.context.settings.get_value("wallet.name")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins and not base_wallet:
                 wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
                 try:
                     my_label = await wallet_handler.get_label(self.context)
@@ -344,7 +345,8 @@ class ConnectionManager:
         if not my_label:
             # get label for wallet if exist
             ext_plugins = self.context.settings.get_value("external_plugins")
-            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            base_wallet = self.context.settings.get_value("wallet.id") == self.context.settings.get_value("wallet.name")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins and not base_wallet:
                 wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
                 try:
                     my_label = await wallet_handler.get_label(self.context)
