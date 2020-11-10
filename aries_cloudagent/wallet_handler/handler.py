@@ -176,8 +176,7 @@ class WalletHandler():
 
         # check wallet name is already exist in wallet_record
         wallet_name = config["name"]
-        post_filter = {"name": wallet_name}
-        wallet_records = await WalletRecord.query(self.context, post_filter_positive=post_filter)
+        wallet_records = await self.get_wallets({"name": wallet_name})
         if wallet_records:
             raise WalletDuplicateError(f"specified wallet name already exist: {wallet_name}")
 
