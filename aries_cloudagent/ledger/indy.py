@@ -17,6 +17,7 @@ import indy.pool
 from indy.error import IndyError, ErrorCode
 
 from ..cache.base import BaseCache
+from ..config.injection_context import InjectionContext
 from ..issuer.base import BaseIssuer, IssuerError, DEFAULT_CRED_DEF_TAG
 from ..indy.error import IndyErrorHandler
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
@@ -854,7 +855,13 @@ class IndyLedger(BaseLedger):
         return False
 
     async def register_nym(
-        self, did: str, verkey: str, alias: str = None, role: str = None
+            self,
+            did: str,
+            verkey: str,
+            alias: str = None,
+            role: str = None,
+            wallet_name: str = None,
+            context: InjectionContext = None
     ):
         """
         Register a nym on the ledger.
@@ -864,13 +871,17 @@ class IndyLedger(BaseLedger):
             verkey: The verification key of the keypair.
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
+            wallet_name: wallet name that owns the did.
+            context: Injection context.
         """
         if self.read_only:
             raise LedgerError(
                 "Error cannot register nym when ledger is in read only mode"
             )
 
-        public_info = await self.wallet.get_public_did()
+        # use the wallet of requester to register nym
+        wallet: BaseWallet = self.wallet
+        public_info = await wallet.get_public_did()
         public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception when building nym request", LedgerError):
             request_json = await indy.ledger.build_nym_request(
@@ -879,9 +890,17 @@ class IndyLedger(BaseLedger):
 
         await self._submit(request_json)
 
-        did_info = await self.wallet.get_local_did(did)
+        # Multitenancy: if wallet_name is given, use the wallet of wallet_name
+        ext_plugins = context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            if wallet_name:
+                _context = context.copy()
+                _context.settings.set_value("wallet.id", wallet_name)
+                wallet = await _context.inject(BaseWallet)
+
+        did_info = await wallet.get_local_did(did)
         metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
-        await self.wallet.replace_local_did_metadata(did, metadata)
+        await wallet.replace_local_did_metadata(did, metadata)
 
     async def get_nym_role(self, did: str) -> Role:
         """
