@@ -109,13 +109,20 @@ class WalletHandler():
         storage = await new_context.inject(BaseStorage)
         ledger = await new_context.inject(BaseLedger)
 
-    async def set_instance(self, wallet: str, context: InjectionContext):
+    async def set_instance(self, wallet_name: str, context: InjectionContext):
         """Set a specific wallet to open by the provider."""
         instances = await self.get_instances()
-        if wallet not in instances:
-            raise WalletNotFoundError('Requested not exisiting wallet instance.')
-        context.settings.set_value("wallet.id", wallet)
-        context.settings.set_value("ledger.pool_name", wallet)
+        if wallet_name not in instances:
+            # wallet is not opened
+            # query wallet and open wallet if exist
+            wallet_records = await self.get_wallets({"name": wallet_name})
+            if wallet_records:
+                wallet_record = wallet_records[0]
+                await self.add_instance(wallet_record.config)
+            else:
+                raise WalletNotFoundError('Requested wallet is not exist in storage.')
+        context.settings.set_value("wallet.id", wallet_name)
+        context.settings.set_value("ledger.pool_name", wallet_name)
 
     async def delete_instance(self, wallet_name: str):
         """

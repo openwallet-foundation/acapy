@@ -308,12 +308,10 @@ class AdminServer(BaseAdminServer):
                 # TODO: Authorization concept.
                 header_auth = request.headers.get("Wallet")
                 if not header_auth:
-
                     raise web.HTTPUnauthorized()
 
                 # Request instance and lock request of wallet provider so that
                 # no other task can interfere
-                #context.settings.set_value("wallet.id", header_auth)
                 try:
                     await wallet_handler.set_instance(header_auth, context)
                 except WalletNotFoundError:
