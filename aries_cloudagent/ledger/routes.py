@@ -174,7 +174,7 @@ async def get_nym_role(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context = request["context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
