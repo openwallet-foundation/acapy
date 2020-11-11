@@ -18,8 +18,8 @@ OUTPUT_DIR="${ROOT_DIR}/open-api"
 ##########################################################################################
 ACA_PY_DOCKER_IMAGE_DEFAULT="aries-cloudagent-run"
 
-ACA_PY_ADMIN_PORT="8101"
-ACA_PY_INBOUND_PORT="8100"
+ACA_PY_ADMIN_PORT="8305"
+ACA_PY_INBOUND_PORT="8307"
 ACA_PY_DOCKER_PORTS="${ACA_PY_INBOUND_PORT}:${ACA_PY_INBOUND_PORT} ${ACA_PY_ADMIN_PORT}:${ACA_PY_ADMIN_PORT}"
 ACA_PY_CMD_OPTIONS=" \
   -e http \
@@ -122,6 +122,11 @@ function runACAPy() {
 
   # Return the docker container id for anyone who cares
   containerId=$(${acaPyCmd})
+  local returnStatus=$?
+  if [[ ${returnStatus} != 0 ]]; then
+      echo "**** FAIL - ACA-Py failed to start, exiting. ****"
+      exit 1
+  fi
   if [[ "${result}" ]]; then
     eval ${result}="'${containerId}'"
   fi
