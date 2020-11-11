@@ -17,12 +17,15 @@ class RouteRecord(BaseRecord):
 
     RECORD_TYPE = "forward_route"
     RECORD_ID_NAME = "record_id"
-    TAG_NAMES = {"connection_id", "recipient_key"}
+    ROLE_CLIENT = "client"
+    ROLE_SERVER = "server"
+    TAG_NAMES = {"connection_id", "role", "recipient_key"}
 
     def __init__(
         self,
         *,
         record_id: str = None,
+        role: str = None,
         connection_id: str = None,
         recipient_key: str = None,
         **kwargs
@@ -35,6 +38,7 @@ class RouteRecord(BaseRecord):
 
         """
         super().__init__(record_id, None, **kwargs)
+        self.role = role or self.ROLE_SERVER
         self.connection_id = connection_id
         self.recipient_key = recipient_key
 
@@ -72,5 +76,6 @@ class RouteRecordSchema(BaseRecordSchema):
         unknown = EXCLUDE
 
     record_id = fields.Str(required=False)
+    role = fields.Str(required=False)
     connection_id = fields.Str(required=True)
     recipient_key = fields.Str(required=True)

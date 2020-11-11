@@ -11,7 +11,7 @@ from .inner.keylist_update_rule import KeylistUpdateRule, KeylistUpdateRuleSchem
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
-    ".keylist_update_request_handler.KeylistUpdateHandler"
+    ".keylist_update_handler.KeylistUpdateHandler"
 )
 
 

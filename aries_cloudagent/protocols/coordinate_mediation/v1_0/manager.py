@@ -1,27 +1,27 @@
 """Manager for Mediation coordination."""
 import json
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
-from ....wallet.base import BaseWallet, DIDInfo
-from ....storage.record import StorageRecord
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
-
-from ...routing.v1_0.models.route_record import RouteRecord
+from ....storage.record import StorageRecord
+from ....wallet.base import BaseWallet, DIDInfo
 from ...routing.v1_0.manager import RoutingManager
+from ...routing.v1_0.models.route_record import RouteRecord
 from ...routing.v1_0.models.route_update import RouteUpdate
 from ...routing.v1_0.models.route_updated import RouteUpdated
-
-from .messages.mediate_request import MediationRequest
-from .messages.mediate_grant import MediationGrant
-from .messages.mediate_deny import MediationDeny
+from .messages.inner.keylist_key import KeylistKey
 from .messages.inner.keylist_update_rule import KeylistUpdateRule
 from .messages.inner.keylist_updated import KeylistUpdated
-from .messages.inner.keylist_key import KeylistKey
-from .messages.keylist_update_response import KeylistUpdateResponse
 from .messages.keylist import Keylist
+from .messages.keylist_update_response import KeylistUpdateResponse
+from .messages.keylist_update import KeylistUpdate
+from .messages.keylist_query import KeylistQuery
+from .messages.mediate_deny import MediationDeny
+from .messages.mediate_grant import MediationGrant
+from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
 
 
@@ -44,6 +44,8 @@ class MediationManager:
             raise MediationManagerError("Missing request context")
 
         self.context = context
+
+    # Role: Server {{{
 
     async def _retrieve_routing_did(self) -> Optional[DIDInfo]:
         """Retrieve routing DID from the wallet."""
@@ -76,6 +78,11 @@ class MediationManager:
 
     async def receive_request(self, request: MediationRequest) -> MediationRecord:
         """Create a new mediation record to track this request."""
+        if await MediationRecord.exists_for_connection_id(
+            self.context, self.context.connection_record.connection_id
+        ):
+            raise MediationManagerError('Mediation Record already exists for connection')
+
         # TODO: Determine if terms are acceptable
         record = MediationRecord(
             connection_id=self.context.connection_record.connection_id,
@@ -159,3 +166,96 @@ class MediationManager:
             lambda key: KeylistKey(recipient_key=key.recipient_key), keylist
         ))
         return Keylist(keys=keys, pagination=None)
+
+    # }}}
+
+    # Role: Client {{{
+
+    async def prepare_request(
+        self,
+        connection_id: str,
+        mediator_terms: Sequence[str] = None,
+        recipient_terms: Sequence[str] = None
+    ):
+        """Prepare a MediationRequest Message, saving a new mediation record."""
+        record = MediationRecord(
+            role=MediationRecord.ROLE_CLIENT,
+            connection_id=connection_id,
+            mediator_terms=mediator_terms,
+            recipient_terms=recipient_terms
+        )
+        await record.save(self.context, reason="Creating new mediation request.")
+        return MediationRequest(
+            mediator_terms=mediator_terms,
+            recipient_terms=recipient_terms
+        )
+
+    async def request_granted(
+        self,
+        record: MediationRecord
+    ):
+        """Process mediation grant message."""
+        record.state = MediationRecord.STATE_GRANTED
+        await record.save(self.context, reason="Mediation request granted.")
+        # TODO Store endpoint and routing key for later use.
+
+    async def request_denied(
+        self,
+        record: MediationRecord
+    ):
+        """Process mediatino denied message."""
+        record.state = MediationRecord.STATE_DENIED
+        await record.save(self.context, reason="Mediation request denied.")
+        # TODO Remove endpoint and routing key.
+
+    async def prepare_keylist_query(
+        self,
+        filter_: dict = None,
+        paginate_limit: int = -1,
+        paginate_offset: int = 0
+    ):
+        """Prepare keylist query message."""
+        message = KeylistQuery(
+            filter=filter_,
+            paginate={
+                'limit': paginate_limit, 'offset': paginate_offset
+            }
+        )
+        return message
+
+    async def add_key(
+        self,
+        recipient_key: str,
+        connection_id: str,
+        message: KeylistUpdate = None
+    ) -> KeylistUpdate:
+        """Prepare a keylist update add."""
+        message = message or KeylistUpdate()
+        message.updates.append(
+            KeylistUpdateRule(recipient_key, KeylistUpdateRule.RULE_ADD)
+        )
+        return message
+
+    async def remove_key(
+        self,
+        recipient_key: str,
+        connection_id: str,
+        message: KeylistUpdate = None
+    ) -> KeylistUpdate:
+        """Prepare keylist update remove."""
+        message = message or KeylistUpdate()
+        message.updates.append(
+            KeylistUpdateRule(recipient_key, KeylistUpdateRule.RULE_REMOVE)
+        )
+        return message
+
+    async def get_my_keylist(
+        self,
+        connection_id: str = None
+    ) -> Sequence[RouteRecord]:
+        """Get my routed keys."""
+        tag_filter = {'connection_id': connection_id} if connection_id else {}
+        tag_filter['role'] = RouteRecord.ROLE_CLIENT
+        return await RouteRecord.query(self.context, tag_filter)
+
+    # }}}
