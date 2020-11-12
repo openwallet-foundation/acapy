@@ -33,7 +33,6 @@ class ConnectionResponse(AgentMessage):
         """
         super().__init__(**kwargs)
         self.connection = connection
-        # CHANGES BY HARSH MULTANi
         self.role = role
 
 
@@ -49,7 +48,6 @@ class ConnectionResponseSchema(AgentMessageSchema):
 
     connection = fields.Nested(ConnectionDetailSchema, required=True)
 
-    # CHANGES BY HARSH MULTANI
     role = fields.Str(
         required=False,
         description="The Role that needs to be passed",

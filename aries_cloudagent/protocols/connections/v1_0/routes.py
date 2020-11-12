@@ -35,7 +35,6 @@ from .messages.connection_invitation import (
     ConnectionInvitationSchema,
 )
 
-# CHANGES BY HARSH MULTANI
 from .role import Role
 
 
@@ -142,7 +141,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         required=False,
         example="Point of contact",
     )
-    # CHANGES BY HARSH MULTANI
+
     tx_my_role = fields.Str(
         description=" A list of my assigned connection role (AUTHOR/ENDORSER)",
         required=False,
@@ -202,7 +201,7 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
     )
-    # CHANGES BY HARSH MULTANI
+
     my_role = fields.Str(
         description="Role",
         required=False,
@@ -216,7 +215,7 @@ class AcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept conn-request web-request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
-    # CHANGES BY HARSH MULTANI
+
     my_role = fields.Str(
         description="Role",
         required=False,
@@ -291,7 +290,6 @@ async def connections_list(request: web.BaseRequest):
         "alias",
         "initiator",
         "state",
-        # CHANGES BY HARSH MULTANI
         "tx_my_role",
         "tx_their_role",
         "their_role",
@@ -451,7 +449,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
         connection_mgr = ConnectionManager(context)
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
-        # CHANGES BY HARSH MULTANI
+
         my_role = request.query.get("my_role")
         request = await connection_mgr.create_request(connection, my_label, my_endpoint, my_role)
         result = connection.serialize()
@@ -490,7 +488,7 @@ async def connections_accept_request(request: web.BaseRequest):
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
         connection_mgr = ConnectionManager(context)
         my_endpoint = request.query.get("my_endpoint") or None
-        # CHANGES BY HARSH MULTANI
+
         my_role = request.query.get("my_role")
         response = await connection_mgr.create_response(connection, my_endpoint, my_role)
         result = connection.serialize()       
