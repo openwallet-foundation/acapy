@@ -66,6 +66,9 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         my_did: str = None,
         their_did: str = None,
         their_label: str = None,
+        # CHANGES BY HARSH MULTANI
+        tx_my_role:list = [],
+        tx_their_role:list = [],
         their_role: str = None,
         initiator: str = None,
         invitation_key: str = None,
@@ -84,6 +87,9 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         self.my_did = my_did
         self.their_did = their_did
         self.their_label = their_label
+        # CHANGES BY HARSH MULTANI
+        self.tx_my_role = tx_my_role
+        self.tx_their_role = tx_their_role
         self.their_role = their_role
         self.initiator = initiator
         self.invitation_key = invitation_key
@@ -107,6 +113,9 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
             prop: getattr(self, prop)
             for prop in (
                 "initiator",
+                # CHANGES BY HARSH MULTANI
+                "tx_my_role",
+                "tx_their_role",
                 "their_role",
                 "inbound_connection_id",
                 "routing_state",
@@ -281,6 +290,13 @@ class ConnectionRecordSchema(BaseRecordSchema):
     )
     their_label = fields.Str(
         required=False, description="Their label for connection", example="Bob"
+    )
+    #CHANGES BY HARSH MULTANI
+    tx_my_role = fields.List(
+        fields.Str(),required=False, description="A List of my transaction related roles (AUTHOR/ENDORSER)"
+    )
+    tx_their_role = fields.List(
+        fields.Str(),required=False, description="A List of their transaction related roles (AUTHOR/ENDORSER)"
     )
     their_role = fields.Str(
         required=False,

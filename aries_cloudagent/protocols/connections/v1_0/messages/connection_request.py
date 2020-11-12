@@ -29,6 +29,8 @@ class ConnectionRequest(AgentMessage):
         connection: ConnectionDetail = None,
         label: str = None,
         image_url: str = None,
+        # CHANGES BY HARSH MULTANI
+        role: str = None,
         **kwargs,
     ):
         """
@@ -42,6 +44,8 @@ class ConnectionRequest(AgentMessage):
         super().__init__(**kwargs)
         self.connection = connection
         self.label = label
+        # CHANGES BY HARSH MULTANI
+        self.role = role
 
 
 class ConnectionRequestSchema(AgentMessageSchema):
@@ -58,6 +62,12 @@ class ConnectionRequestSchema(AgentMessageSchema):
         required=True,
         description="Label for connection request",
         example="Request to connect with Bob",
+    )
+    # CHANGES BY HARSH MULTANI
+    role = fields.Str(
+        required=False,
+        description="The Role that needs to be passed",
+        example="ENDORSER",
     )
     image_url = fields.Str(
         data_key="imageUrl",

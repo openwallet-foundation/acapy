@@ -35,6 +35,9 @@ from .messages.connection_invitation import (
     ConnectionInvitationSchema,
 )
 
+# CHANGES BY HARSH MULTANI
+from .role import Role
+
 
 class ConnectionListSchema(OpenAPISchema):
     """Result schema for connection list."""
@@ -139,6 +142,17 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         required=False,
         example="Point of contact",
     )
+    # CHANGES BY HARSH MULTANI
+    tx_my_role = fields.Str(
+        description=" A list of my assigned connection role (AUTHOR/ENDORSER)",
+        required=False,
+        example="Point of contact",
+    )
+    tx_their_role = fields.Str(
+        description="A list of their assigned connection role (AUTHOR/ENDORSER)",
+        required=False,
+        example="Point of contact",
+    )
 
 
 class CreateInvitationQueryStringSchema(OpenAPISchema):
@@ -146,7 +160,7 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
 
     alias = fields.Str(
         description="Alias",
-        required=False,
+        required=True,
         example="Barry",
     )
     auto_accept = fields.Boolean(
@@ -159,6 +173,12 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
     multi_use = fields.Boolean(
         description="Create invitation for multiple use (default false)", required=False
     )
+    """ Changes By Harsh Multani"""
+    #my_role = fields.str(
+    #	description="The role I play in the connection",
+#	required=True
+ #   )
+
 
 
 class ReceiveInvitationQueryStringSchema(OpenAPISchema):
@@ -182,12 +202,28 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
     )
+    # CHANGES BY HARSH MULTANI
+    my_role = fields.Str(
+        description="Role",
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in Role if isinstance(r.value[0], int)] + ["reset"]
+        ),
+    )
 
 
 class AcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept conn-request web-request query string."""
 
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    # CHANGES BY HARSH MULTANI
+    my_role = fields.Str(
+        description="Role",
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in Role if isinstance(r.value[0], int)] + ["reset"]
+        ),
+    )
 
 
 class ConnIdMatchInfoSchema(OpenAPISchema):
@@ -255,6 +291,9 @@ async def connections_list(request: web.BaseRequest):
         "alias",
         "initiator",
         "state",
+        # CHANGES BY HARSH MULTANI
+        "tx_my_role",
+        "tx_their_role",
         "their_role",
     ):
         if param_name in request.query and request.query[param_name] != "":
@@ -412,7 +451,9 @@ async def connections_accept_invitation(request: web.BaseRequest):
         connection_mgr = ConnectionManager(context)
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
-        request = await connection_mgr.create_request(connection, my_label, my_endpoint)
+        # CHANGES BY HARSH MULTANI
+        my_role = request.query.get("my_role")
+        request = await connection_mgr.create_request(connection, my_label, my_endpoint, my_role)
         result = connection.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -449,8 +490,10 @@ async def connections_accept_request(request: web.BaseRequest):
         connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
         connection_mgr = ConnectionManager(context)
         my_endpoint = request.query.get("my_endpoint") or None
-        response = await connection_mgr.create_response(connection, my_endpoint)
-        result = connection.serialize()
+        # CHANGES BY HARSH MULTANI
+        my_role = request.query.get("my_role")
+        response = await connection_mgr.create_response(connection, my_endpoint, my_role)
+        result = connection.serialize()       
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, WalletError, ConnectionManagerError, BaseModelError) as err:
