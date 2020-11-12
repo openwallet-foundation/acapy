@@ -1,5 +1,6 @@
 """Classes to manage route coordination."""
 
+from aries_cloudagent.wallet.base import BaseWallet
 from typing import Sequence
 
 import logging
@@ -179,6 +180,8 @@ class RouteCoordinationManager:
             grant_response: Response message for grant
 
         """
+        wallet: BaseWallet = await self.context.inject(BaseWallet)
+
         async def get_routing_endpoint():
             return self.context.settings.get("default_endpoint")
 
@@ -191,10 +194,15 @@ class RouteCoordinationManager:
         route_coordination.routing_endpoint = routing_endpoint
         route_coordination.state = RouteCoordination.STATE_MEDIATION_GRANTED
 
+        # Create and store new routing key
+        routing_key = await wallet.create_signing_key()
+
+        route_coordination.routing_keys = [routing_key.verkey, ]
+
         await route_coordination.save(self.context)
         grant_response = await self.create_grant_message(
             endpoint=routing_endpoint,
-            routing_keys=[]
+            routing_keys=route_coordination.routing_keys
         )
         grant_response._thread = {
             "thid": route_coordination.thread_id
