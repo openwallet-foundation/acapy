@@ -28,6 +28,8 @@ from ..valid import (
     INDY_WQL,
     INT_EPOCH,
     NATURAL_NUM,
+    NUM_STR_NATURAL,
+    NUM_STR_WHOLE,
     JWS_HEADER_KID,
     JWT,
     SHA256,
@@ -58,14 +60,33 @@ class TestValid(TestCase):
         WHOLE_NUM["validate"](12345678901234567890)
 
     def test_natural(self):
-        non_naturals = [-9223372036854775809, 2.3, "Hello", 0, None]
-        for non_natural in non_naturals:
+        non_naturals = [-9223372036854775809, 2.3, "Hello", None]
+        for non_naturals in non_naturals:
             with self.assertRaises(ValidationError):
-                NATURAL_NUM["validate"](non_natural)
+                NATURAL_NUM["validate"](non_naturals)
 
         NATURAL_NUM["validate"](1)
-        NATURAL_NUM["validate"](2)
         NATURAL_NUM["validate"](12345678901234567890)
+
+    def test_str_whole(self):
+        non_str_wholes = ["-9223372036854775809", "Hello", "5.5"]
+        for non_str_whole in non_str_wholes:
+            with self.assertRaises(ValidationError):
+                NUM_STR_WHOLE["validate"](non_str_whole)
+
+        NUM_STR_WHOLE["validate"]("0")
+        NUM_STR_WHOLE["validate"]("1")
+        NUM_STR_WHOLE["validate"]("12345678901234567890")
+
+    def test_str_natural(self):
+        non_str_naturals = ["-9223372036854775809", "Hello", "0", "5.5"]
+        for non_str_natural in non_str_naturals:
+            with self.assertRaises(ValidationError):
+                NUM_STR_NATURAL["validate"](non_str_natural)
+
+        NUM_STR_NATURAL["validate"]("1")
+        NUM_STR_NATURAL["validate"]("2")
+        NUM_STR_NATURAL["validate"]("12345678901234567890")
 
     def test_indy_rev_reg_size(self):
         non_indy_rr_sizes = [-9223372036854775809, 2.3, "Hello", 0, 3, 32769, None]
