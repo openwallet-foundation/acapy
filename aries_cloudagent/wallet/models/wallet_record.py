@@ -42,8 +42,6 @@ class WalletRecord(BaseExchangeRecord):
         self.image_url = image_url
         self.webhook_urls = webhook_urls
         self.trace = trace
-        self._associated_keys = []
-        self._associated_connections = []
 
     def get_config_as_settings(self):
         # Wallet settings need to be prefixed with `wallet.`
@@ -54,14 +52,6 @@ class WalletRecord(BaseExchangeRecord):
             BaseWallet, settings=self.get_config_as_settings(),
         )
         return wallet_instance
-
-    def add_key(self, key: str):
-        """Add new associated key to wallet."""
-        self._associated_keys.append(key)
-
-    def add_connection(self, connection_id: str):
-        """Add new associated connection to wallet."""
-        self._associated_connections.append(connection_id)
 
     @property
     def wallet_id(self) -> str:
