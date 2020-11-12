@@ -4,6 +4,8 @@ from asynctest import mock as async_mock
 from ....config.injection_context import InjectionContext
 from ....messaging.request_context import RequestContext
 from ....ledger.base import BaseLedger
+from ....wallet.base import BaseWallet
+from ....wallet.basic import BasicWallet
 from ....messaging.responder import BaseResponder, MockResponder
 from ....storage.error import StorageNotFoundError
 from .. import routes as test_module
@@ -29,7 +31,9 @@ class TestRouteCoordinationManager(AsyncTestCase):
         )
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
+        self.wallet = BasicWallet()
         self.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.context.injector.bind_instance(BaseWallet, self.wallet)
         self.manager = RouteCoordinationManager(self.context)
 
     async def test_create_mediation_request(self):
