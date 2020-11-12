@@ -66,7 +66,6 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         my_did: str = None,
         their_did: str = None,
         their_label: str = None,
-        # CHANGES BY HARSH MULTANI
         tx_my_role:list = [],
         tx_their_role:list = [],
         their_role: str = None,
@@ -87,7 +86,7 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         self.my_did = my_did
         self.their_did = their_did
         self.their_label = their_label
-        # CHANGES BY HARSH MULTANI
+
         self.tx_my_role = tx_my_role
         self.tx_their_role = tx_their_role
         self.their_role = their_role
@@ -113,7 +112,6 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
             prop: getattr(self, prop)
             for prop in (
                 "initiator",
-                # CHANGES BY HARSH MULTANI
                 "tx_my_role",
                 "tx_their_role",
                 "their_role",

@@ -32,7 +32,7 @@ def match_post_filter(record: dict, post_filter: dict, positive: bool = True) ->
     if not post_filter:
         return True
 
-    # CHANGES BY HARSH MULTANI
+    
     return_flag = True
 
     for k, v in post_filter.items():

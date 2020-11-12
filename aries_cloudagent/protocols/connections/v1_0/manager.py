@@ -291,7 +291,6 @@ class ConnectionManager:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
             
-            # CHANGES BY HARSH MULTANI
             connection.tx_my_role.append(my_role)
 
 
@@ -312,7 +311,6 @@ class ConnectionManager:
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
-            # CHANGES BY HARSH MULTANI
             role=my_role,
         )
 
@@ -405,7 +403,7 @@ class ConnectionManager:
         if connection:
             connection.their_label = request.label
             connection.their_did = request.connection.did
-            # CHANGES BY HARSH MULTANI
+
             connection.tx_their_role.append(request.role)
             connection.state = ConnectionRecord.STATE_REQUEST
             await connection.save(
@@ -488,7 +486,6 @@ class ConnectionManager:
             my_info = await wallet.create_local_did()
             connection.my_did = my_info.did
             
-            # CHANGES BY HARSH MULTANI
             connection.tx_my_role.append(my_role)
 
         
@@ -596,7 +593,7 @@ class ConnectionManager:
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did
-        # CHANGES BY HARSH MULTANI
+
         connection.tx_their_role.append(response.role)
         connection.state = ConnectionRecord.STATE_RESPONSE
 
