@@ -180,7 +180,7 @@ class RouteCoordinationManager:
 
         """
         async def get_routing_endpoint():
-            return "test_endpoint"
+            return self.context.settings.get("default_endpoint")
 
         if not route_coordination.state == RouteCoordination.STATE_MEDIATION_RECEIVED:
             raise RouteCoordinationManagerError(
