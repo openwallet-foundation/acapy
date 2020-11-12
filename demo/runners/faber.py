@@ -12,8 +12,8 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import (
+from .support.agent import DemoAgent, default_genesis_txns
+from .support.utils import (
     log_msg,
     log_status,
     log_timer,
@@ -28,11 +28,13 @@ SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 LOGGER = logging.getLogger(__name__)
 
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
+BASE_AGENT_SEED = os.getenv("BASE_AGENT_SEED", "000000000000000000000000Steward1")
 
 
 class FaberAgent(DemoAgent):
     def __init__(
         self,
+        ident: str,
         http_port: int,
         admin_port: int,
         no_auto: bool = False,
@@ -40,7 +42,7 @@ class FaberAgent(DemoAgent):
         **kwargs,
     ):
         super().__init__(
-            "Faber.Agent",
+            ident,
             http_port,
             admin_port,
             prefix="Faber",
@@ -139,6 +141,35 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
+class BaseAgent(DemoAgent):
+    def __init__(
+        self,
+        ident: str,
+        http_port: int,
+        admin_port: int,
+        no_auto: bool = False,
+        tails_server_base_url: str = None,
+        seed: str = "random",
+        **kwargs,
+    ):
+        super().__init__(
+            ident,
+            http_port,
+            admin_port,
+            prefix="Base.Agent",
+            tails_server_base_url=tails_server_base_url,
+            seed=seed,
+            extra_args=[]
+            if no_auto
+            else [
+                "--auto-accept-invites",
+                "--auto-accept-requests",
+                "--auto-store-credential",
+            ],
+            **kwargs,
+        )
+
+
 async def generate_invitation(agent):
     agent._connection_ready = asyncio.Future()
     with log_timer("Generate invitation duration:"):
@@ -207,22 +238,50 @@ async def main(
 
     try:
         log_status("#1 Provision an agent and wallet, get back configuration details")
-        agent = FaberAgent(
-            start_port,
-            start_port + 1,
-            genesis_data=genesis,
-            no_auto=no_auto,
-            tails_server_base_url=tails_server_base_url,
-            timing=show_timing,
-            multitenant=multitenant,
-        )
-        await agent.listen_webhooks(start_port + 2)
-        await agent.register_did()
-
-        with log_timer("Startup duration:"):
-            await agent.start_process()
-        log_msg("Admin URL is at:", agent.admin_url)
-        log_msg("Endpoint URL is at:", agent.endpoint)
+        if multitenant:
+            base_agent = BaseAgent(
+                "Base.Agent",
+                start_port,
+                start_port + 1,
+                genesis_data=genesis,
+                no_auto=no_auto,
+                tails_server_base_url=tails_server_base_url,
+                timing=show_timing,
+                multitenant=multitenant,
+                seed=BASE_AGENT_SEED,
+                wallet_name="base"
+            )
+            # Note that Faber acts as a just controller (use admin/endpoint of BaseAgent)
+            agent = FaberAgent(
+                "Faber",
+                start_port,
+                start_port + 1,
+                multitenant=multitenant
+            )
+            with log_timer("Startup duration:"):
+                await base_agent.start_process()
+            log_msg("Admin URL is at:", base_agent.admin_url)
+            log_msg("Endpoint URL is at:", base_agent.endpoint)
+            await agent.listen_webhooks(start_port + 2)
+            await agent.create_wallet_and_did()
+            await base_agent.register_did_as_endorser(agent.did, agent.verkey, agent.ident, agent.wallet_name)
+            await agent.assign_did_to_public()
+        else:
+            agent = FaberAgent(
+                "Faber.Agent",
+                start_port,
+                start_port + 1,
+                genesis_data=genesis,
+                no_auto=no_auto,
+                tails_server_base_url=tails_server_base_url,
+                timing=show_timing,
+            )
+            await agent.register_did()
+            await agent.listen_webhooks(start_port + 2)
+            with log_timer("Startup duration:"):
+                await agent.start_process()
+            log_msg("Admin URL is at:", agent.admin_url)
+            log_msg("Endpoint URL is at:", agent.endpoint)
 
         # Create a schema
         credential_definition_id = await create_schema_and_cred_def(agent, revocation)

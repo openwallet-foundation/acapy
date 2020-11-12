@@ -1,4 +1,6 @@
 import asyncio
+import sys
+
 import asyncpg
 import functools
 import json
@@ -115,6 +117,7 @@ class DemoAgent:
         postgres: bool = None,
         revocation: bool = False,
         multitenant: bool = False,
+        image_url: str = None,
         extra_args=None,
         **params,
     ):
@@ -165,8 +168,11 @@ class DemoAgent:
         self.wallet_name = (
             params.get("wallet_name") or self.ident.lower().replace(" ", "") + rand_name
         )
+        self.image_url = image_url or f"https://identicon-api.herokuapp.com/{self.wallet_name}/300?format=png";
         self.wallet_key = params.get("wallet_key") or self.wallet_name
+        self.wallet_id = None
         self.did = None
+        self.verkey = None
         self.wallet_stats = []
 
         # for multitenancy, storage_type and wallet_type are the same for all wallets
@@ -387,6 +393,51 @@ class DemoAgent:
             pass
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
+
+    async def create_wallet_and_did(self):
+        self.log(f"Creating a new wallet for {self.ident}")
+        wallet_body = {
+          "name": self.wallet_name,
+          "key": self.wallet_key,
+          "type": self.wallet_type,
+          "label": self.label,
+          "image_url": self.image_url,
+          "webhook_urls": [self.webhook_url]
+        }
+        try:
+            new_wallet = await self.admin_POST('/wallet', wallet_body)
+        except ClientError:
+            self.log(f"Cannnot connect Admin URL of Base.Agent")
+            if self.ident == "Alice":
+                self.log(f"Run faber demo first with --multitenant or set environment BASE_AGENT_PORT correctly")
+            sys.exit(1)
+        self.wallet_id = new_wallet["wallet_id"]
+        self.log(f"Created a new wallet name: {self.wallet_name} with wallet_id: {self.wallet_id}")
+
+        self.log(f"Creating a new local did for {self.ident}")
+        did_body = {}
+        if self.seed:
+            did_body = {"seed": self.seed}
+        new_did = await self.admin_POST('/wallet/did/create', did_body)
+        self.did = new_did["result"]["did"]
+        self.verkey = new_did["result"]["verkey"]
+        self.log(f"Created a new did: {self.did} with verkey: {self.verkey}")
+
+    async def register_did_as_endorser(self, did: str, verkey: str, alias: str, wallet_name: str):
+        self.log(f"Registering a did {did} of {alias} as a ENDORSER")
+        ledger_params = f"?did={did}" \
+                        f"&verkey={verkey}" \
+                        f"&alias={alias}" \
+                        f"&role=ENDORSER" \
+                        f"&wallet_name={wallet_name}"
+        response = await self.admin_POST('/ledger/register-nym' + ledger_params)
+        self.log(f"Response of registration : {response}")
+
+    async def assign_did_to_public(self):
+        self.log(f"Assigning a did {self.did} to public")
+        did_params = f"?did={self.did}"
+        response = await self.admin_POST('/wallet/did/public' + did_params)
+        self.log(f"Response of assignment : {response}")
 
     def handle_output(self, *output, source: str = None, **kwargs):
         end = "" if source else "\n"
