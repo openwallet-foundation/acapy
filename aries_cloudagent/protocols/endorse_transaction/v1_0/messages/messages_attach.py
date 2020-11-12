@@ -1,6 +1,9 @@
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+
+from ..message_types import ATTACHED_MESSAGE
 
 
 SCHEMA_TYPE = "101"
@@ -11,25 +14,32 @@ class MessagesAttach(AgentMessage):
     class Meta:
 
         schema_class = "MessagesAttachSchema"
+        message_type = ATTACHED_MESSAGE
 
 
     def __init__(
                 self, 
                 *,
                 author_did:str = None, 
+                author_verkey:str = None,
                 endorser_did:str = None, 
                 attr_names:list = [], 
                 name:str = None, 
-                version:str = None, 
+                version:str = None,
+                mechanism:str = None,
+                taaDigest:str = None,
+                time:int=None, 
                 **kwargs
                 ):
+
+        super().__init__(**kwargs)
 
         self.mime_type = "application/json"
 
         self.data = {
             "json":{
-                "endorser": author_did,
-                "identifier": endorser_did,
+                "endorser": endorser_did,
+                "identifier": author_did,
                 "operation": {
                     "data": {
                         "attr_names": attr_names,
@@ -41,12 +51,12 @@ class MessagesAttach(AgentMessage):
                 "protocol_version": PROTOCOL_VERSION,
                 "reqId": 1597766666168851000,
                 "signatures": {
-                    "LjgpST2rjsoxYegQDRm7EL": "4uq1mUATKMn6Y9sTgwqaGWGTTsYm7py2c2M8x1EVDTWKZArwyuPgjUEw5UBysWNbkf2SN6SqVwbfSqCfnbm1Vnfw"
+                    author_did: author_verkey
                     },
                 "taaAcceptance": { 
-                    "mechanism": "manual",
-                    "taaDigest": "f50feca75664270842bd4202c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62",
-                    "time": 1597708800
+                    "mechanism": mechanism,
+                    "taaDigest": taaDigest,
+                    "time": time
                     }                
             }
         }
@@ -62,9 +72,6 @@ class MessagesAttachSchema(AgentMessageSchema):
     mime_type = fields.Str(
         required=True
     )
-
     data = fields.Dict(
         required=True
     )
-
-

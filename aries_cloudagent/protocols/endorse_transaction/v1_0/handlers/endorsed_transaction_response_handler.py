@@ -1,3 +1,4 @@
+
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -6,9 +7,9 @@ from .....messaging.base_handler import (
 
 from ..manager import TransactionManager
 
-class TransactionResponseHandler(BaseHandler):
+class EndorsedTransactionResponseHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
 
         mgr = TransactionManager(context)
-        await mgr.receive_response(context.message)
+        await mgr.receive_endorse_response(context.message)

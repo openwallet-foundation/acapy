@@ -7,7 +7,6 @@ from .....messaging.base_handler import (
 
 from ..manager import TransactionManager
 
-
 class TransactionRequestHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):

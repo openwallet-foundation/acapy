@@ -1,3 +1,4 @@
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -38,14 +39,11 @@ class CancelTransactionSchema(AgentMessageSchema):
         model_class = CancelTransaction
         unknown = EXCLUDE
 
-
     state = fields.Str(
         required=False,
         description="The State of the transaction Record",
         example="ENDORSER",
     )
-
     thread_id = fields.Str(
         required=False
-    )  
-
+    ) 
