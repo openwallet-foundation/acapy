@@ -69,7 +69,7 @@ class TestValid(TestCase):
         NATURAL_NUM["validate"](12345678901234567890)
 
     def test_str_whole(self):
-        non_str_wholes = ["-9223372036854775809", "Hello", "5.5"]
+        non_str_wholes = ["-9223372036854775809", "Hello", "5.5", "4+3"]
         for non_str_whole in non_str_wholes:
             with self.assertRaises(ValidationError):
                 NUM_STR_WHOLE["validate"](non_str_whole)
