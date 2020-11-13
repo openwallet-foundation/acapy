@@ -260,9 +260,10 @@ async def main(
             )
             with log_timer("Startup duration:"):
                 await base_agent.start_process()
-            log_msg("Admin URL is at:", base_agent.admin_url)
-            log_msg("Endpoint URL is at:", base_agent.endpoint)
+            log_msg("Admin URL of Base.Agent is at:", base_agent.admin_url)
+            log_msg("Endpoint URL of Base.Agent is at:", base_agent.endpoint)
             await agent.listen_webhooks(start_port + 2)
+            log_msg("Controller URL of Faber is at:", agent.webhook_url)
             await agent.create_wallet_and_did()
             await base_agent.register_did_as_endorser(agent.did, agent.verkey, agent.ident, agent.wallet_name)
             await agent.assign_did_to_public()
@@ -297,14 +298,11 @@ async def main(
             "    (3) Send Message\n"
             "    (4) Create New Invitation\n"
         )
-        if multitenant:
-            options += "    (W) Create and/or Enable Wallet\n"
         if revocation:
             options += "    (5) Revoke Credential\n" "    (6) Publish Revocations\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
-        options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
+        options += "    (X) Exit?\n[1/2/3/4/{}T/X] ".format(
             "5/6/" if revocation else "",
-            "W/" if multitenant else "",
         )
         async for option in prompt_loop(options):
             if option is not None:
@@ -312,16 +310,6 @@ async def main(
 
             if option is None or option in "xX":
                 break
-
-            elif option in "wW" and multitenant:
-                target_wallet_name = await prompt("Enter wallet name: ")
-                created = await agent.register_or_switch_wallet(target_wallet_name, public_did=True)
-                # create a schema and cred def for the new wallet
-                # TODO check first in case we are switching between existing wallets
-                if created:
-                    # TODO this fails because the new wallet doesn't get a public DID
-                    credential_definition_id = await create_schema_and_cred_def(agent, revocation)
-                    pass
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
@@ -363,20 +351,20 @@ async def main(
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
                 req_attrs = [
-                    {"name": "name", "restrictions": [{"schema_name": "degree schema"}]},
-                    {"name": "date", "restrictions": [{"schema_name": "degree schema"}]},
+                    {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
+                    {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
                 ]
                 if revocation:
                     req_attrs.append(
                         {
                             "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
+                            "restrictions": [{"issuer_did": agent.did}],
                             "non_revoked": {"to": int(time.time() - 1)},
                         },
                     )
                 else:
                     req_attrs.append(
-                        {"name": "degree", "restrictions": [{"schema_name": "degree schema"}]}
+                        {"name": "degree", "restrictions": [{"issuer_did": agent.did}]}
                     )
                 if SELF_ATTESTED:
                     # test self-attested claims
@@ -389,7 +377,7 @@ async def main(
                         "name": "age",
                         "p_type": ">=",
                         "p_value": 18,
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"issuer_did": agent.did}],
                     }
                 ]
                 indy_proof_request = {
@@ -464,6 +452,8 @@ async def main(
     finally:
         terminated = True
         try:
+            if multitenant and base_agent:
+                await base_agent.terminate()
             if agent:
                 await agent.terminate()
         except Exception:

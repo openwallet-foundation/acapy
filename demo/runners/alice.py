@@ -240,6 +240,7 @@ async def main(
                 multitenant=multitenant
             )
             await agent.listen_webhooks(start_port + 2)
+            log_msg("Controller URL of Alice is at:", agent.webhook_url)
             await agent.create_wallet_and_did()
         else:
             agent = AliceAgent(
@@ -262,11 +263,8 @@ async def main(
         options = (
             "    (3) Send Message\n"
             "    (4) Input New Invitation\n"
-        )
-        if multitenant:
-            options += "    (W) Create and/or Enable Wallet\n"
-        options += "    (X) Exit?\n[3/4/{}X] ".format(
-            "W/" if multitenant else "",
+            "    (X) Exit?\n"
+            "[3/4/X]: "
         )
         async for option in prompt_loop(options):
             if option is not None:
@@ -274,10 +272,6 @@ async def main(
 
             if option is None or option in "xX":
                 break
-
-            elif option in "wW" and multitenant:
-                target_wallet_name = await prompt("Enter wallet name: ")
-                await agent.register_or_switch_wallet(target_wallet_name)
 
             elif option == "3":
                 msg = await prompt("Enter message: ")
