@@ -11,7 +11,7 @@ from aiohttp_apispec import (
 from json.decoder import JSONDecodeError
 from marshmallow import fields, validate
 
-from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.conn_record import ConnRecord
 from ....issuer.base import IssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
@@ -506,9 +506,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     cred_ex_record = None
     try:
         preview = CredentialPreview.deserialize(preview_spec)
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
@@ -591,9 +589,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     cred_ex_record = None
     try:
         preview = CredentialPreview.deserialize(preview_spec) if preview_spec else None
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
@@ -725,9 +721,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     wallet: BaseWallet = await context.inject(BaseWallet)
     if connection_id:
         try:
-            connection_record = await ConnectionRecord.retrieve_by_id(
-                context, connection_id
-            )
+            connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
             conn_did = await wallet.get_local_did(connection_record.my_did)
         except (WalletError, StorageError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -824,9 +818,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     cred_ex_record = None
     connection_record = None
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
@@ -911,9 +903,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
                 f"(must be {V10CredentialExchange.STATE_PROPOSAL_RECEIVED})"
             )
 
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
@@ -974,9 +964,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
     connection_record = None
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
@@ -1043,9 +1031,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     connection_record = None
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
@@ -1113,9 +1099,7 @@ async def credential_exchange_store(request: web.BaseRequest):
     connection_record = None
     connection_id = cred_ex_record.connection_id
     try:
-        connection_record = await ConnectionRecord.retrieve_by_id(
-            context, connection_id
-        )
+        connection_record = await ConnRecord.retrieve_by_id(context, connection_id)
         if not connection_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
