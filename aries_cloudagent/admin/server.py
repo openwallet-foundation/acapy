@@ -365,11 +365,15 @@ class AdminServer(BaseAdminServer):
         # order tags alphabetically, parameters deterministically and pythonically
         swagger_dict = self.app._state["swagger_dict"]
         swagger_dict.get("tags", []).sort(key=lambda t: t["name"])
-        for path in swagger_dict["paths"].values():
-            for method_spec in path.values():
+
+        # sort content per path and sort paths
+        for path_spec in swagger_dict["paths"].values():
+            for method_spec in path_spec.values():
                 method_spec["parameters"].sort(
                     key=lambda p: (p["in"], not p["required"], p["name"])
                 )
+        for path in sorted([p for p in swagger_dict["paths"]]):
+            swagger_dict["paths"][path] = swagger_dict["paths"].pop(path)
 
         # order definitions alphabetically by dict key
         swagger_dict["definitions"] = sort_dict(swagger_dict["definitions"])
