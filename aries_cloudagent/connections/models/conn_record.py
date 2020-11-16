@@ -292,9 +292,9 @@ class ConnRecord(BaseRecord):
         """
         assert self.connection_id
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
+        result = await storage.find_record(
             self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
-        ).fetch_single()
+        )
         ser = json.loads(result.value)
         return (
             ConnectionInvitation
@@ -333,9 +333,9 @@ class ConnRecord(BaseRecord):
         """
         assert self.connection_id
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
+        result = await storage.find_record(
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
-        ).fetch_single()
+        )
         return ConnectionRequest.from_json(result.value)
 
     @property
