@@ -339,7 +339,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     alias = request.query.get("alias")
     public = json.loads(request.query.get("public", "false"))
     multi_use = json.loads(request.query.get("multi_use", "false"))
-    body = await request.json()
+    body = await request.json() if request.body_exists else {}
     recipient_keys = body.get("recipient_keys")
     service_endpoint = body.get("service_endpoint")
     routing_keys = body.get("routing_keys")
