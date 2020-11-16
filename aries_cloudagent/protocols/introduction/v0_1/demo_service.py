@@ -115,7 +115,7 @@ class DemoIntroductionService(BaseIntroductionService):
                 msg.assign_trace_from(invitation)
 
                 value["state"] = "complete"
-                await storage.update_record_value(row, json.dumps(value))
+                await storage.update_record(row, json.dumps(value), row.tags)
 
                 init_connection_id = row.tags["init_connection_id"]
                 await outbound_handler(msg, connection_id=init_connection_id)

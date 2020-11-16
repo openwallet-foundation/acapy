@@ -155,6 +155,8 @@ class TestBasicWallet:
         info = await wallet.create_local_did(
             self.test_seed, self.test_did, self.test_metadata
         )
+        assert info.did == self.test_did
+        assert info.verkey == self.test_verkey
         assert info.metadata == self.test_metadata
         info2 = await wallet.get_local_did(self.test_did)
         assert info2.metadata == self.test_metadata

@@ -900,9 +900,7 @@ class ConnectionManager:
             did: The DID to search for
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
-        record = await storage.search_records(
-            self.RECORD_TYPE_DID_DOC, {"did": did}
-        ).fetch_single()
+        record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
         return DIDDoc.from_json(record.value), record
 
     async def store_did_document(self, did_doc: DIDDoc):
@@ -921,7 +919,7 @@ class ConnectionManager:
             )
             await storage.add_record(record)
         else:
-            await storage.update_record_value(record, did_doc.to_json())
+            await storage.update_record(record, did_doc.to_json(), {"did": did_doc.did})
         await self.remove_keys_for_did(did_doc.did)
         for key in did_doc.pubkey.values():
             if key.controller == did_doc.did:
@@ -945,9 +943,7 @@ class ConnectionManager:
             key: The verkey to look up
         """
         storage: BaseStorage = await self.context.inject(BaseStorage)
-        record = await storage.search_records(
-            self.RECORD_TYPE_DID_KEY, {"key": key}
-        ).fetch_single()
+        record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
         return record.tags["did"]
 
     async def remove_keys_for_did(self, did: str):
