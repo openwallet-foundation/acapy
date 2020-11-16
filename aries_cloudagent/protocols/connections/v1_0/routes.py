@@ -230,6 +230,7 @@ async def connections_list(request: web.BaseRequest):
 
     """
     context = request.app["request_context"]
+
     tag_filter = {}
     for param_name in (
         "invitation_id",
@@ -239,20 +240,28 @@ async def connections_list(request: web.BaseRequest):
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
+
     post_filter = {}
-    for param_name in (
-        "alias",
-        "state",
-        "their_role",
-    ):
-        if param_name in request.query and request.query[param_name] != "":
-            post_filter[param_name] = request.query[param_name]
+    if request.query.get("alias"):
+        post_filter["alias"] = request.query["alias"]
+    if request.query.get("state"):
+        post_filter["state"] = [
+            v for v in ConnRecord.State.get(request.query["state"]).value
+        ]
+    if request.query.get("their_role"):
+        post_filter["their_role"] = [
+            v for v in ConnRecord.Role.get(request.query["their_role"]).value
+        ]
+
     try:
-        records = await ConnRecord.query(context, tag_filter, post_filter)
+        records = await ConnRecord.query(
+            context, tag_filter, post_filter_positive=post_filter
+        )
         results = [record.serialize() for record in records]
         results.sort(key=connection_sort_key)
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response({"results": results})
 
 
