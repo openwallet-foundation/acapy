@@ -1,17 +1,17 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ...config.injection_context import InjectionContext
-from ...protocols.connections.v1_0.messages.connection_invitation import (
+from ....config.injection_context import InjectionContext
+from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
-from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
-from ...protocols.connections.v1_0.models.connection_detail import ConnectionDetail
-from ...storage.base import BaseStorage
-from ...storage.basic import BasicStorage
-from ...storage.error import StorageNotFoundError
+from ....protocols.connections.v1_0.messages.connection_request import ConnectionRequest
+from ....protocols.connections.v1_0.models.connection_detail import ConnectionDetail
+from ....storage.base import BaseStorage
+from ....storage.basic import BasicStorage
+from ....storage.error import StorageNotFoundError
 
-from ..models.conn_record import ConnRecord
-from ..models.diddoc.diddoc import DIDDoc
+from ..conn_record import ConnRecord
+from ..diddoc.diddoc import DIDDoc
 
 
 class TestConnRecord(AsyncTestCase):
