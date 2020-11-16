@@ -316,7 +316,7 @@ async def connections_list(request: web.BaseRequest):
 
     try:
         records = await ConnRecord.query(
-            context, tag_filter, post_filter_positive=post_filter
+            context, tag_filter, post_filter_positive=post_filter, alt=True
         )
         results = [record.serialize() for record in records]
         results.sort(key=connection_sort_key)

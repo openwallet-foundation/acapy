@@ -238,8 +238,8 @@ class TestBaseRecord(AsyncTestCase):
         record_value = a_record.record_value
         record_value.update({"created_at": time_now(), "updated_at": time_now()})
         tag_filter = {"code": "red"}
-        post_filter_positive = {"a": ["one", "a suffusion of yellow"]}
-        post_filter_negative = {"a": ["three", "no, five"]}
+        post_filter_pos_alt = {"a": ["one", "a suffusion of yellow"]}
+        post_filter_neg_alt = {"a": ["three", "no, five"]}
         stored = StorageRecord(
             ARecordImpl.RECORD_TYPE,
             json.dumps(record_value),
@@ -248,9 +248,9 @@ class TestBaseRecord(AsyncTestCase):
         )
         mock_storage.search_records.return_value.__aiter__.return_value = [stored]
 
-        # positive match by list of alternatives to hit
+        # positive match
         result = await ARecordImpl.query(
-            context, tag_filter, post_filter_positive=post_filter_positive, alt=True
+            context, tag_filter, post_filter_positive={"a": "one"}
         )
         mock_storage.search_records.assert_called_once_with(
             ARecordImpl.RECORD_TYPE,
@@ -263,19 +263,28 @@ class TestBaseRecord(AsyncTestCase):
         assert result[0].value == record_value
         assert result[0].a == "one"
 
-        # negative match by list of alternatives to miss
+        # positive match by list of alternatives to hit
         result = await ARecordImpl.query(
-            context, tag_filter, post_filter_negative=post_filter_negative, alt=True
+            context, tag_filter, post_filter_positive=post_filter_pos_alt, alt=True
         )
         assert result and isinstance(result[0], ARecordImpl)
         assert result[0]._id == record_id
         assert result[0].value == record_value
         assert result[0].a == "one"
 
-        # negative match by list of alternatives to miss, with one hit
-        post_filter_negative = {"a": ["one", "three", "no, five"]}
+        # negative match by list of alternatives to miss (result complies)
         result = await ARecordImpl.query(
-            context, tag_filter, post_filter_negative=post_filter_negative, alt=True
+            context, tag_filter, post_filter_negative=post_filter_neg_alt, alt=True
+        )
+        assert result and isinstance(result[0], ARecordImpl)
+        assert result[0]._id == record_id
+        assert result[0].value == record_value
+        assert result[0].a == "one"
+
+        # negative match by list of alternatives to miss, with one hit spoiling result
+        post_filter_neg_alt = {"a": ["one", "three", "no, five"]}
+        result = await ARecordImpl.query(
+            context, tag_filter, post_filter_negative=post_filter_neg_alt, alt=True
         )
         assert not result
 
