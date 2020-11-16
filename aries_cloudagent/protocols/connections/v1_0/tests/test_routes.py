@@ -189,6 +189,7 @@ class TestConnectionRoutes(AsyncTestCase):
         mock_req.app = {
             "request_context": context,
         }
+        mock_req.json = async_mock.CoroutineMock()
         mock_req.query = {
             "auto_accept": "true",
             "alias": "alias",
@@ -231,6 +232,7 @@ class TestConnectionRoutes(AsyncTestCase):
         mock_req.app = {
             "request_context": context,
         }
+        mock_req.json = async_mock.CoroutineMock()
         mock_req.query = {
             "auto_accept": "true",
             "alias": "alias",
@@ -255,6 +257,7 @@ class TestConnectionRoutes(AsyncTestCase):
         mock_req.app = {
             "request_context": context,
         }
+        mock_req.json = async_mock.CoroutineMock()
         mock_req.query = {
             "auto_accept": "true",
             "alias": "alias",

@@ -28,10 +28,10 @@ from ....messaging.valid import (
     INDY_SCHEMA_ID,
     INDY_VERSION,
     INT_EPOCH,
-    NATURAL_NUM,
+    NUM_STR_NATURAL,
+    NUM_STR_WHOLE,
     UUIDFour,
     UUID4,
-    WHOLE_NUM,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
@@ -406,17 +406,16 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
         required=False,
         example="1_name_uuid,2_score_uuid",
     )
-    start = fields.Int(
+    start = fields.Str(
         description="Start index",
         required=False,
         strict=True,
-        **WHOLE_NUM,
+        **NUM_STR_WHOLE,
     )
-    count = fields.Int(
+    count = fields.Str(
         description="Maximum number to retrieve",
         required=False,
-        strict=True,
-        **NATURAL_NUM,
+        **NUM_STR_NATURAL,
     )
     extra_query = fields.Str(
         description="(JSON) object mapping referents to extra WQL queries",
