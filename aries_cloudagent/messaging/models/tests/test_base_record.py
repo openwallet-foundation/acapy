@@ -96,8 +96,7 @@ class TestBaseRecord(AsyncTestCase):
     async def test_post_save_exist(self):
         context = InjectionContext(enforce_typing=False)
         mock_storage = async_mock.MagicMock()
-        mock_storage.update_record_value = async_mock.CoroutineMock()
-        mock_storage.update_record_tags = async_mock.CoroutineMock()
+        mock_storage.update_record = async_mock.CoroutineMock()
         context.injector.bind_instance(BaseStorage, mock_storage)
         record = BaseRecordImpl()
         last_state = "last_state"
@@ -108,8 +107,7 @@ class TestBaseRecord(AsyncTestCase):
         ) as post_save:
             await record.save(context, reason="reason", webhook=False)
             post_save.assert_called_once_with(context, False, last_state, False)
-        mock_storage.update_record_value.assert_called_once()
-        mock_storage.update_record_tags.assert_called_once()
+        mock_storage.update_record.assert_called_once()
 
     async def test_cache(self):
         assert not await BaseRecordImpl.get_cached_key(None, None)
