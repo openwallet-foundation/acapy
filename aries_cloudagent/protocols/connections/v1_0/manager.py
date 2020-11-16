@@ -124,7 +124,28 @@ class ConnectionManager:
 
         """
         if not my_label:
-            my_label = self.context.settings.get("default_label")
+            # get label for wallet if exist
+            ext_plugins = self.context.settings.get_value("external_plugins")
+            base_wallet = self.context.settings.get_value("wallet.id") == self.context.settings.get_value("wallet.name")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins and not base_wallet:
+                wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
+                try:
+                    my_label = await wallet_handler.get_label(self.context)
+                except WalletNotFoundError:
+                    pass
+            else:
+                my_label = self.context.settings.get("default_label")
+
+        image_url = None
+        # get image_url for wallet if exist
+        ext_plugins = self.context.settings.get_value("external_plugins")
+        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
+            wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
+            try:
+                image_url = await wallet_handler.get_image_url(self.context)
+            except WalletNotFoundError:
+                pass
+
         wallet: BaseWallet = await self.context.inject(BaseWallet)
 
         if public:
@@ -144,7 +165,7 @@ class ConnectionManager:
 
             # FIXME - allow ledger instance to format public DID with prefix?
             invitation = ConnectionInvitation(
-                label=my_label, did=f"did:sov:{public_did.did}"
+                label=my_label, did=f"did:sov:{public_did.did}", image_url=image_url
             )
             return None, invitation
 
@@ -186,7 +207,7 @@ class ConnectionManager:
         # Note: Need to split this into two stages to support inbound routing of invites
         # Would want to reuse create_did_document and convert the result
         invitation = ConnectionInvitation(
-            label=my_label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint
+            label=my_label, recipient_keys=[connection_key.verkey], endpoint=my_endpoint, image_url=image_url
         )
         await connection.attach_invitation(self.context, invitation)
 
@@ -195,8 +216,9 @@ class ConnectionManager:
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
             wallet_id = self.context.settings.get_value("wallet.id")
-            await wallet_handler.add_connection(connection.connection_id, wallet_id)
-            await wallet_handler.add_key(connection.invitation_key, wallet_id)
+            await wallet_handler.add_mapping(
+                connection_id=connection.connection_id, key=connection.invitation_key, wallet_name=wallet_id
+            )
 
         return connection, invitation
 
@@ -264,7 +286,7 @@ class ConnectionManager:
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
             wallet_id = self.context.settings.get_value("wallet.id")
-            await wallet_handler.add_connection(connection.connection_id, wallet_id)
+            await wallet_handler.add_mapping(connection_id=connection.connection_id, wallet_name=wallet_id)
 
         if connection.accept == ConnectionRecord.ACCEPT_AUTO:
             request = await self.create_request(connection)
@@ -321,7 +343,17 @@ class ConnectionManager:
             my_info, connection.inbound_connection_id, my_endpoints
         )
         if not my_label:
-            my_label = self.context.settings.get("default_label")
+            # get label for wallet if exist
+            ext_plugins = self.context.settings.get_value("external_plugins")
+            base_wallet = self.context.settings.get_value("wallet.id") == self.context.settings.get_value("wallet.name")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins and not base_wallet:
+                wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
+                try:
+                    my_label = await wallet_handler.get_label(self.context)
+                except WalletNotFoundError:
+                    pass
+            else:
+                my_label = self.context.settings.get("default_label")
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
@@ -338,8 +370,7 @@ class ConnectionManager:
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
             wallet_id = self.context.settings.get_value("wallet.id")
-            wallet: BaseWallet = await self.context.inject(BaseWallet)
-            await wallet_handler.add_key(my_info.verkey, wallet_id)
+            await wallet_handler.add_mapping(key=my_info.verkey, wallet_name=wallet_id)
 
         return request
 
@@ -531,8 +562,7 @@ class ConnectionManager:
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             wallet_handler: WalletHandler = await self.context.inject(WalletHandler)
             wallet_id = self.context.settings.get_value("wallet.id")
-            wallet: BaseWallet = await self.context.inject(BaseWallet)
-            await wallet_handler.add_key(my_info.verkey, wallet_id)
+            await wallet_handler.add_mapping(key=my_info.verkey, wallet_name=wallet_id)
 
         await connection.save(
             self.context,

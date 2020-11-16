@@ -24,11 +24,9 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..transport.outbound.message import OutboundMessage
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
-from ..wallet.base import BaseWallet
-from ..wallet.models.wallet_record import WalletRecord
 from ..version import __version__
 from ..wallet_handler import WalletHandler
-from ..wallet_handler.error import WalletNotFoundError
+from ..wallet.error import WalletNotFoundError
 
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
@@ -92,15 +90,16 @@ class AdminResponder(BaseResponder):
         """
         await self._send(self._context, message)
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, context: InjectionContext, topic: str, payload: dict):
         """
         Dispatch a webhook.
 
         Args:
+            context: The injection context to use
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
-        await self._webhook(topic, payload)
+        await self._webhook(context, topic, payload)
 
 
 class WebhookTarget:
@@ -296,23 +295,23 @@ class AdminServer(BaseAdminServer):
                 return await handler(request)
             if request.method == 'OPTIONS':
                 return await handler(request)
+            if request.path == '/wallet' and request.method == 'POST':
+                request['context'] = request.app["request_context"].copy()
+                return await handler(request)
             context = request.app["request_context"].copy()
 
             # For a custodial agent we need to inject the correct wallet into
             # the request
             ext_plugins = self.context.settings.get_value("external_plugins")
             if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
-
                 wallet_handler: WalletHandler = await context.inject(WalletHandler)
                 # TODO: Authorization concept.
                 header_auth = request.headers.get("Wallet")
                 if not header_auth:
-
                     raise web.HTTPUnauthorized()
 
                 # Request instance and lock request of wallet provider so that
                 # no other task can interfere
-                #context.settings.set_value("wallet.id", header_auth)
                 try:
                     await wallet_handler.set_instance(header_auth, context)
                 except WalletNotFoundError:
@@ -681,14 +680,26 @@ class AdminServer(BaseAdminServer):
         if target_url in self.webhook_targets:
             del self.webhook_targets[target_url]
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, context: InjectionContext, topic: str, payload: dict):
         """Add a webhook to the queue, to send to all registered targets."""
         if self.webhook_router:
-            for idx, target in self.webhook_targets.items():
-                if not target.topic_filter or topic in target.topic_filter:
-                    self.webhook_router(
-                        topic, payload, target.endpoint, target.max_attempts
-                    )
+            ext_plugins = self.context.settings.get_value("external_plugins")
+            base_wallet = context.settings.get_value("wallet.id") == self.context.settings.get_value("wallet.name")
+            if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins and not base_wallet:
+                wallet_handler: WalletHandler = await context.inject(WalletHandler)
+                try:
+                    webhook_urls = await wallet_handler.get_webhook_urls(context)
+                    for webhook_url in webhook_urls:
+                        # FIXME: Do we need topic filter and max attempts configurable ?
+                        self.webhook_router(topic, payload, webhook_url)
+                except WalletNotFoundError:
+                    LOGGER.exception("webhook urls is not found with given context")
+            else:
+                for idx, target in self.webhook_targets.items():
+                    if not target.topic_filter or topic in target.topic_filter:
+                        self.webhook_router(
+                            topic, payload, target.endpoint, target.max_attempts
+                        )
 
         for queue in self.websocket_queues.values():
             if queue.authenticated or topic in ("ping", "settings"):

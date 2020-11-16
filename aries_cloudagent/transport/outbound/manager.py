@@ -413,8 +413,8 @@ class OutboundTransportManager:
         ext_plugins = queued.context.settings.get_value("external_plugins")
         if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
             connection_id = queued.message.connection_id
-            wallet_handler = await queued.context.inject(WalletHandler)
-            wallet_id = await wallet_handler.get_wallet_for_connection(connection_id)
+            wallet_handler: WalletHandler = await queued.context.inject(WalletHandler)
+            wallet_id = await wallet_handler.get_wallet_by_conn_id(connection_id)
             queued.context.settings.set_value("wallet.id", wallet_id)
             wire_format = await queued.context.inject(
                 BaseWireFormat

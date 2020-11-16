@@ -5,6 +5,7 @@ import re
 from abc import ABC, abstractmethod, ABCMeta
 from typing import Tuple, Sequence
 
+from ..config.injection_context import InjectionContext
 from ..issuer.base import BaseIssuer
 
 from .endpoint_type import EndpointType
@@ -69,7 +70,13 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def register_nym(
-        self, did: str, verkey: str, alias: str = None, role: str = None
+            self,
+            did: str,
+            verkey: str,
+            alias: str = None,
+            role: str = None,
+            wallet_name: str = None,
+            context: InjectionContext = None
     ):
         """
         Register a nym on the ledger.
@@ -79,6 +86,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             verkey: The verification key of the keypair.
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
+            wallet_name: wallet name that owns the did.
+            context: Injection context.
         """
 
     @abstractmethod

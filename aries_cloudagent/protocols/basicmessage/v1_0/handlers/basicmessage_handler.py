@@ -35,6 +35,7 @@ class BasicMessageHandler(BaseHandler):
             meta["copy_invite"] = True
 
         await responder.send_webhook(
+            context,
             "basicmessages",
             {
                 "connection_id": context.connection_record.connection_id,

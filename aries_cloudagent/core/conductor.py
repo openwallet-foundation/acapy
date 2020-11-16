@@ -96,19 +96,6 @@ class Conductor:
         if not await ledger_config(context, public_did):
             LOGGER.warning("No ledger configured")
 
-        # MULTITENANCY: Load all handled wallets from storage
-        ext_plugins = context.settings.get_value("external_plugins")
-        if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
-            # Reload wallet records stored in base wallet
-            wallet_handler: WalletHandler = await context.inject(WalletHandler)
-            wallet_records = await WalletRecord.query(context)
-            for wallet_record in wallet_records:
-                await wallet_handler.add_instance(
-                    wallet_record.wallet_config,
-                    context
-                )
-
-
         # Admin API
         if context.settings.get("admin.enabled"):
             try:
@@ -353,7 +340,7 @@ class Conductor:
             ext_plugins = context.settings.get_value("external_plugins")
             if ext_plugins and 'aries_cloudagent.wallet_handler' in ext_plugins:
                 wallet_handler: WalletHandler = await context.inject(WalletHandler)
-                wallet_id = await wallet_handler.get_wallet_for_connection(
+                wallet_id = await wallet_handler.get_wallet_by_conn_id(
                     outbound.connection_id
                 )
                 message_context.settings.set_value("wallet.id", wallet_id)

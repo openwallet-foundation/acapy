@@ -1,4 +1,6 @@
 import asyncio
+import sys
+
 import asyncpg
 import functools
 import json
@@ -115,6 +117,7 @@ class DemoAgent:
         postgres: bool = None,
         revocation: bool = False,
         multitenant: bool = False,
+        image_url: str = None,
         extra_args=None,
         **params,
     ):
@@ -165,27 +168,12 @@ class DemoAgent:
         self.wallet_name = (
             params.get("wallet_name") or self.ident.lower().replace(" ", "") + rand_name
         )
-        self.wallet_key = params.get("wallet_key") or self.wallet_name
+        self.image_url = image_url or f"https://identicon-api.herokuapp.com/{self.wallet_name}/300?format=png";
+        self.wallet_key = params.get("wallet_key") or f"{self.wallet_name}.key"
+        self.wallet_id = None
         self.did = None
+        self.verkey = None
         self.wallet_stats = []
-
-        # for multitenancy, storage_type and wallet_type are the same for all wallets
-        if self.multitenant:
-            self.agency_ident       = self.ident
-            self.agency_wallet_name = self.wallet_name
-            self.agency_wallet_seed = self.seed
-            self.agency_wallet_did  = self.did
-            self.agency_wallet_key  = self.wallet_key
-
-    async def get_wallets(self):
-        """Get registered wallets of agent."""
-        wallets = await self.admin_GET("/wallet")
-        return wallets
-
-    async def get_public_did(self):
-        """Get public did of wallet."""
-        did = await self.admin_GET("/wallet/did/public")
-        return did
 
     async def register_schema_and_creddef(
         self,
@@ -328,65 +316,76 @@ class DemoAgent:
                 raise Exception(f"Error registering DID, response code {resp.status}")
             nym_info = await resp.json()
             self.did = nym_info["did"]
-            if self.multitenant:
-                if not self.agency_wallet_did:
-                    self.agency_wallet_did = self.did
         self.log(f"Got DID: {self.did}")
 
-    async def register_or_switch_wallet(self, target_wallet_name, public_did=False):
-        self.log(f"Register or switch to wallet {target_wallet_name}")
-        if target_wallet_name == self.agency_wallet_name:
-            self.ident = self.agency_ident
-            self.wallet_name = self.agency_wallet_name
-            self.seed = self.agency_wallet_seed
-            self.did = self.agency_wallet_did
-            self.wallet_key = self.agency_wallet_key
-            self.log(f"Switching to AGENCY wallet {target_wallet_name}")
-            return False
+    async def create_or_switch_wallet(self):
+        self.log(f"Creating or switching to a wallet for {self.ident}")
 
-        # check if wallet exists already
-        wallets = await self.agency_admin_GET('/wallet')
-        for wallet in wallets["result"]:
-            if wallet == target_wallet_name:
-                # if so set local agent attributes
-                self.wallet_name = target_wallet_name
-                # assume wallet key is wallet name
-                self.wallet_key  = target_wallet_name
-                self.ident       = target_wallet_name
-                # we can't recover the seed so let's set it to None and see what happens ...
-                self.seed = None
-                self.log(f"Switching to EXISTING wallet {target_wallet_name}")
-                return False
+        # create or switch to a wallet
+        wallet_exist = False
+        new_wallet = None
+        try:
+            wallet_body = {
+                "name": self.wallet_name,
+                "key": self.wallet_key,
+                "type": self.wallet_type,
+                "label": self.label,
+                "image_url": self.image_url,
+                "webhook_urls": [self.webhook_url]
+            }
+            new_wallet = await self.admin_POST('/wallet', wallet_body)
+        except Exception as e:
+            if "400" in str(e):
+                wallet_exist = True
+                pass
+            if "Connect call failed" in str(e):
+                self.log(f"Cannnot connect Admin URL of Base.Agent")
+                if self.ident == "Alice":
+                    self.log(f"Run faber demo first with --multitenant or set environment BASE_AGENT_PORT correctly")
+                sys.exit(1)
 
-        # if not then create it
-        # TODO seed is required but not used
-        seed = (target_wallet_name + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:32]
-        wallet_params = {
-          "seed": seed,
-          "wallet_key": target_wallet_name,
-          "wallet_name": target_wallet_name,
-          "wallet_type": "indy"
-        }
-        self.wallet_name = target_wallet_name
-        self.wallet_key  = target_wallet_name
-        self.ident       = target_wallet_name
-        self.seed        = seed
-        if (public_did):
-            # create did on ledger
-            #await self.register_did()
-            # TODO don't create from seed
-            pass
-        await self.agency_admin_POST('/wallet', wallet_params)
-        if (public_did):
-            # assign public did
-            # TODO this fails because the above seed doesn't create a did in the wallet (as expected)
-            new_did = await self.admin_POST('/wallet/did/create')
+        if wallet_exist:
+            new_wallet = await self.admin_GET('/wallet/me')
+            self.wallet_id = new_wallet["wallet_id"]
+            self.log(f"Switched to a existing wallet name: {self.wallet_name}")
+        else:
+            self.wallet_id = new_wallet["wallet_id"]
+            self.log(f"Created a new wallet name: {self.wallet_name}")
+
+    async def create_or_enable_public_did(self, base_agent):
+        self.log(f"Creating or enabling a public did for {self.ident}")
+
+        # create or enable a public did
+        new_did = await self.admin_GET('/wallet/did/public')
+        if new_did["result"] and new_did["result"]["posture"] == "public":
             self.did = new_did["result"]["did"]
-            await self.register_did(did=new_did["result"]["did"], verkey=new_did["result"]["verkey"])
-            await self.admin_POST('/wallet/did/public?did=' + self.did)
-            pass
-        self.log(f"Created NEW wallet {target_wallet_name}")
-        return True
+            self.verkey = new_did["result"]["verkey"]
+            self.log(f"Found and enabled a existing public did: {self.did}")
+        else:
+            did_body = {}
+            if self.seed:
+                did_body = {"seed": self.seed}
+            new_did = await self.admin_POST('/wallet/did/create', did_body)
+            self.did = new_did["result"]["did"]
+            self.verkey = new_did["result"]["verkey"]
+            self.log(f"Created a new local did: {self.did}")
+
+            await base_agent.register_did_as_endorser(self.did, self.verkey, self.ident, self.wallet_name)
+
+            self.log(f"Assigning a did {self.did} to public")
+            did_params = f"?did={self.did}"
+            response = await self.admin_POST('/wallet/did/public' + did_params)
+            self.log(f"Response of assignment : {response}")
+
+    async def register_did_as_endorser(self, did: str, verkey: str, alias: str, wallet_name: str):
+        self.log(f"Registering a did {did} of {alias} as a ENDORSER")
+        ledger_params = f"?did={did}" \
+                        f"&verkey={verkey}" \
+                        f"&alias={alias}" \
+                        f"&role=ENDORSER" \
+                        f"&wallet_name={wallet_name}"
+        response = await self.admin_POST('/ledger/register-nym' + ledger_params)
+        self.log(f"Response of registration : {response}")
 
     def handle_output(self, *output, source: str = None, **kwargs):
         end = "" if source else "\n"
@@ -547,25 +546,6 @@ class DemoAgent:
                     raise Exception(f"Error decoding JSON: {resp_text}") from e
             return resp_text
 
-    async def agency_admin_GET(self, path, text=False, params=None, headers=None) -> ClientResponse:
-        if not self.multitenant:
-            raise Exception("Error can't call agency admin unless in multitenant mode")
-        try:
-            EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
-            if not headers:
-                headers = {}
-            headers['Wallet'] = self.agency_wallet_name
-            response = await self.admin_request("GET", path, None, text, params, headers=headers)
-            EVENT_LOGGER.debug(
-                "Response from GET %s received: \n%s",
-                path,
-                repr_json(response),
-            )
-            return response
-        except ClientError as e:
-            self.log(f"Error during GET {path}: {str(e)}")
-            raise
-
     async def admin_GET(self, path, text=False, params=None, headers=None) -> ClientResponse:
         try:
             EVENT_LOGGER.debug("Controller GET %s request to Agent", path)
@@ -582,29 +562,6 @@ class DemoAgent:
             return response
         except ClientError as e:
             self.log(f"Error during GET {path}: {str(e)}")
-            raise
-
-    async def agency_admin_POST(self, path, data=None, text=False, params=None, headers=None) -> ClientResponse:
-        if not self.multitenant:
-            raise Exception("Error can't call agency admin unless in multitenant mode")
-        try:
-            EVENT_LOGGER.debug(
-                "Controller POST %s request to Agent%s",
-                path,
-                (" with data: \n{}".format(repr_json(data)) if data else ""),
-            )
-            if not headers:
-                headers = {}
-            headers['Wallet'] = self.agency_wallet_name
-            response = await self.admin_request("POST", path, data, text, params, headers=headers)
-            EVENT_LOGGER.debug(
-                "Response from POST %s received: \n%s",
-                path,
-                repr_json(response),
-            )
-            return response
-        except ClientError as e:
-            self.log(f"Error during POST {path}: {str(e)}")
             raise
 
     async def admin_POST(self, path, data=None, text=False, params=None, headers=None) -> ClientResponse:
@@ -685,6 +642,7 @@ class DemoAgent:
             raise Exception(
                 "Timed out waiting for agent process to start. "
                 + f"Admin URL: {status_url}"
+                + ". Set environment BASE_AGENT_SEED with the seed of STEWARD." if self.multitenant else ""
             )
         ok = False
         try:

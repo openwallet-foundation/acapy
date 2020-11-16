@@ -31,6 +31,7 @@ class PingResponseHandler(BaseHandler):
 
         if context.settings.get("debug.monitor_ping"):
             await responder.send_webhook(
+                context,
                 "ping",
                 {
                     "comment": context.message.comment,

@@ -27,7 +27,8 @@ from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 
 from ..wallet_handler.handler import WalletHandler
-from ..wallet_handler.error import KeyNotFoundError, WalletNotFoundError
+from ..wallet.error import WalletNotFoundError
+from ..wallet_handler.error import KeyNotFoundError
 
 from ..utils.tracing import trace_event, get_timer
 
@@ -139,7 +140,7 @@ class Dispatcher:
             context.start_scope(inbound_message.session_id)
             wallet_handler: WalletHandler = await context.inject(WalletHandler)
             try:
-                wallet_id = await wallet_handler.get_wallet_for_key(
+                wallet_id = await wallet_handler.get_wallet_by_key(
                     inbound_message.receipt.recipient_verkey
                 )
             except KeyNotFoundError:
@@ -318,13 +319,14 @@ class DispatcherResponder(BaseResponder):
         """
         await self._send(self._context, message, self._inbound_message)
 
-    async def send_webhook(self, topic: str, payload: dict):
+    async def send_webhook(self, context: InjectionContext, topic: str, payload: dict):
         """
         Dispatch a webhook.
 
         Args:
+            context: The injection context to use
             topic: the webhook topic identifier
             payload: the webhook payload value
         """
         if self._webhook:
-            await self._webhook(topic, payload)
+            await self._webhook(context, topic, payload)

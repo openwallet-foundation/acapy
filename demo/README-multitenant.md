@@ -6,7 +6,7 @@ To run either Alice or Faber with multitenancy enabled run with a `--multitenant
 ./run_demo faber --multitenant
 ```
 
-and/or:
+and:
 
 ```bash
 ./run_demo alice --multitenant
@@ -27,4 +27,18 @@ For example:
 * Use Faber to create a new invitation and then accept that invitation in Alice
 * You can now issue credentials from Faber to Alice using the new connection/wallet
 
-TODO - for Faber, the new wallet creation process fails when trying to create a new schema and credential defintion in the new wallet.
+Note that Faber and Alice will use a single Base agent when multitenancy enabled.
+
+Faber boot flow:
+
+* Start Faber in `--multitenant` mode
+* Base agent boots and exposes the admin and endpoint
+* Faber creates its own wallet and did via Base agent
+* Base agent registers the did of Faber as a ENDORSER role
+* Faber assigns the did to public and creates an invitation
+
+Alice boot flow:
+
+* Start Alice in `--multitenant` mode
+* Alice creates its own wallet via Base agent
+* Alice waits input for the invitation of Faber

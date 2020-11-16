@@ -130,7 +130,7 @@ async def credentials_revoked(request: web.BaseRequest):
         The credential response
 
     """
-    context = request.app["request_context"]
+    context = request["context"]
 
     credential_id = request.match_info["credential_id"]
 

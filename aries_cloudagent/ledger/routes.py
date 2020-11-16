@@ -85,7 +85,10 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
             [r.name for r in Role if isinstance(r.value[0], int)] + ["reset"]
         ),
     )
-
+    wallet_name = fields.Str(
+        description="Optional wallet name that owns the did (only if the did is not owned by the requester)",
+        required=False, example="faber",
+    )
 
 class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
@@ -137,11 +140,12 @@ async def register_ledger_nym(request: web.BaseRequest):
     role = request.query.get("role")
     if role == "reset":  # indy: empty to reset, null for regular user
         role = ""  # visually: confusing - correct 'reset' to empty string here
+    wallet_name = request.query.get("wallet_name") or None
 
     success = False
     async with ledger:
         try:
-            await ledger.register_nym(did, verkey, alias, role)
+            await ledger.register_nym(did, verkey, alias, role, wallet_name, context)
             success = True
         except LedgerTransactionError as err:
             raise web.HTTPForbidden(reason=err.roll_up)
@@ -170,7 +174,7 @@ async def get_nym_role(request: web.BaseRequest):
     Args:
         request: aiohttp request object
     """
-    context = request.app["request_context"]
+    context = request["context"]
     ledger = await context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"

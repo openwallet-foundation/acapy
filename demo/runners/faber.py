@@ -12,8 +12,8 @@ from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import (
+from .support.agent import DemoAgent, default_genesis_txns
+from .support.utils import (
     log_msg,
     log_status,
     log_timer,
@@ -28,11 +28,13 @@ SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 LOGGER = logging.getLogger(__name__)
 
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
+BASE_AGENT_SEED = os.getenv("BASE_AGENT_SEED", "000000000000000000000000Steward1")
 
 
 class FaberAgent(DemoAgent):
     def __init__(
         self,
+        ident: str,
         http_port: int,
         admin_port: int,
         no_auto: bool = False,
@@ -40,7 +42,7 @@ class FaberAgent(DemoAgent):
         **kwargs,
     ):
         super().__init__(
-            "Faber.Agent",
+            ident,
             http_port,
             admin_port,
             prefix="Faber",
@@ -139,6 +141,35 @@ class FaberAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
+class BaseAgent(DemoAgent):
+    def __init__(
+        self,
+        ident: str,
+        http_port: int,
+        admin_port: int,
+        no_auto: bool = False,
+        tails_server_base_url: str = None,
+        seed: str = "random",
+        **kwargs,
+    ):
+        super().__init__(
+            ident,
+            http_port,
+            admin_port,
+            prefix="Base.Agent",
+            tails_server_base_url=tails_server_base_url,
+            seed=seed,
+            extra_args=[]
+            if no_auto
+            else [
+                "--auto-accept-invites",
+                "--auto-accept-requests",
+                "--auto-store-credential",
+            ],
+            **kwargs,
+        )
+
+
 async def generate_invitation(agent):
     agent._connection_ready = asyncio.Future()
     with log_timer("Generate invitation duration:"):
@@ -203,26 +234,56 @@ async def main(
         print("Error retrieving ledger genesis transactions")
         sys.exit(1)
 
+    base_agent = None
     agent = None
 
     try:
         log_status("#1 Provision an agent and wallet, get back configuration details")
-        agent = FaberAgent(
-            start_port,
-            start_port + 1,
-            genesis_data=genesis,
-            no_auto=no_auto,
-            tails_server_base_url=tails_server_base_url,
-            timing=show_timing,
-            multitenant=multitenant,
-        )
-        await agent.listen_webhooks(start_port + 2)
-        await agent.register_did()
+        if multitenant:
+            base_agent = BaseAgent(
+                "Base.Agent",
+                start_port,
+                start_port + 1,
+                genesis_data=genesis,
+                no_auto=no_auto,
+                tails_server_base_url=tails_server_base_url,
+                timing=show_timing,
+                multitenant=multitenant,
+                seed=BASE_AGENT_SEED,
+                wallet_name="base"
+            )
+            with log_timer("Startup duration:"):
+                await base_agent.start_process()
+            log_msg("Admin URL of Base.Agent is at:", base_agent.admin_url)
+            log_msg("Endpoint URL of Base.Agent is at:", base_agent.endpoint)
 
-        with log_timer("Startup duration:"):
-            await agent.start_process()
-        log_msg("Admin URL is at:", agent.admin_url)
-        log_msg("Endpoint URL is at:", agent.endpoint)
+            # Note that Faber acts as a just controller (use admin/endpoint of BaseAgent)
+            agent = FaberAgent(
+                "Faber",
+                start_port,
+                start_port + 1,
+                multitenant=multitenant
+            )
+            await agent.listen_webhooks(start_port + 2)
+            log_msg("Controller URL of Faber is at:", agent.webhook_url)
+            await agent.create_or_switch_wallet()
+            await agent.create_or_enable_public_did(base_agent)
+        else:
+            agent = FaberAgent(
+                "Faber.Agent",
+                start_port,
+                start_port + 1,
+                genesis_data=genesis,
+                no_auto=no_auto,
+                tails_server_base_url=tails_server_base_url,
+                timing=show_timing,
+            )
+            await agent.register_did()
+            await agent.listen_webhooks(start_port + 2)
+            with log_timer("Startup duration:"):
+                await agent.start_process()
+            log_msg("Admin URL is at:", agent.admin_url)
+            log_msg("Endpoint URL is at:", agent.endpoint)
 
         # Create a schema
         credential_definition_id = await create_schema_and_cred_def(agent, revocation)
@@ -256,13 +317,18 @@ async def main(
 
             elif option in "wW" and multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
-                created = await agent.register_or_switch_wallet(target_wallet_name, public_did=True)
-                # create a schema and cred def for the new wallet
-                # TODO check first in case we are switching between existing wallets
-                if created:
-                    # TODO this fails because the new wallet doesn't get a public DID
-                    credential_definition_id = await create_schema_and_cred_def(agent, revocation)
-                    pass
+                await agent.terminate()
+                agent = FaberAgent(
+                    "Faber",
+                    start_port,
+                    start_port + 1,
+                    multitenant=multitenant,
+                    wallet_name=target_wallet_name
+                )
+                await agent.listen_webhooks(start_port + 2)
+                await agent.create_or_switch_wallet()
+                await agent.create_or_enable_public_did(base_agent)
+                credential_definition_id = await create_schema_and_cred_def(agent, revocation)
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
@@ -304,20 +370,20 @@ async def main(
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
                 req_attrs = [
-                    {"name": "name", "restrictions": [{"schema_name": "degree schema"}]},
-                    {"name": "date", "restrictions": [{"schema_name": "degree schema"}]},
+                    {"name": "name", "restrictions": [{"issuer_did": agent.did}]},
+                    {"name": "date", "restrictions": [{"issuer_did": agent.did}]},
                 ]
                 if revocation:
                     req_attrs.append(
                         {
                             "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
+                            "restrictions": [{"issuer_did": agent.did}],
                             "non_revoked": {"to": int(time.time() - 1)},
                         },
                     )
                 else:
                     req_attrs.append(
-                        {"name": "degree", "restrictions": [{"schema_name": "degree schema"}]}
+                        {"name": "degree", "restrictions": [{"issuer_did": agent.did}]}
                     )
                 if SELF_ATTESTED:
                     # test self-attested claims
@@ -330,7 +396,7 @@ async def main(
                         "name": "age",
                         "p_type": ">=",
                         "p_value": 18,
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"issuer_did": agent.did}],
                     }
                 ]
                 indy_proof_request = {
@@ -405,6 +471,8 @@ async def main(
     finally:
         terminated = True
         try:
+            if multitenant and base_agent:
+                await base_agent.terminate()
             if agent:
                 await agent.terminate()
         except Exception:

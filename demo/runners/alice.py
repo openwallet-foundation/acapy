@@ -9,8 +9,8 @@ from urllib.parse import urlparse
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
-from runners.support.agent import DemoAgent, default_genesis_txns
-from runners.support.utils import (
+from .support.agent import DemoAgent, default_genesis_txns
+from .support.utils import (
     log_json,
     log_msg,
     log_status,
@@ -22,14 +22,15 @@ from runners.support.utils import (
 
 
 LOGGER = logging.getLogger(__name__)
+BASE_AGENT_PORT = int(os.getenv("BASE_AGENT_PORT", 8020))
 
 
 class AliceAgent(DemoAgent):
     def __init__(
-        self, http_port: int, admin_port: int, no_auto: bool = False, **kwargs
+        self, ident: str, http_port: int, admin_port: int, no_auto: bool = False, **kwargs
     ):
         super().__init__(
-            "Alice.Agent",
+            ident,
             http_port,
             admin_port,
             prefix="Alice",
@@ -229,20 +230,31 @@ async def main(
 
     try:
         log_status("#7 Provision an agent and wallet, get back configuration details")
-        agent = AliceAgent(
-            start_port,
-            start_port + 1,
-            genesis_data=genesis,
-            no_auto=no_auto,
-            timing=show_timing,
-            multitenant=multitenant,
-        )
-        await agent.listen_webhooks(start_port + 2)
-
-        with log_timer("Startup duration:"):
-            await agent.start_process()
-        log_msg("Admin URL is at:", agent.admin_url)
-        log_msg("Endpoint URL is at:", agent.endpoint)
+        if multitenant:
+            # Note that Alice acts as a just controller (use admin/endpoint of BaseAgent)
+            agent = AliceAgent(
+                "Alice",
+                BASE_AGENT_PORT,
+                BASE_AGENT_PORT + 1,
+                multitenant=multitenant
+            )
+            await agent.listen_webhooks(start_port + 2)
+            log_msg("Controller URL of Alice is at:", agent.webhook_url)
+            await agent.create_or_switch_wallet()
+        else:
+            agent = AliceAgent(
+                "Alice.Agent",
+                start_port,
+                start_port + 1,
+                genesis_data=genesis,
+                no_auto=no_auto,
+                timing=show_timing,
+            )
+            await agent.listen_webhooks(start_port + 2)
+            with log_timer("Startup duration:"):
+                await agent.start_process()
+            log_msg("Admin URL is at:", agent.admin_url)
+            log_msg("Endpoint URL is at:", agent.endpoint)
 
         log_status("#9 Input faber.py invitation details")
         await input_invitation(agent)
@@ -265,7 +277,16 @@ async def main(
 
             elif option in "wW" and multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
-                await agent.register_or_switch_wallet(target_wallet_name)
+                await agent.terminate()
+                agent = AliceAgent(
+                    "Alice",
+                    BASE_AGENT_PORT,
+                    BASE_AGENT_PORT + 1,
+                    multitenant=multitenant,
+                    wallet_name=target_wallet_name
+                )
+                await agent.listen_webhooks(start_port + 2)
+                await agent.create_or_switch_wallet()
 
             elif option == "3":
                 msg = await prompt("Enter message: ")

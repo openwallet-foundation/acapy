@@ -398,7 +398,7 @@ class BaseRecord(BaseModel):
                 return
         responder: BaseResponder = await context.inject(BaseResponder, required=False)
         if responder:
-            await responder.send_webhook(topic, payload)
+            await responder.send_webhook(context, topic, payload)
 
     @classmethod
     def log_state(

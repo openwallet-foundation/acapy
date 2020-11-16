@@ -54,6 +54,7 @@ async def save_connection_menu(
     responder: BaseResponder = await context.inject(BaseResponder, required=False)
     if responder:
         await responder.send_webhook(
+            context,
             "actionmenu",
             {
                 "connection_id": connection_id,
