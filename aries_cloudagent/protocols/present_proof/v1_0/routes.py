@@ -457,7 +457,11 @@ async def presentation_exchange_list(request: web.BaseRequest):
     }
 
     try:
-        records = await V10PresentationExchange.query(context, tag_filter, post_filter)
+        records = await V10PresentationExchange.query(
+            context=context,
+            tag_filter=tag_filter,
+            post_filter_positive=post_filter,
+        )
         results = [record.serialize() for record in records]
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
