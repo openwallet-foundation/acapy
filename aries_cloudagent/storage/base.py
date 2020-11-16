@@ -41,37 +41,14 @@ class BaseStorage(ABC):
         """
 
     @abstractmethod
-    async def update_record_value(self, record: StorageRecord, value: str):
+    async def update_record(self, record: StorageRecord, value: str, tags: Mapping):
         """
-        Update an existing stored record's value.
+        Update an existing stored record's value and tags.
 
         Args:
             record: `StorageRecord` to update
             value: The new value
-
-        """
-
-    @abstractmethod
-    async def update_record_tags(self, record: StorageRecord, tags: Mapping):
-        """
-        Update an existing stored record's tags.
-
-        Args:
-            record: `StorageRecord` to update
-            tags: New tags
-
-        """
-
-    @abstractmethod
-    async def delete_record_tags(
-        self, record: StorageRecord, tags: (Sequence, Mapping)
-    ):
-        """
-        Update an existing stored record's tags.
-
-        Args:
-            record: `StorageRecord` to delete
-            tags: Tags
+            tags: The new tags
 
         """
 
@@ -84,6 +61,25 @@ class BaseStorage(ABC):
             record: `StorageRecord` to delete
 
         """
+
+    async def find_record(
+        self, type_filter: str, tag_query: Mapping = None, options: Mapping = None
+    ) -> StorageRecord:
+        """
+        Find a record using a unique tag filter.
+
+        Args:
+            type_filter: Filter string
+            tag_query: Tags to query
+            options: Dictionary of backend-specific options
+        """
+        async with self.search_records(type_filter, tag_query, options) as scan:
+            results = await scan.fetch(2)
+        if not results:
+            raise StorageNotFoundError("Record not found")
+        if len(results) > 1:
+            raise StorageDuplicateError("Duplicate records found")
+        return results[0]
 
     @abstractmethod
     def search_records(
@@ -242,15 +238,6 @@ class BaseStorageRecordSearch(ABC):
         async for record in self:
             results.append(record)
         return results
-
-    async def fetch_single(self) -> StorageRecord:
-        """Fetch a single query result."""
-        results = await self.fetch_all()
-        if not results:
-            raise StorageNotFoundError("Record not found")
-        if len(results) > 1:
-            raise StorageDuplicateError("Duplicate records found")
-        return results[0]
 
     @abstractmethod
     async def open(self):
