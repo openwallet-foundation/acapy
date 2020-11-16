@@ -175,7 +175,7 @@ class ConnectionManager:
             recipient_keys = [invitation_key]
         # Create connection record
         connection = ConnRecord(
-            invitation_key=connection_key.verkey,
+            invitation_key=invitation_key,  # TODO: determine correct key to use
             their_role=ConnRecord.Role.REQUESTER.rfc160,
             state=ConnRecord.State.INVITATION.rfc160,
             accept=accept,

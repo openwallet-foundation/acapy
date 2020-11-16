@@ -34,9 +34,7 @@ class TestConnectionRoutes(AsyncTestCase):
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec:
             mock_conn_rec.query = async_mock.CoroutineMock()
-            mock_conn_rec.Role = async_mock.MagicMock(
-                return_value=ROLE_REQUESTER
-            )
+            mock_conn_rec.Role = async_mock.MagicMock(return_value=ROLE_REQUESTER)
             mock_conn_rec.State = async_mock.MagicMock(
                 COMPLETED=STATE_COMPLETED,
                 INVITATION=STATE_INVITATION,
@@ -110,14 +108,10 @@ class TestConnectionRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec:
-            mock_conn_rec.Role = async_mock.MagicMock(
-                return_value=ROLE_REQUESTER
-            )
+            mock_conn_rec.Role = async_mock.MagicMock(return_value=ROLE_REQUESTER)
             mock_conn_rec.State = async_mock.MagicMock(
                 COMPLETED=STATE_COMPLETED,
-                get=async_mock.MagicMock(
-                    return_value=ConnRecord.State.COMPLETED
-                ),
+                get=async_mock.MagicMock(return_value=ConnRecord.State.COMPLETED),
             )
             mock_conn_rec.query = async_mock.CoroutineMock(
                 side_effect=test_module.StorageError()
