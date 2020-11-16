@@ -71,13 +71,14 @@ class BasicStorage(BaseStorage):
         if not row:
             raise StorageNotFoundError("Record not found: {}".format(record_id))
 
-    async def update_record_value(self, record: StorageRecord, value: str):
+    async def update_record(self, record: StorageRecord, value: str, tags: Mapping):
         """
         Update an existing stored record's value.
 
         Args:
             record: `StorageRecord` to update
             value: The new value
+            tags: The new tags
 
         Raises:
             StorageNotFoundError: If record not found
@@ -86,48 +87,7 @@ class BasicStorage(BaseStorage):
         oldrec = self._records.get(record.id)
         if not oldrec:
             raise StorageNotFoundError("Record not found: {}".format(record.id))
-        self._records[record.id] = oldrec._replace(value=value)
-
-    async def update_record_tags(self, record: StorageRecord, tags: Mapping):
-        """
-        Update an existing stored record's tags.
-
-        Args:
-            record: `StorageRecord` to update
-            tags: New tags
-
-        Raises:
-            StorageNotFoundError: If record not found
-
-        """
-        oldrec = self._records.get(record.id)
-        if not oldrec:
-            raise StorageNotFoundError("Record not found: {}".format(record.id))
-        self._records[record.id] = oldrec._replace(tags=dict(tags or {}))
-
-    async def delete_record_tags(
-        self, record: StorageRecord, tags: (Sequence, Mapping)
-    ):
-        """
-        Update an existing stored record's tags.
-
-        Args:
-            record: `StorageRecord` to delete
-            tags: Tags
-
-        Raises:
-            StorageNotFoundError: If record not found
-
-        """
-        oldrec = self._records.get(record.id)
-        if not oldrec:
-            raise StorageNotFoundError("Record not found: {}".format(record.id))
-        newtags = dict(oldrec.tags or {})
-        if tags:
-            for tag in tags:
-                if tag in newtags:
-                    del newtags[tag]
-        self._records[record.id] = oldrec._replace(tags=newtags)
+        self._records[record.id] = oldrec._replace(value=value, tags=tags)
 
     async def delete_record(self, record: StorageRecord):
         """

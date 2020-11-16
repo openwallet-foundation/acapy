@@ -203,9 +203,9 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         """
         assert self.connection_id
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
+        result = await storage.find_record(
             self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
-        ).fetch_single()
+        )
         return ConnectionInvitation.from_json(result.value)
 
     async def attach_request(
@@ -234,9 +234,9 @@ class ConnectionRecord(BaseRecord):  # lgtm[py/missing-equals]
         """
         assert self.connection_id
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
+        result = await storage.find_record(
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
-        ).fetch_single()
+        )
         return ConnectionRequest.from_json(result.value)
 
     @property
