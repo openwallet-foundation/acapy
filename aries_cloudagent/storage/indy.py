@@ -119,36 +119,14 @@ class IndyStorage(BaseStorage):
             tags=result["tags"] or {},
         )
 
-    async def update_record_value(self, record: StorageRecord, value: str):
+    async def update_record(self, record: StorageRecord, value: str, tags: Mapping):
         """
-        Update an existing stored record's value.
+        Update an existing stored record's value and tags.
 
         Args:
             record: `StorageRecord` to update
             value: The new value
-
-        Raises:
-            StorageNotFoundError: If record not found
-            StorageError: If a libindy error occurs
-
-        """
-        _validate_record(record)
-        try:
-            await non_secrets.update_wallet_record_value(
-                self._wallet.handle, record.type, record.id, value
-            )
-        except IndyError as x_indy:
-            if x_indy.error_code == ErrorCode.WalletItemNotFound:
-                raise StorageNotFoundError(f"Record not found: {record.id}")
-            raise StorageError(str(x_indy))
-
-    async def update_record_tags(self, record: StorageRecord, tags: Mapping):
-        """
-        Update an existing stored record's tags.
-
-        Args:
-            record: `StorageRecord` to update
-            tags: New tags
+            tags: The new tags
 
         Raises:
             StorageNotFoundError: If record not found
@@ -158,6 +136,9 @@ class IndyStorage(BaseStorage):
         _validate_record(record)
         tags_json = json.dumps(tags) if tags else "{}"
         try:
+            await non_secrets.update_wallet_record_value(
+                self._wallet.handle, record.type, record.id, value
+            )
             await non_secrets.update_wallet_record_tags(
                 self._wallet.handle, record.type, record.id, tags_json
             )
@@ -165,27 +146,6 @@ class IndyStorage(BaseStorage):
             if x_indy.error_code == ErrorCode.WalletItemNotFound:
                 raise StorageNotFoundError(f"Record not found: {record.id}")
             raise StorageError(str(x_indy))
-
-    async def delete_record_tags(
-        self, record: StorageRecord, tags: (Sequence, Mapping)
-    ):
-        """
-        Update an existing stored record's tags.
-
-        Args:
-            record: `StorageRecord` to delete
-            tags: Tags
-
-        """
-        _validate_record(record)
-        if tags:
-            # check existence of record first (otherwise no exception thrown)
-            await self.get_record(record.type, record.id)
-
-            tag_names_json = json.dumps(list(tags))
-            await non_secrets.delete_wallet_record_tags(
-                self._wallet.handle, record.type, record.id, tag_names_json
-            )
 
     async def delete_record(self, record: StorageRecord):
         """

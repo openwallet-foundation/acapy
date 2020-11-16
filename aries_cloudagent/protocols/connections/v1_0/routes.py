@@ -53,6 +53,26 @@ class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
         """Bypass middleware field validation."""
 
 
+class InvitationConnectionTargetRequestSchema(OpenAPISchema):
+    """Request schema for invitation connection target."""
+
+    recipient_keys = fields.List(
+        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        required=False,
+        description="List of recipient keys",
+    )
+    service_endpoint = fields.Str(
+        required=False,
+        description="Connection endpoint",
+        example="http://192.168.56.102:8020",
+    )
+    routing_keys = fields.List(
+        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        required=False,
+        description="List of routing keys",
+    )
+
+
 class InvitationResultSchema(OpenAPISchema):
     """Result schema for a new connection invitation."""
 
@@ -301,6 +321,7 @@ async def connections_retrieve(request: web.BaseRequest):
     summary="Create a new connection invitation",
 )
 @querystring_schema(CreateInvitationQueryStringSchema())
+@request_schema(InvitationConnectionTargetRequestSchema())
 @response_schema(InvitationResultSchema(), 200)
 async def connections_create_invitation(request: web.BaseRequest):
     """
@@ -318,6 +339,10 @@ async def connections_create_invitation(request: web.BaseRequest):
     alias = request.query.get("alias")
     public = json.loads(request.query.get("public", "false"))
     multi_use = json.loads(request.query.get("multi_use", "false"))
+    body = await request.json() if request.body_exists else {}
+    recipient_keys = body.get("recipient_keys")
+    service_endpoint = body.get("service_endpoint")
+    routing_keys = body.get("routing_keys")
 
     if public and not context.settings.get("public_invites"):
         raise web.HTTPForbidden(
@@ -328,7 +353,13 @@ async def connections_create_invitation(request: web.BaseRequest):
     connection_mgr = ConnectionManager(context)
     try:
         (connection, invitation) = await connection_mgr.create_invitation(
-            auto_accept=auto_accept, public=public, multi_use=multi_use, alias=alias
+            auto_accept=auto_accept,
+            public=public,
+            multi_use=multi_use,
+            alias=alias,
+            recipient_keys=recipient_keys,
+            my_endpoint=service_endpoint,
+            routing_keys=routing_keys,
         )
 
         result = {

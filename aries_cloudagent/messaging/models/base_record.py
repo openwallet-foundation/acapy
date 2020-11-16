@@ -313,8 +313,7 @@ class BaseRecord(BaseModel):
             storage: BaseStorage = await context.inject(BaseStorage)
             if self._id:
                 record = self.storage_record
-                await storage.update_record_value(record, record.value)
-                await storage.update_record_tags(record, record.tags)
+                await storage.update_record(record, record.value, record.tags)
                 new_record = False
             else:
                 self._id = str(uuid.uuid4())
