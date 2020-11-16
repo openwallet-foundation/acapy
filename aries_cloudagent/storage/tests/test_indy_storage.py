@@ -199,10 +199,7 @@ class TestIndyStorage(test_basic_storage.TestBasicStorage):
                 )
 
                 with pytest.raises(test_module.StorageError):
-                    await storage.update_record_value(rec, "dummy-value")
-
-                with pytest.raises(test_module.StorageError):
-                    await storage.update_record_tags(rec, {"tag": "tag"})
+                    await storage.update_record(rec, "dummy-value", {"tag": "tag"})
 
                 with pytest.raises(test_module.StorageError):
                     await storage.delete_record(rec)

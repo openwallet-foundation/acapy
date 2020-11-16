@@ -19,9 +19,9 @@ async def retrieve_connection_menu(
     """Retrieve the previously-received action menu."""
     storage: BaseStorage = await context.inject(BaseStorage)
     try:
-        record = await storage.search_records(
+        record = await storage.find_record(
             MENU_RECORD_TYPE, {"connection_id": connection_id}
-        ).fetch_single()
+        )
     except StorageNotFoundError:
         record = None
     return Menu.from_json(record.value) if record else None
@@ -34,9 +34,9 @@ async def save_connection_menu(
 
     storage: BaseStorage = await context.inject(BaseStorage)
     try:
-        record = await storage.search_records(
+        record = await storage.find_record(
             MENU_RECORD_TYPE, {"connection_id": connection_id}
-        ).fetch_single()
+        )
     except StorageNotFoundError:
         if menu:
             record = StorageRecord(
@@ -47,7 +47,9 @@ async def save_connection_menu(
             await storage.add_record(record)
     else:
         if menu:
-            await storage.update_record_value(record, menu.to_json())
+            await storage.update_record(
+                record, menu.to_json(), {"connection_id": connection_id}
+            )
         else:
             await storage.delete_record(record)
 
