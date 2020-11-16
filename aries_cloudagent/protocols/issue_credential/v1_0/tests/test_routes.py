@@ -172,7 +172,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -214,7 +214,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -268,7 +268,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -331,7 +331,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
@@ -365,7 +365,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
@@ -397,7 +397,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -433,7 +433,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -468,7 +468,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -493,7 +493,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -548,7 +548,7 @@ class TestCredentialRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -635,7 +635,7 @@ class TestCredentialRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec:
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_exchange_create_free_offer(mock)
@@ -670,7 +670,7 @@ class TestCredentialRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -798,7 +798,7 @@ class TestCredentialRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
@@ -834,7 +834,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -912,7 +912,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
@@ -947,7 +947,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
@@ -980,7 +980,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1047,7 +1047,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1112,7 +1112,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1153,7 +1153,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1216,7 +1216,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1258,7 +1258,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1299,7 +1299,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1362,7 +1362,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1403,7 +1403,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1443,7 +1443,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1483,7 +1483,7 @@ class TestCredentialRoutes(AsyncTestCase):
             serialize=async_mock.MagicMock(side_effect=test_module.BaseModelError()),
         )
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1512,7 +1512,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1554,7 +1554,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1617,7 +1617,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1656,7 +1656,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
@@ -1772,7 +1772,7 @@ class TestCredentialRoutes(AsyncTestCase):
         mock.app["request_context"].settings = {}
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager, async_mock.patch.object(
