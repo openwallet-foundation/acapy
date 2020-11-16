@@ -231,17 +231,16 @@ async def main(
     try:
         log_status("#7 Provision an agent and wallet, get back configuration details")
         if multitenant:
-            base_start_port = BASE_AGENT_PORT
             # Note that Alice acts as a just controller (use admin/endpoint of BaseAgent)
             agent = AliceAgent(
                 "Alice",
-                base_start_port,
-                base_start_port + 1,
+                BASE_AGENT_PORT,
+                BASE_AGENT_PORT + 1,
                 multitenant=multitenant
             )
             await agent.listen_webhooks(start_port + 2)
             log_msg("Controller URL of Alice is at:", agent.webhook_url)
-            await agent.create_wallet_and_did()
+            await agent.create_or_switch_wallet()
         else:
             agent = AliceAgent(
                 "Alice.Agent",
@@ -263,8 +262,11 @@ async def main(
         options = (
             "    (3) Send Message\n"
             "    (4) Input New Invitation\n"
-            "    (X) Exit?\n"
-            "[3/4/X]: "
+        )
+        if multitenant:
+            options += "    (W) Create and/or Enable Wallet\n"
+        options += "    (X) Exit?\n[3/4/{}X] ".format(
+            "W/" if multitenant else "",
         )
         async for option in prompt_loop(options):
             if option is not None:
@@ -272,6 +274,19 @@ async def main(
 
             if option is None or option in "xX":
                 break
+
+            elif option in "wW" and multitenant:
+                target_wallet_name = await prompt("Enter wallet name: ")
+                await agent.terminate()
+                agent = AliceAgent(
+                    "Alice",
+                    BASE_AGENT_PORT,
+                    BASE_AGENT_PORT + 1,
+                    multitenant=multitenant,
+                    wallet_name=target_wallet_name
+                )
+                await agent.listen_webhooks(start_port + 2)
+                await agent.create_or_switch_wallet()
 
             elif option == "3":
                 msg = await prompt("Enter message: ")

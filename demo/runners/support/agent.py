@@ -318,34 +318,64 @@ class DemoAgent:
             self.did = nym_info["did"]
         self.log(f"Got DID: {self.did}")
 
-    async def create_wallet_and_did(self):
-        self.log(f"Creating a new wallet for {self.ident}")
-        wallet_body = {
-          "name": self.wallet_name,
-          "key": self.wallet_key,
-          "type": self.wallet_type,
-          "label": self.label,
-          "image_url": self.image_url,
-          "webhook_urls": [self.webhook_url]
-        }
-        try:
-            new_wallet = await self.admin_POST('/wallet', wallet_body)
-        except ClientError:
-            self.log(f"Cannnot connect Admin URL of Base.Agent")
-            if self.ident == "Alice":
-                self.log(f"Run faber demo first with --multitenant or set environment BASE_AGENT_PORT correctly")
-            sys.exit(1)
-        self.wallet_id = new_wallet["wallet_id"]
-        self.log(f"Created a new wallet name: {self.wallet_name} with wallet_id: {self.wallet_id}")
+    async def create_or_switch_wallet(self):
+        self.log(f"Creating or switching to a wallet for {self.ident}")
 
-        self.log(f"Creating a new local did for {self.ident}")
-        did_body = {}
-        if self.seed:
-            did_body = {"seed": self.seed}
-        new_did = await self.admin_POST('/wallet/did/create', did_body)
-        self.did = new_did["result"]["did"]
-        self.verkey = new_did["result"]["verkey"]
-        self.log(f"Created a new did: {self.did} with verkey: {self.verkey}")
+        # create or switch to a wallet
+        wallet_exist = False
+        new_wallet = None
+        try:
+            wallet_body = {
+                "name": self.wallet_name,
+                "key": self.wallet_key,
+                "type": self.wallet_type,
+                "label": self.label,
+                "image_url": self.image_url,
+                "webhook_urls": [self.webhook_url]
+            }
+            new_wallet = await self.admin_POST('/wallet', wallet_body)
+        except Exception as e:
+            if "400" in str(e):
+                wallet_exist = True
+                pass
+            if "Connect call failed" in str(e):
+                self.log(f"Cannnot connect Admin URL of Base.Agent")
+                if self.ident == "Alice":
+                    self.log(f"Run faber demo first with --multitenant or set environment BASE_AGENT_PORT correctly")
+                sys.exit(1)
+
+        if wallet_exist:
+            new_wallet = await self.admin_GET('/wallet/me')
+            self.wallet_id = new_wallet["wallet_id"]
+            self.log(f"Switched to a existing wallet name: {self.wallet_name}")
+        else:
+            self.wallet_id = new_wallet["wallet_id"]
+            self.log(f"Created a new wallet name: {self.wallet_name}")
+
+    async def create_or_enable_public_did(self, base_agent):
+        self.log(f"Creating or enabling a public did for {self.ident}")
+
+        # create or enable a public did
+        new_did = await self.admin_GET('/wallet/did/public')
+        if new_did["result"] and new_did["result"]["posture"] == "public":
+            self.did = new_did["result"]["did"]
+            self.verkey = new_did["result"]["verkey"]
+            self.log(f"Found and enabled a existing public did: {self.did}")
+        else:
+            did_body = {}
+            if self.seed:
+                did_body = {"seed": self.seed}
+            new_did = await self.admin_POST('/wallet/did/create', did_body)
+            self.did = new_did["result"]["did"]
+            self.verkey = new_did["result"]["verkey"]
+            self.log(f"Created a new local did: {self.did}")
+
+            await base_agent.register_did_as_endorser(self.did, self.verkey, self.ident, self.wallet_name)
+
+            self.log(f"Assigning a did {self.did} to public")
+            did_params = f"?did={self.did}"
+            response = await self.admin_POST('/wallet/did/public' + did_params)
+            self.log(f"Response of assignment : {response}")
 
     async def register_did_as_endorser(self, did: str, verkey: str, alias: str, wallet_name: str):
         self.log(f"Registering a did {did} of {alias} as a ENDORSER")
@@ -356,12 +386,6 @@ class DemoAgent:
                         f"&wallet_name={wallet_name}"
         response = await self.admin_POST('/ledger/register-nym' + ledger_params)
         self.log(f"Response of registration : {response}")
-
-    async def assign_did_to_public(self):
-        self.log(f"Assigning a did {self.did} to public")
-        did_params = f"?did={self.did}"
-        response = await self.admin_POST('/wallet/did/public' + did_params)
-        self.log(f"Response of assignment : {response}")
 
     def handle_output(self, *output, source: str = None, **kwargs):
         end = "" if source else "\n"

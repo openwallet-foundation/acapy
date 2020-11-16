@@ -234,6 +234,7 @@ async def main(
         print("Error retrieving ledger genesis transactions")
         sys.exit(1)
 
+    base_agent = None
     agent = None
 
     try:
@@ -251,6 +252,11 @@ async def main(
                 seed=BASE_AGENT_SEED,
                 wallet_name="base"
             )
+            with log_timer("Startup duration:"):
+                await base_agent.start_process()
+            log_msg("Admin URL of Base.Agent is at:", base_agent.admin_url)
+            log_msg("Endpoint URL of Base.Agent is at:", base_agent.endpoint)
+
             # Note that Faber acts as a just controller (use admin/endpoint of BaseAgent)
             agent = FaberAgent(
                 "Faber",
@@ -258,15 +264,10 @@ async def main(
                 start_port + 1,
                 multitenant=multitenant
             )
-            with log_timer("Startup duration:"):
-                await base_agent.start_process()
-            log_msg("Admin URL of Base.Agent is at:", base_agent.admin_url)
-            log_msg("Endpoint URL of Base.Agent is at:", base_agent.endpoint)
             await agent.listen_webhooks(start_port + 2)
             log_msg("Controller URL of Faber is at:", agent.webhook_url)
-            await agent.create_wallet_and_did()
-            await base_agent.register_did_as_endorser(agent.did, agent.verkey, agent.ident, agent.wallet_name)
-            await agent.assign_did_to_public()
+            await agent.create_or_switch_wallet()
+            await agent.create_or_enable_public_did(base_agent)
         else:
             agent = FaberAgent(
                 "Faber.Agent",
@@ -298,11 +299,14 @@ async def main(
             "    (3) Send Message\n"
             "    (4) Create New Invitation\n"
         )
+        if multitenant:
+            options += "    (W) Create and/or Enable Wallet\n"
         if revocation:
             options += "    (5) Revoke Credential\n" "    (6) Publish Revocations\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
-        options += "    (X) Exit?\n[1/2/3/4/{}T/X] ".format(
+        options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
             "5/6/" if revocation else "",
+            "W/" if multitenant else "",
         )
         async for option in prompt_loop(options):
             if option is not None:
@@ -310,6 +314,21 @@ async def main(
 
             if option is None or option in "xX":
                 break
+
+            elif option in "wW" and multitenant:
+                target_wallet_name = await prompt("Enter wallet name: ")
+                await agent.terminate()
+                agent = FaberAgent(
+                    "Faber",
+                    start_port,
+                    start_port + 1,
+                    multitenant=multitenant,
+                    wallet_name=target_wallet_name
+                )
+                await agent.listen_webhooks(start_port + 2)
+                await agent.create_or_switch_wallet()
+                await agent.create_or_enable_public_did(base_agent)
+                credential_definition_id = await create_schema_and_cred_def(agent, revocation)
 
             elif option in "tT":
                 exchange_tracing = not exchange_tracing
