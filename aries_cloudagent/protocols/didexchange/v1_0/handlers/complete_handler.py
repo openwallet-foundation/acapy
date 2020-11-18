@@ -6,11 +6,11 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
-from ..manager import Conn23Manager, Conn23ManagerError
-from ..messages.complete import Conn23Complete
+from ..manager import DIDXManager, DIDXManagerError
+from ..messages.complete import ConnComplete
 
 
-class Conn23CompleteHandler(BaseHandler):
+class ConnCompleteHandler(BaseHandler):
     """Handler class for connection complete message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
@@ -21,15 +21,15 @@ class Conn23CompleteHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"Conn23CompleteHandler called with context {context}")
-        assert isinstance(context.message, Conn23Complete)
+        self._logger.debug(f"ConnCompleteHandler called with context {context}")
+        assert isinstance(context.message, ConnComplete)
 
-        mgr = Conn23Manager(context)
+        mgr = DIDXManager(context)
         try:
             conn_rec = await mgr.accept_complete(
                 context.message, context.message_receipt
             )
-        except Conn23ManagerError as e:
+        except DIDXManagerError as e:
             # no corresponding request: no targets to send problem report; log and quit
             self._logger.exception("Error receiving connection complete")
             return

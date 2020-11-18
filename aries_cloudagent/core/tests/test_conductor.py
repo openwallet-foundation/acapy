@@ -3,11 +3,9 @@ from io import StringIO
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-from .. import conductor as test_module
 from ...admin.base_server import BaseAdminServer
 from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
-from ...connections.models.connection_record import ConnectionRecord
 from ...connections.models.connection_target import ConnectionTarget
 from ...connections.models.diddoc import (
     DIDDoc,
@@ -16,8 +14,6 @@ from ...connections.models.diddoc import (
     Service,
 )
 from ...core.protocol_registry import ProtocolRegistry
-
-from ...protocols.connections.v1_0.manager import ConnectionManager
 from ...storage.base import BaseStorage
 from ...storage.basic import BasicStorage
 from ...transport.inbound.base import InboundTransportConfiguration
@@ -31,6 +27,8 @@ from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...wallet.base import BaseWallet
 from ...wallet.basic import BasicWallet
+
+from .. import conductor as test_module
 
 
 class Config:
@@ -317,7 +315,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         with async_mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            test_module, "DIDXManager", autospec=True
         ) as conn_mgr:
 
             await conductor.setup()
@@ -392,14 +390,14 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             conductor.handle_not_returned(conductor.context, message)
 
             with async_mock.patch.object(
-                test_module, "ConnectionManager"
+                test_module, "DIDXManager"
             ) as mock_conn_mgr, async_mock.patch.object(
                 conductor.dispatcher, "run_task", async_mock.MagicMock()
             ) as mock_run_task:
                 mock_conn_mgr.return_value.get_connection_targets = (
                     async_mock.CoroutineMock()
                 )
-                mock_run_task.side_effect = test_module.ConnectionManagerError()
+                mock_run_task.side_effect = test_module.DIDXManagerError()
                 await conductor.queue_outbound(conductor.context, message)
                 mock_outbound_mgr.return_value.enqueue_message.assert_not_called()
 
@@ -447,7 +445,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         await conductor.setup()
 
         with async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            test_module, "DIDXManager", autospec=True
         ) as conn_mgr, async_mock.patch.object(
             conductor.dispatcher, "run_task", async_mock.MagicMock()
         ) as mock_dispatch_run, async_mock.patch.object(
@@ -511,10 +509,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         ) as admin_start, async_mock.patch.object(
             admin, "stop", autospec=True
         ) as admin_stop, async_mock.patch.object(
-            test_module, "ConnectionManager"
-        ) as conn_mgr:
+            test_module, "OutOfBandManager"
+        ) as oob_mgr:
             admin_start.side_effect = KeyError("trouble")
-            conn_mgr.return_value.create_invitation(
+            oob_mgr.return_value.create_invitation(
                 side_effect=KeyError("more trouble")
             )
             await conductor.start()
@@ -542,7 +540,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         builder.update_settings({"debug.test_suite_endpoint": True})
         conductor = test_module.Conductor(builder)
 
-        with async_mock.patch.object(test_module, "ConnectionManager") as mock_mgr:
+        with async_mock.patch.object(test_module, "DIDXManager") as mock_mgr:
             await conductor.setup()
 
             wallet = await conductor.context.inject(BaseWallet)
@@ -558,7 +556,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         conductor = test_module.Conductor(builder)
 
         with async_mock.patch.object(
-            test_module, "ConnectionManager"
+            test_module, "DIDXManager"
         ) as mock_mgr, async_mock.patch.object(
             test_module, "InboundTransportManager"
         ) as mock_intx_mgr:
@@ -577,7 +575,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         conductor = test_module.Conductor(builder)
 
         with async_mock.patch.object(
-            test_module, "ConnectionManager"
+            test_module, "DIDXManager"
         ) as mock_mgr, async_mock.patch.object(
             test_module, "OutboundTransportManager"
         ) as mock_outx_mgr:
@@ -661,6 +659,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.start()
             await conductor.stop()
+            value = captured.getvalue()
             assert "http://localhost?c_i=" in captured.getvalue()
 
     async def test_webhook_router(self):

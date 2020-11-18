@@ -1,4 +1,4 @@
-"""Represents a connection response message under RFC 23 (DID exchange)."""
+"""Represents a DID exchange response message under RFC 23."""
 
 from marshmallow import EXCLUDE, fields
 
@@ -9,20 +9,20 @@ from .....messaging.decorators.attach_decorator import (
 )
 from .....messaging.valid import INDY_DID
 
-from ..message_types import CONN23_RESPONSE, PROTOCOL_PACKAGE
+from ..message_types import DIDX_RESPONSE, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.response_handler.Conn23ResponseHandler"
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.response_handler.DIDXResponseHandler"
 
 
-class Conn23Response(AgentMessage):
-    """Class representing a connection response under RFC 23 (DID exchange)."""
+class DIDXResponse(AgentMessage):
+    """Class representing a DID exchange response under RFC 23."""
 
     class Meta:
-        """Metadata for connection response under RFC 23 (DID exchange)."""
+        """Metadata for DID exchange response under RFC 23."""
 
         handler_class = HANDLER_CLASS
-        message_type = CONN23_RESPONSE
-        schema_class = "Conn23ResponseSchema"
+        message_type = DIDX_RESPONSE
+        schema_class = "DIDXResponseSchema"
 
     def __init__(
         self,
@@ -32,10 +32,10 @@ class Conn23Response(AgentMessage):
         **kwargs,
     ):
         """
-        Initialize connection response object under RFC 23 (DID exchange).
+        Initialize DID exchange response object under RFC 23.
 
         Args:
-            image_url: Optional image URL for this connection response
+            image_url: Optional image URL for this response
             did_doc_attach: signed DID doc attachment
         """
         super().__init__(**kwargs)
@@ -43,13 +43,13 @@ class Conn23Response(AgentMessage):
         self.did_doc_attach = did_doc_attach
 
 
-class Conn23ResponseSchema(AgentMessageSchema):
-    """Schema class for connection response under RFC 23 (DID exchange)."""
+class DIDXResponseSchema(AgentMessageSchema):
+    """Schema class for DID exchange response under RFC 23."""
 
     class Meta:
-        """DID exchange connection response schema class metadata."""
+        """DID exchange response schema class metadata."""
 
-        model_class = Conn23Response
+        model_class = DIDXResponse
         unknown = EXCLUDE
 
     did = fields.Str(description="DID of exchange", **INDY_DID)

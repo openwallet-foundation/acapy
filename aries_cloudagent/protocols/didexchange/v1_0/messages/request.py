@@ -1,4 +1,4 @@
-"""Represents a connection request message under RFC 23 (DID exchange)."""
+"""Represents a DID exchange request message under RFC 23."""
 
 from marshmallow import EXCLUDE, fields
 
@@ -9,20 +9,20 @@ from .....messaging.decorators.attach_decorator import (
 )
 from .....messaging.valid import INDY_DID
 
-from ..message_types import CONN23_REQUEST, PROTOCOL_PACKAGE
+from ..message_types import DIDX_REQUEST, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.request_handler.Conn23RequestHandler"
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.request_handler.DIDXRequestHandler"
 
 
-class Conn23Request(AgentMessage):
-    """Class representing a connection request under RFC 23 (DID exchange)."""
+class DIDXRequest(AgentMessage):
+    """Class representing a DID exchange request under RFC 23."""
 
     class Meta:
-        """Metadata for connection request under RFC 23 (DID exchange)."""
+        """Metadata for DID exchange request under RFC 23."""
 
         handler_class = HANDLER_CLASS
-        message_type = CONN23_REQUEST
-        schema_class = "Conn23RequestSchema"
+        message_type = DIDX_REQUEST
+        schema_class = "DIDXRequestSchema"
 
     def __init__(
         self,
@@ -33,11 +33,11 @@ class Conn23Request(AgentMessage):
         **kwargs,
     ):
         """
-        Initialize connection request object under RFC 23 (DID exchange).
+        Initialize DID exchange request object under RFC 23.
 
         Args:
-            label: Label for this connection request
-            image_url: Optional image URL for this connection request
+            label: Label for this request
+            image_url: Optional image URL for this request
             did_doc_attach: signed DID doc attachment
         """
         super().__init__(**kwargs)
@@ -46,18 +46,18 @@ class Conn23Request(AgentMessage):
         self.did_doc_attach = did_doc_attach
 
 
-class Conn23RequestSchema(AgentMessageSchema):
-    """Schema class for connection request under RFC 23 (DID exchange)."""
+class DIDXRequestSchema(AgentMessageSchema):
+    """Schema class for DID exchange request under RFC 23."""
 
     class Meta:
-        """DID exchange connection request schema class metadata."""
+        """DID exchange request schema class metadata."""
 
-        model_class = Conn23Request
+        model_class = DIDXRequest
         unknown = EXCLUDE
 
     label = fields.Str(
         required=True,
-        description="Label for connection request",
+        description="Label for DID exchange request",
         example="Request to connect with Bob",
     )
     did = fields.Str(description="DID of exchange", **INDY_DID)

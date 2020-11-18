@@ -13,14 +13,7 @@ from aiohttp_apispec import (
 
 from marshmallow import fields, validate, validates_schema
 
-from ....connections.models.connection_record import (
-    ConnectionRecord,
-    ConnectionRecordSchema,
-)
-from ....connections.models.conn23rec import (
-    Conn23Record,
-    Conn23RecordSchema,
-)
+from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
@@ -37,86 +30,17 @@ from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessageSchema as OOBInvitationSchema,
 )
 
-from .manager import Conn23Manager, Conn23ManagerError
+from .manager import DIDXManager, DIDXManagerError
 from .message_types import SPEC_URI
 
-
-class ConnectionResultSchema(OpenAPISchema):
-    """Connection result."""
-
-    rfc160_connection = fields.Nested(
-        ConnectionRecordSchema(),
-        required=False,
-    )
-    rfc23_connection = fields.Nested(
-        Conn23RecordSchema(),
-        required=False,
-    )
-
-    '''
-    def pre_load(self, data, **kwargs):
-        """Pre-load hook jockeys connection record types."""
-        data["connection"] = data.pop(
-            "rfc23_connection",
-            data.pop("rfc160_connection", None),
-        )
-        if not data["connection"]:
-            raise ValidationError(
-                "Connection result must have either RFC 23 connection record or "
-                "RFC 160 connection record, not both"
-            )
-        return data
-    
-    @post_dump(self, data, **kwargs):
-        """Post-dump hook jockeys connection record types."""
-        connection = data.pop("connection")
-        data[
-            "rfc23_connection"
-            if isinstance(connection, Conn23Record)
-            else "rfc160_connection"
-        ] = connection
-
-        return data
-    '''
-
-    '''  # doesn't matter: it's a results schema
-    @pre_dump
-    def validate_data(self, data, **kwargs):
-        """
-        Validate schema fields - must have a connection via RFC 23 or via 160, not both
-
-        Args:
-            data: The data to validate
-
-        Raises:
-            ValidationError: if data has both or neither
-
-        """
-        if not data and (
-            (bool(data.get("rfc160_connection")) ^ bool(data.get("rfc23_connection")))
-        ):
-            raise ValidationError(
-                "Connection result must have either RFC 23 connection record or "
-                "RFC 160 connection record, not both"
-            )
-    '''
 
 class ConnectionListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
-    rfc23_connections = fields.List(
-        fields.Nested(Conn23RecordSchema()),
-        description="List of DID exchange protocol (RFC 23) connection records",
+    results = fields.List(
+        fields.Nested(ConnRecordSchema(), "connection")),
+        description="List of connection records",
     )
-    rfc160_connections = fields.List(
-        fields.Nested(ConnectionRecordSchema()),
-        description="List of connection protocol (RFC 160) connection records",
-    )
-    '''
-    connections = fields.List(
-        fields.Nested(fields.Pluck(ConnectionResultSchema, "connection"))
-    )
-    '''
 
 
 class ReceiveInvitationRequestSchema(OOBInvitationSchema):
@@ -125,19 +49,6 @@ class ReceiveInvitationRequestSchema(OOBInvitationSchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Bypass middleware field validation for OpenAPI display."""
-
-'''
-class InvitationResultSchema(OpenAPISchema):
-    """Result schema for a new connection invitation."""
-
-    connection_id = fields.Str(
-        description="Connection identifier", example=UUIDFour.EXAMPLE
-    )
-    invitation = fields.Nested(ConnectionInvitationSchema())
-    invitation_url = fields.Str(
-        description="Invitation URL",
-        example="http://192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ==",
-    )
 
 
 class ConnectionStaticRequestSchema(OpenAPISchema):
@@ -152,11 +63,6 @@ class ConnectionStaticRequestSchema(OpenAPISchema):
     their_verkey = fields.Str(description="Remote verification key", required=False)
     their_endpoint = fields.Str(
         description="URL endpoint for the other party", required=False, **ENDPOINT
-    )
-    their_role = fields.Str(
-        description="Role to assign to this connection",
-        required=False,
-        example="Point of contact",
     )
     their_label = fields.Str(
         description="Label to assign to this connection", required=False
@@ -176,8 +82,8 @@ class ConnectionStaticResultSchema(OpenAPISchema):
     their_verkey = fields.Str(
         description="Remote verification key", required=True, **INDY_RAW_PUBLIC_KEY
     )
-    record = fields.Nested(ConnectionRecordSchema, required=True)
-'''
+    record = fields.Nested(ConnRecordSchema, required=True)
+
 
 class ConnectionsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for connections list request query string."""
@@ -195,51 +101,18 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         description="Connection state",
         required=False,
         validate=validate.OneOf(
-            list(
-                {
-                    getattr(ConnectionRecord, m)
-                    for m in vars(ConnectionRecord)
-                    if m.startswith("STATE_")
-                }
-                | {
-                    getattr(Conn23Record, m)
-                    for m in vars(Conn23Record)
-                    if m.startswith("STATE_")
-                }
-            )
+            {label for state in ConnRecord.State for label in state.value}
         ),
     )
     their_did = fields.Str(description="Their DID", required=False, **INDY_DID)
     their_role = fields.Str(
         required=False,
         description="Their assigned connection role",
-        validate=validate.OneOf(  # conn23rec role values include names by rfcs 23, 160
-            [label for role in Conn23Record.Role for label in role.value]
+        validate=validate.OneOf(  # conn rec role values include names by rfcs 23, 160
+            [label for role in ConnRecord.Role for label in role.value]
         ),
-        example=Conn23Record.Role.REQUESTER.rfc23,
+        example=ConnRecord.Role.REQUESTER.rfc23,
     )
-
-
-'''
-class CreateInvitationQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for create invitation request query string."""
-
-    alias = fields.Str(
-        description="Alias",
-        required=False,
-        example="Barry",
-    )
-    auto_accept = fields.Boolean(
-        description="Auto-accept connection (default as per configuration)",
-        required=False,
-    )
-    public = fields.Boolean(
-        description="Create invitation from public DID (default false)", required=False
-    )
-    multi_use = fields.Boolean(
-        description="Create invitation for multiple use (default false)", required=False
-    )
-'''
 
 
 class ReceiveInvitationQueryStringSchema(OpenAPISchema):
@@ -295,18 +168,13 @@ class ConnIdRefIdMatchInfoSchema(OpenAPISchema):
 
 def connection_sort_key(conn):
     """Get the sorting key for a particular connection."""
-    if conn["state"] in (
-        ConnectionRecord.STATE_INIT,
-        ConnectionRecord.STATE_INACTIVE,
-        ConnectionRecord.STATE_ERROR,
-        Conn23Record.STATE_START,
-        Conn23Record.STATE_ABANDONED,
+    conn_state = ConnRecord.State.get(conn["state"])
+    if conn_state in (
+        ConnRecord.State.INIT,
+        ConnRecord.State.ABANDONED,
     ):
         pfx = "2"
-    elif conn["state"] in (
-        ConnectionRecord.STATE_INVITATION,
-        Conn23Record.STATE_INVITATION,
-    ):
+    elif conn_state is ConnRecord.State.INVITATION:
         pfx = "1"
     else:
         pfx = "0"
@@ -319,7 +187,7 @@ def connection_sort_key(conn):
 )
 @querystring_schema(ConnectionsListQueryStringSchema())
 @response_schema(ConnectionListSchema(), 200)
-async def connections_list(request: web.BaseRequest):
+async def didx_connections_list(request: web.BaseRequest):
     """
     Request handler for searching DID exchange connection records.
 
@@ -340,49 +208,33 @@ async def connections_list(request: web.BaseRequest):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
     post_filter = {}
-    for param_name in (
-        "alias",
-        "state",
-        "their_role",
-    ):
-        if param_name in request.query and request.query[param_name] != "":
-            post_filter[param_name] = request.query[param_name]
-    try:
-        '''
-        records = await ConnectionRecord.query(context, tag_filter, post_filter)
-        results = [record.serialize() for record in records]
-        records = await Conn23Record.query(context, tag_filter, post_filter)
-        results.extend(record.serialize() for record in records]
-        results.sort(key=connection_sort_key)
-        '''
-        records = await ConnectionRecord.query(context, tag_filter, post_filter)
-        rfc160_results = [record.serialize() for record in records]
-        rfc160_results.sort(key=connection_sort_key)
+    if request.query.get("alias"):
+        post_filter["alias"] = request.query["alias"]
+    if request.query.get("state"):
+        post_filter["state"] = [
+            v for v in ConnRecord.State.get(request.query["state"]).value
+        ]
+    if request.query.get("their_role"):
+        post_filter["their_role"] = [
+            v for v in ConnRecord.Role.get(request.query["their_role"]).value
+        ]
 
-        records = await Conn23Record.query(context, tag_filter, post_filter)
-        rfc23_results = [record.serialize() for record in records]
-        rfc23_results.sort(key=connection_sort_key)
+    try:
+        records = await ConnRecord.query(
+            context, tag_filter, post_filter_positive=post_filter, alt=True
+        )
+        results = [record.serialize() for record in records]
+        results.sort(key=connection_sort_key)
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    '''
-    return web.json_response(
-        {
-            "connections": results
-        }
-    )
-    '''
-    return web.json_response(
-        {
-            "rfc160_connections": rfc160_results,
-            "rfc23_connections": rfc23_results,
-        }
-    )
+
+    return web.json_response({"results": results})
 
 
 @docs(tags=["did-exchange"], summary="Fetch a single connection record")
 @match_info_schema(ConnIdMatchInfoSchema())
 @response_schema(ConnectionResultSchema(), 200)
-async def connections_retrieve(request: web.BaseRequest):
+async def didx_connections_retrieve(request: web.BaseRequest):
     """
     Request handler for fetching a single connection record.
 
@@ -397,17 +249,8 @@ async def connections_retrieve(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
 
     try:
-        record = await Conn23Record.retrieve_by_id(context, connection_id)
-        result = {"rfc23_connection": record.serialize()}
-        return web.json_response(result)
-    except StorageNotFoundError as err:
-        pass
-    except BaseModelError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    try:
-        record = await ConnectionRecord.retrieve_by_id(context, connection_id)
-        result = {"rfc160_connection": record.serialize()}
+        record = await ConnRecord.retrieve_by_id(context, connection_id)
+        result = record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
@@ -416,65 +259,14 @@ async def connections_retrieve(request: web.BaseRequest):
     return web.json_response(result)
 
 
-'''
-@docs(
-    tags=["did-exchange"],
-    summary="Create a new connection invitation",
-)
-@querystring_schema(CreateInvitationQueryStringSchema())
-@response_schema(InvitationResultSchema(), 200)
-async def connections_create_invitation(request: web.BaseRequest):
-    """
-    Request handler for creating a new connection invitation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The connection invitation details
-
-    """
-    context = request.app["request_context"]
-    auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    alias = request.query.get("alias")
-    public = json.loads(request.query.get("public", "false"))
-    multi_use = json.loads(request.query.get("multi_use", "false"))
-
-    if public and not context.settings.get("public_invites"):
-        raise web.HTTPForbidden(
-            reason="Configuration does not include public invitations"
-        )
-    base_url = context.settings.get("invite_base_url")
-
-    connection_mgr = ConnectionManager(context)
-    try:
-        (connection, invitation) = await connection_mgr.create_invitation(
-            auto_accept=auto_accept, public=public, multi_use=multi_use, alias=alias
-        )
-
-        result = {
-            "connection_id": connection and connection.connection_id,
-            "invitation": invitation.serialize(),
-            "invitation_url": invitation.to_url(base_url),
-        }
-    except (ConnectionManagerError, BaseModelError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    if connection and connection.alias:
-        result["alias"] = connection.alias
-
-    return web.json_response(result)
-'''
-
-
 @docs(
     tags=["did-exchange"],
     summary="Receive a new connection invitation",
 )
 @querystring_schema(ReceiveInvitationQueryStringSchema())
 @request_schema(ReceiveInvitationRequestSchema())
-@response_schema(ConnectionRecordSchema(), 200)
-async def connections_receive_invitation(request: web.BaseRequest):
+@response_schema(ConnRecordSchema(), 200)
+async def didx_receive_invitation(request: web.BaseRequest):
     """
     Request handler for receiving a new connection invitation.
 
@@ -490,18 +282,18 @@ async def connections_receive_invitation(request: web.BaseRequest):
         raise web.HTTPForbidden(
             reason="Configuration does not allow receipt of invitations"
         )
-    connection_mgr = Conn23Manager(context)
+    didx_mgr = DIDXManager(context)
     invitation_json = await request.json()
 
     try:
         invitation = OOBInvitation.deserialize(invitation_json)
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
-        connection = await connection_mgr.receive_invitation(
+        conn_rec = await didx_mgr.receive_invitation(
             invitation, auto_accept=auto_accept, alias=alias
         )
-        result = connection.serialize()
-    except (Conn23ManagerError, StorageError, BaseModelError) as err:
+        result = conn_rec.serialize()
+    except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result)
@@ -513,8 +305,8 @@ async def connections_receive_invitation(request: web.BaseRequest):
 )
 @match_info_schema(ConnIdMatchInfoSchema())
 @querystring_schema(AcceptInvitationQueryStringSchema())
-@response_schema(ConnectionRecordSchema(), 200)
-async def connections_accept_invitation(request: web.BaseRequest):
+@response_schema(ConnRecordSchema(), 200)
+async def didx_accept_invitation(request: web.BaseRequest):
     """
     Request handler for accepting a stored connection invitation.
 
@@ -530,20 +322,18 @@ async def connections_accept_invitation(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
 
     try:
-        connection = await Conn23Record.retrieve_by_id(context, connection_id)
-        conn23_mgr = Conn23Manager(context)
+        conn_rec = await ConnRecord.retrieve_by_id(context, connection_id)
+        didx_mgr = DIDXManager(context)
         my_label = request.query.get("my_label") or None
         my_endpoint = request.query.get("my_endpoint") or None
-        request = await conn23_mgr.create_request(connection, my_label, my_endpoint)
+        request = await didx_mgr.create_request(conn_rec, my_label, my_endpoint)
+        result = conn_rec.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (StorageError, WalletError, Conn23ManagerError, BaseModelError) as err:
+    except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(request, connection_id=connection.connection_id)
-    connection.state = Conn23Record.STATE_REQUEST
-    await connection.save(context, "Sent connection request")
-    result = connection.serialize()
 
     return web.json_response(result)
 
@@ -554,8 +344,8 @@ async def connections_accept_invitation(request: web.BaseRequest):
 )
 @match_info_schema(ConnIdMatchInfoSchema())
 @querystring_schema(AcceptRequestQueryStringSchema())
-@response_schema(ConnectionRecordSchema(), 200)
-async def connections_accept_request(request: web.BaseRequest):
+@response_schema(ConnRecordSchema(), 200)
+async def didx_accept_request(request: web.BaseRequest):
     """
     Request handler for accepting a stored connection request.
 
@@ -571,17 +361,18 @@ async def connections_accept_request(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
 
     try:
-        connection = await Conn23Record.retrieve_by_id(context, connection_id)
-        connection_mgr = Conn23Manager(context)
+        conn_rec = await ConnRecord.retrieve_by_id(context, connection_id)
+        didx_mgr = DIDXManager(context)
         my_endpoint = request.query.get("my_endpoint") or None
-        response = await connection_mgr.create_response(connection, my_endpoint)
-        result = connection.serialize()
+        response = await didx_mgr.create_response(conn_rec, my_endpoint)
+        result = conn_rec.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (StorageError, WalletError, Conn23ManagerError, BaseModelError) as err:
+    except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    await outbound_handler(response, connection_id=connection.connection_id)
+    # TODO check if conn rec state is correct here? Maybe pass outbound into conn mgr
+    await outbound_handler(response, connection_id=conn_rec.connection_id)
     return web.json_response(result)
 
 
@@ -589,7 +380,7 @@ async def connections_accept_request(request: web.BaseRequest):
     tags=["did-exchange"], summary="Assign another connection as the inbound connection"
 )
 @match_info_schema(ConnIdRefIdMatchInfoSchema())
-async def connections_establish_inbound(request: web.BaseRequest):
+async def didx_establish_inbound(request: web.BaseRequest):
     """
     Request handler for setting the inbound connection on a connection record.
 
@@ -602,14 +393,14 @@ async def connections_establish_inbound(request: web.BaseRequest):
     inbound_connection_id = request.match_info["ref_id"]
 
     try:
-        connection = await Conn23Record.retrieve_by_id(context, connection_id)
-        connection_mgr = Conn23Manager(context)
-        await connection_mgr.establish_inbound(
-            connection, inbound_connection_id, outbound_handler
+        conn_rec = await ConnRecord.retrieve_by_id(context, connection_id)
+        didx_mgr = DIDXManager(context)
+        await didx_mgr.establish_inbound(
+            conn_rec, inbound_connection_id, outbound_handler
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (StorageError, WalletError, Conn23ManagerError) as err:
+    except (StorageError, WalletError, DIDXManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
@@ -617,7 +408,7 @@ async def connections_establish_inbound(request: web.BaseRequest):
 
 @docs(tags=["did-exchange"], summary="Remove an existing connection record")
 @match_info_schema(ConnIdMatchInfoSchema())
-async def connections_remove(request: web.BaseRequest):
+async def didx_remove_connection(request: web.BaseRequest):
     """
     Request handler for removing a connection record.
 
@@ -628,8 +419,8 @@ async def connections_remove(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
 
     try:
-        connection = await Conn23Record.retrieve_by_id(context, connection_id)
-        await connection.delete_record(context)
+        conn_rec = await ConnRecord.retrieve_by_id(context, connection_id)
+        await conn_rec.delete_record(context)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
@@ -638,11 +429,10 @@ async def connections_remove(request: web.BaseRequest):
     return web.json_response({})
 
 
-'''
 @docs(tags=["did-exchange"], summary="Create a new static connection")
 @request_schema(ConnectionStaticRequestSchema())
 @response_schema(ConnectionStaticResultSchema(), 200)
-async def connections_create_static(request: web.BaseRequest):
+async def didx_create_static(request: web.BaseRequest):
     """
     Request handler for creating a new static connection.
 
@@ -656,20 +446,19 @@ async def connections_create_static(request: web.BaseRequest):
     context = request.app["request_context"]
     body = await request.json()
 
-    connection_mgr = ConnectionManager(context)
+    didx_mgr = DIDXManager(context)
     try:
         (
             my_info,
             their_info,
-            connection,
-        ) = await connection_mgr.create_static_connection(
+            conn_rec,
+        ) = await didx_mgr.create_static_connection(
             my_seed=body.get("my_seed") or None,
             my_did=body.get("my_did") or None,
             their_seed=body.get("their_seed") or None,
             their_did=body.get("their_did") or None,
             their_verkey=body.get("their_verkey") or None,
             their_endpoint=body.get("their_endpoint") or None,
-            their_role=body.get("their_role") or None,
             their_label=body.get("their_label") or None,
             alias=body.get("alias") or None,
         )
@@ -679,13 +468,12 @@ async def connections_create_static(request: web.BaseRequest):
             "my_endpoint": context.settings.get("default_endpoint"),
             "their_did": their_info.did,
             "their_verkey": their_info.verkey,
-            "record": connection.serialize(),
+            "record": conn_rec.serialize(),
         }
     except (WalletError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(response)
-'''
 
 
 async def register(app: web.Application):
@@ -693,34 +481,31 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get("/didexchange/connections", connections_list, allow_head=False),
             web.get(
-                "/didexchange/connections/{conn_id}",
-                connections_retrieve,
+                "/didexchange/connections",
+                didx_connections_list,
                 allow_head=False,
             ),
-            web.post(
-                "/didexchange/receive-invitation",
-                connections_receive_invitation
+            web.get( "/didexchange/connections/{conn_id}",
+                didx_connections_retrieve,
+                allow_head=False,
             ),
+            web.post("/didexchange/create-static", didx_create_static),
+            web.post("/didexchange/receive-invitation", didx_receive_invitation),
             web.post(
                 "/didexchange/{conn_id}/accept-invitation",
-                connections_accept_invitation,
+                didx_accept_invitation,
             ),
             web.post(
-                "/didexchange/{conn_id}/accept-request", connections_accept_request
+                "/didexchange/{conn_id}/accept-request", didx_accept_request
             ),
             web.post(
                 "/didexchange/{conn_id}/establish-inbound/{ref_id}",
-                connections_establish_inbound,
+                didx_establish_inbound,
             ),
-            web.post("/didexchange/{conn_id}/remove", connections_remove),
+            web.post("/didexchange/{conn_id}/remove", didx_remove_connection),
         ]
     )
-    """
-            web.post("/connections/create-static", connections_create_static),
-            web.post("/connections/create-invitation", connections_create_invitation),
-    """
 
 
 def post_process_routes(app: web.Application):
@@ -731,7 +516,7 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "connection",
+            "name": "did-exchange",
             "description": "Connection management via DID exchange standard",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }

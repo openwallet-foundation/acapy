@@ -16,6 +16,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
+from .....wallet.util import bytes_to_b64, b64_to_bytes
 
 from .service import Service, ServiceSchema
 
@@ -78,6 +79,38 @@ class InvitationMessage(AgentMessage):
     def wrap_message(cls, message: dict) -> AttachDecorator:
         """Convert an aries message to an attachment decorator."""
         return AttachDecorator.from_aries_msg(message=message, ident="request-0")
+
+    def to_url(self, base_url: str = None) -> str:
+        """
+        Convert an invitation message to URL format for sharing.
+
+        Returns:
+            An invite url
+
+        """
+        c_json = self.to_json()
+        c_i = bytes_to_b64(c_json.encode("ascii"), urlsafe=True)
+        result = urljoin(base_url or self.endpoint or "", "?c_i={}".format(c_i))
+        return result
+
+    @classmethod
+    def from_url(cls, url: str) -> "InvitationMessage":
+        """
+        Parse a URL-encoded invitation into an `InvitationMessage` instance.
+
+        Args:
+            url: Url to decode
+
+        Returns:
+            An `InvitationMessage` object.
+
+        """
+        parts = urlparse(url)
+        query = parse_qs(parts.query)
+        if "c_i" in query:
+            c_i = b64_to_bytes(query["c_i"][0], urlsafe=True)
+            return cls.from_json(c_i)
+        return None
 
 
 class InvitationMessageSchema(AgentMessageSchema):

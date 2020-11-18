@@ -18,12 +18,15 @@ from ..config.injection_context import InjectionContext
 from ..config.ledger import ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config, BaseWallet
-from ..connections.models.conn23rec import Conn23Record
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,
+)
+from ..protocols.didexchange.v1_0.manager import DIDXManager, DIDXManagerError
+from ..protocols.out_of_band.v1_0.manager import (
+    OutOfBandManager, OutOfBandManagerError
 )
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
@@ -142,6 +145,14 @@ class Conductor:
                     "find_inbound_connection",
                 ),
             )
+            collector.wrap(
+                DIDXManager,
+                (
+                    # "get_connection_targets",
+                    "fetch_did_document",
+                    "find_inbound_connection",
+                ),
+            )
 
         self.context = context
 
@@ -189,12 +200,39 @@ class Conductor:
             self.admin_server,
         )
 
+        # Create a static connection for use by the test-suite
+        if context.settings.get("debug.test_suite_endpoint"):
+            mgr = DIDXManager(self.context)
+            their_endpoint = context.settings["debug.test_suite_endpoint"]
+            test_conn = await mgr.create_static_connection(
+                my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
+                their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
+                their_endpoint=their_endpoint,
+                alias="test-suite",
+            )
+            print("Created static connection for test suite")
+            print(" - My DID:", test_conn.my_did)
+            print(" - Their DID:", test_conn.their_did)
+            print(" - Their endpoint:", their_endpoint)
+            print()
+
+'''
+    async def create_invitation(
+        self,
+        my_label: str = None,
+        my_endpoint: str = None,
+        use_public_did: bool = False,
+        include_handshake: bool = False,
+        multi_use: bool = False,
+        attachments: list = None,
+    ) -> InvitationRecord:
+'''
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                mgr = ConnectionManager(self.context)  # TODO flip to conn23mgr
-                _connection, invitation = await mgr.create_invitation(
-                    their_role=Conn23Record.ROLE_REQUESTER,
+                mgr = OutOfBandManager(self.context)
+                #_connection, invitation = await mgr.create_invitation(
+                invi_rec = await mgr.create_invitation(
                     my_label=context.settings.get("debug.invite_label"),
                     multi_use=context.settings.get("debug.invite_multi_use", False),
                     public=context.settings.get("debug.invite_public", False),
@@ -346,12 +384,12 @@ class Conductor:
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
             # using provided request context
-            mgr = ConnectionManager(context)
+            mgr = DIDXManager(context)
             try:
                 outbound.target_list = await self.dispatcher.run_task(
                     mgr.get_connection_targets(connection_id=outbound.connection_id)
                 )
-            except ConnectionManagerError:
+            except DIDXManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return
             except (LedgerConfigError, LedgerTransactionError) as e:

@@ -1,7 +1,7 @@
 """Routing manager classes for tracking and inspecting routing records."""
 
 import json
-from typing import Sequence
+from typing import Coroutine, Sequence
 
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
@@ -67,9 +67,9 @@ class RoutingManager:
         """
         storage: BaseStorage = await self._context.inject(BaseStorage)
         try:
-            record = await storage.search_records(
+            record = await storage.find_record(
                 RoutingManager.RECORD_TYPE, {"recipient_key": recip_verkey}
-            ).fetch_single()
+            )
         except StorageDuplicateError:
             raise RouteNotFoundError(
                 "Duplicate routes found for verkey: %s", recip_verkey
@@ -217,7 +217,7 @@ class RoutingManager:
         return updated
 
     async def send_create_route(
-        self, router_connection_id: str, recip_key: str, outbound_handler
+        self, router_connection_id: str, recip_key: str, outbound_handler: Coroutine
     ):
         """Create and send a route update request.
 

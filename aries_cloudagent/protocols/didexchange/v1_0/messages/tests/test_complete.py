@@ -4,37 +4,37 @@ from ......messaging.models.base import BaseModelError
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ...message_types import CONN23_COMPLETE
-from ..complete import Conn23Complete
+from ...message_types import CONN_COMPLETE
+from ..complete import ConnComplete
 
 THID = "dummy-thid"
 PTHID = "dummy-pthid"
 
 
-class TestConn23Complete(TestCase):
+class TestConnComplete(TestCase):
     def test_init_type(self):
-        complete = Conn23Complete()
-        assert complete._type == DIDCommPrefix.qualify_current(CONN23_COMPLETE)
+        complete = ConnComplete()
+        assert complete._type == DIDCommPrefix.qualify_current(CONN_COMPLETE)
 
     def test_serde(self):
         obj = {"~thread": {"thid": THID, "pthid": PTHID}}
-        complete = Conn23Complete.deserialize(obj)
-        assert complete._type == DIDCommPrefix.qualify_current(CONN23_COMPLETE)
+        complete = ConnComplete.deserialize(obj)
+        assert complete._type == DIDCommPrefix.qualify_current(CONN_COMPLETE)
 
         complete_dict = complete.serialize()
         assert complete_dict["~thread"] == obj["~thread"]
 
 
-class TestConn23CompleteSchema(TestCase):
+class TestConnCompleteSchema(TestCase):
     def test_make_model(self):
-        complete = Conn23Complete()
+        complete = ConnComplete()
         complete.assign_thread_id(THID, PTHID)
         data = complete.serialize()
-        model_instance = Conn23Complete.deserialize(data)
-        assert isinstance(model_instance, Conn23Complete)
+        model_instance = ConnComplete.deserialize(data)
+        assert isinstance(model_instance, ConnComplete)
 
     def test_serde_x(self):
-        Conn23Complete.deserialize({})  # no thread attachment: OK as model
-        x_complete = Conn23Complete()  # no thread attachment: should not deserialize
+        ConnComplete.deserialize({})  # no thread attachment: OK as model
+        x_complete = ConnComplete()  # no thread attachment: should not deserialize
         with self.assertRaises(BaseModelError):
             data = x_complete.serialize()

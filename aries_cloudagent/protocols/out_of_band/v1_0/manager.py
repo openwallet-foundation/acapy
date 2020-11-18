@@ -2,13 +2,13 @@
 
 import logging
 
-from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.conn_record import ConnRecord
 from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....ledger.base import BaseLedger
 from ....wallet.util import did_key_to_naked, naked_to_did_key
 
-from ...didexchange.v1_0.manager import Conn23Manager
+from ...didexchange.v1_0.manager import DIDXManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
@@ -81,8 +81,8 @@ class OutOfBandManager:
 
         """
 
-        connection_mgr = Conn23Manager(self.context)
-        (connection, connection_invitation) = await connection_mgr.create_invitation(
+        didx_mgr = DIDXManager(self.context)
+        (conn_rec, connection_invitation) = await didx_mgr.create_invitation(
             my_label=my_label,
             my_endpoint=my_endpoint,
             auto_accept=True,
@@ -177,7 +177,7 @@ class OutOfBandManager:
 
         return invitation_record
 
-    async def receive_invitation(self, invitation: InvitationMessage) -> Conn23Record:
+    async def receive_invitation(self, invitation: InvitationMessage) -> ConnRecord:
         """Receive an out of band invitation message."""
 
         ledger: BaseLedger = await self.context.inject(BaseLedger)
@@ -252,10 +252,8 @@ class OutOfBandManager:
             )
             """
 
-            connection_mgr = Conn23Manager(self.context)
-            connection = await connection_mgr.receive_invitation(
-                invitation, auto_accept=True
-            )
+            didx_mgr = DIDXManager(self.context)
+            conn_rec = await didx_mgr.receive_invitation(invitation, auto_accept=True)
 
         elif len(
             invitation_message.request_attach
@@ -270,4 +268,4 @@ class OutOfBandManager:
         else:
             raise OutOfBandManagerError("Invalid request type")
 
-        return connection
+        return conn_rec

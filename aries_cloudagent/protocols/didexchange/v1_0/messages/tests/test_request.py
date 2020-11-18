@@ -13,9 +13,9 @@ from ......wallet.basic import BasicWallet
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ...message_types import CONN23_REQUEST
+from ...message_types import CONN_REQUEST
 
-from ..request import Conn23Request
+from ..request import ConnRequest
 
 
 class TestConfig:
@@ -53,7 +53,7 @@ class TestConfig:
         return doc
 
 
-class TestConn23Request(AsyncTestCase, TestConfig):
+class TestConnRequest(AsyncTestCase, TestConfig):
     async def setUp(self):
         self.wallet = BasicWallet()
         self.did_info = await self.wallet.create_local_did()
@@ -61,7 +61,7 @@ class TestConn23Request(AsyncTestCase, TestConfig):
         did_doc_attach = AttachDecorator.from_indy_dict(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
-        self.request = Conn23Request(
+        self.request = ConnRequest(
             label=TestConfig.test_label,
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
@@ -74,11 +74,11 @@ class TestConn23Request(AsyncTestCase, TestConfig):
 
     def test_type(self):
         """Test type."""
-        assert self.request._type == DIDCommPrefix.qualify_current(CONN23_REQUEST)
+        assert self.request._type == DIDCommPrefix.qualify_current(CONN_REQUEST)
 
     @mock.patch(
         "aries_cloudagent.protocols.didexchange.v1_0.messages."
-        "request.Conn23RequestSchema.load"
+        "request.ConnRequestSchema.load"
     )
     def test_deserialize(self, mock_request_schema_load):
         """
@@ -86,14 +86,14 @@ class TestConn23Request(AsyncTestCase, TestConfig):
         """
         obj = {"obj": "obj"}
 
-        request = Conn23Request.deserialize(obj)
+        request = ConnRequest.deserialize(obj)
         mock_request_schema_load.assert_called_once_with(obj)
 
         assert request is mock_request_schema_load.return_value
 
     @mock.patch(
         "aries_cloudagent.protocols.didexchange.v1_0.messages."
-        "request.Conn23RequestSchema.dump"
+        "request.ConnRequestSchema.dump"
     )
     def test_serialize(self, mock_request_schema_dump):
         """
@@ -105,7 +105,7 @@ class TestConn23Request(AsyncTestCase, TestConfig):
         assert request_dict is mock_request_schema_dump.return_value
 
 
-class TestConn23RequestSchema(AsyncTestCase, TestConfig):
+class TestConnRequestSchema(AsyncTestCase, TestConfig):
     """Test request schema."""
 
     async def setUp(self):
@@ -115,7 +115,7 @@ class TestConn23RequestSchema(AsyncTestCase, TestConfig):
         did_doc_attach = AttachDecorator.from_indy_dict(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
-        self.request = Conn23Request(
+        self.request = ConnRequest(
             label=TestConfig.test_label,
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
@@ -123,5 +123,5 @@ class TestConn23RequestSchema(AsyncTestCase, TestConfig):
 
     async def test_make_model(self):
         data = self.request.serialize()
-        model_instance = Conn23Request.deserialize(data)
+        model_instance = ConnRequest.deserialize(data)
         assert type(model_instance) is type(self.request)

@@ -11,25 +11,32 @@ from ...config.injection_context import InjectionContext
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
-from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
-from ...protocols.didexchange.v1_0.messages.request import Conn23Request
+from ...protocols.connections.v1_0.message_types import CONNECTION_INVITATION
+from ...protocols.connections.v1_0.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
+from ...protocols.didcomm_prefix import DIDCommPrefix
+from ...protocols.out_of_band.v1_0.messages.invitation import (
+    Invitation as OOBInvitation,
+)
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 
 
-class Conn23Record(BaseRecord):
-    """Represents a single pairwise connection under RFC 23 (DID exchange) protocol."""
+class ConnRecord(BaseRecord):
+    """Represents a single pairwise connection."""
 
     class Meta:
-        """Conn23Record metadata."""
+        """ConnRecord metadata."""
 
-        schema_class = "Conn23RecordSchema"
+        schema_class = "ConnRecordSchema"
 
     class Role(Enum):
         """RFC 160 (inviter, invitee) = RFC 23 (responder, requester)."""
 
-        REQUESTER = ("invitee", "requester")  # == RFC 160 initiator, RFC 434 receiver
-        RESPONDER = ("inviter", "responder")  # == RFC 23 initiator(!), RFC 434 sender
+        REQUESTER = ("invitee", "requester")  # == RFC 23 initiator, RFC 434 receiver
+        RESPONDER = ("inviter", "responder")  # == RFC 160 initiator(!), RFC 434 sender
 
         @property
         def rfc160(self):
@@ -42,50 +49,76 @@ class Conn23Record(BaseRecord):
             return self.value[1]
 
         @classmethod
-        def get(cls, label: str):
+        def get(cls, label: Union[str, "ConnRecord.Role"]):
             """Get role enum for label."""
-            for role in Role:
-                if label in role.value:
-                    return role
+            if isinstance(label, str):
+                for role in ConnRecord.Role:
+                    if label in role.value:
+                        return role
+            elif isinstance(label, ConnRecord.Role):
+                return label
             return None
 
         def flip(self):
             """Return interlocutor role."""
             return (
-                Conn23Record.Role.REQUESTER
-                if self is Conn23Record.Role.RESPONDER
-                else Conn23Record.Role.RESPONDER
+                ConnRecord.Role.REQUESTER
+                if self is ConnRecord.Role.RESPONDER
+                else ConnRecord.Role.RESPONDER
             )
 
-        def __eq__(self, other: Union[str, "Role"]) -> bool:
+        def __eq__(self, other: Union[str, "ConnRecord.Role"]) -> bool:
             """Comparison between roles."""
-            if isinstance(other, str):
-                return self is Role.get(other)
+            return self is ConnRecord.Role.get(other)
+
+    class State(Enum):
+        """Collator for equivalent states between RFC 160 and RFC 23."""
+
+        INIT = ("init", "start")
+        INVITATION = ("invitation", "invitation")
+        REQUEST = ("request", "request")
+        RESPONSE = ("response", "response")
+        COMPLETED = ("active", "completed")
+        ABANDONED = ("error", "abandoned")
+
+        @property
+        def rfc160(self):
+            """Return RFC 160 (connection protocol) nomenclature."""
+            return self.value[0]
+
+        @property
+        def rfc23(self):
+            """Return RFC 23 (DID exchange protocol) nomenclature."""
+            return self.value[1]
+
+        @classmethod
+        def get(cls, label: Union[str, "ConnRecord.State"]):
+            """Get state enum for label."""
+            if isinstance(label, str):
+                for state in ConnRecord.State:
+                    if label in state.value:
+                        return state
+            elif isinstance(label, ConnRecord.State):
+                return label
+            return None
+
+        def __eq__(self, other: Union[str, "ConnRecord.State"]) -> bool:
+            """Comparison between states."""
+            return self is ConnRecord.State.get(other)
 
     RECORD_ID_NAME = "connection_id"
-    WEBHOOK_TOPIC = "connections_23"
+    WEBHOOK_TOPIC = "connections"
     LOG_STATE_FLAG = "debug.connections"
     CACHE_ENABLED = True
     TAG_NAMES = {"my_did", "their_did", "request_id", "invitation_key"}
 
-    RECORD_TYPE = "conn23"
-    RECORD_TYPE_INVITATION = "conn23_invitation"
-    RECORD_TYPE_REQUEST = "conn23_request"
-
-    DIRECTION_RECEIVED = "received"
-    DIRECTION_SENT = "sent"
-
-    MULTIUSE = "multiuse"
-
-    STATE_START = "start"
-    STATE_INVITATION = "invitation"  # requester: received; responder: created/sent
-    STATE_REQUEST = "request"  # requester: created/sent; responder: received
-    STATE_RESPONSE = "response-sent"  # requester: received; requester: created/sent
-    STATE_ABANDONED = "abandoned"
-    STATE_COMPLETED = "completed"
+    RECORD_TYPE = "connection"
+    RECORD_TYPE_INVITATION = "connection_invitation"
+    RECORD_TYPE_REQUEST = "connection_request"
 
     INVITATION_MODE_ONCE = "once"
     INVITATION_MODE_MULTI = "multi"
+    INVITATION_MODE_STATIC = "static"
 
     ROUTING_STATE_NONE = "none"
     ROUTING_STATE_REQUEST = "request"
@@ -102,10 +135,10 @@ class Conn23Record(BaseRecord):
         my_did: str = None,
         their_did: str = None,
         their_label: str = None,
-        their_role: str = None,
+        their_role: Union[str, "ConnRecord.Role"] = None,
         invitation_key: str = None,
         request_id: str = None,
-        state: str = None,
+        state: Union[str, "ConnRecord.State"] = None,
         inbound_connection_id: str = None,
         error_msg: str = None,
         routing_state: str = None,
@@ -114,12 +147,22 @@ class Conn23Record(BaseRecord):
         alias: str = None,
         **kwargs,
     ):
-        """Initialize a new Conn23Record."""
-        super().__init__(connection_id, state or self.STATE_START, **kwargs)
+        """Initialize a new ConnRecord."""
+        super().__init__(
+            connection_id,
+            state=(ConnRecord.State.get(state) or ConnRecord.State.INIT).rfc23,
+            **kwargs,
+        )
         self.my_did = my_did
         self.their_did = their_did
         self.their_label = their_label
-        self.their_role = their_role
+        self.their_role = (
+            ConnRecord.Role.get(their_role).rfc23
+            if isinstance(their_role, str)
+            else None
+            if their_role is None
+            else their_role.rfc23
+        )
         self.invitation_key = invitation_key
         self.request_id = request_id
         self.error_msg = error_msg
@@ -140,6 +183,7 @@ class Conn23Record(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
+                "their_role",
                 "inbound_connection_id",
                 "routing_state",
                 "accept",
@@ -147,7 +191,6 @@ class Conn23Record(BaseRecord):
                 "alias",
                 "error_msg",
                 "their_label",
-                "their_role",
                 "state",
             )
         }
@@ -158,53 +201,51 @@ class Conn23Record(BaseRecord):
         context: InjectionContext,
         their_did: str = None,
         my_did: str = None,
-        my_role: Role = None,
-    ) -> "Conn23Record":
+        their_role: str = None,
+    ) -> "ConnRecord":
         """Retrieve a connection record by target DID.
 
         Args:
             context: The injection context to use
             their_did: The target DID to filter by
             my_did: One of our DIDs to filter by
-            my_role: Filter connections by record owner role
+            my_role: Filter connections by their role
         """
         tag_filter = {}
         if their_did:
             tag_filter["their_did"] = their_did
         if my_did:
             tag_filter["my_did"] = my_did
+
         post_filter = {}
-        if my_role:
-            post_filter["their_role"] = my_role.flip().rfc23
+        if their_role:
+            post_filter["their_role"] = cls.Role.get(their_role).rfc23
+
         return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_invitation_key(
-        cls,
-        context: InjectionContext,
-        invitation_key: str,
-        my_role: Role,
-    ) -> "Conn23Record":
-        """Retrieve a connection record by invitation key and interlocuter role.
+        cls, context: InjectionContext, invitation_key: str, their_role: str = None
+    ) -> "ConnRecord":
+        """Retrieve a connection record by invitation key.
 
         Args:
             context: The injection context to use
             invitation_key: The key on the originating invitation
-            my_role: Filter by record owner role value
+            initiator: Filter by the initiator value
         """
-        assert my_role
-
         tag_filter = {"invitation_key": invitation_key}
-        post_filter = {
-            "state": cls.STATE_INVITATION,
-            "their_role": my_role.flip().rfc23,
-        }
+        post_filter = {"state": cls.State.INVITATION.rfc23}
+
+        if their_role:
+            post_filter["their_role"] = cls.Role.get(their_role).rfc23
+
         return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_request_id(
         cls, context: InjectionContext, request_id: str
-    ) -> "Conn23Record":
+    ) -> "ConnRecord":
         """Retrieve a connection record from our previous request ID.
 
         Args:
@@ -215,7 +256,9 @@ class Conn23Record(BaseRecord):
         return await cls.retrieve_by_tag_filter(context, tag_filter)
 
     async def attach_invitation(
-        self, context: InjectionContext, invitation: InvitationMessage
+        self,
+        context: InjectionContext,
+        invitation: Union[ConnectionInvitation, OOBInvitation],
     ):
         """Persist the related connection invitation to storage.
 
@@ -225,14 +268,16 @@ class Conn23Record(BaseRecord):
         """
         assert self.connection_id
         record = StorageRecord(
-            Conn23Record.RECORD_TYPE_INVITATION,
+            self.RECORD_TYPE_INVITATION,
             invitation.to_json(),
             {"connection_id": self.connection_id},
         )
         storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
 
-    async def retrieve_invitation(self, context: InjectionContext) -> InvitationMessage:
+    async def retrieve_invitation(
+        self, context: InjectionContext
+    ) -> Union[ConnectionInvitation, OOBInvitation]:
         """Retrieve the related connection invitation.
 
         Args:
@@ -240,12 +285,21 @@ class Conn23Record(BaseRecord):
         """
         assert self.connection_id
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
-            Conn23Record.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
-        ).fetch_single()
-        return InvitationMessage.from_json(result.value)
+        result = await storage.find_record(
+            self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
+        )
+        ser = json.loads(result.value)
+        return (
+            ConnectionInvitation
+            if DIDCommPrefix.unqualify(ser["@type"]) == CONNECTION_INVITATION
+            else OOBInvitation
+        ).deserialize(ser)
 
-    async def attach_request(self, context: InjectionContext, request: Conn23Request):
+    async def attach_request(
+        self,
+        context: InjectionContext,
+        request: ConnectionRequest,  # will be Union[ConnectionRequest, DIDEx Request]
+    ):
         """Persist the related connection request to storage.
 
         Args:
@@ -254,30 +308,36 @@ class Conn23Record(BaseRecord):
         """
         assert self.connection_id
         record = StorageRecord(
-            Conn23Record.RECORD_TYPE_REQUEST,
+            self.RECORD_TYPE_REQUEST,
             request.to_json(),
             {"connection_id": self.connection_id},
         )
         storage: BaseStorage = await context.inject(BaseStorage)
         await storage.add_record(record)
 
-    async def retrieve_request(self, context: InjectionContext) -> Conn23Request:
-        """Retrieve the related connection request.
+    async def retrieve_request(
+        self,
+        context: InjectionContext,
+    ) -> ConnectionRequest:  # will be Union[ConnectionRequest, DIDEx Request]
+        """Retrieve the related connection invitation.
 
         Args:
             context: The injection context to use
         """
         assert self.connection_id
         storage: BaseStorage = await context.inject(BaseStorage)
-        result = await storage.search_records(
-            Conn23Record.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
-        ).fetch_single()
-        return Conn23Request.from_json(result.value)
+        result = await storage.find_record(
+            self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
+        )
+        return ConnectionRequest.from_json(result.value)
 
     @property
     def is_ready(self) -> str:
         """Accessor for connection readiness."""
-        return self.state in (Conn23Record.STATE_COMPLETED, Conn23Record.STATE_RESPONSE)
+        return ConnRecord.State.get(self.state) in (
+            ConnRecord.State.COMPLETED,
+            ConnRecord.State.RESPONSE,
+        )
 
     @property
     def is_multiuse_invitation(self) -> bool:
@@ -301,13 +361,13 @@ class Conn23Record(BaseRecord):
         return super().__eq__(other)
 
 
-class Conn23RecordSchema(BaseRecordSchema):
+class ConnRecordSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of connection records."""
 
     class Meta:
-        """Conn23RecordSchema metadata."""
+        """ConnRecordSchema metadata."""
 
-        model_class = Conn23Record
+        model_class = ConnRecord
 
     connection_id = fields.Str(
         required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
@@ -323,11 +383,11 @@ class Conn23RecordSchema(BaseRecordSchema):
     )
     their_role = fields.Str(
         required=False,
-        description="Their assigned role for connection",
+        description="Their role in the connection protocol",
         validate=validate.OneOf(
-            [label for role in Conn23Record.Role for label in role.value]
+            [label for role in ConnRecord.Role for label in role.value]
         ),
-        example=Conn23Record.Role.REQUESTER.rfc23,
+        example=ConnRecord.Role.REQUESTER.rfc23,
     )
     inbound_connection_id = fields.Str(
         required=False,
@@ -347,21 +407,21 @@ class Conn23RecordSchema(BaseRecordSchema):
         description="Routing state of connection",
         validate=validate.OneOf(
             [
-                getattr(Conn23Record, m)
-                for m in vars(Conn23Record)
+                getattr(ConnRecord, m)
+                for m in vars(ConnRecord)
                 if m.startswith("ROUTING_STATE_")
             ]
         ),
-        example=Conn23Record.ROUTING_STATE_ACTIVE,
+        example=ConnRecord.ROUTING_STATE_ACTIVE,
     )
     accept = fields.Str(
         required=False,
-        description="Connection acceptance",
-        example=Conn23Record.ACCEPT_AUTO,
+        description="Connection acceptance: manual or auto",
+        example=ConnRecord.ACCEPT_AUTO,
         validate=validate.OneOf(
             [
-                getattr(Conn23Record, a)
-                for a in vars(Conn23Record)
+                getattr(ConnRecord, a)
+                for a in vars(ConnRecord)
                 if a.startswith("ACCEPT_")
             ]
         ),
@@ -374,11 +434,11 @@ class Conn23RecordSchema(BaseRecordSchema):
     invitation_mode = fields.Str(
         required=False,
         description="Invitation mode",
-        example=Conn23Record.INVITATION_MODE_ONCE,
+        example=ConnRecord.INVITATION_MODE_ONCE,
         validate=validate.OneOf(
             [
-                getattr(Conn23Record, i)
-                for i in vars(Conn23Record)
+                getattr(ConnRecord, i)
+                for i in vars(ConnRecord)
                 if i.startswith("INVITATION_MODE_")
             ]
         ),

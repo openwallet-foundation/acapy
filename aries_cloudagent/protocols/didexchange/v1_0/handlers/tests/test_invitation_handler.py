@@ -17,7 +17,7 @@ def request_context() -> RequestContext:
     yield ctx
 
 
-class TestConn23InvitationHandler:
+class TestConnInvitationHandler:
     @pytest.mark.asyncio
     async def test_problem_report(self, request_context):
         request_context.message = InvitationMessage()

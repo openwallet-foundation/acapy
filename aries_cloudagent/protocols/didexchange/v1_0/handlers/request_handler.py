@@ -2,12 +2,12 @@
 
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
-from ..manager import Conn23Manager, Conn23ManagerError
-from ..messages.request import Conn23Request
+from ..manager import DIDXManager, DIDXManagerError
+from ..messages.request import ConnRequest
 from ..messages.problem_report import ProblemReport
 
 
-class Conn23RequestHandler(BaseHandler):
+class ConnRequestHandler(BaseHandler):
     """Handler class for connection request message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
@@ -19,13 +19,13 @@ class Conn23RequestHandler(BaseHandler):
             responder: Responder callback
         """
 
-        self._logger.debug(f"Conn23RequestHandler called with context {context}")
-        assert isinstance(context.message, Conn23Request)
+        self._logger.debug(f"ConnRequestHandler called with context {context}")
+        assert isinstance(context.message, ConnRequest)
 
-        mgr = Conn23Manager(context)
+        mgr = DIDXManager(context)
         try:
             await mgr.receive_request(context.message, context.message_receipt)
-        except Conn23ManagerError as e:
+        except DIDXManagerError as e:
             self._logger.exception("Error receiving RFC 23 connection request")
             if e.error_code:
                 targets = None
@@ -35,7 +35,7 @@ class Conn23RequestHandler(BaseHandler):
                             context.message.did_doc_attach,
                             context.message_receipt.recipient_verkey,
                         )
-                    except Conn23ManagerError:
+                    except DIDXManagerError:
                         self._logger.exception(
                             "Error parsing DIDDoc for problem report"
                         )

@@ -7,12 +7,12 @@ from .....messaging.base_handler import (
 )
 from .....protocols.trustping.v1_0.messages.ping import Ping
 
-from ..manager import Conn23Manager, Conn23ManagerError
-from ..messages.response import Conn23Response
+from ..manager import DIDXManager, DIDXManagerError
+from ..messages.response import DIDXResponse
 from ..messages.problem_report import ProblemReport
 
 
-class Conn23ResponseHandler(BaseHandler):
+class ConnResponseHandler(BaseHandler):
     """Handler class for connection response message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
@@ -23,15 +23,15 @@ class Conn23ResponseHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"Conn23ResponseHandler called with context {context}")
-        assert isinstance(context.message, Conn23Response)
+        self._logger.debug(f"ConnResponseHandler called with context {context}")
+        assert isinstance(context.message, ConnResponse)
 
-        mgr = Conn23Manager(context)
+        mgr = DIDXManager(context)
         try:
             conn_rec = await mgr.accept_response(
                 context.message, context.message_receipt
             )
-        except Conn23ManagerError as e:
+        except DIDXManagerError as e:
             self._logger.exception("Error receiving connection response")
             if e.error_code:
                 targets = None
@@ -41,7 +41,7 @@ class Conn23ResponseHandler(BaseHandler):
                             context.message.did_doc_attach,
                             context.message_receipt.recipient_verkey,
                         )
-                    except Conn23ManagerError:
+                    except DIDXManagerError:
                         self._logger.exception(
                             "Error parsing DIDDoc for problem report"
                         )

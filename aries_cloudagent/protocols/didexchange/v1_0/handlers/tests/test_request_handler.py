@@ -17,8 +17,8 @@ from ......transport.inbound.receipt import MessageReceipt
 from ......wallet.basic import BasicWallet
 
 from ...handlers import request_handler as test_module
-from ...manager import Conn23ManagerError
-from ...messages.request import Conn23Request
+from ...manager import DIDXManagerError
+from ...messages.request import ConnRequest
 from ...messages.problem_report import ProblemReport, ProblemReportReason
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -28,7 +28,7 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestConn23RequestHandler(AsyncTestCase):
+class TestConnRequestHandler(AsyncTestCase):
     """Class unit testing request handler."""
 
     def did_doc(self):
@@ -65,7 +65,7 @@ class TestConn23RequestHandler(AsyncTestCase):
         self.did_doc_attach = AttachDecorator.from_indy_dict(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
 
-        self.request = Conn23Request(
+        self.request = ConnRequest(
             label=TEST_LABEL,
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
@@ -73,11 +73,11 @@ class TestConn23RequestHandler(AsyncTestCase):
         self.ctx = RequestContext()
         self.ctx.message_receipt = MessageReceipt()
 
-    @async_mock.patch.object(test_module, "Conn23Manager")
+    @async_mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_conn_mgr):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
-        self.ctx.message = Conn23Request()
-        handler_inst = test_module.Conn23RequestHandler()
+        self.ctx.message = ConnRequest()
+        handler_inst = test_module.ConnRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
 
@@ -87,15 +87,15 @@ class TestConn23RequestHandler(AsyncTestCase):
         )
         assert not responder.messages
 
-    @async_mock.patch.object(test_module, "Conn23Manager")
+    @async_mock.patch.object(test_module, "DIDXManager")
     async def test_problem_report(self, mock_conn_mgr):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock(
-            side_effect=Conn23ManagerError(
+            side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
             )
         )
-        self.ctx.message = Conn23Request()
-        handler_inst = test_module.Conn23RequestHandler()
+        self.ctx.message = ConnRequest()
+        handler_inst = test_module.ConnRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages
@@ -107,23 +107,23 @@ class TestConn23RequestHandler(AsyncTestCase):
         )
         assert target == {"target_list": None}
 
-    @async_mock.patch.object(test_module, "Conn23Manager")
+    @async_mock.patch.object(test_module, "DIDXManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(self, mock_conn_target, mock_conn_mgr):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock(
-            side_effect=Conn23ManagerError(
+            side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
             )
         )
         mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
             return_value=[mock_conn_target]
         )
-        self.ctx.message = Conn23Request(
+        self.ctx.message = ConnRequest(
             label=TEST_LABEL,
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
-        handler_inst = test_module.Conn23RequestHandler()
+        handler_inst = test_module.ConnRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages
@@ -135,7 +135,7 @@ class TestConn23RequestHandler(AsyncTestCase):
         )
         assert target == {"target_list": [mock_conn_target]}
 
-    @async_mock.patch.object(test_module, "Conn23Manager")
+    @async_mock.patch.object(test_module, "DIDXManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
         self,
@@ -143,19 +143,19 @@ class TestConn23RequestHandler(AsyncTestCase):
         mock_conn_mgr,
     ):
         mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock(
-            side_effect=Conn23ManagerError(
+            side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
             )
         )
         mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
-            side_effect=Conn23ManagerError("no targets")
+            side_effect=DIDXManagerError("no targets")
         )
-        self.ctx.message = Conn23Request(
+        self.ctx.message = ConnRequest(
             label=TEST_LABEL,
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
-        handler_inst = test_module.Conn23RequestHandler()
+        handler_inst = test_module.ConnRequestHandler()
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages

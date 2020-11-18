@@ -17,7 +17,7 @@ class TestBasicMessageRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "BasicMessage", autospec=True
         ) as mock_basic_message, async_mock.patch.object(
@@ -40,7 +40,7 @@ class TestBasicMessageRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "BasicMessage", autospec=True
         ) as mock_basic_message:
@@ -63,7 +63,7 @@ class TestBasicMessageRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "ConnectionRecord", autospec=True
+            test_module, "ConnRecord", autospec=True
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "BasicMessage", autospec=True
         ) as mock_basic_message:

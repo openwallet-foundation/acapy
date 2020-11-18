@@ -1,4 +1,4 @@
-"""Represents a connection complete message under RFC 23 (DID exchange)."""
+"""Represents a DID exchange complete message under RFC 23."""
 
 from marshmallow import EXCLUDE, fields, pre_dump, validates_schema, ValidationError
 
@@ -8,38 +8,38 @@ from .....messaging.decorators.thread_decorator import (
     ThreadDecoratorSchema,
 )
 
-from ..message_types import CONN23_COMPLETE, PROTOCOL_PACKAGE
+from ..message_types import DIDX_COMPLETE, PROTOCOL_PACKAGE
 
-HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.complete_handler.Conn23CompleteHandler"
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.complete_handler.DIDXCompleteHandler"
 
 
-class Conn23Complete(AgentMessage):
-    """Class representing a connection completion."""
+class DIDXComplete(AgentMessage):
+    """Class representing a DID exchange completion."""
 
     class Meta:
-        """Metadata for connection completion."""
+        """Metadata for DID exchange completion."""
 
         handler_class = HANDLER_CLASS
-        message_type = CONN23_COMPLETE
-        schema_class = "Conn23CompleteSchema"
+        message_type = DIDX_COMPLETE
+        schema_class = "DIDXCompleteSchema"
 
     def __init__(
         self,
         **kwargs,
     ):
         """
-        Initialize connection complete message object.
+        Initialize DID exchange complete message object.
         """
         super().__init__(**kwargs)
 
 
-class Conn23CompleteSchema(AgentMessageSchema):
-    """Connection complete schema class."""
+class DIDXCompleteSchema(AgentMessageSchema):
+    """DID exchange complete schema class."""
 
     class Meta:
-        """Connection complete schema metadata."""
+        """DID exchange complete schema metadata."""
 
-        model_class = Conn23Complete
+        model_class = DIDXComplete
         unknown = EXCLUDE
 
     @pre_dump
