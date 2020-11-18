@@ -4,7 +4,6 @@ from asynctest import mock as async_mock
 from aiohttp import web as aio_web
 
 from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
 from aries_cloudagent.messaging.request_context import RequestContext
 
 from .. import routes as test_module

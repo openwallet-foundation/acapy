@@ -20,20 +20,36 @@ from ..util import datetime_to_str, time_now
 from ..valid import INDY_ISO8601_DATETIME
 
 
-def match_post_filter(record: dict, post_filter: dict, positive: bool = True) -> bool:
+def match_post_filter(
+    record: dict,
+    post_filter: dict,
+    positive: bool = True,
+    alt: bool = False,
+) -> bool:
     """Determine if a record value matches the post-filter.
 
     Args:
         record: record to check
         post_filter: filter to apply (empty or None filter matches everything)
         positive: whether matching all filter criteria positively or negatively
+        alt: set to match any (positive=True) value or miss all (positive=False)
+            values in post_filter
     """
     if not post_filter:
         return True
 
+    if alt:
+        return (
+            positive and all(record.get(k) in alts for k, alts in post_filter.items())
+        ) or (
+            (not positive)
+            and all(record.get(k) not in alts for k, alts in post_filter.items())
+        )
+
     for k, v in post_filter.items():
         if record.get(k) != v:
             return not positive
+
     return positive
 
 
@@ -227,7 +243,8 @@ class BaseRecord(BaseModel):
         Args:
             context: The injection context to use
             tag_filter: The filter dictionary to apply
-            post_filter: Additional value filters to apply after retrieval
+            post_filter: Additional value filters to apply matching positively,
+                with sequence values specifying alternatives to match (hit any)
         """
         storage: BaseStorage = await context.inject(BaseStorage)
         query = storage.search_records(
@@ -239,7 +256,7 @@ class BaseRecord(BaseModel):
         found = None
         async for record in query:
             vals = json.loads(record.value)
-            if match_post_filter(vals, post_filter):
+            if match_post_filter(vals, post_filter, alt=False):
                 if found:
                     raise StorageDuplicateError(
                         "Multiple {} records located for {}{}".format(
@@ -262,8 +279,10 @@ class BaseRecord(BaseModel):
         cls,
         context: InjectionContext,
         tag_filter: dict = None,
+        *,
         post_filter_positive: dict = None,
         post_filter_negative: dict = None,
+        alt: bool = False,
     ) -> Sequence["BaseRecord"]:
         """Query stored records.
 
@@ -272,6 +291,8 @@ class BaseRecord(BaseModel):
             tag_filter: An optional dictionary of tag filter clauses
             post_filter_positive: Additional value filters to apply matching positively
             post_filter_negative: Additional value filters to apply matching negatively
+            alt: set to match any (positive=True) value or miss all (positive=False)
+                values in post_filter
         """
         storage: BaseStorage = await context.inject(BaseStorage)
         query = storage.search_records(
@@ -284,8 +305,16 @@ class BaseRecord(BaseModel):
         async for record in query:
             vals = json.loads(record.value)
             if match_post_filter(
-                vals, post_filter_positive, True
-            ) and match_post_filter(vals, post_filter_negative, False):
+                vals,
+                post_filter_positive,
+                positive=True,
+                alt=alt,
+            ) and match_post_filter(
+                vals,
+                post_filter_negative,
+                positive=False,
+                alt=alt,
+            ):
                 result.append(cls.from_storage(record.id, vals))
         return result
 
