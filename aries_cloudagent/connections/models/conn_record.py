@@ -154,18 +154,18 @@ class ConnRecord(BaseRecord):
         """Initialize a new ConnRecord."""
         super().__init__(
             connection_id,
-            state=(ConnRecord.State.get(state) or ConnRecord.State.INIT).rfc23,
+            state=(ConnRecord.State.get(state) or ConnRecord.State.INIT).rfc160,
             **kwargs,
         )
         self.my_did = my_did
         self.their_did = their_did
         self.their_label = their_label
         self.their_role = (
-            ConnRecord.Role.get(their_role).rfc23
+            ConnRecord.Role.get(their_role).rfc160
             if isinstance(their_role, str)
             else None
             if their_role is None
-            else their_role.rfc23
+            else their_role.rfc160
         )
         self.invitation_key = invitation_key
         self.request_id = request_id
@@ -223,7 +223,7 @@ class ConnRecord(BaseRecord):
 
         post_filter = {}
         if their_role:
-            post_filter["their_role"] = cls.Role.get(their_role).rfc23
+            post_filter["their_role"] = cls.Role.get(their_role).rfc160
 
         return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
@@ -239,10 +239,10 @@ class ConnRecord(BaseRecord):
             initiator: Filter by the initiator value
         """
         tag_filter = {"invitation_key": invitation_key}
-        post_filter = {"state": cls.State.INVITATION.rfc23}
+        post_filter = {"state": cls.State.INVITATION.rfc160}
 
         if their_role:
-            post_filter["their_role"] = cls.Role.get(their_role).rfc23
+            post_filter["their_role"] = cls.Role.get(their_role).rfc160
 
         return await cls.retrieve_by_tag_filter(context, tag_filter, post_filter)
 
