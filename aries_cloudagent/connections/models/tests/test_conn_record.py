@@ -34,6 +34,8 @@ class TestConnRecord(AsyncTestCase):
             their_role=ConnRecord.Role.REQUESTER.rfc23,
             state=ConnRecord.State.COMPLETED.rfc23,
         )
+        assert self.test_conn_record.their_role == ConnRecord.Role.REQUESTER.rfc160
+        assert self.test_conn_record.state == ConnRecord.State.COMPLETED.rfc160
 
     async def test_get_enums(self):
         assert ConnRecord.Role.get("Larry") is None
@@ -75,9 +77,9 @@ class TestConnRecord(AsyncTestCase):
         connection_id = await record.save(self.context)
         fetched = await ConnRecord.retrieve_by_id(self.context, connection_id)
         assert fetched and fetched == record
-        assert fetched.state is ConnRecord.State.INIT.rfc23
+        assert fetched.state is ConnRecord.State.INIT.rfc160
         assert ConnRecord.State.get(fetched.state) is ConnRecord.State.INIT
-        assert fetched.their_role is ConnRecord.Role.REQUESTER.rfc23
+        assert fetched.their_role is ConnRecord.Role.REQUESTER.rfc160
         assert ConnRecord.Role.get(fetched.their_role) is ConnRecord.Role.REQUESTER
 
         record160 = ConnRecord(
@@ -102,7 +104,7 @@ class TestConnRecord(AsyncTestCase):
             context=self.context,
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
         )
         assert result == record
 
@@ -110,7 +112,7 @@ class TestConnRecord(AsyncTestCase):
         record = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
             state=ConnRecord.State.INVITATION.rfc23,
             invitation_key="dummy",
         )
