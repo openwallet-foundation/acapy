@@ -2,7 +2,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.connections.models.connection_record import ConnectionRecord
+from aries_cloudagent.connections.models.conn_record import ConnRecord
 from aries_cloudagent.messaging.base_handler import HandlerException
 from aries_cloudagent.messaging.request_context import RequestContext
 from aries_cloudagent.messaging.responder import MockResponder
@@ -50,7 +50,7 @@ class TestForwardInvitationHandler(AsyncTestCase):
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
             mock_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
-                return_value=ConnectionRecord(connection_id="dummy")
+                return_value=ConnRecord(connection_id="dummy")
             )
 
             await handler.handle(self.context, responder)

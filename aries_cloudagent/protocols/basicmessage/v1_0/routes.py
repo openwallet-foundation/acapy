@@ -5,7 +5,7 @@ from aiohttp_apispec import docs, match_info_schema, request_schema
 
 from marshmallow import fields
 
-from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageNotFoundError
@@ -45,7 +45,7 @@ async def connections_send_message(request: web.BaseRequest):
     params = await request.json()
 
     try:
-        connection = await ConnectionRecord.retrieve_by_id(context, connection_id)
+        connection = await ConnRecord.retrieve_by_id(context, connection_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 

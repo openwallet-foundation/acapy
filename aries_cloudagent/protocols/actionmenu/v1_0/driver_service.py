@@ -2,7 +2,7 @@
 
 import logging
 
-from ....connections.models.connection_record import ConnectionRecord
+from ....connections.models.conn_record import ConnRecord
 from ....messaging.agent_message import AgentMessage
 from ....messaging.responder import BaseResponder
 
@@ -16,7 +16,7 @@ class DriverMenuService(BaseMenuService):
     """Driver-based action menu service."""
 
     async def get_active_menu(
-        self, connection: ConnectionRecord = None, thread_id: str = None
+        self, connection: ConnRecord = None, thread_id: str = None
     ) -> Menu:
         """
         Render the current menu.
@@ -38,7 +38,7 @@ class DriverMenuService(BaseMenuService):
         self,
         action_name: str,
         action_params: dict,
-        connection: ConnectionRecord = None,
+        connection: ConnRecord = None,
         thread_id: str = None,
     ) -> AgentMessage:
         """
