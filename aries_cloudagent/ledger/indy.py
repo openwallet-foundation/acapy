@@ -40,10 +40,7 @@ from .error import (
 )
 from .util import TAA_ACCEPTED_RECORD_TYPE
 
-GENESIS_TRANSACTION_PATH = tempfile.gettempdir()
-GENESIS_TRANSACTION_PATH = path.join(
-    GENESIS_TRANSACTION_PATH, "indy_genesis_transactions.txt"
-)
+GENESIS_TRANSACTION_FILE = "indy_genesis_transactions.txt"
 
 
 class Role(Enum):
@@ -147,9 +144,9 @@ class IndyLedger(BaseLedger):
     ):
         """Create the pool ledger configuration."""
 
-        # indy-sdk requires a file but it's only used once to bootstrap
-        # the connection so we take a string instead of create a tmp file
-        txn_path = GENESIS_TRANSACTION_PATH
+        # indy-sdk requires a file to pass the pool configuration
+        # the file path includes the pool name to avoid conflicts
+        txn_path = path.join(tempfile.gettempdir(), f"{self.pool_name}_{GENESIS_TRANSACTION_FILE}")
         with open(txn_path, "w") as genesis_file:
             genesis_file.write(genesis_transactions)
         pool_config = json.dumps({"genesis_txn": txn_path})
